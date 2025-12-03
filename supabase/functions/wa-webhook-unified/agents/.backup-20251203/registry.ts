@@ -21,15 +21,16 @@ import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { AgentType, AgentDependencies } from "../core/types.ts";
 import { BaseAgent } from "./base-agent.ts";
 
-// Import all domain agents (DATABASE-DRIVEN)
+// Import all domain agents
 import { SupportAgent } from "./support-agent.ts";
-import { MarketplaceAgent } from "./marketplace-agent.ts"; // Database-driven marketplace agent
+import { CommerceAgent } from "./commerce-agent.ts"; // Unified commerce agent (marketplace)
 import { FarmerAgent } from "./farmer-agent.ts";
 import { WaiterAgent } from "./waiter-agent.ts";
 import { InsuranceAgent } from "./insurance-agent.ts";
 import { RidesAgent } from "./rides-agent.ts";
 import { JobsAgent } from "./jobs-agent.ts";
 import { PropertyAgent } from "./property-agent.ts";
+import { SalesAgent } from "./sales-agent.ts";
 
 export class AgentRegistry {
   private agents: Map<AgentType, BaseAgent> = new Map();
@@ -65,9 +66,9 @@ export class AgentRegistry {
       case "insurance":
         return new InsuranceAgent(deps);
       
-      // 3. Sales/Marketing Cold Caller AI Agent (uses marketplace agent for now)
+      // 3. Sales/Marketing Cold Caller AI Agent
       case "sales_cold_caller":
-        return new MarketplaceAgent(deps);
+        return new SalesAgent(deps);
       
       // 4. Rides AI Agent
       case "rides":
@@ -87,7 +88,7 @@ export class AgentRegistry {
       
       // 8. Marketplace AI Agent (includes pharmacy, hardware, shop)
       case "marketplace":
-        return new MarketplaceAgent(deps);
+        return new CommerceAgent(deps);
       
       // 9. Support AI Agent (includes concierge routing)
       case "support":
@@ -96,8 +97,8 @@ export class AgentRegistry {
       // 10. Business Broker AI Agent (includes legal intake)
       case "business_broker":
         // Business brokerage and legal intake functionality
-        // Uses MarketplaceAgent for business discovery and intake workflows
-        return new MarketplaceAgent(deps);
+        // Uses CommerceAgent for business discovery and intake workflows
+        return new CommerceAgent(deps);
 
       default:
         // Fallback to support agent for any unknown types

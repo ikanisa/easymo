@@ -1,158 +1,137 @@
 /**
- * Support Agent
+ * Support AI Agent
+ * General help, navigation, and customer support
  * 
- * Fallback agent for general queries and navigation.
- * Helps users understand available services and routes to appropriate agents.
+ * Part of Unified AI Agent Architecture
+ * Created: 2025-11-27
+ * 
+ * NOW DATABASE-DRIVEN:
+ * - System prompt loaded from ai_agent_system_instructions table
+ * - Persona loaded from ai_agent_personas table
+ * - Tools loaded from ai_agent_tools table (via AgentConfigLoader)
  */
 
-import { BaseAgent } from "./base-agent.ts";
-import {
-  AgentType,
-  Tool,
-  WhatsAppMessage,
-  UnifiedSession,
-  AgentResponse,
-} from "../core/types.ts";
+import { BaseAgent, type AgentProcessParams, type AgentResponse } from '../core/base-agent.ts';
+import { GeminiProvider } from '../core/providers/gemini.ts';
+import { logStructuredEvent } from '../../_shared/observability.ts';
 
 export class SupportAgent extends BaseAgent {
-  get type(): AgentType {
-    return "support";
+  type = 'support_agent';
+  name = '🆘 Support AI';
+  description = 'General help and customer support';
+
+  private aiProvider: GeminiProvider;
+
+  constructor() {
+    super();
+    this.aiProvider = new GeminiProvider();
   }
 
-  get keywords(): string[] {
-    return ["help", "support", "question", "how", "what", "why", "problem", "issue"];
-  }
+  async process(params: AgentProcessParams): Promise<AgentResponse> {
+    const { message, session, supabase } = params;
 
-  get systemPrompt(): string {
-    return `You are EasyMO Support Agent, a helpful assistant for users in Rwanda.
+    try {
+      // Load database config and build conversation history with DB-driven prompt
+      const messages = await this.buildConversationHistoryAsync(session, supabase);
+      
+      // Add current user message
+      messages.push({
+        role: 'user',
+        content: message,
+      });
 
-YOUR ROLE:
-- Help users understand available services
-- Answer general questions
-- Route users to the appropriate specialized agent
+      // Log config source for debugging
+      await logStructuredEvent('SUPPORT_AGENT_PROCESSING', {
+        sessionId: session.id,
+        configSource: this.cachedConfig?.loadedFrom || 'not_loaded',
+        toolsAvailable: this.cachedConfig?.tools.length || 0,
+      });
 
-AVAILABLE SERVICES:
-1. **Jobs** - Find jobs or post job listings
-2. **Property** - Find rentals or list properties
-3. **Marketplace** - Buy/sell products and services
-4. **Farmer** - Agricultural produce listings and market info
-5. **Waiter** - Restaurant/bar discovery and ordering
-6. **Insurance** - Motor insurance quotes and renewals
-7. **Rides** - Find drivers/passengers and schedule trips
-8. **Sales** - Sales and customer management
-9. **Business Broker** - Business opportunities and partnerships
+      // Generate AI response
+      const aiResponse = await this.aiProvider.chat(messages, {
+        temperature: 0.7,
+        maxTokens: 400,
+      });
 
-HANDOFF RULES:
-- If user asks about jobs → handoff_to: "jobs"
-- If user asks about property/rentals → handoff_to: "property"
-- If user asks about buying/selling products → handoff_to: "marketplace"
-- If user asks about farming/produce → handoff_to: "farmer"
-- If user asks about food/restaurants → handoff_to: "waiter"
-- If user asks about insurance → handoff_to: "insurance"
-- If user asks about rides/transport → handoff_to: "rides"
-- If user asks about sales → handoff_to: "sales"
-- If user asks about business opportunities → handoff_to: "business_broker"
+      // Update conversation history
+      await this.updateConversationHistory(session, message, aiResponse, supabase);
 
-OUTPUT FORMAT (JSON):
-{
-  "response_text": "Your helpful message",
-  "intent": "help|navigate|unclear",
-  "handoff_to": null or "agent_type",
-  "handoff_reason": "Why routing to that agent"
-}
+      // Log interaction
+      await this.logInteraction(session, message, aiResponse, supabase, {
+        agentType: this.type,
+      });
 
-Be friendly, concise, and helpful!`;
-  }
+      await logStructuredEvent('SUPPORT_AGENT_RESPONSE', {
+        sessionId: session.id,
+        responseLength: aiResponse.length,
+        configSource: this.cachedConfig?.loadedFrom,
+      });
 
-  get tools(): Tool[] {
-    return [
-      {
-        name: "show_services_menu",
-        description: "Show menu of available services",
-        parameters: {
-          type: "object",
-          properties: {},
-          required: [],
+      return {
+        message: aiResponse,
+        agentType: this.type,
+        metadata: {
+          model: 'gemini-2.0-flash-exp',
+          configLoadedFrom: this.cachedConfig?.loadedFrom,
         },
-      },
-    ];
-  }
+      };
 
-  /**
-   * Override process to handle simple menu-based navigation
-   */
-  async process(
-    message: WhatsAppMessage,
-    session: UnifiedSession
-  ): Promise<AgentResponse> {
-    const lowerBody = message.body.toLowerCase();
+    } catch (error) {
+      await logStructuredEvent('SUPPORT_AGENT_ERROR', {
+        error: error instanceof Error ? error.message : String(error),
+      }, 'error');
 
-    // Check for menu request
-    if (lowerBody.includes("menu") || lowerBody.includes("services") || lowerBody.includes("help")) {
-      return this.showServicesMenu();
+      return {
+        message: "I apologize for the inconvenience. Please try again or type 'menu' to see all available services.",
+        agentType: this.type,
+        metadata: {
+          error: true,
+        },
+      };
     }
-
-    // Otherwise use AI processing
-    return super.process(message, session);
   }
 
   /**
-   * Show services menu
+   * Default system prompt - fallback if database config not available
    */
-  private showServicesMenu(): AgentResponse {
-    return this.formatListResponse(
-      "Welcome to EasyMO! 🎉\n\nWhat would you like to do today?",
-      "Our Services",
-      [
-        {
-          id: "jobs",
-          title: "💼 Jobs",
-          description: "Find work or hire talent",
-        },
-        {
-          id: "property",
-          title: "🏠 Property",
-          description: "Find rentals or list properties",
-        },
-        {
-          id: "marketplace",
-          title: "🛍️ Marketplace",
-          description: "Buy and sell products",
-        },
-        {
-          id: "farmer",
-          title: "🌾 Farmer",
-          description: "Agricultural produce market",
-        },
-        {
-          id: "waiter",
-          title: "🍽️ Dining",
-          description: "Restaurants and food ordering",
-        },
-        {
-          id: "insurance",
-          title: "🚗 Insurance",
-          description: "Motor insurance services",
-        },
-        {
-          id: "rides",
-          title: "🚕 Rides",
-          description: "Find rides or passengers",
-        },
-      ]
-    );
-  }
+  getDefaultSystemPrompt(): string {
+    return `You are a helpful customer support AI assistant for easyMO platform.
 
-  /**
-   * Execute tool calls
-   */
-  protected async executeTool(
-    toolName: string,
-    parameters: Record<string, any>,
-    session: UnifiedSession
-  ): Promise<any> {
-    if (toolName === "show_services_menu") {
-      return this.showServicesMenu();
-    }
+Your role:
+- Provide general help and guidance
+- Answer questions about easyMO services
+- Help users navigate to the right service
+- Troubleshoot common issues
+- Explain how features work
+
+easyMO Services:
+1. 🍽️ Bar & Restaurants - Order food, book tables
+2. 🚕 Rides & Delivery - Request rides, deliveries
+3. 👔 Jobs & Gigs - Find jobs, post openings
+4. 🛒 Marketplace - Buy & sell products
+5. 🏠 Property Rentals - Find rental properties
+6. 🌱 Farmers Market - Agricultural products, farming support
+7. 🛡️ Insurance - Buy insurance, manage policies
+8. 👤 My Account - Wallet, profile, settings
+
+Guidelines:
+- Be friendly, patient, and helpful
+- Ask clarifying questions when needed
+- Guide users to the appropriate service
+- Provide step-by-step instructions when helpful
+- If question is about a specific service, suggest switching to that agent
+- Keep responses clear and concise
+
+Special commands:
+- "menu" or "home" - Show main services menu
+- Service name - Switch to that specific agent
+
+How to help:
+1. Understand the user's question/issue
+2. Provide clear, helpful answers
+3. Suggest the relevant service if needed
+4. Offer to switch to a specialized agent
+
+Always be supportive and ensure the user knows how to get help!`;
   }
 }

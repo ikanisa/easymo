@@ -1,49 +1,134 @@
 /**
- * Insurance Agent
+ * Insurance AI Agent
+ * Handles motor insurance quotes, renewals, claims, and policy management
  * 
- * Motor insurance assistant for Rwanda.
- * Helps with quotes, renewals, and policy management.
+ * Part of Unified AI Agent Architecture
+ * Created: 2025-12-01
+ * 
+ * DATABASE-DRIVEN:
+ * - System prompt loaded from ai_agent_system_instructions table
+ * - Persona loaded from ai_agent_personas table
+ * - Tools loaded from ai_agent_tools table (via AgentConfigLoader)
  */
 
-import { BaseAgent } from "./base-agent.ts";
-import { AgentType, Tool } from "../core/types.ts";
+import { BaseAgent, type AgentProcessParams, type AgentResponse } from '../core/base-agent.ts';
+import { GeminiProvider } from '../core/providers/gemini.ts';
+import { logStructuredEvent } from '../../_shared/observability.ts';
 
 export class InsuranceAgent extends BaseAgent {
-  get type(): AgentType {
-    return "insurance";
+  type = 'insurance_agent';
+  name = '🛡️ Insurance AI';
+  description = 'Motor insurance and coverage assistant';
+
+  private aiProvider: GeminiProvider;
+
+  constructor() {
+    super();
+    this.aiProvider = new GeminiProvider();
   }
 
-  get keywords(): string[] {
-    return [
-      "insurance", "certificate", "carte jaune", "policy", "cover",
-      "insure", "premium", "claim", "motor", "vehicle", "car insurance",
-      "renew", "quote"
-    ];
+  async process(params: AgentProcessParams): Promise<AgentResponse> {
+    const { message, session, supabase } = params;
+
+    try {
+      // Load database config and build conversation history with DB-driven prompt
+      const messages = await this.buildConversationHistoryAsync(session, supabase);
+      
+      // Add current user message
+      messages.push({
+        role: 'user',
+        content: message,
+      });
+
+      // Log config source for debugging
+      await logStructuredEvent('INSURANCE_AGENT_PROCESSING', {
+        sessionId: session.id,
+        configSource: this.cachedConfig?.loadedFrom || 'not_loaded',
+        toolsAvailable: this.cachedConfig?.tools.length || 0,
+        hasDbPersona: !!this.cachedConfig?.persona,
+      });
+
+      // Generate AI response
+      const aiResponse = await this.aiProvider.chat(messages, {
+        temperature: 0.7,
+        maxTokens: 500,
+      });
+
+      // Update conversation history
+      await this.updateConversationHistory(session, message, aiResponse, supabase);
+
+      // Log interaction
+      await this.logInteraction(session, message, aiResponse, supabase, {
+        agentType: this.type,
+      });
+
+      await logStructuredEvent('INSURANCE_AGENT_RESPONSE', {
+        sessionId: session.id,
+        responseLength: aiResponse.length,
+        configSource: this.cachedConfig?.loadedFrom,
+      });
+
+      return {
+        message: aiResponse,
+        agentType: this.type,
+        metadata: {
+          model: 'gemini-2.0-flash-exp',
+          configLoadedFrom: this.cachedConfig?.loadedFrom,
+        },
+      };
+
+    } catch (error) {
+      await logStructuredEvent('INSURANCE_AGENT_ERROR', {
+        error: error instanceof Error ? error.message : String(error),
+      }, 'error');
+
+      return {
+        message: "Sorry, I'm having trouble right now. Please try again or type 'menu' to go back.",
+        agentType: this.type,
+        metadata: {
+          error: true,
+        },
+      };
+    }
   }
 
-  get systemPrompt(): string {
-    return `You are EasyMO Insurance Agent, helping with motor insurance in Rwanda.
+  /**
+   * Default system prompt - fallback if database config not available
+   */
+  getDefaultSystemPrompt(): string {
+    return `You are the easyMO Insurance assistant, helping with motor insurance in Rwanda, DRC, Burundi, and Tanzania.
 
 YOUR CAPABILITIES:
 - Provide insurance quotes
-- Process renewals
-- Track policy status
-- Handle document uploads
+- Process policy renewals
+- Track policy and claim status
+- Handle document uploads (Carte Jaune, certificates)
 - Explain coverage options
 
+INSURANCE TYPES:
+1. **Third Party (Responsabilité Civile)**
+   - Mandatory minimum coverage
+   - Covers damage to others
+   - Most affordable option
+
+2. **Comprehensive (Tous Risques)**
+   - Full coverage including theft, damage
+   - Personal injury protection
+   - Roadside assistance
+
 QUOTE FLOW:
-- Ask for vehicle type (car, motorcycle, truck)
-- Ask for vehicle details (plate number, make, model)
-- Ask for insurance type (third party, comprehensive)
-- Calculate and provide quote
-- Offer to proceed with purchase
+1. Ask for vehicle type (car, motorcycle, truck)
+2. Ask for vehicle details (plate number, make, model)
+3. Ask for insurance type (third party or comprehensive)
+4. Calculate and provide quote
+5. Offer to proceed with purchase
 
 RENEWAL FLOW:
-- Ask for policy number or plate number
-- Check expiry date
-- Provide renewal quote
-- Process payment
-- Issue new certificate
+1. Ask for policy number or plate number
+2. Check expiry date
+3. Provide renewal quote
+4. Process payment via MoMo
+5. Issue new certificate digitally
 
 DOCUMENT UPLOAD:
 - Accept photos of vehicle documents
@@ -51,81 +136,29 @@ DOCUMENT UPLOAD:
 - Validate documents
 - Confirm receipt
 
-RULES:
+CLAIMS PROCESS:
+1. Collect incident details
+2. Request supporting documents (photos, police report)
+3. Submit claim
+4. Track status updates
+
+PRICING (APPROXIMATE):
+- Motorcycle: 25,000 RWF/year (Third Party)
+- Car: 50,000 RWF/year (Third Party)
+- Comprehensive: 2x Third Party rate
+
+GUIDELINES:
 - Always verify vehicle details
-- Explain coverage clearly
+- Explain coverage clearly in simple terms
 - Provide accurate pricing
 - Follow insurance regulations
-- Respect privacy
+- Respect privacy - mask personal data in logs
 
-OUTPUT FORMAT (JSON):
-{
-  "response_text": "Your message",
-  "intent": "get_quote|renew_policy|track_status|upload_docs|inquiry|unclear",
-  "extracted_entities": {
-    "vehicle_type": "string or null",
-    "plate_number": "string or null",
-    "insurance_type": "string or null",
-    "policy_number": "string or null"
-  },
-  "next_action": "ask_vehicle_details|calculate_quote|process_renewal|upload_document|continue",
-  "flow_complete": false
-}`;
-  }
+PARTNER INSURERS:
+- SORAS, SONARWA, UAP, RADIANT
+- All certificates are digital and valid
 
-  get tools(): Tool[] {
-    return [
-      {
-        name: "calculate_quote",
-        description: "Calculate insurance quote",
-        parameters: {
-          type: "object",
-          properties: {
-            vehicle_type: { type: "string", description: "Type of vehicle" },
-            insurance_type: { type: "string", description: "Insurance type" },
-          },
-          required: ["vehicle_type", "insurance_type"],
-        },
-      },
-      {
-        name: "check_policy_status",
-        description: "Check policy status",
-        parameters: {
-          type: "object",
-          properties: {
-            policy_number: { type: "string", description: "Policy number" },
-          },
-          required: ["policy_number"],
-        },
-      },
-    ];
-  }
-
-  protected async executeTool(toolName: string, parameters: Record<string, any>): Promise<any> {
-    switch (toolName) {
-      case "calculate_quote":
-        return this.calculateQuote(parameters);
-      case "check_policy_status":
-        return this.checkPolicyStatus(parameters.policy_number);
-      default:
-        return null;
-    }
-  }
-
-  private calculateQuote(params: Record<string, any>) {
-    // Simplified quote calculation
-    const baseRates: Record<string, number> = {
-      car: 50000,
-      motorcycle: 25000,
-      truck: 100000,
-    };
-    const multiplier = params.insurance_type === "comprehensive" ? 2 : 1;
-    const quote = (baseRates[params.vehicle_type] || 50000) * multiplier;
-    return { quote, currency: "RWF" };
-  }
-
-  private async checkPolicyStatus(policyNumber: string) {
-    // Would check actual policy database
-    return { status: "active", expiryDate: "2025-12-31" };
+Keep responses clear and helpful. Guide users through the insurance process step by step!
+Type "menu" to return to main services menu.`;
   }
 }

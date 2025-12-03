@@ -1,147 +1,153 @@
 /**
- * Rides Agent
+ * Rides AI Agent
+ * Handles transport services, ride-sharing, driver/passenger matching
  * 
- * Transport and ride-sharing assistant.
- * Connects drivers with passengers and manages trip scheduling.
+ * Part of Unified AI Agent Architecture
+ * Created: 2025-12-01
+ * 
+ * DATABASE-DRIVEN:
+ * - System prompt loaded from ai_agent_system_instructions table
+ * - Persona loaded from ai_agent_personas table
+ * - Tools loaded from ai_agent_tools table (via AgentConfigLoader)
  */
 
-import { BaseAgent } from "./base-agent.ts";
-import { AgentType, Tool } from "../core/types.ts";
+import { BaseAgent, type AgentProcessParams, type AgentResponse } from '../core/base-agent.ts';
+import { GeminiProvider } from '../core/providers/gemini.ts';
+import { logStructuredEvent } from '../../_shared/observability.ts';
 
 export class RidesAgent extends BaseAgent {
-  get type(): AgentType {
-    return "rides";
+  type = 'rides_agent';
+  name = '🚗 Rides AI';
+  description = 'Transport and ride-sharing assistant';
+
+  private aiProvider: GeminiProvider;
+
+  constructor() {
+    super();
+    this.aiProvider = new GeminiProvider();
   }
 
-  get keywords(): string[] {
-    return [
-      "ride", "driver", "passenger", "transport", "pick", "drop",
-      "take me", "going to", "trip", "travel", "taxi", "moto", "car"
-    ];
-  }
+  async process(params: AgentProcessParams): Promise<AgentResponse> {
+    const { message, session, supabase } = params;
 
-  get systemPrompt(): string {
-    return `You are EasyMO Rides Agent, helping with transport and ride-sharing in Rwanda.
+    try {
+      // Load database config and build conversation history with DB-driven prompt
+      const messages = await this.buildConversationHistoryAsync(session, supabase);
+      
+      // Add current user message
+      messages.push({
+        role: 'user',
+        content: message,
+      });
 
-YOUR CAPABILITIES:
-- Help passengers find drivers
-- Help drivers find passengers
-- Schedule trips
-- Manage recurring trips
-- Provide fare estimates
+      // Log config source for debugging
+      await logStructuredEvent('RIDES_AGENT_PROCESSING', {
+        sessionId: session.id,
+        configSource: this.cachedConfig?.loadedFrom || 'not_loaded',
+        toolsAvailable: this.cachedConfig?.tools.length || 0,
+        hasDbPersona: !!this.cachedConfig?.persona,
+      });
 
-PASSENGER FLOW:
-- Ask for pickup location
-- Ask for destination
-- Ask for departure time (now or scheduled)
-- Search for available drivers
-- Connect passenger with driver
+      // Generate AI response
+      const aiResponse = await this.aiProvider.chat(messages, {
+        temperature: 0.7,
+        maxTokens: 500,
+      });
 
-DRIVER FLOW:
-- Ask for route (from → to)
-- Ask for departure time
-- Ask for available seats
-- Search for passengers
-- Connect driver with passengers
+      // Update conversation history
+      await this.updateConversationHistory(session, message, aiResponse, supabase);
 
-SCHEDULING:
-- Support immediate rides
-- Support scheduled trips
-- Support recurring trips (daily, weekly)
-- Send reminders
+      // Log interaction
+      await this.logInteraction(session, message, aiResponse, supabase, {
+        agentType: this.type,
+      });
 
-RULES:
-- Always confirm locations
-- Provide fare estimates
-- Respect time preferences
-- Prioritize safety
-- Clear communication
+      await logStructuredEvent('RIDES_AGENT_RESPONSE', {
+        sessionId: session.id,
+        responseLength: aiResponse.length,
+        configSource: this.cachedConfig?.loadedFrom,
+      });
 
-OUTPUT FORMAT (JSON):
-{
-  "response_text": "Your message",
-  "intent": "find_driver|find_passenger|schedule_trip|cancel_trip|inquiry|unclear",
-  "extracted_entities": {
-    "pickup_location": "string or null",
-    "dropoff_location": "string or null",
-    "departure_time": "string or null",
-    "seats_needed": "number or null",
-    "seats_available": "number or null"
-  },
-  "next_action": "ask_pickup|ask_dropoff|ask_time|search_drivers|search_passengers|confirm_trip|continue",
-  "flow_complete": false
-}`;
-  }
-
-  get tools(): Tool[] {
-    return [
-      {
-        name: "search_drivers",
-        description: "Search for available drivers",
-        parameters: {
-          type: "object",
-          properties: {
-            pickup_location: { type: "string", description: "Pickup location" },
-            dropoff_location: { type: "string", description: "Destination" },
-            departure_time: { type: "string", description: "When to depart" },
-          },
-          required: ["pickup_location", "dropoff_location"],
+      return {
+        message: aiResponse,
+        agentType: this.type,
+        metadata: {
+          model: 'gemini-2.0-flash-exp',
+          configLoadedFrom: this.cachedConfig?.loadedFrom,
         },
-      },
-      {
-        name: "search_passengers",
-        description: "Search for passengers",
-        parameters: {
-          type: "object",
-          properties: {
-            route_from: { type: "string", description: "Starting point" },
-            route_to: { type: "string", description: "Destination" },
-            seats_available: { type: "number", description: "Seats available" },
-          },
-          required: ["route_from", "route_to"],
-        },
-      },
-      {
-        name: "estimate_fare",
-        description: "Estimate trip fare",
-        parameters: {
-          type: "object",
-          properties: {
-            distance_km: { type: "number", description: "Distance in km" },
-          },
-          required: ["distance_km"],
-        },
-      },
-    ];
-  }
+      };
 
-  protected async executeTool(toolName: string, parameters: Record<string, any>): Promise<any> {
-    switch (toolName) {
-      case "search_drivers":
-        return await this.searchDrivers(parameters);
-      case "search_passengers":
-        return await this.searchPassengers(parameters);
-      case "estimate_fare":
-        return this.estimateFare(parameters.distance_km);
-      default:
-        return null;
+    } catch (error) {
+      await logStructuredEvent('RIDES_AGENT_ERROR', {
+        error: error instanceof Error ? error.message : String(error),
+      }, 'error');
+
+      return {
+        message: "Sorry, I'm having trouble right now. Please try again or type 'menu' to go back.",
+        agentType: this.type,
+        metadata: {
+          error: true,
+        },
+      };
     }
   }
 
-  private async searchDrivers(params: Record<string, any>) {
-    // Would search actual driver database
-    return { drivers: [], message: "No drivers found at the moment" };
-  }
+  /**
+   * Default system prompt - fallback if database config not available
+   */
+  getDefaultSystemPrompt(): string {
+    return `You are the easyMO Rides assistant, helping with transport and ride-sharing in Rwanda, DRC, Burundi, and Tanzania.
 
-  private async searchPassengers(params: Record<string, any>) {
-    // Would search actual passenger requests
-    return { passengers: [], message: "No passengers found for this route" };
-  }
+YOUR ROLE:
+- Help passengers find drivers and book rides
+- Help drivers find passengers along their route
+- Schedule trips (immediate or scheduled)
+- Provide fare estimates
+- Track ride status
+- Support recurring trips
 
-  private estimateFare(distanceKm: number) {
-    const baseRate = 500; // RWF
-    const perKmRate = 200; // RWF per km
-    const fare = baseRate + (distanceKm * perKmRate);
-    return { fare, currency: "RWF", distance_km: distanceKm };
+PASSENGER FLOW:
+1. Ask for pickup location (or accept shared GPS)
+2. Ask for destination
+3. Ask for departure time (now or scheduled)
+4. Search for available drivers
+5. Connect passenger with driver
+
+DRIVER FLOW:
+1. Ask for route (from → to)
+2. Ask for departure time
+3. Ask for available seats
+4. Search for passengers
+5. Connect driver with passengers
+
+SERVICES:
+- Moto taxi (quick, affordable)
+- Car taxi (comfortable, groups)
+- Shared rides (cost-effective)
+- Package delivery
+- Same-day cargo transport
+
+GUIDELINES:
+- Always confirm locations
+- Provide fare estimates upfront
+- Respect time preferences
+- Prioritize safety with verified drivers
+- Clear communication at all steps
+
+FARE STRUCTURE:
+- Moto: 500 RWF base + 200 RWF/km
+- Car: 1500 RWF base + 500 RWF/km
+- Shared: 50% discount
+
+PLATFORM FEATURES:
+- GPS location sharing for pickup
+- Real-time driver tracking
+- In-app chat with driver
+- Cashless payment (MoMo, Wallet)
+- Driver ratings and reviews
+- Scheduled and recurring trips
+
+Keep responses concise and action-oriented. Help users find transport quickly!
+Type "menu" to return to main services menu.`;
   }
 }
