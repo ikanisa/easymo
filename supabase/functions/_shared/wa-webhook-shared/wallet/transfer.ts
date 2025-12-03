@@ -1,6 +1,6 @@
 import type { RouterContext } from "../types.ts";
 import { logStructuredEvent } from "../observe/log.ts";
-import { notifyTokenTransfer, notifyTransactionFailed } from "./notifications.ts";
+import { notifyTokenTransfer } from "./notifications.ts";
 
 export interface TransferResult {
   success: boolean;
@@ -10,13 +10,18 @@ export interface TransferResult {
 }
 
 /**
- * Transfer tokens between users
+ * Transfer tokens between users using the atomic wallet_transfer_tokens RPC.
+ * This RPC handles:
+ * - Balance validation
+ * - Atomic transaction (single database transaction)
+ * - Idempotency protection
+ * - Audit trail creation
  */
 export async function transferTokens(
   ctx: RouterContext,
   recipientPhone: string,
   amount: number,
-  pin?: string
+  _pin?: string
 ): Promise<TransferResult> {
   if (!ctx.profileId) {
     return {
@@ -35,28 +40,15 @@ export async function transferTokens(
     };
   }
 
+  // Generate idempotency key for this transfer
+  const idempotencyKey = `transfer:${ctx.profileId}:${recipientPhone}:${amount}:${Date.now()}`;
+
   try {
-    // 1. Check limits
-    const { data: limits, error: limitError } = await ctx.supabase.rpc("check_transfer_limits", {
-      p_profile_id: ctx.profileId,
-      p_amount: amount,
-    });
-
-    if (limitError) throw limitError;
-    
-    if (!limits[0].allowed) {
-      return {
-        success: false,
-        error: "limit_exceeded",
-        message: `❌ ${limits[0].reason}`,
-      };
-    }
-
-    // 2. Find recipient
+    // Find recipient using whatsapp_e164
     const { data: recipient, error: recipientError } = await ctx.supabase
       .from("profiles")
-      .select("id, name, phone_number")
-      .eq("phone_number", recipientPhone)
+      .select("id, name, whatsapp_e164")
+      .eq("whatsapp_e164", recipientPhone)
       .single();
 
     if (recipientError || !recipient) {
@@ -75,94 +67,51 @@ export async function transferTokens(
       };
     }
 
-    // 3. Create transfer record (pending)
-    const { data: transfer, error: transferError } = await ctx.supabase
-      .from("wallet_transfers")
-      .insert({
-        sender_profile: ctx.profileId,
-        recipient_profile: recipient.id,
-        amount_tokens: amount,
-        status: "pending",
-        metadata: { channel: "whatsapp" }
-      })
-      .select()
-      .single();
-
-    if (transferError) throw transferError;
-
-    // 4. Execute Debit (Sender)
-    const { data: debitResult, error: debitError } = await ctx.supabase.rpc("wallet_delta_fn", {
-      p_profile_id: ctx.profileId,
-      p_amount_tokens: -amount,
-      p_entry_type: "p2p_transfer",
-      p_reference_table: "wallet_transfers",
-      p_reference_id: transfer.id
-    });
-
-    if (debitError || !debitResult[0].success) {
-      // Mark transfer as failed
-      await ctx.supabase
-        .from("wallet_transfers")
-        .update({ status: "failed", metadata: { error: debitError?.message || debitResult?.[0]?.error } })
-        .eq("id", transfer.id);
-
-      return {
-        success: false,
-        error: "debit_failed",
-        message: `❌ Transfer failed: ${debitResult?.[0]?.error || "Insufficient balance"}`,
-      };
-    }
-
-    // 5. Execute Credit (Recipient)
-    const { error: creditError } = await ctx.supabase.rpc("wallet_delta_fn", {
-      p_profile_id: recipient.id,
-      p_amount_tokens: amount,
-      p_entry_type: "p2p_transfer",
-      p_reference_table: "wallet_transfers",
-      p_reference_id: transfer.id
-    });
-
-    if (creditError) {
-      // CRITICAL: Credit failed but debit succeeded. Need to reverse debit.
-      await ctx.supabase.rpc("wallet_delta_fn", {
-        p_profile_id: ctx.profileId,
-        p_amount_tokens: amount,
-        p_entry_type: "reversal",
-        p_reference_table: "wallet_transfers",
-        p_reference_id: transfer.id
-      });
-
-      await ctx.supabase
-        .from("wallet_transfers")
-        .update({ status: "failed", metadata: { error: "Credit failed" } })
-        .eq("id", transfer.id);
-
-      return {
-        success: false,
-        error: "system_error",
-        message: "❌ System error. Your tokens have been refunded.",
-      };
-    }
-
-    // 6. Mark transfer complete
-    await ctx.supabase
-      .from("wallet_transfers")
-      .update({ status: "completed", completed_at: new Date().toISOString() })
-      .eq("id", transfer.id);
-
-    // 7. Notify
-    await notifyTokenTransfer(
-      ctx.from, // Sender phone
-      recipientPhone,
-      amount,
-      transfer.id
+    // Execute atomic transfer using wallet_transfer_tokens RPC
+    const { data: result, error: transferError } = await ctx.supabase.rpc(
+      "wallet_transfer_tokens",
+      {
+        p_sender: ctx.profileId,
+        p_recipient_whatsapp: recipientPhone,
+        p_amount: amount,
+        p_idempotency_key: idempotencyKey,
+      },
     );
 
-    return {
-      success: true,
-      transferId: transfer.id,
-      message: `✅ Successfully sent ${amount} tokens to ${recipient.name || recipientPhone}`,
-    };
+    if (transferError) {
+      await logStructuredEvent("TRANSFER_RPC_ERROR", {
+        userId: ctx.profileId,
+        recipientPhone,
+        amount,
+        error: transferError.message,
+      });
+      throw transferError;
+    }
+
+    const row = Array.isArray(result) ? result[0] : result;
+    
+    if (row?.success) {
+      // Notify both parties
+      await notifyTokenTransfer(
+        ctx.from, // Sender phone
+        recipientPhone,
+        amount,
+        row.transfer_id || "unknown"
+      );
+
+      return {
+        success: true,
+        transferId: row.transfer_id,
+        message: `✅ Successfully sent ${amount} tokens to ${recipient.name || recipientPhone}`,
+      };
+    } else {
+      const reason = row?.reason || "Transfer failed";
+      return {
+        success: false,
+        error: "transfer_failed",
+        message: `❌ ${reason}`,
+      };
+    }
 
   } catch (error) {
     await logStructuredEvent("TRANSFER_ERROR", {
