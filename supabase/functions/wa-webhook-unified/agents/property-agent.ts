@@ -1,354 +1,161 @@
 /**
- * Property Agent
+ * Property AI Agent
+ * Handles rental property search, listings, inquiries
  * 
- * Hybrid AI + structured flows for property rentals.
- * Combines conversational AI with multi-step structured processes.
+ * Part of Unified AI Agent Architecture
+ * Created: 2025-11-27
+ * 
+ * NOW DATABASE-DRIVEN:
+ * - System prompt loaded from ai_agent_system_instructions table
+ * - Persona loaded from ai_agent_personas table
+ * - Tools loaded from ai_agent_tools table (via AgentConfigLoader)
  */
 
-import { BaseAgent } from "./base-agent.ts";
-import { AgentType, Tool, WhatsAppMessage, UnifiedSession, AgentResponse } from "../core/types.ts";
+import { BaseAgent, type AgentProcessParams, type AgentResponse } from '../core/base-agent.ts';
+import { GeminiProvider } from '../core/providers/gemini.ts';
+import { logStructuredEvent } from '../../_shared/observability.ts';
 
 export class PropertyAgent extends BaseAgent {
-  get type(): AgentType {
-    return "property";
+  type = 'real_estate_agent';
+  name = '🏠 Property AI';
+  description = 'Rental property search assistant';
+
+  private aiProvider: GeminiProvider;
+
+  constructor() {
+    super();
+    this.aiProvider = new GeminiProvider();
   }
 
-  get keywords(): string[] {
-    return [
-      "property", "house", "apartment", "rent", "rental", "room", "studio",
-      "estate", "landlord", "tenant", "lease", "bedroom", "flat"
-    ];
-  }
+  async process(params: AgentProcessParams): Promise<AgentResponse> {
+    const { message, session, supabase } = params;
 
-  get systemPrompt(): string {
-    return `You are EasyMO Property Agent, helping with property rentals in Rwanda.
-
-YOUR CAPABILITIES:
-- Help tenants FIND rentals
-- Help landlords LIST properties
-- Manage property inquiries
-- Provide rental advice
-
-PROPERTY SEARCH FLOW:
-- Ask for property type (apartment, house, studio, room)
-- Ask for number of bedrooms
-- Ask for budget/price range
-- Ask for location preference
-- Search and show matching properties
-
-PROPERTY LISTING FLOW:
-- Ask for property type
-- Ask for number of bedrooms/bathrooms
-- Ask for monthly rent
-- Ask for location
-- Ask for amenities
-- Confirm and publish listing
-
-RULES:
-- Be helpful and professional
-- Provide realistic price ranges
-- Always confirm details before listing
-- Respect privacy
-- Use clear property descriptions
-
-OUTPUT FORMAT (JSON):
-{
-  "response_text": "Your message",
-  "intent": "find_property|list_property|inquire|view_listings|unclear",
-  "extracted_entities": {
-    "property_type": "string or null",
-    "bedrooms": "number or null",
-    "price_min": "number or null",
-    "price_max": "number or null",
-    "location": "string or null",
-    "amenities": []
-  },
-  "next_action": "search_properties|list_property|send_inquiry|continue",
-  "start_flow": "property_search|property_listing",
-  "flow_complete": false
-}`;
-  }
-
-  get tools(): Tool[] {
-    return [
-      {
-        name: "search_properties",
-        description: "Search for rental properties",
-        parameters: {
-          type: "object",
-          properties: {
-            property_type: { type: "string", description: "Type of property" },
-            bedrooms: { type: "number", description: "Number of bedrooms" },
-            price_max: { type: "number", description: "Maximum price" },
-            location: { type: "string", description: "Location" },
-          },
-          required: [],
-        },
-      },
-      {
-        name: "create_property_listing",
-        description: "Create a property listing",
-        parameters: {
-          type: "object",
-          properties: {
-            property_type: { type: "string", description: "Property type" },
-            bedrooms: { type: "number", description: "Number of bedrooms" },
-            bathrooms: { type: "number", description: "Number of bathrooms" },
-            price: { type: "number", description: "Monthly rent" },
-            location: { type: "string", description: "Location" },
-            amenities: { type: "array", description: "Amenities" },
-          },
-          required: ["property_type", "bedrooms", "price", "location"],
-        },
-      },
-    ];
-  }
-
-  protected async startFlow(flowName: string, session: UnifiedSession): Promise<AgentResponse> {
-    session.flowStep = "start";
-    
-    switch (flowName) {
-      case "property_search":
-        return {
-          text: "I'll help you find a place! 🏠\n\n" +
-            "What type of property are you looking for?\n" +
-            "• Apartment\n" +
-            "• House\n" +
-            "• Studio\n" +
-            "• Room"
-        };
+    try {
+      // Load database config and build conversation history with DB-driven prompt
+      const messages = await this.buildConversationHistoryAsync(session, supabase);
       
-      case "property_listing":
-        return {
-          text: "Let's list your property! 📝\n\n" +
-            "What type of property is it?\n" +
-            "(apartment, house, studio, or room)"
-        };
-      
-      default:
-        return { text: "How can I help you with property rentals?" };
-    }
-  }
-
-  protected async continueFlow(
-    message: WhatsAppMessage,
-    session: UnifiedSession
-  ): Promise<AgentResponse> {
-    const flow = session.activeFlow!;
-    const step = session.flowStep || "start";
-
-    if (flow === "property_search") {
-      return this.continuePropertySearch(message, session, step);
-    } else if (flow === "property_listing") {
-      return this.continuePropertyListing(message, session, step);
-    }
-
-    return { text: "Let me help you with that." };
-  }
-
-  private async continuePropertySearch(
-    message: WhatsAppMessage,
-    session: UnifiedSession,
-    step: string
-  ): Promise<AgentResponse> {
-    const data = session.collectedData;
-
-    if (step === "start") {
-      data.property_type = message.body.toLowerCase();
-      session.flowStep = "bedrooms";
-      return {
-        text: `Looking for ${message.body}. 👍\n\n` +
-          "How many bedrooms?\n" +
-          "(e.g., 1, 2, 3, or 'any')"
-      };
-    }
-
-    if (step === "bedrooms") {
-      const bedrooms = parseInt(message.body);
-      if (!isNaN(bedrooms)) {
-        data.bedrooms = bedrooms;
-      }
-      session.flowStep = "budget";
-      return {
-        text: "What's your monthly budget?\n" +
-          "(e.g., '50000-100000' or just max amount)"
-      };
-    }
-
-    if (step === "budget") {
-      const rangeMatch = message.body.match(/(\d+)-(\d+)/);
-      if (rangeMatch) {
-        data.price_min = parseInt(rangeMatch[1]);
-        data.price_max = parseInt(rangeMatch[2]);
-      } else {
-        const amount = parseInt(message.body.replace(/\D/g, ""));
-        if (!isNaN(amount)) {
-          data.price_max = amount;
-        }
-      }
-      session.flowStep = "location";
-      return {
-        text: "Where would you like to live?\n" +
-          "(e.g., Kigali, Kimironko, Remera)"
-      };
-    }
-
-    if (step === "location") {
-      data.location = message.body;
-      
-      // Search properties
-      const properties = await this.searchProperties(data);
-
-      session.activeFlow = undefined;
-      session.flowStep = undefined;
-
-      if (properties.length === 0) {
-        return {
-          text: "No properties found matching your criteria. 😔\n\n" +
-            "Try adjusting your budget or location, or I can notify you when new properties are listed!"
-        };
-      }
-
-      let text = `Found ${properties.length} properties! 🏠\n\n`;
-      properties.forEach((prop: any, i: number) => {
-        text += `${i + 1}. *${prop.attributes?.property_type || prop.title}*\n`;
-        text += `   🛏️ ${prop.attributes?.bedrooms || 0} bed, ${prop.attributes?.bathrooms || 0} bath\n`;
-        text += `   💰 ${prop.price} RWF/month\n`;
-        text += `   📍 ${prop.location_text}\n`;
-        text += `   ID: ${prop.id}\n\n`;
+      // Add current user message
+      messages.push({
+        role: 'user',
+        content: message,
       });
 
-      text += "Reply with property ID to inquire or ask me anything!";
+      // Log config source for debugging
+      await logStructuredEvent('PROPERTY_AGENT_PROCESSING', {
+        sessionId: session.id,
+        configSource: this.cachedConfig?.loadedFrom || 'not_loaded',
+        toolsAvailable: this.cachedConfig?.tools.length || 0,
+      });
 
-      return { text };
-    }
+      // Generate AI response
+      const aiResponse = await this.aiProvider.chat(messages, {
+        temperature: 0.7,
+        maxTokens: 500,
+      });
 
-    return { text: "Let me help you with that." };
-  }
+      // Update conversation history
+      await this.updateConversationHistory(session, message, aiResponse, supabase);
 
-  private async continuePropertyListing(
-    message: WhatsAppMessage,
-    session: UnifiedSession,
-    step: string
-  ): Promise<AgentResponse> {
-    const data = session.collectedData;
+      // Log interaction
+      await this.logInteraction(session, message, aiResponse, supabase, {
+        agentType: this.type,
+      });
 
-    if (step === "start") {
-      data.property_type = message.body.toLowerCase();
-      session.flowStep = "bedrooms";
+      await logStructuredEvent('PROPERTY_AGENT_RESPONSE', {
+        sessionId: session.id,
+        responseLength: aiResponse.length,
+        configSource: this.cachedConfig?.loadedFrom,
+      });
+
       return {
-        text: `Property type: ${message.body} ✓\n\n` +
-          "How many bedrooms?"
-      };
-    }
-
-    if (step === "bedrooms") {
-      data.bedrooms = parseInt(message.body);
-      session.flowStep = "price";
-      return {
-        text: `${data.bedrooms} bedrooms ✓\n\n` +
-          "What's the monthly rent? (in RWF)"
-      };
-    }
-
-    if (step === "price") {
-      data.price = parseInt(message.body.replace(/\D/g, ""));
-      session.flowStep = "location";
-      return {
-        text: `Rent: ${data.price} RWF/month ✓\n\n` +
-          "Where is the property located?"
-      };
-    }
-
-    if (step === "location") {
-      data.location = message.body;
-      
-      // Create listing
-      const result = await this.createPropertyListing(session.userPhone, data);
-
-      session.activeFlow = undefined;
-      session.flowStep = undefined;
-      session.collectedData = {};
-
-      if (result.success) {
-        return {
-          text: "✅ *Property Listed Successfully!*\n\n" +
-            `🏠 ${data.property_type}\n` +
-            `🛏️ ${data.bedrooms} bedrooms\n` +
-            `💰 ${data.price} RWF/month\n` +
-            `📍 ${data.location}\n\n` +
-            "Your property is now live and tenants can inquire!"
-        };
-      } else {
-        return {
-          text: "Sorry, there was an error listing your property. Please try again."
-        };
-      }
-    }
-
-    return { text: "Let me help you with that." };
-  }
-
-  protected async executeTool(toolName: string, parameters: Record<string, any>): Promise<any> {
-    switch (toolName) {
-      case "search_properties":
-        return await this.searchProperties(parameters);
-      case "create_property_listing":
-        return await this.createPropertyListing(parameters.owner_phone, parameters);
-      default:
-        return null;
-    }
-  }
-
-  private async searchProperties(params: Record<string, any>) {
-    let query = this.supabase
-      .from("unified_listings")
-      .select("*")
-      .eq("domain", "property")
-      .eq("status", "active");
-
-    if (params.property_type) {
-      query = query.eq("attributes->>property_type", params.property_type);
-    }
-    if (params.bedrooms) {
-      query = query.eq("attributes->>bedrooms", params.bedrooms.toString());
-    }
-    if (params.price_max) {
-      query = query.lte("price", params.price_max);
-    }
-    if (params.location) {
-      query = query.ilike("location_text", `%${params.location}%`);
-    }
-
-    const { data } = await query.limit(5);
-    return data || [];
-  }
-
-  private async createPropertyListing(ownerPhone: string, data: Record<string, any>) {
-    const { data: listing, error } = await this.supabase
-      .from("unified_listings")
-      .insert({
-        owner_phone: ownerPhone,
-        domain: "property",
-        listing_type: "rental",
-        title: `${data.bedrooms}-bedroom ${data.property_type}`,
-        description: data.description,
-        price: data.price,
-        currency: "RWF",
-        price_unit: "month",
-        location_text: data.location,
-        attributes: {
-          property_type: data.property_type,
-          bedrooms: data.bedrooms,
-          bathrooms: data.bathrooms || 1,
-          amenities: data.amenities || [],
+        message: aiResponse,
+        agentType: this.type,
+        metadata: {
+          model: 'gemini-2.0-flash-exp',
+          configLoadedFrom: this.cachedConfig?.loadedFrom,
         },
-        status: "active",
-        source_agent: "property",
-      })
-      .select("id")
-      .single();
+      };
 
-    return error ? { success: false } : { success: true, listingId: listing.id };
+    } catch (error) {
+      await logStructuredEvent('PROPERTY_AGENT_ERROR', {
+        error: error instanceof Error ? error.message : String(error),
+      }, 'error');
+
+      return {
+        message: "Sorry, I'm having trouble right now. Please try again or type 'menu' to go back.",
+        agentType: this.type,
+        metadata: {
+          error: true,
+        },
+      };
+    }
+  }
+
+  /**
+   * Default system prompt - fallback if database config not available
+   */
+  getDefaultSystemPrompt(): string {
+    return `You are an intelligent property rental AI assistant at easyMO Property Rentals.
+
+Your role:
+- Help tenants find rental properties
+- Assist landlords in listing properties
+- Provide verified property recommendations
+- Match renters with suitable properties
+- Facilitate property inquiries and viewings
+
+Property types:
+- Apartments
+- Houses
+- Rooms for rent
+- Studios
+- Shared accommodation
+- Commercial spaces
+- Short-term rentals
+
+For Property Seekers:
+- Understand their requirements (location, budget, size, amenities)
+- Search available properties
+- Provide personalized top-5 shortlist
+- All properties are verified
+- Arrange viewings
+- Answer questions about properties
+- Compare options
+
+For Landlords:
+- List properties with details
+- Set rental terms and pricing
+- Screen potential tenants
+- Manage inquiries
+- Schedule viewings
+
+Key features:
+- AI-powered property matching
+- Verified listings only
+- Quick shortlist (top 5 best matches)
+- Instant chat with landlords/agents
+- Virtual tours available
+- Transparent pricing
+- Neighborhood information
+
+Guidelines:
+- Ask specific questions to understand needs
+- Consider: location, budget, bedrooms, amenities
+- Provide honest, helpful recommendations
+- Explain property features clearly
+- Help with decision-making
+- Be transparent about costs and terms
+- Emphasize verified, quality listings
+
+Search criteria to gather:
+1. Location/neighborhood preference
+2. Budget (monthly rent)
+3. Number of bedrooms/bathrooms
+4. Must-have amenities
+5. Move-in timeline
+6. Lease duration preference
+
+Keep responses focused and helpful. Help users find their perfect home quickly!
+Type "menu" to return to main services menu.`;
   }
 }

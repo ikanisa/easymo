@@ -22,16 +22,15 @@ import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { AgentType, AgentDependencies } from "../core/types.ts";
 import { BaseAgent } from "./base-agent.ts";
 
-// Import all domain agents
+// Import all domain agents (DATABASE-DRIVEN)
 import { SupportAgent } from "./support-agent.ts";
-import { CommerceAgent } from "./commerce-agent.ts"; // Unified commerce agent (marketplace)
+import { MarketplaceAgent } from "./marketplace-agent.ts"; // Database-driven marketplace agent
 import { FarmerAgent } from "./farmer-agent.ts";
 import { WaiterAgent } from "./waiter-agent.ts";
 import { InsuranceAgent } from "./insurance-agent.ts";
 import { RidesAgent } from "./rides-agent.ts";
 import { JobsAgent } from "./jobs-agent.ts";
 import { PropertyAgent } from "./property-agent.ts";
-import { SalesAgent } from "./sales-agent.ts";
 
 // Import consolidated agents (from wa-webhook-ai-agents migration)
 import { BuySellAgent } from "./buy-sell.ts";
@@ -90,9 +89,9 @@ export class AgentRegistry {
       case "insurance":
         return new InsuranceAgent(deps);
       
-      // 3. Sales/Marketing Cold Caller AI Agent
+      // 3. Sales/Marketing Cold Caller AI Agent (uses marketplace agent for now)
       case "sales_cold_caller":
-        return new SalesAgent(deps);
+        return new MarketplaceAgent(deps);
       
       // 4. Rides AI Agent
       case "rides":
@@ -113,6 +112,7 @@ export class AgentRegistry {
       // 8. Marketplace AI Agent (legacy - now aliases to buy_sell)
       case "marketplace":
         return new BuySellAgent(deps);
+        return new MarketplaceAgent(deps);
       
       // 9. Support AI Agent (includes concierge routing)
       case "support":
@@ -125,6 +125,9 @@ export class AgentRegistry {
       // 11. Buy & Sell Agent (consolidated marketplace + business_broker)
       case "buy_sell":
         return new BuySellAgent(deps);
+        // Business brokerage and legal intake functionality
+        // Uses MarketplaceAgent for business discovery and intake workflows
+        return new MarketplaceAgent(deps);
 
       default:
         // Fallback to support agent for any unknown types
