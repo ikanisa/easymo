@@ -1,7 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { supabase } from "../_shared/wa-webhook-shared/config.ts";
 import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
+import { sendButtonsMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
+import type { RouterContext } from "../_shared/wa-webhook-shared/types.ts";
 
 serve(async (req) => {
   const requestId = crypto.randomUUID();
@@ -57,9 +59,17 @@ serve(async (req) => {
             const expiryDate = new Date(policy.policy_expiry).toLocaleDateString();
             const dayText = days === 1 ? "day" : "days";
 
+            // Build proper context for sendButtonsMessage
+            const ctx: RouterContext = {
+              from: policy.wa_id,
+              supabase,
+              profileId: policy.user_id,
+              locale: 'en' as const,
+            };
+
             // Send reminder with buttons
             await sendButtonsMessage(
-              { from: policy.wa_id, supabase },
+              ctx,
               `⚠️ *Policy Expiry Reminder*\n\n` +
               `Your ${policy.insurer_name || "insurance"} policy expires in *${days} ${dayText}*!\n\n` +
               `📅 Expiry Date: ${expiryDate}\n\n` +

@@ -333,20 +333,9 @@ async function processInlineOcr(
     const normalized = data.normalized ??
       normalizeInsuranceExtraction(raw as Record<string, unknown>);
 
-    // Check if already processed to prevent duplicate messages
-    const { data: existingLead } = await ctx.supabase
-      .from("insurance_leads")
-      .select("status")
-      .eq("id", params.leadId)
-      .single();
-    
-    if (existingLead?.status === "ocr_ok") {
-      console.info("INS_INLINE_ALREADY_PROCESSED", { leadId: params.leadId });
-      return true; // Already processed, skip duplicate notifications
-    }
-
-    // Update lead status atomically to prevent race conditions
-    const { error: updateError } = await ctx.supabase
+    // Atomic update with CAS (Compare-And-Set) to prevent race conditions
+    // Uses RETURNING clause to verify update succeeded
+    const { data: updatedLead, error: updateError } = await ctx.supabase
       .from("insurance_leads")
       .update({
         raw_ocr: raw,
@@ -355,15 +344,17 @@ async function processInlineOcr(
         file_path: params.storagePath,
       })
       .eq("id", params.leadId)
-      .neq("status", "ocr_ok"); // Only update if not already ocr_ok
+      .eq("status", "received")  // Only update if still in received state (CAS)
+      .select("id, status")
+      .maybeSingle();
 
-    // If update failed (already processed by another instance), skip notifications
-    if (updateError) {
-      console.info("INS_INLINE_RACE_CONDITION", { 
+    // If update returned no rows, another instance already processed this
+    if (!updatedLead) {
+      console.info("INS_INLINE_ALREADY_PROCESSED", { 
         leadId: params.leadId,
-        error: updateError.message 
+        reason: updateError ? "update_error" : "already_processed"
       });
-      return true;
+      return true; // Already processed, skip duplicate notifications
     }
 
     // Mark any queued items as succeeded to prevent duplicate processing

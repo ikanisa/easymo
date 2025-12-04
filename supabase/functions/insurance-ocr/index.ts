@@ -14,6 +14,7 @@ import { allocateInsuranceBonus } from "../_shared/wa-webhook-shared/wallet/allo
 import { determineNextStatus } from "./utils.ts";
 import { recordRunMetrics } from "./telemetry.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 
 type QueueStatus = "queued" | "processing" | "retry" | "succeeded" | "failed";
 
@@ -83,6 +84,20 @@ export async function handler(req: Request): Promise<Response> {
         "Access-Control-Allow-Headers": "authorization, content-type",
       },
     });
+  }
+
+  // Rate limiting: 10 OCR requests per minute per IP/user
+  // This prevents DoS attacks and controls OpenAI API costs
+  const rateLimitCheck = await rateLimitMiddleware(req, {
+    limit: 10,
+    windowSeconds: 60,
+  });
+
+  if (!rateLimitCheck.allowed) {
+    logStructuredEvent("INS_OCR_RATE_LIMITED", {
+      ip: req.headers.get("x-forwarded-for") || "unknown",
+    }, "warn");
+    return rateLimitCheck.response!;
   }
 
   if (req.method !== "POST" && req.method !== "GET") {
