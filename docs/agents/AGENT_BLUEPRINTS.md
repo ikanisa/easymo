@@ -1,14 +1,14 @@
 # EasyMO Platform - Agent Blueprints
 
-**Version**: 2.0  
-**Last Updated**: 2025-11-28  
+**Version**: 2.1  
+**Last Updated**: 2025-12-04  
 **Status**: Production Reference
 
 ---
 
 ## Overview
 
-This document provides detailed blueprints for the **10 official AI agents** in the EasyMO WhatsApp-first platform, matching the production `agent_registry` database.
+This document provides detailed blueprints for the **9 official AI agents** in the EasyMO WhatsApp-first platform, matching the production `agent_registry` database.
 
 ### Official Agents
 
@@ -21,9 +21,8 @@ This document provides detailed blueprints for the **10 official AI agents** in 
 | 5 | `jobs` | Jobs AI Agent | suggest |
 | 6 | `waiter` | Waiter AI Agent | suggest |
 | 7 | `real_estate` | Real Estate AI Agent | suggest |
-| 8 | `marketplace` | Marketplace AI Agent | suggest |
+| 8 | `buy_and_sell` | Buy & Sell AI Agent | suggest |
 | 9 | `support` | Support AI Agent | auto |
-| 10 | `business_broker` | Business Broker AI Agent | handoff |
 
 Each blueprint includes:
 
@@ -410,55 +409,62 @@ Polite leasing and sales coordinator for properties.
 
 ---
 
-### 8. Marketplace AI Agent
+### 8. Buy & Sell AI Agent
 
 #### Persona
 
-Unified commerce assistant for all retail verticals (pharmacy, hardware, grocery, general shopping).
+Unified commerce and business discovery assistant for buying and selling products, services, and businesses.
 
-**Note**: This agent consolidates capabilities from the former `pharmacy-agent`, `hardware-agent`, and `shop-agent`.
+**Note**: This agent consolidates capabilities from the former `marketplace` agent (pharmacy, hardware, shop) and `business_broker` agent (business brokerage, legal intake).
 
 #### Primary Tasks
 
-1. **Product Search**: Find products across categories
-2. **Availability Check**: Stock levels and substitutes
-3. **Order Processing**: Create orders, track delivery
-4. **Category-Specific Handling**:
-   - **Pharmacy**: OTC products, Rx photo verification, pharmacist escalation
-   - **Hardware**: Specs collection, delivery fee calculation
-   - **Grocery**: Smart substitutions, delivery windows
+1. **Product Commerce**: Find products, check availability, place orders across all retail categories (pharmacy, hardware, grocery)
+2. **Business Discovery**: Map user needs → business categories → specific nearby businesses
+3. **Business Brokerage**: Connect business buyers/sellers, facilitate valuations, match parties
+4. **Legal Intake**: Triage cases, collect facts, prepare scope summary, generate engagement letters
+5. **Order Fulfillment**: Track delivery, handle substitutions, process payments
 
 #### Tools
 
-- `search_supabase` - Products, inventory
+- `search_supabase` - Products, inventory, businesses
 - `inventory_check` - Stock levels
 - `order_create` - Place orders
 - `order_status_update` - Track delivery
 - `momo_charge` - Payment
 - `ocr_extract` - Prescription verification
+- `generate_pdf` - NDAs, LOIs, engagement letters
+- `maps_geocode` - Location-based search
 - `notify_staff` - Escalations
 - `analytics_log` - Metrics
 
 #### Guardrails
 
+**Commerce guardrails (from marketplace):**
 - **medical_advice**: Forbidden
 - **pharmacist_review_required**: True for Rx items
 - **age_restricted**: Handoff for restricted products
 - **delivery_fee_threshold_kg**: 20kg for heavy items
 - **substitution_policy**: "brand→generic→none"
 
+**Business brokerage guardrails (from business_broker):**
+- **advice**: Forbidden (no legal, tax, or financial advice)
+- **sensitive_topics_handoff**: True
+- **pii_minimization**: True
+
 #### KPIs
 
 - Order completion rate
 - Delivery success rate
+- Business match success rate
+- Intake→retainer conversion
 - Substitution acceptance rate
-- Fill rate
 
 #### Configuration
 
 ```yaml
-- slug: marketplace
-  name: Marketplace AI Agent
+- slug: buy_and_sell
+  name: Buy & Sell AI Agent
   languages: [en, fr]
   autonomy: suggest
 ```
@@ -511,67 +517,23 @@ Customer support and front-door triage concierge. Helpful, efficient routing and
 
 ---
 
-### 10. Business Broker AI Agent
-
-#### Persona
-
-Professional, discreet broker for business sales, acquisitions, and professional services intake.
-
-**Note**: This agent consolidates capabilities from the former `legal-intake` agent.
-
-#### Primary Tasks
-
-1. **Business Brokerage**: Connect buyers and sellers
-2. **Valuation Support**: Facilitate business valuations
-3. **Legal Intake**: Triage cases, collect facts, prepare quotes
-4. **Document Generation**: NDAs, LOIs, engagement letters
-5. **Human Handoff**: All substantive matters require review
-
-#### Tools
-
-- `search_supabase` - Business listings, cases
-- `generate_pdf` - Legal documents
-- `momo_charge` - Retainer payments
-- `notify_staff` - Escalations
-- `analytics_log` - Metrics
-
-#### Guardrails
-
-- **advice**: Forbidden (no legal, tax, or financial advice)
-- **sensitive_topics_handoff**: True
-
-#### KPIs
-
-- Intake→retainer conversion
-- Match success rate
-- Case resolution time
-
-#### Configuration
-
-```yaml
-- slug: business_broker
-  name: Business Broker AI Agent
-  languages: [en, fr]
-  autonomy: handoff
-```
-
----
-
 ## Agent Slug Migration Reference
 
-When migrating from the old 15-agent system, use this mapping:
+When migrating from the old agent system, use this mapping:
 
 | Old Slug | New Slug | Notes |
 |----------|----------|-------|
 | `concierge-router` | `support` | Merged into Support |
 | `waiter-ai` | `waiter` | Renamed |
 | `mobility-orchestrator` | `rides` | Renamed |
-| `pharmacy-agent` | `marketplace` | Merged into Marketplace |
-| `hardware-agent` | `marketplace` | Merged into Marketplace |
-| `shop-agent` | `marketplace` | Merged into Marketplace |
+| `pharmacy-agent` | `buy_and_sell` | Merged into Buy & Sell |
+| `hardware-agent` | `buy_and_sell` | Merged into Buy & Sell |
+| `shop-agent` | `buy_and_sell` | Merged into Buy & Sell |
+| `marketplace` | `buy_and_sell` | Merged into Buy & Sell |
+| `business_broker` | `buy_and_sell` | Merged into Buy & Sell |
 | `insurance-agent` | `insurance` | Renamed |
 | `property-agent` | `real_estate` | Renamed |
-| `legal-intake` | `business_broker` | Merged into Business Broker |
+| `legal-intake` | `buy_and_sell` | Merged into Buy & Sell |
 | `payments-agent` | N/A | Internal utility (not agent) |
 | `marketing-sales` | `sales_cold_caller` | Renamed |
 | `sora-video` | N/A | Removed |
@@ -592,9 +554,8 @@ When migrating from the old 15-agent system, use this mapping:
 | Jobs | Job fill rate, application rate, time to hire |
 | Waiter | Order cycle time, payment success %, CSAT |
 | Real Estate | Viewing rate, deposit conversion, time-to-lease |
-| Marketplace | Order completion, delivery success, fill rate |
+| Buy & Sell | Order completion, delivery success, business match rate, fill rate |
 | Support | Routing accuracy, first response time, resolution rate |
-| Business Broker | Intake→retainer conversion, match success |
 
 ---
 

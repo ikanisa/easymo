@@ -309,24 +309,24 @@ export interface IntentApplicationResult {
 export type AgentSlug =
   | 'waiter'
   | 'farmer'
-  | 'broker'
-  | 'business_broker'
+  | 'buy_and_sell'
   | 'real_estate'
   | 'jobs'
   | 'sales_cold_caller'
   | 'rides'
-  | 'insurance';
+  | 'insurance'
+  | 'support';
 
 export const AGENT_SLUGS: Record<string, AgentSlug> = {
   WAITER: 'waiter',
   FARMER: 'farmer',
-  BROKER: 'broker',
-  BUSINESS_BROKER: 'business_broker',
+  BUY_AND_SELL: 'buy_and_sell',
   REAL_ESTATE: 'real_estate',
   JOBS: 'jobs',
   SALES_COLD_CALLER: 'sales_cold_caller',
   RIDES: 'rides',
   INSURANCE: 'insurance',
+  SUPPORT: 'support',
 } as const;
 
 // =====================================================================

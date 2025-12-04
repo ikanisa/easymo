@@ -260,3 +260,11 @@ export class BusinessBrokerAgent extends BaseAgent {
   }
 }
 
+/**
+ * @deprecated Use BuyAndSellAgent instead. This agent has been merged into buy_and_sell.
+ */
+export async function runBusinessBrokerAgent(input: AgentInput): Promise<AgentResult> {
+  const agent = new BusinessBrokerAgent();
+  return agent.execute(input);
+}
+

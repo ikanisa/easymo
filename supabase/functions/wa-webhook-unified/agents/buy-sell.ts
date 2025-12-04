@@ -27,7 +27,7 @@ export class BuySellAgent extends BaseAgent {
   }
 
   get type(): AgentType {
-    return "buy_sell";
+    return "buy_and_sell";
   }
 
   get keywords(): string[] {
