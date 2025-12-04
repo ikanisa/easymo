@@ -31,7 +31,7 @@ serve(async (req: Request): Promise<Response> => {
     headers.set("Content-Type", "application/json");
     headers.set("X-Request-ID", requestId);
     headers.set("X-Correlation-ID", correlationId);
-    headers.set("X-Service", "wa-webhook-profile");
+    headers.set("X-Service", SERVICE_NAME);
     return new Response(JSON.stringify(body), { ...init, headers });
   };
 
@@ -41,7 +41,7 @@ serve(async (req: Request): Promise<Response> => {
     level: "debug" | "info" | "warn" | "error" = "info",
   ) => {
     logStructuredEvent(event, {
-      service: "wa-webhook-profile",
+      service: SERVICE_NAME,
       requestId,
       correlationId,
       path: url.pathname,
@@ -1114,7 +1114,7 @@ serve(async (req: Request): Promise<Response> => {
 
     return respond({
       error: "internal_error",
-      service: "wa-webhook-profile",
+      service: SERVICE_NAME,
       requestId,
     }, {
       status: 500,
