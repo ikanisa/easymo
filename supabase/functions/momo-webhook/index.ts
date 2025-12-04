@@ -172,8 +172,46 @@ async function updatePaymentStatus(
       correlationId,
     });
 
-    // TODO: Send notification to user about payment status
-    // This could trigger a push notification or SMS
+    // Send notification to user about payment status
+    try {
+      const { sendWhatsAppMessage } = await import("../_shared/whatsapp-client.ts");
+      
+      const notificationMessage = paymentStatus === "successful"
+        ? `✅ Payment Successful!\n\nYour payment of ${payment.amount} ${payment.currency} has been confirmed.\n\nOrder #${payment.order_id} is now being processed.`
+        : `❌ Payment ${paymentStatus === "failed" ? "Failed" : "Pending"}\n\nYour payment of ${payment.amount} ${payment.currency} is ${paymentStatus}.\n\n${reason ? `Reason: ${reason}` : "Please try again or contact support."}`;
+      
+      // Get user's WhatsApp number from order
+      if (payment.waiter_orders?.customer_phone) {
+        const config = {
+          phoneId: Deno.env.get("WA_PHONE_ID")!,
+          accessToken: Deno.env.get("WA_ACCESS_TOKEN")!,
+        };
+        
+        await sendWhatsAppMessage(
+          config,
+          {
+            to: payment.waiter_orders.customer_phone,
+            type: "text",
+            text: { body: notificationMessage },
+          },
+          correlationId
+        );
+        
+        await logStructuredEvent("MOMO_NOTIFICATION_SENT", {
+          paymentId: payment.id,
+          status: paymentStatus,
+          phone: payment.waiter_orders.customer_phone,
+        });
+      }
+    } catch (notificationError) {
+      // Log but don't fail the webhook if notification fails
+      await logStructuredEvent("MOMO_NOTIFICATION_FAILED", {
+        error: (notificationError as Error).message,
+        paymentId: payment.id,
+      }, "warn");
+    }
+
+
 
   } catch (error) {
     await logStructuredEvent("MOMO_WEBHOOK_UPDATE_ERROR", {
