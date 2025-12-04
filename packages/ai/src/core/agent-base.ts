@@ -174,6 +174,7 @@ export abstract class AgentBase extends EventEmitter {
 
   // Tool registry for this agent
   private registeredTools: Map<string, Tool> = new Map();
+  private toolsRegistered: boolean = false;
 
   constructor(config?: AgentConfig) {
     super();
@@ -208,19 +209,22 @@ export abstract class AgentBase extends EventEmitter {
     if (config?.correlationId) {
       this.correlationId = config.correlationId;
     }
-
-    // Register tools
-    this.registerTools();
+    // Note: tools are registered lazily on first access
   }
 
   /**
-   * Register all tools for this agent
+   * Register all tools for this agent (called lazily)
    */
   protected registerTools(): void {
-    for (const tool of this.tools) {
+    if (this.toolsRegistered) {
+      return;
+    }
+    const tools = this.tools || [];
+    for (const tool of tools) {
       this.registeredTools.set(tool.name, tool);
     }
-    this.log('TOOLS_REGISTERED', { count: this.tools.length });
+    this.toolsRegistered = true;
+    this.log('TOOLS_REGISTERED', { count: tools.length });
   }
 
   /**
@@ -339,12 +343,13 @@ export abstract class AgentBase extends EventEmitter {
       throw new Error('LLM provider not configured');
     }
 
+    const tools = this.tools || [];
     const config: UnifiedChatConfig = {
       model: this.model,
       temperature: this.temperature,
       maxTokens: this.maxTokens,
       tools: this.getToolDefinitions(),
-      toolChoice: this.tools.length > 0 ? 'auto' : undefined,
+      toolChoice: tools.length > 0 ? 'auto' : undefined,
       userId: context.userId,
       correlationId: context.correlationId,
     };
@@ -359,7 +364,8 @@ export abstract class AgentBase extends EventEmitter {
    * Get tool definitions for LLM function calling
    */
   protected getToolDefinitions(): UnifiedChatConfig['tools'] {
-    return this.tools.map((tool) => ({
+    const tools = this.tools || [];
+    return tools.map((tool) => ({
       name: tool.name,
       description: tool.description,
       parameters: this.zodToJsonSchema(tool.parameters),
@@ -374,6 +380,9 @@ export abstract class AgentBase extends EventEmitter {
     params: Record<string, unknown>,
     context: AgentContext,
   ): Promise<ToolResult> {
+    // Ensure tools are registered
+    this.registerTools();
+    
     const startTime = Date.now();
     const tool = this.registeredTools.get(toolName);
 
