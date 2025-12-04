@@ -1,27 +1,33 @@
 # @easymo/agents
 
-OpenAI Agents SDK integration for EasyMO platform.
+AI Agent implementations for EasyMO WhatsApp-first platform.
 
 ## Overview
 
-This package provides agent definitions, tools, and orchestration logic for the EasyMO platform using the OpenAI Agents SDK. It enables multi-agent workflows for bar-truck booking, token redemption, savings groups, and more.
+This package provides AI agent definitions, tools, and orchestration logic for the EasyMO platform. It enables multi-agent workflows for commerce, jobs, real estate, restaurants, and more.
+
+## Official Agents
+
+| Agent | Export | Description |
+|-------|--------|-------------|
+| Farmer | `FarmerAgent` | Agricultural marketplace |
+| Jobs | `JobsAgent` | Job board |
+| Real Estate | `RealEstateAgent` | Property rentals/sales |
+| Sales | `SalesAgent` | Marketing campaigns |
+| Waiter | `WaiterAgent` | Restaurant ordering |
+| Buy & Sell | `BuyAndSellAgent` | Commerce + business discovery |
 
 ## Features
 
 - **Agent Definitions**: Pre-configured agents for different use cases
-  - BookingAgent: Handles bar-truck slot bookings
-  - TokenRedemptionAgent: Manages token redemptions
-  - SavingsGroupAgent: Assists with savings group operations
-  - TriageAgent: Routes user requests to appropriate specialized agents
-
 - **Tool Registry**: Reusable tools for common operations
   - WebSearch: Search the web for information
   - MenuLookup: Query available drinks/products
-  - BookingCreate: Create new bookings
-  - TokenRedeem: Redeem tokens/credits
-  - And more...
+  - VectorSearch: Semantic search
+  - CheckAvailability: Check availability
+  - CreateBooking: Create new bookings
+  - ScriptPlanner: Plan scripts
 
-- **Agent Orchestration**: Hand-off logic between agents
 - **Observability**: Built-in structured logging and metrics
 - **Security**: Input/output guardrails and validation
 - **Feature Flags**: All functionality gated behind feature flags
@@ -40,51 +46,50 @@ pnpm --filter @easymo/agents build
 ### Basic Agent Execution
 
 ```typescript
-import { BookingAgent } from '@easymo/agents';
-import { runAgent } from '@easymo/agents';
+import { WaiterAgent, runAgent } from '@easymo/agents';
 
 // Run agent with user query
-const result = await runAgent(BookingAgent, {
+const agent = new WaiterAgent();
+const result = await agent.execute({
   userId: 'user-123',
-  query: 'I want to book the bar truck for Friday evening'
+  query: 'Show me the menu'
 });
 
 console.log(result.finalOutput);
 ```
 
-### With Context and Streaming
+### Using the Buy & Sell Agent
 
 ```typescript
-import { BookingAgent, streamAgent } from '@easymo/agents';
+import { BuyAndSellAgent } from '@easymo/agents';
 
-// Stream agent responses
-const stream = await streamAgent(BookingAgent, {
+const agent = new BuyAndSellAgent();
+const result = await agent.execute({
   userId: 'user-123',
-  query: 'Show me available time slots',
-  context: {
-    userLocation: 'Kigali',
-    preferredDate: '2025-11-01'
-  }
+  query: 'Find a pharmacy near Kigali',
 });
-
-for await (const chunk of stream) {
-  console.log(chunk);
-}
 ```
 
-### Agent Hand-offs
+### Using Domain Agents
 
 ```typescript
-import { TriageAgent } from '@easymo/agents';
+import { FarmerAgent, JobsAgent, RealEstateAgent, SalesAgent } from '@easymo/agents';
 
-// Triage agent automatically hands off to specialized agents
-const result = await runAgent(TriageAgent, {
-  userId: 'user-123',
-  query: 'I want to redeem my credits and book a slot'
-});
+// Farmer agent for agricultural marketplace
+const farmer = new FarmerAgent();
+await farmer.execute({ userId: 'user-123', query: 'List my corn harvest' });
 
-// TriageAgent will detect redemption + booking intent
-// and coordinate with TokenRedemptionAgent and BookingAgent
+// Jobs agent for job board
+const jobs = new JobsAgent();
+await jobs.execute({ userId: 'user-123', query: 'Find developer jobs' });
+
+// Real estate agent for property listings
+const realEstate = new RealEstateAgent();
+await realEstate.execute({ userId: 'user-123', query: 'Find apartments in Kigali' });
+
+// Sales agent for marketing
+const sales = new SalesAgent();
+await sales.execute({ userId: 'user-123', query: 'Create a campaign for my product' });
 ```
 
 ## Architecture
@@ -147,75 +152,92 @@ if (!isFeatureEnabled('agents.booking')) {
 
 ## Available Agents
 
-### BookingAgent
+### WaiterAgent
 
-Handles bar-truck slot bookings and availability queries.
-
-**Tools**:
-- `checkAvailability`: Query available time slots
-- `createBooking`: Create a new booking
-- `cancelBooking`: Cancel existing booking
-- `viewBookings`: List user's bookings
-
-**Example**:
-```typescript
-const result = await runAgent(BookingAgent, {
-  userId: 'user-123',
-  query: 'Book me a slot for this Friday at 7pm'
-});
-```
-
-### TokenRedemptionAgent
-
-Manages token and credit redemptions.
-
-**Tools**:
-- `checkBalance`: View token/credit balance
-- `redeemToken`: Redeem a token/credit
-- `viewHistory`: Show redemption history
-
-**Example**:
-```typescript
-const result = await runAgent(TokenRedemptionAgent, {
-  userId: 'user-123',
-  query: 'Redeem my 5000 RWF token balance'
-});
-```
-
-### SavingsGroupAgent
-
-Assists with savings group operations.
-
-**Tools**:
-- `createGroup`: Create new savings group
-- `joinGroup`: Join existing group
-- `makeContribution`: Record contribution
-- `viewGroupStatus`: Check group balance and members
-
-**Example**:
-```typescript
-const result = await runAgent(SavingsGroupAgent, {
-  userId: 'user-123',
-  query: 'Create a savings group for our office team'
-});
-```
-
-### TriageAgent
-
-Routes user requests to appropriate specialized agents.
+Handles restaurant ordering and menu queries.
 
 **Capabilities**:
-- Intent detection
-- Multi-agent coordination
-- Context preservation across hand-offs
+- Menu lookup and recommendations
+- Order placement
+- Availability checking
 
 **Example**:
 ```typescript
-const result = await runAgent(TriageAgent, {
+const agent = new WaiterAgent();
+const result = await agent.execute({
   userId: 'user-123',
-  query: 'I want to check my balance and book a slot'
+  query: 'Show me the menu'
 });
-// Automatically routes to TokenRedemptionAgent then BookingAgent
+```
+
+### BuyAndSellAgent
+
+Unified commerce and business discovery agent.
+
+**Capabilities**:
+- Product commerce across all retail categories
+- Business discovery with location-based search
+- Order management
+
+**Example**:
+```typescript
+const agent = new BuyAndSellAgent();
+const result = await agent.execute({
+  userId: 'user-123',
+  query: 'Find a pharmacy near me'
+});
+```
+
+### FarmerAgent
+
+Agricultural marketplace agent.
+
+**Example**:
+```typescript
+const agent = new FarmerAgent();
+const result = await agent.execute({
+  userId: 'user-123',
+  query: 'List my corn harvest for sale'
+});
+```
+
+### JobsAgent
+
+Job board and employment matching.
+
+**Example**:
+```typescript
+const agent = new JobsAgent();
+const result = await agent.execute({
+  userId: 'user-123',
+  query: 'Find software developer positions'
+});
+```
+
+### RealEstateAgent
+
+Property rentals and sales.
+
+**Example**:
+```typescript
+const agent = new RealEstateAgent();
+const result = await agent.execute({
+  userId: 'user-123',
+  query: 'Find 2-bedroom apartments in Kigali'
+});
+```
+
+### SalesAgent
+
+Marketing and sales campaigns.
+
+**Example**:
+```typescript
+const agent = new SalesAgent();
+const result = await agent.execute({
+  userId: 'user-123',
+  query: 'Create a marketing campaign for my new product'
+});
 ```
 
 ## Tool Development
