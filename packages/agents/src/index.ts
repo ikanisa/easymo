@@ -1,27 +1,26 @@
 /**
- * @easymo/agents - OpenAI Agents SDK integration
+ * @easymo/agents - AI Agent Implementations
  * 
- * Main entry point for the agents package.
+ * Official agents for EasyMO WhatsApp-first platform.
  */
 
 // Core functionality
 export type { AgentDefinition } from './runner';
 export { runAgent } from './runner';
 
-// Agents
-export {
-  // NearbyDriversAgent,
-  // PharmacyAgent,
-  RealEstateAgent,
-  // QuincaillerieAgent,
-  runBusinessBrokerAgent,
-  SalesAgent,
-  // ScheduleTripAgent,
-  // ShopsAgent,
-  // SupportAgent,
-  // TriageAgent,
-  WaiterAgent,
-} from './agents';
+// Base Agent
+export { BaseAgent } from './agents/base/agent.base';
+
+// Domain Agents
+export { BuyAndSellAgent, runBuyAndSellAgent } from './agents/commerce/buy-and-sell.agent';
+export { FarmerAgent } from './agents/farmer/farmer.agent';
+export { JobsAgent } from './agents/jobs/jobs.agent';
+export { RealEstateAgent } from './agents/property/real-estate.agent';
+export { SalesAgent } from './agents/sales/sales.agent';
+export { WaiterAgent } from './agents/waiter/waiter.agent';
+
+// Legacy exports - deprecated, use BuyAndSellAgent instead
+export { BusinessBrokerAgent, runBusinessBrokerAgent } from './agents/general/business-broker.agent';
 
 // Tools
 export {
