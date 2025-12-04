@@ -18,7 +18,7 @@ export type EasyMOVertical =
   | 'none'; // Out of scope
 
 /**
- * Official 10 agents matching production agent_registry database.
+ * Official 9 agents matching production agent_registry database.
  */
 export type AgentType =
   | 'farmer'           // Farmer AI Agent
@@ -28,9 +28,8 @@ export type AgentType =
   | 'jobs'             // Jobs AI Agent
   | 'waiter'           // Waiter AI Agent
   | 'real_estate'      // Real Estate AI Agent
-  | 'marketplace'      // Marketplace AI Agent (includes pharmacy, hardware, shop)
-  | 'support'          // Support AI Agent (includes concierge routing)
-  | 'business_broker'; // Business Broker AI Agent (includes legal intake)
+  | 'buy_and_sell'     // Buy & Sell AI Agent (unified commerce + business brokerage)
+  | 'support';         // Support AI Agent (includes concierge routing)
 
 export interface IntentAnalysis {
   agent: AgentType;

@@ -19,17 +19,19 @@ import { buildToneDirective } from "../../../../packages/localization/src/tone.t
 import { AGENT_CONFIGURATIONS } from "./agent_configs.ts";
 
 /**
- * Official 10 agents matching production agent_registry database.
+ * Official 9 agents matching production agent_registry database.
  * 
  * Agent slug mapping (from removed agents):
  * - concierge-router → support
  * - mobility-orchestrator → rides
- * - pharmacy-agent → marketplace
- * - hardware-agent → marketplace
- * - shop-agent → marketplace
+ * - pharmacy-agent → buy_and_sell
+ * - hardware-agent → buy_and_sell
+ * - shop-agent → buy_and_sell
  * - property-agent → real_estate
- * - legal-intake → business_broker
+ * - legal-intake → buy_and_sell
  * - marketing-sales → sales_cold_caller
+ * - marketplace → buy_and_sell (merged)
+ * - business_broker → buy_and_sell (merged)
  * - sora-video → REMOVED
  * - locops → INTERNAL (not agent)
  * - analytics-risk → INTERNAL (not agent)
@@ -43,9 +45,8 @@ export type AgentType =
   | "jobs"             // Jobs AI Agent
   | "waiter"           // Waiter AI Agent
   | "real_estate"      // Real Estate AI Agent
-  | "marketplace"      // Marketplace AI Agent (includes pharmacy, hardware, shop)
-  | "support"          // Support AI Agent (includes concierge routing)
-  | "business_broker"; // Business Broker AI Agent (includes legal intake)
+  | "buy_and_sell"     // Buy & Sell AI Agent (unified commerce + business brokerage)
+  | "support";         // Support AI Agent (includes concierge routing)
 
 export interface AgentConfig {
   id: string;
@@ -163,9 +164,8 @@ export class AgentOrchestrator {
 - jobs: Employment, job search, hiring, gigs
 - waiter: Restaurant, bar, dining, food ordering, menu
 - real_estate: Property, rentals, housing, apartments
-- marketplace: Shopping, products, pharmacy, hardware, groceries
+- buy_and_sell: Shopping, products, pharmacy, hardware, groceries, business sales, acquisitions, legal services
 - support: Help, account issues, technical problems, general questions
-- business_broker: Business sales, acquisitions, legal services
 
 Respond with just the agent type (e.g., "rides").`,
         tool_calls: undefined,

@@ -330,13 +330,13 @@ export interface ApplyIntentResult {
 export type AgentSlug = 
   | 'waiter'
   | 'farmer'
-  | 'broker'
-  | 'business_broker'
+  | 'buy_and_sell'
   | 'real_estate'
   | 'jobs'
   | 'sales_cold_caller'
   | 'rides'
-  | 'insurance';
+  | 'insurance'
+  | 'support';
 
 export type IntentStatus = 'pending' | 'applied' | 'rejected';
 

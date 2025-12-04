@@ -4,7 +4,7 @@
  * Central registry for all domain agents.
  * Manages agent instantiation and lookup.
  * 
- * OFFICIAL AGENTS (11 production agents):
+ * OFFICIAL AGENTS (9 production agents):
  * 1. farmer - Farmer AI Agent
  * 2. insurance - Insurance AI Agent
  * 3. sales_cold_caller - Sales/Marketing Cold Caller AI Agent
@@ -12,10 +12,8 @@
  * 5. jobs - Jobs AI Agent
  * 6. waiter - Waiter AI Agent
  * 7. real_estate - Real Estate AI Agent
- * 8. marketplace - Marketplace AI Agent (includes pharmacy, hardware, shop)
+ * 8. buy_and_sell - Buy & Sell Agent (consolidates marketplace + business_broker)
  * 9. support - Support AI Agent (includes concierge routing)
- * 10. business_broker - Business Broker AI Agent (legacy, aliases to buy_sell)
- * 11. buy_sell - Buy & Sell Agent (consolidates marketplace + business_broker)
  */
 
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -42,10 +40,11 @@ export class AgentRegistry {
    * Map legacy agent types to new consolidated agents
    */
   private static readonly ALIAS_MAP: Record<string, AgentType> = {
-    "business_broker": "buy_sell",
-    "business_broker_agent": "buy_sell",
-    "marketplace": "buy_sell",
-    "marketplace_agent": "buy_sell",
+    "business_broker": "buy_and_sell",
+    "business_broker_agent": "buy_and_sell",
+    "marketplace": "buy_and_sell",
+    "marketplace_agent": "buy_and_sell",
+    "buy_sell": "buy_and_sell",
   };
 
   constructor(private supabase: SupabaseClient) {}
@@ -115,7 +114,7 @@ export class AgentRegistry {
       
       // 9. Buy & Sell Agent (consolidated marketplace + business_broker)
       // Handles: marketplace, business_broker (legacy aliases resolved in ALIAS_MAP)
-      case "buy_sell":
+      case "buy_and_sell":
         return new BuySellAgent(deps);
 
       default:
@@ -140,7 +139,7 @@ export class AgentRegistry {
       { type: "support", name: "Support Agent", description: "General help and navigation" },
       { type: "sales_cold_caller", name: "Sales Agent", description: "Sales and customer management" },
       { 
-        type: "buy_sell", 
+        type: "buy_and_sell", 
         name: "Buy & Sell Agent", 
         description: "Marketplace transactions and business brokerage",
         consolidates: ["business_broker", "marketplace"]

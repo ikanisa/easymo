@@ -6,7 +6,7 @@ import path from 'path';
 /**
  * Agent Configurations Tests
  * 
- * Tests for the 10 official agents matching production agent_registry database:
+ * Tests for the 9 official agents matching production agent_registry database:
  * 1. farmer - Farmer AI Agent
  * 2. insurance - Insurance AI Agent
  * 3. sales_cold_caller - Sales/Marketing Cold Caller AI Agent
@@ -14,9 +14,8 @@ import path from 'path';
  * 5. jobs - Jobs AI Agent
  * 6. waiter - Waiter AI Agent
  * 7. real_estate - Real Estate AI Agent
- * 8. marketplace - Marketplace AI Agent (includes pharmacy, hardware, shop)
+ * 8. buy_and_sell - Buy & Sell AI Agent (unified commerce + business brokerage)
  * 9. support - Support AI Agent (includes concierge routing)
- * 10. business_broker - Business Broker AI Agent (includes legal intake)
  */
 describe('Agent Configurations', () => {
   const configPath = path.join(process.cwd(), 'config', 'agent_configs.yaml');
@@ -32,11 +31,11 @@ describe('Agent Configurations', () => {
     expect(Array.isArray(configs)).toBe(true);
   });
 
-  it('should have exactly 10 official agent configurations', () => {
-    expect(configs).toHaveLength(10);
+  it('should have exactly 9 official agent configurations', () => {
+    expect(configs).toHaveLength(9);
   });
 
-  it('should have the correct 10 official agent slugs', () => {
+  it('should have the correct 9 official agent slugs', () => {
     const expectedSlugs = [
       'farmer',
       'insurance',
@@ -45,9 +44,8 @@ describe('Agent Configurations', () => {
       'jobs',
       'waiter',
       'real_estate',
-      'marketplace',
-      'support',
-      'business_broker'
+      'buy_and_sell',
+      'support'
     ];
     const actualSlugs = configs.map(c => c.slug);
     
@@ -188,19 +186,25 @@ describe('Agent Configurations', () => {
       expect(realEstate.guardrails.address_sharing).toBe('on-viewing');
     });
 
-    it('should configure Marketplace Agent correctly (includes pharmacy, hardware, shop)', () => {
-      const marketplace = configs.find(c => c.slug === 'marketplace');
-      expect(marketplace).toBeDefined();
-      expect(marketplace.name).toBe('Marketplace AI Agent');
-      expect(marketplace.autonomy).toBe('suggest');
-      // Should include capabilities from pharmacy, hardware, and shop
-      expect(marketplace.tools).toContain('inventory_check');
-      expect(marketplace.tools).toContain('order_create');
-      expect(marketplace.tools).toContain('ocr_extract');
-      expect(marketplace.guardrails.medical_advice).toBe('forbidden');
-      expect(marketplace.guardrails.pharmacist_review_required).toBe(true);
-      expect(marketplace.guardrails.delivery_fee_threshold_kg).toBe(20);
-      expect(marketplace.guardrails.substitution_policy).toBe('brand->generic->none');
+    it('should configure Buy & Sell Agent correctly (merged marketplace + business_broker)', () => {
+      const buyAndSell = configs.find(c => c.slug === 'buy_and_sell');
+      expect(buyAndSell).toBeDefined();
+      expect(buyAndSell.name).toBe('Buy & Sell AI Agent');
+      expect(buyAndSell.autonomy).toBe('suggest');
+      // Should include capabilities from marketplace (pharmacy, hardware, shop) and business_broker
+      expect(buyAndSell.tools).toContain('inventory_check');
+      expect(buyAndSell.tools).toContain('order_create');
+      expect(buyAndSell.tools).toContain('ocr_extract');
+      expect(buyAndSell.tools).toContain('generate_pdf');
+      expect(buyAndSell.tools).toContain('maps_geocode');
+      // Commerce guardrails from marketplace
+      expect(buyAndSell.guardrails.medical_advice).toBe('forbidden');
+      expect(buyAndSell.guardrails.pharmacist_review_required).toBe(true);
+      expect(buyAndSell.guardrails.delivery_fee_threshold_kg).toBe(20);
+      expect(buyAndSell.guardrails.substitution_policy).toBe('brand->generic->none');
+      // Business brokerage guardrails from business_broker
+      expect(buyAndSell.guardrails.advice).toBe('forbidden');
+      expect(buyAndSell.guardrails.sensitive_topics_handoff).toBe(true);
     });
 
     it('should configure Support Agent correctly (includes concierge routing)', () => {
@@ -217,17 +221,6 @@ describe('Agent Configurations', () => {
       expect(support.guardrails.allow_payments).toBe(false);
       expect(support.guardrails.route_when_confidence_gte).toBe(0.6);
       expect(support.guardrails.summarize_last_messages).toBe(10);
-    });
-
-    it('should configure Business Broker Agent correctly (includes legal intake)', () => {
-      const broker = configs.find(c => c.slug === 'business_broker');
-      expect(broker).toBeDefined();
-      expect(broker.name).toBe('Business Broker AI Agent');
-      expect(broker.autonomy).toBe('handoff');
-      expect(broker.tools).toContain('generate_pdf');
-      expect(broker.tools).toContain('momo_charge');
-      // Should include legal intake capabilities
-      expect(broker.guardrails.advice).toBe('forbidden');
     });
   });
 
@@ -291,6 +284,16 @@ describe('Agent Configurations', () => {
       const mobility = configs.find(c => c.slug === 'mobility-orchestrator');
       expect(mobility).toBeUndefined();
     });
+
+    it('should NOT include marketplace (merged into buy_and_sell)', () => {
+      const marketplace = configs.find(c => c.slug === 'marketplace');
+      expect(marketplace).toBeUndefined();
+    });
+
+    it('should NOT include business_broker (merged into buy_and_sell)', () => {
+      const businessBroker = configs.find(c => c.slug === 'business_broker');
+      expect(businessBroker).toBeUndefined();
+    });
   });
 
   describe('Tool Assignments', () => {
@@ -312,7 +315,7 @@ describe('Agent Configurations', () => {
       const agentsWithPayment = configs.filter(c => 
         c.tools.includes('momo_charge')
       );
-      // Should include: farmer, waiter, real_estate, marketplace, business_broker, rides
+      // Should include: farmer, waiter, real_estate, buy_and_sell
       expect(agentsWithPayment.length).toBeGreaterThanOrEqual(4);
     });
   });
@@ -331,11 +334,11 @@ describe('Agent Configurations', () => {
 
     it('should mark high-risk agents as suggest or handoff', () => {
       const insurance = configs.find(c => c.slug === 'insurance');
-      const businessBroker = configs.find(c => c.slug === 'business_broker');
+      const buyAndSell = configs.find(c => c.slug === 'buy_and_sell');
       const salesColdCaller = configs.find(c => c.slug === 'sales_cold_caller');
 
       expect(['suggest', 'handoff']).toContain(insurance?.autonomy);
-      expect(['suggest', 'handoff']).toContain(businessBroker?.autonomy);
+      expect(['suggest', 'handoff']).toContain(buyAndSell?.autonomy);
       expect(['suggest', 'handoff']).toContain(salesColdCaller?.autonomy);
     });
   });
@@ -367,15 +370,13 @@ describe('Agent Configurations', () => {
       expect(waiter?.guardrails.never_collect_card).toBe(true);
     });
 
-    it('should enforce medical compliance for marketplace agent', () => {
-      const marketplace = configs.find(c => c.slug === 'marketplace');
-      expect(marketplace?.guardrails.medical_advice).toBe('forbidden');
-      expect(marketplace?.guardrails.pharmacist_review_required).toBe(true);
-    });
-
-    it('should enforce legal compliance for business broker agent', () => {
-      const broker = configs.find(c => c.slug === 'business_broker');
-      expect(broker?.guardrails.advice).toBe('forbidden');
+    it('should enforce medical and legal compliance for buy_and_sell agent', () => {
+      const buyAndSell = configs.find(c => c.slug === 'buy_and_sell');
+      // Medical compliance (from marketplace)
+      expect(buyAndSell?.guardrails.medical_advice).toBe('forbidden');
+      expect(buyAndSell?.guardrails.pharmacist_review_required).toBe(true);
+      // Legal compliance (from business_broker)
+      expect(buyAndSell?.guardrails.advice).toBe('forbidden');
     });
   });
 });

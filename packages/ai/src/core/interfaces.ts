@@ -21,17 +21,19 @@ import type { TokenUsage } from '../types/index';
 // ============================================================================
 
 /**
- * Official 10 agents matching production agent_registry database.
+ * Official 9 agents matching production agent_registry database.
  * 
  * Agent slug mapping (from removed agents):
  * - concierge-router → support
  * - mobility-orchestrator → rides
- * - pharmacy-agent → marketplace
- * - hardware-agent → marketplace
- * - shop-agent → marketplace
+ * - pharmacy-agent → buy_and_sell
+ * - hardware-agent → buy_and_sell
+ * - shop-agent → buy_and_sell
  * - property-agent → real_estate
- * - legal-intake → business_broker
+ * - legal-intake → buy_and_sell
  * - marketing-sales → sales_cold_caller
+ * - marketplace → buy_and_sell (merged)
+ * - business_broker → buy_and_sell (merged)
  * - sora-video → REMOVED
  * - locops → INTERNAL (not agent)
  * - analytics-risk → INTERNAL (not agent)
@@ -45,9 +47,8 @@ export type OrchestratorAgentType =
   | 'jobs'             // Jobs AI Agent
   | 'waiter'           // Waiter AI Agent
   | 'real_estate'      // Real Estate AI Agent
-  | 'marketplace'      // Marketplace AI Agent (includes pharmacy, hardware, shop)
-  | 'support'          // Support AI Agent (includes concierge routing)
-  | 'business_broker'; // Business Broker AI Agent (includes legal intake)
+  | 'buy_and_sell'     // Buy & Sell AI Agent (unified commerce + business brokerage)
+  | 'support';         // Support AI Agent (includes concierge routing)
 
 /**
  * Common parameters for processing a message
