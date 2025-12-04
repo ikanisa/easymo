@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS admin_notifications (
   priority TEXT DEFAULT 'normal' CHECK (priority IN ('low', 'normal', 'high', 'urgent')),
   read BOOLEAN DEFAULT false,
   read_at TIMESTAMPTZ,
-  read_by UUID REFERENCES profiles(id),
+  read_by UUID REFERENCES profiles(user_id),
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -41,7 +41,7 @@ CREATE POLICY admin_notifications_select_policy ON admin_notifications
   USING (
     EXISTS (
       SELECT 1 FROM profiles
-      WHERE profiles.id = auth.uid()
+      WHERE profiles.user_id = auth.uid()
       AND profiles.role = 'admin'
     )
   );
@@ -52,7 +52,7 @@ CREATE POLICY admin_notifications_update_policy ON admin_notifications
   USING (
     EXISTS (
       SELECT 1 FROM profiles
-      WHERE profiles.id = auth.uid()
+      WHERE profiles.user_id = auth.uid()
       AND profiles.role = 'admin'
     )
   );
@@ -94,7 +94,7 @@ GRANT EXECUTE ON FUNCTION get_unread_admin_notifications_count() TO authenticate
 -- Add cashout status tracking
 ALTER TABLE wallet_cashouts
 ADD COLUMN IF NOT EXISTS admin_notified_at TIMESTAMPTZ,
-ADD COLUMN IF NOT EXISTS admin_processed_by UUID REFERENCES profiles(id),
+ADD COLUMN IF NOT EXISTS admin_processed_by UUID REFERENCES profiles(user_id),
 ADD COLUMN IF NOT EXISTS admin_processed_at TIMESTAMPTZ,
 ADD COLUMN IF NOT EXISTS admin_notes TEXT;
 
@@ -122,7 +122,7 @@ BEGIN
   -- Verify admin role
   IF NOT EXISTS (
     SELECT 1 FROM profiles
-    WHERE id = p_admin_id AND role = 'admin'
+    WHERE user_id = p_admin_id AND role = 'admin'
   ) THEN
     RAISE EXCEPTION 'Only admins can process cashouts';
   END IF;
