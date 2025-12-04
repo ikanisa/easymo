@@ -693,8 +693,8 @@ async function handleHomeMenuSelection(
     }
     case IDS.FARMER_AGENT: {
       // Farmer AI - Produce listing and buyer matching
-      const { startFarmerAgent } = await import("../domains/ai-agents/farmer_home.ts");
-      return await startFarmerAgent(ctx);
+      const { startFarmerAgentMenu } = await import("../domains/ai-agents/farmer_home.ts");
+      return await startFarmerAgentMenu(ctx);
     }
     case IDS.INSURANCE_AGENT: {
       // Insurance AI - Quotes, claims, policies
