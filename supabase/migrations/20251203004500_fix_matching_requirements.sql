@@ -104,12 +104,11 @@ BEGIN
     t.vehicle_type,
     (t.vehicle_type = v_vehicle_type) AS is_exact_match,
     EXTRACT(EPOCH FROM (now() - COALESCE(t.last_location_at, t.created_at)))::integer / 60 AS location_age_minutes,
-    dp.number_plate,
+    t.number_plate,
     p.full_name AS driver_name,
     'driver'::text AS role
   FROM public.rides_trips t
   INNER JOIN public.profiles p ON p.user_id = t.creator_user_id
-  LEFT JOIN public.driver_profiles dp ON dp.user_id = t.creator_user_id
   WHERE t.role = 'driver'
     AND t.status IN ('open', 'pending', 'active')
     AND t.expires_at > now()
