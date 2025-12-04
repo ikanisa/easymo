@@ -26,7 +26,9 @@
     "src/agents/**/*",
     "src/core/unified-gateway.ts",
     "src/core/agent-factory.ts",
+    "src/core/agent-base.ts",
     "src/core/types.ts",
+    "src/core/unified-provider.ts",
     "src/index.ts"
   ],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
