@@ -60,7 +60,10 @@ import {
   handleLicenseUpload,
   VERIFICATION_STATES,
 } from "./handlers/driver_verification.ts";
-// Full integration - All handlers enabled (using console.log for logging)
+// TEMPORARY: Trip lifecycle handlers disabled due to bundler issue
+// TODO: Re-enable after splitting trip_lifecycle.ts into modular files
+// See: MOBILITY_QUICK_ACTION_PLAN.md
+/*
 import {
   handleTripStart,
   handleTripArrivedAtPickup,
@@ -69,6 +72,7 @@ import {
   handleTripCancel,
   handleTripRate,
 } from "./handlers/trip_lifecycle.ts";
+*/
 import {
   startDriverTracking,
   updateDriverLocation,
@@ -353,7 +357,22 @@ serve(async (req: Request): Promise<Response> => {
            handled = await startScheduleSavedLocationPicker(ctx, state.data as any, "dropoff");
         } else if (id.startsWith("FAV::") && state?.key === "location_saved_picker" && state.data?.source === "schedule") {
            handled = await handleScheduleSavedLocationSelection(ctx, state.data as any, id);
-        } else if (id === IDS.TRIP_START && state?.data?.matchId) {
+         }        else if (id === IDS.TRIP_START || id === IDS.TRIP_ARRIVED || id === IDS.TRIP_PICKED_UP || 
+                 id === IDS.TRIP_COMPLETE || id.startsWith(IDS.TRIP_CANCEL_PREFIX) || id.startsWith(IDS.RATE_PREFIX)) {
+          await sendText(
+            ctx.from,
+            "🚧 *Trip Management Temporarily Unavailable*\n\n" +
+            "We're upgrading our trip management system.\n" +
+            "This feature will be back online shortly.\n\n" +
+            "✅ Nearby matching still works\n" +
+            "✅ Driver/passenger lists available\n" +
+            "✅ Schedule features active\n\n" +
+            "Thank you for your patience!"
+          );
+          handled = true;
+        }
+        /* COMMENTED OUT - Re-enable after handler split
+        else if (id === IDS.TRIP_START && state?.data?.matchId) {
           const matchId = String(state.data.matchId);
           handled = await handleTripStart(ctx, matchId);
         } else if (id === IDS.TRIP_ARRIVED && state?.data?.tripId) {
@@ -375,6 +394,7 @@ serve(async (req: Request): Promise<Response> => {
           const rating = parseInt(parts[2]);
           handled = await handleTripRate(ctx, tripId, rating);
         }
+        */
         
         // Payment Handlers
         else if (id === IDS.TRIP_PAYMENT_PAID && state?.key === PAYMENT_STATES.PENDING) {
