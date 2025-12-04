@@ -1,4 +1,13 @@
 /**
+ * @deprecated Import from '@easymo/types' or '@easymo/types/ai-agents' instead.
+ * This file will be removed in the next major version.
+ * 
+ * Migration guide:
+ * - import { AiAgentRow, Database } from '@easymo/types/ai-agents'
+ * - Or: import type { AiAgentRow } from '@easymo/types'
+ */
+
+/**
  * AI Agent Ecosystem - TypeScript Type Definitions
  * Auto-generated types for Supabase AI Agent tables
  */

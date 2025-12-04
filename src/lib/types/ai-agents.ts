@@ -1,4 +1,13 @@
 /**
+ * @deprecated Import from '@easymo/types' or '@easymo/types/ai-agents' instead.
+ * This file will be removed in the next major version.
+ * 
+ * Migration guide:
+ * - import { AiAgent, WhatsappConversation } from '@easymo/types/ai-agents'
+ * - Or: import type { AiAgent } from '@easymo/types'
+ */
+
+/**
  * TypeScript types for AI Agent Ecosystem (WhatsApp-first)
  * Generated from Supabase schema
  * Maps snake_case DB columns to camelCase TS properties

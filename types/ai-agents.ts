@@ -1,3 +1,12 @@
+/**
+ * @deprecated Import from '@easymo/types' or '@easymo/types/ai-agents' instead.
+ * This file will be removed in the next major version.
+ * 
+ * Migration guide:
+ * - import { AiAgent, AgentSlug } from '@easymo/types/ai-agents'
+ * - Or: import type { AiAgent } from '@easymo/types'
+ */
+
 // =====================================================================
 // AI AGENT ECOSYSTEM – TypeScript Types
 // =====================================================================

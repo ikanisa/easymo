@@ -1,4 +1,13 @@
 /**
+ * @deprecated Import from '@easymo/types' or '@easymo/types/ai-agents' instead.
+ * This file will be removed in the next major version.
+ * 
+ * Migration guide:
+ * - import { EasyMOVertical, AgentType, IntentAnalysis } from '@easymo/types/ai-agents'
+ * - Or: import type { AgentType } from '@easymo/types'
+ */
+
+/**
  * EasyMO Vertical Types
  * 
  * Type definitions for EasyMO service verticals and intent classification.
