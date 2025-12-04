@@ -12,6 +12,7 @@ import {
   recommendDriversForUser,
   recommendPassengersForUser,
   findScheduledTripsNearby,
+  MOBILITY_CONFIG,
 } from "../../rpc/mobility.ts";
 import { getAppConfig } from "../../utils/app_config.ts";
 import { waChatLink } from "../../utils/links.ts";
@@ -43,12 +44,10 @@ import {
 import { buildSaveRows } from "../locations/save.ts";
 import { sortMatches } from "../../../_shared/wa-webhook-shared/utils/sortMatches.ts";
 
-// Time window for matching: SQL function uses days
-const DEFAULT_WINDOW_DAYS = 30;
-// Per requirements: 10km radius consistently
-const REQUIRED_RADIUS_METERS = 10_000;
-// Search radius: read from app_config, default 15km (increased from 10km for 90%+ match rate)
-const DEFAULT_RADIUS_METERS = 15_000;
+// Use centralized config for consistency
+const DEFAULT_WINDOW_DAYS = MOBILITY_CONFIG.DEFAULT_WINDOW_DAYS;
+const REQUIRED_RADIUS_METERS = MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS;
+const DEFAULT_RADIUS_METERS = MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS;
 const SAVED_ROW_PREFIX = "FAV::";
 
 const VEHICLE_OPTION_DEFS = [

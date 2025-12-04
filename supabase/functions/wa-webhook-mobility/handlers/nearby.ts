@@ -9,6 +9,7 @@ import {
   type MatchResult,
   updateTripDropoff,
   updateTripLocation,
+  MOBILITY_CONFIG,
 } from "../rpc/mobility.ts";
 import { getAppConfig } from "../utils/app_config.ts";
 import { waChatLink } from "../utils/links.ts";
@@ -43,13 +44,11 @@ import { checkLocationCache } from "./location_cache.ts";
 import { readLastLocation } from "../locations/favorites.ts";
 import { sortMatches } from "../../_shared/wa-webhook-shared/utils/sortMatches.ts";
 
-// Time window for matching: 48 hours (2 days) as per requirements
-const DEFAULT_WINDOW_DAYS = 2;
-// Per requirements: 10km radius consistently
-const REQUIRED_RADIUS_METERS = 10_000;
-// Search radius: 10km as per requirements (not 15km)
-const DEFAULT_RADIUS_METERS = 10_000;
-const MAX_RADIUS_METERS = 25_000;
+// Use centralized config for all mobility constants
+const DEFAULT_WINDOW_DAYS = MOBILITY_CONFIG.DEFAULT_WINDOW_DAYS;
+const REQUIRED_RADIUS_METERS = MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS;
+const DEFAULT_RADIUS_METERS = MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS;
+const MAX_RADIUS_METERS = MOBILITY_CONFIG.MAX_SEARCH_RADIUS_METERS;
 const SAVED_ROW_PREFIX = "FAV::";
 
 const VEHICLE_OPTION_DEFS = [

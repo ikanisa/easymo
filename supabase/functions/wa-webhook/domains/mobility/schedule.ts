@@ -10,6 +10,7 @@ import {
   matchPassengersForTrip,
   type MatchResult,
   updateTripDropoff,
+  MOBILITY_CONFIG,
 } from "../../rpc/mobility.ts";
 import { getAppConfig } from "../../utils/app_config.ts";
 import { waChatLink } from "../../utils/links.ts";
@@ -40,8 +41,9 @@ import { buildSaveRows } from "../locations/save.ts";
 import { saveIntent } from "../../../_shared/wa-webhook-shared/domains/intent_storage.ts";
 import { sortMatches } from "../../../_shared/wa-webhook-shared/utils/sortMatches.ts";
 
-const DEFAULT_WINDOW_DAYS = 30;
-const REQUIRED_RADIUS_METERS = 10_000;
+// Use centralized config for consistency
+const DEFAULT_WINDOW_DAYS = MOBILITY_CONFIG.DEFAULT_WINDOW_DAYS;
+const REQUIRED_RADIUS_METERS = MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS;
 const DEFAULT_TIMEZONE = "Africa/Kigali";
 const DAY_MS = 24 * 60 * 60 * 1000;
 

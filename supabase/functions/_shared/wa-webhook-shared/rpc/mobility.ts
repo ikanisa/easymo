@@ -1,4 +1,10 @@
 import type { SupabaseClient } from "../deps.ts";
+import { MOBILITY_CONFIG, getTripExpiryMs } from "../config/mobility.ts";
+
+// Re-export config for consumers
+export { MOBILITY_CONFIG } from "../config/mobility.ts";
+
+export type RecurrenceType = "once" | "daily" | "weekdays" | "weekly" | "monthly";
 
 export async function gateProFeature(client: SupabaseClient, userId: string) {
   const { data, error } = await client.rpc("gate_pro_feature", {
@@ -49,9 +55,21 @@ export async function insertTrip(
     lng: number;
     radiusMeters: number;
     pickupText?: string;
+    scheduledAt?: Date | string;
+    recurrence?: RecurrenceType;
   },
 ): Promise<string> {
-  const expires = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+  // For scheduled trips, use longer expiry (7 days) or default from config
+  const isScheduled = params.scheduledAt !== undefined;
+  const expiryMs = isScheduled ? 7 * 24 * 60 * 60 * 1000 : getTripExpiryMs();
+  const expires = new Date(Date.now() + expiryMs).toISOString();
+  
+  const scheduledAtStr = params.scheduledAt 
+    ? (params.scheduledAt instanceof Date 
+        ? params.scheduledAt.toISOString() 
+        : params.scheduledAt)
+    : null;
+
   const { data, error } = await client
     .from("rides_trips")
     .insert({
@@ -63,8 +81,10 @@ export async function insertTrip(
       pickup: `SRID=4326;POINT(${params.lng} ${params.lat})`,
       pickup_radius_m: params.radiusMeters,
       pickup_text: params.pickupText ?? null,
-      status: "open",
+      status: isScheduled ? "scheduled" : "open",
       expires_at: expires,
+      scheduled_at: scheduledAtStr,
+      recurrence: params.recurrence ?? null,
       last_location_at: new Date().toISOString(),
     })
     .select("id")
@@ -110,15 +130,18 @@ export type MatchResult = {
   vehicle_type?: string | null;
   is_exact_match?: boolean;
   location_age_minutes?: number;
+  number_plate?: string | null;
+  driver_name?: string | null;
+  role?: "driver" | "passenger";
 };
 
 export async function matchDriversForTrip(
   client: SupabaseClient,
   tripId: string,
-  limit = 9,
+  limit = MOBILITY_CONFIG.MAX_RESULTS_LIMIT,
   preferDropoff = false,
   radiusMeters?: number,
-  windowDays = 30,
+  windowDays = MOBILITY_CONFIG.DEFAULT_WINDOW_DAYS,
 ) {
   const { data, error } = await client.rpc("match_drivers_for_trip_v2", {
     _trip_id: tripId,
@@ -134,10 +157,10 @@ export async function matchDriversForTrip(
 export async function matchPassengersForTrip(
   client: SupabaseClient,
   tripId: string,
-  limit = 9,
+  limit = MOBILITY_CONFIG.MAX_RESULTS_LIMIT,
   preferDropoff = false,
   radiusMeters?: number,
-  windowDays = 30,
+  windowDays = MOBILITY_CONFIG.DEFAULT_WINDOW_DAYS,
 ) {
   const { data, error } = await client.rpc("match_passengers_for_trip_v2", {
     _trip_id: tripId,
