@@ -6,6 +6,7 @@ import { sendButtonsMessage, sendListMessage } from "../_shared/wa-webhook-share
 import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
 import type { RouterContext, WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.ts";
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 // Note: Rate limiting removed - handled by wa-webhook-core (100 req/min per phone number)
 // Static imports for frequently used handlers to reduce dynamic import overhead
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
