@@ -41,7 +41,7 @@ import {
 import { buildSaveRows } from "../../locations/save.ts";
 import { sortMatches } from "../../../_shared/wa-webhook-shared/utils/sortMatches.ts";
 
-const DEFAULT_WINDOW_DAYS = 30;
+const DEFAULT_WINDOW_DAYS = 2;  // 48-hour window to match DB default
 const REQUIRED_RADIUS_METERS = 10_000;
 const MAX_RADIUS_METERS = 25_000;
 const DEFAULT_TIMEZONE = "Africa/Kigali";
