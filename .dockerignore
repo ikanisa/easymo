@@ -1,0 +1,102 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build outputs
+.next
+dist
+build
+out
+.turbo
+coverage
+
+# Environment files (use Cloud Run env vars instead)
+.env
+.env.local
+.env*.local
+*.env
+
+# Git
+.git
+.github
+.gitignore
+
+# Documentation
+*.md
+!README.md
+docs
+
+# Test files
+**/__tests__
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+*.test.js
+*.spec.js
+vitest.config.*
+jest.config.*
+.vitest-*
+
+# CI/CD
+.ci
+.github
+cloudbuild.yaml
+*.sh
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tauri/Desktop
+src-tauri
+electron
+*.dmg
+*.exe
+*.app
+
+# Deployment artifacts
+.vercel
+.netlify
+.cloudflare
+
+# Supabase (backend only)
+supabase
+
+# Services (not needed for admin-app)
+services
+apps
+backend
+migrations
+scripts
+tools
+crawler
+data
+monitoring
+infrastructure
+
+# PWAs (other apps in monorepo)
+client-pwa
+waiter-pwa
+real-estate-pwa
+bar-manager-app
+bar-manager-final
+bar-manager-production
+station-app
+
+# Archive
+.archive
+.changeset

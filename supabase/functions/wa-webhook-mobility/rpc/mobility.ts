@@ -10,30 +10,7 @@ const TRIP_EXPIRY_MINUTES = Number.isFinite(envExpiryMinutes) && envExpiryMinute
   : DEFAULT_TRIP_EXPIRY_MINUTES;
 const TRIP_EXPIRY_MS = TRIP_EXPIRY_MINUTES * 60 * 1000;
 
-let ridesSchemaReady = false;
-let ridesSchemaCheck: Promise<void> | null = null;
-
-async function ensureRidesTripsSchema(client: SupabaseClient): Promise<void> {
-  if (ridesSchemaReady) return;
-  if (ridesSchemaCheck) {
-    await ridesSchemaCheck;
-    return;
-  }
-  ridesSchemaCheck = (async () => {
-    const { error } = await client
-      .from("rides_trips")
-      .select("creator_user_id, pickup_latitude, pickup_longitude")
-      .limit(1);
-    if (error) {
-      ridesSchemaCheck = null;
-      const reason = `RIDES_TRIPS_SCHEMA_INCOMPLETE: ${error.message ?? error.code ?? "unknown"}`;
-      console.error(reason);
-      throw new Error(reason);
-    }
-    ridesSchemaReady = true;
-  })();
-  await ridesSchemaCheck;
-}
+// Schema check removed for V2 migration
 
 export async function gateProFeature(client: SupabaseClient, userId: string) {
   const { data, error } = await client.rpc("gate_pro_feature", {
@@ -88,8 +65,7 @@ export async function insertTrip(
     recurrence?: RecurrenceType;
   },
 ): Promise<string> {
-  await ensureRidesTripsSchema(client);
-  // For scheduled trips, use longer expiry (7 days) or default 30 minutes
+  // For scheduled trips, use longer expiry (7 days) or default 90 minutes
   const isScheduled = params.scheduledAt !== undefined;
   const expiryMs = isScheduled ? 7 * 24 * 60 * 60 * 1000 : TRIP_EXPIRY_MS;
   const expires = new Date(Date.now() + expiryMs).toISOString();
@@ -100,29 +76,25 @@ export async function insertTrip(
         : params.scheduledAt)
     : null;
 
-  const riderUserId = params.userId;
-  const driverUserId = params.role === "driver" ? params.userId : null;
   const { data, error } = await client
-    .from("rides_trips")
+    .from("mobility_trips") // V2 table
     .insert({
       creator_user_id: params.userId,
-      rider_user_id: riderUserId,
-      driver_user_id: driverUserId,
       role: params.role,
       vehicle_type: params.vehicleType,
-      pickup_latitude: params.lat,
-      pickup_longitude: params.lng,
-      pickup: `SRID=4326;POINT(${params.lng} ${params.lat})`,
-      pickup_radius_m: params.radiusMeters,
+      pickup_lat: params.lat,
+      pickup_lng: params.lng,
       pickup_text: params.pickupText ?? null,
-      status: isScheduled ? "scheduled" : "open",
+      pickup_radius_m: params.radiusMeters,
+      status: isScheduled ? "open" : "open", // Status is 'open' until matched
       expires_at: expires,
-      scheduled_at: scheduledAtStr,
+      scheduled_for: scheduledAtStr,
       recurrence: params.recurrence ?? null,
-      last_location_at: new Date().toISOString(),
+      last_location_update: new Date().toISOString(),
     })
     .select("id")
     .single();
+
   if (error) throw error;
   return data?.id;
 }
@@ -137,7 +109,6 @@ export async function updateTripDropoff(
     radiusMeters?: number;
   },
 ): Promise<void> {
-  await ensureRidesTripsSchema(client);
   const { error } = await client
     .from("mobility_trips") // V2 table
     .update({
@@ -235,4 +206,41 @@ export async function updateTripLocation(
     })
     .eq("id", params.tripId);
   if (error) throw error;
+}
+
+export async function createTripMatch(
+  client: SupabaseClient,
+  params: {
+    driverTripId: string;
+    passengerTripId: string;
+    driverUserId: string;
+    passengerUserId: string;
+    vehicleType: string;
+    pickupLocation: string; // WKT or similar
+    driverPhone: string;
+    passengerPhone: string;
+    estimatedFare?: number;
+    distanceKm?: number;
+  }
+): Promise<string> {
+  const { data, error } = await client
+    .from("mobility_trip_matches")
+    .insert({
+      driver_trip_id: params.driverTripId,
+      passenger_trip_id: params.passengerTripId,
+      driver_user_id: params.driverUserId,
+      passenger_user_id: params.passengerUserId,
+      vehicle_type: params.vehicleType,
+      pickup_location: params.pickupLocation, // Expecting geography string
+      status: "pending",
+      driver_phone: params.driverPhone,
+      passenger_phone: params.passengerPhone,
+      estimated_fare: params.estimatedFare,
+      distance_km: params.distanceKm,
+    })
+    .select("id")
+    .single();
+
+  if (error) throw error;
+  return data.id;
 }

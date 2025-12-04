@@ -97,25 +97,25 @@ COMMENT ON COLUMN trip_status_audit.changed_via IS 'Source of change: user, syst
 -- ============================================================================
 
 -- Payment requests
-CREATE INDEX idx_trip_payment_requests_trip 
+CREATE INDEX IF NOT EXISTS idx_trip_payment_requests_trip 
   ON trip_payment_requests(trip_id);
 
-CREATE INDEX idx_trip_payment_requests_payer 
+CREATE INDEX IF NOT EXISTS idx_trip_payment_requests_payer 
   ON trip_payment_requests(payer_id, created_at DESC);
 
-CREATE INDEX idx_trip_payment_requests_status 
+CREATE INDEX IF NOT EXISTS idx_trip_payment_requests_status 
   ON trip_payment_requests(status, created_at DESC)
   WHERE status IN ('pending', 'failed');
 
-CREATE INDEX idx_trip_payment_requests_reference 
+CREATE INDEX IF NOT EXISTS idx_trip_payment_requests_reference 
   ON trip_payment_requests(reference_id)
   WHERE reference_id IS NOT NULL;
 
 -- Audit trail
-CREATE INDEX idx_trip_status_audit_trip 
+CREATE INDEX IF NOT EXISTS idx_trip_status_audit_trip 
   ON trip_status_audit(trip_id, changed_at DESC);
 
-CREATE INDEX idx_trip_status_audit_changed_by 
+CREATE INDEX IF NOT EXISTS idx_trip_status_audit_changed_by 
   ON trip_status_audit(changed_by, changed_at DESC)
   WHERE changed_by IS NOT NULL;
 
@@ -132,6 +132,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_trip_payment_requests_updated_at ON trip_payment_requests;
 CREATE TRIGGER trg_trip_payment_requests_updated_at
   BEFORE UPDATE ON trip_payment_requests
   FOR EACH ROW
@@ -163,6 +164,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_log_trip_status_change ON mobility_trip_matches;
 CREATE TRIGGER trg_log_trip_status_change
   AFTER UPDATE ON mobility_trip_matches
   FOR EACH ROW
@@ -176,11 +178,13 @@ ALTER TABLE trip_payment_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE trip_status_audit ENABLE ROW LEVEL SECURITY;
 
 -- Payment requests: Users can view their own
+DROP POLICY IF EXISTS "Users view own payment requests" ON trip_payment_requests;
 CREATE POLICY "Users view own payment requests" 
   ON trip_payment_requests
   FOR SELECT 
   USING (auth.uid() = payer_id);
 
+DROP POLICY IF EXISTS "Service role full access payment requests" ON trip_payment_requests;
 CREATE POLICY "Service role full access payment requests" 
   ON trip_payment_requests
   FOR ALL 
@@ -188,6 +192,7 @@ CREATE POLICY "Service role full access payment requests"
   USING (true);
 
 -- Audit trail: Users can view audits for their trips
+DROP POLICY IF EXISTS "Users view own trip audits" ON trip_status_audit;
 CREATE POLICY "Users view own trip audits" 
   ON trip_status_audit
   FOR SELECT 
@@ -199,6 +204,7 @@ CREATE POLICY "Users view own trip audits"
     )
   );
 
+DROP POLICY IF EXISTS "Service role full access trip audits" ON trip_status_audit;
 CREATE POLICY "Service role full access trip audits" 
   ON trip_status_audit
   FOR ALL 
