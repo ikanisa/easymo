@@ -13,6 +13,8 @@ import { sendText, sendImageUrl } from "../wa/client.ts";
 import { buildButtons, sendButtonsMessage } from "../utils/reply.ts";
 import { setState, clearState } from "../state/store.ts";
 import { IDS } from "../wa/ids.ts";
+import { t } from "../i18n/translator.ts";
+import { fmtCurrency } from "../utils/text.ts";
 
 // ============================================================================
 // TYPES
@@ -108,13 +110,16 @@ export async function initiateTripPayment(
     // Send payment instructions
     const roleName = payment.role === "passenger" ? "passenger" : "driver";
     const otherRole = payment.role === "passenger" ? "driver" : "passenger";
+    const formattedAmount = fmtCurrency(payment.amount, DEFAULT_CURRENCY);
 
-    const message = 
-      `💰 *Trip Payment - RWF ${payment.amount.toLocaleString()}*\n\n` +
-      `As the ${roleName}, please pay the ${otherRole} using MTN Mobile Money:\n\n` +
-      `📱 *Dial this USSD code:*\n${ussdStandard}\n\n` +
-      `Or tap the button below to dial automatically.\n\n` +
-      `✅ After payment, tap "Paid" to confirm.`;
+    const title = t(ctx.locale, "payment.init.title", { amount: formattedAmount });
+    const instructions = t(ctx.locale, "payment.init.instructions", {
+      role: roleName,
+      otherRole: otherRole,
+      ussd: ussdStandard,
+    });
+
+    const message = `${title}\n\n${instructions}`;
 
     // Send QR code first
     try {
@@ -132,8 +137,8 @@ export async function initiateTripPayment(
       ctx,
       message,
       buildButtons(
-        { id: IDS.TRIP_PAYMENT_PAID, title: "✅ Paid" },
-        { id: IDS.TRIP_PAYMENT_SKIP, title: "Skip for now" }
+        { id: IDS.TRIP_PAYMENT_PAID, title: t(ctx.locale, "payment.init.button_paid") },
+        { id: IDS.TRIP_PAYMENT_SKIP, title: t(ctx.locale, "payment.init.button_skip") }
       )
     );
 
@@ -208,10 +213,7 @@ export async function handlePaymentConfirmation(
 
     await sendText(
       ctx.from,
-      `✅ Great! To complete the payment record:\n\n` +
-      `Please send the MTN MoMo transaction reference number (SMS confirmation code).\n\n` +
-      `Example: MP123456789\n\n` +
-      `Or type "SKIP" if you'll verify later.`
+      t(ctx.locale, "payment.confirm.prompt")
     );
 
     return true;
@@ -235,63 +237,38 @@ export async function processTransactionReference(
     if (!ctx.profileId || !state.data) return false;
 
     const payment = state.data;
+    let cleanRef = reference.trim().toUpperCase().replace(/\s/g, "");
 
-    // Validate reference format (MTN MoMo typically: MP + digits)
-    const cleanRef = reference.trim().toUpperCase();
+    // Handle SKIP
+    if (cleanRef === "SKIP") {
+      return await finalizePayment(ctx, payment, "skipped");
+    }
+
+    // Smart Validation: Auto-prepend MP if missing
+    if (/^\d{9,12}$/.test(cleanRef)) {
+      cleanRef = `MP${cleanRef}`;
+    }
+
+    // Validate format (MP + 9-12 digits)
     const isValid = /^MP\d{9,12}$/.test(cleanRef);
 
-    if (!isValid && cleanRef !== "SKIP") {
-      await sendText(
-        ctx.from,
-        `⚠️ Invalid transaction reference format.\n\n` +
-        `Expected format: MP123456789\n\n` +
-        `Please try again or type SKIP.`
-      );
-      return true; // Keep state active
+    if (!isValid) {
+      // Provide specific error feedback
+      let errorMsg = t(ctx.locale, "payment.error.invalid_ref");
+      
+      if (cleanRef.length < 11) { // MP + 9 digits = 11 chars min
+        errorMsg = t(ctx.locale, "payment.error.ref_too_short");
+      } else if (cleanRef.length > 14) { // MP + 12 digits = 14 chars max
+        errorMsg = t(ctx.locale, "payment.error.ref_too_long");
+      }
+
+      await sendText(ctx.from, errorMsg);
+      return true; // Keep state active for retry
     }
 
-    // Update trip payment status
-    const { error: updateError } = await ctx.supabase
-      .from("mobility_trip_matches") // V2 table
-      .update({
-        payment_status: cleanRef === "SKIP" ? "pending_verification" : "paid",
-        payment_reference: cleanRef === "SKIP" ? null : cleanRef,
-        payment_confirmed_at: cleanRef === "SKIP" ? null : new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", payment.tripId);
+    // Success!
+    return await finalizePayment(ctx, payment, "paid", cleanRef);
 
-    if (updateError) {
-      throw updateError;
-    }
-
-    // Clear state
-    await clearState(ctx.supabase, ctx.profileId);
-
-    // Send confirmation
-    if (cleanRef === "SKIP") {
-      await sendText(
-        ctx.from,
-        `⏳ Payment marked for later verification.\n\n` +
-        `You can submit the transaction reference anytime by contacting support.`
-      );
-    } else {
-      await sendText(
-        ctx.from,
-        `✅ Payment recorded!\n\n` +
-        `Reference: ${cleanRef}\n` +
-        `Amount: RWF ${payment.amount.toLocaleString()}\n\n` +
-        `Thank you for using easyMO! 🚗`
-      );
-    }
-
-    await logStructuredEvent("TRIP_PAYMENT_RECORDED", {
-      tripId: payment.tripId,
-      reference: cleanRef,
-      amount: payment.amount,
-    });
-
-    return true;
   } catch (error) {
     await logStructuredEvent("TRIP_PAYMENT_PROCESS_ERROR", {
       error: error instanceof Error ? error.message : String(error),
@@ -306,47 +283,88 @@ export async function processTransactionReference(
 }
 
 /**
+ * Finalizes payment state and updates database
+ */
+async function finalizePayment(
+  ctx: RouterContext,
+  payment: PaymentState,
+  status: "paid" | "skipped",
+  reference?: string
+): Promise<boolean> {
+  // Update trip payment status
+  const { error: updateError } = await ctx.supabase
+    .from("mobility_trip_matches") // V2 table
+    .update({
+      payment_status: status === "skipped" ? "pending_verification" : "paid",
+      payment_reference: reference || null,
+      payment_confirmed_at: status === "paid" ? new Date().toISOString() : null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", payment.tripId);
+
+  if (updateError) throw updateError;
+
+  // Clear state
+  await clearState(ctx.supabase, ctx.profileId);
+
+  // Send confirmation
+  if (status === "skipped") {
+    await sendText(ctx.from, t(ctx.locale, "payment.confirm.skipped"));
+    await logStructuredEvent("TRIP_PAYMENT_SKIPPED", { tripId: payment.tripId });
+  } else {
+    const formattedAmount = fmtCurrency(payment.amount, DEFAULT_CURRENCY);
+    await sendText(
+      ctx.from,
+      t(ctx.locale, "payment.confirm.success", {
+        ref: reference,
+        amount: formattedAmount
+      })
+    );
+    await logStructuredEvent("TRIP_PAYMENT_RECORDED", {
+      tripId: payment.tripId,
+      reference,
+      amount: payment.amount,
+    });
+  }
+
+  return true;
+}
+
+/**
+ * Checks for pending payments for a user
+ * Returns the amount pending if any, or null
+ */
+export async function checkPendingPayments(
+  ctx: RouterContext
+): Promise<{ amount: number; tripId: string } | null> {
+  if (!ctx.profileId) return null;
+
+  const { data, error } = await ctx.supabase
+    .from("mobility_trip_matches")
+    .select("id, actual_fare, fare_estimate")
+    .eq("passenger_id", ctx.profileId)
+    .eq("payment_status", "pending_verification")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error || !data) return null;
+
+  const amount = data.actual_fare || data.fare_estimate || 0;
+  if (amount <= 0) return null;
+
+  return { amount, tripId: data.id };
+}
+
+/**
  * Handles skip payment action
  */
 export async function handleSkipPayment(
   ctx: RouterContext,
   state: { data?: PaymentState }
 ): Promise<boolean> {
-  try {
-    if (!ctx.profileId || !state.data) return false;
-
-    const payment = state.data;
-
-    // Update trip to mark payment as pending
-    await ctx.supabase
-      .from("mobility_trip_matches") // V2 table
-      .update({
-        payment_status: "skipped",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", payment.tripId);
-
-    // Clear state
-    await clearState(ctx.supabase, ctx.profileId);
-
-    await sendText(
-      ctx.from,
-      `⏭️ Payment skipped.\n\n` +
-      `You can complete payment later through the trip history.\n\n` +
-      `Safe travels! 🚗`
-    );
-
-    await logStructuredEvent("TRIP_PAYMENT_SKIPPED", {
-      tripId: payment.tripId,
-    });
-
-    return true;
-  } catch (error) {
-    await logStructuredEvent("TRIP_PAYMENT_SKIP_ERROR", {
-      error: error instanceof Error ? error.message : String(error),
-    }, "error");
-    return false;
-  }
+  if (!state.data) return false;
+  return await finalizePayment(ctx, state.data, "skipped");
 }
 
 // ============================================================================

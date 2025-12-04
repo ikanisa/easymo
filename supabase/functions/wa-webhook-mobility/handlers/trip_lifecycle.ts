@@ -291,11 +291,17 @@ export async function handleTripPickedUp(
         }, "error");
         return false;
       }
-
-    if (updateError || !trip) {
       await logStructuredEvent("TRIP_PICKUP_FAILED", { 
         tripId, 
-        error: updateError?.message 
+        error: updateError.message 
+      }, "error");
+      return false;
+    }
+
+    if (!trip) {
+      await logStructuredEvent("TRIP_PICKUP_FAILED", { 
+        tripId, 
+        reason: "trip_not_found"
       }, "error");
       return false;
     }

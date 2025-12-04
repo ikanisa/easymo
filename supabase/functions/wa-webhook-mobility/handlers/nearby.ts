@@ -215,8 +215,23 @@ function buildNearbyRow(
   };
 }
 
+import { checkPendingPayments } from "./trip_payment.ts";
+import { fmtCurrency } from "../utils/text.ts";
+
 export async function handleSeeDrivers(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
+
+  // 0. Check for pending payments
+  const pending = await checkPendingPayments(ctx);
+  if (pending) {
+    const formattedAmount = fmtCurrency(pending.amount, "RWF");
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "payment.reminder.pending", { amount: formattedAmount }),
+      homeOnly()
+    );
+    return true;
+  }
   
   // 1. Check for cached location (30 min window)
   const last = await readLastLocation(ctx);
@@ -444,60 +459,9 @@ export async function handleNearbyLocation(
     console.error("mobility.nearby_cache_write_fail", error);
   }
 
-  /* AI AGENT DISABLED FOR PHASE 1 - Direct database matching only
-     AI agents will be enabled in Phase 2 for enhanced driver/passenger matching
-  
-  if (
-    state.mode === "drivers" &&
-    dropoff &&
-    isFeatureEnabled("agent.nearby_drivers")
-  ) {
-    await sendText(ctx.from, t(ctx.locale, "mobility.nearby.agent_search"));
-    try {
-      const agentResponse = await routeToAIAgent(ctx, {
-        userId: ctx.from,
-        agentType: "nearby_drivers",
-        flowType: "find_driver",
-        requestData: {
-          pickup: { latitude: pickup.lat, longitude: pickup.lng },
-          dropoff: { latitude: dropoff.lat, longitude: dropoff.lng },
-          vehicleType: state.vehicle,
-          maxPrice: null,
-        },
-      });
-
-      if (agentResponse.success && agentResponse.options) {
-        await sendAgentOptions(
-          ctx,
-          agentResponse.sessionId,
-          agentResponse.options,
-          t(ctx.locale, "mobility.nearby.agent_results"),
-        );
-
-        await setState(ctx.supabase, ctx.profileId, {
-          key: "ai_agent_selection",
-          data: {
-            sessionId: agentResponse.sessionId,
-            agentType: "nearby_drivers",
-          },
-        });
-        return true;
-      }
-
-      await sendText(
-        ctx.from,
-        agentResponse.message ??
-          t(ctx.locale, "mobility.nearby.agent_empty"),
-      );
-    } catch (error) {
-      console.error("mobility.nearby_agent_fail", error);
-      await sendText(ctx.from, t(ctx.locale, "mobility.nearby.agent_error"));
-    }
-  }
-  */
-
   // DIRECT DATABASE MATCHING: Simple workflow for Phase 1
   // User shares location → Instant database query → Top 9 results
+  // Note: AI agent integration planned for Phase 2
   return await runMatchingFallback(ctx, updatedState, pickup);
 }
 

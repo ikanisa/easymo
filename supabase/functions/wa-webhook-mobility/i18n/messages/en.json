@@ -1084,4 +1084,16 @@
   "farmer.demand.prompt": "📝 Tell me what produce you're looking for:\n• Crop type\n• Quantity needed\n• Delivery location\n• Quality requirements\n\nExample: \"100kg beans, Kigali delivery\"\n\nType 0 to return home.",
   "farmer.continue": "💬 Continue Chat",
   "common.back": "⬅️ Back"
+  "payment.init.title": "💰 *Trip Payment - {{amount}}*",
+  "payment.init.instructions": "As the {{role}}, please pay the {{otherRole}} using MTN Mobile Money:\n\n1️⃣ *Dial:* `{{ussd}}`\n2️⃣ *Approve:* Enter your PIN\n3️⃣ *Confirm:* Tap \"Paid\" below",
+  "payment.init.button_dial": "Dial Code",
+  "payment.init.button_paid": "✅ I have paid",
+  "payment.init.button_skip": "Skip for now",
+  "payment.confirm.prompt": "✅ Payment initiated!\n\nPlease enter the **Transaction Reference** from the SMS you received (e.g., `MP123456789`).\n\nOr type \"SKIP\" to verify later.",
+  "payment.confirm.success": "✅ *Payment Verified!*\n\nReference: `{{ref}}`\nAmount: {{amount}}\n\nThank you for using easyMO! 🚗",
+  "payment.confirm.skipped": "⏳ *Payment Pending*\n\nPlease verify this payment later from your Trip History.",
+  "payment.error.invalid_ref": "⚠️ *Invalid Reference*\n\nExpected format: `MP` followed by 9-12 digits (e.g., `MP123456789`).\n\nTip: You can enter just the numbers if you prefer.",
+  "payment.error.ref_too_short": "⚠️ Reference too short. Check the SMS from MTN.",
+  "payment.error.ref_too_long": "⚠️ Reference too long. Check the SMS from MTN.",
+  "payment.reminder.pending": "⚠️ *Pending Payment*\n\nYou have a pending payment of {{amount}} for your last trip.\n\nPlease verify it now to continue."
 }
