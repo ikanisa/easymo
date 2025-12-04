@@ -10,12 +10,30 @@ export async function listMyVehicles(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
 
-  // Query insurance_profiles which contains vehicle_metadata
-  const { data: vehicleProfiles, error } = await ctx.supabase
-    .from("insurance_profiles")
-    .select("id, vehicle_identifier, vehicle_metadata, created_at")
+  // Query vehicles through vehicle_ownerships
+  const { data: ownerships, error } = await ctx.supabase
+    .from("vehicle_ownerships")
+    .select(`
+      id,
+      vehicle_id,
+      created_at,
+      vehicles:vehicle_id (
+        id,
+        registration_plate,
+        make,
+        model,
+        vehicle_year,
+        vehicle_type,
+        status
+      ),
+      driver_insurance_certificates:insurance_certificate_id (
+        policy_expiry,
+        insurer_name,
+        status
+      )
+    `)
     .eq("user_id", ctx.profileId)
-    .not("vehicle_identifier", "is", null)
+    .eq("is_current", true)
     .order("created_at", { ascending: false })
     .limit(20);
 
@@ -29,40 +47,52 @@ export async function listMyVehicles(
     return true;
   }
 
-  if (!vehicleProfiles || vehicleProfiles.length === 0) {
+  if (!ownerships || ownerships.length === 0) {
     await sendButtonsMessage(
       ctx,
-      "🚗 *You don't have any registered vehicles yet.*\n\nTap below to chat with our Insurance AI Agent who will help you register your vehicle through a simple conversation.",
+      "🚗 *You don't have any registered vehicles yet.*\n\n" +
+      "To add a vehicle, simply send us a photo or PDF of your valid insurance certificate (Yellow Card).\n\n" +
+      "We'll automatically extract the vehicle details and register it for you!",
       [
-        { id: IDS.INSURANCE_AGENT, title: "💬 Chat with Insurance Agent" },
+        { id: "ADD_VEHICLE", title: "➕ Add Vehicle" },
         { id: IDS.BACK_PROFILE, title: "← Back" },
       ],
     );
     return true;
   }
 
-  const rows = vehicleProfiles.map((v) => {
-    const metadata = v.vehicle_metadata as any;
-    const make = metadata?.make || metadata?.brand || "Unknown";
-    const model = metadata?.model || "";
-    const year = metadata?.year || "";
-    const plate = v.vehicle_identifier || "No plate";
-    
-    const title = `${make} ${model} ${year}`.trim() || "Vehicle";
-    const description = `Plate: ${plate}`;
+  const rows = ownerships
+    .map((ownership: any) => {
+      const vehicle = ownership.vehicles;
+      const cert = ownership.driver_insurance_certificates;
+      
+      if (!vehicle) return null;
+      
+      const make = vehicle.make || "Unknown";
+      const model = vehicle.model || "";
+      const year = vehicle.vehicle_year || "";
+      const plate = vehicle.registration_plate || "No plate";
+      
+      const title = `${plate}`;
+      const description = `${make} ${model} ${year}`.trim() || "Vehicle";
+      
+      // Check if insurance is expired
+      const isExpired = cert?.policy_expiry && new Date(cert.policy_expiry) < new Date();
+      const statusEmoji = isExpired ? "⚠️" : cert?.status === "approved" ? "✅" : "🕐";
 
-    return {
-      id: `VEHICLE::${v.id}`,
-      title,
-      description,
-    };
-  });
+      return {
+        id: `VEHICLE::${vehicle.id}`,
+        title: `${statusEmoji} ${title}`,
+        description,
+      };
+    })
+    .filter((row): row is { id: string; title: string; description: string } => row !== null);
 
   rows.push(
     {
-      id: IDS.INSURANCE_AGENT,
-      title: "💬 Add via AI Agent",
-      description: "Chat with AI to register new vehicle",
+      id: "ADD_VEHICLE",
+      title: "➕ Add New Vehicle",
+      description: "Upload insurance certificate",
     },
     {
       id: IDS.BACK_PROFILE,
@@ -75,7 +105,7 @@ export async function listMyVehicles(
     ctx,
     {
       title: "🚗 My Vehicles",
-      body: `You have ${vehicleProfiles.length} registered vehicle${vehicleProfiles.length === 1 ? "" : "s"}`,
+      body: `You have ${ownerships.length} registered vehicle${ownerships.length === 1 ? "" : "s"}`,
       sectionTitle: "Vehicles",
       buttonText: "View",
       rows,
@@ -92,14 +122,38 @@ export async function handleVehicleSelection(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
 
-  const { data: vehicle, error } = await ctx.supabase
-    .from("insurance_profiles")
-    .select("*")
-    .eq("id", vehicleId)
+  const { data: ownership, error } = await ctx.supabase
+    .from("vehicle_ownerships")
+    .select(`
+      id,
+      vehicle_id,
+      created_at,
+      vehicles:vehicle_id (
+        id,
+        registration_plate,
+        make,
+        model,
+        vehicle_year,
+        vin_chassis,
+        color,
+        vehicle_type,
+        status
+      ),
+      driver_insurance_certificates:insurance_certificate_id (
+        id,
+        policy_number,
+        policy_expiry,
+        insurer_name,
+        status,
+        media_url
+      )
+    `)
     .eq("user_id", ctx.profileId)
-    .single();
+    .eq("vehicle_id", vehicleId)
+    .eq("is_current", true)
+    .maybeSingle();
 
-  if (error || !vehicle) {
+  if (error || !ownership) {
     await sendButtonsMessage(
       ctx,
       "⚠️ Vehicle not found or you don't have permission to view it.",
@@ -108,21 +162,60 @@ export async function handleVehicleSelection(
     return true;
   }
 
-  const metadata = (vehicle.vehicle_metadata as any) || {};
-  const plate = vehicle.vehicle_identifier || "No plate";
+  const vehicle = ownership.vehicles as any;
+  const cert = ownership.driver_insurance_certificates as any;
+  const plate = vehicle.registration_plate || "No plate";
+  
+  // Check insurance expiry
+  const isExpired = cert?.policy_expiry && new Date(cert.policy_expiry) < new Date();
+  const daysUntilExpiry = cert?.policy_expiry 
+    ? Math.ceil((new Date(cert.policy_expiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : null;
+  
+  const insuranceStatus = isExpired 
+    ? "⚠️ *EXPIRED*" 
+    : daysUntilExpiry && daysUntilExpiry <= 7
+    ? `⚠️ Expiring in ${daysUntilExpiry} days`
+    : cert?.status === "approved"
+    ? "✅ Active"
+    : "🕐 Pending";
   
   const details = [
-    `*Vehicle Details*`,
-    `Plate Number: ${plate}`,
-    metadata.make ? `Make: ${metadata.make || metadata.brand}` : null,
-    metadata.model ? `Model: ${metadata.model}` : null,
-    metadata.year ? `Year: ${metadata.year}` : null,
-    metadata.color ? `Color: ${metadata.color}` : null,
-    metadata.vin ? `VIN: ${metadata.vin}` : null,
-    vehicle.status ? `\nInsurance Status: ${vehicle.status}` : null,
+    `🚗 *Vehicle Details*`,
+    ``,
+    `📋 *Plate:* ${plate}`,
+    vehicle.make ? `🏢 *Make:* ${vehicle.make}` : null,
+    vehicle.model ? `🚙 *Model:* ${vehicle.model}` : null,
+    vehicle.vehicle_year ? `📅 *Year:* ${vehicle.vehicle_year}` : null,
+    vehicle.color ? `🎨 *Color:* ${vehicle.color}` : null,
+    vehicle.vin_chassis ? `🔢 *VIN:* ${vehicle.vin_chassis}` : null,
+    ``,
+    `🛡️ *Insurance*`,
+    `Status: ${insuranceStatus}`,
+    cert?.insurer_name ? `Company: ${cert.insurer_name}` : null,
+    cert?.policy_number ? `Policy: ${cert.policy_number}` : null,
+    cert?.policy_expiry ? `Expires: ${new Date(cert.policy_expiry).toLocaleDateString()}` : null,
   ]
     .filter(Boolean)
     .join("\n");
+
+  const actions = [];
+  
+  if (isExpired || (daysUntilExpiry && daysUntilExpiry <= 30)) {
+    actions.push({
+      id: `RENEW_INSURANCE::${vehicleId}`,
+      title: "🔄 Renew Insurance",
+      description: "Upload new insurance certificate",
+    });
+  }
+  
+  actions.push(
+    {
+      id: IDS.MY_VEHICLES,
+      title: "← Back",
+      description: "Return to vehicles list",
+    },
+  );
 
   await sendListMessage(
     ctx,
@@ -131,23 +224,7 @@ export async function handleVehicleSelection(
       body: details,
       sectionTitle: "Actions",
       buttonText: "Choose",
-      rows: [
-        {
-          id: `VIEW_VEHICLE_INSURANCE::${vehicleId}`,
-          title: "🛡️ View Insurance",
-          description: "Check insurance details",
-        },
-        {
-          id: IDS.INSURANCE_AGENT,
-          title: "💬 Update via AI",
-          description: "Chat with AI to update vehicle info",
-        },
-        {
-          id: IDS.MY_VEHICLES,
-          title: "← Back",
-          description: "Return to vehicles list",
-        },
-      ],
+      rows: actions,
     },
     { emoji: "🚗" },
   );

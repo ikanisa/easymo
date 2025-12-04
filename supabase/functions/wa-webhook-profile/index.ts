@@ -361,10 +361,20 @@ serve(async (req: Request): Promise<Response> => {
           const { listMyVehicles } = await import("./vehicles/list.ts");
           handled = await listMyVehicles(ctx);
         }
+        else if (id === "ADD_VEHICLE" || id === "add_vehicle") {
+          const { startAddVehicle } = await import("./vehicles/add.ts");
+          handled = await startAddVehicle(ctx);
+        }
         else if (id.startsWith("VEHICLE::")) {
           const vehicleId = id.replace("VEHICLE::", "");
           const { handleVehicleSelection } = await import("./vehicles/list.ts");
           handled = await handleVehicleSelection(ctx, vehicleId);
+        }
+        else if (id.startsWith("RENEW_INSURANCE::")) {
+          const vehicleId = id.replace("RENEW_INSURANCE::", "");
+          const { startAddVehicle } = await import("./vehicles/add.ts");
+          // Reuse add vehicle flow for renewal (it will update existing vehicle)
+          handled = await startAddVehicle(ctx);
         }
         
         // Saved Locations
@@ -970,6 +980,12 @@ serve(async (req: Request): Promise<Response> => {
           handled = true;
         }
       }
+    }
+    
+    // Handle vehicle insurance document upload
+    else if ((message.type === "image" || message.type === "document") && state?.key === "vehicle_add_insurance") {
+      const { handleVehicleInsuranceUpload } = await import("./vehicles/add.ts");
+      handled = await handleVehicleInsuranceUpload(ctx, message);
     }
     
     // Handle location messages (when user shares location)
