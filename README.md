@@ -1,14 +1,6 @@
 
 ## Supported Countries
 
-**IMPORTANT**: EasyMO operates in exactly **4 countries**. Do **NOT** use any other country codes.
-
-### ✅ Supported Countries
-- 🇷🇼 **RW** - Rwanda (Primary market, default)
-- 🇨🇩 **CD** - Democratic Republic of Congo
-- 🇧🇮 **BI** - Burundi  
-- 🇹🇿 **TZ** - Tanzania
-
 ### ❌ NOT Supported (DO NOT USE)
 - ~~KE~~ (Kenya) - Removed 2025-11-27
 - ~~UG~~ (Uganda) - Removed 2025-11-27
