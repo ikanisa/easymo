@@ -24,25 +24,64 @@ import {
 import { AgentConfigLoader, type AgentConfig } from "../../_shared/agent-config-loader.ts";
 import { ToolExecutor } from "../../_shared/tool-executor.ts";
 
+// Re-export types from wa-webhook-ai-agents for backward compatibility
+// These are used by some agents that haven't been fully migrated
+export interface Session {
+  id: string;
+  phone: string;
+  context: Record<string, unknown>;
+  currentAgent?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface AgentProcessParams {
+  message: string;
+  session: Session;
+  supabase: SupabaseClient;
+}
+
+// Re-export AgentResponse for backwards compatibility
+export type { AgentResponse };
+
 export abstract class BaseAgent {
-  protected supabase: SupabaseClient;
-  protected genAI: GoogleGenerativeAI;
-  protected correlationId: string;
-  protected configLoader: AgentConfigLoader;
-  protected toolExecutor: ToolExecutor;
+  protected supabase!: SupabaseClient;
+  protected genAI!: GoogleGenerativeAI;
+  protected correlationId: string = '';
+  protected configLoader!: AgentConfigLoader;
+  protected toolExecutor!: ToolExecutor;
   protected cachedConfig: AgentConfig | null = null;
 
-  constructor(deps: AgentDependencies) {
+  /**
+   * Constructor supports both patterns:
+   * 1. New pattern: constructor(deps: AgentDependencies)
+   * 2. Legacy pattern: constructor() - initialize() must be called later
+   */
+  constructor(deps?: AgentDependencies) {
+    if (deps) {
+      this.initialize(deps);
+    }
+    // If no deps provided, the agent must call initialize() manually
+    // or use the legacy pattern where supabase is passed per-request
+  }
+
+  /**
+   * Initialize the agent with dependencies
+   * Called automatically if deps are passed to constructor
+   * Must be called manually for legacy agents that use constructor()
+   */
+  protected initialize(deps: AgentDependencies): void {
     this.supabase = deps.supabase;
     this.correlationId = deps.correlationId;
     this.configLoader = new AgentConfigLoader(deps.supabase);
     this.toolExecutor = new ToolExecutor(deps.supabase);
     
     const apiKey = Deno.env.get("GEMINI_API_KEY");
-    if (!apiKey) {
-      throw new Error("GEMINI_API_KEY not configured");
+    if (apiKey) {
+      this.genAI = new GoogleGenerativeAI(apiKey);
     }
-    this.genAI = new GoogleGenerativeAI(apiKey);
+    // Note: genAI may be undefined if GEMINI_API_KEY is not set
+    // Legacy agents use their own GeminiProvider
   }
 
   // Abstract methods each agent must implement
@@ -319,5 +358,117 @@ export abstract class BaseAgent {
       text,
       interactiveButtons: buttons,
     };
+  }
+
+  // =========================================================================
+  // LEGACY SUPPORT METHODS
+  // These methods support agents that haven't been fully migrated to the
+  // new unified pattern. They bridge between the old AgentProcessParams
+  // pattern and the new WhatsAppMessage/UnifiedSession pattern.
+  // =========================================================================
+
+  /**
+   * Build conversation history from legacy Session (for backward compatibility)
+   * @deprecated Use buildHistory with UnifiedSession instead
+   */
+  protected buildConversationHistoryAsync(
+    session: Session,
+    supabase: SupabaseClient
+  ): Promise<Array<{ role: 'user' | 'assistant' | 'system'; content: string }>> {
+    const history: Array<{ role: 'user' | 'assistant' | 'system'; content: string }> = [];
+    
+    // Add system prompt
+    history.push({
+      role: 'system',
+      content: this.systemPrompt,
+    });
+
+    // Add context if exists
+    if (session.context && Object.keys(session.context).length > 0) {
+      history.push({
+        role: 'system',
+        content: `Current context: ${JSON.stringify(session.context, null, 2)}`,
+      });
+    }
+
+    // Add conversation history if stored in context
+    if (session.context?.conversationHistory) {
+      const pastMessages = session.context.conversationHistory as Array<{ role: 'user' | 'assistant' | 'system'; content: string }>;
+      history.push(...pastMessages);
+    }
+
+    return Promise.resolve(history);
+  }
+
+  /**
+   * Update conversation history in session (for backward compatibility)
+   * @deprecated Use unified session management instead
+   */
+  protected async updateConversationHistory(
+    session: Session,
+    userMessage: string,
+    agentResponse: string,
+    supabase: SupabaseClient
+  ): Promise<void> {
+    const history = (session.context?.conversationHistory || []) as Array<{ role: 'user' | 'assistant'; content: string }>;
+    
+    // Add user message
+    history.push({
+      role: 'user',
+      content: userMessage,
+    });
+
+    // Add agent response
+    history.push({
+      role: 'assistant',
+      content: agentResponse,
+    });
+
+    // Keep only last 10 messages
+    const trimmedHistory = history.slice(-10);
+
+    // Update session context
+    await supabase
+      .from('ai_agent_sessions')
+      .update({
+        context: {
+          ...session.context,
+          conversationHistory: trimmedHistory,
+        },
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', session.id);
+  }
+
+  /**
+   * Log agent interaction (for backward compatibility)
+   * @deprecated Use unified logging instead
+   */
+  protected async logInteraction(
+    session: Session,
+    userMessage: string,
+    agentResponse: string,
+    supabase: SupabaseClient,
+    metadata?: Record<string, unknown>
+  ): Promise<void> {
+    await supabase.from('ai_agent_interactions').insert({
+      session_id: session.id,
+      agent_type: this.type,
+      user_message: userMessage,
+      agent_response: agentResponse,
+      metadata: {
+        ...metadata,
+        configSource: this.cachedConfig?.loadedFrom || 'not_loaded',
+      },
+      created_at: new Date().toISOString(),
+    });
+  }
+
+  /**
+   * Get default system prompt (for backward compatibility)
+   * @deprecated Use systemPrompt getter instead
+   */
+  getDefaultSystemPrompt(): string {
+    return this.systemPrompt;
   }
 }
