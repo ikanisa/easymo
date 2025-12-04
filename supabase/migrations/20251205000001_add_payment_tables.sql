@@ -124,6 +124,14 @@ CREATE INDEX idx_trip_status_audit_changed_by
 -- ============================================================================
 
 -- Auto-update updated_at on payment requests
+CREATE OR REPLACE FUNCTION mobility_update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TRIGGER trg_trip_payment_requests_updated_at
   BEFORE UPDATE ON trip_payment_requests
   FOR EACH ROW

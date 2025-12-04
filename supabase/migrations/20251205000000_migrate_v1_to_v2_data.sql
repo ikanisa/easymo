@@ -70,7 +70,8 @@ WHERE NOT EXISTS (
 
 -- Insert matches from mobility_matches to mobility_trip_matches
 -- Note: V1 schema is missing many columns, so we'll use defaults
-INSERT INTO mobility_trip_matches (\n  id,
+INSERT INTO mobility_trip_matches (
+  id,
   driver_trip_id,
   passenger_trip_id,
   driver_user_id,
@@ -117,8 +118,8 @@ SELECT
   'RWF', -- V1 doesn't have currency column
   mm.distance_km,
   mm.duration_minutes,
-  dp.whatsapp_number, -- Get from profiles
-  pp.whatsapp_number, -- Get from profiles
+  dp.phone_number, -- Get from profiles
+  pp.phone_number, -- Get from profiles
   mm.created_at,
   mm.updated_at,
   mm.started_at,

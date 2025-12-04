@@ -1,0 +1,32 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'matching-service'
+    static_configs:
+      - targets: ['matching-service:4700']
+    metrics_path: '/metrics'
+
+  - job_name: 'ranking-service'
+    static_configs:
+      - targets: ['ranking-service:4500']
+    metrics_path: '/metrics'
+
+  - job_name: 'orchestrator'
+    static_configs:
+      - targets: ['orchestrator:4600']
+    metrics_path: '/metrics'
+
+  - job_name: 'tracking-service'
+    static_configs:
+      - targets: ['tracking-service:4800']
+    metrics_path: '/metrics'
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']

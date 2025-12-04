@@ -70,15 +70,16 @@ CREATE INDEX IF NOT EXISTS idx_mobility_trips_user_status
   WHERE status IN ('open', 'matched');
 
 -- For spatial queries with vehicle type filter
+-- Note: GIST indexes don't support INCLUDE clause
 CREATE INDEX IF NOT EXISTS idx_mobility_trips_vehicle_geog
   ON mobility_trips USING GIST(pickup_geog)
-  WHERE status = 'open'
-  INCLUDE (vehicle_type, role);
+  WHERE status = 'open';
 
 -- For scheduled trips cron job
+-- Note: Cannot use now() in index predicate (not IMMUTABLE)
 CREATE INDEX IF NOT EXISTS idx_mobility_trips_scheduled_pending
   ON mobility_trips(scheduled_for)
-  WHERE status = 'open' AND scheduled_for IS NOT NULL AND scheduled_for <= now();
+  WHERE status = 'open' AND scheduled_for IS NOT NULL;
 
 -- ============================================================================
 -- 4. ADD INDEXES ON METRICS TABLES
@@ -90,9 +91,9 @@ CREATE INDEX IF NOT EXISTS idx_mobility_driver_metrics_leaderboard
   WHERE total_trips >= 5 AND avg_rating >= 3.0;
 
 -- For recent activity queries
+-- Note: Cannot use now() in index predicate (not IMMUTABLE)
 CREATE INDEX IF NOT EXISTS idx_mobility_driver_metrics_recent
-  ON mobility_driver_metrics(last_online_at DESC NULLS LAST)
-  WHERE last_online_at > now() - interval '7 days';
+  ON mobility_driver_metrics(last_online_at DESC NULLS LAST);
 
 -- ============================================================================
 -- 5. VERIFICATION
