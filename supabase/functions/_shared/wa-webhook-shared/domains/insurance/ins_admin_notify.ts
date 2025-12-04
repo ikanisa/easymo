@@ -83,123 +83,38 @@ export async function notifyInsuranceAdmins(
   }
 
   const message = formatAdminNotificationMessage(extracted, userWaId);
-  const errors: string[] = [];
+  
+  console.log("insurance.sending_to_all_admins", {
+    leadId,
+    totalAdmins: targets.length,
+    adminWaIds: targets.map(t => normalizeAdminWaId(t.waId)).filter(Boolean),
+  });
+
+  // Send to ALL admins concurrently (not sequentially)
+  const results = await Promise.allSettled(
+    targets.map((admin) => sendToAdmin(client, admin, message, leadId, userWaId, extracted))
+  );
+
+  // Aggregate results
   let sent = 0;
   let failed = 0;
+  const errors: string[] = [];
 
-  for (const admin of targets) {
-    const adminWaId = normalizeAdminWaId(admin.waId);
-    if (!adminWaId) {
-      errors.push("Missing admin wa_id");
-      failed++;
-      continue;
-    }
-
-    const now = new Date().toISOString();
-    let delivered = false;
-    let lastError: string | null = null;
-
-    try {
-      await sendText(adminWaId, message);
-      delivered = true;
-    } catch (error) {
-      const errMsg = error instanceof Error ? error.message : String(error ?? "unknown");
-      lastError = errMsg;
-      console.warn("insurance.admin_direct_send_fail", { admin: adminWaId, error: errMsg });
-      try {
-        const templateName = Deno.env.get("WA_INSURANCE_ADMIN_TEMPLATE") ?? "insurance_admin_alert";
-        const lang = Deno.env.get("WA_TEMPLATE_LANG") ?? "en";
-        const compact = message.replace(/[*_]|[\r\n]+/g, " ").trim().slice(0, 1024);
-        const { sendTemplate } = await import("../../wa/client.ts");
-        await sendTemplate(adminWaId, {
-          name: templateName,
-          language: lang,
-          bodyParameters: [{ type: "text", text: compact }],
-        });
-        delivered = true;
-        lastError = null;
-      } catch (tplError) {
-        const tplMsg = tplError instanceof Error ? tplError.message : String(tplError ?? "unknown");
-        lastError = `${errMsg} | tpl:${tplMsg}`;
-        console.error("insurance.admin_template_send_fail", { admin: adminWaId, error: tplMsg });
+  results.forEach((result, index) => {
+    if (result.status === "fulfilled") {
+      if (result.value.success) {
+        sent++;
+      } else {
+        failed++;
+        if (result.value.error) {
+          errors.push(`${targets[index].waId}: ${result.value.error}`);
+        }
       }
-    }
-
-    const auditInsert = await client
-      .from("insurance_admin_notifications")
-      .insert({
-        lead_id: leadId,
-        admin_wa_id: adminWaId,
-        user_wa_id: userWaId,
-        notification_payload: {
-          message,
-          extracted,
-          lead_id: leadId,
-          user_wa_id: userWaId,
-        },
-        status: delivered ? "sent" : "queued",
-        sent_at: delivered ? now : null,
-        retry_count: 0,
-        error_message: delivered ? null : lastError,
-        updated_at: now,
-      })
-      .select("id")
-      .single();
-
-    if (auditInsert.error || !auditInsert.data) {
-      const auditError = auditInsert.error?.message ?? "audit_insert_failed";
-      console.error("insurance.admin_notif_record_fail", {
-        admin: adminWaId,
-        error: auditError,
-      });
-      errors.push(`${adminWaId}: ${auditError}`);
-      failed++;
-      continue;
-    }
-
-    const adminNotificationId = auditInsert.data.id;
-
-    const { error: notifError } = await client
-      .from("notifications")
-      .insert({
-        to_wa_id: adminWaId,
-        notification_type: "insurance_admin_alert",
-        payload: {
-          text: message,
-          lead_id: leadId,
-          user_wa_id: userWaId,
-          extracted,
-          admin_notification_id: adminNotificationId,
-          admin_contact_id: admin.contactId ?? null,
-        },
-        status: delivered ? "sent" : "queued",
-        sent_at: delivered ? now : null,
-        retry_count: 0,
-      });
-
-    if (notifError) {
-      console.error("insurance.admin_notif_queue_fail", {
-        admin: adminWaId,
-        error: notifError.message,
-      });
-      errors.push(`${adminWaId}: ${notifError.message}`);
-      failed++;
-      continue;
-    }
-
-    console.log("insurance.admin_notif_recorded", {
-      admin: adminWaId,
-      leadId,
-      userWaId,
-      delivered,
-    });
-
-    if (delivered) {
-      sent++;
     } else {
       failed++;
+      errors.push(`${targets[index].waId}: ${result.reason}`);
     }
-  }
+  });
 
   console.log("insurance.admin_notifications_complete", {
     leadId,
@@ -209,6 +124,132 @@ export async function notifyInsuranceAdmins(
   });
 
   return { sent, failed, errors };
+}
+
+// Helper function to send notification to a single admin
+async function sendToAdmin(
+  client: SupabaseClient,
+  admin: AdminTarget,
+  message: string,
+  leadId: string,
+  userWaId: string,
+  extracted: InsuranceExtraction,
+): Promise<{ success: boolean; error?: string }> {
+  const adminWaId = normalizeAdminWaId(admin.waId);
+  if (!adminWaId) {
+    return { success: false, error: "Missing admin wa_id" };
+  }
+
+  const now = new Date().toISOString();
+  let delivered = false;
+  let lastError: string | null = null;
+
+  console.log("insurance.attempting_whatsapp_send", {
+    admin: adminWaId,
+    messageLength: message.length,
+    leadId,
+  });
+
+  try {
+    await sendText(adminWaId, message);
+    delivered = true;
+    console.log("insurance.whatsapp_send_success", {
+      admin: adminWaId,
+      leadId,
+    });
+  } catch (error) {
+    const errMsg = error instanceof Error ? error.message : String(error ?? "unknown");
+    lastError = errMsg;
+    console.error("insurance.admin_direct_send_fail", { 
+      admin: adminWaId, 
+      error: errMsg,
+      errorStack: error instanceof Error ? error.stack : undefined,
+    });
+    try {
+      const templateName = Deno.env.get("WA_INSURANCE_ADMIN_TEMPLATE") ?? "insurance_admin_alert";
+      const lang = Deno.env.get("WA_TEMPLATE_LANG") ?? "en";
+      const compact = message.replace(/[*_]|[\r\n]+/g, " ").trim().slice(0, 1024);
+      const { sendTemplate } = await import("../../wa/client.ts");
+      await sendTemplate(adminWaId, {
+        name: templateName,
+        language: lang,
+        bodyParameters: [{ type: "text", text: compact }],
+      });
+      delivered = true;
+      lastError = null;
+    } catch (tplError) {
+      const tplMsg = tplError instanceof Error ? tplError.message : String(tplError ?? "unknown");
+      lastError = `${errMsg} | tpl:${tplMsg}`;
+      console.error("insurance.admin_template_send_fail", { admin: adminWaId, error: tplMsg });
+    }
+  }
+
+  const auditInsert = await client
+    .from("insurance_admin_notifications")
+    .insert({
+      lead_id: leadId,
+      admin_wa_id: adminWaId,
+      user_wa_id: userWaId,
+      notification_payload: {
+        message,
+        extracted,
+        lead_id: leadId,
+        user_wa_id: userWaId,
+      },
+      status: delivered ? "sent" : "queued",
+      sent_at: delivered ? now : null,
+      retry_count: 0,
+      error_message: delivered ? null : lastError,
+      updated_at: now,
+    })
+    .select("id")
+    .single();
+
+  if (auditInsert.error || !auditInsert.data) {
+    const auditError = auditInsert.error?.message ?? "audit_insert_failed";
+    console.error("insurance.admin_notif_record_fail", {
+      admin: adminWaId,
+      error: auditError,
+    });
+    return { success: false, error: auditError };
+  }
+
+  const adminNotificationId = auditInsert.data.id;
+
+  const { error: notifError } = await client
+    .from("notifications")
+    .insert({
+      to_wa_id: adminWaId,
+      notification_type: "insurance_admin_alert",
+      payload: {
+        text: message,
+        lead_id: leadId,
+        user_wa_id: userWaId,
+        extracted,
+        admin_notification_id: adminNotificationId,
+        admin_contact_id: admin.contactId ?? null,
+      },
+      status: delivered ? "sent" : "queued",
+      sent_at: delivered ? now : null,
+      retry_count: 0,
+    });
+
+  if (notifError) {
+    console.error("insurance.admin_notif_queue_fail", {
+      admin: adminWaId,
+      error: notifError.message,
+    });
+    return { success: false, error: notifError.message };
+  }
+
+  console.log("insurance.admin_notif_recorded", {
+    admin: adminWaId,
+    leadId,
+    userWaId,
+    delivered,
+  });
+
+  return { success: delivered };
 }
 
 export async function sendDirectAdminNotification(

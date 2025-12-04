@@ -51,6 +51,34 @@ const countries = ['RW', 'KE', 'UG']; // NO!
   and headers required for the admin panel and exposed API routes (see
   `docs/deployment/production-pipeline.md` for the full process).
 
+## Insurance Admin Notifications
+
+**Status:** ✅ Working (as of 2025-12-04)
+
+When users submit insurance certificates via WhatsApp, the system automatically notifies ALL insurance admins concurrently.
+
+**Key Features:**
+- ✅ Concurrent notifications to all admins (1-2s vs 3-5s sequential)
+- ✅ Dynamic admin list from database (no hardcoded numbers)
+- ✅ Full audit trail in `insurance_admin_notifications` table
+- ✅ Comprehensive structured logging
+
+**Admin Management:**
+```sql
+-- View current admins
+SELECT contact_value, display_name, is_active 
+FROM insurance_admin_contacts 
+WHERE contact_type = 'whatsapp';
+
+-- Add new admin
+INSERT INTO insurance_admin_contacts (contact_type, contact_value, display_name, display_order, is_active)
+VALUES ('whatsapp', '+250XXXXXXXXX', 'Admin Name', 4, true);
+```
+
+**⚠️ Important:** Admins must initiate contact with your WhatsApp Business number first to receive notifications (WhatsApp 24-hour messaging window policy).
+
+**Complete Documentation:** See [`docs/INSURANCE_ADMIN_NOTIFICATIONS_README.md`](./docs/INSURANCE_ADMIN_NOTIFICATIONS_README.md)
+
 ## Phase 4 & 5 Highlights
 
 - **Realtime bridges**: `services/voice-bridge` ingests Twilio Media Streams,

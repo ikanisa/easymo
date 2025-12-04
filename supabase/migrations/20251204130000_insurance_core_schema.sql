@@ -202,9 +202,13 @@ $$;
 GRANT EXECUTE ON FUNCTION public.get_expiring_policies TO service_role, authenticated;
 
 -- SEED ADMIN CONTACTS
-INSERT INTO public.insurance_admin_contacts (contact_type, contact_value, display_name, display_order) VALUES
-  ('whatsapp', '+250788000001', 'Insurance Team', 1),
-  ('email', 'insurance@easymo.rw', 'Insurance Email', 2)
+-- Real admin numbers loaded from insurance_admin_contacts table
+-- Add more admins via SQL or admin panel
+INSERT INTO public.insurance_admin_contacts (contact_type, contact_value, display_name, display_order, is_active) VALUES
+  ('whatsapp', '+250795588248', 'Insurance Support Team 1', 1, true),
+  ('whatsapp', '+250793094876', 'Insurance Support Team 2', 2, true),
+  ('whatsapp', '+250788767816', 'Insurance Support Team 3', 3, true),
+  ('email', 'insurance@easymo.rw', 'Insurance Email', 10, true)
 ON CONFLICT DO NOTHING;
 
 COMMIT;
