@@ -1,12 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent } from "../_shared/observability.ts";
-import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
+import { getState, setState, clearState } from "../_shared/wa-webhook-shared/state/store.ts";
 import { sendButtonsMessage, sendListMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
 import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
 import type { RouterContext, WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.ts";
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
 // Note: Rate limiting removed - handled by wa-webhook-core before forwarding
+// Static imports for frequently used handlers to reduce dynamic import overhead
+import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
+import { ensureProfile } from "../_shared/wa-webhook-shared/utils/profile.ts";
 
 const SERVICE_NAME = "wa-webhook-profile";
 const SERVICE_VERSION = "2.2.1";
@@ -94,7 +97,6 @@ serve(async (req: Request): Promise<Response> => {
     const allowUnsigned = (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() === "true";
 
     if (signatureHeader && appSecret) {
-      const { verifyWebhookSignature } = await import("../_shared/webhook-utils.ts");
       const isValid = await verifyWebhookSignature(rawBody, signatureHeader, appSecret);
       if (!isValid && !allowUnsigned) {
         logEvent("PROFILE_AUTH_FAILED", { signatureHeader }, "warn");
@@ -129,7 +131,6 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // Build Context - Auto-create profile if needed
-    const { ensureProfile } = await import("../_shared/wa-webhook-shared/utils/profile.ts");
     const profile = await ensureProfile(supabase, from);
 
     const ctx: RouterContext = {
@@ -419,7 +420,6 @@ serve(async (req: Request): Promise<Response> => {
         else if (id.startsWith("ADD_LOC::")) {
           const locationType = id.replace("ADD_LOC::", "");
           if (ctx.profileId) {
-            const { setState } = await import("../_shared/wa-webhook-shared/state/store.ts");
             await setState(ctx.supabase, ctx.profileId, {
               key: "add_location",
               data: { type: locationType },
@@ -478,7 +478,6 @@ serve(async (req: Request): Promise<Response> => {
               }
             }
             
-            const { clearState } = await import("../_shared/wa-webhook-shared/state/store.ts");
             await clearState(ctx.supabase, ctx.profileId);
             
             if (error) {
@@ -562,7 +561,6 @@ serve(async (req: Request): Promise<Response> => {
               );
               handled = true;
             } else {
-              const { setState } = await import("../_shared/wa-webhook-shared/state/store.ts");
               await setState(ctx.supabase, ctx.profileId, {
                 key: "edit_location",
                 data: { locationId, originalLabel: location.label },
@@ -602,7 +600,6 @@ serve(async (req: Request): Promise<Response> => {
               );
               handled = true;
             } else {
-              const { setState } = await import("../_shared/wa-webhook-shared/state/store.ts");
               await setState(ctx.supabase, ctx.profileId, {
                 key: "delete_location_confirm",
                 data: { locationId, label: location.label },
@@ -642,7 +639,6 @@ serve(async (req: Request): Promise<Response> => {
               );
               logEvent("LOCATION_DELETE_FAILED", { locationId, error: error.message }, "error");
             } else {
-              const { clearState } = await import("../_shared/wa-webhook-shared/state/store.ts");
               await clearState(ctx.supabase, ctx.profileId);
               await sendButtonsMessage(
                 ctx,
@@ -960,7 +956,6 @@ serve(async (req: Request): Promise<Response> => {
           const locationType = state.data.type as string;
           
           // For now, just confirm receipt - actual location saving would need geocoding
-          const { clearState } = await import("../_shared/wa-webhook-shared/state/store.ts");
           await clearState(ctx.supabase, ctx.profileId);
           
           await sendButtonsMessage(
@@ -1011,7 +1006,6 @@ serve(async (req: Request): Promise<Response> => {
           const address = location?.address || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
           
           if (ctx.profileId) {
-            const { setState } = await import("../_shared/wa-webhook-shared/state/store.ts");
             await setState(ctx.supabase, ctx.profileId, {
               key: "confirm_add_location",
               data: { 
@@ -1069,7 +1063,6 @@ serve(async (req: Request): Promise<Response> => {
             }
           }
           
-          const { clearState } = await import("../_shared/wa-webhook-shared/state/store.ts");
           await clearState(ctx.supabase, ctx.profileId);
           
           if (error) {
