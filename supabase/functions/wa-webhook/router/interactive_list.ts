@@ -981,8 +981,10 @@ async function handleHomeMenuSelection(
     }
     case "help_support":
     case "show_help":
-    case "customer_support": {
-      // Launch AI customer support agent
+    case "customer_support":
+    case "support_agent":
+    case IDS.SUPPORT_AGENT: {
+      // Launch AI customer support agent (Help Center)
       const { startCustomerSupportChat } = await import("../domains/ai-agents/customer-support.ts");
       return await startCustomerSupportChat(ctx);
     }

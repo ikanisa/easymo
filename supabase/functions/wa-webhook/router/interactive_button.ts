@@ -403,6 +403,14 @@ export async function handleButton(
       await sendHomeMenu(ctx);
       return true;
     }
+    case "help_support":
+    case "customer_support":
+    case "support_agent":
+    case IDS.SUPPORT_AGENT: {
+      // Launch AI customer support agent (Help Center)
+      const { startCustomerSupportChat } = await import("../domains/ai-agents/customer-support.ts");
+      return await startCustomerSupportChat(ctx);
+    }
 
     default:
       if (LOCATION_KIND_BY_ID[id]) {
