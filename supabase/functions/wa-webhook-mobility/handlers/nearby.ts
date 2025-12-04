@@ -914,12 +914,12 @@ async function runMatchingFallback(
           
           try {
             // Rate limiting: max 5 notifications per driver per hour
+            // Query ride_notifications table (where notifications are actually stored)
             const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
             const { count: recentNotifications } = await ctx.supabase
-              .from('mobility_matches')
+              .from('ride_notifications')
               .select('id', { count: 'exact', head: true })
               .eq('driver_id', match.creator_user_id)
-              .eq('status', 'pending')
               .gte('created_at', oneHourAgo);
             
             if ((recentNotifications || 0) >= 5) {

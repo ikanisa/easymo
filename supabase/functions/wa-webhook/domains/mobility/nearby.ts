@@ -48,6 +48,12 @@ import { sortMatches } from "../../../_shared/wa-webhook-shared/utils/sortMatche
 const DEFAULT_WINDOW_DAYS = MOBILITY_CONFIG.DEFAULT_WINDOW_DAYS;
 const REQUIRED_RADIUS_METERS = MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS;
 const DEFAULT_RADIUS_METERS = MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS;
+// Time window for matching: SQL function uses days
+const DEFAULT_WINDOW_DAYS = 2;  // 48-hour window to match DB default
+// Per requirements: 10km radius consistently
+const REQUIRED_RADIUS_METERS = 10_000;
+// Search radius: read from app_config, default 15km (increased from 10km for 90%+ match rate)
+const DEFAULT_RADIUS_METERS = 15_000;
 const SAVED_ROW_PREFIX = "FAV::";
 
 const VEHICLE_OPTION_DEFS = [

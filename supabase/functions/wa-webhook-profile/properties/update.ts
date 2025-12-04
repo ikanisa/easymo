@@ -92,20 +92,54 @@ export async function handleUpdatePropertyField(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
 
-  let updateValue: any = value;
+  const trimmedValue = value.trim();
+
+  // Input validation - minimum length (except price which needs special handling)
+  if (field !== "price" && trimmedValue.length < 2) {
+    await sendTextMessage(
+      ctx,
+      `⚠️ ${field.charAt(0).toUpperCase() + field.slice(1)} must be at least 2 characters long. Please try again.`,
+    );
+    return true;
+  }
+
+  // Field-specific length limits
+  const maxLengths: Record<string, number> = {
+    title: 150,
+    description: 1000,
+    location: 200,
+  };
+
+  if (field !== "price" && trimmedValue.length > maxLengths[field]) {
+    await sendTextMessage(
+      ctx,
+      `⚠️ ${field.charAt(0).toUpperCase() + field.slice(1)} is too long. Please keep it under ${maxLengths[field]} characters.`,
+    );
+    return true;
+  }
+
+  let updateValue: unknown = trimmedValue;
   if (field === "price") {
-    const num = parseInt(value.replace(/[^0-9]/g, ""), 10);
-    if (isNaN(num)) {
+    const num = parseInt(trimmedValue.replace(/[^0-9]/g, ""), 10);
+    if (isNaN(num) || num < 0) {
       await sendTextMessage(
         ctx,
-        "⚠️ Invalid price. Please enter a valid number.",
+        "⚠️ Invalid price. Please enter a valid positive number.",
+      );
+      return true;
+    }
+    // Reasonable price limit (100 billion RWF)
+    if (num > 100_000_000_000) {
+      await sendTextMessage(
+        ctx,
+        "⚠️ Price seems too high. Please enter a reasonable price.",
       );
       return true;
     }
     updateValue = num;
   }
 
-  const updates: Record<string, any> = { [field]: updateValue, updated_at: new Date().toISOString() };
+  const updates: Record<string, unknown> = { [field]: updateValue, updated_at: new Date().toISOString() };
 
   const { error } = await ctx.supabase
     .from("properties")

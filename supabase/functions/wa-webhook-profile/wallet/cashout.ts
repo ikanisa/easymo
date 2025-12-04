@@ -113,18 +113,42 @@ export async function handleCashOutPhone(
   const state = await getState(ctx.supabase, ctx.profileId!);
   const { amount, fee, netTokens, rwfAmount } = state?.data || {};
 
+  // Validate required state data
+  if (!amount || !fee || !netTokens || !rwfAmount) {
+    await sendText(ctx.from, "❌ Session expired. Please start again.");
+    return false;
+  }
+
   // Validate and normalize phone
   const cleanPhone = phone.replace(/[^0-9]/g, "");
   
-  if (!/^(078|079)\d{7}$/.test(cleanPhone)) {
+  // Support Rwanda MTN (078) and Airtel (073, 072) numbers
+  // Also support format with country code prefix
+  let normalizedPhone = cleanPhone;
+  let formattedPhone: string;
+  
+  // Handle cases where user includes country code
+  if (cleanPhone.startsWith("250") && cleanPhone.length === 12) {
+    normalizedPhone = cleanPhone.slice(3);
+  }
+  
+  // Validate Rwanda mobile number format (078, 079, 073, 072)
+  if (!/^0?(78|79|73|72)\d{7}$/.test(normalizedPhone)) {
     await sendText(ctx.from,
       "❌ Invalid mobile money number.\n\n" +
-      "Use format: 078XXXXXXX or 079XXXXXXX"
+      "Supported formats:\n" +
+      "• MTN: 078XXXXXXX or 079XXXXXXX\n" +
+      "• Airtel: 072XXXXXXX or 073XXXXXXX"
     );
     return true;
   }
-
-  const formattedPhone = `+250${cleanPhone}`;
+  
+  // Ensure we have the leading 0
+  if (!normalizedPhone.startsWith("0")) {
+    normalizedPhone = "0" + normalizedPhone;
+  }
+  
+  formattedPhone = `+250${normalizedPhone.slice(1)}`;
 
   await setState(ctx.supabase, ctx.profileId!, {
     key: CASHOUT_STATES.CONFIRM,

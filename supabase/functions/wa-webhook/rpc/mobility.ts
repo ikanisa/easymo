@@ -3,6 +3,83 @@ export { MOBILITY_CONFIG } from "../../_shared/wa-webhook-shared/config/mobility
 export * from "../../_shared/wa-webhook-shared/rpc/mobility.ts";
 
 import type { SupabaseClient } from "../deps.ts";
+export async function updateTripDropoff(
+  client: SupabaseClient,
+  params: {
+    tripId: string;
+    lat: number;
+    lng: number;
+    dropoffText?: string;
+    radiusMeters?: number;
+  },
+): Promise<void> {
+  const { error } = await client
+    .from("rides_trips")
+    .update({
+      dropoff_latitude: params.lat,
+      dropoff_longitude: params.lng,
+      dropoff: `SRID=4326;POINT(${params.lng} ${params.lat})`,
+      dropoff_text: params.dropoffText ?? null,
+      dropoff_radius_m: params.radiusMeters ?? null,
+    })
+    .eq("id", params.tripId);
+  if (error) throw error;
+}
+
+export type MatchResult = {
+  trip_id: string;
+  creator_user_id: string;
+  whatsapp_e164: string;
+  ref_code: string;
+  distance_km: number;
+  drop_bonus_m: number | null;
+  pickup_text: string | null;
+  dropoff_text: string | null;
+  matched_at: string | null;
+  created_at?: string | null;
+  vehicle_type?: string | null;
+  is_exact_match?: boolean;
+  location_age_minutes?: number;
+  number_plate?: string | null;
+};
+
+export async function matchDriversForTrip(
+  client: SupabaseClient,
+  tripId: string,
+  limit = 9,
+  preferDropoff = false,
+  radiusMeters?: number,
+  windowDays = 2,  // 48-hour window to match DB default
+) {
+  const { data, error } = await client.rpc("match_drivers_for_trip_v2", {
+    _trip_id: tripId,
+    _limit: limit,
+    _prefer_dropoff: preferDropoff,
+    _radius_m: radiusMeters ?? null,
+    _window_days: windowDays,
+  } as Record<string, unknown>);
+  if (error) throw error;
+  return (data ?? []) as MatchResult[];
+}
+
+export async function matchPassengersForTrip(
+  client: SupabaseClient,
+  tripId: string,
+  limit = 9,
+  preferDropoff = false,
+  radiusMeters?: number,
+  windowDays = 2,  // 48-hour window to match DB default
+) {
+  const { data, error } = await client.rpc("match_passengers_for_trip_v2", {
+    _trip_id: tripId,
+    _limit: limit,
+    _prefer_dropoff: preferDropoff,
+    _radius_m: radiusMeters ?? null,
+    _window_days: windowDays,
+  } as Record<string, unknown>);
+  if (error) throw error;
+  return (data ?? []) as MatchResult[];
+}
 
 // Additional types specific to this service
 export type RecommendationResult = {

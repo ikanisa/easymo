@@ -128,6 +128,8 @@ export async function matchDriversForTripWithValidation(
   radiusMeters?: number,
   windowDays = MOBILITY_CONFIG.DEFAULT_WINDOW_DAYS,
 ): Promise<MatchResult[]> {
+  windowDays = 2,  // 48-hour window to match DB default
+) {
   await ensureRidesTripsSchema(client);
   const { data, error } = await client.rpc("match_drivers_for_trip_v2", {
     _trip_id: tripId,
@@ -151,6 +153,8 @@ export async function matchPassengersForTripWithValidation(
   radiusMeters?: number,
   windowDays = MOBILITY_CONFIG.DEFAULT_WINDOW_DAYS,
 ): Promise<MatchResult[]> {
+  windowDays = 2,  // 48-hour window to match DB default
+) {
   await ensureRidesTripsSchema(client);
   const { data, error } = await client.rpc("match_passengers_for_trip_v2", {
     _trip_id: tripId,
