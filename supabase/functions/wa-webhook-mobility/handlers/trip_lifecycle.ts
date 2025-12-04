@@ -254,18 +254,43 @@ export async function handleTripPickedUp(
     await logStructuredEvent("TRIP_PICKUP_INITIATED", { tripId });
 
     // 1. Update trip status
+    // Get current state for optimistic locking
+    const { data: currentTrip } = await ctx.supabase
+      .from("mobility_trip_matches") // V2 table
+      .select("*")
+      .eq("id", tripId)
+      .eq("driver_user_id", userId)
+      .eq("status", "driver_arrived")
+      .single();
+
+    if (!currentTrip) {
+      await logStructuredEvent("TRIP_PICKUP_FAILED", { 
+        tripId, 
+        reason: "trip_not_found_or_wrong_status"
+      }, "error");
+      return false;
+    }
+
     const { data: trip, error: updateError } = await ctx.supabase
-      .from("mobility_matches")
+      .from("mobility_trip_matches") // V2 table
       .update({
         status: "in_progress",
-        pickup_time: new Date().toISOString(),
+        picked_up_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq("id", tripId)
-      .eq("driver_id", userId)
-      .eq("status", "driver_arrived")
+      .eq("version", currentTrip.version) // Optimistic lock
       .select()
       .single();
+
+    if (updateError) {
+      if (updateError.code === 'PGRST116') {
+        await logStructuredEvent("TRIP_PICKUP_FAILED", { 
+          tripId, 
+          reason: "concurrent_update_detected"
+        }, "error");
+        return false;
+      }
 
     if (updateError || !trip) {
       await logStructuredEvent("TRIP_PICKUP_FAILED", { 
@@ -323,7 +348,7 @@ export async function handleTripComplete(
 
     // 1. Get trip details
     const { data: trip, error: tripError } = await ctx.supabase
-      .from("mobility_matches")
+      .from("mobility_trip_matches") // V2 table
       .select("*")
       .eq("id", tripId)
       .eq("status", "in_progress")
@@ -383,7 +408,7 @@ export async function handleTripComplete(
 
     // 5. Update trip status
     const { error: updateError } = await ctx.supabase
-      .from("mobility_matches")
+      .from("mobility_trip_matches") // V2 table
       .update({
         status: "completed",
         completed_at: completedAt.toISOString(),
@@ -391,7 +416,8 @@ export async function handleTripComplete(
         actual_fare: finalFare,
         updated_at: completedAt.toISOString(),
       })
-      .eq("id", tripId);
+      .eq("id", tripId)
+      .eq("version", trip.version); // Optimistic lock
 
     if (updateError) {
       await logStructuredEvent("TRIP_COMPLETION_FAILED", { 
@@ -520,7 +546,7 @@ export async function handleTripCancel(
 
     // 1. Get trip details
     const { data: trip, error: tripError } = await ctx.supabase
-      .from("mobility_matches")
+      .from("mobility_trip_matches") // V2 table
       .select("*")
       .eq("id", tripId)
       .single();
@@ -555,14 +581,16 @@ export async function handleTripCancel(
 
     // 5. Update trip status
     const { error: updateError } = await ctx.supabase
-      .from("mobility_matches")
+      .from("mobility_trip_matches") // V2 table
       .update({
         status: cancellationStatus,
         cancelled_at: new Date().toISOString(),
         cancellation_reason: reason,
+        cancelled_by_user_id: userId,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", tripId);
+      .eq("id", tripId)
+      .eq("version", trip.version); // Optimistic lock
 
     if (updateError) {
       await logStructuredEvent("TRIP_CANCELLATION_FAILED", { 
@@ -660,7 +688,7 @@ export async function handleTripRating(
 
     // 2. Get trip details
     const { data: trip, error: tripError } = await ctx.supabase
-      .from("mobility_matches")
+      .from("mobility_trip_matches") // V2 table
       .select("*")
       .eq("id", tripId)
       .eq("status", "completed")
@@ -750,7 +778,7 @@ export async function getTripStatus(
 ): Promise<{ status: TripStatus; trip: any } | null> {
   try {
     const { data: trip, error } = await ctx.supabase
-      .from("mobility_matches")
+      .from("mobility_trip_matches") // V2 table
       .select("*")
       .eq("id", tripId)
       .single();

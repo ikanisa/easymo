@@ -69,8 +69,8 @@ WHERE NOT EXISTS (
 -- ============================================================================
 
 -- Insert matches from mobility_matches to mobility_trip_matches
-INSERT INTO mobility_trip_matches (
-  id,
+-- Note: V1 schema is missing many columns, so we'll use defaults
+INSERT INTO mobility_trip_matches (\n  id,
   driver_trip_id,
   passenger_trip_id,
   driver_user_id,
@@ -84,34 +84,25 @@ INSERT INTO mobility_trip_matches (
   estimated_fare,
   actual_fare,
   currency,
-  surge_multiplier,
   distance_km,
   duration_minutes,
   driver_phone,
   passenger_phone,
   created_at,
   updated_at,
-  accepted_at,
   started_at,
-  arrived_at_pickup_at,
-  picked_up_at,
   completed_at,
   cancelled_at,
-  rating_by_passenger,
-  rating_by_driver,
-  feedback_by_passenger,
-  feedback_by_driver,
   cancellation_reason,
-  cancelled_by_user_id,
   metadata
 )
 SELECT 
   mm.id,
-  dt.id AS driver_trip_id,
-  pt.id AS passenger_trip_id,
+  mm.trip_id, -- V1 uses single trip_id, we'll use it as driver_trip_id
+  mm.trip_id, -- Same for passenger_trip_id (limitation of V1 schema)
   mm.driver_id,
   mm.passenger_id,
-  mm.vehicle_type,
+  COALESCE(mm.vehicle_type, 'car'),
   ST_SetSRID(ST_MakePoint(mm.pickup_lng, mm.pickup_lat), 4326)::geography,
   CASE 
     WHEN mm.dropoff_lat IS NOT NULL AND mm.dropoff_lng IS NOT NULL 
@@ -123,37 +114,24 @@ SELECT
   mm.status,
   mm.fare_estimate,
   mm.actual_fare,
-  COALESCE(mm.currency, 'RWF'),
-  COALESCE(mm.surge_multiplier, 1.0),
+  'RWF', -- V1 doesn't have currency column
   mm.distance_km,
   mm.duration_minutes,
-  COALESCE(mm.driver_phone, dp.whatsapp_number, dp.phone_number),
-  COALESCE(mm.passenger_phone, pp.whatsapp_number, pp.phone_number),
+  dp.whatsapp_number, -- Get from profiles
+  pp.whatsapp_number, -- Get from profiles
   mm.created_at,
   mm.updated_at,
-  mm.accepted_at,
   mm.started_at,
-  mm.arrived_at,
-  mm.pickup_time,
   mm.completed_at,
   mm.cancelled_at,
-  mm.passenger_rating,
-  mm.driver_rating,
-  mm.passenger_feedback,
-  mm.driver_feedback,
   mm.cancellation_reason,
-  mm.cancelled_by,
-  '{}'::jsonb
+  COALESCE(mm.metadata, '{}'::jsonb)
 FROM mobility_matches mm
-LEFT JOIN rides_trips dt ON dt.creator_user_id = mm.driver_id AND dt.role = 'driver'
-LEFT JOIN rides_trips pt ON pt.creator_user_id = mm.passenger_id AND pt.role = 'passenger'
 LEFT JOIN profiles dp ON dp.user_id = mm.driver_id
 LEFT JOIN profiles pp ON pp.user_id = mm.passenger_id
 WHERE NOT EXISTS (
   SELECT 1 FROM mobility_trip_matches mtm WHERE mtm.id = mm.id
-)
-AND dt.id IS NOT NULL 
-AND pt.id IS NOT NULL;
+);
 
 -- ============================================================================
 -- 3. VERIFICATION

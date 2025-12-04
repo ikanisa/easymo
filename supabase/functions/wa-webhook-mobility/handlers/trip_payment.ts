@@ -252,7 +252,7 @@ export async function processTransactionReference(
 
     // Update trip payment status
     const { error: updateError } = await ctx.supabase
-      .from("mobility_matches")
+      .from("mobility_trip_matches") // V2 table
       .update({
         payment_status: cleanRef === "SKIP" ? "pending_verification" : "paid",
         payment_reference: cleanRef === "SKIP" ? null : cleanRef,
@@ -319,7 +319,7 @@ export async function handleSkipPayment(
 
     // Update trip to mark payment as pending
     await ctx.supabase
-      .from("mobility_matches")
+      .from("mobility_trip_matches") // V2 table
       .update({
         payment_status: "skipped",
         updated_at: new Date().toISOString(),

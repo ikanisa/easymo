@@ -74,17 +74,17 @@ export async function updateDriverLocation(
 
     // 2. Verify trip is in progress
     const { data: trip, error: tripError } = await ctx.supabase
-      .from("mobility_matches")
-      .select("*")
+      .from("mobility_trip_matches") // V2 table
+      .select("driver_user_id, passenger_user_id, status")
       .eq("id", tripId)
-      .eq("driver_id", ctx.profileId)
+      .eq("driver_user_id", ctx.profileId) // V2 column name
       .in("status", ["accepted", "driver_arrived", "in_progress"])
       .single();
 
     if (tripError || !trip) {
-      await logStructuredEvent("LOCATION_UPDATE_FAILED", {
+      await logStructuredEvent("DRIVER_TRACKING_FAILED", {
         tripId,
-        reason: "trip_not_found_or_invalid_status",
+        reason: "trip_not_found_or_wrong_status",
       }, "error");
       return false;
     }
@@ -157,7 +157,7 @@ export async function updateDriverLocation(
       if (etaDifference > 5) { // Significant change (>5 minutes)
         // Update trip ETA
         await ctx.supabase
-          .from("mobility_matches")
+          .from("mobility_trip_matches") // V2 table
           .update({
             eta_minutes: eta.durationMinutes,
             distance_km: eta.distanceKm,
@@ -165,12 +165,21 @@ export async function updateDriverLocation(
           })
           .eq("id", tripId);
 
-        await notifyPassenger(
-          ctx.supabase,
-          trip.passenger_id,
-          buildEtaMessage(ctx.locale, eta.durationMinutes),
-        );
+        // Get trip participants for notifications
+        const { data: tripData } = await ctx.supabase
+          .from("mobility_trip_matches") // V2 table
+          .select("driver_user_id, passenger_user_id")
+          .eq("id", tripId)
+          .single();
 
+        if (tripData) {
+          // Notify passenger of driver's location update
+          await notifyPassenger(
+            ctx.supabase,
+            tripData.passenger_user_id, // V2 column name
+            buildEtaMessage(ctx.locale, eta.durationMinutes),
+          );
+        }
         await logStructuredEvent("ETA_UPDATED", {
           tripId,
           previousETA,
@@ -422,8 +431,8 @@ export async function getTripProgress(
   try {
     // Get trip details
     const { data: trip, error: tripError } = await ctx.supabase
-      .from("mobility_matches")
-      .select("*")
+      .from("mobility_trip_matches") // V2 table
+      .select("driver_user_id, passenger_user_id, status")
       .eq("id", tripId)
       .single();
 

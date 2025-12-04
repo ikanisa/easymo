@@ -338,8 +338,7 @@ CREATE INDEX idx_mobility_driver_metrics_ranking
   WHERE acceptance_rate >= 70.0 AND total_trips > 0;
 
 CREATE INDEX idx_mobility_driver_metrics_activity
-  ON mobility_driver_metrics(last_online_at DESC)
-  WHERE last_online_at > now() - interval '24 hours';
+  ON mobility_driver_metrics(last_online_at DESC);
 
 -- Pricing: Lookups
 CREATE INDEX idx_mobility_pricing_active

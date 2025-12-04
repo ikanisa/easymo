@@ -280,10 +280,10 @@ describe("Nearby Handlers - Driver Discovery", () => {
         status: "pending",
       };
 
-      mockClient.setMockData("mobility_matches", [{ id: "match-uuid", ...matchData }]);
+      mockClient.setMockData("mobility_trip_matches", [{ id: "match-uuid", ...matchData }]);
 
       const result = await mockClient
-        .from("mobility_matches")
+        .from("mobility_trip_matches")
         .insert(matchData)
         .select()
         .single();

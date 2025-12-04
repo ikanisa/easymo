@@ -16,6 +16,7 @@ import pino from 'pino';
 import pinoHttp from 'pino-http';
 import { z } from 'zod';
 import axios from 'axios';
+import { getCachedMatches, cacheMatches } from '@easymo/cache-layer/cache';
 
 // Configuration
 const config = {
@@ -47,7 +48,6 @@ const AcceptMatchSchema = z.object({
   passengerTripId: z.string().uuid(),
   driverUserId: z.string().uuid(),
   passengerUserId: z.string().uuid(),
-  estimatedFare: z.number().optional(),
 });
 
 const app = express();
@@ -90,6 +90,22 @@ app.post('/workflows/find-drivers', async (req: Request, res: Response, next: Ne
 
     logger.info({ userId, passengerTripId }, 'Starting find-drivers workflow');
 
+    // Check cache first
+    const cacheKey = `${passengerTripId}:${vehicleType}:${radiusKm || 15}`;
+    const cachedResult = await getCachedMatches(cacheKey);
+
+    if (cachedResult) {
+      logger.info({ tripId: passengerTripId }, 'Cache hit for matches');
+      res.json({
+        success: true,
+        drivers: cachedResult,
+        count: cachedResult.length,
+        workflow: 'find-drivers',
+        cached: true,
+      });
+      return;
+    }
+
     // Step 1: Call matching service
     const matchingResponse = await axios.post(`${config.services.matching}/matches`, {
       tripId: passengerTripId,
@@ -115,6 +131,9 @@ app.post('/workflows/find-drivers', async (req: Request, res: Response, next: Ne
 
     const { drivers } = rankingResponse.data;
 
+    // Cache the result
+    await cacheMatches(cacheKey, drivers);
+
     logger.info({ count: drivers.length, userId }, 'Find-drivers workflow complete');
 
     res.json({
@@ -122,6 +141,7 @@ app.post('/workflows/find-drivers', async (req: Request, res: Response, next: Ne
       drivers,
       count: drivers.length,
       workflow: 'find-drivers',
+      cached: false,
     });
   } catch (error) {
     logger.error({ error }, 'Find-drivers workflow failed');
@@ -138,7 +158,7 @@ app.post('/workflows/accept-match', async (req: Request, res: Response, next: Ne
       return;
     }
 
-    const { driverTripId, passengerTripId, driverUserId, passengerUserId, estimatedFare } = validation.data;
+    const { driverTripId, passengerTripId, driverUserId, passengerUserId } = validation.data;
     const supabase = getSupabaseClient();
 
     // Get trip details
@@ -186,7 +206,6 @@ app.post('/workflows/accept-match', async (req: Request, res: Response, next: Ne
           : null,
         pickup_address: passengerTrip.pickup_text,
         dropoff_address: passengerTrip.dropoff_text,
-        estimated_fare: estimatedFare,
         driver_phone: driverProfile?.phone_number || '',
         passenger_phone: passengerProfile?.phone_number || '',
         status: 'pending',

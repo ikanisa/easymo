@@ -167,7 +167,7 @@ export async function handlePaymentConfirmation(
       
       // Update trip status
       await ctx.supabase
-        .from("mobility_matches")
+        .from("mobility_trip_matches") // V2 table
         .update({ 
           status: "cancelled",
           payment_status: "cancelled",
@@ -207,7 +207,7 @@ export async function handlePaymentConfirmation(
     if (paymentVerified) {
       // Update trip payment status
       await ctx.supabase
-        .from("mobility_matches")
+        .from("mobility_trip_matches") // V2 table
         .update({ 
           status: "payment_confirmed",
           payment_status: "completed",
@@ -300,7 +300,7 @@ export async function handleRefund(
   try {
     // Get trip payment details
     const { data: trip } = await ctx.supabase
-      .from("mobility_matches")
+      .from("mobility_trip_matches") // V2 table
       .select("payment_method, payment_amount, payment_status, passenger_id")
       .eq("id", tripId)
       .single();
