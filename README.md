@@ -399,6 +399,77 @@ See [docs/github_actions_signing.md](./docs/github_actions_signing.md) for setup
 
 ---
 
+## Cloud Run Deployment
+
+The admin panel is configured for deployment to Google Cloud Run as an internal-only application.
+
+### Build and Run Locally with Docker
+
+```bash
+# Build the Docker image
+docker build -t easymo-admin .
+
+# Run locally with environment variables
+docker run -p 8080:8080 \
+  -e NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co \
+  -e NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key \
+  -e ADMIN_SESSION_SECRET=your-session-secret-min-64-chars \
+  -e EASYMO_ADMIN_TOKEN=your-admin-token \
+  easymo-admin
+
+# Or use an env file
+docker run -p 8080:8080 --env-file .env.local easymo-admin
+```
+
+The application will be available at `http://localhost:8080`.
+
+### Required Environment Variables for Cloud Run
+
+Configure these in Cloud Run → Service → Edit & Deploy New Revision → Variables & Secrets:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Public Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anonymous key (safe for client) |
+| `ADMIN_SESSION_SECRET` | Yes | Session encryption secret (min 64 chars) |
+| `EASYMO_ADMIN_TOKEN` | Yes | Admin API authentication token |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key (server-only) |
+| `ADMIN_ACCESS_CREDENTIALS` | Yes | JSON array of admin user credentials |
+
+**Security Notes:**
+- Never expose `SUPABASE_SERVICE_ROLE_KEY` in client-side environment variables
+- Use Cloud Run secrets for sensitive values
+- IAP (Identity-Aware Proxy) should be configured in GCP Console for internal access
+
+### Deploy with Cloud Build
+
+```bash
+# Submit build to Cloud Build (requires gcloud CLI)
+gcloud builds submit --config cloudbuild.yaml
+
+# Or trigger via Git push if Cloud Build trigger is configured
+git push origin main
+```
+
+### Manual Cloud Run Deployment
+
+```bash
+# Build and push to GCR
+docker build -t gcr.io/YOUR_PROJECT_ID/easymo-admin .
+docker push gcr.io/YOUR_PROJECT_ID/easymo-admin
+
+# Deploy to Cloud Run
+gcloud run deploy easymo-admin \
+  --image gcr.io/YOUR_PROJECT_ID/easymo-admin \
+  --region us-central1 \
+  --platform managed \
+  --port 8080 \
+  --memory 512Mi \
+  --no-allow-unauthenticated
+```
+
+---
+
 ## Setup
 Copy env sample:
 
