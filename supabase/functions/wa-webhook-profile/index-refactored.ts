@@ -4,6 +4,17 @@
  * 
  * @version 2.3.0
  * @description Modular profile service using shared infrastructure
+ * 
+ * @deprecated This file is a work-in-progress refactored version.
+ * It imports non-existent modules and is NOT currently in use.
+ * The active implementation is in index.ts
+ * 
+ * TODO: Complete the refactoring by:
+ * - Creating ../\_shared/config/index.ts with SERVICES, WA_IDS, STATE_KEYS exports
+ * - Creating ../\_shared/types/index.ts with WebhookPayload, RouterContext types  
+ * - Creating ../\_shared/state/index.ts with ensureProfile, getState exports
+ * - Creating ../\_shared/messaging/index.ts with sendList, sendButtons, sendText exports
+ * - Updating function signatures to match the expected parameters
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";

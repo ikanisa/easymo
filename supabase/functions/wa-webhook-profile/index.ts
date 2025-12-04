@@ -7,28 +7,15 @@ import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
 import type { RouterContext, WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.ts";
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
-// Phase 2: Enhanced security modules
-import { createSecurityMiddleware } from "../_shared/security/middleware.ts";
-import { verifyWebhookRequest } from "../_shared/security/signature.ts";
-import { createAuditLogger } from "../_shared/security/audit-logger.ts";
-import { createErrorHandler } from "../_shared/errors/error-handler.ts";
+
+const SERVICE_NAME = "wa-webhook-profile";
+const SERVICE_VERSION = "2.2.0";
+const MAX_BODY_SIZE = 2 * 1024 * 1024; // 2MB limit for profile photos
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
 );
-
-// Phase 2: Initialize security infrastructure
-const securityMiddleware = createSecurityMiddleware("wa-webhook-profile", {
-  maxBodySize: 2 * 1024 * 1024, // 2MB (for profile photos)
-  rateLimit: {
-    enabled: true,
-    limit: 100,
-    windowSeconds: 60,
-  },
-});
-const auditLogger = createAuditLogger("wa-webhook-profile", supabase);
-const errorHandler = createErrorHandler("wa-webhook-profile");
 
 serve(async (req: Request): Promise<Response> => {
   // Rate limiting (100 req/min for high-volume WhatsApp)
@@ -75,15 +62,15 @@ serve(async (req: Request): Promise<Response> => {
       const { error } = await supabase.from("profiles").select("user_id").limit(1);
       return respond({
         status: error ? "unhealthy" : "healthy",
-        service: "wa-webhook-profile",
+        service: SERVICE_NAME,
         timestamp: new Date().toISOString(),
         checks: { database: error ? "disconnected" : "connected", table: "profiles" },
-        version: "2.0.0",
+        version: SERVICE_VERSION,
       }, { status: error ? 503 : 200 });
     } catch (err) {
       return respond({
         status: "unhealthy",
-        service: "wa-webhook-profile",
+        service: SERVICE_NAME,
         error: err instanceof Error ? err.message : String(err),
       }, { status: 503 });
     }
@@ -104,6 +91,13 @@ serve(async (req: Request): Promise<Response> => {
   // Main webhook handler
   try {
     const rawBody = await req.text();
+    
+    // Security: Body size validation
+    if (rawBody.length > MAX_BODY_SIZE) {
+      logEvent("PROFILE_BODY_TOO_LARGE", { size: rawBody.length }, "warn");
+      return respond({ error: "payload_too_large" }, { status: 413 });
+    }
+    
     const signatureHeader = req.headers.get("x-hub-signature-256");
     const appSecret = Deno.env.get("WHATSAPP_APP_SECRET");
     const allowUnsigned = (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() === "true";
@@ -120,7 +114,15 @@ serve(async (req: Request): Promise<Response> => {
       return respond({ error: "unauthorized" }, { status: 401 });
     }
 
-    const payload: WhatsAppWebhookPayload = JSON.parse(rawBody);
+    // Parse payload with error handling
+    let payload: WhatsAppWebhookPayload;
+    try {
+      payload = JSON.parse(rawBody);
+    } catch {
+      logEvent("PROFILE_INVALID_JSON", {}, "warn");
+      return respond({ error: "invalid_payload" }, { status: 400 });
+    }
+    
     const entry = payload.entry?.[0];
     const change = entry?.changes?.[0];
     const value = change?.value;
@@ -1137,6 +1139,6 @@ serve(async (req: Request): Promise<Response> => {
 });
 
 logStructuredEvent("SERVICE_STARTED", { 
-  service: "wa-webhook-profile",
-  version: "2.1.0",
+  service: SERVICE_NAME,
+  version: SERVICE_VERSION,
 });
