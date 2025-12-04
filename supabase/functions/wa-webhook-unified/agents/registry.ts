@@ -109,25 +109,14 @@ export class AgentRegistry {
       case "real_estate":
         return new PropertyAgent(deps);
       
-      // 8. Marketplace AI Agent (legacy - now aliases to buy_sell)
-      case "marketplace":
-        return new BuySellAgent(deps);
-        return new MarketplaceAgent(deps);
-      
-      // 9. Support AI Agent (includes concierge routing)
+      // 8. Support AI Agent (includes concierge routing)
       case "support":
         return new SupportAgent(deps);
       
-      // 10. Business Broker AI Agent (legacy - now aliases to buy_sell)
-      case "business_broker":
-        return new BuySellAgent(deps);
-      
-      // 11. Buy & Sell Agent (consolidated marketplace + business_broker)
+      // 9. Buy & Sell Agent (consolidated marketplace + business_broker)
+      // Handles: marketplace, business_broker (legacy aliases resolved in ALIAS_MAP)
       case "buy_sell":
         return new BuySellAgent(deps);
-        // Business brokerage and legal intake functionality
-        // Uses MarketplaceAgent for business discovery and intake workflows
-        return new MarketplaceAgent(deps);
 
       default:
         // Fallback to support agent for any unknown types

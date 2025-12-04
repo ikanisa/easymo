@@ -13,8 +13,10 @@ export async function handleCreateBusinessName(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
 
+  const trimmedName = name.trim();
+
   // Basic validation
-  if (name.length < 3) {
+  if (trimmedName.length < 3) {
     await sendTextMessage(
       ctx,
       "⚠️ Business name must be at least 3 characters long. Please try again.",
@@ -22,10 +24,20 @@ export async function handleCreateBusinessName(
     return true;
   }
 
-  // Create the business
+  // Length validation (WhatsApp list item titles have character limits)
+  if (trimmedName.length > 100) {
+    await sendTextMessage(
+      ctx,
+      "⚠️ Business name must be less than 100 characters. Please try again.",
+    );
+    return true;
+  }
+
+  // Create the business - use owner_id to match list.ts query
   const { error } = await ctx.supabase.from("businesses").insert({
-    profile_id: ctx.profileId,
-    name: name.trim(),
+    owner_id: ctx.profileId,
+    owner_whatsapp: ctx.from,
+    name: trimmedName,
     description: "New business", // Default description
   });
 

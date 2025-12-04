@@ -693,8 +693,8 @@ async function handleHomeMenuSelection(
     }
     case IDS.FARMER_AGENT: {
       // Farmer AI - Produce listing and buyer matching
-      const { startFarmerAgent } = await import("../domains/ai-agents/farmer_home.ts");
-      return await startFarmerAgent(ctx);
+      const { startFarmerAgentMenu } = await import("../domains/ai-agents/farmer_home.ts");
+      return await startFarmerAgentMenu(ctx);
     }
     case IDS.INSURANCE_AGENT: {
       // Insurance AI - Quotes, claims, policies
@@ -981,8 +981,10 @@ async function handleHomeMenuSelection(
     }
     case "help_support":
     case "show_help":
-    case "customer_support": {
-      // Launch AI customer support agent
+    case "customer_support":
+    case "support_agent":
+    case IDS.SUPPORT_AGENT: {
+      // Launch AI customer support agent (Help Center)
       const { startCustomerSupportChat } = await import("../domains/ai-agents/customer-support.ts");
       return await startCustomerSupportChat(ctx);
     }

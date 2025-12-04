@@ -34,7 +34,7 @@ export async function handleDeleteBusiness(
     .from("businesses")
     .delete()
     .eq("id", businessId)
-    .eq("profile_id", ctx.profileId);
+    .eq("owner_id", ctx.profileId);
 
   if (error) {
     console.error("Failed to delete business:", error);

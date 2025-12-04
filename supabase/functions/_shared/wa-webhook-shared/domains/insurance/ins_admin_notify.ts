@@ -281,6 +281,7 @@ async function fetchActiveContacts(client: SupabaseClient): Promise<AdminTarget[
       .from("insurance_admin_contacts")
       .select("id, contact_value, display_name")
       .eq("is_active", true)
+      .eq("contact_type", "whatsapp")
       .order("display_order");
 
     if (error) {

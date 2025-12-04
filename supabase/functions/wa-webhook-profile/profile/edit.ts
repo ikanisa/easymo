@@ -71,13 +71,22 @@ export async function handleEditName(
 ): Promise<boolean> {
   const trimmedName = newName.trim();
 
+  // Validation: minimum length
   if (trimmedName.length < 2) {
     await sendText(ctx.from, "❌ Name must be at least 2 characters long.");
     return true;
   }
 
+  // Validation: maximum length
   if (trimmedName.length > 100) {
     await sendText(ctx.from, "❌ Name is too long (max 100 characters).");
+    return true;
+  }
+
+  // Validation: alphanumeric and common characters only (prevent injection)
+  const validNamePattern = /^[\p{L}\p{N}\s\-'.]+$/u;
+  if (!validNamePattern.test(trimmedName)) {
+    await sendText(ctx.from, "❌ Name contains invalid characters. Please use only letters, numbers, spaces, hyphens, and apostrophes.");
     return true;
   }
 
@@ -110,7 +119,7 @@ export async function handleEditName(
 
     await logStructuredEvent("PROFILE_NAME_UPDATED", {
       userId: ctx.profileId,
-      newName: trimmedName
+      // Note: Not logging actual name for privacy
     });
 
     return true;
