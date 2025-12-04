@@ -1,6 +1,7 @@
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
 import { setState, getState } from "../../_shared/wa-webhook-shared/state/store.ts";
-import { sendText, sendButtonsMessage } from "../../_shared/wa-webhook-shared/wa/client.ts";
+import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
+import { sendButtonsMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 
@@ -64,7 +65,7 @@ export async function handleCashOutAmount(
   amountStr: string
 ): Promise<boolean> {
   const state = await getState(ctx.supabase, ctx.profileId!);
-  const { maxBalance } = state?.data || {};
+  const maxBalance = Number(state?.data?.maxBalance ?? 0);
 
   const amount = parseInt(amountStr.replace(/[^0-9]/g, ""));
 
@@ -111,7 +112,10 @@ export async function handleCashOutPhone(
   phone: string
 ): Promise<boolean> {
   const state = await getState(ctx.supabase, ctx.profileId!);
-  const { amount, fee, netTokens, rwfAmount } = state?.data || {};
+  const amount = Number(state?.data?.amount ?? 0);
+  const fee = Number(state?.data?.fee ?? 0);
+  const netTokens = Number(state?.data?.netTokens ?? 0);
+  const rwfAmount = Number(state?.data?.rwfAmount ?? 0);
 
   // Validate required state data
   if (!amount || !fee || !netTokens || !rwfAmount) {
@@ -176,7 +180,11 @@ export async function handleCashOutPhone(
 
 export async function handleCashOutConfirm(ctx: RouterContext): Promise<boolean> {
   const state = await getState(ctx.supabase, ctx.profileId!);
-  const { amount, fee, netTokens, rwfAmount, momoPhone } = state?.data || {};
+  const amount = Number(state?.data?.amount ?? 0);
+  const fee = Number(state?.data?.fee ?? 0);
+  const netTokens = Number(state?.data?.netTokens ?? 0);
+  const rwfAmount = Number(state?.data?.rwfAmount ?? 0);
+  const momoPhone = String(state?.data?.momoPhone ?? "");
 
   try {
     // Create cashout record

@@ -913,11 +913,11 @@ serve(async (req: Request): Promise<Response> => {
       }
       else if (state?.key === "job_edit_location" && state.data) {
         const { handleUpdateJobField } = await import("./jobs/update.ts");
-        handled = await handleUpdateJobField(ctx, state.data.jobId, "location", (message.text as any)?.body ?? "");
+        handled = await handleUpdateJobField(ctx, String(state.data.jobId), "location", (message.text as any)?.body ?? "");
       }
-      else if (state?.key === "job_edit_requirements") {
+      else if (state?.key === "job_edit_requirements" && state.data) {
         const { handleUpdateJobField } = await import("./jobs/update.ts");
-        handled = await handleUpdateJobField(ctx, state.data.jobId, "requirements", (message.text as any)?.body ?? "");
+        handled = await handleUpdateJobField(ctx, String(state.data.jobId), "requirements", (message.text as any)?.body ?? "");
       }
       
       // Handle property creation title
@@ -927,21 +927,21 @@ serve(async (req: Request): Promise<Response> => {
       }
       
       // Handle property edit fields
-      else if (state?.key === "property_edit_title") {
+      else if (state?.key === "property_edit_title" && state.data) {
         const { handleUpdatePropertyField } = await import("./properties/update.ts");
-        handled = await handleUpdatePropertyField(ctx, state.data.propertyId, "title", (message.text as any)?.body ?? "");
+        handled = await handleUpdatePropertyField(ctx, String(state.data.propertyId), "title", (message.text as any)?.body ?? "");
       }
-      else if (state?.key === "property_edit_description") {
+      else if (state?.key === "property_edit_description" && state.data) {
         const { handleUpdatePropertyField } = await import("./properties/update.ts");
-        handled = await handleUpdatePropertyField(ctx, state.data.propertyId, "description", (message.text as any)?.body ?? "");
+        handled = await handleUpdatePropertyField(ctx, String(state.data.propertyId), "description", (message.text as any)?.body ?? "");
       }
-      else if (state?.key === "property_edit_location") {
+      else if (state?.key === "property_edit_location" && state.data) {
         const { handleUpdatePropertyField } = await import("./properties/update.ts");
-        handled = await handleUpdatePropertyField(ctx, state.data.propertyId, "location", (message.text as any)?.body ?? "");
+        handled = await handleUpdatePropertyField(ctx, String(state.data.propertyId), "location", (message.text as any)?.body ?? "");
       }
-      else if (state?.key === "property_edit_price") {
+      else if (state?.key === "property_edit_price" && state.data) {
         const { handleUpdatePropertyField } = await import("./properties/update.ts");
-        handled = await handleUpdatePropertyField(ctx, state.data.propertyId, "price", (message.text as any)?.body ?? "");
+        handled = await handleUpdatePropertyField(ctx, String(state.data.propertyId), "price", (message.text as any)?.body ?? "");
       }
       
       // Handle profile edit name

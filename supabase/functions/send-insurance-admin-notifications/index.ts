@@ -27,7 +27,17 @@ serve(async (req) => {
   }
 
   try {
+    await logStructuredEvent("INFO", { 
+      event: "INSURANCE_ADMIN_NOTIFICATION_START", 
+      method: req.method 
+    });
+
     const { limit = 10 } = await req.json().catch(() => ({}));
+
+    await logStructuredEvent("INFO", { 
+      event: "FETCHING_NOTIFICATIONS", 
+      limit 
+    });
 
     // Get queued insurance admin notifications
     const { data: notifications, error: fetchError } = await supabase
@@ -39,10 +49,23 @@ serve(async (req) => {
       .limit(limit);
 
     if (fetchError) {
+      await logStructuredEvent("ERROR", { 
+        event: "FETCH_NOTIFICATIONS_ERROR", 
+        error: fetchError.message,
+        code: fetchError.code 
+      });
       throw fetchError;
     }
 
+    await logStructuredEvent("INFO", { 
+      event: "NOTIFICATIONS_FETCHED", 
+      count: notifications?.length ?? 0 
+    });
+
     if (!notifications || notifications.length === 0) {
+      await logStructuredEvent("INFO", { 
+        event: "NO_PENDING_NOTIFICATIONS" 
+      });
       return new Response(
         JSON.stringify({
           success: true,
@@ -69,13 +92,37 @@ serve(async (req) => {
         ? notif.retry_count
         : 0;
 
+      await logStructuredEvent("INFO", { 
+        event: "PROCESSING_NOTIFICATION", 
+        notificationId: notif.id,
+        toWaId: notif.to_wa_id,
+        hasMessage: !!message,
+        retryCount: currentRetries 
+      });
+
       try {
         if (!message) {
+          await logStructuredEvent("ERROR", { 
+            event: "MISSING_MESSAGE", 
+            notificationId: notif.id,
+            payload 
+          });
           throw new Error("No message text found in payload");
         }
 
+        await logStructuredEvent("INFO", { 
+          event: "SENDING_WHATSAPP", 
+          toWaId: notif.to_wa_id 
+        });
+
         // Send via wa-webhook client
         await sendText(notif.to_wa_id, message);
+
+        await logStructuredEvent("INFO", { 
+          event: "WHATSAPP_SENT_SUCCESS", 
+          toWaId: notif.to_wa_id,
+          notificationId: notif.id 
+        });
 
         // Mark as sent
         await supabase
@@ -102,11 +149,23 @@ serve(async (req) => {
         }
 
         sent++;
-        await logStructuredEvent("LOG", { data: `Sent notification to ${notif.to_wa_id}` });
+        await logStructuredEvent("INFO", { 
+          event: "NOTIFICATION_SENT", 
+          toWaId: notif.to_wa_id,
+          notificationId: notif.id 
+        });
       } catch (error) {
         failed++;
         const errorMsg = error instanceof Error ? error.message : String(error);
         errors.push(`${notif.to_wa_id}: ${errorMsg}`);
+
+        await logStructuredEvent("ERROR", { 
+          event: "NOTIFICATION_SEND_FAILED", 
+          toWaId: notif.to_wa_id,
+          notificationId: notif.id,
+          error: errorMsg,
+          retryCount: currentRetries 
+        });
 
         const nextRetry = currentRetries + 1;
         const failureTime = new Date().toISOString();
@@ -133,9 +192,15 @@ serve(async (req) => {
             .eq("id", adminNotificationId);
         }
 
-        await logStructuredEvent("ERROR", { data: `Failed to send to ${notif.to_wa_id}:`, error });
       }
     }
+
+    await logStructuredEvent("INFO", { 
+      event: "BATCH_COMPLETE", 
+      sent, 
+      failed, 
+      total: notifications.length 
+    });
 
     return new Response(
       JSON.stringify({
@@ -151,7 +216,11 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    await logStructuredEvent("ERROR", { data: "Send insurance admin notifications error:", error });
+    await logStructuredEvent("ERROR", { 
+      event: "FUNCTION_ERROR", 
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined 
+    });
     return new Response(
       JSON.stringify({
         success: false,
