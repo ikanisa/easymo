@@ -127,10 +127,171 @@ VALUES ('whatsapp', '+250XXXXXXXXX', 'Admin Name', 4, true);
 | `VITE_SUPABASE_PROJECT_ID` | Supabase project ref used by diagnostics scripts. | `.env` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key used only by Edge Functions. | `.env` |
 | `EASYMO_ADMIN_TOKEN` | Shared secret validated by admin Edge Functions. | `.env`, `.env.local` |
-| `ADMIN_SESSION_SECRET` | 16+ chars to encrypt cookies in the admin app. | `.env` |
+| `ADMIN_SESSION_SECRET` | 32+ chars to encrypt cookies in the admin app. | `.env` |
 
 Optional helpers such as `SUPABASE_DB_URL`, `DISPATCHER_FUNCTION_URL`, and cron toggles
 remain in `.env.example` for services that require them.
+
+## Configuration & Environment Variables
+
+### Quick Start
+
+1. **Local Development:**
+   ```bash
+   # Copy the example file
+   cp .env.example .env.local
+   
+   # For admin-app specifically
+   cd admin-app
+   cp .env.example .env.local
+   ```
+
+2. **Edit `.env.local`** with your actual values from:
+   - Supabase Dashboard → Settings → API
+   - Meta Business Suite → WhatsApp → Settings
+   - Google Cloud Console (for AI features)
+
+3. **NEVER commit** `.env.local` or `.env` to git (already in `.gitignore`)
+
+### Required Variables
+
+#### Supabase (Required for all apps)
+
+```bash
+# Public (client-side safe)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+
+# Server-side only (NEVER use NEXT_PUBLIC_* prefix)
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+EASYMO_ADMIN_TOKEN=your-admin-token
+ADMIN_SESSION_SECRET=your-session-secret-min-32-chars
+```
+
+#### WhatsApp Business API (Required for messaging)
+
+```bash
+# Meta WhatsApp Business API (NOT Twilio)
+WHATSAPP_ACCESS_TOKEN=your-permanent-access-token
+WHATSAPP_PHONE_NUMBER_ID=your-phone-number-id
+WHATSAPP_SEND_ENDPOINT=https://your-project.supabase.co/functions/v1/wa-webhook-core
+```
+
+### Optional Variables
+
+#### AI Features
+
+```bash
+# OpenAI (for AI chat, agents)
+OPENAI_API_KEY=sk-your-openai-api-key
+ENABLE_OPENAI_REALTIME=false
+
+# Google AI (Gemini)
+GOOGLE_AI_API_KEY=AIza-your-google-ai-api-key
+GOOGLE_MAPS_API_KEY=AIza-your-maps-api-key
+GOOGLE_SEARCH_API_KEY=AIza-your-search-api-key
+GOOGLE_SEARCH_ENGINE_ID=your-engine-id
+```
+
+#### Microservices
+
+```bash
+# Only needed if running microservices locally
+NEXT_PUBLIC_AGENT_CORE_URL=http://localhost:3001
+NEXT_PUBLIC_VOICE_BRIDGE_API_URL=http://localhost:3002
+NEXT_PUBLIC_WALLET_SERVICE_URL=http://localhost:3006
+```
+
+### Production Deployment
+
+#### Cloud Run / App Engine
+
+Set environment variables in GCP:
+
+```bash
+# Using gcloud CLI
+gcloud run services update easymo-admin-app \
+  --region us-central1 \
+  --set-env-vars NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co \
+  --set-env-vars NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key \
+  --update-secrets SUPABASE_SERVICE_ROLE_KEY=supabase-service-role:latest \
+  --update-secrets EASYMO_ADMIN_TOKEN=admin-token:latest \
+  --update-secrets ADMIN_SESSION_SECRET=session-secret:latest
+```
+
+**Best Practice:** Use Secret Manager for sensitive values:
+
+1. Create secrets:
+   ```bash
+   echo -n "your-service-role-key" | gcloud secrets create supabase-service-role --data-file=-
+   echo -n "your-admin-token" | gcloud secrets create easymo-admin-token --data-file=-
+   ```
+
+2. Grant access to Cloud Run service account
+
+3. Reference in deployment (shown above)
+
+#### Netlify
+
+Configure in: **Site settings → Environment variables**
+
+- Add all `NEXT_PUBLIC_*` variables
+- Add server-side secrets (`SUPABASE_SERVICE_ROLE_KEY`, `EASYMO_ADMIN_TOKEN`, etc.)
+- Netlify automatically provides: `NETLIFY`, `CONTEXT`, `URL`, `DEPLOY_URL`
+
+### Security Rules
+
+⚠️ **CRITICAL:** Follow these rules to prevent security breaches:
+
+1. **NEVER use `NEXT_PUBLIC_*` or `VITE_*` prefixes for sensitive values**
+   - ❌ `NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY` (WRONG - exposed to browser!)
+   - ✅ `SUPABASE_SERVICE_ROLE_KEY` (CORRECT - server-only)
+
+2. **NEVER commit secrets to git**
+   - Use `.env.local` for local development (in `.gitignore`)
+   - Use `.env.example` to document required variables (no real values)
+   - Use Secret Manager for production
+
+3. **Validate during build**
+   - The prebuild script (`scripts/assert-no-service-role-in-client.mjs`) will fail builds if service role keys are found in `NEXT_PUBLIC_*` or `VITE_*` variables
+
+4. **Environment-specific configuration**
+   - Local: `.env.local` (ignored by git)
+   - CI/CD: GitHub Secrets / environment variables
+   - Production: Cloud Run env vars + Secret Manager
+
+### Framework-Specific Prefixes
+
+Different frameworks use different environment variable prefixes for client-side exposure:
+
+| Framework | Client Prefix | Server Prefix | Example |
+|-----------|---------------|---------------|---------|
+| Next.js   | `NEXT_PUBLIC_*` | No prefix | `NEXT_PUBLIC_SUPABASE_URL` |
+| Vite      | `VITE_*` | No prefix | `VITE_API_BASE_URL` |
+| Node.js   | No prefix | No prefix | All variables server-side |
+
+**Rule:** If it has a prefix, it's sent to the browser. Only use prefixes for non-sensitive values!
+
+### Verification
+
+Check your configuration is correct:
+
+```bash
+# Verify Cloud Run config
+./verify-cloudrun-config.sh
+
+# Check for security issues
+pnpm exec eslint --no-error-on-unmatched-pattern
+node scripts/assert-no-service-role-in-client.mjs
+```
+
+### Complete Reference
+
+See `.env.example` files for complete lists:
+- Root: `/Users/jeanbosco/workspace/easymo/.env.example` (monorepo-wide)
+- Admin app: `/Users/jeanbosco/workspace/easymo/admin-app/.env.example` (Next.js specific)
+
+For Cloud Run deployment details, see [CLOUD_RUN_DEPLOYMENT.md](./CLOUD_RUN_DEPLOYMENT.md)
 
 ## Run Commands
 
@@ -237,6 +398,132 @@ before granting write access or sharing tokens.
    (mirrors the `.env` table above; never expose service-role keys in `NEXT_PUBLIC_*`).
 4. `netlify dev` can simulate the build locally if you install the CLI
    (`npm install -g netlify-cli`).
+
+## CI/CD to Google Cloud Run
+
+The admin PWA can be deployed to Google Cloud Run using the GitHub Actions workflow `.github/workflows/deploy-cloud-run.yml`. The workflow automatically builds a Docker container and deploys it on every push to `main`, or can be triggered manually.
+
+### Required GitHub Secrets
+
+Configure these secrets in your repository settings (Settings → Secrets and variables → Actions):
+
+| Secret | Description | Example |
+|--------|-------------|---------|
+| `GCP_PROJECT_ID` | Your GCP project ID | `easymo-production` |
+| `GCP_REGION` | Cloud Run deployment region | `europe-west1` |
+| `CLOUD_RUN_SERVICE` | Name of the Cloud Run service | `easymo-admin-pwa` |
+| `GCP_SA_KEY` | JSON service account key with Cloud Run Admin, Storage Admin, and Artifact Registry permissions | `{"type": "service_account", ...}` |
+
+### Service Account Setup
+
+1. Create a service account in your GCP project:
+   ```bash
+   gcloud iam service-accounts create cloud-run-deployer \
+     --description="GitHub Actions deployment for Cloud Run" \
+     --display-name="Cloud Run Deployer"
+   ```
+
+2. Grant required permissions:
+   ```bash
+   gcloud projects add-iam-policy-binding PROJECT_ID \
+     --member="serviceAccount:cloud-run-deployer@PROJECT_ID.iam.gserviceaccount.com" \
+     --role="roles/run.admin"
+   
+   gcloud projects add-iam-policy-binding PROJECT_ID \
+     --member="serviceAccount:cloud-run-deployer@PROJECT_ID.iam.gserviceaccount.com" \
+     --role="roles/storage.admin"
+   
+   gcloud projects add-iam-policy-binding PROJECT_ID \
+     --member="serviceAccount:cloud-run-deployer@PROJECT_ID.iam.gserviceaccount.com" \
+     --role="roles/artifactregistry.admin"
+   
+   gcloud projects add-iam-policy-binding PROJECT_ID \
+     --member="serviceAccount:cloud-run-deployer@PROJECT_ID.iam.gserviceaccount.com" \
+     --role="roles/iam.serviceAccountUser"
+   ```
+
+3. Create and download the JSON key:
+   ```bash
+   gcloud iam service-accounts keys create key.json \
+     --iam-account=cloud-run-deployer@PROJECT_ID.iam.gserviceaccount.com
+   ```
+   
+   Copy the contents of `key.json` and paste it as the `GCP_SA_KEY` secret in GitHub.
+
+### Manual Deployment Trigger
+
+To manually trigger a deployment from GitHub:
+
+1. Go to **Actions** → **Deploy to Google Cloud Run**
+2. Click **Run workflow**
+3. Select the `main` branch (or your target branch)
+4. Click **Run workflow**
+
+### Authentication & IAP
+
+The workflow deploys with `--allow-unauthenticated` by default for simplicity. For production deployments:
+
+1. **With Identity-Aware Proxy (IAP):** Configure IAP at the load balancer level and change the deployment to use `--no-allow-unauthenticated`:
+   ```bash
+   gcloud run deploy SERVICE_NAME \
+     --no-allow-unauthenticated \
+     ...
+   ```
+   IAP handles authentication before requests reach Cloud Run.
+
+2. **Environment Variables:** Configure runtime environment variables (Supabase keys, admin tokens, etc.) in the Cloud Run console or via `gcloud`:
+   ```bash
+   gcloud run services update SERVICE_NAME \
+     --update-env-vars="NEXT_PUBLIC_SUPABASE_URL=https://...,NEXT_PUBLIC_SUPABASE_ANON_KEY=..." \
+     --region=REGION
+   ```
+
+### Monitoring Deployments
+
+- View deployment logs in the **Actions** tab of your GitHub repository
+- Check Cloud Run logs: `gcloud run services logs read SERVICE_NAME --region=REGION`
+- Monitor service health in the [Cloud Run console](https://console.cloud.google.com/run)
+
+## Identity-Aware Proxy (IAP)
+
+For production deployments, secure your admin PWA with Google's Identity-Aware Proxy to restrict access to authorized users only.
+
+**What is IAP?**
+- Centralized authentication layer that sits in front of your application
+- Verifies user identity via Google OAuth before allowing access
+- Supports Google Workspace accounts and Gmail addresses
+- Zero code changes required - purely infrastructure-level security
+
+**Quick Start:**
+
+```bash
+# 1. Enable required APIs
+./scripts/enable-iap.sh --enable-apis --project-id=YOUR_PROJECT_ID
+
+# 2. Grant access to your admin team
+./scripts/enable-iap.sh \
+  --project-id=YOUR_PROJECT_ID \
+  --backend-service=YOUR_BACKEND_SERVICE \
+  --member=group:easymo-admins@yourcompany.com
+
+# 3. Update Cloud Run to deny unauthenticated access
+gcloud run services update YOUR_SERVICE \
+  --region=YOUR_REGION \
+  --no-allow-unauthenticated
+```
+
+**Complete Setup Guide:** See [docs/iap-setup.md](./docs/iap-setup.md) for:
+- Step-by-step IAP configuration (OAuth consent screen, load balancer, access policies)
+- Managing users and groups
+- Testing and troubleshooting
+- Security best practices
+- Cost considerations
+
+**Helper Script:** Use `./scripts/enable-iap.sh` to:
+- Enable required GCP APIs
+- List available backend services
+- Grant/revoke IAP access
+- Show current access policies
 
 ## Development Notes
 
@@ -401,72 +688,97 @@ See [docs/github_actions_signing.md](./docs/github_actions_signing.md) for setup
 
 ## Cloud Run Deployment
 
-The admin panel is configured for deployment to Google Cloud Run as an internal-only application.
+### Overview
 
-### Build and Run Locally with Docker
+The admin-app is a Next.js 15 SSR application deployed to Google Cloud Run as a standalone container. The Dockerfile builds the admin-app with all required workspace dependencies and serves it on port 8080.
+
+### Local Docker Testing
+
+Build and test the Docker image locally before deploying:
 
 ```bash
 # Build the Docker image
-docker build -t easymo-admin .
+docker build -t easymo-admin-app .
 
-# Run locally with environment variables
+# Run the container locally
 docker run -p 8080:8080 \
   -e NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co \
   -e NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key \
-  -e ADMIN_SESSION_SECRET=your-session-secret-min-64-chars \
+  -e SUPABASE_SERVICE_ROLE_KEY=your-service-role-key \
   -e EASYMO_ADMIN_TOKEN=your-admin-token \
-  easymo-admin
+  -e ADMIN_SESSION_SECRET=your-session-secret-min-32-chars \
+  easymo-admin-app
 
-# Or use an env file
-docker run -p 8080:8080 --env-file .env.local easymo-admin
+# Test the app
+open http://localhost:8080
 ```
 
-The application will be available at `http://localhost:8080`.
+### Required Environment Variables
 
-### Required Environment Variables for Cloud Run
+Configure these environment variables in Cloud Run (Console → Service → Variables & Secrets):
 
-Configure these in Cloud Run → Service → Edit & Deploy New Revision → Variables & Secrets:
+**Public (Client-side):**
+- `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL (e.g., `https://xxxxx.supabase.co`)
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key (safe for browser)
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Public Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anonymous key (safe for client) |
-| `ADMIN_SESSION_SECRET` | Yes | Session encryption secret (min 64 chars) |
-| `EASYMO_ADMIN_TOKEN` | Yes | Admin API authentication token |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key (server-only) |
-| `ADMIN_ACCESS_CREDENTIALS` | Yes | JSON array of admin user credentials |
+**Server-only (NEVER prefix with NEXT_PUBLIC_):**
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key for server-side operations
+- `EASYMO_ADMIN_TOKEN` - Admin API authentication token
+- `ADMIN_SESSION_SECRET` - Session encryption key (min 32 characters)
 
-**Security Notes:**
-- Never expose `SUPABASE_SERVICE_ROLE_KEY` in client-side environment variables
-- Use Cloud Run secrets for sensitive values
-- IAP (Identity-Aware Proxy) should be configured in GCP Console for internal access
+**Optional Microservice URLs:**
+- `NEXT_PUBLIC_AGENT_CORE_URL` - Agent core service URL
+- `NEXT_PUBLIC_VOICE_BRIDGE_API_URL` - Voice bridge API URL
+- `NEXT_PUBLIC_MARKETPLACE_RANKING_URL` - Marketplace ranking service URL
+- `NEXT_PUBLIC_MARKETPLACE_VENDOR_URL` - Vendor service URL
+- `NEXT_PUBLIC_MARKETPLACE_BUYER_URL` - Buyer service URL
+- `NEXT_PUBLIC_WALLET_SERVICE_URL` - Wallet service URL
 
-### Deploy with Cloud Build
-
-```bash
-# Submit build to Cloud Build (requires gcloud CLI)
-gcloud builds submit --config cloudbuild.yaml
-
-# Or trigger via Git push if Cloud Build trigger is configured
-git push origin main
-```
-
-### Manual Cloud Run Deployment
+### Deploy to Cloud Run
 
 ```bash
-# Build and push to GCR
-docker build -t gcr.io/YOUR_PROJECT_ID/easymo-admin .
-docker push gcr.io/YOUR_PROJECT_ID/easymo-admin
+# Set your GCP project
+gcloud config set project YOUR_PROJECT_ID
 
-# Deploy to Cloud Run
-gcloud run deploy easymo-admin \
-  --image gcr.io/YOUR_PROJECT_ID/easymo-admin \
+# Build and deploy (Cloud Build will handle the build)
+gcloud run deploy easymo-admin-app \
+  --source . \
   --region us-central1 \
   --platform managed \
-  --port 8080 \
-  --memory 512Mi \
-  --no-allow-unauthenticated
+  --allow-unauthenticated \
+  --set-env-vars NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co \
+  --set-env-vars NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+
+# Or use gcloud secrets for sensitive values
+gcloud run deploy easymo-admin-app \
+  --source . \
+  --region us-central1 \
+  --platform managed \
+  --allow-unauthenticated \
+  --update-secrets SUPABASE_SERVICE_ROLE_KEY=supabase-service-role:latest \
+  --update-secrets EASYMO_ADMIN_TOKEN=admin-token:latest \
+  --update-secrets ADMIN_SESSION_SECRET=session-secret:latest
 ```
+
+### Configure Identity-Aware Proxy (IAP)
+
+After deployment, configure IAP in the Cloud Console to restrict access to internal users:
+
+1. Go to **Security → Identity-Aware Proxy**
+2. Enable IAP for your Cloud Run service
+3. Add authorized users/groups
+4. The service will be accessible only after IAP authentication
+
+### Production Checklist
+
+- [ ] All environment variables configured
+- [ ] Service role key stored in Secret Manager (not hardcoded)
+- [ ] IAP configured for internal-only access
+- [ ] Supabase CORS settings include Cloud Run URL
+- [ ] Supabase Auth redirect URLs include Cloud Run URL
+- [ ] Health checks passing (Next.js built-in at `/api/health` if implemented)
+- [ ] Logs flowing to Cloud Logging
+- [ ] CloudSQL/external services accessible from Cloud Run VPC
 
 ---
 

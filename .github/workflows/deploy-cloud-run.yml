@@ -1,0 +1,96 @@
+name: Deploy to Google Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pwa/${{ secrets.CLOUD_RUN_SERVICE }}
+
+jobs:
+  deploy:
+    name: Build and Deploy to Cloud Run
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Enable pnpm
+        run: corepack enable && corepack prepare pnpm@latest --activate
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
+
+      - name: Create Artifact Registry repository (if not exists)
+        run: |
+          gcloud artifacts repositories describe pwa \
+            --location=${{ secrets.GCP_REGION }} || \
+          gcloud artifacts repositories create pwa \
+            --repository-format=docker \
+            --location=${{ secrets.GCP_REGION }} \
+            --description="EasyMO PWA container images"
+
+      - name: Build and push container image
+        run: |
+          docker build \
+            -t ${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            -t ${{ env.IMAGE_NAME }}:latest \
+            .
+          docker push ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker push ${{ env.IMAGE_NAME }}:latest
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ secrets.CLOUD_RUN_SERVICE }} \
+            --image=${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            --platform=managed \
+            --region=${{ secrets.GCP_REGION }} \
+            --allow-unauthenticated \
+            --port=8080 \
+            --memory=512Mi \
+            --cpu=1 \
+            --min-instances=0 \
+            --max-instances=10 \
+            --timeout=300 \
+            --set-env-vars="APP_ENV=production" \
+            --labels="app=easymo,component=admin-pwa,managed-by=github-actions" \
+            --tag=sha-${{ github.sha }}
+
+      - name: Output deployment URL
+        run: |
+          echo "### 🚀 Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Service:** ${{ secrets.CLOUD_RUN_SERVICE }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Region:** ${{ secrets.GCP_REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ env.IMAGE_NAME }}:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          SERVICE_URL=$(gcloud run services describe ${{ secrets.CLOUD_RUN_SERVICE }} \
+            --platform=managed \
+            --region=${{ secrets.GCP_REGION }} \
+            --format='value(status.url)')
+          echo "**Service URL:** $SERVICE_URL" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
