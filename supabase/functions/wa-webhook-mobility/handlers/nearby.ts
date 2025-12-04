@@ -8,7 +8,6 @@ import {
   matchPassengersForTrip,
   type MatchResult,
   updateTripDropoff,
-  updateTripLocation,
   MOBILITY_CONFIG,
 } from "../rpc/mobility.ts";
 import { getAppConfig } from "../utils/app_config.ts";

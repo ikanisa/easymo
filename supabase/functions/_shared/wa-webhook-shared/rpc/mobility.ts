@@ -4,7 +4,9 @@ import { MOBILITY_CONFIG, getTripExpiryMs } from "../config/mobility.ts";
 // Re-export config for consumers
 export { MOBILITY_CONFIG } from "../config/mobility.ts";
 
-export type RecurrenceType = "once" | "daily" | "weekdays" | "weekly" | "monthly";
+// Re-export RecurrenceType from intent_storage.ts to avoid duplication
+export type { RecurrenceType } from "../domains/intent_storage.ts";
+import type { RecurrenceType } from "../domains/intent_storage.ts";
 
 export async function gateProFeature(client: SupabaseClient, userId: string) {
   const { data, error } = await client.rpc("gate_pro_feature", {

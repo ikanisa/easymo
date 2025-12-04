@@ -4,6 +4,7 @@ export { MOBILITY_CONFIG } from "../../_shared/wa-webhook-shared/config/mobility
 
 import type { SupabaseClient } from "../deps.ts";
 import type { RecurrenceType } from "../../_shared/wa-webhook-shared/domains/intent_storage.ts";
+import type { MatchResult } from "../../_shared/wa-webhook-shared/rpc/mobility.ts";
 import { MOBILITY_CONFIG, getTripExpiryMs } from "../../_shared/wa-webhook-shared/config/mobility.ts";
 
 // Schema validation - specific to this service for better error handling
@@ -126,7 +127,7 @@ export async function matchDriversForTripWithValidation(
   preferDropoff = false,
   radiusMeters?: number,
   windowDays = MOBILITY_CONFIG.DEFAULT_WINDOW_DAYS,
-) {
+): Promise<MatchResult[]> {
   await ensureRidesTripsSchema(client);
   const { data, error } = await client.rpc("match_drivers_for_trip_v2", {
     _trip_id: tripId,
@@ -136,7 +137,7 @@ export async function matchDriversForTripWithValidation(
     _window_days: windowDays,
   } as Record<string, unknown>);
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []) as MatchResult[];
 }
 
 /**
@@ -149,7 +150,7 @@ export async function matchPassengersForTripWithValidation(
   preferDropoff = false,
   radiusMeters?: number,
   windowDays = MOBILITY_CONFIG.DEFAULT_WINDOW_DAYS,
-) {
+): Promise<MatchResult[]> {
   await ensureRidesTripsSchema(client);
   const { data, error } = await client.rpc("match_passengers_for_trip_v2", {
     _trip_id: tripId,
@@ -159,5 +160,5 @@ export async function matchPassengersForTripWithValidation(
     _window_days: windowDays,
   } as Record<string, unknown>);
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []) as MatchResult[];
 }
