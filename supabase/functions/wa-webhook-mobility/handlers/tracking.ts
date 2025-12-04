@@ -201,17 +201,61 @@ export async function updateDriverLocation(
 // ============================================================================
 
 /**
- * Calculates estimated time of arrival
- * Uses simple haversine distance + average speed
- * In production, should integrate with Google Maps Distance Matrix API
+ * Enhanced ETA calculation using Google Maps Distance Matrix API
+ * Falls back to Haversine calculation if API is unavailable
  */
 export async function calculateETA(
   origin: Coordinates,
   destination: Coordinates,
-  averageSpeedKmh: number = 30 // Default urban speed
+  averageSpeedKmh: number = 30 // Fallback speed
 ): Promise<ETACalculation> {
   try {
-    // Calculate straight-line distance using Haversine formula
+    const apiKey = Deno.env.get("GOOGLE_MAPS_API_KEY");
+    
+    // Try Google Maps API first if key is available
+    if (apiKey) {
+      const { calculateETAWithCache } = await import(
+        "../../_shared/maps/distance-matrix.ts"
+      );
+      
+      const result = await calculateETAWithCache(
+        apiKey,
+        { lat: origin.latitude, lng: origin.longitude },
+        { lat: destination.latitude, lng: destination.longitude },
+        {
+          mode: "driving",
+          includeTraffic: true, // Get real-time traffic data
+        }
+      );
+      
+      if (!result.error) {
+        const estimatedArrival = new Date(
+          Date.now() + result.duration_minutes * 60000
+        );
+        
+        await logStructuredEvent("ETA_CALCULATED_MAPS_API", {
+          origin,
+          destination,
+          distanceKm: result.distance_km,
+          durationMinutes: result.duration_minutes,
+          withTraffic: result.duration_with_traffic_minutes,
+          cached: result.cached,
+        });
+        
+        return {
+          distanceKm: result.distance_km,
+          durationMinutes: result.duration_with_traffic_minutes || result.duration_minutes,
+          estimatedArrival,
+        };
+      }
+      
+      // Log API failure and fall back
+      await logStructuredEvent("MAPS_API_FALLBACK", {
+        error: result.error,
+      }, "warn");
+    }
+    
+    // Fallback: Calculate straight-line distance using Haversine formula
     const distanceKm = calculateHaversineDistance(origin, destination);
     
     // Apply route factor (straight-line vs actual road distance)
@@ -225,7 +269,7 @@ export async function calculateETA(
     // Calculate estimated arrival time
     const estimatedArrival = new Date(Date.now() + durationMinutes * 60000);
 
-    await logStructuredEvent("ETA_CALCULATED", {
+    await logStructuredEvent("ETA_CALCULATED_HAVERSINE", {
       origin,
       destination,
       distanceKm: actualDistanceKm,
@@ -250,39 +294,6 @@ export async function calculateETA(
     };
   }
 }
-
-/**
- * TODO: Enhanced ETA calculation using Google Maps Distance Matrix API
- * 
- * export async function calculateETAWithMaps(
- *   origin: Coordinates,
- *   destination: Coordinates
- * ): Promise<ETACalculation> {
- *   const apiKey = Deno.env.get("GOOGLE_MAPS_API_KEY");
- *   
- *   const response = await fetch(
- *     `https://maps.googleapis.com/maps/api/distancematrix/json?` +
- *     `origins=${origin.latitude},${origin.longitude}&` +
- *     `destinations=${destination.latitude},${destination.longitude}&` +
- *     `mode=driving&` +
- *     `key=${apiKey}`
- *   );
- *   
- *   const data = await response.json();
- *   const element = data.rows[0].elements[0];
- *   
- *   if (element.status === "OK") {
- *     const distanceKm = element.distance.value / 1000;
- *     const durationMinutes = Math.ceil(element.duration.value / 60);
- *     const estimatedArrival = new Date(Date.now() + durationMinutes * 60000);
- *     
- *     return { distanceKm, durationMinutes, estimatedArrival };
- *   }
- *   
- *   // Fallback to haversine if API fails
- *   return calculateETA(origin, destination);
- * }
- */
 
 // ============================================================================
 // TRACKING CONTROL

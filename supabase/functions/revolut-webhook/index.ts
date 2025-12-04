@@ -10,8 +10,17 @@ import { logStructuredEvent, recordMetric } from "../_shared/observability.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
 import { getEnv, getRotatingSecret } from "../_shared/env.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
+import { initErrorTracking, captureException } from "../_shared/error-tracking.ts";
 
 const supabase = getServiceClient();
+
+// Initialize error tracking
+initErrorTracking({
+  dsn: Deno.env.get("SENTRY_DSN") || "",
+  environment: Deno.env.get("REVOLUT_ENVIRONMENT") || "development",
+  release: Deno.env.get("RELEASE_VERSION"),
+  sampleRate: 1.0, // Capture all errors in webhooks
+});
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
