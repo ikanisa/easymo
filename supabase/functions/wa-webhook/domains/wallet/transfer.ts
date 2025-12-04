@@ -5,7 +5,7 @@ import { IDS } from "../../wa/ids.ts";
 import { setState } from "../../state/store.ts";
 import { t } from "../../i18n/translator.ts";
 import { toE164 } from "../../utils/phone.ts";
-import { listWalletPartners } from "../../rpc/wallet.ts";
+import { listWalletPartners, fetchWalletSummary } from "../../rpc/wallet.ts";
 
 type TransferState = {
   key: string;
@@ -18,6 +18,25 @@ type TransferState = {
 
 export async function startWalletTransfer(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
+  
+  // Check balance - minimum 2000 tokens required
+  let currentBalance = 0;
+  try {
+    const summary = await fetchWalletSummary(ctx.supabase, ctx.profileId);
+    currentBalance = Number(summary?.tokens ?? 0);
+  } catch (_) {
+    currentBalance = 0;
+  }
+  
+  if (currentBalance < 2000) {
+    await sendButtonsMessage(
+      ctx,
+      `⚠️ You need at least 2000 tokens to transfer. Your balance: ${currentBalance}.`,
+      [{ id: IDS.WALLET, title: "💎 Wallet" }],
+    );
+    return true;
+  }
+  
   const idem = crypto.randomUUID();
   await setState(ctx.supabase, ctx.profileId, { key: "wallet_transfer", data: { stage: "choose", idem } });
   try {
