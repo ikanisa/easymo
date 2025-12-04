@@ -1,102 +1,8 @@
+// Re-export core mobility functions from shared
+export { MOBILITY_CONFIG } from "../../_shared/wa-webhook-shared/config/mobility.ts";
+export * from "../../_shared/wa-webhook-shared/rpc/mobility.ts";
+
 import type { SupabaseClient } from "../deps.ts";
-import type { RecurrenceType } from "../../_shared/wa-webhook-shared/domains/intent_storage.ts";
-
-// Trip expiry: configurable via environment variable, default 90 minutes
-// Increased from 30 to 90 minutes to improve match rate (75% → 90%+)
-const DEFAULT_TRIP_EXPIRY_MINUTES = 90;
-const envExpiryMinutes = Number(Deno.env.get("MOBILITY_TRIP_EXPIRY_MINUTES"));
-const TRIP_EXPIRY_MINUTES = Number.isFinite(envExpiryMinutes) && envExpiryMinutes > 0 
-  ? envExpiryMinutes 
-  : DEFAULT_TRIP_EXPIRY_MINUTES;
-const TRIP_EXPIRY_MS = TRIP_EXPIRY_MINUTES * 60 * 1000;
-
-export async function gateProFeature(client: SupabaseClient, userId: string) {
-  const { data, error } = await client.rpc("gate_pro_feature", {
-    _user_id: userId,
-  });
-  if (error) throw error;
-  if (!data || data.length === 0) {
-    return { access: false, used_credit: false, credits_left: 0 };
-  }
-  return data[0] as {
-    access: boolean;
-    used_credit: boolean;
-    credits_left: number;
-  };
-}
-
-export async function recordDriverPresence(
-  client: SupabaseClient,
-  userId: string,
-  params: {
-    vehicleType: string;
-    lat: number;
-    lng: number;
-    lastSeenAt?: string;
-  },
-): Promise<void> {
-  const { error } = await client
-    .from("driver_status")
-    .upsert({
-      user_id: userId,
-      vehicle_type: params.vehicleType,
-      last_seen: params.lastSeenAt ?? new Date().toISOString(),
-      lat: params.lat,
-      lng: params.lng,
-      location: `SRID=4326;POINT(${params.lng} ${params.lat})`,
-      online: true,
-    }, { onConflict: "user_id" });
-  if (error) throw error;
-}
-
-export async function insertTrip(
-  client: SupabaseClient,
-  params: {
-    userId: string;
-    role: "driver" | "passenger";
-    vehicleType: string;
-    lat: number;
-    lng: number;
-    radiusMeters: number;
-    pickupText?: string;
-    scheduledAt?: Date | string;
-    recurrence?: RecurrenceType;
-  },
-): Promise<string> {
-  // For scheduled trips, use longer expiry (7 days) or default 30 minutes
-  const isScheduled = params.scheduledAt !== undefined;
-  const expiryMs = isScheduled ? 7 * 24 * 60 * 60 * 1000 : TRIP_EXPIRY_MS;
-  const expires = new Date(Date.now() + expiryMs).toISOString();
-  
-  const scheduledAtStr = params.scheduledAt 
-    ? (params.scheduledAt instanceof Date 
-        ? params.scheduledAt.toISOString() 
-        : params.scheduledAt)
-    : null;
-
-  const { data, error } = await client
-    .from("rides_trips")
-    .insert({
-      creator_user_id: params.userId,
-      role: params.role,
-      vehicle_type: params.vehicleType,
-      pickup_latitude: params.lat,
-      pickup_longitude: params.lng,
-      pickup: `SRID=4326;POINT(${params.lng} ${params.lat})`,
-      pickup_radius_m: params.radiusMeters,
-      pickup_text: params.pickupText ?? null,
-      status: isScheduled ? "scheduled" : "open",
-      expires_at: expires,
-      scheduled_at: scheduledAtStr,
-      recurrence: params.recurrence ?? null,
-      last_location_at: new Date().toISOString(),
-    })
-    .select("id")
-    .single();
-  if (error) throw error;
-  return data?.id;
-}
-
 export async function updateTripDropoff(
   client: SupabaseClient,
   params: {
@@ -175,6 +81,7 @@ export async function matchPassengersForTrip(
   return (data ?? []) as MatchResult[];
 }
 
+// Additional types specific to this service
 export type RecommendationResult = {
   driver_user_id?: string;
   passenger_user_id?: string;
@@ -243,33 +150,4 @@ export async function findScheduledTripsNearby(
   });
   if (error) throw error;
   return (data ?? []) as ScheduledTripResult[];
-}
-
-export async function updateTripLocation(
-  client: SupabaseClient,
-  params: {
-    tripId: string;
-    lat: number;
-    lng: number;
-    pickupText?: string;
-  },
-): Promise<void> {
-  // Validate lat/lng are finite numbers to prevent malformed geometry
-  if (!Number.isFinite(params.lat) || !Number.isFinite(params.lng)) {
-    throw new Error("Invalid coordinates: lat and lng must be finite numbers");
-  }
-  if (params.lat < -90 || params.lat > 90 || params.lng < -180 || params.lng > 180) {
-    throw new Error("Invalid coordinates: lat must be [-90,90], lng must be [-180,180]");
-  }
-  const { error } = await client
-    .from("rides_trips")
-    .update({
-      pickup_latitude: params.lat,
-      pickup_longitude: params.lng,
-      pickup: `SRID=4326;POINT(${params.lng} ${params.lat})`,
-      pickup_text: params.pickupText ?? null,
-      last_location_at: new Date().toISOString(),
-    })
-    .eq("id", params.tripId);
-  if (error) throw error;
 }

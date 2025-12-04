@@ -10,6 +10,7 @@ import {
   matchPassengersForTrip,
   type MatchResult,
   updateTripDropoff,
+  MOBILITY_CONFIG,
 } from "../../rpc/mobility.ts";
 import { getAppConfig } from "../../utils/app_config.ts";
 import { waChatLink } from "../../utils/links.ts";
@@ -41,6 +42,10 @@ import {
 import { buildSaveRows } from "../../locations/save.ts";
 import { sortMatches } from "../../../_shared/wa-webhook-shared/utils/sortMatches.ts";
 
+// Use centralized config for consistency
+const DEFAULT_WINDOW_DAYS = MOBILITY_CONFIG.DEFAULT_WINDOW_DAYS;
+const REQUIRED_RADIUS_METERS = MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS;
+const MAX_RADIUS_METERS = MOBILITY_CONFIG.MAX_SEARCH_RADIUS_METERS;
 const DEFAULT_WINDOW_DAYS = 2;  // 48-hour window to match DB default
 const REQUIRED_RADIUS_METERS = 10_000;
 const MAX_RADIUS_METERS = 25_000;
