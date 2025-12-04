@@ -1,7 +1,8 @@
-import type { RouterContext } from "../../types.ts";
-import { sendText } from "../../wa/client.ts";
 import { t } from "../../i18n/translator.ts";
 import { setState } from "../../state/store.ts";
+import type { RouterContext } from "../../types.ts";
+import { sendButtonsMessage } from "../../utils/reply.ts";
+import { IDS } from "../../wa/ids.ts";
 
 /**
  * Start General Broker AI Agent
@@ -16,11 +17,12 @@ export async function handleGeneralBrokerStart(ctx: RouterContext): Promise<bool
     });
   }
 
-  // Send welcome message and route to AI agent
-  await sendText(
-    ctx.from,
+  // Send welcome message with home button
+  await sendButtonsMessage(
+    ctx,
     t(ctx.locale, "generalBroker.welcome") ||
-      "Welcome to General Broker! 🤝\n\nI can help you find and connect with service providers for various needs. What service are you looking for?"
+      "Welcome to General Broker! 🤝\n\nI can help you find and connect with service providers for various needs. What service are you looking for?",
+    [{ id: IDS.BACK_HOME, title: t(ctx.locale, "common.home_button") }]
   );
 
   return true;

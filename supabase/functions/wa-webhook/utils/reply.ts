@@ -1,7 +1,7 @@
+import { t } from "../i18n/translator.ts";
 import type { ButtonSpec, RouterContext } from "../types.ts";
 import { sendButtons, sendList } from "../wa/client.ts";
 import { IDS } from "../wa/ids.ts";
-import { t } from "../i18n/translator.ts";
 
 const HOME_BUTTON: ButtonSpec = { id: IDS.BACK_HOME, title: "🏠 Home" };
 
@@ -9,6 +9,24 @@ function ensureHomeButton(buttons: ButtonSpec[], max = 3): ButtonSpec[] {
   if (!buttons.length) {
     return [HOME_BUTTON];
   }
+  
+  // Check if home button already exists
+  const hasHomeButton = buttons.some(b => 
+    b.id === IDS.BACK_HOME || b.id === IDS.BACK_MENU || b.id === IDS.HOME_BACK
+  );
+  
+  // If no home button and we have room, add it
+  if (!hasHomeButton && buttons.length < max) {
+    return [...buttons, HOME_BUTTON];
+  }
+  
+  // If no home button but at max capacity, replace last button with home
+  if (!hasHomeButton && buttons.length >= max) {
+    const trimmed = buttons.slice(0, max - 1);
+    return [...trimmed, HOME_BUTTON];
+  }
+  
+  // Home button exists, just trim to max
   return buttons.slice(0, max);
 }
 
@@ -24,7 +42,7 @@ export async function sendButtonsMessage(
   buttons: ButtonSpec[],
   options: { emoji?: string } = {},
 ): Promise<void> {
-  let augmented = [...buttons];
+  const augmented = [...buttons];
   // Auto-append Share button if room (<3 actions)
   try {
     const hasAdmin = buttons.some((b) =>

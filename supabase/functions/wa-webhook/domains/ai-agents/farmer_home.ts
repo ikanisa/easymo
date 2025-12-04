@@ -1,13 +1,10 @@
+import { t } from "../../i18n/translator.ts";
+import { setState } from "../../state/store.ts";
 import type { RouterContext } from "../../types.ts";
 import { sendButtonsMessage } from "../../utils/reply.ts";
 import { IDS } from "../../wa/ids.ts";
-import { setState } from "../../state/store.ts";
-import { t } from "../../i18n/translator.ts";
 
 export async function startFarmerAgentMenu(ctx: RouterContext): Promise<void> {
-  const welcomeMsg = t(ctx.locale, "farmer.welcome");
-  const menuText = `${welcomeMsg}\n\n1️⃣ ${t(ctx.locale, "farmer.supply.title")}\n2️⃣ ${t(ctx.locale, "farmer.demand.title")}\n0️⃣ ${t(ctx.locale, "common.back")}`;
-
   if (ctx.profileId) {
     await setState(ctx.supabase, ctx.profileId, {
       key: "farmer_agent_menu",
@@ -15,8 +12,14 @@ export async function startFarmerAgentMenu(ctx: RouterContext): Promise<void> {
     });
   }
 
-  const { sendText } = await import("../../wa/client.ts");
-  await sendText(ctx.from, menuText);
+  await sendButtonsMessage(
+    ctx,
+    t(ctx.locale, "farmer.welcome"),
+    [
+      { id: IDS.FARMER_AGENT_SUPPLY, title: t(ctx.locale, "farmer.supply.title") },
+      { id: IDS.FARMER_AGENT_DEMAND, title: t(ctx.locale, "farmer.demand.title") },
+    ]
+  );
 }
 
 export async function handleFarmerAgentSupply(ctx: RouterContext): Promise<void> {
@@ -27,8 +30,11 @@ export async function handleFarmerAgentSupply(ctx: RouterContext): Promise<void>
     });
   }
 
-  const { sendText } = await import("../../wa/client.ts");
-  await sendText(ctx.from, t(ctx.locale, "farmer.supply.prompt"));
+  await sendButtonsMessage(
+    ctx,
+    t(ctx.locale, "farmer.supply.prompt"),
+    [{ id: IDS.BACK_HOME, title: t(ctx.locale, "common.home_button") }]
+  );
 }
 
 export async function handleFarmerAgentDemand(ctx: RouterContext): Promise<void> {
@@ -39,6 +45,9 @@ export async function handleFarmerAgentDemand(ctx: RouterContext): Promise<void>
     });
   }
 
-  const { sendText } = await import("../../wa/client.ts");
-  await sendText(ctx.from, t(ctx.locale, "farmer.demand.prompt"));
+  await sendButtonsMessage(
+    ctx,
+    t(ctx.locale, "farmer.demand.prompt"),
+    [{ id: IDS.BACK_HOME, title: t(ctx.locale, "common.home_button") }]
+  );
 }
