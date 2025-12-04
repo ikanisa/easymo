@@ -1,0 +1,218 @@
+version: '3.8'
+
+services:
+  # Redis Cache
+  redis-mobility:
+    image: redis:7-alpine
+    container_name: redis-mobility
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-mobility-data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - mobility-net
+    restart: unless-stopped
+
+  # Matching Service
+  matching-service:
+    build:
+      context: ./services/matching-service
+      dockerfile: Dockerfile
+    container_name: matching-service
+    ports:
+      - "4700:4700"
+    environment:
+      - NODE_ENV=production
+      - PORT=4700
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - REDIS_URL=redis://redis-mobility:6379
+    depends_on:
+      redis-mobility:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4700/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - mobility-net
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # Ranking Service
+  ranking-service:
+    build:
+      context: ./services/ranking-service
+      dockerfile: Dockerfile
+    container_name: ranking-service
+    ports:
+      - "4500:4500"
+    environment:
+      - NODE_ENV=production
+      - PORT=4500
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - REDIS_URL=redis://redis-mobility:6379
+    depends_on:
+      redis-mobility:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4500/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - mobility-net
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  # Orchestrator Service
+  mobility-orchestrator:
+    build:
+      context: ./services/mobility-orchestrator
+      dockerfile: Dockerfile
+    container_name: mobility-orchestrator
+    ports:
+      - "4600:4600"
+    environment:
+      - NODE_ENV=production
+      - PORT=4600
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - REDIS_URL=redis://redis-mobility:6379
+      - MATCHING_SERVICE_URL=http://matching-service:4700
+      - RANKING_SERVICE_URL=http://ranking-service:4500
+      - TRACKING_SERVICE_URL=http://tracking-service:4800
+    depends_on:
+      matching-service:
+        condition: service_healthy
+      ranking-service:
+        condition: service_healthy
+      tracking-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4600/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - mobility-net
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # Tracking Service
+  tracking-service:
+    build:
+      context: ./services/tracking-service
+      dockerfile: Dockerfile
+    container_name: tracking-service
+    ports:
+      - "4800:4800"
+    environment:
+      - NODE_ENV=production
+      - PORT=4800
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - REDIS_URL=redis://redis-mobility:6379
+    depends_on:
+      redis-mobility:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4800/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - mobility-net
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus-mobility
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/monitoring/prometheus:/etc/prometheus
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - mobility-net
+    restart: unless-stopped
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana-mobility
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./infrastructure/monitoring/grafana:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=redis-datasource
+    depends_on:
+      - prometheus
+    networks:
+      - mobility-net
+    restart: unless-stopped
+
+networks:
+  mobility-net:
+    driver: bridge
+
+volumes:
+  redis-mobility-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
