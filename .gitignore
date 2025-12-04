@@ -69,6 +69,10 @@ package.json.backup
 pnpm-debug.log*
 supabase/.branches/
 supabase/.temp/
+supabase/migrations__archive/
+docs/archive/
+supabase/functions/_shared/examples/
+supabase/functions/_shared/health/
 yarn-debug.log*
 yarn-error.log*
 # NEVER commit code-signing certificates
