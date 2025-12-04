@@ -139,11 +139,10 @@ export async function updateTripDropoff(
 ): Promise<void> {
   await ensureRidesTripsSchema(client);
   const { error } = await client
-    .from("rides_trips")
+    .from("mobility_trips") // V2 table
     .update({
-      dropoff_latitude: params.lat,
-      dropoff_longitude: params.lng,
-      dropoff: `SRID=4326;POINT(${params.lng} ${params.lat})`,
+      dropoff_lat: params.lat,
+      dropoff_lng: params.lng,
       dropoff_text: params.dropoffText ?? null,
       dropoff_radius_m: params.radiusMeters ?? null,
     })
@@ -227,13 +226,12 @@ export async function updateTripLocation(
     throw new Error("Invalid coordinates: lat must be [-90,90], lng must be [-180,180]");
   }
   const { error } = await client
-    .from("rides_trips")
+    .from("mobility_trips") // V2 table
     .update({
-      pickup_latitude: params.lat,
-      pickup_longitude: params.lng,
-      pickup: `SRID=4326;POINT(${params.lng} ${params.lat})`,
+      pickup_lat: params.lat,
+      pickup_lng: params.lng,
       pickup_text: params.pickupText ?? null,
-      last_location_at: new Date().toISOString(),
+      last_location_update: new Date().toISOString(),
     })
     .eq("id", params.tripId);
   if (error) throw error;

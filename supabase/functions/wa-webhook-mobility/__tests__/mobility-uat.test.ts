@@ -506,7 +506,7 @@ errorHandlingSuite.test("handles missing sender gracefully", () => {
     }],
   };
 
-  const from = payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from;
+  const from = (payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0] as any)?.from;
   assertEquals(from, undefined, "Should detect missing sender");
 });
 

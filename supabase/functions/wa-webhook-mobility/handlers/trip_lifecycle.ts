@@ -61,7 +61,7 @@ export async function handleTripStart(
 
     // 1. Verify trip exists and is in accepted state
     const { data: trip, error: tripError } = await ctx.supabase
-      .from("mobility_matches")
+      .from("mobility_trip_matches") // V2 table
       .select("*")
       .eq("id", tripId)
       .eq("status", "accepted")
@@ -85,17 +85,29 @@ export async function handleTripStart(
       return false;
     }
 
-    // 3. Update trip status to in_progress
-    const { error: updateError } = await ctx.supabase
-      .from("mobility_matches")
+    // 3. Update trip status to in_progress with optimistic locking
+    const { data: updated, error: updateError } = await ctx.supabase
+      .from("mobility_trip_matches") // V2 table
       .update({
         status: "in_progress",
         started_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .eq("id", tripId);
+      .eq("id", tripId)
+      .eq("version", trip.version) // Optimistic lock
+      .select()
+      .single();
 
     if (updateError) {
+      // Check for concurrent update (optimistic lock failure)
+      if (updateError.code === 'PGRST116') {
+        await logStructuredEvent("TRIP_START_FAILED", { 
+          tripId, 
+          reason: "concurrent_update_detected",
+          currentVersion: trip.version
+        }, "error");
+        return false;
+      }
       await logStructuredEvent("TRIP_START_FAILED", { 
         tripId, 
         reason: "update_failed",
@@ -152,23 +164,47 @@ export async function handleTripArrivedAtPickup(
     if (!userId) return false;
     await logStructuredEvent("DRIVER_ARRIVAL_INITIATED", { tripId });
 
-    // 1. Update trip status
+    // 1. Get current trip state
+    const { data: currentTrip } = await ctx.supabase
+      .from("mobility_trip_matches") // V2 table
+      .select("*")
+      .eq("id", tripId)
+      .eq("driver_user_id", userId)
+      .eq("status", "accepted")
+      .single();
+
+    if (!currentTrip) {
+      await logStructuredEvent("DRIVER_ARRIVAL_FAILED", { 
+        tripId, 
+        reason: "trip_not_found_or_wrong_status"
+      }, "error");
+      return false;
+    }
+
+    // 2. Update trip status with optimistic locking
     const { data: trip, error: updateError } = await ctx.supabase
-      .from("mobility_matches")
+      .from("mobility_trip_matches") // V2 table
       .update({
         status: "driver_arrived",
+        arrived_at_pickup_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq("id", tripId)
-      .eq("driver_id", userId)
-      .eq("status", "accepted")
+      .eq("version", currentTrip.version) // Optimistic lock
       .select()
       .single();
 
-    if (updateError || !trip) {
+    if (updateError) {
+      if (updateError.code === 'PGRST116') {
+        await logStructuredEvent("DRIVER_ARRIVAL_FAILED", { 
+          tripId, 
+          reason: "concurrent_update_detected"
+        }, "error");
+        return false;
+      }
       await logStructuredEvent("DRIVER_ARRIVAL_FAILED", { 
         tripId, 
-        error: updateError?.message 
+        error: updateError.message 
       }, "error");
       return false;
     }

@@ -8,6 +8,7 @@ import { z } from "zod";
 import { settings } from "./config";
 import { logger } from "./logger";
 import { RankingService } from "./service";
+import mobilityRoutes from "./mobility-routes";
 
 const log = childLogger({ service: 'ranking-service' });
 
@@ -23,11 +24,15 @@ async function bootstrap() {
   const ranking = new RankingService(prisma);
 
   const app = express();
+  app.use(express.json());
   app.use(pinoHttp({ logger: logger as any }));
 
   app.get("/health", (_req, res) => {
     res.json({ status: "ok" });
   });
+
+  // Mobility ranking routes
+  app.use("/ranking", mobilityRoutes);
 
   app.get("/ranking/vendors", async (req, res) => {
     if (!isFeatureEnabled("marketplace.ranking")) {
