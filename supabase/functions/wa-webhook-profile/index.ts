@@ -6,10 +6,10 @@ import { sendButtonsMessage, sendListMessage } from "../_shared/wa-webhook-share
 import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
 import type { RouterContext, WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.ts";
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
-import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
+// Note: Rate limiting removed - handled by wa-webhook-core before forwarding
 
 const SERVICE_NAME = "wa-webhook-profile";
-const SERVICE_VERSION = "2.2.0";
+const SERVICE_VERSION = "2.2.1";
 const MAX_BODY_SIZE = 2 * 1024 * 1024; // 2MB limit for profile photos
 
 const supabase = createClient(
@@ -18,16 +18,7 @@ const supabase = createClient(
 );
 
 serve(async (req: Request): Promise<Response> => {
-  // Rate limiting (100 req/min for high-volume WhatsApp)
-  const rateLimitCheck = await rateLimitMiddleware(req, {
-    limit: 100,
-    windowSeconds: 60,
-  });
-
-  if (!rateLimitCheck.allowed) {
-    return rateLimitCheck.response!;
-  }
-
+  // Note: Rate limiting handled by wa-webhook-core before forwarding to this service
   const url = new URL(req.url);
   const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
   const correlationId = req.headers.get("x-correlation-id") ?? requestId;
