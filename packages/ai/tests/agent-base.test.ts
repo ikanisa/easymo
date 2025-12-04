@@ -7,7 +7,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 import { AgentBase, AgentConfig, AgentInput, AgentResult } from '../src/core/agent-base.js';
-import type { Tool } from '../src/core/types.js';
+import type { Tool } from '../src/types/index.js';
 
 // Mock childLogger
 vi.mock('@easymo/commons', () => ({
