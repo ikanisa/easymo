@@ -15,12 +15,8 @@
  * @packageDocumentation
  */
 
-import { childLogger } from '@easymo/commons';
-
 import { AgentBase, AgentConfig, AgentInput, AgentResult } from '../core/agent-base.js';
 import type { Tool, ToolContext } from '../types/index.js';
-
-const log = childLogger({ service: 'mobility-agent' });
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -197,7 +193,6 @@ export abstract class MobilityAgentBase extends AgentBase {
 
   constructor(config?: AgentConfig) {
     super(config);
-    this.log('MOBILITY_AGENT_INIT', { agent: this.name });
   }
 
   /**

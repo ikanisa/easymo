@@ -16,12 +16,8 @@
  * @packageDocumentation
  */
 
-import { childLogger } from '@easymo/commons';
-
 import { AgentBase, AgentConfig, AgentInput, AgentResult } from '../core/agent-base.js';
 import type { Tool, ToolContext } from '../types/index.js';
-
-const log = childLogger({ service: 'commerce-agent' });
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -153,7 +149,6 @@ export abstract class CommerceAgentBase extends AgentBase {
 
   constructor(config?: AgentConfig) {
     super(config);
-    this.log('COMMERCE_AGENT_INIT', { agent: this.name });
   }
 
   /**

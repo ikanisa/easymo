@@ -11,9 +11,8 @@
  * @packageDocumentation
  */
 
-import { EventEmitter } from 'events';
-
 import { childLogger } from '@easymo/commons';
+import { EventEmitter } from 'events';
 
 import type { MemoryManager } from '../memory/memory-manager.js';
 import type { Tool, ToolContext } from '../types/index.js';
@@ -245,8 +244,8 @@ export abstract class AgentBase extends EventEmitter {
   ): Promise<AgentResult> {
     const startTime = Date.now();
     const turns = maxTurns ?? this.maxTurns;
-    let currentMessages = [...messages];
-    let totalUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+    const currentMessages = [...messages];
+    const totalUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
     let totalCost = 0;
     const toolsExecuted: string[] = [];
 
@@ -429,7 +428,7 @@ export abstract class AgentBase extends EventEmitter {
    * Load memory context for the agent
    */
   protected async loadMemory(
-    userId: string,
+    _userId: string,
     conversationId: string,
     query?: string,
   ): Promise<MemoryContext> {
@@ -482,7 +481,7 @@ export abstract class AgentBase extends EventEmitter {
    * Save to memory after interaction
    */
   protected async saveMemory(
-    userId: string,
+    _userId: string,
     conversationId: string,
     userMessage: string,
     assistantMessage: string,
@@ -635,7 +634,7 @@ export abstract class AgentBase extends EventEmitter {
    * Check if agent should hand off to another agent
    */
   protected shouldHandoff(
-    message: string,
+    _message: string,
     _context: AgentContext,
   ): { needsHandoff: boolean; targetAgent?: string; reason?: string } {
     // Base implementation - can be overridden by subclasses
