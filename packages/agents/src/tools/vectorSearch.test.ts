@@ -7,7 +7,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { vectorSearchTool, vectorSearchSchema } from './vectorSearch';
+import { vectorSearchSchema,vectorSearchTool } from './vectorSearch';
 
 describe('vectorSearch', () => {
   beforeEach(() => {

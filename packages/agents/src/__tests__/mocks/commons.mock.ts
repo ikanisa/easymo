@@ -5,16 +5,16 @@
 
 export function childLogger(options: { service: string }) {
   return {
-    info: (...args: unknown[]) => {
+    info: (...args: unknown[]): void => {
       // Silent in tests
     },
-    error: (...args: unknown[]) => {
+    error: (...args: unknown[]): void => {
       // Silent in tests
     },
-    warn: (...args: unknown[]) => {
+    warn: (...args: unknown[]): void => {
       // Silent in tests
     },
-    debug: (...args: unknown[]) => {
+    debug: (...args: unknown[]): void => {
       // Silent in tests
     },
   };

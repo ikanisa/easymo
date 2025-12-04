@@ -7,13 +7,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  getUserLocationsTool,
-  upsertUserLocationTool,
-  getUserFactsTool,
-  recordServiceRequestTool,
   findVendorsNearbyTool,
+  getUserFactsTool,
+  getUserLocationsTool,
+  recordServiceRequestTool,
   searchFAQTool,
   searchServiceCatalogTool,
+  upsertUserLocationTool,
 } from './generalBrokerTools';
 
 // Mock fetch
