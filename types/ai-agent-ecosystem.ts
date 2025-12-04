@@ -1,4 +1,13 @@
 /**
+ * @deprecated Import from '@easymo/types' or '@easymo/types/ai-agents' instead.
+ * This file will be removed in the next major version.
+ * 
+ * Migration guide:
+ * - import { WhatsappUser, RidesTrip } from '@easymo/types/ai-agents'
+ * - Or: import type { WhatsappUser } from '@easymo/types'
+ */
+
+/**
  * AI Agent Ecosystem - TypeScript Types
  * Generated: 2025-11-22
  * 

@@ -1,3 +1,13 @@
+/**
+ * @deprecated Import from '@easymo/types' or '@easymo/types/ai-agents' instead.
+ * This file will be removed in the next major version.
+ * 
+ * For Deno/Supabase Functions, use the consolidated types package.
+ * 
+ * Migration guide:
+ * - import { AiAgent, WhatsappUser } from '@easymo/types/ai-agents'
+ */
+
 // =====================================================================
 // AI AGENT ECOSYSTEM – TYPESCRIPT TYPES
 // =====================================================================

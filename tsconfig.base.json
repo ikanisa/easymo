@@ -14,6 +14,8 @@
     "paths": {
       "@va/shared": ["packages/shared/src/index.ts"],
       "@va/shared/*": ["packages/shared/src/*"],
+      "@easymo/types": ["packages/types/src/index.ts"],
+      "@easymo/types/*": ["packages/types/src/*"],
       "@easymo/video-agent-schema": [
         "packages/video-agent-schema/dist/index"
       ],

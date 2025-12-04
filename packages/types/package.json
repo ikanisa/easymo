@@ -1,0 +1,29 @@
+{
+  "name": "@easymo/types",
+  "version": "1.0.0",
+  "description": "Consolidated type definitions for EasyMO platform",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./ai-agents": {
+      "import": "./dist/ai-agents/index.js",
+      "types": "./dist/ai-agents/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -w -p tsconfig.json",
+    "type-check": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "5.5.4"
+  }
+}
