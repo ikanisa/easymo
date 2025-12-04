@@ -997,7 +997,31 @@ export class AgentOrchestrator {
         params: intent.structuredPayload,
       }));
       
-      // TODO: Query job_posts table and create match events
+      // Query job_posts table and create match events
+      const { searchJobs, createJobMatchEvents, formatJobsForWhatsApp } = await import(
+        "../wa-webhook-shared/tools/jobs-matcher.ts"
+      );
+      
+      const { matches, total } = await searchJobs(
+        this.supabase,
+        intent.structuredPayload as any,
+        context.userId
+      );
+      
+      // Create match events in database
+      await createJobMatchEvents(
+        this.supabase,
+        context.userId,
+        context.agentId,
+        context.conversationId,
+        matches
+      );
+      
+      console.log(JSON.stringify({
+        event: "JOBS_MATCHES_CREATED",
+        matchCount: matches.length,
+        totalAvailable: total,
+      }));
     }
   }
 
@@ -1015,7 +1039,30 @@ export class AgentOrchestrator {
         params: intent.structuredPayload,
       }));
       
-      // TODO: Query properties table and create match events
+      // Query properties table and create match events
+      const { searchProperties, createPropertyMatchEvents, formatPropertiesForWhatsApp } = await import(
+        "../wa-webhook-shared/tools/property-matcher.ts"
+      );
+      
+      const { matches, total } = await searchProperties(
+        this.supabase,
+        intent.structuredPayload as any
+      );
+      
+      // Create match events in database
+      await createPropertyMatchEvents(
+        this.supabase,
+        context.userId,
+        context.agentId,
+        context.conversationId,
+        matches
+      );
+      
+      console.log(JSON.stringify({
+        event: "PROPERTY_MATCHES_CREATED",
+        matchCount: matches.length,
+        totalAvailable: total,
+      }));
     }
   }
 
@@ -1083,18 +1130,83 @@ export class AgentOrchestrator {
 
     if (intent.type === "find_driver") {
       // Create ride request
-      // TODO: Query rides_driver_status for online drivers nearby
-      // TODO: Create ai_agent_match_events with compatible drivers
+      // Query rides_driver_status for online drivers nearby
+      const { findNearbyDrivers, createDriverMatchEvents, formatDriversForWhatsApp } = await import(
+        "../wa-webhook-shared/tools/rides-matcher.ts"
+      );
+      
+      const { drivers, total } = await findNearbyDrivers(
+        this.supabase,
+        intent.structuredPayload as any
+      );
+      
+      // Create match events for compatible drivers
+      await createDriverMatchEvents(
+        this.supabase,
+        context.userId,
+        context.agentId,
+        context.conversationId,
+        drivers,
+        intent.structuredPayload as any
+      );
+      
+      console.log(JSON.stringify({
+        event: "DRIVER_MATCHES_CREATED",
+        driverCount: drivers.length,
+        totalOnline: total,
+      }));
     } else if (intent.type === "find_passenger") {
       // Find passengers along route
-      // TODO: Query rides_trips for pending requests
-      // TODO: Create matches
+      // Query rides_trips for pending requests (passengers looking for rides)
+      // This would match drivers with passengers going the same route
+      console.log(JSON.stringify({
+        event: "PASSENGER_MATCHING_REQUESTED",
+        note: "Feature requires route matching algorithm",
+      }));
     } else if (intent.type === "schedule_trip") {
       // Create scheduled trip
-      // TODO: Insert into rides_trips with scheduled_at
+      // Insert into rides_trips with scheduled_at
+      const { createTripRequest } = await import(
+        "../wa-webhook-shared/tools/rides-matcher.ts"
+      );
+      
+      const { tripId, error } = await createTripRequest(
+        this.supabase,
+        context.userId,
+        intent.structuredPayload as any
+      );
+      
+      if (tripId) {
+        console.log(JSON.stringify({
+          event: "SCHEDULED_TRIP_CREATED",
+          tripId,
+        }));
+      } else {
+        console.error("Failed to create scheduled trip:", error);
+      }
     } else if (intent.type === "cancel_trip") {
       // Cancel existing trip
-      // TODO: Update rides_trips status to 'cancelled'
+      // Update rides_trips status to 'cancelled'
+      // Find user's active trips and cancel them
+      const { data: activeTrips } = await this.supabase
+        .from("rides_trips")
+        .select("id")
+        .eq("passenger_id", context.userId)
+        .in("status", ["pending", "scheduled", "matched"])
+        .order("created_at", { ascending: false })
+        .limit(1);
+      
+      if (activeTrips && activeTrips.length > 0) {
+        await this.supabase
+          .from("rides_trips")
+          .update({ status: "cancelled", cancelled_at: new Date().toISOString() })
+          .eq("id", activeTrips[0].id);
+        
+        console.log(JSON.stringify({
+          event: "TRIP_CANCELLED",
+          tripId: activeTrips[0].id,
+        }));
+      }
     }
   }
 
@@ -1114,16 +1226,90 @@ export class AgentOrchestrator {
 
     if (intent.type === "submit_documents") {
       // Guide user through document upload
-      // TODO: Store in insurance_documents
+      // Store in insurance_documents table
+      // Note: This requires the user to actually send a document (image/PDF)
+      // The document upload would be handled by the WhatsApp webhook
+      // Here we just log the intent
+      console.log(JSON.stringify({
+        event: "INSURANCE_DOCUMENT_UPLOAD_REQUESTED",
+        userId: context.userId,
+        note: "User should send document via WhatsApp",
+      }));
     } else if (intent.type === "get_quote") {
       // Create quote request
-      // TODO: Insert into insurance_quote_requests
+      // Insert into insurance_quote_requests
+      const quoteData = {
+        user_id: context.userId,
+        vehicle_type: intent.structuredPayload.vehicle_type || "car",
+        vehicle_identifier: intent.structuredPayload.vehicle_identifier,
+        insurance_type: intent.structuredPayload.insurance_type || "third_party",
+        status: "pending",
+        requested_at: new Date().toISOString(),
+        metadata: intent.structuredPayload,
+      };
+      
+      const { data, error } = await this.supabase
+        .from("insurance_quote_requests")
+        .insert(quoteData)
+        .select("id")
+        .single();
+      
+      if (data) {
+        console.log(JSON.stringify({
+          event: "INSURANCE_QUOTE_CREATED",
+          quoteId: data.id,
+        }));
+      } else {
+        console.error("Failed to create insurance quote:", error);
+      }
     } else if (intent.type === "renew_policy") {
       // Initiate renewal
-      // TODO: Query existing policies, create renewal request
+      // Query existing policies, create renewal request
+      const { data: existingPolicies } = await this.supabase
+        .from("insurance_policies")
+        .select("id, policy_number, expiry_date")
+        .eq("user_id", context.userId)
+        .eq("status", "active")
+        .order("expiry_date", { ascending: true })
+        .limit(1);
+      
+      if (existingPolicies && existingPolicies.length > 0) {
+        const policy = existingPolicies[0];
+        
+        // Create renewal request
+        await this.supabase
+          .from("insurance_quote_requests")
+          .insert({
+            user_id: context.userId,
+            request_type: "renewal",
+            existing_policy_id: policy.id,
+            status: "pending",
+            requested_at: new Date().toISOString(),
+            metadata: { policy_number: policy.policy_number },
+          });
+        
+        console.log(JSON.stringify({
+          event: "INSURANCE_RENEWAL_REQUESTED",
+          policyId: policy.id,
+        }));
+      } else {
+        console.log("No active policies found for renewal");
+      }
     } else if (intent.type === "track_status") {
       // Check status
-      // TODO: Query insurance_quote_requests for user
+      // Query insurance_quote_requests for user
+      const { data: quotes } = await this.supabase
+        .from("insurance_quote_requests")
+        .select("id, status, requested_at, vehicle_type")
+        .eq("user_id", context.userId)
+        .order("requested_at", { ascending: false })
+        .limit(5);
+      
+      console.log(JSON.stringify({
+        event: "INSURANCE_STATUS_CHECKED",
+        quoteCount: quotes?.length || 0,
+        latestStatus: quotes?.[0]?.status,
+      }));
     }
   }
 
