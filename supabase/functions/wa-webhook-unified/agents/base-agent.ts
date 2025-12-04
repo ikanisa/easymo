@@ -45,43 +45,70 @@ export interface AgentProcessParams {
 export type { AgentResponse };
 
 export abstract class BaseAgent {
+  /**
+   * Supabase client - initialized via constructor deps or legacy pattern.
+   * For new agents: Always available after construction.
+   * For legacy agents: May be undefined until supabase is passed per-request.
+   */
   protected supabase!: SupabaseClient;
+  
+  /**
+   * Gemini AI client - initialized if GEMINI_API_KEY is set.
+   * For new agents: Required for process() method.
+   * For legacy agents: They use their own GeminiProvider instead.
+   */
   protected genAI!: GoogleGenerativeAI;
+  
   protected correlationId: string = '';
   protected configLoader!: AgentConfigLoader;
   protected toolExecutor!: ToolExecutor;
   protected cachedConfig: AgentConfig | null = null;
+  
+  /** Tracks whether this agent has been properly initialized */
+  private _initialized: boolean = false;
 
   /**
    * Constructor supports both patterns:
    * 1. New pattern: constructor(deps: AgentDependencies)
-   * 2. Legacy pattern: constructor() - initialize() must be called later
+   * 2. Legacy pattern: constructor() - legacy agents pass supabase per-request
+   * 
+   * @param deps - Optional dependencies. If provided, agent is fully initialized.
+   *               If omitted, legacy agents must pass supabase in their process() params.
    */
   constructor(deps?: AgentDependencies) {
     if (deps) {
       this.initialize(deps);
     }
-    // If no deps provided, the agent must call initialize() manually
-    // or use the legacy pattern where supabase is passed per-request
+    // Legacy agents use constructor() without deps and pass supabase per-request
+    // in their AgentProcessParams. This is handled by the legacy support methods.
   }
 
   /**
-   * Initialize the agent with dependencies
-   * Called automatically if deps are passed to constructor
-   * Must be called manually for legacy agents that use constructor()
+   * Check if the agent has been properly initialized with dependencies
+   */
+  protected get isInitialized(): boolean {
+    return this._initialized;
+  }
+
+  /**
+   * Initialize the agent with dependencies.
+   * Called automatically if deps are passed to constructor.
+   * 
+   * @param deps - Agent dependencies containing supabase client and correlation ID
    */
   protected initialize(deps: AgentDependencies): void {
     this.supabase = deps.supabase;
     this.correlationId = deps.correlationId;
     this.configLoader = new AgentConfigLoader(deps.supabase);
     this.toolExecutor = new ToolExecutor(deps.supabase);
+    this._initialized = true;
     
     const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (apiKey) {
       this.genAI = new GoogleGenerativeAI(apiKey);
     }
     // Note: genAI may be undefined if GEMINI_API_KEY is not set
-    // Legacy agents use their own GeminiProvider
+    // Legacy agents use their own GeminiProvider instance
   }
 
   // Abstract methods each agent must implement

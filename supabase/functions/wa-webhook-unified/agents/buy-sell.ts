@@ -451,6 +451,15 @@ OUTPUT FORMAT (JSON):
       });
     
     if (error) {
+      // Log the RPC error before falling back
+      await logStructuredEvent("BUY_SELL_FIND_NEARBY_RPC_ERROR", {
+        error: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        category,
+      }, "warn");
+      
       // Fallback to simple query if RPC doesn't exist
       const { data: fallbackData } = await this.supabase
         .from("unified_listings")
