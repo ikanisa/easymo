@@ -32,8 +32,10 @@ export async function handleCreatePropertyTitle(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
 
-  // Basic validation
-  if (title.length < 3) {
+  const trimmedTitle = title.trim();
+
+  // Basic validation - minimum length
+  if (trimmedTitle.length < 3) {
     await sendTextMessage(
       ctx,
       "⚠️ Property title must be at least 3 characters long. Please try again.",
@@ -41,10 +43,19 @@ export async function handleCreatePropertyTitle(
     return true;
   }
 
+  // Maximum length validation  
+  if (trimmedTitle.length > 150) {
+    await sendTextMessage(
+      ctx,
+      "⚠️ Property title must be less than 150 characters. Please try again.",
+    );
+    return true;
+  }
+
   // Create the property
   const { error } = await ctx.supabase.from("properties").insert({
     owner_id: ctx.profileId,
-    title: title.trim(),
+    title: trimmedTitle,
     description: "New property listing", // Default description
     status: "active",
   });

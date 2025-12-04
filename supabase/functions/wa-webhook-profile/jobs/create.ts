@@ -32,8 +32,10 @@ export async function handleCreateJobTitle(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
 
-  // Basic validation
-  if (title.length < 3) {
+  const trimmedTitle = title.trim();
+
+  // Basic validation - minimum length
+  if (trimmedTitle.length < 3) {
     await sendTextMessage(
       ctx,
       "⚠️ Job title must be at least 3 characters long. Please try again.",
@@ -41,10 +43,19 @@ export async function handleCreateJobTitle(
     return true;
   }
 
+  // Maximum length validation
+  if (trimmedTitle.length > 150) {
+    await sendTextMessage(
+      ctx,
+      "⚠️ Job title must be less than 150 characters. Please try again.",
+    );
+    return true;
+  }
+
   // Create the job
   const { error } = await ctx.supabase.from("job_listings").insert({
     posted_by: ctx.profileId,
-    title: title.trim(),
+    title: trimmedTitle,
     description: "New job posting", // Default description
     status: "active",
   });

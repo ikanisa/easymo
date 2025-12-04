@@ -80,13 +80,32 @@ export async function handleUpdateBusinessField(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
 
-  const updates: Record<string, any> = { [field]: value, updated_at: new Date().toISOString() };
+  const trimmedValue = value.trim();
+
+  // Input validation
+  if (trimmedValue.length < 2) {
+    await sendTextMessage(
+      ctx,
+      `⚠️ ${field.charAt(0).toUpperCase() + field.slice(1)} must be at least 2 characters long. Please try again.`,
+    );
+    return true;
+  }
+
+  if (trimmedValue.length > (field === "name" ? 100 : 500)) {
+    await sendTextMessage(
+      ctx,
+      `⚠️ ${field.charAt(0).toUpperCase() + field.slice(1)} is too long. Please keep it under ${field === "name" ? 100 : 500} characters.`,
+    );
+    return true;
+  }
+
+  const updates: Record<string, unknown> = { [field]: trimmedValue, updated_at: new Date().toISOString() };
 
   const { error } = await ctx.supabase
     .from("businesses")
     .update(updates)
     .eq("id", businessId)
-    .eq("profile_id", ctx.profileId);
+    .eq("owner_id", ctx.profileId);
 
   if (error) {
     console.error(`Failed to update business ${field}:`, error);
