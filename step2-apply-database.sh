@@ -9,8 +9,12 @@ echo "📊 STEP 2: Applying Database Migration"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# Set database URL
-export DATABASE_URL="postgresql://postgres:Pq0jyevTlfoa376P@db.lhbowpbcpwoiparwnwgt.supabase.co:5432/postgres"
+# Set database URL (must be provided via environment)
+: "${DATABASE_URL:=${SUPABASE_DB_URL:-}}"
+if [ -z "$DATABASE_URL" ]; then
+  echo "❌ DATABASE_URL not set. Export DATABASE_URL or SUPABASE_DB_URL before running."
+  exit 1
+fi
 
 # Create migration file
 cat > supabase/migrations/20251204130000_insurance_core_schema.sql << 'MIGRATION_SQL'

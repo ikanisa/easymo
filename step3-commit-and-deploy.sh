@@ -8,9 +8,11 @@ echo "📦 STEP 3: Git Commit & Supabase Deployment"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# Set credentials
-export SUPABASE_ACCESS_TOKEN="sbp_500607f0d078e919aa24f179473291544003a035"
-PROJECT_REF="lhbowpbcpwoiparwnwgt"
+# Set credentials (expect Supabase CLI login or SUPABASE_ACCESS_TOKEN)
+if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
+  echo "ℹ️  SUPABASE_ACCESS_TOKEN not set; relying on existing Supabase CLI session (run 'supabase login' if needed)."
+fi
+PROJECT_REF="${SUPABASE_PROJECT_REF:-lhbowpbcpwoiparwnwgt}"
 
 # Stage changes
 echo "📝 Staging changes..."

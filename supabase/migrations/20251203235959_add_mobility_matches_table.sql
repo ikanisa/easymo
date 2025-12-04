@@ -68,6 +68,10 @@ CREATE TABLE IF NOT EXISTS public.mobility_matches (
   metadata jsonb DEFAULT '{}'::jsonb
 );
 
+-- Ensure trip_id column exists for indexing/linking to rides_trips
+ALTER TABLE public.mobility_matches
+  ADD COLUMN IF NOT EXISTS trip_id uuid REFERENCES public.rides_trips(id) ON DELETE CASCADE;
+
 -- Add comments
 COMMENT ON TABLE public.mobility_matches IS 'Tracks matched trips between drivers and passengers with full lifecycle';
 COMMENT ON COLUMN public.mobility_matches.status IS 'Trip lifecycle status: pending -> accepted -> driver_arrived -> in_progress -> completed';
