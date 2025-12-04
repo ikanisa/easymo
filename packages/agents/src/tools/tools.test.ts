@@ -6,7 +6,6 @@ import { describe, expect,it } from 'vitest';
 
 import { 
   checkAvailabilityTool,
-  checkBalanceTool,
   createBookingTool,
   menuLookupTool,
   webSearchTool,
@@ -70,32 +69,6 @@ describe('Tools', () => {
           guestCount: 4,
         });
       }).toThrow();
-    });
-  });
-
-  describe('checkBalanceTool', () => {
-    it('should have correct schema', () => {
-      expect(checkBalanceTool.name).toBe('CheckBalance');
-      expect(checkBalanceTool.parameters).toBeDefined();
-    });
-
-    it('should execute successfully without token type', async () => {
-      const result = await checkBalanceTool.execute({}, mockContext);
-
-      expect(result).toBeDefined();
-      expect(result.balances).toBeInstanceOf(Array);
-      expect(result.balances.length).toBeGreaterThan(0);
-    });
-
-    it('should filter by token type', async () => {
-      const result = await checkBalanceTool.execute(
-        { tokenType: 'token' },
-        mockContext
-      );
-
-      expect(result).toBeDefined();
-      expect(result.balances).toBeInstanceOf(Array);
-      expect(result.balances.every(b => b.type === 'token')).toBe(true);
     });
   });
 
