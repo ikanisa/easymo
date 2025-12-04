@@ -1,6 +1,6 @@
 // Re-export core mobility functions from shared
-export * from "../../_shared/wa-webhook-shared/rpc/mobility.ts";
 export { MOBILITY_CONFIG } from "../../_shared/wa-webhook-shared/config/mobility.ts";
+export * from "../../_shared/wa-webhook-shared/rpc/mobility.ts";
 
 import type { SupabaseClient } from "../deps.ts";
 

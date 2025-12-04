@@ -1,23 +1,22 @@
-import type { ButtonSpec, RouterContext } from "../../types.ts";
-import { clearState, setState } from "../../state/store.ts";
-import { IDS } from "../../wa/ids.ts";
-import { VEHICLE_OPTIONS, vehicleFromId } from "./nearby.ts";
+import { saveIntent } from "../../../_shared/wa-webhook-shared/domains/intent_storage.ts";
+import { sortMatches } from "../../../_shared/wa-webhook-shared/utils/sortMatches.ts";
+import { maskPhone } from "../../flows/support.ts";
 import { t } from "../../i18n/translator.ts";
+import { emitAlert } from "../../observe/alert.ts";
+import { logStructuredEvent } from "../../observe/log.ts";
 import {
   gateProFeature,
   insertTrip,
   matchDriversForTrip,
   matchPassengersForTrip,
   type MatchResult,
-  updateTripDropoff,
   MOBILITY_CONFIG,
+  updateTripDropoff,
 } from "../../rpc/mobility.ts";
+import { clearState, setState } from "../../state/store.ts";
+import type { ButtonSpec, RouterContext } from "../../types.ts";
 import { getAppConfig } from "../../utils/app_config.ts";
 import { waChatLink } from "../../utils/links.ts";
-import { maskPhone } from "../../flows/support.ts";
-import { logStructuredEvent } from "../../observe/log.ts";
-import { timeAgo } from "../../utils/text.ts";
-import { sendText } from "../../wa/client.ts";
 import {
   buildButtons,
   homeOnly,
@@ -25,12 +24,9 @@ import {
   sendListMessage,
   sendListWithActions,
 } from "../../utils/reply.ts";
-import { emitAlert } from "../../observe/alert.ts";
-import {
-  ensureVehiclePlate,
-  getStoredVehicleType,
-  updateStoredVehicleType,
-} from "./vehicle_plate.ts";
+import { timeAgo } from "../../utils/text.ts";
+import { sendText } from "../../wa/client.ts";
+import { IDS } from "../../wa/ids.ts";
 import {
   getFavoriteById,
   listFavorites,
@@ -38,8 +34,12 @@ import {
   type UserFavorite,
 } from "../locations/favorites.ts";
 import { buildSaveRows } from "../locations/save.ts";
-import { saveIntent } from "../../../_shared/wa-webhook-shared/domains/intent_storage.ts";
-import { sortMatches } from "../../../_shared/wa-webhook-shared/utils/sortMatches.ts";
+import { VEHICLE_OPTIONS, vehicleFromId } from "./nearby.ts";
+import {
+  ensureVehiclePlate,
+  getStoredVehicleType,
+  updateStoredVehicleType,
+} from "./vehicle_plate.ts";
 
 // Use centralized config for consistency
 const DEFAULT_WINDOW_DAYS = MOBILITY_CONFIG.DEFAULT_WINDOW_DAYS;
