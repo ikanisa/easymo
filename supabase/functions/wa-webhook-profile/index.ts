@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.86.0";
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { getState, setState, clearState } from "../_shared/wa-webhook-shared/state/store.ts";
 import { sendButtonsMessage, sendListMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
@@ -439,10 +439,10 @@ serve(async (req: Request): Promise<Response> => {
         // Confirm Save Location
         else if (id.startsWith("CONFIRM_SAVE_LOC::")) {
           const locationType = id.replace("CONFIRM_SAVE_LOC::", "");
-          if (!ctx.profileId || !state || state.key !== "confirm_add_location") {
+          if (!ctx.profileId || !state || state.key !== "confirm_add_location" || !state.data) {
             handled = false;
           } else {
-            const { lat, lng, address } = state.data;
+            const { lat, lng, address } = state.data as { lat: number; lng: number; address?: string };
             
             // Show loading state
             await sendText(ctx.from, "⏳ Saving location...");

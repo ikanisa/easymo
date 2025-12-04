@@ -336,6 +336,16 @@ export async function handleLicenseUpload(
     }
 
     // If we get here, OCR succeeded
+    // Final validation check (data should never be undefined here)
+    if (!data) {
+      await sendText(
+        ctx.from,
+        "⚠️ Could not extract license data after multiple attempts.\n\n" +
+        "Please ensure your photo is clear and try again."
+      );
+      await clearState(ctx.supabase, ctx.profileId);
+      return false;
+    }
 
     // Validate extracted data
     const validation = validateLicenseData(data);

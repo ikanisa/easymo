@@ -38,8 +38,8 @@ type MomoData = {
 import { checkCountrySupport } from "../../domains/exchange/country_support.ts";
 async function isMomoSupported(ctx: RouterContext, phone: string): Promise<boolean> {
   try {
-    const res = await checkCountrySupport(ctx.supabase as any, phone, "momo");
-    return res.supported === true;
+    const res = await checkCountrySupport(ctx.supabase as any, phone);
+    return res.momoSupported === true;
   } catch (_e) {
     return false;
   }
@@ -396,7 +396,7 @@ async function deliverMomoQr(
   const qrUrl = buildQrLink(qrData.telUri);
   const lines: string[] = [
     `Target: ${data.display}`,
-    provider?.provider ? `Provider: ${provider.provider}` : undefined,
+    provider?.name ? `Provider: ${provider.name}` : undefined,
     amountRwf && amountRwf > 0 ? `Amount: ${amountRwf.toLocaleString('en-US')} RWF` : undefined,
     `Dial: ${buttonData.ussd}`,
   ].filter(Boolean) as string[];
@@ -413,7 +413,7 @@ async function deliverMomoQr(
   try {
     const capParts = [
       `Scan to pay ${data.display}`,
-      provider?.provider ? `via ${provider.provider}` : undefined,
+      provider?.name ? `via ${provider.name}` : undefined,
       amountRwf && amountRwf > 0 ? `${amountRwf.toLocaleString('en-US')} RWF` : undefined,
     ].filter(Boolean) as string[];
     await sendImageUrl(ctx.from, qrUrl, capParts.join(' • '));

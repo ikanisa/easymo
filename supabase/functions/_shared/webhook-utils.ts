@@ -389,7 +389,7 @@ export class WebhookProcessor {
       await this.metrics.record("webhook.queued", 1, { priority, source });
     } catch (error) {
       this.logger.error("Failed to queue webhook", {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         correlationId,
       });
       throw new WebhookError("Failed to queue webhook", "QUEUE_ERROR", true, 500);
@@ -590,7 +590,7 @@ export class WebhookProcessor {
   private async handleProcessingError(webhook: any, error: any): Promise<void> {
     this.logger.error("Webhook processing failed", {
       webhookId: webhook.id,
-      error: error.message
+      error: error instanceof Error ? error.message : String(error)
     });
 
     const shouldRetry = webhook.retry_count < webhook.max_retries;
@@ -602,8 +602,8 @@ export class WebhookProcessor {
       .from("webhook_queue")
       .update({
         status: shouldRetry ? "failed" : "dead",
-        error_message: error.message,
-        error_details: { stack: error.stack },
+        error_message: error instanceof Error ? error.message : String(error),
+        error_details: error instanceof Error ? { stack: error.stack } : { error: String(error) },
         retry_count: webhook.retry_count + 1,
         next_retry_at: nextRetryAt
       })
