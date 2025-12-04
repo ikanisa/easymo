@@ -13,6 +13,14 @@
 # =============================================================================
 
 steps:
+  # Pull existing image for cache (ignore if not found)
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - 'docker pull gcr.io/$PROJECT_ID/easymo-admin:latest || exit 0'
+    id: 'pull-cache'
+
   # Build the Docker image with cache
   - name: 'gcr.io/cloud-builders/docker'
     args:
@@ -24,6 +32,7 @@ steps:
       - 'gcr.io/$PROJECT_ID/easymo-admin:latest'
       - '.'
     id: 'build'
+    waitFor: ['pull-cache']
 
   # Push the Docker image to GCR
   - name: 'gcr.io/cloud-builders/docker'
