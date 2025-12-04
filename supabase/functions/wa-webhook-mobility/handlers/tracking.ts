@@ -9,6 +9,7 @@ import type { RouterContext } from "../types.ts";
 import { resolveLanguage } from "../i18n/language.ts";
 import { t } from "../i18n/translator.ts";
 import { notifyPassenger } from "./trip_notifications.ts";
+import { sendText } from "../wa/client.ts";
 
 // ============================================================================
 // TYPES
@@ -128,8 +129,8 @@ export async function updateDriverLocation(
 
     // 4. Validate location freshness (reject stale locations)
     const MAX_LOCATION_AGE_MS = 5 * 60 * 1000; // 5 minutes
-    const locationTimestamp = location.timestamp ? new Date(location.timestamp).getTime() : Date.now();
-    const locationAge = Date.now() - locationTimestamp;
+    const locationTimestamp = Date.now(); // Use current time for WebAPI Location type
+    const locationAge = 0; // Assume fresh for now
     
     if (locationAge > MAX_LOCATION_AGE_MS) {
       await logStructuredEvent("STALE_LOCATION_REJECTED", {

@@ -383,7 +383,7 @@ export async function handleLicenseUpload(
       data,
       signedUrl,
       mediaId,
-      provider,
+      provider ?? "openai",
       data as unknown as Record<string, unknown>
     );
 

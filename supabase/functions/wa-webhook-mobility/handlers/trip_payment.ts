@@ -203,7 +203,7 @@ export async function handlePaymentConfirmation(
     // Prompt for transaction reference
     await setState(ctx.supabase, ctx.profileId, {
       key: PAYMENT_CONFIRMATION_STATE_KEY,
-      data: payment,
+      data: payment as unknown as Record<string, unknown>,
     });
 
     await sendText(

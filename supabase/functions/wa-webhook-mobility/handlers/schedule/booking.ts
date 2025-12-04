@@ -10,8 +10,8 @@ import {
   matchPassengersForTrip,
   type MatchResult,
   updateTripDropoff,
-  MOBILITY_CONFIG,
 } from "../../rpc/mobility.ts";
+import { MOBILITY_CONFIG } from "../../../_shared/wa-webhook-shared/config/mobility.ts";
 import { getAppConfig } from "../../utils/app_config.ts";
 import { waChatLink } from "../../utils/links.ts";
 import { maskPhone } from "../../flows/support.ts";
@@ -42,13 +42,7 @@ import {
 import { buildSaveRows } from "../../locations/save.ts";
 import { sortMatches } from "../../../_shared/wa-webhook-shared/utils/sortMatches.ts";
 
-// Use centralized config for consistency
-const DEFAULT_WINDOW_DAYS = MOBILITY_CONFIG.DEFAULT_WINDOW_DAYS;
-const REQUIRED_RADIUS_METERS = MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS;
-const MAX_RADIUS_METERS = MOBILITY_CONFIG.MAX_SEARCH_RADIUS_METERS;
-const DEFAULT_WINDOW_DAYS = 2;  // 48-hour window to match DB default
-const REQUIRED_RADIUS_METERS = 10_000;
-const MAX_RADIUS_METERS = 25_000;
+// Use centralized config for consistency (avoid duplicate const declarations)
 const DEFAULT_TIMEZONE = "Africa/Kigali";
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -1008,12 +1002,12 @@ async function promptScheduleVehicleSelection(
 }
 
 export function kmToMeters(km: number | null | undefined): number {
-  if (!km || Number.isNaN(km)) return REQUIRED_RADIUS_METERS;
+  if (!km || Number.isNaN(km)) return MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS;
   const meters = Math.round(km * 1000);
-  if (!Number.isFinite(meters) || meters <= 0) return REQUIRED_RADIUS_METERS;
+  if (!Number.isFinite(meters) || meters <= 0) return MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS;
   return Math.min(
-    Math.max(meters, REQUIRED_RADIUS_METERS),
-    MAX_RADIUS_METERS,
+    Math.max(meters, MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS),
+    MOBILITY_CONFIG.MAX_SEARCH_RADIUS_METERS,
   );
 }
 
@@ -1098,7 +1092,7 @@ export async function fetchMatches(
       options.limit,
       options.preferDropoff,
       options.radiusMeters,
-      DEFAULT_WINDOW_DAYS,
+      MOBILITY_CONFIG.DEFAULT_WINDOW_DAYS,
     )
     : await matchPassengersForTrip(
       ctx.supabase,
@@ -1106,7 +1100,7 @@ export async function fetchMatches(
       options.limit,
       options.preferDropoff,
       options.radiusMeters,
-      DEFAULT_WINDOW_DAYS,
+      MOBILITY_CONFIG.DEFAULT_WINDOW_DAYS,
     );
   return sortMatches(matches, { prioritize: "time" }).slice(0, 9);
 }

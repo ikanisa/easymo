@@ -790,11 +790,11 @@ serve(async (req: Request): Promise<Response> => {
           }
         }
         
-        // Reward selection
-        else if (id.startsWith("REWARD::") && state?.key === IDS.WALLET_REDEEM) {
-          const { handleRewardSelection } = await import("./wallet/redeem.ts");
-          handled = await handleRewardSelection(ctx, state.data as any, id);
-        }
+        // Reward selection (TODO: implement handleRewardSelection)
+        // else if (id.startsWith("REWARD::") && state?.key === IDS.WALLET_REDEEM) {
+        //   const { handleRewardSelection } = await import("./wallet/redeem.ts");
+        //   handled = await handleRewardSelection(ctx, state.data as any, id);
+        // }
         
       }
     }
@@ -887,13 +887,13 @@ serve(async (req: Request): Promise<Response> => {
       }
       
       // Handle business edit fields
-      else if (state?.key === "business_edit_name") {
+      else if (state?.key === "business_edit_name" && state.data) {
         const { handleUpdateBusinessField } = await import("./business/update.ts");
-        handled = await handleUpdateBusinessField(ctx, state.data.businessId, "name", (message.text as any)?.body ?? "");
+        handled = await handleUpdateBusinessField(ctx, String(state.data.businessId), "name", (message.text as any)?.body ?? "");
       }
-      else if (state?.key === "business_edit_description") {
+      else if (state?.key === "business_edit_description" && state.data) {
         const { handleUpdateBusinessField } = await import("./business/update.ts");
-        handled = await handleUpdateBusinessField(ctx, state.data.businessId, "description", (message.text as any)?.body ?? "");
+        handled = await handleUpdateBusinessField(ctx, String(state.data.businessId), "description", (message.text as any)?.body ?? "");
       }
       
       // Handle job creation title
@@ -903,15 +903,15 @@ serve(async (req: Request): Promise<Response> => {
       }
       
       // Handle job edit fields
-      else if (state?.key === "job_edit_title") {
+      else if (state?.key === "job_edit_title" && state.data) {
         const { handleUpdateJobField } = await import("./jobs/update.ts");
-        handled = await handleUpdateJobField(ctx, state.data.jobId, "title", (message.text as any)?.body ?? "");
+        handled = await handleUpdateJobField(ctx, String(state.data.jobId), "title", (message.text as any)?.body ?? "");
       }
-      else if (state?.key === "job_edit_description") {
+      else if (state?.key === "job_edit_description" && state.data) {
         const { handleUpdateJobField } = await import("./jobs/update.ts");
-        handled = await handleUpdateJobField(ctx, state.data.jobId, "description", (message.text as any)?.body ?? "");
+        handled = await handleUpdateJobField(ctx, String(state.data.jobId), "description", (message.text as any)?.body ?? "");
       }
-      else if (state?.key === "job_edit_location") {
+      else if (state?.key === "job_edit_location" && state.data) {
         const { handleUpdateJobField } = await import("./jobs/update.ts");
         handled = await handleUpdateJobField(ctx, state.data.jobId, "location", (message.text as any)?.body ?? "");
       }

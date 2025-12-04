@@ -8,8 +8,8 @@ import {
   matchPassengersForTrip,
   type MatchResult,
   updateTripDropoff,
-  MOBILITY_CONFIG,
 } from "../rpc/mobility.ts";
+import { MOBILITY_CONFIG } from "../../_shared/wa-webhook-shared/config/mobility.ts";
 import { getAppConfig } from "../utils/app_config.ts";
 import { waChatLink } from "../utils/links.ts";
 import { maskPhone } from "../flows/support.ts";

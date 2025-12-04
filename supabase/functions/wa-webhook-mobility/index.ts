@@ -50,6 +50,7 @@ import {
   processTransactionReference,
   handleSkipPayment,
   PAYMENT_STATES,
+  type PaymentState,
 } from "./handlers/trip_payment.ts";
 
 // Verification handlers
@@ -377,9 +378,9 @@ serve(async (req: Request): Promise<Response> => {
         
         // Payment Handlers
         else if (id === IDS.TRIP_PAYMENT_PAID && state?.key === PAYMENT_STATES.PENDING) {
-          handled = await handlePaymentConfirmation(ctx, state);
+          handled = await handlePaymentConfirmation(ctx, { data: state.data as unknown as PaymentState });
         } else if (id === IDS.TRIP_PAYMENT_SKIP && state?.key === PAYMENT_STATES.PENDING) {
-          handled = await handleSkipPayment(ctx, state);
+          handled = await handleSkipPayment(ctx, { data: state.data as unknown as PaymentState });
         }
         
         // Driver Verification Handlers
@@ -441,7 +442,8 @@ serve(async (req: Request): Promise<Response> => {
         // Real-time tracking location updates
         if (state?.key === "trip_in_progress" && state?.data?.tripId && state?.data?.role === "driver") {
           const tripId = String(state.data.tripId);
-          handled = await updateDriverLocation(ctx, tripId, coords);
+          const coordinates = { latitude: coords.lat, longitude: coords.lng };
+          handled = await updateDriverLocation(ctx, tripId, coordinates);
         }
         // Existing location handlers
         else if (state?.key === "mobility_nearby_location") {
@@ -496,7 +498,7 @@ serve(async (req: Request): Promise<Response> => {
       
       // Payment transaction reference input
       if (state?.key === PAYMENT_STATES.CONFIRMATION) {
-        handled = await processTransactionReference(ctx, rawText, state);
+        handled = await processTransactionReference(ctx, rawText, { data: state.data as unknown as PaymentState });
       }
       // Check for menu selection keys first
       else if (text === "rides_agent" || text === "rides") {
