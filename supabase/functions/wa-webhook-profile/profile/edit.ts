@@ -118,7 +118,7 @@ export async function handleEditName(
     );
 
     await logStructuredEvent("PROFILE_NAME_UPDATED", {
-      userId: ctx.profileId
+      userId: ctx.profileId,
       // Note: Not logging actual name for privacy
     });
 
