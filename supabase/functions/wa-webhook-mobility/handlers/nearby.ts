@@ -3,6 +3,7 @@ import { clearState, setState } from "../state/store.ts";
 import { t } from "../i18n/translator.ts";
 import { IDS } from "../wa/ids.ts";
 import {
+  createTripMatch,
   insertTrip,
   matchDriversForTrip,
   matchPassengersForTrip,
@@ -109,6 +110,7 @@ export type NearbyState = {
   pickup?: { lat: number; lng: number };
   dropoff?: { lat: number; lng: number };
   rows?: NearbyStateRow[];
+  myTripId?: string; // The trip ID created for the current user
 };
 
 type NearbySnapshot = {
@@ -443,10 +445,7 @@ export async function handleNearbyLocation(
 
   if (isDriverRequest) {
     updatedState = { ...state, pickup };
-    await setState(ctx.supabase, ctx.profileId, {
-      key: "mobility_nearby_location",
-      data: updatedState,
-    });
+    // We'll update state again after trip creation to include the ID
   }
 
   try {
@@ -465,30 +464,97 @@ export async function handleNearbyLocation(
   return await runMatchingFallback(ctx, updatedState, pickup);
 }
 
+
+
 export async function handleNearbyResultSelection(
   ctx: RouterContext,
   state: NearbyState,
   id: string,
 ): Promise<boolean> {
-  if (!state.rows || !ctx.profileId) return false;
-  const match = state.rows.find((row) => row.id === id);
-  if (!match) return false;
-  await logStructuredEvent("MATCH_SELECTION", {
-    flow: "nearby",
-    trip_id: match.tripId,
-    mode: state.mode,
-  });
-  const prefilledMessage = state.mode === "drivers"
-    ? t(ctx.locale, "mobility.nearby.prefill.driver")
-    : t(ctx.locale, "mobility.nearby.prefill.passenger");
-  const link = waChatLink(match.whatsapp, prefilledMessage);
-  await sendButtonsMessage(
-    ctx,
-    t(ctx.locale, "mobility.nearby.chat_cta", { link }),
-    homeOnly(),
-  );
-  await clearState(ctx.supabase, ctx.profileId);
-  return true;
+  if (!ctx.profileId || !state.myTripId) {
+    await sendText(ctx.from, t(ctx.locale, "mobility.nearby.session_expired"));
+    return true;
+  }
+  
+  try {
+    // Fetch the selected trip details
+    const { data: selectedTrip, error: tripError } = await ctx.supabase
+      .from("mobility_trips")
+      .select("creator_user_id, role, vehicle_type, pickup_lat, pickup_lng")
+      .eq("id", id)
+      .single();
+      
+    if (tripError || !selectedTrip) {
+      await sendText(ctx.from, t(ctx.locale, "mobility.nearby.match_unavailable"));
+      await clearState(ctx.supabase, ctx.profileId);
+      return true;
+    }
+    
+    // Fetch user phone numbers for both users
+    const { data: profiles } = await ctx.supabase
+      .from("profiles")
+      .select("user_id, whatsapp_number")
+      .in("user_id", [ctx.profileId, selectedTrip.creator_user_id]);
+    
+    const myProfile = profiles?.find(p => p.user_id === ctx.profileId);
+    const otherProfile = profiles?.find(p => p.user_id === selectedTrip.creator_user_id);
+    
+    if (!myProfile?.whatsapp_number || !otherProfile?.whatsapp_number) {
+      await sendText(ctx.from, t(ctx.locale, "mobility.nearby.match_error"));
+      return true;
+    }
+    
+    // Determine roles - if searching for drivers, I'm the passenger
+    const isPassenger = state.mode === "drivers";
+    const passengerTripId = isPassenger ? state.myTripId : id;
+    const driverTripId = isPassenger ? id : state.myTripId;
+    const passengerUserId = isPassenger ? ctx.profileId : selectedTrip.creator_user_id;
+    const driverUserId = isPassenger ? selectedTrip.creator_user_id : ctx.profileId;
+    const passengerPhone = isPassenger ? myProfile.whatsapp_number : otherProfile.whatsapp_number;
+    const driverPhone = isPassenger ? otherProfile.whatsapp_number : myProfile.whatsapp_number;
+    
+    // Create the match using existing RPC function
+    await createTripMatch(ctx.supabase, {
+      driverTripId,
+      passengerTripId,
+      driverUserId,
+      passengerUserId,
+      vehicleType: state.vehicle || selectedTrip.vehicle_type,
+      pickupLocation: `POINT(${selectedTrip.pickup_lng} ${selectedTrip.pickup_lat})`,
+      driverPhone,
+      passengerPhone,
+    });
+    
+    // Log success
+    await logStructuredEvent("MATCH_CREATED", {
+      passengerTripId,
+      driverTripId,
+      via: "nearby_selection",
+      mode: state.mode,
+      vehicle: state.vehicle,
+    });
+    
+    // Clear state and notify user
+    await clearState(ctx.supabase, ctx.profileId);
+    
+    const successMessage = isPassenger 
+      ? t(ctx.locale, "mobility.nearby.driver_notified")
+      : t(ctx.locale, "mobility.nearby.passenger_notified");
+    
+    await sendButtonsMessage(ctx, successMessage, homeOnly());
+    
+    return true;
+  } catch (err) {
+    console.error("handleNearbyResultSelection error:", err);
+    await sendText(ctx.from, t(ctx.locale, "mobility.nearby.match_error"));
+    await logStructuredEvent("MATCH_CREATION_ERROR", {
+      error: String(err),
+      mode: state.mode,
+      myTripId: state.myTripId,
+      selectedId: id,
+    });
+    return true;
+  }
 }
 
 export async function handleChangeVehicleRequest(
@@ -813,7 +879,14 @@ async function runMatchingFallback(
       });
     } catch (intentError) {
       // Don't fail the search if intent saving fails
-      console.error("Failed to save intent:", intentError);
+    }
+
+    // Update state with myTripId so we can use it for matching later
+    if (tempTripId) {
+      await setState(ctx.supabase, ctx.profileId!, {
+        key: "mobility_nearby_location",
+        data: { ...state, pickup, dropoff, myTripId: tempTripId },
+      });
     }
 
     await logStructuredEvent("MATCHES_CALL", {

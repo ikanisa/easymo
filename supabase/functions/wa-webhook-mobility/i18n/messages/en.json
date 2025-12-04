@@ -348,13 +348,11 @@
   "mobility.nearby.recent_searches.body_drivers": "🔄 Search again from a recent location:",
   "mobility.nearby.recent_searches.body_passengers": "🔄 Find passengers from a recent location:",
   "mobility.nearby.share_new_location": "📍 New Location",
-  "mobility.nearby.no_recent_search": "🔍 No recent search found. Pick a mode.",
+  "mobility.nearby.no_recent_search": "No recent search found. Pick a mode.",
   "mobility.nearby.recent_load_error": "😔 Couldn't load your recent search.",
   "mobility.nearby.buttons.drivers": "Drivers",
   "mobility.nearby.buttons.passengers": "Passengers",
   "mobility.nearby.new_location.desc": "Search from a different location",
-  "mobility.nearby.no_recent_search": "No recent search found. Pick a mode.",
-  "mobility.nearby.recent_load_error": "😔 Couldn't load your recent search.",
   "schedule.menu.title": "🚦 Schedule a trip",
   "schedule.menu.body": "Choose how you want to ride today.",
   "schedule.menu.section": "Role",
@@ -1083,7 +1081,7 @@
   "farmer.demand.title": "I'm a Buyer",
   "farmer.demand.prompt": "📝 Tell me what produce you're looking for:\n• Crop type\n• Quantity needed\n• Delivery location\n• Quality requirements\n\nExample: \"100kg beans, Kigali delivery\"\n\nType 0 to return home.",
   "farmer.continue": "💬 Continue Chat",
-  "common.back": "⬅️ Back"
+  "common.back": "⬅️ Back",
   "payment.init.title": "💰 *Trip Payment - {{amount}}*",
   "payment.init.instructions": "As the {{role}}, please pay the {{otherRole}} using MTN Mobile Money:\n\n1️⃣ *Dial:* `{{ussd}}`\n2️⃣ *Approve:* Enter your PIN\n3️⃣ *Confirm:* Tap \"Paid\" below",
   "payment.init.button_dial": "Dial Code",
@@ -1095,5 +1093,10 @@
   "payment.error.invalid_ref": "⚠️ *Invalid Reference*\n\nExpected format: `MP` followed by 9-12 digits (e.g., `MP123456789`).\n\nTip: You can enter just the numbers if you prefer.",
   "payment.error.ref_too_short": "⚠️ Reference too short. Check the SMS from MTN.",
   "payment.error.ref_too_long": "⚠️ Reference too long. Check the SMS from MTN.",
-  "payment.reminder.pending": "⚠️ *Pending Payment*\n\nYou have a pending payment of {{amount}} for your last trip.\n\nPlease verify it now to continue."
+  "payment.reminder.pending": "⚠️ *Pending Payment*\n\nYou have a pending payment of {{amount}} for your last trip.\n\nPlease verify it now to continue.",
+  "mobility.nearby.session_expired": "⚠️ Your search session has expired. Please search again.",
+  "mobility.nearby.match_unavailable": "⚠️ That match is no longer available. Please search again.",
+  "mobility.nearby.match_error": "⚠️ Unable to create match. Please try again.",
+  "mobility.nearby.driver_notified": "✅ Driver notified! You'll receive updates via WhatsApp when they respond.",
+  "mobility.nearby.passenger_notified": "✅ Passenger notified! You'll receive updates via WhatsApp when they respond."
 }
