@@ -251,14 +251,61 @@ async function sendPWAPushNotification(
   };
 }
 
-async function sendSMSNotification(
-  conversation: any,
-  request: NotifyRequest,
-  correlationId: string,
-): Promise<{ success: boolean; message_id?: string }> {
-  // TODO: Implement SMS via MTN or other SMS provider
-  throw new Error("SMS notifications not yet implemented");
-}
+  // Implement SMS via MTN provider
+  const { sendSMSWithRetry, validateRwandaPhone } = await import(
+    "../_shared/notifications/sms-provider.ts"
+  );
+
+  const phoneNumber = conversation.profiles?.phone;
+  if (!phoneNumber) {
+    throw new Error("No phone number found for user");
+  }
+
+  // Validate and normalize phone number
+  const phoneValidation = validateRwandaPhone(phoneNumber);
+  if (!phoneValidation.valid) {
+    throw new Error(phoneValidation.error || "Invalid phone number");
+  }
+
+  const message =
+    request.payload.message ||
+    getDefaultMessage(request.notification_type, conversation.locale);
+
+  // Get SMS configuration from environment
+  const smsConfig = {
+    apiKey: Deno.env.get("MTN_SMS_API_KEY") || "",
+    apiSecret: Deno.env.get("MTN_SMS_API_SECRET") || "",
+    senderId: Deno.env.get("MTN_SMS_SENDER_ID") || "easyMO",
+  };
+
+  // Send SMS with retry
+  const result = await sendSMSWithRetry(
+    smsConfig,
+    {
+      to: phoneValidation.normalized!,
+      message: message.substring(0, 160), // Limit to single SMS
+      reference: correlationId,
+    },
+    3 // Max 3 retries
+  );
+
+  if (!result.success) {
+    throw new Error(`SMS send failed: ${result.error}`);
+  }
+
+  console.log(
+    JSON.stringify({
+      event: "SMS_SENT",
+      correlationId,
+      messageId: result.messageId,
+      cost: result.cost,
+    })
+  );
+
+  return {
+    success: true,
+    message_id: result.messageId,
+  };
 
 function getDefaultTitle(
   type: string,

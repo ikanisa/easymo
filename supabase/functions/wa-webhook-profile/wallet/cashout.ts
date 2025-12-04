@@ -257,8 +257,92 @@ export async function handleCashOutConfirm(ctx: RouterContext): Promise<boolean>
       momoPhone
     });
 
-    // TODO: Trigger admin notification or automated USSD disbursement
-    // For now, admin will process manually via USSD
+    // Trigger admin notification for cashout processing
+    try {
+      // Get admin users who should be notified
+      const { data: admins } = await ctx.supabase
+        .from("profiles")
+        .select("id, phone, full_name")
+        .eq("role", "admin")
+        .eq("receive_cashout_notifications", true)
+        .limit(5);
+
+      if (admins && admins.length > 0) {
+        // Send WhatsApp notification to admins
+        const { sendWhatsAppMessage } = await import(
+          "../../_shared/whatsapp-client.ts"
+        );
+
+        const config = {
+          phoneId: Deno.env.get("WA_PHONE_ID")!,
+          accessToken: Deno.env.get("WA_ACCESS_TOKEN")!,
+        };
+
+        const adminMessage =
+          `🔔 *New Cashout Request*\n\n` +
+          `Reference: ${cashoutRef}\n` +
+          `User: ${ctx.profileId}\n` +
+          `Amount: ${rwfAmount.toLocaleString()} RWF\n` +
+          `Tokens: ${amount.toLocaleString()}\n` +
+          `Mobile Money: ${momoPhone}\n\n` +
+          `⚠️ Action Required: Process USSD transfer within 24 hours\n\n` +
+          `View in admin panel: /wallet/cashouts`;
+
+        // Send to all admins
+        for (const admin of admins) {
+          if (admin.phone) {
+            try {
+              await sendWhatsAppMessage(
+                config,
+                {
+                  to: admin.phone,
+                  type: "text",
+                  text: { body: adminMessage },
+                },
+                cashout.id
+              );
+            } catch (notifError) {
+              console.error(`Failed to notify admin ${admin.id}:`, notifError);
+            }
+          }
+        }
+
+        await logStructuredEvent("WALLET_CASHOUT_ADMIN_NOTIFIED", {
+          cashoutId: cashout.id,
+          adminCount: admins.length,
+        });
+      } else {
+        // Fallback: Create notification in database for admin panel
+        await ctx.supabase.from("admin_notifications").insert({
+          type: "cashout_request",
+          title: "New Cashout Request",
+          message: `${amount.toLocaleString()} tokens → ${rwfAmount.toLocaleString()} RWF`,
+          data: {
+            cashout_id: cashout.id,
+            user_id: ctx.profileId,
+            amount: rwfAmount,
+            momo_number: momoPhone,
+          },
+          priority: "high",
+          read: false,
+        });
+
+        console.warn("No admins configured for cashout notifications");
+      }
+    } catch (notificationError) {
+      // Log but don't fail the cashout if notification fails
+      await logStructuredEvent(
+        "WALLET_CASHOUT_ADMIN_NOTIFICATION_FAILED",
+        {
+          cashoutId: cashout.id,
+          error:
+            notificationError instanceof Error
+              ? notificationError.message
+              : String(notificationError),
+        },
+        "warn"
+      );
+    }
 
     return true;
   } catch (error) {
