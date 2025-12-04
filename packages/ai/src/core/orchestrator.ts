@@ -20,12 +20,9 @@ import type {
   Conversation,
   ExecutionParams,
   MemoryEntry,
-  Message,
   OrchestratorConfig,
   ProcessMessageParams,
-  TokenUsage,
   Tool,
-  ToolCall,
 } from './types';
 
 export class AgentOrchestrator {
@@ -103,7 +100,7 @@ export class AgentOrchestrator {
 
       return response;
     } catch (error) {
-      log.error('[AgentOrchestrator] Error processing message:', error);
+      log.error({ error, event: 'PROCESS_MESSAGE_ERROR' }, '[AgentOrchestrator] Error processing message');
       throw error;
     }
   }
@@ -407,7 +404,13 @@ Respond with ONLY the agent type, nothing else.`,
         const args = JSON.parse(toolCall.function.arguments);
         const startTime = Date.now();
 
-        const result = await tool.execute(args, {
+        // Use execute or handler (handler is the legacy name)
+        const toolFn = tool.execute || tool.handler;
+        if (!toolFn) {
+          throw new Error(`Tool handler not implemented for ${tool.name}`);
+        }
+
+        const result = await toolFn(args, {
           conversationId: params.conversation.id,
           userId: params.conversation.user_id,
           profileId: params.conversation.profile_id,
@@ -437,8 +440,9 @@ Respond with ONLY the agent type, nothing else.`,
         });
 
         executedTools.push(tool.name);
-      } catch (error: any) {
-        log.error(`[AgentOrchestrator] Tool execution error:`, error);
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        log.error({ error: errorMessage, event: 'TOOL_EXECUTION_ERROR' }, '[AgentOrchestrator] Tool execution error');
 
         // Log failed execution
         await this.logToolExecution(
@@ -450,13 +454,13 @@ Respond with ONLY the agent type, nothing else.`,
           false,
           0,
           params.conversation.user_id,
-          error.message
+          errorMessage
         );
 
         toolResults.push({
           tool_call_id: toolCall.id,
           role: 'tool',
-          content: JSON.stringify({ error: error.message }),
+          content: JSON.stringify({ error: errorMessage }),
         });
       }
     }
@@ -581,13 +585,13 @@ Respond with ONLY the agent type, nothing else.`,
   private async getConversationHistory(
     conversationId: string,
     limit: number = 20
-  ): Promise<any[]> {
+  ): Promise<unknown[]> {
     try {
       const key = `conversation:${conversationId}:messages`;
       const messages = await this.redis.lrange(key, -limit, -1);
       return messages.map((msg) => JSON.parse(msg));
     } catch (error) {
-      log.error('[AgentOrchestrator] Error loading history:', error);
+      log.error({ error: String(error), event: 'GET_HISTORY_ERROR' }, '[AgentOrchestrator] Error loading history');
       return [];
     }
   }
@@ -617,13 +621,13 @@ Respond with ONLY the agent type, nothing else.`,
       });
 
       if (error) {
-        log.error('[AgentOrchestrator] Memory retrieval error:', error);
+        log.error({ error: error.message, event: 'MEMORY_RETRIEVAL_ERROR' }, '[AgentOrchestrator] Memory retrieval error');
         return [];
       }
 
       return (data as MemoryEntry[])?.map((entry) => entry.content) || [];
     } catch (error) {
-      log.error('[AgentOrchestrator] Memory retrieval error:', error);
+      log.error({ error: String(error), event: 'MEMORY_RETRIEVAL_ERROR' }, '[AgentOrchestrator] Memory retrieval error');
       return [];
     }
   }
@@ -679,7 +683,7 @@ Respond with ONLY the agent type, nothing else.`,
         });
       }
     } catch (error) {
-      log.error('[AgentOrchestrator] Error saving to memory:', error);
+      log.error({ error: String(error), event: 'SAVE_MEMORY_ERROR' }, '[AgentOrchestrator] Error saving to memory');
     }
   }
 
@@ -752,7 +756,7 @@ Respond with ONLY the agent type, nothing else.`,
         created_at: new Date().toISOString(),
       });
     } catch (err) {
-      log.error('[AgentOrchestrator] Error logging tool execution:', err);
+      log.error({ error: String(err), event: 'LOG_TOOL_ERROR' }, '[AgentOrchestrator] Error logging tool execution');
     }
   }
 
@@ -792,7 +796,7 @@ Respond with ONLY the agent type, nothing else.`,
         });
       }
     } catch (error) {
-      log.error('[AgentOrchestrator] Error tracking metrics:', error);
+      log.error({ error: String(error), event: 'TRACK_METRICS_ERROR' }, '[AgentOrchestrator] Error tracking metrics');
     }
   }
 

@@ -114,3 +114,52 @@ export { default as SearchGroundingClient } from "./agents/google/search-groundi
 export { default as AgentFactory } from "./core/agent-factory";
 export * from "./core/types";
 export { default as UnifiedGateway } from "./core/unified-gateway";
+
+// Agent Base Class (Phase 2)
+export {
+  AgentBase,
+  type AgentConfig as AgentBaseConfig,
+  type AgentContext,
+  type AgentInput,
+  type AgentResult,
+  type MemoryContext,
+  type ToolResult,
+} from "./core/agent-base";
+
+// Domain-Specific Agent Base Classes (Phase 2)
+export {
+  CommerceAgentBase,
+  type Order,
+  type OrderItem,
+  type OrderStatus,
+  type PaymentResult,
+  type Product,
+  type ProductQuery,
+} from "./agents/commerce-agent.base";
+
+export {
+  MobilityAgentBase,
+  type Booking,
+  type BookingStatus,
+  type Driver,
+  type FareEstimate,
+  type Location,
+  type RideStatus,
+  type TripRequest,
+  type Vehicle,
+  type VehicleType,
+} from "./agents/mobility-agent.base";
+
+export {
+  ProfessionalAgentBase,
+  type Appointment,
+  type AppointmentRequest,
+  type AppointmentStatus,
+  type AppointmentType,
+  type DocumentData,
+  type DocumentTemplate,
+  type DocumentType,
+  type EscalationPriority,
+  type EscalationRequest,
+  type EscalationResult,
+} from "./agents/professional-agent.base";
