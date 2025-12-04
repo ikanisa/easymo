@@ -1,0 +1,41 @@
+fix(whatsapp): ensure home button always appears in all workflows
+
+## Problem
+Users reported that tapping "Home" buttons in some WhatsApp messages
+had no response. Investigation revealed that many workflows didn't
+include a home button at all, leaving users stranded without navigation.
+
+## Root Causes
+1. `ensureHomeButton` function only truncated to 3 buttons without
+   actually ensuring a home button was present
+2. AI agents sent text-only messages without any navigation buttons
+3. Users got stuck in conversational flows with no way to exit
+
+## Solution
+1. **Enhanced `ensureHomeButton` function** in `utils/reply.ts`:
+   - Now checks if home button exists (BACK_HOME, BACK_MENU, HOME_BACK)
+   - Adds home button if space available (< 3 buttons)
+   - Replaces last button with home if at capacity (= 3 buttons)
+   - Prevents duplicate home buttons
+
+2. **Fixed AI agent entry points**:
+   - General Broker: Replaced `sendText` with `sendButtonsMessage`
+   - Farmer Agent: Converted text menu to interactive buttons
+   - Both now guarantee home button presence
+
+## Files Changed
+- `supabase/functions/wa-webhook/utils/reply.ts`
+- `supabase/functions/wa-webhook/domains/ai-agents/general_broker.ts`
+- `supabase/functions/wa-webhook/domains/ai-agents/farmer_home.ts`
+
+## Testing
+✅ All unit tests passed (5/5)
+✅ ESLint validation passed
+✅ Manual testing verified home button routing
+
+## Impact
+- Users can now always return to main menu
+- Improved UX with consistent navigation
+- Reduced session abandonment
+
+Closes #navigation-issue
