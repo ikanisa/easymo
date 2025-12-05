@@ -367,9 +367,10 @@ export async function processInsuranceDocument(
 }
 
 /**
- * Handle insurance help request - show admin contacts
+ * Handle insurance help request - show admin contacts with WhatsApp links
  */
 export async function handleInsuranceHelp(ctx: RouterContext): Promise<boolean> {
+  const { sendText } = await import("../../wa/client.ts");
   const { sendButtonsMessage, homeOnly } = await import("../../utils/reply.ts");
   const { IDS } = await import("../../wa/ids.ts");
   
@@ -389,31 +390,26 @@ export async function handleInsuranceHelp(ctx: RouterContext): Promise<boolean> 
     return true;
   }
 
-  // Build contact list message
-  const contactList = contacts
-    .map((c: any) => `${c.display_name}: ${c.contact_value}`)
-    .join('\n');
+  // Build contact list with WhatsApp links
+  const contactLinks = contacts
+    .map((c: any) => {
+      // Format phone number for WhatsApp (remove + and spaces)
+      const phone = c.contact_value.replace(/[^0-9]/g, '');
+      const whatsappUrl = `https://wa.me/${phone}`;
+      return `• *${c.display_name}*\n  ${whatsappUrl}`;
+    })
+    .join('\n\n');
 
   const message = `🏥 *Motor Insurance Support*\n\n` +
-    `Contact our insurance team for help:\n\n${contactList}\n\n` +
-    `Tap a contact to start chatting on WhatsApp.`;
+    `Contact our insurance team for help:\n\n${contactLinks}\n\n` +
+    `_Tap any link above to start chatting on WhatsApp._`;
 
-  // Build contact buttons (max 3)
-  const buttons = contacts.slice(0, 3).map((contact: any) => ({
-    id: `insurance_contact_${contact.id}`,
-    title: contact.display_name.substring(0, 20) // WhatsApp button limit
-  }));
-
-  buttons.push({
-    id: IDS.BACK_MENU,
-    title: "Back to Menu"
-  });
-
-  await sendButtonsMessage(ctx, message, buttons, { emoji: "🏥" });
+  await sendText(ctx.from, message);
   
   await logStructuredEvent("INSURANCE_HELP_REQUESTED", {
     profile_id: ctx.profileId,
-    wa_id: ctx.from
+    wa_id: ctx.from,
+    contacts_count: contacts.length
   });
 
   return true;

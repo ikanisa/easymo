@@ -533,11 +533,11 @@ export async function processInsuranceDocument(
 }
 
 /**
- * Handle insurance help request - show admin contacts
+ * Handle insurance help request - show admin contacts with WhatsApp links
  */
 export async function handleInsuranceHelp(ctx: RouterContext): Promise<boolean> {
-  const { sendListMessage } = await import("../../_shared/wa-webhook-shared/utils/reply.ts");
-  const { IDS } = await import("../../_shared/wa-webhook-shared/wa/ids.ts");
+  const { sendText } = await import("../../_shared/wa-webhook-shared/wa/client.ts");
+  const { sendButtonsMessage, homeOnly } = await import("../../_shared/wa-webhook-shared/utils/reply.ts");
   
   const { data: contacts } = await ctx.supabase
     .from('insurance_admin_contacts')
@@ -546,37 +546,48 @@ export async function handleInsuranceHelp(ctx: RouterContext): Promise<boolean> 
     .order('display_order');
 
   if (!contacts || contacts.length === 0) {
-    await sendListMessage(
+    await sendButtonsMessage(
       ctx,
-      {
-        title: '🏥 Insurance Support',
-        body: 'Insurance support contacts are currently unavailable. Please try again later.',
-        sectionTitle: 'Support',
-        rows: [{ id: IDS.BACK_MENU, title: 'Back' }],
-        buttonText: 'Open'
-      },
-      { emoji: '🏥' }
+      'Insurance support contacts are currently unavailable. Please try again later.',
+      homeOnly()
     );
     return true;
   }
 
-  const rows = contacts
-    .filter((c: any) => String(c.contact_type || '').toLowerCase() === 'whatsapp')
-    .map((c: any) => ({ id: `insurance_contact_${c.id}`, title: c.display_name.substring(0, 24), description: c.contact_value }))
-    .slice(0, 10);
-
-  await sendListMessage(
-    ctx,
-    {
-      title: '🏥 Insurance Support',
-      body: 'Contact our support team for assistance. Tap a contact below to start chatting on WhatsApp.',
-      sectionTitle: 'Contacts',
-      rows: [...rows, { id: IDS.BACK_MENU, title: 'Back to Menu' }],
-      buttonText: 'Choose'
-    },
-    { emoji: '🏥' }
+  // Build contact list with WhatsApp links
+  const whatsappContacts = contacts.filter((c: any) => 
+    String(c.contact_type || '').toLowerCase() === 'whatsapp'
   );
 
-  await logStructuredEvent('INSURANCE_HELP_REQUESTED', { profile_id: ctx.profileId, wa_id: ctx.from });
+  if (whatsappContacts.length === 0) {
+    await sendButtonsMessage(
+      ctx,
+      'No WhatsApp contacts available. Please try again later.',
+      homeOnly()
+    );
+    return true;
+  }
+
+  const contactLinks = whatsappContacts
+    .map((c: any) => {
+      // Format phone number for WhatsApp (remove + and spaces)
+      const phone = c.contact_value.replace(/[^0-9]/g, '');
+      const whatsappUrl = `https://wa.me/${phone}`;
+      return `• *${c.display_name}*\n  ${whatsappUrl}`;
+    })
+    .join('\n\n');
+
+  const message = `🏥 *Motor Insurance Support*\n\n` +
+    `Contact our insurance team for help:\n\n${contactLinks}\n\n` +
+    `_Tap any link above to start chatting on WhatsApp._`;
+
+  await sendText(ctx.from, message);
+
+  await logStructuredEvent('INSURANCE_HELP_REQUESTED', { 
+    profile_id: ctx.profileId, 
+    wa_id: ctx.from,
+    contacts_count: whatsappContacts.length
+  });
+  
   return true;
 }
