@@ -148,7 +148,6 @@ export async function matchDriversForTrip(
   radiusMeters?: number,
   windowDays = 2, // Match migration default: 48-hour window
 ) {
-  await ensureRidesTripsSchema(client);
   const { data, error } = await client.rpc("match_drivers_for_trip_v2", {
     _trip_id: tripId,
     _limit: limit,
@@ -168,7 +167,6 @@ export async function matchPassengersForTrip(
   radiusMeters?: number,
   windowDays = 2, // Match migration default: 48-hour window
 ) {
-  await ensureRidesTripsSchema(client);
   const { data, error } = await client.rpc("match_passengers_for_trip_v2", {
     _trip_id: tripId,
     _limit: limit,
