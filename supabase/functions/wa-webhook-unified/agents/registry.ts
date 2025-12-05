@@ -14,6 +14,10 @@
  * 7. real_estate - Real Estate AI Agent
  * 8. buy_and_sell - Buy & Sell Agent (consolidates marketplace + business_broker)
  * 9. support - Support AI Agent (includes concierge routing)
+ * 
+ * DEPRECATED (merged into buy_and_sell):
+ * - marketplace
+ * - business_broker
  */
 
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -22,7 +26,6 @@ import { BaseAgent } from "./base-agent.ts";
 
 // Import all domain agents (DATABASE-DRIVEN)
 import { SupportAgent } from "./support-agent.ts";
-import { MarketplaceAgent } from "./marketplace-agent.ts"; // Database-driven marketplace agent
 import { FarmerAgent } from "./farmer-agent.ts";
 import { WaiterAgent } from "./waiter-agent.ts";
 import { InsuranceAgent } from "./insurance-agent.ts";
@@ -30,7 +33,7 @@ import { RidesAgent } from "./rides-agent.ts";
 import { JobsAgent } from "./jobs-agent.ts";
 import { PropertyAgent } from "./property-agent.ts";
 
-// Import consolidated agents (from wa-webhook-ai-agents migration)
+// Buy & Sell Agent (consolidated marketplace + business_broker)
 import { BuySellAgent } from "./buy-sell.ts";
 
 export class AgentRegistry {
@@ -88,9 +91,9 @@ export class AgentRegistry {
       case "insurance":
         return new InsuranceAgent(deps);
       
-      // 3. Sales/Marketing Cold Caller AI Agent (uses marketplace agent for now)
+      // 3. Sales/Marketing Cold Caller AI Agent
       case "sales_cold_caller":
-        return new MarketplaceAgent(deps);
+        return new SupportAgent(deps);
       
       // 4. Rides AI Agent
       case "rides":

@@ -1,32 +1,52 @@
 /**
- * Marketplace Agent - EasyMO product search and shopping
- * Handles pharmacy, hardware store, shop inventory searches
+ * Buy & Sell Agent - EasyMO unified commerce and business discovery
+ * Handles marketplace transactions, business brokerage, and legal intake
+ * 
+ * @deprecated MarketplaceAgent has been merged into BuyAndSellAgent.
+ * This file provides backward compatibility for existing code.
  */
 
 import { AgentExecutor } from '../agent-executor';
 
-const MARKETPLACE_SYSTEM_PROMPT = `You are EasyMO's Marketplace Assistant, helping users find products and services.
+const BUY_AND_SELL_SYSTEM_PROMPT = `You are EasyMO's unified Buy & Sell assistant, helping users with marketplace transactions and business opportunities.
 
-Your responsibilities:
-- Search for products across pharmacies, hardware stores, and shops
-- Provide product information, prices, and availability
-- Help users compare options and find best deals
-- Locate nearest stores with specific products
-- Answer questions about product categories and specifications
-- Process product orders and deliveries
+MARKETPLACE CAPABILITIES:
+- Help users buy and sell products across all retail categories (pharmacy, hardware, grocery)
+- Find shops and stores nearby
+- Create and manage product listings
+- Search for specific items
+- Handle OTC pharmacy products; for RX items, request photo and escalate to pharmacist
+- No medical advice, dosing, or contraindication information
+
+BUSINESS DISCOVERY:
+- Map user needs → business categories → specific nearby businesses
+- Use maps_geocode for location-based search
+- Return ranked list with reasons (open now, distance, rating)
+- Only recommend businesses from the database; respect opening hours
+
+BUSINESS BROKERAGE:
+- For sellers: Collect business details, financials (sanitized), asking price, terms
+- For buyers: Understand acquisition criteria, budget, industry preferences
+- Match parties; facilitate introductions; schedule meetings
 
 Available tools:
 - database_query: Search inventory, check prices and availability
 - google_maps: Find nearby stores and calculate delivery distances
 - search_grounding: Get current product information, reviews, or comparisons
 
+GUARDRAILS:
+- No medical advice beyond finding a pharmacy
+- No legal, tax, or financial advice—only logistics and intake
+- Protect user privacy and confidentiality
+- Sensitive topics require handoff to staff
+
 Be helpful, accurate, and recommend quality products. Verify product availability before confirming orders.`;
 
-export class MarketplaceAgent extends AgentExecutor {
+export class BuyAndSellAgent extends AgentExecutor {
   constructor() {
     super({
       model: 'gpt-4o-mini',
-      systemPrompt: MARKETPLACE_SYSTEM_PROMPT,
+      systemPrompt: BUY_AND_SELL_SYSTEM_PROMPT,
       tools: ['database_query', 'google_maps', 'search_grounding'],
       maxIterations: 5,
     });
@@ -61,6 +81,15 @@ export class MarketplaceAgent extends AgentExecutor {
   }
 
   /**
+   * Search for businesses
+   */
+  async searchBusinesses(category: string, location?: { lat: number; lng: number }) {
+    const locationInfo = location ? ` near coordinates [${location.lat}, ${location.lng}]` : '';
+    const query = `Find "${category}" businesses${locationInfo}. Include distance, rating, and contact information.`;
+    return this.execute(query);
+  }
+
+  /**
    * Get product recommendations
    */
   async getProductRecommendations(params: {
@@ -90,4 +119,21 @@ export class MarketplaceAgent extends AgentExecutor {
   }
 }
 
-export const marketplaceAgent = new MarketplaceAgent();
+/**
+ * @deprecated Use BuyAndSellAgent instead. MarketplaceAgent has been merged into BuyAndSellAgent.
+ */
+export class MarketplaceAgent extends BuyAndSellAgent {
+  constructor() {
+    super();
+    console.warn(
+      'DEPRECATION WARNING: MarketplaceAgent is deprecated. Use BuyAndSellAgent instead.'
+    );
+  }
+}
+
+export const buyAndSellAgent = new BuyAndSellAgent();
+
+/**
+ * @deprecated Use buyAndSellAgent instead
+ */
+export const marketplaceAgent = buyAndSellAgent;

@@ -46,7 +46,10 @@ export type AgentType =
   | "waiter"           // Waiter AI Agent
   | "real_estate"      // Real Estate AI Agent
   | "buy_and_sell"     // Buy & Sell AI Agent (unified commerce + business brokerage)
-  | "support";         // Support AI Agent (includes concierge routing)
+  | "support"          // Support AI Agent (includes concierge routing)
+  // Deprecated types - kept for backward compatibility
+  | "marketplace"      // DEPRECATED: Use buy_and_sell instead
+  | "business_broker"; // DEPRECATED: Use buy_and_sell instead
 
 export interface AgentConfig {
   id: string;
