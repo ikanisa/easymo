@@ -355,6 +355,15 @@ export class MarketplaceAgent {
       }
     }
 
+    // If user wants to connect with a seller/business
+    if (action === "connect" || action === "confirm") {
+      // If we have a current listing or business context, provide the contact info
+      if (context.currentListingId || aiResponse.extracted_entities.phone) {
+         // Logic to get phone number would go here if not already in context
+         // For now, we rely on the AI's response text, but we can enhance it to send a Contact Card
+      }
+    }
+
     return {
       message,
       action: action as AgentResponse["action"],
@@ -515,10 +524,13 @@ export class MarketplaceAgent {
         formatted += `${i + 1}. *${r.title}*${distance}${price}\n`;
         if (r.description)
           formatted += `   ${(r.description as string).slice(0, 50)}...\n`;
+        if (r.seller_phone) 
+          formatted += `   💬 https://wa.me/${(r.seller_phone as string).replace('+', '')}?text=I'm%20interested%20in%20${encodeURIComponent(r.title as string)}\n`;
       } else {
         formatted += `${i + 1}. *${r.name}*${distance}${rating}\n`;
         formatted += `   📂 ${r.category} | 📍 ${r.city}\n`;
-        if (r.phone) formatted += `   📞 ${r.phone}\n`;
+        if (r.phone) 
+            formatted += `   💬 https://wa.me/${(r.phone as string).replace(/\D/g, '')}\n`;
       }
       formatted += "\n";
     });

@@ -10,6 +10,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { CallCenterAgent } from './call-center-agent.ts';
+import { CallCenterAGI } from './call-center-agi.ts';
 import { verifyWebhookSignature } from '../_shared/webhook-utils.ts';
 import { logStructuredEvent } from '../_shared/observability.ts';
 import { sendWhatsAppMessage } from '../_shared/wa-webhook-shared/wa/client.ts';
@@ -21,8 +22,12 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
 
-const agent = new CallCenterAgent();
+// Use full AGI implementation (with tools) if enabled, otherwise use basic agent
+const useAGI = Deno.env.get('CALL_CENTER_USE_AGI') !== 'false'; // Default to true
+const agent = useAGI ? new CallCenterAGI() : new CallCenterAgent();
 const deduplicator = new MessageDeduplicator(supabase);
+
+console.log(`Call Center initialized: ${useAGI ? 'AGI (Full Tools)' : 'Basic Agent'}`);
 
 serve(async (req: Request): Promise<Response> => {
   const url = new URL(req.url);
@@ -61,12 +66,22 @@ serve(async (req: Request): Promise<Response> => {
         name: agent.name,
         description: agent.description,
       },
-      capabilities: [
+      capabilities: useAGI ? [
+        'universal_knowledge',
+        'agent_orchestration',
+        'multi_language',
+        'voice_optimized',
+        'tool_execution',
+        'knowledge_retrieval',
+        'database_operations'
+      ] : [
         'universal_knowledge',
         'agent_collaboration',
         'multi_language',
         'voice_ready',
       ],
+      mode: useAGI ? 'agi' : 'basic',
+      tools_available: useAGI && 'getToolCount' in agent ? (agent as any).getToolCount() : 0,
       timestamp: new Date().toISOString(),
     });
   }

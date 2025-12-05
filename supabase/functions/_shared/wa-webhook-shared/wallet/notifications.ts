@@ -42,17 +42,18 @@ export async function notifyTokenTransfer(
     // Notify sender
     await sendText(
       senderPhone,
-      `💸 Transfer sent!\n\n` +
-      `Amount: ${amount.toLocaleString()} tokens\n` +
-      `To: ${recipientPhone}`
+      `✅ *Transfer Sent!*\n\n` +
+      `You sent ${amount.toLocaleString()} tokens to ${recipientPhone}\n\n` +
+      `Your tokens have been delivered successfully.`
     );
     
     // Notify recipient
     await sendText(
       recipientPhone,
-      `💰 Tokens received!\n\n` +
+      `💰 *You Received Tokens!*\n\n` +
       `Amount: ${amount.toLocaleString()} tokens\n` +
-      `From: ${senderPhone}`
+      `From: ${senderPhone}\n\n` +
+      `Use your tokens for rides, payments, and rewards!`
     );
     
     await logStructuredEvent("NOTIFICATION_SENT", {

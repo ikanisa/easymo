@@ -212,45 +212,8 @@ export async function handleWalletTransferText(
     }
     
     // Validate transfer amount and limits handled by transferTokens
-
     
     try {
-      // Resolve recipient profile by WhatsApp - try both e164 and wa_id
-      let recipient: { user_id: string } | null = null;
-      
-      // Try whatsapp_e164 first
-      const { data: recipient1 } = await ctx.supabase
-        .from("profiles")
-        .select("user_id")
-        .eq("whatsapp_e164", data.to as string)
-        .maybeSingle();
-      
-      if (recipient1?.user_id) {
-        recipient = recipient1;
-      } else {
-        // Fallback to wa_id
-        const { data: recipient2 } = await ctx.supabase
-          .from("profiles")
-          .select("user_id")
-          .eq("wa_id", (data.to as string).replace('+', ''))
-          .maybeSingle();
-        recipient = recipient2;
-      }
-      
-      if (!recipient?.user_id) {
-        console.warn(JSON.stringify({
-          event: "WALLET_TRANSFER_RECIPIENT_NOT_FOUND",
-          searched_number: data.to,
-          sender: ctx.profileId
-        }));
-        await sendButtonsMessage(
-          ctx, 
-          `❌ Recipient not found.\n\nThe number ${data.to} is not registered on easyMO. They need to chat with us first.`, 
-          [{ id: IDS.WALLET, title: "💎 Wallet" }]
-        );
-        return true;
-      }
-      
       // Execute transfer using shared business logic
       const { transferTokens } = await import("../../_shared/wa-webhook-shared/wallet/transfer.ts");
       const result = await transferTokens(ctx, data.to as string, amount);

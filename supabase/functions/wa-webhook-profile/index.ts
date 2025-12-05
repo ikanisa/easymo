@@ -131,6 +131,38 @@ serve(async (req: Request): Promise<Response> => {
       return respond({ success: true, ignored: "no_sender" });
     }
 
+    // Idempotency: Check if we've already processed this message
+    const messageId = (message as any).id; // WhatsApp message ID (wamid)
+    if (messageId) {
+      // Check if we've processed this message in the last 5 minutes
+      const { data: processed } = await supabase
+        .from("processed_webhooks")
+        .select("id")
+        .eq("message_id", messageId)
+        .gte("created_at", new Date(Date.now() - 5 * 60 * 1000).toISOString())
+        .maybeSingle();
+      
+      if (processed) {
+        logEvent("PROFILE_DUPLICATE_MESSAGE", { messageId, from }, "debug");
+        return respond({ success: true, ignored: "duplicate" });
+      }
+      
+      // Mark as processed (fire and forget - don't await)
+      supabase
+        .from("processed_webhooks")
+        .insert({
+          message_id: messageId,
+          phone_number: from,
+          webhook_type: "profile",
+          created_at: new Date().toISOString(),
+        })
+        .then(() => {
+          // Success - no action needed
+        }, (err: Error) => {
+          logEvent("PROFILE_IDEMPOTENCY_INSERT_FAILED", { error: err.message }, "warn");
+        });
+    }
+
     // Build Context - Auto-create profile if needed
     const profile = await ensureProfile(supabase, from);
 
@@ -669,6 +701,12 @@ serve(async (req: Request): Promise<Response> => {
         
         // Back to Profile
         else if (id === IDS.BACK_PROFILE) {
+          const { startProfile } = await import("./profile/home.ts");
+          handled = await startProfile(ctx, state ?? { key: "home" });
+        }
+        
+        // Back to Menu (from wallet/other submenus)
+        else if (id === IDS.BACK_MENU || id === "back_menu") {
           const { startProfile } = await import("./profile/home.ts");
           handled = await startProfile(ctx, state ?? { key: "home" });
         }

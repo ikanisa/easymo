@@ -409,6 +409,9 @@ export function logMarketplaceEvent(
     maskedDetails.buyer_phone = maskPhone(maskedDetails.buyer_phone as string);
   }
 
+  // Ensure console output for Supabase Dashboard
+  console.log(`[${level.toUpperCase()}] MARKETPLACE_${event}`, JSON.stringify(maskedDetails));
+
   logStructuredEvent(`MARKETPLACE_${event}`, {
     service: "wa-webhook-marketplace",
     ...maskedDetails,

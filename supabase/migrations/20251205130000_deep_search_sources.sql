@@ -199,27 +199,34 @@ alter table real_estate_sources enable row level security;
 alter table farmers_sources enable row level security;
 
 -- Public read access for active sources
+-- Public read access for active sources
+DROP POLICY IF EXISTS "Public can view active job sources" ON job_sources;
 create policy "Public can view active job sources"
   on job_sources for select
   using (is_active = true);
 
+DROP POLICY IF EXISTS "Public can view active real estate sources" ON real_estate_sources;
 create policy "Public can view active real estate sources"
   on real_estate_sources for select
   using (is_active = true);
 
+DROP POLICY IF EXISTS "Public can view active farmers sources" ON farmers_sources;
 create policy "Public can view active farmers sources"
   on farmers_sources for select
   using (is_active = true);
 
 -- Service role full access
+DROP POLICY IF EXISTS "Service role manages job sources" ON job_sources;
 create policy "Service role manages job sources"
   on job_sources for all
   using (auth.role() = 'service_role');
 
+DROP POLICY IF EXISTS "Service role manages real estate sources" ON real_estate_sources;
 create policy "Service role manages real estate sources"
   on real_estate_sources for all
   using (auth.role() = 'service_role');
 
+DROP POLICY IF EXISTS "Service role manages farmers sources" ON farmers_sources;
 create policy "Service role manages farmers sources"
   on farmers_sources for all
   using (auth.role() = 'service_role');
