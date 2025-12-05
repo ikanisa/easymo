@@ -18,6 +18,7 @@ import {
 import { GeminiProvider } from '../_shared/ai-agents/providers/gemini.ts';
 import { logStructuredEvent } from '../_shared/observability.ts';
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import OpenAI from 'https://esm.sh/openai@4.26.0';
 
 interface ToolExecutionResult {
   success: boolean;
@@ -83,6 +84,10 @@ export class CallCenterAGI extends BaseAgent {
     // Call logging
     tools.set('supabase_log_call_summary', this.logCallSummary.bind(this));
     tools.set('get_call_metadata', this.getCallMetadata.bind(this));
+
+    // Deep Search (real-time web search - no data stored)
+    tools.set('deep_search_jobs', this.deepSearchJobs.bind(this));
+    tools.set('deep_search_real_estate', this.deepSearchRealEstate.bind(this));
 
     return tools;
   }
@@ -216,6 +221,34 @@ export class CallCenterAGI extends BaseAgent {
             parameters: { type: 'object', description: 'Additional parameters' },
           },
           required: ['agent_id', 'intent'],
+        },
+      },
+      {
+        name: 'deep_search_jobs',
+        description: 'Search external job websites in real-time for job listings. Use this after checking our internal job_listings table when user wants more options.',
+        parameters: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: 'Job search query (e.g., "software developer", "driver", "accountant")' },
+            location: { type: 'string', description: 'Location (e.g., "Kigali", "Malta")' },
+            country: { type: 'string', enum: ['RW', 'MT'], description: 'Country code' },
+          },
+          required: ['query'],
+        },
+      },
+      {
+        name: 'deep_search_real_estate',
+        description: 'Search external property websites in real-time for rentals or properties for sale. Use this after checking our internal property_listings table when user wants more options.',
+        parameters: {
+          type: 'object',
+          properties: {
+            location: { type: 'string', description: 'Location (e.g., "Kimironko", "Kigali", "Sliema")' },
+            listing_type: { type: 'string', enum: ['rent', 'buy'], description: 'Rent or buy' },
+            bedrooms: { type: 'integer', description: 'Number of bedrooms' },
+            max_price: { type: 'number', description: 'Maximum price' },
+            country: { type: 'string', enum: ['RW', 'MT'], description: 'Country code' },
+          },
+          required: ['location', 'listing_type'],
         },
       },
     ];
@@ -657,6 +690,165 @@ export class CallCenterAGI extends BaseAgent {
         channel: 'whatsapp_call',
       },
     };
+  }
+
+  // ================================================================
+  // DEEP SEARCH TOOLS (Real-time web search - no data stored)
+  // ================================================================
+
+  /**
+   * Search external job websites in real-time using OpenAI web search
+   * Results are NOT stored in the database - they are live results
+   */
+  private async deepSearchJobs(args: any, supabase: SupabaseClient): Promise<ToolExecutionResult> {
+    try {
+      await logStructuredEvent('DEEP_SEARCH_JOBS_START', {
+        query: args.query,
+        location: args.location,
+        country: args.country,
+      });
+
+      // 1. Get target URLs from job_sources table
+      const { data: sources } = await supabase
+        .from('job_sources')
+        .select('url, name')
+        .eq('is_active', true)
+        .eq('country', args.country || 'RW')
+        .order('priority', { ascending: false })
+        .limit(5);
+
+      const targetSites = sources?.map((s: { url: string }) => s.url) || [];
+
+      // 2. Call OpenAI API with web search
+      const openai = new OpenAI({ apiKey: Deno.env.get('OPENAI_API_KEY') });
+      
+      const locationText = args.location || (args.country === 'MT' ? 'Malta' : 'Rwanda');
+      const sitesList = targetSites.length > 0 
+        ? `Search these sites: ${targetSites.join(', ')}.`
+        : '';
+      
+      const query = `Find job listings for "${args.query}" in ${locationText}. 
+                     ${sitesList}
+                     Return for each job: title, company, location, salary range if available, key requirements, and URL to apply.
+                     Limit to 5 most relevant recent listings.
+                     Format as a clear numbered list.`;
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a job search assistant. Search the web for current job listings and provide accurate, helpful results. Include direct URLs when available.'
+          },
+          {
+            role: 'user',
+            content: query
+          }
+        ],
+        max_tokens: 1500,
+      });
+
+      const results = completion.choices[0]?.message?.content || 'No results found';
+
+      await logStructuredEvent('DEEP_SEARCH_JOBS_COMPLETE', {
+        query: args.query,
+        resultsLength: results.length,
+      });
+
+      // 3. Return results (NOT stored in DB)
+      return {
+        success: true,
+        data: {
+          jobs: results,
+          sources_searched: targetSites,
+          note: 'These are live results from external websites, not stored in our database.',
+        },
+      };
+    } catch (error) {
+      await logStructuredEvent('DEEP_SEARCH_JOBS_ERROR', {
+        error: error instanceof Error ? error.message : String(error),
+      }, 'error');
+      return { success: false, error: error instanceof Error ? error.message : 'Deep search failed' };
+    }
+  }
+
+  /**
+   * Search external property websites in real-time using OpenAI web search
+   * Results are NOT stored in the database - they are live results
+   */
+  private async deepSearchRealEstate(args: any, supabase: SupabaseClient): Promise<ToolExecutionResult> {
+    try {
+      await logStructuredEvent('DEEP_SEARCH_REAL_ESTATE_START', {
+        location: args.location,
+        listing_type: args.listing_type,
+        country: args.country,
+      });
+
+      // 1. Get target URLs from real_estate_sources table
+      const { data: sources } = await supabase
+        .from('real_estate_sources')
+        .select('url, name')
+        .eq('is_active', true)
+        .eq('country', args.country || 'RW')
+        .order('priority', { ascending: false })
+        .limit(5);
+
+      const targetSites = sources?.map((s: { url: string }) => s.url) || [];
+
+      // 2. Build search query
+      const priceFilter = args.max_price ? `under ${args.max_price} ${args.country === 'MT' ? 'EUR' : 'RWF'}` : '';
+      const bedroomFilter = args.bedrooms ? `${args.bedrooms} bedroom` : '';
+      const listingType = args.listing_type === 'rent' ? 'rental' : 'for sale';
+      const sitesList = targetSites.length > 0 
+        ? `Search these sites: ${targetSites.join(', ')}.`
+        : '';
+      
+      const query = `Find ${listingType} properties in ${args.location}.
+                     ${bedroomFilter} ${priceFilter}.
+                     ${sitesList}
+                     Return for each property: title, price, bedrooms, bathrooms, location/address, key amenities, contact info if available, and listing URL.
+                     Limit to 5 most relevant listings.
+                     Format as a clear numbered list.`;
+
+      // 3. Call OpenAI API with web search
+      const openai = new OpenAI({ apiKey: Deno.env.get('OPENAI_API_KEY') });
+      
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a real estate search assistant. Search the web for current property listings and provide accurate, helpful results. Include direct URLs and contact information when available.'
+          },
+          {
+            role: 'user',
+            content: query
+          }
+        ],
+        max_tokens: 1500,
+      });
+
+      const results = completion.choices[0]?.message?.content || 'No results found';
+
+      await logStructuredEvent('DEEP_SEARCH_REAL_ESTATE_COMPLETE', {
+        location: args.location,
+        resultsLength: results.length,
+      });
+
+      return {
+        success: true,
+        data: {
+          properties: results,
+          sources_searched: targetSites,
+          note: 'These are live results from external websites.',
+        },
+      };
+    } catch (error) {
+      await logStructuredEvent('DEEP_SEARCH_REAL_ESTATE_ERROR', {
+        error: error instanceof Error ? error.message : String(error),
+      }, 'error');
+      return { success: false, error: error instanceof Error ? error.message : 'Deep search failed' };
+    }
   }
 
   async getSystemPromptAsync(supabase: SupabaseClient): Promise<string> {
