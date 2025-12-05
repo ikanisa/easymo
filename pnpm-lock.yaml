@@ -476,6 +476,19 @@ importers:
         specifier: 5.5.4
         version: 5.5.4
 
+  packages/agent-config:
+    dependencies:
+      '@supabase/supabase-js':
+        specifier: ^2.39.0
+        version: 2.86.0
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.25
+      typescript:
+        specifier: 5.5.4
+        version: 5.5.4
+
   packages/agents:
     dependencies:
       '@google/generative-ai':
@@ -726,6 +739,31 @@ importers:
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
+
+  packages/google-speech:
+    dependencies:
+      '@easymo/commons':
+        specifier: workspace:*
+        version: link:../commons
+      '@google-cloud/speech':
+        specifier: ^6.4.0
+        version: 6.7.1(encoding@0.1.13)
+      '@google-cloud/text-to-speech':
+        specifier: ^5.0.0
+        version: 5.8.1(encoding@0.1.13)
+      '@google-cloud/translate':
+        specifier: ^8.0.0
+        version: 8.5.1(encoding@0.1.13)
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.25
+      typescript:
+        specifier: 5.5.4
+        version: 5.5.4
+      vitest:
+        specifier: ^1.0.0
+        version: 1.6.1(@types/node@20.19.25)(jsdom@26.1.0)(terser@5.44.1)
 
   packages/localization:
     dependencies:
@@ -1331,6 +1369,71 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@22.18.12)(jiti@1.21.7)(jsdom@26.1.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
 
+  services/openai-deep-research-service:
+    dependencies:
+      '@supabase/supabase-js':
+        specifier: ^2.38.4
+        version: 2.86.0
+      dotenv:
+        specifier: ^16.3.1
+        version: 16.6.1
+      express:
+        specifier: ^4.18.2
+        version: 4.21.2
+      openai:
+        specifier: ^4.20.0
+        version: 4.104.0(encoding@0.1.13)(ws@8.18.3)(zod@3.25.76)
+      pino:
+        specifier: ^8.16.0
+        version: 8.21.0
+    devDependencies:
+      '@types/express':
+        specifier: ^4.17.21
+        version: 4.17.25
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.25
+      tsx:
+        specifier: ^4.6.0
+        version: 4.21.0
+      typescript:
+        specifier: 5.5.4
+        version: 5.5.4
+
+  services/openai-responses-service:
+    dependencies:
+      '@supabase/supabase-js':
+        specifier: ^2.38.4
+        version: 2.86.0
+      dotenv:
+        specifier: ^16.3.1
+        version: 16.6.1
+      express:
+        specifier: ^4.18.2
+        version: 4.21.2
+      openai:
+        specifier: ^4.20.0
+        version: 4.104.0(encoding@0.1.13)(ws@8.18.3)(zod@3.25.76)
+      pino:
+        specifier: ^8.16.0
+        version: 8.21.0
+      zod:
+        specifier: ^3.22.4
+        version: 3.25.76
+    devDependencies:
+      '@types/express':
+        specifier: ^4.17.21
+        version: 4.17.25
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.25
+      tsx:
+        specifier: ^4.6.0
+        version: 4.21.0
+      typescript:
+        specifier: 5.5.4
+        version: 5.5.4
+
   services/profile:
     dependencies:
       '@easymo/commons':
@@ -1576,6 +1679,52 @@ importers:
       vitest:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.18.12)(jsdom@26.1.0)(terser@5.44.1)
+
+  services/voice-gateway:
+    dependencies:
+      '@easymo/call-capability':
+        specifier: workspace:*
+        version: link:../../packages/call-capability
+      '@easymo/google-speech':
+        specifier: workspace:*
+        version: link:../../packages/google-speech
+      '@supabase/supabase-js':
+        specifier: ^2.38.4
+        version: 2.86.0
+      dotenv:
+        specifier: ^16.3.1
+        version: 16.6.1
+      express:
+        specifier: ^4.18.2
+        version: 4.21.2
+      pino:
+        specifier: ^8.16.0
+        version: 8.21.0
+      pino-pretty:
+        specifier: ^10.2.0
+        version: 10.3.1
+      ws:
+        specifier: ^8.14.0
+        version: 8.18.3
+    devDependencies:
+      '@types/express':
+        specifier: ^4.17.21
+        version: 4.17.25
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.25
+      '@types/ws':
+        specifier: ^8.5.9
+        version: 8.18.1
+      tsx:
+        specifier: ^4.6.0
+        version: 4.21.0
+      typescript:
+        specifier: 5.5.4
+        version: 5.5.4
+      vitest:
+        specifier: ^1.0.0
+        version: 1.6.1(@types/node@20.19.25)(jsdom@26.1.0)(terser@5.44.1)
 
   services/wallet-service:
     dependencies:
@@ -3630,6 +3779,10 @@ packages:
     resolution: {integrity: sha512-Eo+ckr1KbTxAOew9P+MeeR0aQXeW5PeOzrSM1JyGny/SGKejwX/RcGWSFpeapnlegTfI9N9xJeUeo3M+XBOeFg==}
     engines: {node: '>=14.0.0'}
 
+  '@google-cloud/common@5.0.2':
+    resolution: {integrity: sha512-V7bmBKYQyu0eVG2BFejuUjlBt+zrya6vtsKdY+JxMM/dNntPF41vZ9+LhOshEUH01zOHEqBSvI7Dad7ZS6aUeA==}
+    engines: {node: '>=14.0.0'}
+
   '@google-cloud/common@6.0.0':
     resolution: {integrity: sha512-IXh04DlkLMxWgYLIUYuHHKXKOUwPDzDgke1ykkkJPe48cGIS9kkL2U/o0pm4ankHLlvzLF/ma1eO86n/bkumIA==}
     engines: {node: '>=18'}
@@ -3646,13 +3799,25 @@ packages:
     resolution: {integrity: sha512-N8qS6dlORGHwk7WjGXKOSsLjIjNINCPicsOX6gyyLiYk7mq3MtII96NZ9N2ahwA2vnkLmZODOIH9rlNniYWvCQ==}
     engines: {node: '>=18'}
 
+  '@google-cloud/speech@6.7.1':
+    resolution: {integrity: sha512-KgI2xmO8jHStYyoblj5FQ1G1Lk9JuvsR3wUpNSjxJP89yKA+Y/TBgGFvvu+mwm/f5x2ldLLY4So1VGNXZ+yzKg==}
+    engines: {node: '>=14.0.0'}
+
   '@google-cloud/speech@7.2.1':
     resolution: {integrity: sha512-3eaX4/aT5cJ0JMAiMwg1RLJJD2fxbF3St9x+9QSQskHJGFuMM2RCUmadLjCK3gPsdVk2eVdStiyxxuw+zeIEbw==}
     engines: {node: '>=18'}
 
+  '@google-cloud/text-to-speech@5.8.1':
+    resolution: {integrity: sha512-HXyZBtfQq+ETSLwWV/k3zFRWSzt+KEfiC5/OqXNNUed+lU/LEyN0CsqqEmkFfkL8BPsVIMAK2xiYCaDsKENukg==}
+    engines: {node: '>=14.0.0'}
+
   '@google-cloud/text-to-speech@6.4.0':
     resolution: {integrity: sha512-KUnK+mBYz9aegxHrBbwEignOkGRqXvqOXs/EGY7CAJhMFKuNSieW02/PV/ipVRsJM11MP69qgTgEetoyAN0HAg==}
     engines: {node: '>=18'}
+
+  '@google-cloud/translate@8.5.1':
+    resolution: {integrity: sha512-xqIRV+lTaszgPHw0ulUQ3CUhnbPnsnYlh90mBh3PomU5SUGRlJc5bjN0UEP6MICnrj3AugxYQSelNn+rxGj2Ig==}
+    engines: {node: '>=14.0.0'}
 
   '@google-cloud/translate@9.3.0':
     resolution: {integrity: sha512-OgZ2bCu3P0ZzMhEdYubwyCo/eFFlJMYalozmgOxlVcD51vCYelYUJeVnGlS+3cFQTJQX4RE84bYTKu7W0wqByw==}
@@ -10450,6 +10615,10 @@ packages:
   pino-http@9.0.0:
     resolution: {integrity: sha512-Q9QDNEz0vQmbJtMFjOVr2c9yL92vHudjmr3s3m6J1hbw3DBGFZJm3TIj9TWyynZ4GEsEA9SOtni4heRUr6lNOg==}
 
+  pino-pretty@10.3.1:
+    resolution: {integrity: sha512-az8JbIYeN/1iLj2t0jR9DV48/LQ3RC6hZPpapKPkb84Q+yTidMCpgWxIT3N0flnBDilyBQ1luWNpOeJptjdp/g==}
+    hasBin: true
+
   pino-pretty@11.3.0:
     resolution: {integrity: sha512-oXwn7ICywaZPHmu3epHGU2oJX4nPmKvHvB/bwrJHlGcbEWaVcotkpyVHMKLKmiVryWYByNp0jpgAcXpFJDXJzA==}
     hasBin: true
@@ -14616,6 +14785,21 @@ snapshots:
       - encoding
       - supports-color
 
+  '@google-cloud/common@5.0.2(encoding@0.1.13)':
+    dependencies:
+      '@google-cloud/projectify': 4.0.0
+      '@google-cloud/promisify': 4.1.0
+      arrify: 2.0.1
+      duplexify: 4.1.3
+      extend: 3.0.2
+      google-auth-library: 9.15.1(encoding@0.1.13)
+      html-entities: 2.6.0
+      retry-request: 7.0.2(encoding@0.1.13)
+      teeny-request: 9.0.0(encoding@0.1.13)
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
+
   '@google-cloud/common@6.0.0':
     dependencies:
       '@google-cloud/projectify': 4.0.0
@@ -14636,6 +14820,18 @@ snapshots:
 
   '@google-cloud/promisify@5.0.0': {}
 
+  '@google-cloud/speech@6.7.1(encoding@0.1.13)':
+    dependencies:
+      '@google-cloud/common': 5.0.2(encoding@0.1.13)
+      '@types/pumpify': 1.4.5
+      google-gax: 4.6.1(encoding@0.1.13)
+      pumpify: 2.0.1
+      stream-events: 1.0.5
+      uuid: 9.0.1
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
+
   '@google-cloud/speech@7.2.1':
     dependencies:
       '@google-cloud/common': 6.0.0
@@ -14647,10 +14843,29 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@google-cloud/text-to-speech@5.8.1(encoding@0.1.13)':
+    dependencies:
+      google-gax: 4.6.1(encoding@0.1.13)
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
+
   '@google-cloud/text-to-speech@6.4.0':
     dependencies:
       google-gax: 5.0.6
     transitivePeerDependencies:
+      - supports-color
+
+  '@google-cloud/translate@8.5.1(encoding@0.1.13)':
+    dependencies:
+      '@google-cloud/common': 5.0.2(encoding@0.1.13)
+      '@google-cloud/promisify': 4.1.0
+      arrify: 2.0.1
+      extend: 3.0.2
+      google-gax: 4.6.1(encoding@0.1.13)
+      is-html: 2.0.0
+    transitivePeerDependencies:
+      - encoding
       - supports-color
 
   '@google-cloud/translate@9.3.0':
@@ -23119,6 +23334,23 @@ snapshots:
       pino: 8.21.0
       pino-std-serializers: 6.2.2
       process-warning: 3.0.0
+
+  pino-pretty@10.3.1:
+    dependencies:
+      colorette: 2.0.20
+      dateformat: 4.6.3
+      fast-copy: 3.0.2
+      fast-safe-stringify: 2.1.1
+      help-me: 5.0.0
+      joycon: 3.1.1
+      minimist: 1.2.8
+      on-exit-leak-free: 2.1.2
+      pino-abstract-transport: 1.2.0
+      pump: 3.0.3
+      readable-stream: 4.7.0
+      secure-json-parse: 2.7.0
+      sonic-boom: 3.8.1
+      strip-json-comments: 3.1.1
 
   pino-pretty@11.3.0:
     dependencies:

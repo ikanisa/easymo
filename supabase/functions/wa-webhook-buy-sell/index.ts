@@ -3,22 +3,18 @@
  *
  * Natural language AI agent for connecting buyers and sellers in Rwanda via WhatsApp.
  * Features:
+ * - Interactive category-based workflow with 9 business types
  * - Conversational selling flow (create listings)
  * - Conversational buying flow (search and match)
  * - Proximity-based matching
  * - Integration with business directory
  *
- * @deprecated This service is deprecated and will be removed in a future release.
- * Marketplace functionality has been migrated to wa-webhook-unified.
- * 
- * Migration Status:
- * - MarketplaceAgent is available in wa-webhook-unified/agents/marketplace-agent.ts
- * - Payment handling available in wa-webhook-unified/tools/
- * - New marketplace features should ONLY be added to wa-webhook-unified
- * - This service remains active for backward compatibility during migration
- * 
- * @see supabase/functions/wa-webhook-unified for the consolidated service
- * @see docs/WA_WEBHOOK_CONSOLIDATION.md for migration guide
+ * Workflow:
+ * 1. User sends message → Agent responds with 9 emoji-numbered category options
+ * 2. User types a number (e.g., 4) → Agent asks user to share location
+ * 3. System filters database by user location → Returns top 9 nearest businesses
+ * 4. User can select one to chat with seller/vendor
+ *
  * @see docs/GROUND_RULES.md for observability requirements
  */
 
@@ -27,7 +23,18 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent, recordMetric } from "../_shared/observability.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
-import { MarketplaceAgent } from "./agent.ts";
+import { 
+  MarketplaceAgent, 
+  generateCategoryMenu,
+  parseCategorySelection,
+  getCategoryByNumber,
+  generateLocationRequest,
+  formatBusinessResults,
+  formatBusinessContact,
+  parseResultSelection,
+  BUSINESS_CATEGORIES,
+  type MarketplaceContext,
+} from "./agent.ts";
 import { handleMediaUpload, ensureStorageBucket } from "./media.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import {
@@ -53,7 +60,7 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
 );
 
-// Feature flag for AI agent
+// Feature flag for AI agent (defaults to false, use interactive workflow)
 const AI_AGENT_ENABLED = Deno.env.get("FEATURE_MARKETPLACE_AI") === "true";
 
 serve(async (req: Request): Promise<Response> => {
@@ -217,8 +224,21 @@ serve(async (req: Request): Promise<Response> => {
 
       let responseText: string;
 
+      // Handle WhatsApp location messages (for interactive flow)
+      if (message.type === "location" && message.location) {
+        const location = parseWhatsAppLocation(message.location);
+        if (location) {
+          responseText = await handleLocationMessage(
+            userPhone,
+            location,
+            requestId,
+          );
+        } else {
+          responseText = "📍 Could not process your location. Please try again or type a city name like 'Kigali'.";
+        }
+      }
       // Handle media uploads (photos, documents)
-      if (message.type === "image" || message.type === "document") {
+      else if (message.type === "image" || message.type === "document") {
         if (AI_AGENT_ENABLED) {
           const context = await MarketplaceAgent.loadContext(userPhone, supabase);
           responseText = await handleMediaUpload(
@@ -277,6 +297,110 @@ serve(async (req: Request): Promise<Response> => {
       return respond({ error: String(error) }, { status: 500 });
     }
 });
+
+// =====================================================
+// LOCATION MESSAGE HANDLER
+// =====================================================
+
+/**
+ * Handle WhatsApp location messages for the interactive flow
+ */
+async function handleLocationMessage(
+  userPhone: string,
+  location: { lat: number; lng: number; text?: string },
+  requestId: string,
+): Promise<string> {
+  // Get user's flow state
+  const state = userFlowStates.get(userPhone);
+  
+  logMarketplaceEvent("LOCATION_RECEIVED", {
+    from: userPhone,
+    lat: location.lat,
+    lng: location.lng,
+    mode: state?.mode,
+    requestId,
+  });
+  
+  // If user is awaiting location and has selected a category
+  if (state?.mode === "awaiting_location" && state.selectedCategory) {
+    // Search for businesses near user's location
+    const { data: businesses, error } = await supabase.rpc(
+      "search_businesses_nearby",
+      {
+        search_term: state.selectedCategory.code,
+        user_lat: location.lat,
+        user_lng: location.lng,
+        radius_km: 15,
+        result_limit: 9,
+      }
+    );
+
+    // Fallback to basic search if RPC fails
+    let results = businesses;
+    if (error || !results || results.length === 0) {
+      logMarketplaceEvent("LOCATION_SEARCH_RPC_FALLBACK", {
+        error: error?.message,
+        category: state.selectedCategory.code,
+        requestId,
+      }, "warn");
+      
+      const { data: fallbackResults } = await supabase
+        .from("business_directory")
+        .select("id, name, category, city, address, phone, rating")
+        .or(`category.ilike.%${state.selectedCategory.code}%,category.ilike.%${state.selectedCategory.name}%`)
+        .neq("status", "DO_NOT_CALL")
+        .order("rating", { ascending: false, nullsFirst: false })
+        .limit(9);
+      
+      results = fallbackResults || [];
+    }
+
+    // Update state with results
+    const updatedState = { 
+      ...state, 
+      mode: "show_results" as const, 
+      lastAction: "location_search_complete",
+      searchResults: results,
+      location: { lat: location.lat, lng: location.lng },
+    };
+    userFlowStates.set(userPhone, updatedState);
+    
+    logMarketplaceEvent("LOCATION_SEARCH_COMPLETE", {
+      from: userPhone,
+      category: state.selectedCategory.code,
+      resultCount: results?.length || 0,
+      requestId,
+    });
+
+    return formatBusinessResults(results || [], state.selectedCategory);
+  }
+  
+  // If no category selected, show category menu first
+  const newState = { 
+    mode: "category_menu" as const, 
+    lastAction: "location_received_no_category",
+    location: { lat: location.lat, lng: location.lng },
+  };
+  userFlowStates.set(userPhone, newState);
+  
+  return (
+    `📍 *Location Received!*\n\n` +
+    `Great, I have your location. Now select what you're looking for:\n\n` +
+    generateCategoryMenu().split("\n\n").slice(1).join("\n\n")
+  );
+}
+
+// In-memory state for interactive flow (defined before usage)
+interface UserFlowState {
+  mode: "idle" | "category_menu" | "awaiting_location" | "show_results" | "show_contact" | "register_business" | "selling";
+  lastAction: string;
+  selectedCategory?: typeof BUSINESS_CATEGORIES[number];
+  searchResults?: Array<Record<string, unknown>>;
+  selectedBusiness?: Record<string, unknown>;
+  location?: { lat: number; lng: number };
+}
+
+const userFlowStates = new Map<string, UserFlowState>();
 
 // =====================================================
 // AI AGENT HANDLER
@@ -474,112 +598,286 @@ async function handleWithAIAgent(
 }
 
 // =====================================================
-// MENU-BASED HANDLER (FALLBACK)
+// INTERACTIVE WORKFLOW HANDLER
 // =====================================================
-
-// In-memory state for menu-based flow
-interface UserState {
-  mode: "idle" | "browsing" | "search" | "register_business";
-  lastAction: string;
-  searchQuery?: string;
-}
-
-const userStates = new Map<string, UserState>();
 
 async function handleWithMenu(
   userPhone: string,
   text: string,
-  _requestId: string,
+  requestId: string,
 ): Promise<string> {
-  const textLower = text.toLowerCase();
-  let state = userStates.get(userPhone) || { mode: "idle" as const, lastAction: "" };
+  const textLower = text.toLowerCase().trim();
+  let state = userFlowStates.get(userPhone) || { mode: "idle" as const, lastAction: "" };
   let response = "";
 
-  // Main menu or welcome
+  logMarketplaceEvent("INTERACTIVE_FLOW_INPUT", {
+    from: userPhone,
+    mode: state.mode,
+    input: textLower.slice(0, 50),
+    requestId,
+  });
+
+  // =====================================================
+  // STEP 1: Main menu / Category selection
+  // =====================================================
   if (
     !text ||
     textLower === "marketplace" ||
     textLower === "shops_services" ||
+    textLower === "buy_and_sell" ||
     textLower === "shop" ||
     textLower === "menu" ||
-    textLower === "home"
+    textLower === "home" ||
+    textLower === "start" ||
+    textLower === "hi" ||
+    textLower === "hello"
   ) {
-    state = { mode: "idle", lastAction: "menu" };
-    response =
-      `🛍️ *EasyMO Marketplace*\n\n` +
-      `Find local businesses and services in Rwanda.\n\n` +
-      `1. 🏪 Browse Businesses\n` +
-      `2. 🔍 Search by Category\n` +
-      `3. 📍 Nearby Services\n` +
-      `4. ➕ Register Your Business\n\n` +
-      `Reply with a number or type what you're looking for.`;
+    state = { mode: "category_menu", lastAction: "show_menu" };
+    response = generateCategoryMenu();
   }
-  // Browse businesses
-  else if (
-    textLower === "1" ||
-    textLower.includes("browse") ||
-    textLower.includes("businesses")
-  ) {
-    state = { mode: "browsing", lastAction: "browse" };
 
-    const { data: businesses } = await supabase
-      .from("business_directory")
-      .select("id, name, category, city, phone, rating")
-      .neq("status", "DO_NOT_CALL")
-      .order("rating", { ascending: false })
-      .limit(5);
-
-    if (businesses && businesses.length > 0) {
-      response = "🏪 *Featured Businesses*\n\n";
-      businesses.forEach((biz, i) => {
-        const stars = biz.rating ? "⭐".repeat(Math.round(biz.rating)) : "";
-        response += `${i + 1}. *${biz.name}*\n`;
-        response += `   📂 ${biz.category}\n`;
-        response += `   📍 ${biz.city}\n`;
-        if (biz.rating) response += `   ${stars} (${biz.rating})\n`;
-        response += `\n`;
-      });
-      response += `Reply with a number for details and contact info.`;
+  // =====================================================
+  // STEP 2: Category selected → Ask for location
+  // =====================================================
+  else if (state.mode === "category_menu" || state.mode === "idle") {
+    const categoryNum = parseCategorySelection(textLower);
+    
+    if (categoryNum) {
+      const category = getCategoryByNumber(categoryNum);
+      if (category) {
+        state = { 
+          mode: "awaiting_location", 
+          lastAction: "category_selected",
+          selectedCategory: category,
+        };
+        response = generateLocationRequest(category);
+        
+        logMarketplaceEvent("CATEGORY_SELECTED", {
+          from: userPhone,
+          category: category.code,
+          categoryName: category.name,
+          requestId,
+        });
+      } else {
+        response = generateCategoryMenu();
+      }
     } else {
-      response =
-        "🏪 No businesses found in directory yet.\n\nType *register* to add your business!";
+      // Try to match category from natural language
+      const matchedCategory = BUSINESS_CATEGORIES.find(cat => 
+        textLower.includes(cat.code) || 
+        textLower.includes(cat.name.toLowerCase()) ||
+        cat.description.toLowerCase().split(" ").some(w => textLower.includes(w) && w.length > 4)
+      );
+      
+      if (matchedCategory) {
+        state = { 
+          mode: "awaiting_location", 
+          lastAction: "category_selected",
+          selectedCategory: matchedCategory,
+        };
+        response = generateLocationRequest(matchedCategory);
+      } else {
+        // Show menu with hint
+        state = { mode: "category_menu", lastAction: "show_menu" };
+        response = generateCategoryMenu();
+      }
     }
   }
-  // Search by category
-  else if (
-    textLower === "2" ||
-    textLower.includes("category") ||
-    textLower.includes("categories")
-  ) {
-    state = { mode: "search", lastAction: "category_prompt" };
-    response =
-      `🔍 *Search by Category*\n\n` +
-      `Popular categories:\n` +
-      `• Restaurant 🍽️\n` +
-      `• Pharmacy 💊\n` +
-      `• Hotel 🏨\n` +
-      `• Supermarket 🛒\n` +
-      `• Bank 🏦\n` +
-      `• Hospital 🏥\n\n` +
-      `Type a category to search.`;
+
+  // =====================================================
+  // STEP 3: Location received → Search and show results
+  // =====================================================
+  else if (state.mode === "awaiting_location") {
+    // Try to parse location from text
+    const textLocation = parseLocationFromText(textLower);
+    let lat: number | null = null;
+    let lng: number | null = null;
+    
+    if (textLocation) {
+      lat = textLocation.lat;
+      lng = textLocation.lng;
+    } else {
+      // Default to Kigali center if no location recognized
+      // User should share actual location for better results
+      lat = -1.9403;
+      lng = 30.0588;
+    }
+    
+    if (lat !== null && lng !== null && state.selectedCategory) {
+      // Search for businesses near user's location
+      const { data: businesses, error } = await supabase.rpc(
+        "search_businesses_nearby",
+        {
+          search_term: state.selectedCategory.code,
+          user_lat: lat,
+          user_lng: lng,
+          radius_km: 15,
+          result_limit: 9,
+        }
+      );
+
+      // Fallback to basic search if RPC fails
+      let results = businesses;
+      if (error || !results || results.length === 0) {
+        logMarketplaceEvent("RPC_FALLBACK", {
+          error: error?.message,
+          category: state.selectedCategory.code,
+          requestId,
+        }, "warn");
+        
+        const { data: fallbackResults } = await supabase
+          .from("business_directory")
+          .select("id, name, category, city, address, phone, rating")
+          .or(`category.ilike.%${state.selectedCategory.code}%,category.ilike.%${state.selectedCategory.name}%`)
+          .neq("status", "DO_NOT_CALL")
+          .order("rating", { ascending: false, nullsFirst: false })
+          .limit(9);
+        
+        results = fallbackResults || [];
+      }
+
+      state = { 
+        ...state, 
+        mode: "show_results", 
+        lastAction: "search_complete",
+        searchResults: results,
+        location: { lat, lng },
+      };
+      
+      response = formatBusinessResults(results || [], state.selectedCategory);
+      
+      logMarketplaceEvent("SEARCH_COMPLETE", {
+        from: userPhone,
+        category: state.selectedCategory.code,
+        resultCount: results?.length || 0,
+        requestId,
+      });
+    } else {
+      // Could not get location, ask again
+      response = 
+        `📍 *I didn't recognize that location*\n\n` +
+        `Please try:\n` +
+        `• Sharing your location using the 📎 button\n` +
+        `• Typing a city name like "Kigali" or "Musanze"\n\n` +
+        `_Or type *menu* to choose a different category_`;
+    }
   }
-  // Nearby services
-  else if (
-    textLower === "3" ||
-    textLower.includes("nearby") ||
-    textLower.includes("near me")
-  ) {
-    state = { mode: "search", lastAction: "nearby" };
-    response =
-      `📍 *Find Nearby Services*\n\n` +
-      `Tell me your location (city or area) and what you need.\n\n` +
-      `Example: "pharmacy in Kigali" or "restaurant Nyarugenge"`;
+
+  // =====================================================
+  // STEP 4: Result selected → Show contact details
+  // =====================================================
+  else if (state.mode === "show_results" && state.searchResults) {
+    const resultNum = parseResultSelection(textLower);
+    
+    // Check if user wants to call the selected business
+    if (textLower === "call" && state.selectedBusiness) {
+      const phone = state.selectedBusiness.phone as string;
+      if (phone) {
+        response = 
+          `📞 *Contact Information*\n\n` +
+          `*${state.selectedBusiness.name}*\n` +
+          `Phone: ${phone}\n\n` +
+          `You can call or WhatsApp this number directly.\n\n` +
+          `🔄 _Type *menu* to search for more businesses_`;
+      } else {
+        response = 
+          `😔 Sorry, no phone number is available for this business.\n\n` +
+          `🔄 _Type *menu* to search for more businesses_`;
+      }
+    }
+    else if (resultNum && resultNum <= state.searchResults.length) {
+      const selectedBiz = state.searchResults[resultNum - 1];
+      state = {
+        ...state,
+        mode: "show_contact",
+        lastAction: "business_selected",
+        selectedBusiness: selectedBiz,
+      };
+      response = formatBusinessContact(selectedBiz as {
+        name: string;
+        category?: string;
+        city?: string;
+        address?: string;
+        phone?: string;
+        rating?: number;
+        distance_km?: number;
+        description?: string;
+      });
+      
+      logMarketplaceEvent("BUSINESS_SELECTED", {
+        from: userPhone,
+        businessId: selectedBiz.id,
+        businessName: selectedBiz.name,
+        requestId,
+      });
+    } else {
+      // Invalid selection, show results again
+      response = formatBusinessResults(
+        state.searchResults as Array<{
+          id?: string;
+          name: string;
+          category?: string;
+          city?: string;
+          address?: string;
+          phone?: string;
+          rating?: number;
+          distance_km?: number;
+        }>,
+        state.selectedCategory!
+      );
+    }
   }
-  // Register business
+
+  // =====================================================
+  // STEP 5: Contact shown → Handle call or back to menu
+  // =====================================================
+  else if (state.mode === "show_contact" && state.selectedBusiness) {
+    if (textLower === "call") {
+      const phone = state.selectedBusiness.phone as string;
+      if (phone) {
+        response = 
+          `📞 *Contact Information*\n\n` +
+          `*${state.selectedBusiness.name}*\n` +
+          `Phone: ${phone}\n\n` +
+          `You can call or WhatsApp this number directly.\n\n` +
+          `🔄 _Type *menu* to search for more businesses_`;
+        
+        recordMetric("marketplace.contact.revealed", 1, {
+          category: state.selectedCategory?.code ?? "unknown",
+        });
+      } else {
+        response = 
+          `😔 Sorry, no phone number is available for this business.\n\n` +
+          `🔄 _Type *menu* to search for more businesses_`;
+      }
+    } else {
+      // Go back to menu
+      state = { mode: "category_menu", lastAction: "show_menu" };
+      response = generateCategoryMenu();
+    }
+  }
+
+  // =====================================================
+  // Handle special commands
+  // =====================================================
   else if (
-    textLower === "4" ||
-    textLower.includes("register") ||
-    textLower.includes("add business")
+    textLower === "cancel" ||
+    textLower === "exit" ||
+    textLower === "back"
+  ) {
+    state = { mode: "category_menu", lastAction: "cancelled" };
+    response = generateCategoryMenu();
+  }
+
+  // =====================================================
+  // Handle sell/register business
+  // =====================================================
+  else if (
+    textLower === "sell" ||
+    textLower === "register" ||
+    textLower === "add business" ||
+    textLower.includes("i want to sell") ||
+    textLower.includes("list my")
   ) {
     state = { mode: "register_business", lastAction: "register_start" };
     response =
@@ -590,15 +888,7 @@ async function handleWithMenu(
       `"Kigali Pharmacy, Pharmacy, Kigali, 0788123456"\n\n` +
       `Type *cancel* to go back.`;
   }
-  // Cancel
-  else if (
-    textLower === "cancel" ||
-    textLower === "exit" ||
-    textLower === "back"
-  ) {
-    state = { mode: "idle", lastAction: "cancelled" };
-    response = "✅ Cancelled. Type *marketplace* to see the main menu.";
-  }
+
   // Handle business registration
   else if (state.mode === "register_business") {
     const parts = text.split(",").map((p) => p.trim());
@@ -632,14 +922,18 @@ async function handleWithMenu(
         response =
           "❌ Sorry, there was an error registering your business. Please try again.";
       } else {
-        state = { mode: "idle", lastAction: "business_registered" };
+        state = { mode: "category_menu", lastAction: "business_registered" };
         response =
           `✅ *Business Registered!*\n\n` +
           `🏪 ${newBiz.name}\n` +
           `📂 ${newBiz.category}\n` +
           `📍 ${newBiz.city}\n\n` +
           `Your business is now in our directory! Customers can find you by searching.\n\n` +
-          `Type *marketplace* to return to menu.`;
+          `Type *menu* to continue.`;
+        
+        recordMetric("marketplace.business.registered", 1, {
+          category: category,
+        });
       }
     } else {
       response =
@@ -648,67 +942,16 @@ async function handleWithMenu(
         `Example: Kigali Pharmacy, Pharmacy, Kigali, 0788123456`;
     }
   }
-  // Handle search mode
-  else if (
-    state.mode === "search" ||
-    textLower.includes(" in ") ||
-    textLower.includes(" near ")
-  ) {
-    const searchQuery = text;
 
-    const { data: results } = await supabase
-      .from("business_directory")
-      .select("id, name, category, city, phone, rating, address")
-      .neq("status", "DO_NOT_CALL")
-      .or(
-        `name.ilike.%${searchQuery}%,category.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%`,
-      )
-      .order("rating", { ascending: false })
-      .limit(5);
-
-    if (results && results.length > 0) {
-      response = `🔍 *Results for "${searchQuery}"*\n\n`;
-      results.forEach((biz, i) => {
-        const stars = biz.rating ? "⭐".repeat(Math.round(biz.rating)) : "";
-        response += `${i + 1}. *${biz.name}*\n`;
-        response += `   📂 ${biz.category}\n`;
-        response += `   📍 ${biz.city}\n`;
-        if (biz.phone) response += `   📞 ${biz.phone}\n`;
-        if (biz.rating) response += `   ${stars}\n`;
-        response += `\n`;
-      });
-      response += `Reply with a number for more details.`;
-    } else {
-      response = `🔍 No businesses found for "${searchQuery}".\n\nTry browsing with *browse* or search a different category.`;
-    }
-    state = { mode: "idle", lastAction: "search_complete" };
-  }
-  // Default handler - treat as search
+  // =====================================================
+  // Default: show category menu
+  // =====================================================
   else {
-    const { data: results } = await supabase
-      .from("business_directory")
-      .select("id, name, category, city, phone, rating")
-      .neq("status", "DO_NOT_CALL")
-      .or(
-        `name.ilike.%${text}%,category.ilike.%${text}%,city.ilike.%${text}%`,
-      )
-      .order("rating", { ascending: false })
-      .limit(5);
-
-    if (results && results.length > 0) {
-      response = `🔍 *Results for "${text}"*\n\n`;
-      results.forEach((biz, i) => {
-        response += `${i + 1}. *${biz.name}*\n`;
-        response += `   📂 ${biz.category} | 📍 ${biz.city}\n`;
-        if (biz.phone) response += `   📞 ${biz.phone}\n`;
-        response += `\n`;
-      });
-    } else {
-      response = `I didn't find any businesses matching "${text}".\n\nType *marketplace* to see options.`;
-    }
+    state = { mode: "category_menu", lastAction: "show_menu" };
+    response = generateCategoryMenu();
   }
 
-  userStates.set(userPhone, state);
+  userFlowStates.set(userPhone, state);
   return response;
 }
 
