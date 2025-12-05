@@ -8,7 +8,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const OPENAI_REALTIME_MODEL = Deno.env.get("OPENAI_REALTIME_MODEL") || "gpt-4o-realtime-preview-2024-10-01";

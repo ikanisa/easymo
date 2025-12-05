@@ -5,7 +5,8 @@
  * Optimized for phone-grade audio (8kHz, mono, µ-law/PCM).
  */
 
-import speech from '@google-cloud/speech';
+import { SpeechClient } from '@google-cloud/speech';
+import type { google } from '@google-cloud/speech/build/protos/protos';
 
 export interface TranscribeConfig {
   /** Language code (e.g., 'rw-RW', 'en-US', 'fr-FR', 'sw-TZ') */
@@ -53,15 +54,15 @@ const DEFAULT_CONFIG: TranscribeConfig = {
 /**
  * Create a Speech-to-Text client
  */
-export function createSpeechClient(): speech.SpeechClient {
-  return new speech.SpeechClient();
+export function createSpeechClient(): SpeechClient {
+  return new SpeechClient();
 }
 
 /**
  * Transcribe audio synchronously (for short audio < 1 minute)
  */
 export async function transcribeAudio(
-  client: speech.SpeechClient,
+  client: SpeechClient,
   audioContent: Buffer,
   config: Partial<TranscribeConfig> = {}
 ): Promise<TranscriptResult> {
@@ -72,7 +73,7 @@ export async function transcribeAudio(
       content: audioContent.toString('base64'),
     },
     config: {
-      encoding: mergedConfig.encoding as any,
+      encoding: mergedConfig.encoding as unknown as google.cloud.speech.v1.RecognitionConfig.AudioEncoding,
       sampleRateHertz: mergedConfig.sampleRateHertz,
       languageCode: mergedConfig.languageCode,
       alternativeLanguageCodes: mergedConfig.alternativeLanguageCodes,
@@ -96,7 +97,7 @@ export async function transcribeAudio(
     confidence: alt.confidence || 0,
     isFinal: true,
     languageCode: result.languageCode || mergedConfig.languageCode,
-    words: alt.words?.map((w) => ({
+    words: alt.words?.map((w: google.cloud.speech.v1.IWordInfo) => ({
       word: w.word || '',
       startTime: Number(w.startTime?.seconds || 0) + Number(w.startTime?.nanos || 0) / 1e9,
       endTime: Number(w.endTime?.seconds || 0) + Number(w.endTime?.nanos || 0) / 1e9,
@@ -110,7 +111,7 @@ export async function transcribeAudio(
  * Returns an async generator that yields transcript results
  */
 export async function* transcribeStream(
-  client: speech.SpeechClient,
+  client: SpeechClient,
   audioStream: AsyncIterable<Buffer>,
   config: Partial<TranscribeConfig> = {}
 ): AsyncGenerator<TranscriptResult> {
@@ -118,7 +119,7 @@ export async function* transcribeStream(
 
   const request = {
     config: {
-      encoding: mergedConfig.encoding as any,
+      encoding: mergedConfig.encoding as unknown as google.cloud.speech.v1.RecognitionConfig.AudioEncoding,
       sampleRateHertz: mergedConfig.sampleRateHertz,
       languageCode: mergedConfig.languageCode,
       alternativeLanguageCodes: mergedConfig.alternativeLanguageCodes,
@@ -137,7 +138,7 @@ export async function* transcribeStream(
   let resolveNext: ((value: TranscriptResult | null) => void) | null = null;
   let streamEnded = false;
 
-  recognizeStream.on('data', (data: any) => {
+  recognizeStream.on('data', (data: google.cloud.speech.v1.IStreamingRecognizeResponse) => {
     if (data.results?.[0]) {
       const result = data.results[0];
       const alt = result.alternatives?.[0];
@@ -146,7 +147,7 @@ export async function* transcribeStream(
           transcript: alt.transcript || '',
           confidence: alt.confidence || 0,
           isFinal: result.isFinal || false,
-          languageCode: result.languageCode,
+          languageCode: result.languageCode ?? undefined,
         };
         if (resolveNext) {
           const resolve = resolveNext;

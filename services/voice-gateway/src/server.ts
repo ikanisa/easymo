@@ -6,11 +6,12 @@
 
 import express, { Request, Response } from 'express';
 import { createServer } from 'http';
-import { WebSocketServer, WebSocket } from 'ws';
 import { v4 as uuidv4 } from 'uuid';
+import { WebSocket,WebSocketServer } from 'ws';
+
 import { config, validateConfig } from './config';
 import { logger } from './logger';
-import { sessionManager, CallSessionConfig } from './session';
+import { CallSessionConfig,sessionManager } from './session';
 
 const app = express();
 app.use(express.json());
@@ -118,7 +119,7 @@ app.post('/calls/:id/answer', async (req: Request, res: Response) => {
  */
 app.post('/calls/:id/end', async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { disposition, notes } = req.body;
+  const { disposition } = req.body;
 
   const session = sessionManager.getSession(id);
 
@@ -240,6 +241,177 @@ app.post('/calls/outbound', async (req: Request, res: Response) => {
     logger.error({ error, msg: 'calls.outbound.error' });
     res.status(500).json({ error: 'Failed to initiate outbound call' });
   }
+});
+
+// ============================================================================
+// SIP INCOMING CALL WEBHOOK ENDPOINTS
+// ============================================================================
+
+import { getAllEnabledTrunks,type IncomingCallInfo, routeIncomingCall, type SIPProvider } from './sip-config';
+
+/**
+ * POST /sip/incoming
+ * 
+ * Webhook for incoming SIP calls from any provider.
+ * This is called by the SBC (Session Border Controller) when a call arrives.
+ * 
+ * Request body should contain:
+ * - call_id: Unique SIP call ID
+ * - from: Caller phone number (E.164)
+ * - to: Called DID number (E.164)
+ * - provider: SIP provider ('openai' | 'mtn')
+ */
+app.post('/sip/incoming', async (req: Request, res: Response) => {
+  try {
+    const {
+      call_id,
+      from,
+      to,
+      provider = 'generic',
+      headers = {},
+    } = req.body;
+
+    if (!call_id || !from || !to) {
+      return res.status(400).json({ error: 'call_id, from, and to are required' });
+    }
+
+    const callInfo: IncomingCallInfo = {
+      callId: call_id,
+      from,
+      to,
+      provider: provider as SIPProvider,
+      headers,
+      timestamp: new Date(),
+    };
+
+    // Route the call
+    const routeResult = await routeIncomingCall(callInfo);
+
+    if (!routeResult.accept) {
+      logger.info({ callId: call_id, reason: routeResult.rejectReason, msg: 'sip.call_rejected' });
+      return res.status(403).json({
+        action: 'reject',
+        reason: routeResult.rejectReason,
+      });
+    }
+
+    // Create a call session
+    const internalCallId = uuidv4();
+    const sessionConfig: CallSessionConfig = {
+      callId: internalCallId,
+      providerCallId: call_id,
+      fromNumber: from,
+      toNumber: to,
+      agentId: routeResult.agentId || 'call_center',
+      direction: 'inbound',
+      language: routeResult.language,
+      voiceStyle: routeResult.voiceStyle,
+      systemPrompt: routeResult.systemPrompt,
+      metadata: {
+        ...routeResult.metadata,
+        sipProvider: provider,
+      },
+    };
+
+    const session = await sessionManager.createSession(sessionConfig);
+    await session.connectRealtime();
+
+    logger.info({
+      sipCallId: call_id,
+      internalCallId,
+      from: from.slice(-4),
+      agentId: routeResult.agentId,
+      msg: 'sip.call_accepted',
+    });
+
+    // Return WebSocket URL for audio streaming
+    res.status(200).json({
+      action: 'accept',
+      call_id: internalCallId,
+      websocket_url: `/audio?call_id=${internalCallId}`,
+      agent_id: routeResult.agentId,
+    });
+
+  } catch (error) {
+    logger.error({ error, msg: 'sip.incoming_error' });
+    res.status(500).json({ error: 'Failed to process incoming call' });
+  }
+});
+
+/**
+ * POST /sip/openai/incoming
+ * 
+ * OpenAI SIP trunk specific webhook.
+ * OpenAI Realtime API can send SIP INVITE events here.
+ */
+app.post('/sip/openai/incoming', async (req: Request, res: Response) => {
+  // Forward to generic handler with provider set
+  req.body.provider = 'openai';
+  return app._router.handle(
+    { ...req, url: '/sip/incoming', method: 'POST' },
+    res,
+    () => {}
+  );
+});
+
+/**
+ * POST /sip/mtn/incoming
+ * 
+ * MTN Rwanda SIP trunk specific webhook.
+ * MTN SBC sends incoming call notifications here.
+ */
+app.post('/sip/mtn/incoming', async (req: Request, res: Response) => {
+  // Forward to generic handler with provider set
+  req.body.provider = 'mtn';
+  return app._router.handle(
+    { ...req, url: '/sip/incoming', method: 'POST' },
+    res,
+    () => {}
+  );
+});
+
+/**
+ * POST /sip/:callId/hangup
+ * 
+ * SIP call hangup notification from SBC
+ */
+app.post('/sip/:callId/hangup', async (req: Request, res: Response) => {
+  const { callId } = req.params;
+  const { reason, duration } = req.body;
+
+  // Find session by provider call ID
+  const sessions = sessionManager.getActiveSessions();
+  const session = sessions.find(s => s.config.providerCallId === callId);
+
+  if (session) {
+    await session.end(reason || 'sip_hangup');
+    logger.info({ sipCallId: callId, reason, duration, msg: 'sip.hangup_processed' });
+  }
+
+  res.json({ status: 'ok' });
+});
+
+/**
+ * GET /sip/status
+ * 
+ * Get SIP trunk status and configuration (sanitized)
+ */
+app.get('/sip/status', (req: Request, res: Response) => {
+  const trunks = getAllEnabledTrunks();
+
+  res.json({
+    trunks: trunks.map(t => ({
+      provider: t.provider,
+      endpoint: t.endpoint,
+      transport: t.transport,
+      codecs: t.codecs,
+      enabled: t.enabled,
+      didCount: t.didNumbers.length,
+    })),
+    activeCalls: sessionManager.getActiveSessions().filter(s => 
+      s.config.metadata?.sipProvider
+    ).length,
+  });
 });
 
 // ============================================================================
