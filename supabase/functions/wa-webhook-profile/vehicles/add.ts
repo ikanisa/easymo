@@ -158,13 +158,29 @@ export async function handleVehicleInsuranceUpload(
     // Extract OCR data
     const extracted = ocrResult.normalized || ocrResult.raw;
     
+    // Log OCR result for debugging
+    logStructuredEvent("VEHICLE_OCR_RESULT", {
+      userId: ctx.profileId,
+      leadId,
+      hasNormalized: !!ocrResult.normalized,
+      hasRaw: !!ocrResult.raw,
+      extractedKeys: extracted ? Object.keys(extracted) : [],
+      extracted: extracted || {},
+    }, "info");
+    
     // Validate required fields
-    const plateNumber = extracted?.vehicle_plate || extracted?.plate_number;
+    const plateNumber = extracted?.registration_plate || extracted?.vehicle_plate || extracted?.plate_number;
     const policyExpiry = extracted?.policy_expiry || extracted?.expires_on;
     const insurerName = extracted?.insurer_name || extracted?.insurer;
     const policyNumber = extracted?.policy_number || extracted?.policy_no;
 
     if (!plateNumber) {
+      logStructuredEvent("VEHICLE_PLATE_NOT_FOUND", {
+        userId: ctx.profileId,
+        leadId,
+        extractedFields: extracted ? Object.keys(extracted) : [],
+      }, "warn");
+      
       await clearState(ctx.supabase, ctx.profileId);
       await sendButtonsMessage(
         ctx,
