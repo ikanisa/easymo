@@ -383,14 +383,36 @@ export class MarketplaceAgent {
         correlationId: this.correlationId,
       });
 
-      // Fallback if no AI configured
+      // Fallback if no AI configured - show category list immediately
       if (!this.genAI) {
-        return {
-          message: "🛒 Welcome to Buy & Sell!\n\n" +
-                   "Please use the category menu to browse businesses and services near you.\n\n" +
-                   "Tap the menu button or type 'menu' to see options.",
-          flowComplete: true,
-        };
+        const { showBuySellCategories } = await import("./show_categories.ts");
+        
+        try {
+          // Send interactive list to user
+          await showBuySellCategories(context.phone);
+          
+          // Return empty since message was already sent
+          return {
+            message: "", // Already sent via showBuySellCategories
+            flowComplete: false,
+          };
+        } catch (error) {
+          // If sending list fails, return fallback text
+          return {
+            message: "🛒 Buy & Sell categories:\n\n" +
+                     "1. 💊 Pharmacies\n" +
+                     "2. 💇 Salons\n" +
+                     "3. 💄 Cosmetics\n" +
+                     "4. ⚖️ Notaries\n" +
+                     "5. 📱 Electronics\n" +
+                     "6. 🔨 Hardware\n" +
+                     "7. 🛒 Groceries\n" +
+                     "8. 👔 Fashion\n" +
+                     "9. 🚗 Auto Services\n\n" +
+                     "Type a number to select.",
+            flowComplete: false,
+          };
+        }
       }
 
       // Build conversation for AI
