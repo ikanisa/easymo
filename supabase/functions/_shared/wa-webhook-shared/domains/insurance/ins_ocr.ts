@@ -16,7 +16,7 @@ const OPENAI_BASE_URL = Deno.env.get("OPENAI_BASE_URL") ??
 const DEFAULT_OCR_TIMEOUT_MS = 30_000;
 const DEFAULT_MAX_RETRIES = 2;
 
-const MAX_IMAGE_LONGEST_EDGE = 1024; // pixels
+const MAX_IMAGE_LONGEST_EDGE = 2048; // pixels - increased for better OCR quality
 
 // Dynamic config cache (refresh every 5 minutes)
 let configCache: { timeout: number; retries: number; fetchedAt: number } | null = null;
@@ -153,7 +153,15 @@ async function fetchAndResizeImage(
 
 
 const OCR_PROMPT =
-  `You are extracting fields from a motor insurance certificate (photo or PDF).
+  `You are extracting fields from a motor insurance certificate (Yellow Card or similar).
+This is typically from Rwanda/East Africa. The document may be in French or English.
+
+CRITICAL: Look carefully for the vehicle registration/number plate:
+- It may be labeled as: "Registration", "Immatriculation", "Plaque", "Number Plate", "Reg No", "Vehicle No"
+- Format examples: RAB123C, RAH815J, RP1234A (3 letters + 3-4 digits + optional letter)
+- It is ALWAYS present on the certificate - search the entire document carefully
+- Do NOT leave this field null unless the document is completely unreadable
+
 Return a single JSON object. No prose. Fields:
 {
   "insurer_name": string,
@@ -192,7 +200,7 @@ const OCR_JSON_SCHEMA = {
     make: { type: ["string", "null"] },
     model: { type: ["string", "null"] },
     vehicle_year: { type: ["integer", "null"] },
-    registration_plate: { type: "string" },
+    registration_plate: { type: ["string", "null"] }, // nullable - but should always be present
     vin_chassis: { type: ["string", "null"] },
     usage: { type: ["string", "null"] },
     licensed_to_carry: { type: ["integer", "null"] },
