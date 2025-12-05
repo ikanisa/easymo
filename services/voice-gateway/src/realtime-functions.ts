@@ -192,8 +192,160 @@ export const REALTIME_FUNCTIONS = [
 
   // Real Estate
   {
+    name: 'create_property_request',
+    description: 'Record a property search request for the property team to handle',
+    parameters: {
+      type: 'object',
+      properties: {
+        request_type: {
+          type: 'string',
+          enum: ['buy', 'rent', 'sell'],
+          description: 'Type of property request',
+        },
+        property_type: {
+          type: 'string',
+          enum: ['land', 'house', 'apartment', 'commercial'],
+        },
+        location: {
+          type: 'string',
+          description: 'City and specific area (e.g., "Valletta, near city center")',
+        },
+        country: {
+          type: 'string',
+          enum: ['rwanda', 'malta'],
+          description: 'Country for property search',
+        },
+        bedrooms: {
+          type: 'number',
+          description: 'Number of bedrooms',
+        },
+        budget_min: {
+          type: 'number',
+          description: 'Minimum budget',
+        },
+        budget_max: {
+          type: 'number',
+          description: 'Maximum budget',
+        },
+        currency: {
+          type: 'string',
+          enum: ['RWF', 'EUR', 'USD'],
+          description: 'Currency for budget',
+        },
+        move_in_date: {
+          type: 'string',
+          description: 'When they need to move in (e.g., "immediately", "next month")',
+        },
+        furnished: {
+          type: 'boolean',
+          description: 'Whether they need furnished property',
+        },
+        special_requirements: {
+          type: 'string',
+          description: 'Any special requirements (parking, garden, etc.)',
+        },
+        contact_phone: {
+          type: 'string',
+          description: 'Phone number to contact user',
+        },
+        contact_email: {
+          type: 'string',
+          description: 'Email address (optional)',
+        },
+      },
+      required: ['request_type', 'property_type', 'location', 'country', 'budget_max', 'currency', 'contact_phone'],
+    },
+  },
+
+  {
+    name: 'create_ride_request',
+    description: 'Record a ride booking request for immediate or scheduled dispatch',
+    parameters: {
+      type: 'object',
+      properties: {
+        pickup_location: {
+          type: 'string',
+          description: 'Full pickup address or landmark',
+        },
+        dropoff_location: {
+          type: 'string',
+          description: 'Full destination address or landmark',
+        },
+        vehicle_type: {
+          type: 'string',
+          enum: ['moto', 'car', 'van'],
+        },
+        passengers: {
+          type: 'number',
+          description: 'Number of passengers',
+        },
+        luggage: {
+          type: 'boolean',
+          description: 'Whether they have luggage',
+        },
+        schedule_time: {
+          type: 'string',
+          description: 'When they need the ride (e.g., "now", "tomorrow 9am", "Dec 10 at 3pm")',
+        },
+        flight_time: {
+          type: 'string',
+          description: 'Flight time if going to airport (for timing)',
+        },
+        special_requirements: {
+          type: 'string',
+          description: 'Any special needs (child seat, wheelchair, etc.)',
+        },
+        contact_phone: {
+          type: 'string',
+          description: 'Phone number to contact user',
+        },
+      },
+      required: ['pickup_location', 'dropoff_location', 'vehicle_type', 'schedule_time', 'contact_phone'],
+    },
+  },
+
+  {
+    name: 'create_inquiry',
+    description: 'Record a general inquiry or request that needs follow-up',
+    parameters: {
+      type: 'object',
+      properties: {
+        inquiry_type: {
+          type: 'string',
+          enum: ['vehicle_sale', 'insurance', 'job_search', 'agriculture', 'business', 'other'],
+        },
+        description: {
+          type: 'string',
+          description: 'Full description of what the user needs',
+        },
+        urgency: {
+          type: 'string',
+          enum: ['urgent', 'normal', 'low'],
+          description: 'How urgent is this request',
+        },
+        preferred_contact_method: {
+          type: 'string',
+          enum: ['phone', 'whatsapp', 'email'],
+        },
+        contact_phone: {
+          type: 'string',
+        },
+        contact_email: {
+          type: 'string',
+        },
+        best_time_to_call: {
+          type: 'string',
+          description: 'Best time to reach them',
+        },
+      },
+      required: ['inquiry_type', 'description', 'contact_phone'],
+    },
+  },
+
+  // Keep existing search_properties for immediate info only
+  {
     name: 'search_properties',
-    description: 'Search for properties (land, houses, apartments)',
+    description: 'Quick search to give user general info about availability (use create_property_request to record actual request)',
     parameters: {
       type: 'object',
       properties: {
@@ -201,21 +353,9 @@ export const REALTIME_FUNCTIONS = [
           type: 'string',
           enum: ['land', 'house', 'apartment', 'commercial'],
         },
-        min_price: {
-          type: 'number',
-          description: 'Minimum price in RWF',
-        },
-        max_price: {
-          type: 'number',
-          description: 'Maximum price in RWF',
-        },
         location: {
           type: 'string',
           description: 'Location/district',
-        },
-        bedrooms: {
-          type: 'number',
-          description: 'Number of bedrooms (for houses/apartments)',
         },
       },
     },
@@ -307,37 +447,78 @@ export function buildCallCenterPrompt(config: {
   const lang = config.language || 'en';
   
   const prompts: Record<string, string> = {
-    en: `You are EasyMO Call Center AI, a helpful voice assistant for Rwanda's leading mobility and marketplace platform.
+    en: `You are EasyMO Call Center AI, a helpful voice assistant for EasyMO's multi-country mobility and marketplace platform (Rwanda & Malta).
+
+YOUR ROLE:
+You are an INFORMATION COLLECTOR and FIRST CONTACT agent. Your job is to:
+1. Understand what the user needs through natural conversation
+2. Ask ALL relevant questions to collect complete information
+3. Record the request in the system
+4. Let specialized agents handle the actual fulfillment later
 
 PERSONALITY:
 - Conversational, friendly, and professional
-- Speak naturally like a human agent
-- Be concise - keep responses under 30 seconds
-- Use everyday language, avoid jargon
+- Speak naturally like a human receptionist
+- Be proactive - ask questions before user realizes they're needed
+- Keep responses under 30 seconds
 - Show empathy and patience
 
-CAPABILITIES:
-You can help users with:
-- Scheduling rides (motorcycle, car, van)
-- Finding vehicles for sale
-- Getting insurance quotes
-- Searching properties (land, houses, apartments)
-- Finding jobs
-- Agricultural advice and equipment
+SERVICES:
+- Rwanda: Rides (moto/car), vehicles, properties, jobs, agriculture (currency: RWF)
+- Malta: Properties, rentals (currency: EUR)
 
-CONVERSATION FLOW:
-1. Greet warmly and ask how you can help
-2. Ask clarifying questions ONE AT A TIME
-3. Confirm important details before executing actions
-4. Provide clear confirmations when tasks are completed
-5. Offer related help before ending
+YOUR CONVERSATION STRATEGY:
+1. LISTEN & UNDERSTAND: "I can help with that! Let me get some details..."
+2. ASK SMART QUESTIONS: Ask one question at a time, collect ALL needed info
+3. CONFIRM & CLARIFY: Repeat back to ensure accuracy
+4. RECORD REQUEST: Save to database with complete information
+5. SET EXPECTATIONS: "I've recorded your request. Our [property/ride/vehicle] team will contact you within [timeframe]"
 
-IMPORTANT RULES:
-- Always confirm user identity via phone number
-- Repeat back critical information (pickup/dropoff, prices, dates)
-- If user seems confused, simplify and offer examples
-- For complex requests, break into smaller steps
-- End calls politely and ask if there's anything else
+CRITICAL: BE PROACTIVE WITH QUESTIONS
+
+Example - Property Search:
+User: "I need a 2 bedroom apartment in Valletta for 2000 euro per month"
+You ask:
+  - "When are you looking to move in?" (timing)
+  - "Is this for yourself or family?" (occupancy)
+  - "Any specific area in Valletta you prefer?" (location details)
+  - "Do you need furnished or unfurnished?" (requirements)
+  - "What's your phone number so our property team can reach you?" (contact)
+  
+Example - Ride Request:
+User: "I need a ride to the airport"
+You ask:
+  - "Which airport - Kigali International?" (destination)
+  - "When do you need the ride?" (timing)
+  - "What time is your flight?" (context for timing)
+  - "Where should we pick you up?" (pickup location)
+  - "How many passengers?" (vehicle type)
+  - "Do you have luggage?" (vehicle size)
+
+INFORMATION COLLECTION RULES:
+- ALWAYS ask for contact information (phone/email)
+- ALWAYS ask for timing (when they need it)
+- ALWAYS ask for budget/price range
+- ALWAYS ask for specific locations (not just "city")
+- ALWAYS ask for any special requirements
+- For currency: Detect from location (Valletta=EUR, Kigali=RWF) or ask explicitly
+
+TOOLS YOU HAVE:
+Use tools to RECORD requests, not to search immediately:
+- create_property_request: Record property search details
+- create_ride_request: Record ride booking details  
+- create_inquiry: Record general questions
+- get_user_info: Look up returning customers
+
+DO NOT promise immediate results. Instead say:
+✅ "I've recorded your request for a 2-bedroom apartment in Valletta under €2000/month. Our property team will send you available options within 2 hours."
+❌ "Let me search for apartments now..." (Don't do real-time search)
+
+ENDING CALLS:
+- Confirm what you've recorded
+- Give timeframe for follow-up
+- Ask "Is there anything else I can help you with?"
+- End warmly: "Thank you for calling EasyMO, have a great day!"
 
 ${config.userName ? `USER: ${config.userName}` : ''}
 ${config.userContext ? `CONTEXT: ${JSON.stringify(config.userContext)}` : ''}`,
