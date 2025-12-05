@@ -1,29 +1,48 @@
 /**
  * Show Buy & Sell categories as interactive list
+ * Categories are fetched from buy_sell_categories table
  */
 
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendList } from "../_shared/wa-webhook-shared/wa/client.ts";
 
-export async function showBuySellCategories(userPhone: string): Promise<void> {
-  const categories = [
-    { id: "pharmacies", icon: "💊", name: "Pharmacies" },
-    { id: "salons", icon: "💇", name: "Salons & Barbers" },
-    { id: "cosmetics", icon: "💄", name: "Cosmetics & Beauty" },
-    { id: "notaries", icon: "⚖️", name: "Notaries & Legal" },
-    { id: "electronics", icon: "📱", name: "Electronics" },
-    { id: "hardware", icon: "🔨", name: "Hardware & Tools" },
-    { id: "groceries", icon: "🛒", name: "Groceries & Supermarkets" },
-    { id: "fashion", icon: "👔", name: "Fashion & Clothing" },
-    { id: "auto", icon: "🚗", name: "Auto Services & Parts" },
-  ];
+export async function showBuySellCategories(
+  userPhone: string,
+  userCountry: string = "RW"
+): Promise<void> {
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
 
-  const rows = categories.map(cat => ({
-    id: `category_${cat.id}`,
-    title: `${cat.icon} ${cat.name}`,
-    description: `Find nearby ${cat.name.toLowerCase()}`,
-  }));
+  // Fetch active categories from database
+  const { data: categories, error } = await supabase
+    .from("buy_sell_categories")
+    .select("key, icon, name, country_specific_names, display_order")
+    .eq("is_active", true)
+    .order("display_order", { ascending: true });
 
-  // Add AI chat option
+  if (error || !categories || categories.length === 0) {
+    throw new Error("Failed to load categories");
+  }
+
+  // Get country-specific names or default
+  const rows = categories.map(cat => {
+    let displayName = cat.name;
+    
+    // Use country-specific name if available
+    if (cat.country_specific_names?.[userCountry]?.name) {
+      displayName = cat.country_specific_names[userCountry].name;
+    }
+
+    return {
+      id: `category_${cat.key}`,
+      title: displayName,
+      description: `Find nearby ${cat.name.toLowerCase()}`,
+    };
+  });
+
+  // Add AI chat option at the end
   rows.push({
     id: "chat_with_ai",
     title: "💬 Chat with AI Agent",

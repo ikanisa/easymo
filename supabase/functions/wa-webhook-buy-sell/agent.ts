@@ -388,28 +388,31 @@ export class MarketplaceAgent {
         const { showBuySellCategories } = await import("./show_categories.ts");
         
         try {
-          // Send interactive list to user
-          await showBuySellCategories(context.phone);
-          
-          // Return empty since message was already sent
-          return {
-            message: "", // Already sent via showBuySellCategories
-            flowComplete: false,
+          // Detect user country from phone number
+          const countryCode = context.phone.slice(0, 3); // First 3 digits
+          const countryMap: Record<string, string> = {
+            "250": "RW", "257": "BI", "255": "TZ", 
+            "243": "CD", "260": "ZM", "228": "TG", "356": "MT"
           };
+          const userCountry = countryMap[countryCode] || "RW";
+          
+          // Send interactive list to user
+          await showBuySellCategories(context.phone, userCountry);
+          
+          // Important: We already sent the list, so throw to prevent sending empty text
+          throw new Error("INTERACTIVE_LIST_SENT");
         } catch (error) {
-          // If sending list fails, return fallback text
+          // If we successfully sent the list, rethrow to skip text response
+          if (error instanceof Error && error.message === "INTERACTIVE_LIST_SENT") {
+            throw error;
+          }
+          
+          // If sending list fails, return fallback with proper message
           return {
-            message: "🛒 Buy & Sell categories:\n\n" +
-                     "1. 💊 Pharmacies\n" +
-                     "2. 💇 Salons\n" +
-                     "3. 💄 Cosmetics\n" +
-                     "4. ⚖️ Notaries\n" +
-                     "5. 📱 Electronics\n" +
-                     "6. 🔨 Hardware\n" +
-                     "7. 🛒 Groceries\n" +
-                     "8. 👔 Fashion\n" +
-                     "9. 🚗 Auto Services\n\n" +
-                     "Type a number to select.",
+            message: "🛒 *Buy & Sell*\n\n" +
+                     "Welcome! We're setting up your shopping experience.\n\n" +
+                     "Please try again in a moment.",
+            action: "continue",
             flowComplete: false,
           };
         }
@@ -527,6 +530,13 @@ export class MarketplaceAgent {
       return agentResponse;
     } catch (error) {
       const duration = Date.now() - startTime;
+      
+      // INTERACTIVE_LIST_SENT is not an error - it's intentional flow control
+      // Just re-throw it to skip text response
+      if (error instanceof Error && error.message === "INTERACTIVE_LIST_SENT") {
+        throw error;
+      }
+      
       logStructuredEvent(
         "MARKETPLACE_AGENT_PROCESS_ERROR",
         {
