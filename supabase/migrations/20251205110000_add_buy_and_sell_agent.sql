@@ -27,7 +27,7 @@ VALUES
       'categories', ARRAY['marketplace', 'commerce', 'buy', 'sell', 'business', 'broker', 'legal'],
       'merges', ARRAY['marketplace', 'business_broker'],
       'version', '1.0',
-      'keywords', ARRAY['buy', 'sell', 'product', 'shop', 'store', 'purchase', 'selling', 'buying', 'market', 'item', 'goods', 'trade', 'merchant', 'business', 'service', 'company', 'enterprise', 'startup', 'venture', 'broker', 'investment', 'partner', 'opportunity']
+      'keywords', ARRAY['buy', 'sell', 'product', 'shop', 'store', 'purchase', 'selling', 'buying', 'market', 'item', 'goods', 'trade', 'merchant', 'business', 'service', 'company', 'enterprise', 'startup', 'venture', 'broker', 'investment', 'partner', 'opportunity', 'pharmacy', 'medicine', 'drug', 'quincaillerie', 'hardware', 'grocery', 'order', 'legal', 'contract', 'lawyer', 'attorney']
     )
   )
 ON CONFLICT (slug) DO UPDATE SET

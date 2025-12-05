@@ -29,7 +29,7 @@ import { SupportAgent } from '../agents/support-agent.ts';
 import { FarmerAgent } from '../agents/farmer-agent.ts';
 import { JobsAgent } from '../agents/jobs-agent.ts';
 import { PropertyAgent } from '../agents/property-agent.ts';
-import { BuyAndSellAgent, MarketplaceAgent } from '../agents/buy-and-sell-agent.ts';
+import { BuyAndSellAgent } from '../agents/buy-and-sell-agent.ts';
 import { RidesAgent } from '../agents/rides-agent.ts';
 import { InsuranceAgent } from '../agents/insurance-agent.ts';
 
