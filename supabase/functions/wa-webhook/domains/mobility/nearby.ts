@@ -268,33 +268,8 @@ async function showRecentSearches(
 export async function handleSeeDrivers(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
   
-  // Try to show recent searches first
-  const showedRecent = await showRecentSearches(ctx, "drivers");
-  if (showedRecent) {
-    return true;
-  }
-  
-  // Fall back to cached or vehicle selection
-  try {
-    const cached = await getRecentNearbyIntent(
-      ctx.supabase,
-      ctx.profileId,
-      "drivers",
-    );
-    if (cached) {
-      await setState(ctx.supabase, ctx.profileId, {
-        key: "mobility_nearby_location",
-        data: { mode: "drivers", vehicle: cached.vehicle, pickup: null },
-      });
-      return await handleNearbyLocation(
-        ctx,
-        { mode: "drivers", vehicle: cached.vehicle },
-        { lat: cached.lat, lng: cached.lng },
-      );
-    }
-  } catch (error) {
-    console.error("mobility.nearby_cache_read_fail", error);
-  }
+  // Standard workflow: always ask for vehicle selection
+  // This provides a clean, predictable user experience
   await setState(ctx.supabase, ctx.profileId, {
     key: "mobility_nearby_select",
     data: { mode: "drivers" },
@@ -310,27 +285,9 @@ export async function handleSeePassengers(
   const ready = await ensureVehiclePlate(ctx, { type: "nearby_passengers" });
   if (!ready) return true;
 
-  try {
-    const cached = await getRecentNearbyIntent(
-      ctx.supabase,
-      ctx.profileId,
-      "passengers",
-    );
-    if (cached) {
-      await setState(ctx.supabase, ctx.profileId, {
-        key: "mobility_nearby_location",
-        data: { mode: "passengers", vehicle: cached.vehicle },
-      });
-      return await handleNearbyLocation(
-        ctx,
-        { mode: "passengers", vehicle: cached.vehicle },
-        { lat: cached.lat, lng: cached.lng },
-      );
-    }
-  } catch (error) {
-    console.error("mobility.nearby_cache_read_fail", error);
-  }
-
+  // Standard workflow: check if user has stored vehicle preference
+  // If yes, use it and ask for location
+  // If no, ask for vehicle selection
   const storedVehicle = await getStoredVehicleType(
     ctx.supabase,
     ctx.profileId,
@@ -346,6 +303,7 @@ export async function handleSeePassengers(
     return true;
   }
 
+  // No stored vehicle - ask user to select one
   await setState(ctx.supabase, ctx.profileId, {
     key: "mobility_nearby_select",
     data: { mode: "passengers" },

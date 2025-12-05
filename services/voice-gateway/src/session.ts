@@ -1,0 +1,379 @@
+/**
+ * Voice Gateway - Call Session Manager
+ * 
+ * Manages active call sessions with audio streaming,
+ * transcription, and OpenAI Realtime integration.
+ */
+
+import { EventEmitter } from 'events';
+import WebSocket from 'ws';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { config } from './config';
+import { logger } from './logger';
+
+export type CallState = 'ringing' | 'answered' | 'in_progress' | 'ending' | 'ended';
+
+export interface CallSessionConfig {
+  callId: string;
+  providerCallId?: string;
+  fromNumber: string;
+  toNumber: string;
+  agentId: string;
+  direction: 'inbound' | 'outbound';
+  language?: string;
+  voiceStyle?: string;
+  systemPrompt?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface TranscriptChunk {
+  role: 'user' | 'assistant' | 'system';
+  text: string;
+  confidence?: number;
+  timestamp: Date;
+}
+
+/**
+ * Manages a single call session
+ */
+export class CallSession extends EventEmitter {
+  readonly callId: string;
+  readonly config: CallSessionConfig;
+  
+  private state: CallState = 'ringing';
+  private supabase: SupabaseClient;
+  private realtimeWs: WebSocket | null = null;
+  private transcriptBuffer: TranscriptChunk[] = [];
+  private transcriptSeq: number = 0;
+  private startedAt: Date | null = null;
+  private endedAt: Date | null = null;
+
+  constructor(sessionConfig: CallSessionConfig) {
+    super();
+    this.callId = sessionConfig.callId;
+    this.config = sessionConfig;
+    
+    this.supabase = createClient(
+      config.SUPABASE_URL,
+      config.SUPABASE_SERVICE_ROLE_KEY,
+      { auth: { persistSession: false } }
+    );
+  }
+
+  /**
+   * Initialize the call session
+   */
+  async initialize(): Promise<void> {
+    logger.info({ callId: this.callId, msg: 'call_session.initializing' });
+
+    // Create call record in DB
+    const { error } = await this.supabase.from('calls').insert({
+      id: this.callId,
+      agent_id: this.config.agentId,
+      channel: 'phone',
+      direction: this.config.direction,
+      status: 'initiated',
+      provider_call_id: this.config.providerCallId,
+      from_number: this.config.fromNumber,
+      to_number: this.config.toNumber,
+      metadata: {
+        language: this.config.language || 'en-US',
+        voice_style: this.config.voiceStyle,
+        ...this.config.metadata,
+      },
+      started_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      logger.error({ callId: this.callId, error, msg: 'call_session.db_insert_failed' });
+      throw error;
+    }
+
+    this.emit('initialized');
+  }
+
+  /**
+   * Connect to OpenAI Realtime API
+   */
+  async connectRealtime(): Promise<void> {
+    const model = config.OPENAI_REALTIME_MODEL;
+    const url = `wss://api.openai.com/v1/realtime?model=${model}`;
+
+    this.realtimeWs = new WebSocket(url, {
+      headers: {
+        'Authorization': `Bearer ${config.OPENAI_API_KEY}`,
+        'OpenAI-Beta': 'realtime=v1',
+      },
+    });
+
+    this.realtimeWs.on('open', () => {
+      logger.info({ callId: this.callId, msg: 'realtime.connected' });
+      this.initializeRealtimeSession();
+      this.emit('realtime_connected');
+    });
+
+    this.realtimeWs.on('message', (data: WebSocket.Data) => {
+      try {
+        const event = JSON.parse(data.toString());
+        this.handleRealtimeEvent(event);
+      } catch (error) {
+        logger.error({ callId: this.callId, error, msg: 'realtime.parse_error' });
+      }
+    });
+
+    this.realtimeWs.on('error', (error) => {
+      logger.error({ callId: this.callId, error, msg: 'realtime.error' });
+      this.emit('realtime_error', error);
+    });
+
+    this.realtimeWs.on('close', () => {
+      logger.info({ callId: this.callId, msg: 'realtime.disconnected' });
+      this.emit('realtime_disconnected');
+    });
+  }
+
+  /**
+   * Mark call as answered
+   */
+  async answer(): Promise<void> {
+    this.state = 'answered';
+    this.startedAt = new Date();
+
+    await this.updateCallStatus('in_progress');
+    this.emit('answered');
+    
+    logger.info({ callId: this.callId, msg: 'call_session.answered' });
+  }
+
+  /**
+   * Send audio chunk to Realtime API
+   */
+  sendAudio(audioBuffer: Buffer): void {
+    if (this.realtimeWs?.readyState !== WebSocket.OPEN) {
+      return;
+    }
+
+    this.realtimeWs.send(JSON.stringify({
+      type: 'input_audio_buffer.append',
+      audio: audioBuffer.toString('base64'),
+    }));
+  }
+
+  /**
+   * Commit audio buffer and trigger response
+   */
+  commitAudio(): void {
+    if (this.realtimeWs?.readyState !== WebSocket.OPEN) {
+      return;
+    }
+
+    this.realtimeWs.send(JSON.stringify({ type: 'input_audio_buffer.commit' }));
+    this.realtimeWs.send(JSON.stringify({ type: 'response.create' }));
+  }
+
+  /**
+   * Add transcript chunk
+   */
+  async addTranscript(chunk: TranscriptChunk): Promise<void> {
+    this.transcriptBuffer.push(chunk);
+    
+    // Insert to DB
+    await this.supabase.from('call_transcripts').insert({
+      call_id: this.callId,
+      seq: ++this.transcriptSeq,
+      role: chunk.role,
+      text: chunk.text,
+      confidence: chunk.confidence,
+      started_at: chunk.timestamp.toISOString(),
+      raw: {},
+    });
+
+    this.emit('transcript', chunk);
+  }
+
+  /**
+   * End the call
+   */
+  async end(disposition?: string): Promise<void> {
+    this.state = 'ending';
+    this.endedAt = new Date();
+
+    // Disconnect Realtime
+    if (this.realtimeWs) {
+      this.realtimeWs.close();
+      this.realtimeWs = null;
+    }
+
+    // Calculate duration
+    const durationSeconds = this.startedAt
+      ? Math.floor((this.endedAt.getTime() - this.startedAt.getTime()) / 1000)
+      : 0;
+
+    // Update call record
+    await this.supabase.from('calls').update({
+      status: 'completed',
+      ended_at: this.endedAt.toISOString(),
+      duration_seconds: durationSeconds,
+      metadata: {
+        ...this.config.metadata,
+        disposition,
+      },
+    }).eq('id', this.callId);
+
+    this.state = 'ended';
+    this.emit('ended', { durationSeconds, disposition });
+
+    logger.info({ 
+      callId: this.callId, 
+      duration: durationSeconds,
+      disposition,
+      msg: 'call_session.ended' 
+    });
+  }
+
+  /**
+   * Get full transcript
+   */
+  getTranscript(): TranscriptChunk[] {
+    return [...this.transcriptBuffer];
+  }
+
+  /**
+   * Get current state
+   */
+  getState(): CallState {
+    return this.state;
+  }
+
+  private initializeRealtimeSession(): void {
+    if (this.realtimeWs?.readyState !== WebSocket.OPEN) return;
+
+    this.realtimeWs.send(JSON.stringify({
+      type: 'session.update',
+      session: {
+        voice: this.config.voiceStyle || 'alloy',
+        instructions: this.config.systemPrompt || this.buildDefaultPrompt(),
+        input_audio_format: 'g711_ulaw',
+        output_audio_format: 'g711_ulaw',
+        turn_detection: {
+          type: 'server_vad',
+          threshold: 0.5,
+          prefix_padding_ms: 300,
+          silence_duration_ms: 500,
+        },
+      },
+    }));
+  }
+
+  private handleRealtimeEvent(event: any): void {
+    switch (event.type) {
+      case 'session.created':
+        logger.info({ callId: this.callId, msg: 'realtime.session_created' });
+        break;
+
+      case 'response.audio.delta':
+        // Audio chunk from AI - send to caller
+        this.emit('audio_out', Buffer.from(event.delta, 'base64'));
+        break;
+
+      case 'response.audio_transcript.delta':
+        // AI is speaking
+        this.emit('ai_speaking', event.delta);
+        break;
+
+      case 'input_audio_buffer.speech_started':
+        // User started speaking
+        this.emit('user_speaking');
+        break;
+
+      case 'conversation.item.input_audio_transcription.completed':
+        // User transcript ready
+        this.addTranscript({
+          role: 'user',
+          text: event.transcript,
+          timestamp: new Date(),
+        });
+        break;
+
+      case 'response.done':
+        // AI response complete
+        if (event.response?.output?.[0]?.content?.[0]?.transcript) {
+          this.addTranscript({
+            role: 'assistant',
+            text: event.response.output[0].content[0].transcript,
+            timestamp: new Date(),
+          });
+        }
+        break;
+
+      case 'error':
+        logger.error({ callId: this.callId, error: event.error, msg: 'realtime.error' });
+        this.emit('error', event.error);
+        break;
+    }
+  }
+
+  private buildDefaultPrompt(): string {
+    const agentPrompts: Record<string, string> = {
+      jobs_ai: 'You are a friendly jobs assistant helping people find work in Rwanda. Speak clearly and ask about their skills, experience, and job preferences.',
+      farmers_ai: 'You are a farmers marketplace assistant. Help farmers sell their produce and buyers find what they need. Ask about quantities, prices, and delivery preferences.',
+      real_estate_ai: 'You are a real estate assistant helping people find properties in Rwanda. Ask about location, budget, bedrooms, and other requirements.',
+      sales_sdr_ai: 'You are a professional sales representative. Be friendly but efficient. Introduce yourself, explain the offering, and capture the leads interest.',
+      waiter_ai: 'You are a restaurant assistant taking orders over the phone. Be friendly, confirm orders clearly, and ask about any special requests.',
+    };
+
+    return agentPrompts[this.config.agentId] || 'You are a helpful assistant. Listen carefully and respond appropriately.';
+  }
+
+  private async updateCallStatus(status: string): Promise<void> {
+    await this.supabase.from('calls').update({ status }).eq('id', this.callId);
+  }
+}
+
+/**
+ * Session Manager - tracks all active call sessions
+ */
+export class SessionManager {
+  private sessions: Map<string, CallSession> = new Map();
+
+  /**
+   * Create a new call session
+   */
+  async createSession(config: CallSessionConfig): Promise<CallSession> {
+    const session = new CallSession(config);
+    await session.initialize();
+    this.sessions.set(config.callId, session);
+
+    session.on('ended', () => {
+      this.sessions.delete(config.callId);
+    });
+
+    return session;
+  }
+
+  /**
+   * Get an existing session
+   */
+  getSession(callId: string): CallSession | undefined {
+    return this.sessions.get(callId);
+  }
+
+  /**
+   * Get all active sessions
+   */
+  getActiveSessions(): CallSession[] {
+    return Array.from(this.sessions.values());
+  }
+
+  /**
+   * End all sessions
+   */
+  async endAllSessions(): Promise<void> {
+    const promises = Array.from(this.sessions.values()).map((session) =>
+      session.end('system_shutdown')
+    );
+    await Promise.all(promises);
+  }
+}
+
+export const sessionManager = new SessionManager();

@@ -1,0 +1,25 @@
+{
+  "name": "@easymo/openai-responses-service",
+  "version": "0.1.0",
+  "description": "OpenAI Responses API service for summarization, matching, and entity extraction",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.4",
+    "express": "^4.18.2",
+    "openai": "^4.20.0",
+    "pino": "^8.16.0",
+    "dotenv": "^16.3.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.0",
+    "tsx": "^4.6.0",
+    "typescript": "^5.3.0"
+  }
+}

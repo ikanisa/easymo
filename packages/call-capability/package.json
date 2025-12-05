@@ -1,0 +1,25 @@
+{
+  "name": "@easymo/call-capability",
+  "version": "0.1.0",
+  "description": "Unified call handling capability for all easyMO agents",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "peerDependencies": {
+    "@easymo/ai": "workspace:*",
+    "@easymo/commons": "workspace:*"
+  }
+}
