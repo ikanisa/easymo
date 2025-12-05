@@ -52,11 +52,9 @@ function getOpenAIClient(): OpenAI {
   }
   return openaiClient;
 }
-import { 
-  deepSearchJobs, 
-  deepSearchRealEstate,
-  deepSearchToolDefinitions 
-} from './tools/deep-search-tools.ts';
+// Note: deepSearchJobs and deepSearchRealEstate are implemented as class methods below
+// The deep-search-tools.ts exports are not used since we have inline implementations
+// that use OpenAI directly for real-time web search
 
 interface ToolExecutionResult {
   success: boolean;
@@ -739,7 +737,7 @@ export class CallCenterAGI extends BaseAgent {
    * Search external job websites in real-time using OpenAI web search
    * Results are NOT stored in the database - they are live results
    */
-  private async deepSearchJobs(args: any, supabase: SupabaseClient): Promise<ToolExecutionResult> {
+  private async deepSearchJobs(args: any, supabase: SupabaseClient, _phone?: string): Promise<ToolExecutionResult> {
     try {
       // Sanitize user inputs to prevent prompt injection
       const sanitizedQuery = sanitizeSearchInput(args.query);
@@ -824,7 +822,7 @@ export class CallCenterAGI extends BaseAgent {
    * Search external property websites in real-time using OpenAI web search
    * Results are NOT stored in the database - they are live results
    */
-  private async deepSearchRealEstate(args: any, supabase: SupabaseClient): Promise<ToolExecutionResult> {
+  private async deepSearchRealEstate(args: any, supabase: SupabaseClient, _phone?: string): Promise<ToolExecutionResult> {
     try {
       // Sanitize user inputs to prevent prompt injection
       const sanitizedLocation = sanitizeSearchInput(args.location);
@@ -908,65 +906,6 @@ export class CallCenterAGI extends BaseAgent {
         error: error instanceof Error ? error.message : String(error),
       }, 'error');
       return { success: false, error: error instanceof Error ? error.message : 'Deep search failed' };
-  /**
-   * Deep Search Jobs - Search internal DB + web via OpenAI Deep Research API
-   */
-  private async deepSearchJobs(args: any, supabase: SupabaseClient, phone: string): Promise<ToolExecutionResult> {
-    try {
-      // Get user ID for tracking
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('whatsapp_e164', phone)
-        .single();
-
-      const result = await deepSearchJobs(
-        supabase,
-        {
-          query: args.query,
-          country: args.country || 'RW',
-          context: args.context || {},
-        },
-        profile?.user_id
-      );
-
-      return { success: true, data: result };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Deep search failed' 
-      };
-    }
-  }
-
-  /**
-   * Deep Search Real Estate - Search internal DB + web via OpenAI Deep Research API
-   */
-  private async deepSearchRealEstate(args: any, supabase: SupabaseClient, phone: string): Promise<ToolExecutionResult> {
-    try {
-      // Get user ID for tracking
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('whatsapp_e164', phone)
-        .single();
-
-      const result = await deepSearchRealEstate(
-        supabase,
-        {
-          query: args.query,
-          country: args.country || 'RW',
-          context: args.context || {},
-        },
-        profile?.user_id
-      );
-
-      return { success: true, data: result };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Deep search failed' 
-      };
     }
   }
 
