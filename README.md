@@ -63,8 +63,9 @@ const response = await fetch(
 | MoMo Disbursements API | **USSD-based payment flows** |
 
 ```typescript
-// ❌ WRONG - NEVER USE MOMO API
+// ❌ WRONG - NEVER USE MOMO API (example of prohibited code)
 import { MoMoClient } from 'mtn-momo';
+const momoClient = new MoMoClient({ /* config */ });  // DO NOT DO THIS
 await momoClient.requestToPay({ /* ... */ });
 
 // ✅ CORRECT - Use USSD tel: mobile money

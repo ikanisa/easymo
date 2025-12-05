@@ -177,15 +177,26 @@ function verifySIPWebhookSignature(
   signature: string,
   body: string
 ): boolean {
+  // Strip common prefixes (e.g., 'sha256=', 'sha1=')
+  const rawSignature = signature.replace(/^sha\d+=/, "");
+
   const expectedSignature = crypto
     .createHmac("sha256", secretKey)
     .update(body)
     .digest("hex");
 
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  );
+  // Handle both hex and base64 encoded signatures
+  const signatureBuffer = Buffer.from(rawSignature, "hex").length === 32
+    ? Buffer.from(rawSignature, "hex")
+    : Buffer.from(rawSignature, "base64");
+
+  const expectedBuffer = Buffer.from(expectedSignature, "hex");
+
+  if (signatureBuffer.length !== expectedBuffer.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(signatureBuffer, expectedBuffer);
 }
 ```
 
