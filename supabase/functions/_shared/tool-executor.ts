@@ -222,7 +222,7 @@ export class ToolExecutor {
       case "search_menu_supabase":
         return await this.searchMenu(inputs);
       
-      case "search_business_directory":
+      case "search_businesses":
         return await this.searchBusinessDirectory(inputs);
       
       case "search_produce":
@@ -811,7 +811,7 @@ export class ToolExecutor {
     const location = inputs.location as string;
 
     let dbQuery = this.supabase
-      .from("business_directory")
+      .from("businesses")
       .select("*")
       .eq("is_active", true)
       .limit(15);

@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
             };
 
             const { error } = await supabaseClient
-              .from('business_directory')
+              .from('businesses')
               .upsert(business, { onConflict: 'external_id' });
 
             if (error) {

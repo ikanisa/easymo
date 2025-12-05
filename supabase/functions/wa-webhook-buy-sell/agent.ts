@@ -443,28 +443,7 @@ export class MarketplaceAgent {
     const results: Array<Record<string, unknown>> = [];
 
     try {
-      // Search marketplace listings
-      const { data: listings } = await this.supabase.rpc(
-        "search_marketplace_listings_nearby",
-        {
-          search_term: searchTerm,
-          user_lat: location.lat,
-          user_lng: location.lng,
-          radius_km: 10,
-          result_limit: 5,
-        },
-      );
-
-      if (listings && listings.length > 0) {
-        results.push(
-          ...listings.map((l: Record<string, unknown>) => ({
-            ...l,
-            source: "listing",
-          })),
-        );
-      }
-
-      // Search business directory
+      // Search unified business registry
       const { data: businesses } = await this.supabase.rpc(
         "search_businesses_nearby",
         {
@@ -472,7 +451,7 @@ export class MarketplaceAgent {
           user_lat: location.lat,
           user_lng: location.lng,
           radius_km: 10,
-          result_limit: 5,
+          result_limit: 10,
         },
       );
 

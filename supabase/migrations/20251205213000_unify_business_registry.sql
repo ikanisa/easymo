@@ -10,6 +10,9 @@ BEGIN;
 -- 1. Upgrade 'businesses' table with missing columns
 --    (If they already exist, these are no-ops or harmless)
 
+-- First, handle profile_id constraint for data migration
+ALTER TABLE public.businesses ALTER COLUMN profile_id DROP NOT NULL;
+
 ALTER TABLE public.businesses ADD COLUMN IF NOT EXISTS external_id TEXT UNIQUE;
 ALTER TABLE public.businesses ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'General';
 ALTER TABLE public.businesses ADD COLUMN IF NOT EXISTS city TEXT;

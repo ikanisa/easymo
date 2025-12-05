@@ -418,9 +418,9 @@ export async function searchBusinesses(
 
   // Basic text search
   const { data } = await supabase
-    .from("business_directory")
+    .from("businesses")
     .select("id, name, category, city, address, phone, rating")
-    .neq("status", "DO_NOT_CALL")
+    .neq("status", "inactive")
     .or(
       `name.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%`,
     )

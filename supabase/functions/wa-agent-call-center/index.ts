@@ -16,6 +16,12 @@ import { logStructuredEvent } from '../_shared/observability.ts';
 import { sendWhatsAppMessage } from '../_shared/wa-webhook-shared/wa/client.ts';
 import { rateLimitMiddleware } from '../_shared/rate-limit/index.ts';
 import { MessageDeduplicator } from '../_shared/message-deduplicator.ts';
+import {
+  downloadWhatsAppAudio,
+  transcribeAudio,
+  textToSpeech,
+  uploadWhatsAppMedia,
+} from '../_shared/voice-handler.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -147,7 +153,53 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const phone = message.from;
-    const text = message.text?.body ?? '';
+    let text = message.text?.body ?? '';
+    let isVoiceMessage = false;
+
+    // Handle voice/audio messages
+    if (message.type === 'audio' || message.type === 'voice') {
+      isVoiceMessage = true;
+      
+      try {
+        const accessToken = Deno.env.get('WHATSAPP_ACCESS_TOKEN') ?? Deno.env.get('WABA_ACCESS_TOKEN') ?? '';
+        const mediaId = message.audio?.id ?? message.voice?.id;
+        
+        if (!mediaId || !accessToken) {
+          throw new Error('Missing media ID or access token');
+        }
+
+        await logStructuredEvent('CALL_CENTER_VOICE_PROCESSING', {
+          phone: phone.slice(-4),
+          mediaId: mediaId.slice(0, 10),
+          correlationId,
+        });
+
+        // Download and transcribe audio
+        const audioBuffer = await downloadWhatsAppAudio(mediaId, accessToken);
+        const { text: transcribedText, language } = await transcribeAudio(audioBuffer, 'ogg');
+        
+        text = transcribedText;
+
+        await logStructuredEvent('CALL_CENTER_VOICE_TRANSCRIBED', {
+          phone: phone.slice(-4),
+          language,
+          textLength: text.length,
+          correlationId,
+        });
+
+      } catch (voiceError) {
+        await logStructuredEvent('CALL_CENTER_VOICE_ERROR', {
+          error: voiceError instanceof Error ? voiceError.message : String(voiceError),
+          correlationId,
+        }, 'error');
+        
+        // Fall back to text response
+        await sendWhatsAppMessage(phone, 
+          "I'm sorry, I had trouble processing your voice message. Please try sending a text message instead."
+        );
+        return respond({ success: true, message: 'voice_processing_failed' });
+      }
+    }
 
     // Deduplication
     const shouldProcess = await deduplicator.shouldProcess({
@@ -165,6 +217,7 @@ serve(async (req: Request): Promise<Response> => {
     await logStructuredEvent('CALL_CENTER_MESSAGE', {
       phone: phone.slice(-4),
       messageType: message.type,
+      isVoice: isVoiceMessage,
       correlationId,
     });
 
@@ -179,8 +232,54 @@ serve(async (req: Request): Promise<Response> => {
       supabase,
     });
 
-    // Send response
-    await sendWhatsAppMessage(phone, response.message);
+    // Send response - voice for voice, text for text
+    if (isVoiceMessage) {
+      try {
+        const accessToken = Deno.env.get('WHATSAPP_ACCESS_TOKEN') ?? Deno.env.get('WABA_ACCESS_TOKEN') ?? '';
+        const phoneNumberId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') ?? Deno.env.get('WABA_PHONE_NUMBER_ID') ?? '';
+        
+        if (!accessToken || !phoneNumberId) {
+          throw new Error('Missing WhatsApp credentials for voice response');
+        }
+
+        // Convert response to audio
+        const audioBuffer = await textToSpeech(response.message, 'en', 'alloy');
+        
+        // Upload to WhatsApp
+        const mediaId = await uploadWhatsAppMedia(audioBuffer, accessToken, phoneNumberId);
+        
+        // Send audio message
+        await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            messaging_product: 'whatsapp',
+            to: phone,
+            type: 'audio',
+            audio: { id: mediaId },
+          }),
+        });
+
+        await logStructuredEvent('CALL_CENTER_VOICE_RESPONSE_SENT', {
+          phone: phone.slice(-4),
+          correlationId,
+        });
+
+      } catch (voiceError) {
+        await logStructuredEvent('CALL_CENTER_VOICE_RESPONSE_ERROR', {
+          error: voiceError instanceof Error ? voiceError.message : String(voiceError),
+          correlationId,
+        }, 'error');
+        
+        // Fall back to text
+        await sendWhatsAppMessage(phone, response.message);
+      }
+    } else {
+      await sendWhatsAppMessage(phone, response.message);
+    }
 
     await logStructuredEvent('CALL_CENTER_RESPONSE_SENT', {
       phone: phone.slice(-4),

@@ -76,7 +76,7 @@ easyMO is Rwanda's all-in-one platform for:
 - Agricultural services
 
 ## Your Role
-- Identify leads from business_directory
+- Identify leads from businesses
 - Make outbound calls/messages
 - Handle objections professionally
 - Schedule follow-ups
@@ -109,7 +109,7 @@ IMPORTANT: Always be professional, respectful, and value-driven.`;
     return [
       {
         name: 'get_next_lead',
-        description: 'Get the next business lead to contact from business_directory',
+        description: 'Get the next business lead to contact from businesses',
         parameters: {
           type: 'object',
           properties: {
@@ -119,7 +119,7 @@ IMPORTANT: Always be professional, respectful, and value-driven.`;
         },
         execute: async (params, context) => {
           let query = this.supabase
-            .from('business_directory')
+            .from('businesses')
             .select('*')
             .is('last_contacted', null)
             .limit(1);
@@ -151,7 +151,7 @@ IMPORTANT: Always be professional, respectful, and value-driven.`;
         },
         execute: async (params, context) => {
           const { error } = await this.supabase
-            .from('business_directory')
+            .from('businesses')
             .update({
               last_contacted: new Date().toISOString(),
               sales_status: params.outcome,
@@ -177,7 +177,7 @@ IMPORTANT: Always be professional, respectful, and value-driven.`;
         },
         execute: async (params, context) => {
           const { error } = await this.supabase
-            .from('business_directory')
+            .from('businesses')
             .update({
               callback_scheduled: params.callback_date,
               callback_reason: params.reason
@@ -201,7 +201,7 @@ IMPORTANT: Always be professional, respectful, and value-driven.`;
         },
         execute: async (params, context) => {
           const { error } = await this.supabase
-            .from('business_directory')
+            .from('businesses')
             .update({
               do_not_call: true,
               dnc_reason: params.reason

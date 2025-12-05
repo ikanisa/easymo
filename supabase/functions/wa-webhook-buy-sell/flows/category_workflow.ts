@@ -277,7 +277,7 @@ export async function handleBusinessSelection(
   if (!ctx.profileId) return false;
 
   const { data: business, error } = await ctx.supabase
-    .from("business_directory")
+    .from("businesses")
     .select("*")
     .eq("id", businessId)
     .maybeSingle();

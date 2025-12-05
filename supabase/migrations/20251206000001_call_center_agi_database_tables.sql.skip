@@ -12,7 +12,7 @@ BEGIN;
 
 CREATE TABLE IF NOT EXISTS public.property_listings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  profile_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  profile_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE,
   listing_type TEXT NOT NULL CHECK (listing_type IN ('rent', 'sale')),
   country TEXT NOT NULL DEFAULT 'RW' CHECK (country IN ('RW', 'CD', 'BI', 'TZ')),
   city TEXT NOT NULL,
@@ -32,6 +32,18 @@ CREATE TABLE IF NOT EXISTS public.property_listings (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- Add profile_id if it doesn't exist (table may already exist)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'property_listings' AND column_name = 'profile_id'
+  ) THEN
+    ALTER TABLE public.property_listings 
+      ADD COLUMN profile_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE;
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_property_listings_profile ON public.property_listings(profile_id);
 CREATE INDEX IF NOT EXISTS idx_property_listings_city ON public.property_listings(city);
 CREATE INDEX IF NOT EXISTS idx_property_listings_type ON public.property_listings(listing_type);
@@ -45,7 +57,7 @@ COMMENT ON TABLE public.property_listings IS 'Property listings for rent/sale cr
 
 CREATE TABLE IF NOT EXISTS public.job_listings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  profile_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  profile_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   description TEXT,
   country TEXT NOT NULL DEFAULT 'RW' CHECK (country IN ('RW', 'CD', 'BI', 'TZ')),
@@ -68,7 +80,7 @@ COMMENT ON TABLE public.job_listings IS 'Job postings created via Call Center AG
 
 CREATE TABLE IF NOT EXISTS public.job_candidates (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  profile_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE UNIQUE,
+  profile_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE UNIQUE,
   skills TEXT[] DEFAULT ARRAY[]::TEXT[],
   preferred_roles TEXT[] DEFAULT ARRAY[]::TEXT[],
   preferred_locations TEXT[] DEFAULT ARRAY[]::TEXT[],
@@ -92,7 +104,7 @@ COMMENT ON TABLE public.job_candidates IS 'Job seekers registered via Call Cente
 
 CREATE TABLE IF NOT EXISTS public.marketplace_vendors (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  profile_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  profile_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE,
   category TEXT NOT NULL CHECK (category IN ('farmer', 'shop', 'pharmacy', 'restaurant', 'other')),
   products TEXT[] DEFAULT ARRAY[]::TEXT[],
   country TEXT NOT NULL DEFAULT 'RW' CHECK (country IN ('RW', 'CD', 'BI', 'TZ')),
@@ -118,13 +130,13 @@ COMMENT ON TABLE public.marketplace_vendors IS 'Vendors/farmers registered via C
 
 CREATE TABLE IF NOT EXISTS public.legal_leads (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  profile_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  profile_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE,
   topic TEXT NOT NULL,
   description TEXT NOT NULL,
   country TEXT NOT NULL DEFAULT 'RW' CHECK (country IN ('RW', 'CD', 'BI', 'TZ')),
   urgency TEXT DEFAULT 'medium' CHECK (urgency IN ('low', 'medium', 'high', 'urgent')),
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'assigned', 'in_progress', 'completed', 'cancelled')),
-  assigned_to UUID REFERENCES public.profiles(id),
+  assigned_to UUID REFERENCES public.profiles(user_id),
   notes TEXT,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
@@ -142,7 +154,7 @@ COMMENT ON TABLE public.legal_leads IS 'Legal/notary assistance requests from Ca
 
 CREATE TABLE IF NOT EXISTS public.pharmacy_leads (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  profile_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  profile_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE,
   need_type TEXT NOT NULL CHECK (need_type IN ('delivery', 'enquiry', 'prescription')),
   description TEXT NOT NULL,
   country TEXT NOT NULL DEFAULT 'RW' CHECK (country IN ('RW', 'CD', 'BI', 'TZ')),
@@ -167,7 +179,7 @@ COMMENT ON TABLE public.pharmacy_leads IS 'Pharmacy requests from Call Center AG
 
 CREATE TABLE IF NOT EXISTS public.payment_qr_codes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  profile_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  profile_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE,
   amount NUMERIC(12,2) NOT NULL,
   currency TEXT DEFAULT 'RWF' CHECK (currency IN ('RWF', 'USD', 'EUR')),
   purpose TEXT NOT NULL,
@@ -192,7 +204,7 @@ COMMENT ON TABLE public.payment_qr_codes IS 'MoMo QR codes generated via Call Ce
 CREATE TABLE IF NOT EXISTS public.call_summaries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   call_id TEXT NOT NULL UNIQUE,
-  profile_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  profile_id UUID REFERENCES public.profiles(user_id) ON DELETE SET NULL,
   primary_intent TEXT NOT NULL,
   secondary_intents TEXT[] DEFAULT ARRAY[]::TEXT[],
   summary TEXT NOT NULL,

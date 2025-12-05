@@ -118,7 +118,7 @@ Always provide helpful, accurate information based on the business directory.`;
         },
         execute: async (params) => {
           let query = this.supabase
-            .from('business_directory')
+            .from('businesses')
             .select('id, name, category, city, address, phone, rating');
 
           if (params.query) {
@@ -170,7 +170,7 @@ Always provide helpful, accurate information based on the business directory.`;
         },
         execute: async (params) => {
           const { data, error } = await this.supabase
-            .from('business_directory')
+            .from('businesses')
             .select('*')
             .eq('id', params.business_id)
             .single();
@@ -282,7 +282,7 @@ Always provide helpful, accurate information based on the business directory.`;
             
             // Check if user already has a business
             const { data: existing } = await this.supabase
-              .from('business_directory')
+              .from('businesses')
               .select('id')
               .eq('phone', context.userId)
               .single();
@@ -292,7 +292,7 @@ Always provide helpful, accurate information based on the business directory.`;
             if (!existing) {
               // Create business entry for user
               const { data: newBusiness, error: bizError } = await this.supabase
-                .from('business_directory')
+                .from('businesses')
                 .insert({
                   name: businessName,
                   category: params.category,
@@ -317,7 +317,7 @@ Always provide helpful, accurate information based on the business directory.`;
             const productInfo = `\n\n📦 Product: ${params.product_name}\n💰 Price: ${params.price} RWF\n📝 ${params.description || ''}`;
             
             await this.supabase
-              .from('business_directory')
+              .from('businesses')
               .update({
                 description: productInfo
               })
@@ -355,7 +355,7 @@ Always provide helpful, accurate information based on the business directory.`;
             
             // Check if user already has a business
             const { data: existing } = await this.supabase
-              .from('business_directory')
+              .from('businesses')
               .select('id')
               .eq('phone', context.userId)
               .single();
@@ -365,7 +365,7 @@ Always provide helpful, accurate information based on the business directory.`;
             if (!existing) {
               // Create business entry for user
               const { data: newBusiness, error: bizError } = await this.supabase
-                .from('business_directory')
+                .from('businesses')
                 .insert({
                   name: businessName,
                   category: params.category,
@@ -389,7 +389,7 @@ Always provide helpful, accurate information based on the business directory.`;
             const serviceInfo = `\n\n🛠️ Service: ${params.service_name}\n💰 Rate: ${params.price || 'Contact for pricing'}\n📝 ${params.description || ''}`;
             
             await this.supabase
-              .from('business_directory')
+              .from('businesses')
               .update({
                 description: serviceInfo
               })
@@ -425,7 +425,7 @@ Always provide helpful, accurate information based on the business directory.`;
         execute: async (params, context) => {
           try {
             const { data, error } = await this.supabase
-              .from('business_directory')
+              .from('businesses')
               .insert({
                 name: params.business_name,
                 category: params.category,

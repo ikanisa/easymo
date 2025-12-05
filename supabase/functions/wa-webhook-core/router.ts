@@ -104,6 +104,16 @@ const ROUTER_TIMEOUT_MS = Math.max(Number(Deno.env.get("WA_ROUTER_TIMEOUT_MS") ?
 
 export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Promise<RoutingDecision> {
   const routingMessage = getFirstMessage(payload);
+  
+  // Handle voice/audio messages -> Route to Call Center AGI
+  if (routingMessage?.type === 'audio' || routingMessage?.type === 'voice') {
+    return {
+      service: "wa-agent-call-center",
+      reason: "keyword",
+      routingText: "[VOICE_MESSAGE]",
+    };
+  }
+  
   const routingText = routingMessage ? getRoutingText(routingMessage) : null;
   const phoneNumber = routingMessage?.from ?? null;
 

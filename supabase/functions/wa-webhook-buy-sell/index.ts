@@ -550,18 +550,16 @@ async function handleWithMenu(
 
     // Build the query
     let query = supabase
-      .from("business_directory")
+      .from("businesses")
       .select("*") 
       .ilike("category", `%${category}%`)
       .eq("country", country)
-      .neq("status", "DO_NOT_CALL")
+      .eq("status", "active")
       .order("rating", { ascending: false })
       .limit(5);
 
     // If we have precise coordinates, use rpc for distance sorting (if available) or just simple query
-    // For now, to keep it simple and robust without assuming PostGIS extensions are perfect, we'll try text search if no lat/lng,
-    // or just use lat/lng if available in a future enhancement. 
-    // The previous code used ILIKE for city/address which is fine for text.
+    // For now, to keep it simple and robust without assuming PostGIS extensions are perfect, we'll try text search if no lat/lng.
     
     if (!lat && !lng) {
       query = query.or(`city.ilike.%${locationQuery}%,address.ilike.%${locationQuery}%`);
@@ -577,7 +575,7 @@ async function handleWithMenu(
       results.forEach((biz: any, i: number) => {
         const stars = biz.rating ? "⭐".repeat(Math.round(biz.rating)) : "";
         response += `${i + 1}. *${biz.name}*\n`;
-        response += `   📍 ${biz.city}\n`;
+        response += `   📍 ${biz.city || biz.address || "Unknown Location"}\n`;
         if (biz.phone) {
           const cleanPhone = biz.phone.replace(/\D/g, "");
           response += `   💬 https://wa.me/${cleanPhone}\n`;
