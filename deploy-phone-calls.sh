@@ -7,7 +7,7 @@ set -e
 
 echo "📞 Phone Calls Deployment (SIP Trunk)"
 echo "====================================="
-echo "Supports: Twilio, MTN Rwanda, GO Malta, Any SIP Provider"
+echo "Supports: MTN Rwanda, GO Malta, Any SIP Provider"
 echo ""
 
 # Colors
@@ -22,10 +22,7 @@ echo ""
 
 SIP_PROVIDER=""
 
-if [ -n "$TWILIO_ACCOUNT_SID" ] && [ -n "$TWILIO_AUTH_TOKEN" ]; then
-  SIP_PROVIDER="twilio"
-  echo -e "${GREEN}✅ Twilio credentials detected${NC}"
-elif [ -n "$MTN_SIP_USERNAME" ] && [ -n "$MTN_SIP_PASSWORD" ]; then
+if [ -n "$MTN_SIP_USERNAME" ] && [ -n "$MTN_SIP_PASSWORD" ]; then
   SIP_PROVIDER="mtn"
   echo -e "${GREEN}✅ MTN Rwanda credentials detected${NC}"
 elif [ -n "$GO_SIP_USERNAME" ] && [ -n "$GO_SIP_PASSWORD" ]; then
@@ -38,11 +35,6 @@ else
   echo -e "${RED}❌ No SIP credentials found${NC}"
   echo ""
   echo "Please set credentials for your SIP provider:"
-  echo ""
-  echo "For Twilio:"
-  echo "  export TWILIO_ACCOUNT_SID=your-sid"
-  echo "  export TWILIO_AUTH_TOKEN=your-token"
-  echo "  export TWILIO_PHONE_NUMBER=+1234567890"
   echo ""
   echo "For MTN Rwanda:"
   echo "  export MTN_SIP_USERNAME=your-username"
@@ -117,14 +109,6 @@ echo ""
 echo "🔐 Setting SIP credentials..."
 
 case $SIP_PROVIDER in
-  twilio)
-    supabase secrets set \
-      SIP_PROVIDER=twilio \
-      TWILIO_ACCOUNT_SID="$TWILIO_ACCOUNT_SID" \
-      TWILIO_AUTH_TOKEN="$TWILIO_AUTH_TOKEN" \
-      SIP_PHONE_NUMBER="${TWILIO_PHONE_NUMBER:-+1234567890}" \
-      VOICE_GATEWAY_URL="$VOICE_GATEWAY_URL"
-    ;;
   mtn)
     supabase secrets set \
       SIP_PROVIDER=mtn \

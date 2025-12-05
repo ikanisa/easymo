@@ -1,10 +1,10 @@
 BEGIN;
 
--- Drop existing function if exists
-DROP FUNCTION IF EXISTS public.search_businesses_nearby(double precision, double precision, text, double precision, integer);
-DROP FUNCTION IF EXISTS public.search_businesses_nearby(text, double precision, integer, double precision, double precision);
+-- Drop function using specific signature based on error message
+DROP FUNCTION IF EXISTS public.search_businesses_nearby(p_category text, p_latitude double precision, p_limit integer, p_longitude double precision, p_radius_km double precision);
+DROP FUNCTION IF EXISTS public.search_businesses_nearby(p_latitude double precision, p_longitude double precision, p_category text, p_radius_km double precision, p_limit integer);
 
--- Create the correct function
+-- Create the correct function with correct parameter order
 CREATE OR REPLACE FUNCTION public.search_businesses_nearby(
   p_latitude DOUBLE PRECISION,
   p_longitude DOUBLE PRECISION,
@@ -62,6 +62,6 @@ END;
 $$;
 
 -- Grant execute permission
-GRANT EXECUTE ON FUNCTION public.search_businesses_nearby TO authenticated, anon, service_role;
+GRANT EXECUTE ON FUNCTION public.search_businesses_nearby(double precision, double precision, text, double precision, integer) TO authenticated, anon, service_role;
 
 COMMIT;
