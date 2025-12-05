@@ -177,20 +177,71 @@ WHATSAPP_PHONE_NUMBER_ID=your-phone-number-id
 WHATSAPP_SEND_ENDPOINT=https://your-project.supabase.co/functions/v1/wa-webhook-core
 ```
 
-### Optional Variables
+### AI/LLM Configuration (Required)
 
-#### AI Features
+> ⚠️ **IMPORTANT**: EasyMO requires specific LLM models for AI features. Using other models may result in degraded performance or unexpected behavior.
+
+#### Mandatory LLM Providers
+
+| Provider | Model | Use Cases |
+|----------|-------|-----------|
+| **OpenAI** | **GPT-5** | Conversation, reasoning, intent classification, complex decision-making |
+| **Google Gemini** | **Gemini-3** | Vision/OCR, Google Maps integration, document parsing, image analysis |
+
+#### Environment Variables
 
 ```bash
-# OpenAI (for AI chat, agents)
+# OpenAI GPT-5 (Required for AI chat, agents, reasoning)
 OPENAI_API_KEY=sk-your-openai-api-key
-ENABLE_OPENAI_REALTIME=false
+# Model: GPT-5 is used automatically for conversation and reasoning tasks
 
-# Google AI (Gemini)
-GOOGLE_AI_API_KEY=AIza-your-google-ai-api-key
-GOOGLE_MAPS_API_KEY=AIza-your-maps-api-key
-GOOGLE_SEARCH_API_KEY=AIza-your-search-api-key
+# Google Gemini-3 (Required for vision/OCR tasks)
+GEMINI_API_KEY=AIza-your-gemini-api-key
+# Model: Gemini-3 is used automatically for vision, OCR, and document parsing
+
+# Additional Google APIs
+GOOGLE_MAPS_API_KEY=AIza-your-google-maps-api-key
+GOOGLE_SEARCH_API_KEY=AIza-your-google-search-api-key
 GOOGLE_SEARCH_ENGINE_ID=your-engine-id
+```
+
+#### Dual Provider Architecture
+
+EasyMO uses a **dual-provider AI architecture** with automatic failover:
+
+1. **Primary Provider (OpenAI GPT-5)**: Handles conversation, reasoning, and intent classification
+2. **Secondary Provider (Google Gemini-3)**: Handles vision/OCR, document parsing, and Google Maps integration
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     AI Request Router                           │
+├─────────────────────────────────────────────────────────────────┤
+│  Text/Conversation ──► OpenAI GPT-5 (primary)                   │
+│  Vision/OCR ──────────► Google Gemini-3 (primary)               │
+│  Document Parsing ────► Google Gemini-3 (primary)               │
+│  Maps Integration ────► Google Gemini-3 + Google Maps API       │
+│                                                                 │
+│  Failover: If primary fails, automatically retry with backup    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### ⚠️ Model Restrictions
+
+**DO NOT** use the following deprecated models:
+- ❌ `gpt-4o`, `gpt-4-turbo`, `gpt-4o-mini` - Use **GPT-5** instead
+- ❌ `gemini-1.5-flash`, `gemini-1.5-pro`, `gemini-2.0-flash` - Use **Gemini-3** instead
+
+### Optional Variables
+
+#### Additional AI Features
+
+```bash
+# Enable real-time voice features (optional)
+ENABLE_OPENAI_REALTIME=false
+ENABLE_GEMINI_LIVE=false
+
+# Enable Google Search grounding for AI responses (optional)
+ENABLE_GOOGLE_SEARCH_GROUNDING=false
 ```
 
 #### Microservices

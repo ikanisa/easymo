@@ -276,9 +276,11 @@ FEATURE_AGENT_BUSINESS_BROKER=true
 AGENT_ERROR_THRESHOLD=3
 AGENT_FALLBACK_DURATION_SECONDS=3600
 
-# API Configuration
-GEMINI_API_KEY=your_key_here
-GEMINI_MODEL=gemini-2.5-pro-latest
+# AI Provider Configuration
+# ⚠️ MANDATORY MODELS: GPT-5 (OpenAI) and Gemini-3 (Google)
+OPENAI_API_KEY=your_openai_key_here
+GEMINI_API_KEY=your_gemini_key_here
+# Models are automatically configured to use GPT-5 and Gemini-3
 GEMINI_TIMEOUT_MS=10000
 ```
 

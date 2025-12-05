@@ -25,9 +25,9 @@ const envSchema = z.object({
   // Allow unsigned webhooks (for internal forwarding or testing)
   WA_ALLOW_UNSIGNED_WEBHOOKS: z.string().default("false"),
 
-  // OpenAI
+  // OpenAI - MANDATORY: Use GPT-5 model
   OPENAI_API_KEY: z.string(),
-  OPENAI_MODEL: z.string().default("gpt-4o-mini"),
+  OPENAI_MODEL: z.string().default("gpt-5"),
   OPENAI_BASE_URL: z.string().optional(),
 
   // Worker Config
