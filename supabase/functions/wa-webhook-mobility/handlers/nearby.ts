@@ -34,6 +34,7 @@ import { getRecentNearbyIntent, storeNearbyIntent } from "./intent_cache.ts";
 import { saveIntent, getRecentIntents } from "../../_shared/wa-webhook-shared/domains/intent_storage.ts";
 import { isFeatureEnabled } from "../../_shared/feature-flags.ts";
 import { routeToAIAgent, sendAgentOptions } from "../ai-agents/index.ts";
+import { reverseGeocode } from "../../_shared/wa-webhook-shared/locations/geocoding.ts";
 import {
   getFavoriteById,
   listFavorites,
@@ -747,16 +748,31 @@ async function showRecentSearches(
       return false; // No recent searches
     }
 
-    // Build list rows from recent intents
-    const rows = recentIntents.map((intent, i) => {
+    // Build list rows from recent intents with reverse geocoding
+    const rows = await Promise.all(recentIntents.map(async (intent, i) => {
       const when = timeAgo(intent.created_at);
-      const coords = `${intent.pickup_lat.toFixed(4)},${intent.pickup_lng.toFixed(4)}`;
+      
+      // Try to get human-readable address
+      let locationText = "";
+      try {
+        const geocoded = await reverseGeocode(intent.pickup_lat, intent.pickup_lng, { timeout: 2000 });
+        if (geocoded) {
+          // Use short address (street name or area)
+          locationText = geocoded.address || geocoded.city || "";
+        }
+      } catch (error) {
+        console.warn("Failed to geocode recent search:", error);
+      }
+      
+      // Fallback to "Unknown location" if geocoding failed (never show coordinates!)
+      const displayLocation = locationText || "Unknown location";
+      
       return {
         id: `RECENT_SEARCH::${i}::${intent.pickup_lat},${intent.pickup_lng}`,
         title: `📍 ${when}`,
-        description: `${intent.vehicle_type} · ${coords}`,
+        description: `${intent.vehicle_type} · ${displayLocation}`,
       };
-    });
+    }));
 
     // Add option to share new location
     rows.push({
@@ -1109,9 +1125,8 @@ function favoriteToRow(
   ctx: RouterContext,
   favorite: UserFavorite,
 ): { id: string; title: string; description?: string } {
-  const description = favorite.address
-    ? favorite.address
-    : `${favorite.lat.toFixed(4)}, ${favorite.lng.toFixed(4)}`;
+  // Always use the address field if available (never show coordinates!)
+  const description = favorite.address || "Location saved";
   return {
     id: `${SAVED_ROW_PREFIX}${favorite.id}`,
     title: `⭐ ${favorite.label}`,

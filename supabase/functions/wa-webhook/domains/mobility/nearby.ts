@@ -36,6 +36,7 @@ import { getRecentNearbyIntent, storeNearbyIntent } from "./intent_cache.ts";
 import { saveIntent, getRecentIntents } from "../../../_shared/wa-webhook-shared/domains/intent_storage.ts";
 import { isFeatureEnabled } from "../../../_shared/feature-flags.ts";
 import { routeToAIAgent, sendAgentOptions } from "../ai-agents/index.ts";
+import { reverseGeocode } from "../../../_shared/wa-webhook-shared/locations/geocoding.ts";
 import {
   getFavoriteById,
   listFavorites,
@@ -220,10 +221,26 @@ async function showRecentSearches(
       return false; // No recent searches
     }
     
-    const rows = recentIntents.map((intent, i) => ({
-      id: `RECENT::${i}::${intent.pickup_lat}::${intent.pickup_lng}::${intent.vehicle_type}`,
-      title: `📍 ${timeAgo(new Date(intent.created_at))} - ${intent.vehicle_type}`,
-      description: `${intent.pickup_lat.toFixed(4)}, ${intent.pickup_lng.toFixed(4)}`,
+    const rows = await Promise.all(recentIntents.map(async (intent, i) => {
+      // Try to get human-readable address
+      let locationText = "";
+      try {
+        const geocoded = await reverseGeocode(intent.pickup_lat, intent.pickup_lng, { timeout: 2000 });
+        if (geocoded) {
+          locationText = geocoded.address || geocoded.city || "";
+        }
+      } catch (error) {
+        console.warn("Failed to geocode recent search:", error);
+      }
+      
+      // Never show raw coordinates to users
+      const displayLocation = locationText || "Unknown location";
+      
+      return {
+        id: `RECENT::${i}::${intent.pickup_lat}::${intent.pickup_lng}::${intent.vehicle_type}`,
+        title: `📍 ${timeAgo(new Date(intent.created_at))} - ${intent.vehicle_type}`,
+        description: displayLocation,
+      };
     }));
     
     await sendListMessage(ctx, {
@@ -871,9 +888,8 @@ function favoriteToRow(
   ctx: RouterContext,
   favorite: UserFavorite,
 ): { id: string; title: string; description?: string } {
-  const description = favorite.address
-    ? favorite.address
-    : `${favorite.lat.toFixed(4)}, ${favorite.lng.toFixed(4)}`;
+  // Always use the address field if available (never show coordinates!)
+  const description = favorite.address || "Location saved";
   return {
     id: `${SAVED_ROW_PREFIX}${favorite.id}`,
     title: `⭐ ${favorite.label}`,
