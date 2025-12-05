@@ -761,8 +761,8 @@ async function showRecentSearches(
     // Add option to share new location
     rows.push({
       id: "SHARE_NEW_LOCATION",
-      title: t(ctx.locale, "mobility.nearby.new_location") || "📍 Share New Location",
-      description: t(ctx.locale, "mobility.nearby.new_location.desc") || "Search from a different location",
+      title: t(ctx.locale, "mobility.nearby.new_location"),
+      description: t(ctx.locale, "mobility.nearby.new_location.desc"),
     });
 
     await sendListMessage(ctx, {

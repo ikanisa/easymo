@@ -2,6 +2,7 @@
 // Stores user intents in dedicated table instead of profiles.metadata
 
 import type { SupabaseClient } from "../deps.ts";
+import { MOBILITY_CONFIG } from "../config/mobility.ts";
 
 export type IntentType = 'nearby_drivers' | 'nearby_passengers' | 'schedule' | 'go_online';
 export type RecurrenceType = 'once' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
@@ -19,12 +20,13 @@ interface SaveIntentParams {
 
 /**
  * Save user intent to mobility_intents table for better querying and recommendations
+ * Default expiry: 30 minutes (recent search window)
  */
 export async function saveIntent(
   client: SupabaseClient,
   params: SaveIntentParams,
 ): Promise<string> {
-  const expiresInMinutes = params.expiresInMinutes ?? 30;
+  const expiresInMinutes = params.expiresInMinutes ?? MOBILITY_CONFIG.RECENT_SEARCH_WINDOW_MINUTES;
   const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000);
   
   const { data, error } = await client

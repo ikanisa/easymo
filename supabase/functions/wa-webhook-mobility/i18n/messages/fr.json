@@ -326,6 +326,7 @@
   "mobility.nearby.recent_load_error": "😔 Impossible de charger votre recherche récente.",
   "mobility.nearby.buttons.drivers": "Chauffeurs",
   "mobility.nearby.buttons.passengers": "Passagers",
+  "mobility.nearby.new_location": "📍 Partager Nouveau Lieu",
   "mobility.nearby.new_location.desc": "Rechercher depuis un lieu différent",
   "schedule.menu.title": "🚦 Programmer un trajet",
   "schedule.menu.body": "Choisissez comment vous souhaitez voyager.",

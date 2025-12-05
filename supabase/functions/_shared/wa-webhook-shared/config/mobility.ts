@@ -1,6 +1,11 @@
 /**
  * Mobility Configuration Constants
  * Centralized configuration for mobility services to prevent hardcoded values
+ * 
+ * TIME WINDOWS:
+ * - Recent searches: 30 minutes (in intent_storage.ts expiresInMinutes default)
+ * - Trip matching: 48 hours (DEFAULT_WINDOW_DAYS = 2 days)
+ * - Location cache: 30 minutes (LOCATION_FRESHNESS_MINUTES)
  */
 
 // Search and matching constants
@@ -9,13 +14,15 @@ export const MOBILITY_CONFIG = {
   DEFAULT_SEARCH_RADIUS_METERS: 10_000,
   /** Maximum search radius in meters (25km) */
   MAX_SEARCH_RADIUS_METERS: 25_000,
-  /** Location freshness window in minutes (30 min) - trips with location older than this are deprioritized */
+  /** Location cache window in minutes (30 min) - location older than this requires refresh */
   LOCATION_FRESHNESS_MINUTES: 30,
+  /** Recent search window in minutes (30 min) - matches LOCATION_FRESHNESS_MINUTES */
+  RECENT_SEARCH_WINDOW_MINUTES: 30,
   /** Trip expiry time in minutes (90 min) */
   TRIP_EXPIRY_MINUTES: 90,
   /** Maximum number of results to return */
   MAX_RESULTS_LIMIT: 9,
-  /** Default time window for matching in days (2 days = 48 hours) */
+  /** Default time window for trip matching in days (2 days = 48 hours) */
   DEFAULT_WINDOW_DAYS: 2,
 } as const;
 
