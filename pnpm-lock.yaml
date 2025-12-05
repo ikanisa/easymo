@@ -1703,6 +1703,9 @@ importers:
       pino-pretty:
         specifier: ^10.2.0
         version: 10.3.1
+      uuid:
+        specifier: ^9.0.0
+        version: 9.0.1
       ws:
         specifier: ^8.14.0
         version: 8.18.3
@@ -1713,6 +1716,9 @@ importers:
       '@types/node':
         specifier: ^20.10.0
         version: 20.19.25
+      '@types/uuid':
+        specifier: ^9.0.0
+        version: 9.0.8
       '@types/ws':
         specifier: ^8.5.9
         version: 8.18.1

@@ -32,37 +32,43 @@
  * ```
  */
 
+// Re-export Speech client type
+export type { SpeechClient } from '@google-cloud/speech';
+
+// Re-export TTS client type
+export type { TextToSpeechClient } from '@google-cloud/text-to-speech';
+
 // Speech-to-Text
 export {
   createSpeechClient,
-  transcribeAudio,
-  transcribeStream,
   TELEPHONY_LANGUAGES,
-  type TranscribeConfig,
-  type TranscriptResult,
   type TelephonyLanguage,
+  transcribeAudio,
+  type TranscribeConfig,
+  transcribeStream,
+  type TranscriptResult,
 } from './stt';
 
 // Text-to-Speech
 export {
   createTTSClient,
-  synthesizeSpeech,
-  synthesizeSSML,
-  VOICE_PRESETS,
   SSMLBuilder,
   type SynthesizeConfig,
   type SynthesizeResult,
+  synthesizeSpeech,
+  synthesizeSSML,
+  VOICE_PRESETS,
 } from './tts';
 
 // Translation
 export {
   createTranslateClient,
-  translateText,
-  translateBatch,
   detectLanguage,
-  Translator,
+  type LanguageCode,
   LANGUAGES,
+  translateBatch,
   type TranslateConfig,
   type TranslateResult,
-  type LanguageCode,
+  translateText,
+  Translator,
 } from './translate';

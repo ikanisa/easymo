@@ -5,7 +5,8 @@
  * Supports multiple voices and languages.
  */
 
-import textToSpeech from '@google-cloud/text-to-speech';
+import { TextToSpeechClient } from '@google-cloud/text-to-speech';
+import type { google } from '@google-cloud/text-to-speech/build/protos/protos';
 
 export interface SynthesizeConfig {
   /** Language code (e.g., 'rw-RW', 'en-US', 'fr-FR') */
@@ -67,15 +68,15 @@ export const VOICE_PRESETS = {
 /**
  * Create a Text-to-Speech client
  */
-export function createTTSClient(): textToSpeech.TextToSpeechClient {
-  return new textToSpeech.TextToSpeechClient();
+export function createTTSClient(): TextToSpeechClient {
+  return new TextToSpeechClient();
 }
 
 /**
  * Synthesize speech from text
  */
 export async function synthesizeSpeech(
-  client: textToSpeech.TextToSpeechClient,
+  client: TextToSpeechClient,
   text: string,
   config: Partial<SynthesizeConfig> = {}
 ): Promise<SynthesizeResult> {
@@ -86,10 +87,10 @@ export async function synthesizeSpeech(
     voice: {
       languageCode: mergedConfig.languageCode,
       name: mergedConfig.voiceName,
-      ssmlGender: mergedConfig.ssmlGender,
+      ssmlGender: mergedConfig.ssmlGender as unknown as google.cloud.texttospeech.v1.SsmlVoiceGender,
     },
     audioConfig: {
-      audioEncoding: mergedConfig.audioEncoding as any,
+      audioEncoding: mergedConfig.audioEncoding as unknown as google.cloud.texttospeech.v1.AudioEncoding,
       speakingRate: mergedConfig.speakingRate,
       pitch: mergedConfig.pitch,
       volumeGainDb: mergedConfig.volumeGainDb,
@@ -127,7 +128,7 @@ export async function synthesizeSpeech(
  * Synthesize speech from SSML (for advanced control)
  */
 export async function synthesizeSSML(
-  client: textToSpeech.TextToSpeechClient,
+  client: TextToSpeechClient,
   ssml: string,
   config: Partial<SynthesizeConfig> = {}
 ): Promise<SynthesizeResult> {
@@ -138,10 +139,10 @@ export async function synthesizeSSML(
     voice: {
       languageCode: mergedConfig.languageCode,
       name: mergedConfig.voiceName,
-      ssmlGender: mergedConfig.ssmlGender,
+      ssmlGender: mergedConfig.ssmlGender as unknown as google.cloud.texttospeech.v1.SsmlVoiceGender,
     },
     audioConfig: {
-      audioEncoding: mergedConfig.audioEncoding as any,
+      audioEncoding: mergedConfig.audioEncoding as unknown as google.cloud.texttospeech.v1.AudioEncoding,
       speakingRate: mergedConfig.speakingRate,
       pitch: mergedConfig.pitch,
       volumeGainDb: mergedConfig.volumeGainDb,
