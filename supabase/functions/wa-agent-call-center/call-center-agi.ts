@@ -20,6 +20,39 @@ import { logStructuredEvent } from '../_shared/observability.ts';
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import OpenAI from 'https://esm.sh/openai@4.26.0';
 
+// Constants for deep search configuration
+const DEEP_SEARCH_MAX_TOKENS = 1500;
+const DEEP_SEARCH_MAX_RESULTS = 5;
+const DEEP_SEARCH_MAX_INPUT_LENGTH = 200; // Maximum characters for user input
+
+/**
+ * Sanitize user input to prevent prompt injection
+ * Removes special characters and limits length
+ */
+function sanitizeSearchInput(input: string | undefined, maxLength: number = DEEP_SEARCH_MAX_INPUT_LENGTH): string {
+  if (!input) return '';
+  // Remove potential injection patterns and special characters
+  return input
+    .replace(/[<>{}[\]\\\/'"`;]/g, '') // Remove special characters
+    .replace(/\n|\r|\t/g, ' ') // Replace newlines/tabs with spaces
+    .replace(/\s+/g, ' ') // Collapse multiple spaces
+    .trim()
+    .slice(0, maxLength);
+}
+
+// Lazy-initialized OpenAI client singleton
+let openaiClient: OpenAI | null = null;
+function getOpenAIClient(): OpenAI {
+  if (!openaiClient) {
+    const apiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!apiKey) {
+      throw new Error('OPENAI_API_KEY environment variable is not set');
+    }
+    openaiClient = new OpenAI({ apiKey });
+  }
+  return openaiClient;
+}
+
 interface ToolExecutionResult {
   success: boolean;
   data?: any;
@@ -702,10 +735,19 @@ export class CallCenterAGI extends BaseAgent {
    */
   private async deepSearchJobs(args: any, supabase: SupabaseClient): Promise<ToolExecutionResult> {
     try {
+      // Sanitize user inputs to prevent prompt injection
+      const sanitizedQuery = sanitizeSearchInput(args.query);
+      const sanitizedLocation = sanitizeSearchInput(args.location);
+      const sanitizedCountry = (args.country === 'MT' || args.country === 'RW') ? args.country : 'RW';
+
+      if (!sanitizedQuery) {
+        return { success: false, error: 'Search query is required' };
+      }
+
       await logStructuredEvent('DEEP_SEARCH_JOBS_START', {
-        query: args.query,
-        location: args.location,
-        country: args.country,
+        query: sanitizedQuery,
+        location: sanitizedLocation,
+        country: sanitizedCountry,
       });
 
       // 1. Get target URLs from job_sources table
@@ -713,24 +755,24 @@ export class CallCenterAGI extends BaseAgent {
         .from('job_sources')
         .select('url, name')
         .eq('is_active', true)
-        .eq('country', args.country || 'RW')
+        .eq('country', sanitizedCountry)
         .order('priority', { ascending: false })
-        .limit(5);
+        .limit(DEEP_SEARCH_MAX_RESULTS);
 
       const targetSites = sources?.map((s: { url: string }) => s.url) || [];
 
-      // 2. Call OpenAI API with web search
-      const openai = new OpenAI({ apiKey: Deno.env.get('OPENAI_API_KEY') });
+      // 2. Call OpenAI API with web search using singleton client
+      const openai = getOpenAIClient();
       
-      const locationText = args.location || (args.country === 'MT' ? 'Malta' : 'Rwanda');
+      const locationText = sanitizedLocation || (sanitizedCountry === 'MT' ? 'Malta' : 'Rwanda');
       const sitesList = targetSites.length > 0 
         ? `Search these sites: ${targetSites.join(', ')}.`
         : '';
       
-      const query = `Find job listings for "${args.query}" in ${locationText}. 
+      const prompt = `Find job listings for "${sanitizedQuery}" in ${locationText}. 
                      ${sitesList}
                      Return for each job: title, company, location, salary range if available, key requirements, and URL to apply.
-                     Limit to 5 most relevant recent listings.
+                     Limit to ${DEEP_SEARCH_MAX_RESULTS} most relevant recent listings.
                      Format as a clear numbered list.`;
 
       const completion = await openai.chat.completions.create({
@@ -742,16 +784,16 @@ export class CallCenterAGI extends BaseAgent {
           },
           {
             role: 'user',
-            content: query
+            content: prompt
           }
         ],
-        max_tokens: 1500,
+        max_tokens: DEEP_SEARCH_MAX_TOKENS,
       });
 
       const results = completion.choices[0]?.message?.content || 'No results found';
 
       await logStructuredEvent('DEEP_SEARCH_JOBS_COMPLETE', {
-        query: args.query,
+        query: sanitizedQuery,
         resultsLength: results.length,
       });
 
@@ -778,10 +820,21 @@ export class CallCenterAGI extends BaseAgent {
    */
   private async deepSearchRealEstate(args: any, supabase: SupabaseClient): Promise<ToolExecutionResult> {
     try {
+      // Sanitize user inputs to prevent prompt injection
+      const sanitizedLocation = sanitizeSearchInput(args.location);
+      const sanitizedCountry = (args.country === 'MT' || args.country === 'RW') ? args.country : 'RW';
+      const sanitizedListingType = (args.listing_type === 'rent' || args.listing_type === 'buy') ? args.listing_type : 'rent';
+      const sanitizedBedrooms = typeof args.bedrooms === 'number' && args.bedrooms > 0 && args.bedrooms < 20 ? args.bedrooms : null;
+      const sanitizedMaxPrice = typeof args.max_price === 'number' && args.max_price > 0 ? args.max_price : null;
+
+      if (!sanitizedLocation) {
+        return { success: false, error: 'Location is required' };
+      }
+
       await logStructuredEvent('DEEP_SEARCH_REAL_ESTATE_START', {
-        location: args.location,
-        listing_type: args.listing_type,
-        country: args.country,
+        location: sanitizedLocation,
+        listing_type: sanitizedListingType,
+        country: sanitizedCountry,
       });
 
       // 1. Get target URLs from real_estate_sources table
@@ -789,29 +842,30 @@ export class CallCenterAGI extends BaseAgent {
         .from('real_estate_sources')
         .select('url, name')
         .eq('is_active', true)
-        .eq('country', args.country || 'RW')
+        .eq('country', sanitizedCountry)
         .order('priority', { ascending: false })
-        .limit(5);
+        .limit(DEEP_SEARCH_MAX_RESULTS);
 
       const targetSites = sources?.map((s: { url: string }) => s.url) || [];
 
-      // 2. Build search query
-      const priceFilter = args.max_price ? `under ${args.max_price} ${args.country === 'MT' ? 'EUR' : 'RWF'}` : '';
-      const bedroomFilter = args.bedrooms ? `${args.bedrooms} bedroom` : '';
-      const listingType = args.listing_type === 'rent' ? 'rental' : 'for sale';
+      // 2. Build search query with sanitized inputs
+      const currency = sanitizedCountry === 'MT' ? 'EUR' : 'RWF';
+      const priceFilter = sanitizedMaxPrice ? `under ${sanitizedMaxPrice} ${currency}` : '';
+      const bedroomFilter = sanitizedBedrooms ? `${sanitizedBedrooms} bedroom` : '';
+      const listingType = sanitizedListingType === 'rent' ? 'rental' : 'for sale';
       const sitesList = targetSites.length > 0 
         ? `Search these sites: ${targetSites.join(', ')}.`
         : '';
       
-      const query = `Find ${listingType} properties in ${args.location}.
+      const prompt = `Find ${listingType} properties in ${sanitizedLocation}.
                      ${bedroomFilter} ${priceFilter}.
                      ${sitesList}
                      Return for each property: title, price, bedrooms, bathrooms, location/address, key amenities, contact info if available, and listing URL.
-                     Limit to 5 most relevant listings.
+                     Limit to ${DEEP_SEARCH_MAX_RESULTS} most relevant listings.
                      Format as a clear numbered list.`;
 
-      // 3. Call OpenAI API with web search
-      const openai = new OpenAI({ apiKey: Deno.env.get('OPENAI_API_KEY') });
+      // 3. Call OpenAI API with web search using singleton client
+      const openai = getOpenAIClient();
       
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o',
@@ -822,16 +876,16 @@ export class CallCenterAGI extends BaseAgent {
           },
           {
             role: 'user',
-            content: query
+            content: prompt
           }
         ],
-        max_tokens: 1500,
+        max_tokens: DEEP_SEARCH_MAX_TOKENS,
       });
 
       const results = completion.choices[0]?.message?.content || 'No results found';
 
       await logStructuredEvent('DEEP_SEARCH_REAL_ESTATE_COMPLETE', {
-        location: args.location,
+        location: sanitizedLocation,
         resultsLength: results.length,
       });
 
