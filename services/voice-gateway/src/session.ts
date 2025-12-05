@@ -12,6 +12,8 @@ import WebSocket from 'ws';
 import { AGI_TOOL_DEFINITIONS, executeAGITool, formatToolResult, type ToolExecutionContext } from './agi-tools';
 import { config } from './config';
 import { logger } from './logger';
+import { AGIBridge, ToolCall } from './agi-bridge';
+import { REALTIME_FUNCTIONS, buildCallCenterPrompt } from './realtime-functions';
 
 export type CallState = 'ringing' | 'answered' | 'in_progress' | 'ending' | 'ended';
 
@@ -47,6 +49,7 @@ export class CallSession extends EventEmitter {
   private state: CallState = 'ringing';
   private supabase: SupabaseClient;
   private realtimeWs: WebSocket | null = null;
+  private agiBridge: AGIBridge;
   private transcriptBuffer: TranscriptChunk[] = [];
   private transcriptSeq: number = 0;
   private startedAt: Date | null = null;
@@ -66,6 +69,9 @@ export class CallSession extends EventEmitter {
       config.SUPABASE_SERVICE_ROLE_KEY,
       { auth: { persistSession: false } }
     );
+
+    // Initialize AGI Bridge for tool execution
+    this.agiBridge = new AGIBridge(this.callId);
   }
 
   /**
@@ -288,7 +294,39 @@ export class CallSession extends EventEmitter {
     this.realtimeWs.send(JSON.stringify({
       type: 'session.update',
       session: sessionConfig,
+    // Get user context for personalized prompt
+    const userContext = this.config.metadata?.userContext || {};
+    const userName = this.config.metadata?.userName as string | undefined;
+
+    this.realtimeWs.send(JSON.stringify({
+      type: 'session.update',
+      session: {
+        voice: this.config.voiceStyle || 'alloy',
+        instructions: this.config.systemPrompt || buildCallCenterPrompt({
+          language: this.config.language || 'en',
+          userName,
+          userContext,
+        }),
+        tools: REALTIME_FUNCTIONS, // Add all AGI tools
+        tool_choice: 'auto', // Let AI decide when to use tools
+        input_audio_format: 'g711_ulaw',
+        output_audio_format: 'g711_ulaw',
+        turn_detection: {
+          type: 'server_vad',
+          threshold: 0.5,
+          prefix_padding_ms: 300,
+          silence_duration_ms: 500,
+        },
+        temperature: 0.8,
+        max_response_output_tokens: 4096,
+      },
     }));
+
+    logger.info({
+      callId: this.callId,
+      toolsCount: REALTIME_FUNCTIONS.length,
+      msg: 'realtime.session_initialized_with_tools',
+    });
   }
 
   /**
@@ -425,6 +463,15 @@ export class CallSession extends EventEmitter {
         break;
       }
 
+      case 'response.function_call_arguments.done':
+        // Function/tool call from AI
+        this.handleToolCall({
+          id: event.call_id,
+          name: event.name,
+          arguments: JSON.parse(event.arguments),
+        });
+        break;
+
       case 'error':
         logger.error({ callId: this.callId, error: event.error, msg: 'realtime.error' });
         this.emit('error', event.error);
@@ -435,6 +482,43 @@ export class CallSession extends EventEmitter {
         if (eventType && !eventType.startsWith('rate_limits')) {
           logger.debug({ callId: this.callId, eventType, msg: 'realtime.unknown_event' });
         }
+    }
+  }
+
+  /**
+   * Handle tool call from Realtime API
+   */
+  private async handleToolCall(toolCall: ToolCall): Promise<void> {
+    logger.info({
+      callId: this.callId,
+      toolCallId: toolCall.id,
+      toolName: toolCall.name,
+      msg: 'realtime.tool_call_received',
+    });
+
+    // Execute tool via AGI Bridge
+    const result = await this.agiBridge.executeTool(toolCall);
+
+    // Send result back to Realtime API
+    if (this.realtimeWs?.readyState === WebSocket.OPEN) {
+      this.realtimeWs.send(JSON.stringify({
+        type: 'conversation.item.create',
+        item: {
+          type: 'function_call_output',
+          call_id: result.id,
+          output: JSON.stringify(result.error ? { error: result.error } : result.result),
+        },
+      }));
+
+      // Trigger AI to process the result
+      this.realtimeWs.send(JSON.stringify({ type: 'response.create' }));
+
+      logger.info({
+        callId: this.callId,
+        toolCallId: toolCall.id,
+        hasError: !!result.error,
+        msg: 'realtime.tool_result_sent',
+      });
     }
   }
 

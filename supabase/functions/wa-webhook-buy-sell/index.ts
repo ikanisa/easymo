@@ -217,6 +217,38 @@ serve(async (req: Request): Promise<Response> => {
 
       let responseText: string;
 
+      // Check for category selection (interactive list response)
+      if (message.type === "interactive" && message.interactive?.list_reply?.id) {
+        const selectedId = message.interactive.list_reply.id;
+        
+        // Handle category selection
+        if (selectedId.startsWith("category_")) {
+          const { handleCategorySelection } = await import("./handle_category.ts");
+          await handleCategorySelection(userPhone, selectedId);
+          
+          // Return empty to skip sending additional text
+          return respond({ success: true, message: "category_selection_sent" });
+        }
+        
+        // Handle "Chat with AI" option
+        if (selectedId === "chat_with_ai") {
+          responseText = "💬 *Chat Mode Activated*\n\nAsk me anything about products or services you're looking for!";
+        }
+      }
+      
+      // Handle location sharing
+      else if (message.type === "location" && message.location) {
+        const { handleLocationShared } = await import("./handle_category.ts");
+        await handleLocationShared(
+          userPhone,
+          message.location.latitude,
+          message.location.longitude
+        );
+        
+        // Return empty to skip sending additional text
+        return respond({ success: true, message: "location_processed" });
+      }
+      
       // Handle media uploads (photos, documents)
       if (message.type === "image" || message.type === "document") {
         if (AI_AGENT_ENABLED) {
@@ -234,8 +266,10 @@ serve(async (req: Request): Promise<Response> => {
       // ALL flows now go through the Hybrid Menu handler
       responseText = await handleWithMenu(userPhone, text, message, requestId);
 
-      // Send response
-      await sendText(userPhone, responseText);
+      // Send response only if there's actual text (empty means interactive already sent)
+      if (responseText && responseText.trim()) {
+        await sendText(userPhone, responseText);
+      }
 
       const duration = Date.now() - startTime;
       logMarketplaceEvent("MESSAGE_PROCESSED", {
@@ -425,6 +459,11 @@ async function handleWithAIAgent(
 
     return response.message;
   } catch (error) {
+    // If interactive list was sent, return empty to skip text message
+    if (error instanceof Error && error.message === "INTERACTIVE_LIST_SENT") {
+      return ""; // Interactive list already sent, don't send text
+    }
+    
     logMarketplaceEvent(
       "AI_AGENT_ERROR",
       {

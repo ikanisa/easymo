@@ -248,6 +248,7 @@ export function extractWhatsAppMessage(payload: unknown): {
   type: string;
   location?: { latitude: number; longitude: number; name?: string; address?: string };
   image?: { id?: string; link?: string; url?: string };
+  interactive?: { list_reply?: { id: string; title: string }; button_reply?: { id: string; title: string } };
   messageId?: string;
 } | null {
   try {
@@ -268,6 +269,7 @@ export function extractWhatsAppMessage(payload: unknown): {
           type: msg.type as string,
           location: msg.location as { latitude: number; longitude: number; name?: string; address?: string },
           image: msg.image as { id?: string; link?: string; url?: string },
+          interactive: msg.interactive as { list_reply?: { id: string; title: string }; button_reply?: { id: string; title: string } },
           messageId: msg.id as string,
         };
       }

@@ -2,6 +2,7 @@
  * Voice Gateway HTTP Server
  * 
  * Provides REST API for call management and WebSocket for audio streaming.
+ * Supports SIP trunk integration via Twilio Media Streams
  */
 
 import express, { Request, Response } from 'express';
@@ -12,6 +13,8 @@ import { WebSocket,WebSocketServer } from 'ws';
 import { config, validateConfig } from './config';
 import { logger } from './logger';
 import { CallSessionConfig,sessionManager } from './session';
+import { sessionManager, CallSessionConfig } from './session';
+import { SIPHandler } from './sip-handler';
 
 const app = express();
 app.use(express.json());
@@ -515,7 +518,62 @@ app.get('/sip/status', (req: Request, res: Response) => {
 
 const server = createServer(app);
 const wss = new WebSocketServer({ server, path: '/audio' });
+const sipHandler = new SIPHandler();
 
+// WebSocket for Twilio Media Streams (SIP trunk)
+const twilioWss = new WebSocketServer({ server, path: '/stream/:callSid' });
+
+twilioWss.on('connection', (ws: WebSocket, req) => {
+  // Extract parameters from URL or initial message
+  const url = new URL(req.url || '', `http://${req.headers.host}`);
+  const pathParts = url.pathname.split('/');
+  const callSid = pathParts[pathParts.length - 1];
+
+  logger.info({
+    callSid,
+    path: req.url,
+    msg: 'twilio_stream.connection',
+  });
+
+  // Wait for 'start' event to get full parameters
+  ws.once('message', (data: WebSocket.Data) => {
+    try {
+      const msg = JSON.parse(data.toString());
+      
+      if (msg.event === 'start') {
+        const params = msg.start.customParameters || {};
+        
+        sipHandler.handleIncomingCall({
+          callSid: params.callSid || callSid,
+          from: params.from || 'unknown',
+          to: params.to || 'unknown',
+          correlationId: params.correlationId,
+        }, ws);
+      }
+    } catch (error) {
+      logger.error({
+        callSid,
+        error: error instanceof Error ? error.message : String(error),
+        msg: 'twilio_stream.init_error',
+      });
+      ws.close();
+    }
+  });
+
+  ws.on('close', () => {
+    logger.info({ callSid, msg: 'twilio_stream.closed' });
+  });
+
+  ws.on('error', (error) => {
+    logger.error({
+      callSid,
+      error: error.message,
+      msg: 'twilio_stream.error',
+    });
+  });
+});
+
+// Regular WebSocket for audio streaming (existing functionality)
 wss.on('connection', (ws: WebSocket, req) => {
   // Extract call_id from URL path
   const url = new URL(req.url || '', `http://${req.headers.host}`);
