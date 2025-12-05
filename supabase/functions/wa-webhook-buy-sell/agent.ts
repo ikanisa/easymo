@@ -9,6 +9,7 @@
  * - Entity extraction (product, price, location, attributes)
  * - Conversation state management
  * - Proximity-based matching
+ * - Interactive category-based workflow with 9 business types
  *
  * @see docs/GROUND_RULES.md for observability requirements
  */
@@ -27,18 +28,38 @@ const AI_TEMPERATURE = parseFloat(Deno.env.get("MARKETPLACE_AI_TEMPERATURE") || 
 const AI_MAX_TOKENS = parseInt(Deno.env.get("MARKETPLACE_AI_MAX_TOKENS") || "1024", 10);
 
 // =====================================================
+// BUSINESS CATEGORIES
+// =====================================================
+
+export const BUSINESS_CATEGORIES = [
+  { code: "pharmacy", name: "Pharmacies", icon: "💊", description: "Pharmacies and medical supplies" },
+  { code: "salon", name: "Salons & Barbers", icon: "💇", description: "Hair salons, barber shops, beauty services" },
+  { code: "restaurant", name: "Restaurants", icon: "🍽️", description: "Restaurants, cafes, and food services" },
+  { code: "supermarket", name: "Supermarkets", icon: "🛒", description: "Supermarkets and grocery stores" },
+  { code: "hardware", name: "Hardware Stores", icon: "🔧", description: "Hardware stores and construction supplies" },
+  { code: "bank", name: "Banks & Finance", icon: "🏦", description: "Banks, microfinance, and mobile money" },
+  { code: "hospital", name: "Hospitals & Clinics", icon: "🏥", description: "Hospitals, clinics, and health centers" },
+  { code: "hotel", name: "Hotels & Lodging", icon: "🏨", description: "Hotels, guesthouses, and accommodations" },
+  { code: "transport", name: "Transport & Logistics", icon: "🚗", description: "Transport services, taxis, and delivery" },
+] as const;
+
+export const EMOJI_NUMBERS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"] as const;
+
+// =====================================================
 // TYPES
 // =====================================================
 
 export interface MarketplaceContext {
   phone: string;
-  flowType: "selling" | "buying" | "inquiry" | null;
+  flowType: "selling" | "buying" | "inquiry" | "category_selection" | "awaiting_location" | "show_results" | null;
   flowStep: string | null;
   collectedData: Record<string, unknown>;
   conversationHistory: Array<{ role: "user" | "assistant"; content: string }>;
   location?: { lat: number; lng: number };
   currentListingId?: string | null;
   currentIntentId?: string | null;
+  selectedCategory?: string;
+  searchResults?: Array<Record<string, unknown>>;
 }
 
 export interface AgentResponse {
@@ -127,6 +148,199 @@ OUTPUT FORMAT (JSON):
   "next_action": "ask_price|ask_location|ask_description|ask_photo|create_listing|search|connect|clarify|continue",
   "flow_complete": false
 }`;
+
+// =====================================================
+// INTERACTIVE WORKFLOW HELPERS
+// =====================================================
+
+/**
+ * Generate the category selection menu with emoji-numbered options
+ */
+export function generateCategoryMenu(): string {
+  let menu = "🛍️ *EasyMO Buy & Sell*\n\n";
+  menu += "What are you looking for? Choose a category:\n\n";
+  
+  BUSINESS_CATEGORIES.forEach((cat, i) => {
+    menu += `${EMOJI_NUMBERS[i]} ${cat.icon} ${cat.name}\n`;
+  });
+  
+  menu += "\n📍 _Reply with a number (1-9) or describe what you need_";
+  return menu;
+}
+
+/**
+ * Parse user input to get selected category number
+ * Supports: "1", "1️⃣", "one", "pharmacy", etc.
+ */
+export function parseCategorySelection(input: string): number | null {
+  const normalized = input.trim().toLowerCase();
+  
+  // Direct number match (1-9)
+  const numMatch = normalized.match(/^(\d)$/);
+  if (numMatch) {
+    const num = parseInt(numMatch[1], 10);
+    if (num >= 1 && num <= 9) return num;
+  }
+  
+  // Emoji number match (emojis don't have lowercase, so just check includes)
+  const emojiIndex = EMOJI_NUMBERS.findIndex(e => input.includes(e));
+  if (emojiIndex >= 0) return emojiIndex + 1;
+  
+  // Word number match
+  const wordNumbers: Record<string, number> = {
+    "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+    "six": 6, "seven": 7, "eight": 8, "nine": 9,
+    "first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5,
+    "sixth": 6, "seventh": 7, "eighth": 8, "ninth": 9,
+  };
+  for (const [word, num] of Object.entries(wordNumbers)) {
+    if (normalized.includes(word)) return num;
+  }
+  
+  // Category name/code match
+  for (let i = 0; i < BUSINESS_CATEGORIES.length; i++) {
+    const cat = BUSINESS_CATEGORIES[i];
+    if (
+      normalized.includes(cat.code.toLowerCase()) ||
+      normalized.includes(cat.name.toLowerCase()) ||
+      cat.description.toLowerCase().split(" ").some(w => normalized.includes(w) && w.length > 3)
+    ) {
+      return i + 1;
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Get category by number (1-indexed)
+ */
+export function getCategoryByNumber(num: number): typeof BUSINESS_CATEGORIES[number] | null {
+  if (num < 1 || num > BUSINESS_CATEGORIES.length) return null;
+  return BUSINESS_CATEGORIES[num - 1];
+}
+
+/**
+ * Generate location request message
+ */
+export function generateLocationRequest(category: typeof BUSINESS_CATEGORIES[number]): string {
+  return (
+    `📍 *Share Your Location*\n\n` +
+    `Looking for ${category.icon} ${category.name} near you!\n\n` +
+    `Please share your location:\n` +
+    `• Tap the 📎 attachment icon\n` +
+    `• Select 📍 Location\n` +
+    `• Choose "Send your current location"\n\n` +
+    `_Or type a location like "Kigali" or "Nyarugenge"_`
+  );
+}
+
+/**
+ * Format search results as emoji-numbered list
+ */
+export function formatBusinessResults(
+  businesses: Array<{
+    id?: string;
+    name: string;
+    category?: string;
+    city?: string;
+    address?: string;
+    phone?: string;
+    rating?: number;
+    distance_km?: number;
+  }>,
+  category: typeof BUSINESS_CATEGORIES[number],
+): string {
+  if (!businesses || businesses.length === 0) {
+    return (
+      `😔 *No ${category.name} Found Nearby*\n\n` +
+      `We couldn't find any ${category.name.toLowerCase()} in your area.\n\n` +
+      `Try:\n` +
+      `• Sharing a different location\n` +
+      `• Type *menu* to browse other categories`
+    );
+  }
+
+  let response = `${category.icon} *${category.name} Near You*\n\n`;
+  
+  const limit = Math.min(businesses.length, 9);
+  for (let i = 0; i < limit; i++) {
+    const biz = businesses[i];
+    const stars = biz.rating ? "⭐".repeat(Math.min(Math.round(biz.rating), 5)) : "";
+    const distance = biz.distance_km != null ? ` (${biz.distance_km.toFixed(1)}km)` : "";
+    
+    response += `${EMOJI_NUMBERS[i]} *${biz.name}*${distance}\n`;
+    if (biz.city || biz.address) {
+      response += `   📍 ${biz.city || biz.address}\n`;
+    }
+    if (stars) {
+      response += `   ${stars}\n`;
+    }
+    response += `\n`;
+  }
+  
+  response += `📞 _Reply with a number (1-${limit}) to get contact info_\n`;
+  response += `🔄 _Type *menu* to see more categories_`;
+  
+  return response;
+}
+
+/**
+ * Format single business details for contact
+ */
+export function formatBusinessContact(business: {
+  name: string;
+  category?: string;
+  city?: string;
+  address?: string;
+  phone?: string;
+  rating?: number;
+  distance_km?: number;
+  description?: string;
+}): string {
+  let response = `🏪 *${business.name}*\n\n`;
+  
+  if (business.category) {
+    response += `📂 ${business.category}\n`;
+  }
+  if (business.address || business.city) {
+    response += `📍 ${business.address || business.city}\n`;
+  }
+  if (business.distance_km != null) {
+    response += `🚶 ${business.distance_km.toFixed(1)}km away\n`;
+  }
+  if (business.rating) {
+    response += `⭐ ${business.rating.toFixed(1)} rating\n`;
+  }
+  if (business.description) {
+    response += `\n${business.description}\n`;
+  }
+  
+  // Minimum phone length to mask middle digits for privacy
+  const MIN_PHONE_LENGTH_FOR_MASKING = 8;
+  
+  if (business.phone) {
+    // Mask middle digits for privacy in display
+    const phoneDisplay = business.phone.length > MIN_PHONE_LENGTH_FOR_MASKING 
+      ? `${business.phone.slice(0, 4)}****${business.phone.slice(-3)}`
+      : business.phone;
+    response += `\n📞 Contact: ${phoneDisplay}\n`;
+    response += `\n_Reply *call* to get the full phone number_`;
+  } else {
+    response += `\n_Contact information not available_`;
+  }
+  
+  response += `\n\n🔄 _Type *menu* to search for more businesses_`;
+  
+  return response;
+}
+
+/**
+ * Parse result selection (1-9) from user input
+ */
+export function parseResultSelection(input: string): number | null {
+  return parseCategorySelection(input); // Same logic as category selection
+}
 
 // =====================================================
 // MARKETPLACE AGENT CLASS
