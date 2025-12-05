@@ -18,11 +18,6 @@ const SIP_PROVIDER = Deno.env.get('SIP_PROVIDER') || 'auto';
 
 // Provider configurations
 const PROVIDERS = {
-  twilio: {
-    name: 'Twilio',
-    authToken: Deno.env.get('TWILIO_AUTH_TOKEN'),
-    verifySignature: true,
-  },
   mtn: {
     name: 'MTN Rwanda',
     username: Deno.env.get('MTN_SIP_USERNAME'),
@@ -48,10 +43,6 @@ const PROVIDERS = {
  */
 function detectProvider(req: Request): string {
   const userAgent = req.headers.get('User-Agent') || '';
-  
-  if (userAgent.includes('TwilioProxy') || req.headers.get('X-Twilio-Signature')) {
-    return 'twilio';
-  }
   
   const origin = req.headers.get('Origin') || '';
   if (origin.includes('mtn.rw')) {
@@ -104,14 +95,6 @@ function extractCallDetails(params: any, provider: string): {
   status?: string;
 } {
   switch (provider) {
-    case 'twilio':
-      return {
-        callId: params.CallSid || crypto.randomUUID(),
-        from: params.From || params.Caller || 'unknown',
-        to: params.To || params.Called || 'unknown',
-        status: params.CallStatus,
-      };
-      
     case 'mtn':
       return {
         callId: params.call_id || params.session_id || crypto.randomUUID(),
@@ -146,15 +129,6 @@ function generateVoiceResponse(provider: string, callId: string, streamUrl: stri
   const wsUrl = streamUrl.replace('http', 'ws');
   
   switch (provider) {
-    case 'twilio':
-      return `<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say voice="alice" language="en-US">Welcome to EasyMO. Connecting you to our AI assistant.</Say>
-  <Connect>
-    <Stream url="${wsUrl}/stream/${callId}" />
-  </Connect>
-</Response>`;
-      
     case 'mtn':
       // MTN Rwanda typically uses similar XML format
       return `<?xml version="1.0" encoding="UTF-8"?>
