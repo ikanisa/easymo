@@ -18,6 +18,40 @@ import {
 import { GeminiProvider } from '../_shared/ai-agents/providers/gemini.ts';
 import { logStructuredEvent } from '../_shared/observability.ts';
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import OpenAI from 'https://esm.sh/openai@4.26.0';
+
+// Constants for deep search configuration
+const DEEP_SEARCH_MAX_TOKENS = 1500;
+const DEEP_SEARCH_MAX_RESULTS = 5;
+const DEEP_SEARCH_MAX_INPUT_LENGTH = 200; // Maximum characters for user input
+
+/**
+ * Sanitize user input to prevent prompt injection
+ * Removes special characters and limits length
+ */
+function sanitizeSearchInput(input: string | undefined, maxLength: number = DEEP_SEARCH_MAX_INPUT_LENGTH): string {
+  if (!input) return '';
+  // Remove potential injection patterns and special characters
+  return input
+    .replace(/[<>{}[\]\\\/'"`;]/g, '') // Remove special characters
+    .replace(/\n|\r|\t/g, ' ') // Replace newlines/tabs with spaces
+    .replace(/\s+/g, ' ') // Collapse multiple spaces
+    .trim()
+    .slice(0, maxLength);
+}
+
+// Lazy-initialized OpenAI client singleton
+let openaiClient: OpenAI | null = null;
+function getOpenAIClient(): OpenAI {
+  if (!openaiClient) {
+    const apiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!apiKey) {
+      throw new Error('OPENAI_API_KEY environment variable is not set');
+    }
+    openaiClient = new OpenAI({ apiKey });
+  }
+  return openaiClient;
+}
 import { 
   deepSearchJobs, 
   deepSearchRealEstate,
@@ -89,6 +123,7 @@ export class CallCenterAGI extends BaseAgent {
     tools.set('supabase_log_call_summary', this.logCallSummary.bind(this));
     tools.set('get_call_metadata', this.getCallMetadata.bind(this));
 
+    // Deep Search (real-time web search - no data stored)
     // Deep Search (OpenAI Deep Research API)
     tools.set('deep_search_jobs', this.deepSearchJobs.bind(this));
     tools.set('deep_search_real_estate', this.deepSearchRealEstate.bind(this));
@@ -225,6 +260,34 @@ export class CallCenterAGI extends BaseAgent {
             parameters: { type: 'object', description: 'Additional parameters' },
           },
           required: ['agent_id', 'intent'],
+        },
+      },
+      {
+        name: 'deep_search_jobs',
+        description: 'Search external job websites in real-time for job listings. Use this after checking our internal job_listings table when user wants more options.',
+        parameters: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: 'Job search query (e.g., "software developer", "driver", "accountant")' },
+            location: { type: 'string', description: 'Location (e.g., "Kigali", "Malta")' },
+            country: { type: 'string', enum: ['RW', 'MT'], description: 'Country code' },
+          },
+          required: ['query'],
+        },
+      },
+      {
+        name: 'deep_search_real_estate',
+        description: 'Search external property websites in real-time for rentals or properties for sale. Use this after checking our internal property_listings table when user wants more options.',
+        parameters: {
+          type: 'object',
+          properties: {
+            location: { type: 'string', description: 'Location (e.g., "Kimironko", "Kigali", "Sliema")' },
+            listing_type: { type: 'string', enum: ['rent', 'buy'], description: 'Rent or buy' },
+            bedrooms: { type: 'integer', description: 'Number of bedrooms' },
+            max_price: { type: 'number', description: 'Maximum price' },
+            country: { type: 'string', enum: ['RW', 'MT'], description: 'Country code' },
+          },
+          required: ['location', 'listing_type'],
         },
       },
     ];
@@ -668,6 +731,183 @@ export class CallCenterAGI extends BaseAgent {
     };
   }
 
+  // ================================================================
+  // DEEP SEARCH TOOLS (Real-time web search - no data stored)
+  // ================================================================
+
+  /**
+   * Search external job websites in real-time using OpenAI web search
+   * Results are NOT stored in the database - they are live results
+   */
+  private async deepSearchJobs(args: any, supabase: SupabaseClient): Promise<ToolExecutionResult> {
+    try {
+      // Sanitize user inputs to prevent prompt injection
+      const sanitizedQuery = sanitizeSearchInput(args.query);
+      const sanitizedLocation = sanitizeSearchInput(args.location);
+      const sanitizedCountry = (args.country === 'MT' || args.country === 'RW') ? args.country : 'RW';
+
+      if (!sanitizedQuery) {
+        return { success: false, error: 'Search query is required' };
+      }
+
+      await logStructuredEvent('DEEP_SEARCH_JOBS_START', {
+        query: sanitizedQuery,
+        location: sanitizedLocation,
+        country: sanitizedCountry,
+      });
+
+      // 1. Get target URLs from job_sources table
+      const { data: sources } = await supabase
+        .from('job_sources')
+        .select('url, name')
+        .eq('is_active', true)
+        .eq('country', sanitizedCountry)
+        .order('priority', { ascending: false })
+        .limit(DEEP_SEARCH_MAX_RESULTS);
+
+      const targetSites = sources?.map((s: { url: string }) => s.url) || [];
+
+      // 2. Call OpenAI API with web search using singleton client
+      const openai = getOpenAIClient();
+      
+      const locationText = sanitizedLocation || (sanitizedCountry === 'MT' ? 'Malta' : 'Rwanda');
+      const sitesList = targetSites.length > 0 
+        ? `Search these sites: ${targetSites.join(', ')}.`
+        : '';
+      
+      const prompt = `Find job listings for "${sanitizedQuery}" in ${locationText}. 
+                     ${sitesList}
+                     Return for each job: title, company, location, salary range if available, key requirements, and URL to apply.
+                     Limit to ${DEEP_SEARCH_MAX_RESULTS} most relevant recent listings.
+                     Format as a clear numbered list.`;
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a job search assistant. Search the web for current job listings and provide accurate, helpful results. Include direct URLs when available.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_tokens: DEEP_SEARCH_MAX_TOKENS,
+      });
+
+      const results = completion.choices[0]?.message?.content || 'No results found';
+
+      await logStructuredEvent('DEEP_SEARCH_JOBS_COMPLETE', {
+        query: sanitizedQuery,
+        resultsLength: results.length,
+      });
+
+      // 3. Return results (NOT stored in DB)
+      return {
+        success: true,
+        data: {
+          jobs: results,
+          sources_searched: targetSites,
+          note: 'These are live results from external websites, not stored in our database.',
+        },
+      };
+    } catch (error) {
+      await logStructuredEvent('DEEP_SEARCH_JOBS_ERROR', {
+        error: error instanceof Error ? error.message : String(error),
+      }, 'error');
+      return { success: false, error: error instanceof Error ? error.message : 'Deep search failed' };
+    }
+  }
+
+  /**
+   * Search external property websites in real-time using OpenAI web search
+   * Results are NOT stored in the database - they are live results
+   */
+  private async deepSearchRealEstate(args: any, supabase: SupabaseClient): Promise<ToolExecutionResult> {
+    try {
+      // Sanitize user inputs to prevent prompt injection
+      const sanitizedLocation = sanitizeSearchInput(args.location);
+      const sanitizedCountry = (args.country === 'MT' || args.country === 'RW') ? args.country : 'RW';
+      const sanitizedListingType = (args.listing_type === 'rent' || args.listing_type === 'buy') ? args.listing_type : 'rent';
+      const sanitizedBedrooms = typeof args.bedrooms === 'number' && args.bedrooms > 0 && args.bedrooms < 20 ? args.bedrooms : null;
+      const sanitizedMaxPrice = typeof args.max_price === 'number' && args.max_price > 0 ? args.max_price : null;
+
+      if (!sanitizedLocation) {
+        return { success: false, error: 'Location is required' };
+      }
+
+      await logStructuredEvent('DEEP_SEARCH_REAL_ESTATE_START', {
+        location: sanitizedLocation,
+        listing_type: sanitizedListingType,
+        country: sanitizedCountry,
+      });
+
+      // 1. Get target URLs from real_estate_sources table
+      const { data: sources } = await supabase
+        .from('real_estate_sources')
+        .select('url, name')
+        .eq('is_active', true)
+        .eq('country', sanitizedCountry)
+        .order('priority', { ascending: false })
+        .limit(DEEP_SEARCH_MAX_RESULTS);
+
+      const targetSites = sources?.map((s: { url: string }) => s.url) || [];
+
+      // 2. Build search query with sanitized inputs
+      const currency = sanitizedCountry === 'MT' ? 'EUR' : 'RWF';
+      const priceFilter = sanitizedMaxPrice ? `under ${sanitizedMaxPrice} ${currency}` : '';
+      const bedroomFilter = sanitizedBedrooms ? `${sanitizedBedrooms} bedroom` : '';
+      const listingType = sanitizedListingType === 'rent' ? 'rental' : 'for sale';
+      const sitesList = targetSites.length > 0 
+        ? `Search these sites: ${targetSites.join(', ')}.`
+        : '';
+      
+      const prompt = `Find ${listingType} properties in ${sanitizedLocation}.
+                     ${bedroomFilter} ${priceFilter}.
+                     ${sitesList}
+                     Return for each property: title, price, bedrooms, bathrooms, location/address, key amenities, contact info if available, and listing URL.
+                     Limit to ${DEEP_SEARCH_MAX_RESULTS} most relevant listings.
+                     Format as a clear numbered list.`;
+
+      // 3. Call OpenAI API with web search using singleton client
+      const openai = getOpenAIClient();
+      
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a real estate search assistant. Search the web for current property listings and provide accurate, helpful results. Include direct URLs and contact information when available.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_tokens: DEEP_SEARCH_MAX_TOKENS,
+      });
+
+      const results = completion.choices[0]?.message?.content || 'No results found';
+
+      await logStructuredEvent('DEEP_SEARCH_REAL_ESTATE_COMPLETE', {
+        location: sanitizedLocation,
+        resultsLength: results.length,
+      });
+
+      return {
+        success: true,
+        data: {
+          properties: results,
+          sources_searched: targetSites,
+          note: 'These are live results from external websites.',
+        },
+      };
+    } catch (error) {
+      await logStructuredEvent('DEEP_SEARCH_REAL_ESTATE_ERROR', {
+        error: error instanceof Error ? error.message : String(error),
+      }, 'error');
+      return { success: false, error: error instanceof Error ? error.message : 'Deep search failed' };
   /**
    * Deep Search Jobs - Search internal DB + web via OpenAI Deep Research API
    */
