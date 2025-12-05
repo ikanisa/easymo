@@ -99,6 +99,17 @@ export class AGIBridge {
    * Call an AGI tool via the Call Center AGI function
    */
   private async callAGITool(toolName: string, args: Record<string, any>): Promise<any> {
+    // Handle request recording tools locally (don't need AGI function)
+    if (toolName === 'create_property_request') {
+      return await this.createPropertyRequest(args);
+    }
+    if (toolName === 'create_ride_request') {
+      return await this.createRideRequest(args);
+    }
+    if (toolName === 'create_inquiry') {
+      return await this.createInquiry(args);
+    }
+
     // Map Realtime tool names to AGI tool names
     const toolMap: Record<string, string> = {
       'get_profile': 'get_or_create_profile',
@@ -133,6 +144,110 @@ export class AGIBridge {
     }
 
     return await response.json();
+  }
+
+  /**
+   * Record a property request for the property team to handle
+   */
+  private async createPropertyRequest(args: Record<string, any>): Promise<any> {
+    const { data, error } = await this.supabase
+      .from('property_requests')
+      .insert({
+        request_type: args.request_type,
+        property_type: args.property_type,
+        location: args.location,
+        country: args.country,
+        bedrooms: args.bedrooms,
+        budget_min: args.budget_min,
+        budget_max: args.budget_max,
+        currency: args.currency,
+        move_in_date: args.move_in_date,
+        furnished: args.furnished,
+        special_requirements: args.special_requirements,
+        contact_phone: args.contact_phone,
+        contact_email: args.contact_email,
+        status: 'pending',
+        source: 'voice_call',
+        call_id: this.callId,
+        user_id: this.userId,
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return {
+      success: true,
+      request_id: data.id,
+      message: `Property request recorded. ID: ${data.id}. The property team will contact you within 2 hours.`,
+    };
+  }
+
+  /**
+   * Record a ride request
+   */
+  private async createRideRequest(args: Record<string, any>): Promise<any> {
+    const { data, error } = await this.supabase
+      .from('ride_requests')
+      .insert({
+        pickup_location: args.pickup_location,
+        dropoff_location: args.dropoff_location,
+        vehicle_type: args.vehicle_type,
+        passengers: args.passengers,
+        luggage: args.luggage,
+        schedule_time: args.schedule_time,
+        flight_time: args.flight_time,
+        special_requirements: args.special_requirements,
+        contact_phone: args.contact_phone,
+        status: 'pending',
+        source: 'voice_call',
+        call_id: this.callId,
+        user_id: this.userId,
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return {
+      success: true,
+      request_id: data.id,
+      message: `Ride request recorded. ID: ${data.id}. A driver will be assigned shortly.`,
+    };
+  }
+
+  /**
+   * Record a general inquiry
+   */
+  private async createInquiry(args: Record<string, any>): Promise<any> {
+    const { data, error } = await this.supabase
+      .from('inquiries')
+      .insert({
+        inquiry_type: args.inquiry_type,
+        description: args.description,
+        urgency: args.urgency,
+        preferred_contact_method: args.preferred_contact_method,
+        contact_phone: args.contact_phone,
+        contact_email: args.contact_email,
+        best_time_to_call: args.best_time_to_call,
+        status: 'pending',
+        source: 'voice_call',
+        call_id: this.callId,
+        user_id: this.userId,
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return {
+      success: true,
+      inquiry_id: data.id,
+      message: `Inquiry recorded. ID: ${data.id}. Our team will follow up with you soon.`,
+    };
   }
 
   /**

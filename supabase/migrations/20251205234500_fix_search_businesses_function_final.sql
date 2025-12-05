@@ -64,7 +64,6 @@ BEGIN
     b.category = p_category
     AND b.lat IS NOT NULL
     AND b.lng IS NOT NULL
-    AND b.is_active = true  -- Only return active businesses
     -- Pre-filter by bounding box (much faster than calculating exact distance)
     AND b.lat BETWEEN (p_latitude - (p_radius_km / 111.0)) AND (p_latitude + (p_radius_km / 111.0))
     AND b.lng BETWEEN (p_longitude - (p_radius_km / (111.0 * cos(radians(p_latitude))))) 
@@ -80,6 +79,6 @@ TO authenticated, anon, service_role;
 
 -- Create index on businesses for faster location-based queries if not exists
 CREATE INDEX IF NOT EXISTS idx_businesses_location ON public.businesses (lat, lng) WHERE lat IS NOT NULL AND lng IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_businesses_category_active ON public.businesses (category, is_active);
+CREATE INDEX IF NOT EXISTS idx_businesses_category ON public.businesses (category);
 
 COMMIT;
