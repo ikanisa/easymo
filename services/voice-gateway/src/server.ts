@@ -343,15 +343,63 @@ app.post('/sip/incoming', async (req: Request, res: Response) => {
  * 
  * OpenAI SIP trunk specific webhook.
  * OpenAI Realtime API can send SIP INVITE events here.
+ * Sets the provider to 'openai' and delegates to the generic handler.
  */
 app.post('/sip/openai/incoming', async (req: Request, res: Response) => {
-  // Forward to generic handler with provider set
   req.body.provider = 'openai';
-  return app._router.handle(
-    { ...req, url: '/sip/incoming', method: 'POST' },
-    res,
-    () => {}
-  );
+  // Re-emit the request to the generic handler
+  const {
+    call_id,
+    from,
+    to,
+    headers = {},
+  } = req.body;
+
+  if (!call_id || !from || !to) {
+    return res.status(400).json({ error: 'call_id, from, and to are required' });
+  }
+
+  const callInfo: IncomingCallInfo = {
+    callId: call_id,
+    from,
+    to,
+    provider: 'openai',
+    headers,
+    timestamp: new Date(),
+  };
+
+  try {
+    const routeResult = await routeIncomingCall(callInfo);
+
+    if (!routeResult.accept) {
+      return res.status(403).json({ action: 'reject', reason: routeResult.rejectReason });
+    }
+
+    const internalCallId = uuidv4();
+    const session = await sessionManager.createSession({
+      callId: internalCallId,
+      providerCallId: call_id,
+      fromNumber: from,
+      toNumber: to,
+      agentId: routeResult.agentId || 'call_center',
+      direction: 'inbound',
+      language: routeResult.language,
+      voiceStyle: routeResult.voiceStyle,
+      systemPrompt: routeResult.systemPrompt,
+      metadata: { ...routeResult.metadata, sipProvider: 'openai' },
+    });
+    await session.connectRealtime();
+
+    res.status(200).json({
+      action: 'accept',
+      call_id: internalCallId,
+      websocket_url: `/audio?call_id=${internalCallId}`,
+      agent_id: routeResult.agentId,
+    });
+  } catch (error) {
+    logger.error({ error, msg: 'sip.openai_incoming_error' });
+    res.status(500).json({ error: 'Failed to process incoming call' });
+  }
 });
 
 /**
@@ -359,15 +407,62 @@ app.post('/sip/openai/incoming', async (req: Request, res: Response) => {
  * 
  * MTN Rwanda SIP trunk specific webhook.
  * MTN SBC sends incoming call notifications here.
+ * Sets the provider to 'mtn' and delegates to the generic handler.
  */
 app.post('/sip/mtn/incoming', async (req: Request, res: Response) => {
-  // Forward to generic handler with provider set
   req.body.provider = 'mtn';
-  return app._router.handle(
-    { ...req, url: '/sip/incoming', method: 'POST' },
-    res,
-    () => {}
-  );
+  const {
+    call_id,
+    from,
+    to,
+    headers = {},
+  } = req.body;
+
+  if (!call_id || !from || !to) {
+    return res.status(400).json({ error: 'call_id, from, and to are required' });
+  }
+
+  const callInfo: IncomingCallInfo = {
+    callId: call_id,
+    from,
+    to,
+    provider: 'mtn',
+    headers,
+    timestamp: new Date(),
+  };
+
+  try {
+    const routeResult = await routeIncomingCall(callInfo);
+
+    if (!routeResult.accept) {
+      return res.status(403).json({ action: 'reject', reason: routeResult.rejectReason });
+    }
+
+    const internalCallId = uuidv4();
+    const session = await sessionManager.createSession({
+      callId: internalCallId,
+      providerCallId: call_id,
+      fromNumber: from,
+      toNumber: to,
+      agentId: routeResult.agentId || 'call_center',
+      direction: 'inbound',
+      language: routeResult.language,
+      voiceStyle: routeResult.voiceStyle,
+      systemPrompt: routeResult.systemPrompt,
+      metadata: { ...routeResult.metadata, sipProvider: 'mtn' },
+    });
+    await session.connectRealtime();
+
+    res.status(200).json({
+      action: 'accept',
+      call_id: internalCallId,
+      websocket_url: `/audio?call_id=${internalCallId}`,
+      agent_id: routeResult.agentId,
+    });
+  } catch (error) {
+    logger.error({ error, msg: 'sip.mtn_incoming_error' });
+    res.status(500).json({ error: 'Failed to process incoming call' });
+  }
 });
 
 /**

@@ -280,19 +280,19 @@ function detectLanguageFromCaller(phoneNumber: string): string {
  * Normalize phone number to E.164 format
  */
 function normalizePhoneNumber(phone: string): string {
+  // Check if already has + prefix (before stripping)
+  const hasPlus = phone.startsWith('+');
+  
   // Remove all non-digit characters
   let digits = phone.replace(/\D/g, '');
   
-  // Add + prefix if missing
-  if (!phone.startsWith('+')) {
+  // If doesn't have + prefix, add country code if needed
+  if (!hasPlus) {
     // Assume Rwanda country code if 10 digits starting with 07
     if (digits.length === 10 && digits.startsWith('07')) {
       digits = '250' + digits.substring(1);
     }
-    // Assume international format if starts with country code
-    else if (digits.length > 10) {
-      // Already has country code
-    }
+    // Otherwise assume international format if starts with country code
   }
   
   return '+' + digits;

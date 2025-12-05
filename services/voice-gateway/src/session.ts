@@ -366,7 +366,7 @@ export class CallSession extends EventEmitter {
   }
 
   private handleRealtimeEvent(event: Record<string, unknown>): void {
-    const eventType = event.type as string;
+    const eventType = typeof event.type === 'string' ? event.type : '';
     
     switch (eventType) {
       case 'session.created':
