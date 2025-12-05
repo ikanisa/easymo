@@ -21,13 +21,13 @@ import type {
   AiAgentKnowledgeBaseRow,
   AiAgentPersona,
   AiAgentPersonaRow,
+  AiAgentRow,
   AiAgentSystemInstruction,
   AiAgentSystemInstructionRow,
   AiAgentTask,
   AiAgentTaskRow,
   AiAgentTool,
   AiAgentToolRow,
-  AiAgentRow,
   ResolvedAgentConfig,
 } from './agent-config.types';
 
@@ -170,7 +170,7 @@ export class AgentConfigLoader {
     const cached = this.cache.get(cacheKey);
     
     if (cached && Date.now() < cached.expiresAt) {
-      console.log(JSON.stringify({
+      console.warn(JSON.stringify({
         event: 'AGENT_CONFIG_CACHE_HIT',
         agentIdentifier,
         loadTime: Date.now() - startTime,
@@ -188,7 +188,7 @@ export class AgentConfigLoader {
         expiresAt: Date.now() + this.cacheTTL,
       });
 
-      console.log(JSON.stringify({
+      console.warn(JSON.stringify({
         event: 'AGENT_CONFIG_LOADED',
         agentIdentifier,
         loadTime: Date.now() - startTime,
@@ -280,7 +280,7 @@ export class AgentConfigLoader {
     const cacheKey = agentIdentifier.toLowerCase();
     this.cache.delete(cacheKey);
     
-    console.log(JSON.stringify({
+    console.warn(JSON.stringify({
       event: 'AGENT_CONFIG_CACHE_INVALIDATED',
       agentIdentifier,
     }));
@@ -292,7 +292,7 @@ export class AgentConfigLoader {
   clearCache(): void {
     this.cache.clear();
     
-    console.log(JSON.stringify({
+    console.warn(JSON.stringify({
       event: 'AGENT_CONFIG_CACHE_CLEARED',
     }));
   }
@@ -465,7 +465,7 @@ export function createAgentConfigLoader(
   }
 
   const url = supabaseOrOptions?.supabaseUrl ?? process.env.SUPABASE_URL ?? '';
-  const key = supabaseOrOptions?.supabaseKey ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY ?? '';
+  const key = supabaseOrOptions?.supabaseKey ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
 
   if (!url || !key) {
     throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables are required');

@@ -929,18 +929,47 @@ async function momoChargeTool(
     return { success: false, error: 'Phone and amount are required' };
   }
 
-  // Store transaction (MoMo API integration would be here)
-  await supabase.from('payment_transactions').insert({
+  // Check if MoMo API is configured
+  const momoApiKey = process.env.MOMO_API_KEY;
+  const isApiConfigured = !!momoApiKey;
+
+  // Store transaction with appropriate status based on API availability
+  const { error: insertError } = await supabase.from('payment_transactions').insert({
     user_id: context.userId,
     amount,
     currency: 'RWF',
     phone_number: phone,
     reference,
-    status: 'pending_manual',
+    status: isApiConfigured ? 'pending' : 'pending_manual',
     payment_method: 'momo',
-    metadata: { initiated_by_agent: context.agentSlug },
+    metadata: { 
+      initiated_by_agent: context.agentSlug,
+      api_configured: isApiConfigured,
+      requires_manual_processing: !isApiConfigured,
+    },
   });
 
+  if (insertError) {
+    console.error('Failed to create payment transaction:', insertError.message);
+    return {
+      success: false,
+      error: 'Failed to initiate payment. Please try again.',
+    };
+  }
+
+  if (!isApiConfigured) {
+    return {
+      success: true,
+      phone,
+      amount,
+      reference,
+      status: 'pending_manual',
+      message: 'Payment request recorded. Our team will process it and contact you shortly.',
+      note: 'Automated payments are temporarily unavailable.',
+    };
+  }
+
+  // TODO: Actual MoMo API integration would go here
   return {
     success: true,
     phone,
@@ -1187,7 +1216,7 @@ async function translateTextTool(
       translated_text: data.data?.translations?.[0]?.translatedText || text,
       target_language: targetLanguage,
     };
-  } catch (err) {
+  } catch {
     return { original_text: text, translated_text: text, error: 'Translation failed' };
   }
 }
@@ -1196,12 +1225,29 @@ async function translateTextTool(
 // UTILITY FUNCTIONS
 // =====================================================================
 
+/**
+ * Sanitize search query for use in LIKE patterns.
+ * Note: Supabase client uses parameterized queries internally,
+ * this sanitization handles LIKE special characters.
+ */
 function sanitizeSearchQuery(query: string): string {
+  if (!query || typeof query !== 'string') {
+    return '';
+  }
+  
   return query
+    // Remove null bytes
+    .replace(/\0/g, '')
+    // Escape backslashes first
     .replace(/\\/g, '\\\\')
+    // Escape LIKE wildcards
     .replace(/%/g, '\\%')
     .replace(/_/g, '\\_')
+    // Escape single quotes
     .replace(/'/g, "''")
+    // Remove semicolons to prevent statement termination
+    .replace(/;/g, '')
+    // Limit length to prevent DoS
     .slice(0, 100);
 }
 
@@ -1210,6 +1256,6 @@ function sanitizeSearchQuery(query: string): string {
 // =====================================================================
 
 export {
-  TOOL_IMPLEMENTATIONS,
   sanitizeSearchQuery,
+  TOOL_IMPLEMENTATIONS,
 };

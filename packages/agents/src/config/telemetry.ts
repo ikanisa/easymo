@@ -62,7 +62,7 @@ export async function logAgentMetric(
         error: error.message,
       }));
     } else {
-      console.log(JSON.stringify({
+      console.warn(JSON.stringify({
         event: 'AGENT_METRIC_LOGGED',
         agentId: metric.agentId,
         success: metric.success,
@@ -163,7 +163,7 @@ export async function logMatchEvent(
         error: error.message,
       }));
     } else {
-      console.log(JSON.stringify({
+      console.warn(JSON.stringify({
         event: 'MATCH_EVENT_LOGGED',
         matchType: event.matchType,
         agentId: event.agentId,
@@ -322,7 +322,7 @@ export async function logCacheMetric(
       // Non-critical, just warn
       console.warn('Cache metric log failed:', error.message);
     }
-  } catch (err) {
+  } catch {
     // Silent fail for cache metrics
   }
 }

@@ -37,45 +37,45 @@
 
 // Types
 export type {
-  // Database row types
-  AiAgentRow,
-  AiAgentPersonaRow,
-  AiAgentSystemInstructionRow,
-  AiAgentToolRow,
-  AiAgentTaskRow,
-  AiAgentKnowledgeBaseRow,
-  AiAgentIntentRow,
-  AiAgentMatchEventRow,
-  AiAgentMetricRow,
-  AiAgentToolExecutionRow,
-  AiAgentInstructionExperimentRow,
-  AiAgentExperimentResultRow,
-  // Application types
-  AiAgent,
-  AiAgentPersona,
-  AiAgentSystemInstruction,
-  AiAgentTool,
-  AiAgentTask,
-  AiAgentKnowledgeBase,
-  AiAgentIntent,
-  // Config types
-  ResolvedAgentConfig,
   // Input types
   AgentMetricInput,
-  ToolExecutionInput,
-  MatchEventInput,
+  AgentSlug,
+  // Application types
+  AiAgent,
+  AiAgentExperimentResultRow,
+  AiAgentInstructionExperimentRow,
+  AiAgentIntent,
+  AiAgentIntentRow,
+  AiAgentKnowledgeBase,
+  AiAgentKnowledgeBaseRow,
+  AiAgentMatchEventRow,
+  AiAgentMetricRow,
+  AiAgentPersona,
+  AiAgentPersonaRow,
+  // Database row types
+  AiAgentRow,
+  AiAgentSystemInstruction,
+  AiAgentSystemInstructionRow,
+  AiAgentTask,
+  AiAgentTaskRow,
+  AiAgentTool,
+  AiAgentToolExecutionRow,
+  AiAgentToolRow,
+  Channel,
   ExperimentResultInput,
+  ExperimentStatus,
+  IntentStatus,
+  MatchEventInput,
+  MatchType,
+  // Config types
+  ResolvedAgentConfig,
   // Runtime types
   RuntimeTool,
   RuntimeToolContext,
+  StorageType,
+  ToolExecutionInput,
   // Enums
   ToolType,
-  StorageType,
-  Channel,
-  IntentStatus,
-  MatchType,
-  ExperimentStatus,
-  AgentSlug,
 } from './agent-config.types';
 
 // Config Loader
@@ -88,21 +88,21 @@ export {
 // Tool Registry Factory
 export {
   buildRuntimeTools,
-  TOOL_IMPLEMENTATIONS,
   sanitizeSearchQuery,
+  TOOL_IMPLEMENTATIONS,
 } from './tool-registry-factory';
 
 // Telemetry
 export {
-  logAgentMetric,
-  logToolExecution,
-  logMatchEvent,
-  logExperimentResult,
-  logToolExecutionsBatch,
-  logMatchEventsBatch,
-  logCacheMetric,
-  getToolExecutionStats,
   getMatchEventStats,
+  getToolExecutionStats,
+  logAgentMetric,
+  logCacheMetric,
+  logExperimentResult,
+  logMatchEvent,
+  logMatchEventsBatch,
+  logToolExecution,
+  logToolExecutionsBatch,
 } from './telemetry';
 
 // Experiment Support
@@ -111,30 +111,30 @@ export type {
   ExperimentVariant,
 } from './experiment-support';
 export {
-  getActiveExperiment,
-  listExperiments,
   assignVariant,
-  getInstructionForVariant,
+  completeExperiment,
+  createExperiment,
+  getActiveExperiment,
   getExperimentAwareInstruction,
+  getExperimentResults,
+  getInstructionForVariant,
+  listExperiments,
   logExperimentAssignment,
   logExperimentOutcome,
-  createExperiment,
-  startExperiment,
   pauseExperiment,
-  completeExperiment,
-  getExperimentResults,
+  startExperiment,
 } from './experiment-support';
 
 // Service Catalog (existing)
-export {
-  EASYMO_VERTICALS,
-  SERVICE_CATALOG,
-  isValidVertical,
-  getServiceDefinition,
-  getAvailableServices,
-  detectVerticalFromQuery,
-  OUT_OF_SCOPE_PATTERNS,
-  isOutOfScope,
-  getOutOfScopeMessage,
-} from './service-catalog';
 export type { EasyMOVertical, ServiceDefinition } from './service-catalog';
+export {
+  detectVerticalFromQuery,
+  EASYMO_VERTICALS,
+  getAvailableServices,
+  getOutOfScopeMessage,
+  getServiceDefinition,
+  isOutOfScope,
+  isValidVertical,
+  OUT_OF_SCOPE_PATTERNS,
+  SERVICE_CATALOG,
+} from './service-catalog';

@@ -21,7 +21,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type {
-  AiAgentInstructionExperimentRow,
   AiAgentSystemInstruction,
   AiAgentSystemInstructionRow,
   ExperimentStatus,
@@ -152,7 +151,7 @@ function simpleHash(str: string): number {
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
+    hash = hash | 0; // Convert to 32-bit integer
   }
   return Math.abs(hash);
 }
@@ -237,7 +236,7 @@ export async function logExperimentAssignment(
 ): Promise<void> {
   try {
     // We only log the assignment, not the result yet
-    console.log(JSON.stringify({
+    console.warn(JSON.stringify({
       event: 'EXPERIMENT_ASSIGNMENT',
       experimentId,
       userId: userId.slice(0, 8) + '...', // Truncate for privacy
@@ -450,7 +449,13 @@ function createEmptyStats(): VariantStats {
   };
 }
 
-function calculateStats(data: any[]): VariantStats {
+function calculateStats(data: Array<{
+  success?: boolean;
+  user_satisfaction_score?: number;
+  response_time_ms?: number;
+  tools_executed?: number;
+  tools_succeeded?: number;
+}>): VariantStats {
   if (data.length === 0) {
     return createEmptyStats();
   }
