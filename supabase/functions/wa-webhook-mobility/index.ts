@@ -14,6 +14,7 @@ import {
   handleUseCachedLocation,
   startNearbySavedLocationPicker,
   handleNearbySavedLocationSelection,
+  handleRecentSearchSelection,
   isVehicleOption,
 } from "./handlers/nearby.ts";
 import {
@@ -317,6 +318,10 @@ serve(async (req: Request): Promise<Response> => {
         } else if (id === IDS.LOCATION_SAVED_LIST && state?.key === "mobility_nearby_location") {
           handled = await startNearbySavedLocationPicker(ctx, state.data as any);
         } else if (id.startsWith("FAV::") && state?.key === "location_saved_picker" && state.data?.source === "nearby") {
+          handled = await handleNearbySavedLocationSelection(ctx, state.data as any, id);
+        } else if ((id.startsWith("RECENT_SEARCH::") || id === "SHARE_NEW_LOCATION") && state?.key === "mobility_nearby_select") {
+          handled = await handleRecentSearchSelection(ctx, id);
+        } else if (id === "USE_CURRENT_LOCATION" && state?.key === "location_saved_picker") {
           handled = await handleNearbySavedLocationSelection(ctx, state.data as any, id);
         }
         
