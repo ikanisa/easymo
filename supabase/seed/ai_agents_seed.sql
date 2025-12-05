@@ -1,8 +1,19 @@
 -- =====================================================================
 -- AI AGENT ECOSYSTEM - SEED DATA (OPTIONAL)
 -- =====================================================================
--- This file provides initial seed data for the 6 AI agents with minimal
+-- This file provides initial seed data for the 9 AI agents with minimal
 -- configurations. Load this after the schema migration.
+-- 
+-- OFFICIAL AGENTS (9 production agents):
+-- 1. waiter - Restaurant/Bar ordering
+-- 2. farmer - Agricultural support
+-- 3. buy_and_sell - Unified commerce & business (merged: marketplace + business_broker)
+-- 4. real_estate - Property rentals
+-- 5. jobs - Employment search
+-- 6. sales_cold_caller - Sales/Marketing
+-- 7. rides - Transport (added separately)
+-- 8. insurance - Motor insurance (added separately)
+-- 9. support - Customer support (added separately)
 -- =====================================================================
 
 BEGIN;
@@ -34,11 +45,11 @@ VALUES
     true
   ),
   (
-    'business_broker',
-    'Business Broker AI Agent',
-    'Business directory agent for discovering local businesses, services, and promotions via WhatsApp',
-    'BB-PERSONA',
-    'BB-SYS',
+    'buy_and_sell',
+    'Buy & Sell AI Agent',
+    'Unified commerce and business discovery agent. Handles marketplace transactions (buying/selling products), business discovery, business brokerage (sales/acquisitions), and legal intake.',
+    'BAS-PERSONA',
+    'BAS-SYS',
     'en',
     'whatsapp',
     true
@@ -74,6 +85,12 @@ VALUES
     true
   )
 ON CONFLICT (slug) DO NOTHING;
+
+-- Deprecate old agents that have been merged into buy_and_sell
+UPDATE public.ai_agents SET
+  is_active = false,
+  description = 'DEPRECATED: Merged into buy_and_sell agent. Use buy_and_sell instead.'
+WHERE slug IN ('business_broker', 'broker', 'marketplace') AND is_active = true;
 
 -- =====================================================================
 -- 2. INSERT DEFAULT PERSONAS
@@ -115,22 +132,22 @@ SELECT
 FROM public.ai_agents WHERE slug = 'farmer'
 ON CONFLICT DO NOTHING;
 
--- Business Broker persona
+-- Buy & Sell persona (replaces business_broker)
 INSERT INTO public.ai_agent_personas (agent_id, code, role_name, tone_style, languages, traits, is_default)
 SELECT
   id,
-  'BB-PERSONA',
-  'Local Business Discovery Guide',
-  'Enthusiastic, informative, concise',
-  ARRAY['en', 'fr', 'rw'],
+  'BAS-PERSONA',
+  'Commerce & Business Concierge',
+  'Friendly, professional, commerce-focused. Assists buyers, sellers, and entrepreneurs.',
+  ARRAY['en', 'fr', 'rw', 'sw'],
   jsonb_build_object(
     'warmth', 'high',
-    'formality', 'low',
-    'search_oriented', true,
-    'promotion_aware', true
+    'formality', 'medium',
+    'focus', 'Quick transactions and business connections',
+    'expertise', ARRAY['commerce', 'local_business', 'negotiation', 'business_brokerage', 'product_knowledge']
   ),
   true
-FROM public.ai_agents WHERE slug = 'business_broker'
+FROM public.ai_agents WHERE slug = 'buy_and_sell'
 ON CONFLICT DO NOTHING;
 
 -- Real Estate persona
@@ -217,17 +234,44 @@ SELECT
 FROM public.ai_agents WHERE slug = 'farmer'
 ON CONFLICT DO NOTHING;
 
--- Business Broker system instructions
+-- Buy & Sell system instructions (replaces business_broker)
 INSERT INTO public.ai_agent_system_instructions (agent_id, code, title, instructions, guardrails, memory_strategy, is_active)
 SELECT
   id,
-  'BB-SYS',
-  'Business Broker Agent System Prompt',
-  'You are a local business discovery guide. Help users find businesses, services, and promotions. Always search the business directory first. Use location-based matching. Provide concise results with top 5 matches.',
-  'Never endorse specific businesses. Verify business hours before sharing. Respect geographic constraints. Confirm user location.',
-  'Remember user preferences. Track search history. Maintain location context.',
+  'BAS-SYS',
+  'Buy & Sell Agent System Prompt',
+  E'You are EasyMO''s unified Buy & Sell assistant, helping users with marketplace transactions and business opportunities.
+
+MARKETPLACE CAPABILITIES:
+- Help users buy and sell products across all retail categories (pharmacy, hardware, grocery)
+- Find shops and stores nearby
+- Create and manage product listings
+- Search for specific items
+
+BUSINESS DISCOVERY:
+- Map user needs → business categories → specific nearby businesses
+- Use maps_geocode for location-based search
+- Return ranked list with reasons (open now, distance, rating)
+
+BUSINESS BROKERAGE:
+- For sellers: Collect business details, financials (sanitized), asking price, terms
+- For buyers: Understand acquisition criteria, budget, industry preferences
+- Match parties; facilitate introductions; schedule meetings
+
+LEGAL INTAKE (handoff required):
+- Triage case category (business, contract, IP, employment, etc.)
+- Collect facts: who/what/when/where and desired outcome
+- All substantive matters require human associate review',
+  E'GUARDRAILS:
+- No medical advice beyond finding a pharmacy
+- No legal, tax, or financial advice—only logistics and intake
+- Protect user privacy and confidentiality
+- Sensitive topics require handoff to staff
+- Never share personal contact info without consent
+- Verify listings are real before recommending',
+  'Track user preferences. Remember search history. Maintain transaction context.',
   true
-FROM public.ai_agents WHERE slug = 'business_broker'
+FROM public.ai_agents WHERE slug = 'buy_and_sell'
 ON CONFLICT DO NOTHING;
 
 -- Real Estate system instructions
@@ -331,33 +375,33 @@ SELECT
 FROM public.ai_agents WHERE slug = 'farmer'
 ON CONFLICT DO NOTHING;
 
--- Business Broker tools
+-- Buy & Sell tools (replaces business_broker tools)
 INSERT INTO public.ai_agent_tools (agent_id, name, display_name, tool_type, description, input_schema, output_schema, config, is_active)
 SELECT
   id,
-  'search_business_directory',
-  'Search Business Directory',
+  'search_products',
+  'Search Products',
   'db',
-  'Search local businesses by name, category, location, or services',
+  'Search for products in the marketplace across all categories',
   jsonb_build_object('type', 'object', 'properties', jsonb_build_object('query', jsonb_build_object('type', 'string'), 'category', jsonb_build_object('type', 'string'))),
   jsonb_build_object('type', 'array', 'items', jsonb_build_object('type', 'object')),
-  jsonb_build_object('table', 'businesses', 'search_columns', ARRAY['name', 'category', 'services']),
+  jsonb_build_object('table', 'products', 'search_columns', ARRAY['name', 'description']),
   true
-FROM public.ai_agents WHERE slug = 'business_broker'
+FROM public.ai_agents WHERE slug = 'buy_and_sell'
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.ai_agent_tools (agent_id, name, display_name, tool_type, description, input_schema, output_schema, config, is_active)
 SELECT
   id,
-  'get_business_promotions',
-  'Get Business Promotions',
+  'search_businesses',
+  'Search Businesses',
   'db',
-  'Retrieve active promotions for a specific business',
-  jsonb_build_object('type', 'object', 'properties', jsonb_build_object('business_id', jsonb_build_object('type', 'string'))),
+  'Find businesses by location and category. Returns sorted list with distance.',
+  jsonb_build_object('type', 'object', 'properties', jsonb_build_object('category', jsonb_build_object('type', 'string'), 'lat', jsonb_build_object('type', 'number'), 'lng', jsonb_build_object('type', 'number'))),
   jsonb_build_object('type', 'array', 'items', jsonb_build_object('type', 'object')),
-  jsonb_build_object('table', 'promotions', 'filter_column', 'business_id'),
+  jsonb_build_object('table', 'business_directory', 'location_search', true),
   true
-FROM public.ai_agents WHERE slug = 'business_broker'
+FROM public.ai_agents WHERE slug = 'buy_and_sell'
 ON CONFLICT DO NOTHING;
 
 -- Real Estate tools
