@@ -185,8 +185,9 @@ function verifySIPWebhookSignature(
     .update(body)
     .digest("hex");
 
-  // Handle both hex and base64 encoded signatures
-  const signatureBuffer = Buffer.from(rawSignature, "hex").length === 32
+  // Detect encoding: SHA256 hex is 64 chars, base64 is 44 chars
+  const isHex = /^[a-fA-F0-9]{64}$/.test(rawSignature);
+  const signatureBuffer = isHex
     ? Buffer.from(rawSignature, "hex")
     : Buffer.from(rawSignature, "base64");
 
