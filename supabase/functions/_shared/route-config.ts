@@ -84,32 +84,34 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
     priority: 1,
   },
   {
-    service: "wa-webhook-marketplace",
+    service: "wa-webhook-buy-sell",
     keywords: ["marketplace", "shop", "buy", "sell", "store", "product", "business", "broker"],
     menuKeys: ["marketplace", "shops_services", "buy_and_sell", "buy and sell", "business_broker_agent", "general_broker", "6"],
     priority: 1,
-    deprecated: true,
-    redirectTo: "wa-webhook-unified",
   },
   {
-    service: "wa-webhook-ai-agents",
-    keywords: ["agent", "chat", "help", "support", "ask", "farmer", "waiter", "restaurant", "bar", "food"],
-    menuKeys: [
-      "ai_agents", 
-      "farmer_agent",    // Farmers Market
-      "sales_agent",     // Sales SDR
-      "support_agent",   // Customer Support
-      "waiter_agent",    // Bar & Restaurants
-      "waiter", 
-      "support", 
-      "customer_support", 
-      "help",
-      "farmers", 
-      "7"
-    ],
-    priority: 3, // Lower priority so specific services match first
-    deprecated: true,
-    redirectTo: "wa-webhook-unified",
+    service: "wa-agent-farmer",
+    keywords: ["farmer", "agriculture", "crop", "harvest", "seed", "fertilizer"],
+    menuKeys: ["farmer_agent", "farmers", "farmers_market"],
+    priority: 2,
+  },
+  {
+    service: "wa-agent-support",
+    keywords: ["support", "help", "issue", "problem", "question", "faq"],
+    menuKeys: ["support_agent", "support", "customer_support", "help", "7"],
+    priority: 2,
+  },
+  {
+    service: "wa-agent-waiter",
+    keywords: ["waiter", "restaurant", "bar", "food", "menu", "order", "reservation"],
+    menuKeys: ["waiter_agent", "waiter", "restaurant"],
+    priority: 2,
+  },
+  {
+    service: "wa-agent-call-center",
+    keywords: ["agent", "chat", "ask", "call center", "universal"],
+    menuKeys: ["ai_agents", "call_center", "universal_agent"],
+    priority: 3, // Fallback for general AI queries
   },
 ];
 
@@ -117,16 +119,18 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
  * List of all routed services (for health checks, validation, etc.)
  */
 export const ROUTED_SERVICES: readonly string[] = [
-  "wa-webhook-jobs",
-  "wa-webhook-marketplace",
-  "wa-webhook-ai-agents",
-  "wa-webhook-unified",   // Consolidated service (replaces marketplace + ai-agents)
-  "wa-webhook-property",
   "wa-webhook-mobility",
-  "wa-webhook-profile",
   "wa-webhook-insurance",
-  "wa-webhook", // Legacy fallback
+  "wa-webhook-jobs",
+  "wa-webhook-property",
+  "wa-webhook-profile",
+  "wa-webhook-buy-sell",
+  "wa-agent-farmer",
+  "wa-agent-support",
+  "wa-agent-waiter",
+  "wa-agent-call-center",
   "wa-webhook-core",
+  "wa-webhook", // Legacy fallback
 ] as const;
 
 export type RoutedService = typeof ROUTED_SERVICES[number];
@@ -153,8 +157,11 @@ export const STATE_PATTERNS: Array<{ patterns: string[]; service: string }> = [
   { patterns: ["mobility", "trip_", "ride_"], service: "wa-webhook-mobility" },
   { patterns: ["property", "rental_"], service: "wa-webhook-property" },
   { patterns: ["wallet", "payment_", "transfer_"], service: "wa-webhook-profile" },
-  { patterns: ["marketplace", "shop_"], service: "wa-webhook-marketplace" },
-  { patterns: ["agent", "ai_", "farmer_", "waiter_"], service: "wa-webhook-ai-agents" },
+  { patterns: ["marketplace", "shop_", "buy_", "sell_"], service: "wa-webhook-buy-sell" },
+  { patterns: ["farmer_"], service: "wa-agent-farmer" },
+  { patterns: ["support_"], service: "wa-agent-support" },
+  { patterns: ["waiter_", "restaurant_"], service: "wa-agent-waiter" },
+  { patterns: ["agent_", "call_center_"], service: "wa-agent-call-center" },
 ];
 
 /**
