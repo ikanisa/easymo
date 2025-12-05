@@ -13,7 +13,7 @@ import { AGI_TOOL_DEFINITIONS, executeAGITool, formatToolResult, type ToolExecut
 import { config } from './config';
 import { logger } from './logger';
 import { AGIBridge, ToolCall } from './agi-bridge';
-import { REALTIME_FUNCTIONS, buildCallCenterPrompt } from './realtime-functions';
+import { loadRealtimeFunctions, buildCallCenterPrompt } from './realtime-functions-dynamic';
 
 export type CallState = 'ringing' | 'answered' | 'in_progress' | 'ending' | 'ended';
 
