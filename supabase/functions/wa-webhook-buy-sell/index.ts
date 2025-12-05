@@ -299,6 +299,21 @@ serve(async (req: Request): Promise<Response> => {
 });
 
 // =====================================================
+// USER FLOW STATE MANAGEMENT
+// =====================================================
+
+interface UserFlowState {
+  mode: "idle" | "category_menu" | "awaiting_location" | "show_results" | "show_contact" | "register_business" | "selling";
+  lastAction: string;
+  selectedCategory?: typeof BUSINESS_CATEGORIES[number];
+  searchResults?: Array<Record<string, unknown>>;
+  selectedBusiness?: Record<string, unknown>;
+  location?: { lat: number; lng: number };
+}
+
+const userFlowStates = new Map<string, UserFlowState>();
+
+// =====================================================
 // LOCATION MESSAGE HANDLER
 // =====================================================
 
@@ -389,18 +404,6 @@ async function handleLocationMessage(
     generateCategoryMenu().split("\n\n").slice(1).join("\n\n")
   );
 }
-
-// In-memory state for interactive flow (defined before usage)
-interface UserFlowState {
-  mode: "idle" | "category_menu" | "awaiting_location" | "show_results" | "show_contact" | "register_business" | "selling";
-  lastAction: string;
-  selectedCategory?: typeof BUSINESS_CATEGORIES[number];
-  searchResults?: Array<Record<string, unknown>>;
-  selectedBusiness?: Record<string, unknown>;
-  location?: { lat: number; lng: number };
-}
-
-const userFlowStates = new Map<string, UserFlowState>();
 
 // =====================================================
 // AI AGENT HANDLER

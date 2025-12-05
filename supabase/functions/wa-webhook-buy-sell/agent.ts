@@ -182,8 +182,8 @@ export function parseCategorySelection(input: string): number | null {
     if (num >= 1 && num <= 9) return num;
   }
   
-  // Emoji number match
-  const emojiIndex = EMOJI_NUMBERS.findIndex(e => normalized.includes(e.toLowerCase()) || normalized.includes(e));
+  // Emoji number match (emojis don't have lowercase, so just check includes)
+  const emojiIndex = EMOJI_NUMBERS.findIndex(e => input.includes(e));
   if (emojiIndex >= 0) return emojiIndex + 1;
   
   // Word number match
@@ -316,9 +316,12 @@ export function formatBusinessContact(business: {
     response += `\n${business.description}\n`;
   }
   
+  // Minimum phone length to mask middle digits for privacy
+  const MIN_PHONE_LENGTH_FOR_MASKING = 8;
+  
   if (business.phone) {
     // Mask middle digits for privacy in display
-    const phoneDisplay = business.phone.length > 8 
+    const phoneDisplay = business.phone.length > MIN_PHONE_LENGTH_FOR_MASKING 
       ? `${business.phone.slice(0, 4)}****${business.phone.slice(-3)}`
       : business.phone;
     response += `\n📞 Contact: ${phoneDisplay}\n`;
