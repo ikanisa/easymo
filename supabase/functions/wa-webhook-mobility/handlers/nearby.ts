@@ -850,6 +850,16 @@ async function runMatchingFallback(
       radiusMeters,
     });
 
+    await logStructuredEvent("TRIP_CREATED", {
+      tripId: tempTripId,
+      role,
+      vehicleType: state.vehicle,
+      mode: state.mode,
+      pickup: `${pickup.lat.toFixed(4)},${pickup.lng.toFixed(4)}`,
+      radiusMeters,
+      expiresIn: "90 min",
+    });
+
     if (dropoff) {
       await updateTripDropoff(ctx.supabase, {
         tripId: tempTripId,
@@ -911,14 +921,32 @@ async function runMatchingFallback(
       flow: "nearby",
       mode: state.mode,
       count: matches.length,
+      tripId: tempTripId,
+      searchedFor: state.mode, // "drivers" or "passengers"
+      myRole: role, // opposite of mode
     });
 
     // Per requirement: Never send fallback error messages
     // Instead, proceed with database results (even if empty) and return to menu
     if (!matches.length) {
+      await logStructuredEvent("NO_MATCHES_FOUND", {
+        tripId: tempTripId,
+        mode: state.mode,
+        role,
+        vehicle: state.vehicle,
+        pickup: `${pickup.lat.toFixed(4)},${pickup.lng.toFixed(4)}`,
+        radiusMeters,
+        windowDays: DEFAULT_WINDOW_DAYS,
+      }, "warn");
+      
+      // Use specific message based on what user was searching for
+      const messageKey = state.mode === "drivers" 
+        ? "mobility.nearby.empty_results.drivers"  // User searched for drivers
+        : "mobility.nearby.empty_results.passengers";  // User searched for passengers
+      
       await sendButtonsMessage(
         ctx,
-        t(ctx.locale, "mobility.nearby.empty_results"),
+        t(ctx.locale, messageKey),
         homeOnly(),
       );
       await clearState(ctx.supabase, ctx.profileId!);

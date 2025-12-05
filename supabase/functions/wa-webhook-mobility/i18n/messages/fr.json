@@ -307,6 +307,8 @@
   "mobility.nearby.list.body.drivers": "Touchez un chauffeur pour ouvrir le chat WhatsApp.",
   "mobility.nearby.list.body.passengers": "Touchez un passager pour ouvrir le chat WhatsApp.",
   "mobility.nearby.list.section": "Correspondances",
+  "mobility.nearby.empty_results.drivers": "Aucun chauffeur trouvé à proximité pour le moment. Essayez à nouveau ou partagez votre trajet.",
+  "mobility.nearby.empty_results.passengers": "Aucun passager trouvé à proximité pour le moment. Essayez à nouveau ou revenez bientôt.",
   "mobility.nearby.empty_results": "Aucune correspondance trouvée pour le moment. Vous pouvez rechercher à nouveau ou revenir au menu principal.",
   "mobility.nearby.error": "⚠️ Service de mise en relation indisponible. Réessayez bientôt.",
   "mobility.nearby.prefill.driver": "Bonjour, j’ai besoin d’un trajet.",

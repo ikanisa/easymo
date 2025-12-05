@@ -10,7 +10,7 @@ import { fetchInsuranceMedia, uploadInsuranceBytes } from "../../_shared/wa-webh
 const INSURANCE_MEDIA_BUCKET = Deno.env.get("INSURANCE_MEDIA_BUCKET") ?? "insurance-docs";
 
 /**
- * Start the vehicle addition flow
+ * Start the vehicle addition flow - Step 1: Select vehicle type
  */
 export async function startAddVehicle(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) {
@@ -19,14 +19,83 @@ export async function startAddVehicle(ctx: RouterContext): Promise<boolean> {
   }
 
   await setState(ctx.supabase, ctx.profileId, {
-    key: "vehicle_add_insurance",
+    key: "vehicle_add_select_type",
     data: {},
+  });
+
+  await sendListMessage(
+    ctx,
+    {
+      title: "🚗 Add Vehicle",
+      body: "First, select your vehicle type:",
+      sectionTitle: "Vehicle Types",
+      rows: [
+        {
+          id: "veh_moto",
+          title: "🏍️ Moto taxi",
+          description: "Two-wheel motorcycle",
+        },
+        {
+          id: "veh_cab",
+          title: "🚗 Cab",
+          description: "Standard car (4 wheels)",
+        },
+        {
+          id: "veh_lifan",
+          title: "🛺 Lifan",
+          description: "Three-wheel cargo vehicle",
+        },
+        {
+          id: "veh_truck",
+          title: "🚚 Truck",
+          description: "Pickup or delivery truck",
+        },
+        {
+          id: "veh_other",
+          title: "🚐 Other",
+          description: "Bus, van, or other vehicle",
+        },
+      ],
+      buttonText: "Select",
+    },
+  );
+
+  logStructuredEvent("VEHICLE_ADD_STARTED", { userId: ctx.profileId });
+  return true;
+}
+
+/**
+ * Handle vehicle type selection - Step 2: Request insurance certificate
+ */
+export async function handleVehicleTypeSelection(
+  ctx: RouterContext,
+  vehicleType: string,
+): Promise<boolean> {
+  if (!ctx.profileId) {
+    await sendText(ctx.from, "⚠️ Please create your profile first.");
+    return true;
+  }
+
+  // Map vehicle type IDs to display names
+  const vehicleNames: Record<string, string> = {
+    veh_moto: "Moto taxi",
+    veh_cab: "Cab",
+    veh_lifan: "Lifan",
+    veh_truck: "Truck",
+    veh_other: "Other vehicle",
+  };
+
+  const vehicleName = vehicleNames[vehicleType] || vehicleType;
+
+  await setState(ctx.supabase, ctx.profileId, {
+    key: "vehicle_add_insurance",
+    data: { vehicleType },
   });
 
   await sendButtonsMessage(
     ctx,
-    "🚗 *Add Vehicle*\n\n" +
-    "To add your vehicle, please send a photo or PDF of your valid insurance certificate (Yellow Card).\n\n" +
+    `🚗 *Add ${vehicleName}*\n\n` +
+    "Please send a photo or PDF of your valid insurance certificate (Yellow Card).\n\n" +
     "📋 The system will automatically extract:\n" +
     "• Vehicle registration plate\n" +
     "• Insurance policy number\n" +
@@ -38,7 +107,11 @@ export async function startAddVehicle(ctx: RouterContext): Promise<boolean> {
     ],
   );
 
-  logStructuredEvent("VEHICLE_ADD_STARTED", { userId: ctx.profileId });
+  logStructuredEvent("VEHICLE_TYPE_SELECTED", { 
+    userId: ctx.profileId, 
+    vehicleType 
+  });
+  
   return true;
 }
 
