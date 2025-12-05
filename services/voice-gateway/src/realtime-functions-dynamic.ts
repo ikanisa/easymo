@@ -10,16 +10,20 @@ import { SupabaseClient } from '@supabase/supabase-js';
 /**
  * Load all available tools from database for Realtime API
  */
-export async function loadRealtimeFunctions(supabase: SupabaseClient): Promise<any[]> {
+export async function loadRealtimeFunctions(supabase: SupabaseClient, agentId: string): Promise<any[]> {
   const { data: tools, error } = await supabase
-    .from('agent_tools')
+    .from('ai_agent_tools')
     .select('*')
-    .eq('enabled', true)
-    .eq('available_for_voice', true)
-    .order('priority', { ascending: false });
+    .eq('agent_id', agentId)
+    .eq('is_active', true);
 
   if (error) {
     console.error('Failed to load tools from database:', error);
+    return [];
+  }
+
+  if (!tools || tools.length === 0) {
+    console.warn(`No tools found for agent ${agentId}`);
     return [];
   }
 
@@ -27,7 +31,7 @@ export async function loadRealtimeFunctions(supabase: SupabaseClient): Promise<a
   return tools.map(tool => ({
     type: 'function',
     name: tool.name,
-    description: tool.description,
+    description: tool.description || tool.display_name,
     parameters: tool.input_schema || {
       type: 'object',
       properties: {},
@@ -41,6 +45,7 @@ export async function loadRealtimeFunctions(supabase: SupabaseClient): Promise<a
 export async function buildCallCenterPrompt(
   supabase: SupabaseClient,
   config: {
+    agentId: string;
     language?: string;
     userName?: string;
     userContext?: Record<string, any>;
@@ -49,51 +54,68 @@ export async function buildCallCenterPrompt(
   const lang = config.language || 'en';
   
   // Load agent configuration from database
-  const { data: agentConfig } = await supabase
+  const { data: agentConfig, error: agentError } = await supabase
     .from('ai_agents')
     .select('*')
-    .eq('slug', 'call-center')
+    .eq('id', config.agentId)
     .single();
 
-  if (!agentConfig) {
-    // Minimal fallback if no config in DB
-    return `You are an intelligent AI assistant. You adapt your behavior based on what the user needs.
+  if (agentError || !agentConfig) {
+    console.error('Failed to load agent config:', agentError);
+    return `You are an intelligent AI assistant.
 
 ${config.userName ? `Speaking with: ${config.userName}` : ''}
 ${config.userContext ? `Context: ${JSON.stringify(config.userContext)}` : ''}`;
   }
 
+  // Load persona
+  const { data: persona } = await supabase
+    .from('ai_agent_personas')
+    .select('*')
+    .eq('agent_id', config.agentId)
+    .eq('code', agentConfig.default_persona_code)
+    .single();
+
+  // Load system instructions
+  const { data: instructions } = await supabase
+    .from('ai_agent_system_instructions')
+    .select('*')
+    .eq('agent_id', config.agentId)
+    .eq('code', agentConfig.default_system_instruction_code)
+    .single();
+
   // Build prompt from database configuration
   let prompt = '';
   
-  // Base description
+  // Agent description
   if (agentConfig.description) {
     prompt += agentConfig.description + '\n\n';
   }
 
-  // System prompt (main instructions)
-  if (agentConfig.system_prompt) {
-    prompt += agentConfig.system_prompt + '\n\n';
+  // Persona (role, tone, traits)
+  if (persona) {
+    if (persona.role_name) {
+      prompt += `ROLE: ${persona.role_name}\n\n`;
+    }
+    if (persona.tone_style) {
+      prompt += `TONE: ${persona.tone_style}\n\n`;
+    }
+    if (persona.traits) {
+      prompt += `PERSONALITY TRAITS:\n${JSON.stringify(persona.traits, null, 2)}\n\n`;
+    }
   }
 
-  // Personality traits
-  if (agentConfig.personality) {
-    prompt += `PERSONALITY:\n${agentConfig.personality}\n\n`;
-  }
-
-  // Conversation strategy
-  if (agentConfig.conversation_strategy) {
-    prompt += `CONVERSATION STRATEGY:\n${agentConfig.conversation_strategy}\n\n`;
-  }
-
-  // Examples (if any)
-  if (agentConfig.examples && agentConfig.examples.length > 0) {
-    prompt += `EXAMPLES:\n${agentConfig.examples.join('\n\n')}\n\n`;
-  }
-
-  // Language-specific instructions (if available)
-  if (agentConfig.language_instructions && agentConfig.language_instructions[lang]) {
-    prompt += agentConfig.language_instructions[lang] + '\n\n';
+  // System instructions
+  if (instructions) {
+    if (instructions.instructions) {
+      prompt += `INSTRUCTIONS:\n${instructions.instructions}\n\n`;
+    }
+    if (instructions.guardrails) {
+      prompt += `GUARDRAILS:\n${instructions.guardrails}\n\n`;
+    }
+    if (instructions.memory_strategy) {
+      prompt += `MEMORY STRATEGY: ${instructions.memory_strategy}\n\n`;
+    }
   }
 
   // Add user context

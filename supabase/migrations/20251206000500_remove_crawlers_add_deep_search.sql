@@ -100,10 +100,11 @@ BEGIN
   PERFORM cron.schedule(
     'cleanup-old-deep-research',
     '0 2 * * *', -- Daily at 2 AM
-    $$SELECT cleanup_old_deep_research_results()$$
+    $cron$SELECT cleanup_old_deep_research_results()$cron$
   );
 EXCEPTION
   WHEN undefined_table THEN NULL; -- cron extension not installed
+  WHEN undefined_function THEN NULL; -- cron.schedule not available
 END $$;
 
 -- ============================================================================

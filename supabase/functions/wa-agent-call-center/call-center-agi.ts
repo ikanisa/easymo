@@ -18,6 +18,11 @@ import {
 import { GeminiProvider } from '../_shared/ai-agents/providers/gemini.ts';
 import { logStructuredEvent } from '../_shared/observability.ts';
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { 
+  deepSearchJobs, 
+  deepSearchRealEstate,
+  deepSearchToolDefinitions 
+} from './tools/deep-search-tools.ts';
 
 interface ToolExecutionResult {
   success: boolean;
@@ -83,6 +88,10 @@ export class CallCenterAGI extends BaseAgent {
     // Call logging
     tools.set('supabase_log_call_summary', this.logCallSummary.bind(this));
     tools.set('get_call_metadata', this.getCallMetadata.bind(this));
+
+    // Deep Search (OpenAI Deep Research API)
+    tools.set('deep_search_jobs', this.deepSearchJobs.bind(this));
+    tools.set('deep_search_real_estate', this.deepSearchRealEstate.bind(this));
 
     return tools;
   }
@@ -657,6 +666,68 @@ export class CallCenterAGI extends BaseAgent {
         channel: 'whatsapp_call',
       },
     };
+  }
+
+  /**
+   * Deep Search Jobs - Search internal DB + web via OpenAI Deep Research API
+   */
+  private async deepSearchJobs(args: any, supabase: SupabaseClient, phone: string): Promise<ToolExecutionResult> {
+    try {
+      // Get user ID for tracking
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('whatsapp_e164', phone)
+        .single();
+
+      const result = await deepSearchJobs(
+        supabase,
+        {
+          query: args.query,
+          country: args.country || 'RW',
+          context: args.context || {},
+        },
+        profile?.user_id
+      );
+
+      return { success: true, data: result };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Deep search failed' 
+      };
+    }
+  }
+
+  /**
+   * Deep Search Real Estate - Search internal DB + web via OpenAI Deep Research API
+   */
+  private async deepSearchRealEstate(args: any, supabase: SupabaseClient, phone: string): Promise<ToolExecutionResult> {
+    try {
+      // Get user ID for tracking
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('whatsapp_e164', phone)
+        .single();
+
+      const result = await deepSearchRealEstate(
+        supabase,
+        {
+          query: args.query,
+          country: args.country || 'RW',
+          context: args.context || {},
+        },
+        profile?.user_id
+      );
+
+      return { success: true, data: result };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Deep search failed' 
+      };
+    }
   }
 
   async getSystemPromptAsync(supabase: SupabaseClient): Promise<string> {
