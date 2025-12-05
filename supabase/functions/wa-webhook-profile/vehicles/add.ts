@@ -72,10 +72,28 @@ export async function handleVehicleInsuranceUpload(
     return true;
   }
 
-  // Show processing message
-  await sendText(ctx.from, "⏳ Processing your insurance certificate...\n\nThis may take a few seconds.");
-
   try {
+    // Check if this media has already been processed (deduplication)
+    const { data: existingMedia } = await ctx.supabase
+      .from("insurance_media")
+      .select("lead_id, insurance_leads!inner(status)")
+      .eq("wa_media_id", mediaId)
+      .eq("insurance_leads.user_id", ctx.profileId)
+      .single();
+
+    if (existingMedia) {
+      // Already processed - skip silently (WhatsApp duplicate webhook)
+      logStructuredEvent("VEHICLE_DUPLICATE_MEDIA", {
+        userId: ctx.profileId,
+        mediaId,
+        existingLeadId: existingMedia.lead_id,
+      }, "info");
+      return true;
+    }
+
+    // Show processing message
+    await sendText(ctx.from, "⏳ Processing your insurance certificate...\n\nThis may take a few seconds.");
+
     // Create insurance lead
     const { data: lead, error: leadError } = await ctx.supabase
       .from("insurance_leads")
