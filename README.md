@@ -20,6 +20,77 @@ const countries = ['RW', 'KE', 'UG']; // NO!
 
 **All database migrations, TypeScript code, and configuration must only use: RW, CD, BI, TZ**
 
+---
+
+## ⛔ PROHIBITED SERVICES (CRITICAL - DO NOT USE)
+
+**The following third-party services are STRICTLY PROHIBITED in EasyMO. Any code using these services will be REJECTED.**
+
+### ❌ Twilio - NEVER USE
+
+| Instead of | Use |
+|------------|-----|
+| Twilio WhatsApp API | **WhatsApp Cloud Business API** (direct Meta API) |
+| Twilio Voice/SIP | **MTN and telecom direct SIP Trunk connections** |
+| Twilio Media Streams | **Direct SIP Trunk integration** via `services/sip-ingress` |
+
+```typescript
+// ❌ WRONG - NEVER USE TWILIO
+import twilio from 'twilio';
+const client = twilio(accountSid, authToken);
+await client.messages.create({ /* ... */ });
+
+// ✅ CORRECT - Use WhatsApp Cloud Business API directly
+const response = await fetch(
+  `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`,
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ /* WhatsApp Cloud API payload */ }),
+  }
+);
+```
+
+### ❌ MoMo API - NEVER USE
+
+| Instead of | Use |
+|------------|-----|
+| MTN MoMo API | **USSD `tel:` mobile money** (direct dial codes) |
+| MoMo Collections API | **USSD-based payment flows** |
+| MoMo Disbursements API | **USSD-based payment flows** |
+
+```typescript
+// ❌ WRONG - NEVER USE MOMO API
+import { MoMoClient } from 'mtn-momo';
+await momoClient.requestToPay({ /* ... */ });
+
+// ✅ CORRECT - Use USSD tel: mobile money
+// Generate USSD dial string for user to initiate payment
+const ussdCode = `*182*8*1*${merchantCode}*${amount}#`;
+// Send to user via WhatsApp for them to dial manually
+await sendWhatsAppMessage(userId, `Pay via USSD: ${ussdCode}`);
+```
+
+### Voice/SIP Integration
+
+EasyMO uses **direct SIP Trunk connections** with MTN and other telecoms:
+
+- `services/sip-ingress`: Handles inbound SIP webhook events with Redis-backed idempotency
+- `services/voice-bridge`: Processes audio streams via direct SIP Trunk, relays to OpenAI Realtime API
+
+**DO NOT integrate any Twilio Voice, Twilio SIP Trunking, or similar services.**
+
+### Why These Restrictions?
+
+1. **Cost**: Direct APIs are significantly cheaper than third-party aggregators
+2. **Latency**: Fewer hops = faster message/call delivery
+3. **Control**: Direct integration with carriers gives us full control
+4. **Compliance**: Direct carrier relationships simplify regulatory compliance in East Africa
+
+---
 
 - **RealAdapter** (`src/lib/adapter.real.ts`): delegates to the `AdminAPI`
   helper which calls Supabase Edge Functions secured by an admin token.
@@ -81,10 +152,10 @@ VALUES ('whatsapp', '+250XXXXXXXXX', 'Admin Name', 4, true);
 
 ## Phase 4 & 5 Highlights
 
-- **Realtime bridges**: `services/voice-bridge` ingests Twilio Media Streams,
+- **Realtime bridges**: `services/voice-bridge` processes audio streams via **direct SIP Trunk connections** (MTN and telecoms),
   relays audio to the OpenAI Realtime API, emits Kafka telemetry, and exposes a
   `/analytics/live-calls` snapshot consumed by the admin console. `services/sip-ingress`
-  normalises SIP webhook events with Redis-backed idempotency.
+  normalises SIP webhook events with Redis-backed idempotency. ⚠️ **Note:** We do NOT use Twilio - see [Prohibited Services](#-prohibited-services-critical---do-not-use).
 - **Marketplace & wallet services**: new microservices (`wallet-service`,
   `ranking-service`, `vendor-service`, `buyer-service`, `broker-orchestrator`)
   coordinate intents → quotes → purchases and double-entry ledger postings.
@@ -93,7 +164,7 @@ VALUES ('whatsapp', '+250XXXXXXXXX', 'Admin Name', 4, true);
   marketplace oversight (vendor ranking, intent pipeline, purchase audits). The
   UI remains PWA-ready with offline awareness and CSV exports.
 - **Testing & observability**: acceptance tests cover ledger invariants,
-  payment helpers (MoMo USSD / Revolut), opt-out flows, and ranking logic. New
+  payment helpers (USSD mobile money / Revolut - **NOT MoMo API**), opt-out flows, and ranking logic. New
   Grafana-ready dashboards (`dashboards/phase4/*.json`) and Kafka topic manifests
   document the expanded footprint.
 
@@ -608,7 +679,7 @@ gcloud run services update YOUR_SERVICE \
    `pnpm --filter @easymo/vendor-service test`,  
    `pnpm --filter @easymo/buyer-service test`, and  
    `pnpm --filter @easymo/agent-core test`.  Tests cover payment helpers
-   (MoMo USSD / Revolut), opt-out flows, intent/quote ranking, and ledger
+   (USSD mobile money / Revolut - **NOT MoMo API**), opt-out flows, intent/quote ranking, and ledger
    invariants.
 8. Deploy Supabase edge functions via `supabase functions deploy --project-ref <ref>`,
    or let Netlify handle deployment if configured.  Import the Grafana dashboards
@@ -658,7 +729,8 @@ See [docs/GROUND_RULES.md](docs/GROUND_RULES.md) for comprehensive guidelines on
 Key principles:
 - Use structured logs (JSON format) with correlation IDs
 - Never expose secrets client-side (validated in `prebuild` script)
-- Verify webhook signatures (WhatsApp, Twilio, etc.)
+- Verify webhook signatures (WhatsApp Cloud API, SIP Trunk webhooks)
+- **NEVER use Twilio or MoMo API** - see [Prohibited Services](#-prohibited-services-critical---do-not-use)
 - Gate all new features behind feature flags
 - Record metrics for significant actions
 - Mask PII in all logs

@@ -2,6 +2,25 @@
 
 **ALL code MUST comply with these rules. PRs without compliance will be REJECTED.**
 
+---
+
+## ⛔ PROHIBITED SERVICES (CRITICAL)
+
+**The following third-party services are STRICTLY PROHIBITED. Code using these will be REJECTED.**
+
+| ❌ DO NOT USE | ✅ USE INSTEAD |
+|---------------|----------------|
+| Twilio WhatsApp API | **WhatsApp Cloud Business API** (direct Meta API) |
+| Twilio Voice/SIP | **MTN and telecom direct SIP Trunk connections** |
+| MTN MoMo API | **USSD `tel:` mobile money** (direct dial codes) |
+| MoMo Collections/Disbursements API | **USSD-based payment flows** |
+
+**Why?** Direct APIs provide: lower cost, lower latency, full control, and simplified East Africa compliance.
+
+See the [complete documentation in README.md](../README.md#-prohibited-services-critical---do-not-use) for code examples.
+
+---
+
 ## 1. Observability
 
 ### Structured Logging
@@ -137,7 +156,7 @@ The prebuild script (`scripts/assert-no-service-role-in-client.mjs`) enforces th
 
 ALL webhook endpoints MUST verify signatures:
 
-#### WhatsApp Webhooks
+#### WhatsApp Cloud Business API Webhooks
 
 ```typescript
 import { verifySignature } from "../wa/verify.ts";
@@ -148,29 +167,30 @@ if (!isValid) {
 }
 ```
 
-#### Twilio Webhooks
+#### SIP Trunk Webhooks (MTN and Telecoms)
 
 ```typescript
 import crypto from "crypto";
 
-function verifyTwilioSignature(
-  authToken: string,
+function verifySIPWebhookSignature(
+  secretKey: string,
   signature: string,
-  url: string,
-  params: Record<string, string>
+  body: string
 ): boolean {
-  const data = Object.keys(params)
-    .sort()
-    .reduce((acc, key) => acc + key + params[key], url);
-
   const expectedSignature = crypto
-    .createHmac("sha1", authToken)
-    .update(Buffer.from(data, "utf-8"))
-    .digest("base64");
+    .createHmac("sha256", secretKey)
+    .update(body)
+    .digest("hex");
 
-  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expectedSignature)
+  );
 }
 ```
+
+> ⚠️ **IMPORTANT:** Do NOT implement Twilio webhook verification. EasyMO does NOT use Twilio.
+> See the [Prohibited Services section in README.md](../README.md#-prohibited-services-critical---do-not-use) for details.
 
 ### Rate Limiting
 
