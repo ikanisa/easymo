@@ -347,7 +347,7 @@ export function parseResultSelection(input: string): number | null {
 // =====================================================
 
 export class MarketplaceAgent {
-  private genAI: GoogleGenerativeAI;
+  private genAI?: GoogleGenerativeAI; // Optional - may not be configured
   private supabase: SupabaseClient;
   private correlationId?: string;
 
@@ -357,10 +357,10 @@ export class MarketplaceAgent {
     correlationId?: string,
   ) {
     const key = apiKey || Deno.env.get("GEMINI_API_KEY");
-    if (!key) {
-      throw new Error("GEMINI_API_KEY is required for marketplace agent");
+    if (key) {
+      this.genAI = new GoogleGenerativeAI(key);
     }
-    this.genAI = new GoogleGenerativeAI(key);
+    // If no API key, genAI will be undefined and we'll use fallback responses
     this.supabase = supabase;
     this.correlationId = correlationId;
   }
@@ -382,6 +382,16 @@ export class MarketplaceAgent {
         flowStep: context.flowStep,
         correlationId: this.correlationId,
       });
+
+      // Fallback if no AI configured
+      if (!this.genAI) {
+        return {
+          message: "🛒 Welcome to Buy & Sell!\n\n" +
+                   "Please use the category menu to browse businesses and services near you.\n\n" +
+                   "Tap the menu button or type 'menu' to see options.",
+          flowComplete: true,
+        };
+      }
 
       // Build conversation for AI
       const messages = context.conversationHistory.map((m) => ({
