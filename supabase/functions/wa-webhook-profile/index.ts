@@ -365,6 +365,11 @@ serve(async (req: Request): Promise<Response> => {
           const { startAddVehicle } = await import("./vehicles/add.ts");
           handled = await startAddVehicle(ctx);
         }
+        // Handle vehicle type selection (veh_moto, veh_cab, etc.)
+        else if (id.startsWith("veh_") && state?.key === "vehicle_add_select_type") {
+          const { handleVehicleTypeSelection } = await import("./vehicles/add.ts");
+          handled = await handleVehicleTypeSelection(ctx, id);
+        }
         else if (id.startsWith("VEHICLE::")) {
           const vehicleId = id.replace("VEHICLE::", "");
           const { handleVehicleSelection } = await import("./vehicles/list.ts");
@@ -985,7 +990,7 @@ serve(async (req: Request): Promise<Response> => {
     // Handle vehicle insurance document upload
     else if ((message.type === "image" || message.type === "document") && state?.key === "vehicle_add_insurance") {
       const { handleVehicleInsuranceUpload } = await import("./vehicles/add.ts");
-      handled = await handleVehicleInsuranceUpload(ctx, message);
+      handled = await handleVehicleInsuranceUpload(ctx, message, state);
     }
     
     // Handle location messages (when user shares location)

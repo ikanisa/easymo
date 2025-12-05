@@ -1,7 +1,7 @@
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
 import type { RawWhatsAppMessage } from "../../_shared/wa-webhook-shared/types.ts";
 import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
-import { sendButtonsMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
+import { sendButtonsMessage, sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 import { setState, clearState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
@@ -121,11 +121,15 @@ export async function handleVehicleTypeSelection(
 export async function handleVehicleInsuranceUpload(
   ctx: RouterContext,
   message: RawWhatsAppMessage,
+  state: any,
 ): Promise<boolean> {
   if (!ctx.profileId) {
     await sendText(ctx.from, "⚠️ Please create your profile first.");
     return true;
   }
+
+  // Get vehicle type from state
+  const vehicleType = state?.data?.vehicleType || "veh_other";
 
   // Extract media ID from message
   const mediaId = message.type === "image"
@@ -312,7 +316,7 @@ export async function handleVehicleInsuranceUpload(
         p_model: extracted?.model || null,
         p_year: extracted?.vehicle_year || extracted?.year || null,
         p_vin: extracted?.vin_chassis || extracted?.vin || null,
-        p_vehicle_type: extracted?.vehicle_type || null,
+        p_vehicle_type: vehicleType, // Use the vehicle type selected by user
       });
 
     if (vehicleError || !vehicleId) {
