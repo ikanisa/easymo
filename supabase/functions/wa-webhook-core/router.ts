@@ -1,6 +1,6 @@
 
 import { getRoutingText } from "../_shared/wa-webhook-shared/utils/messages.ts";
-import type { WhatsAppWebhookPayload, RouterContext, WhatsAppMessage } from "../_shared/wa-webhook-shared/types.ts";
+import type { WhatsAppWebhookPayload, RouterContext, WhatsAppMessage, WhatsAppCallEvent } from "../_shared/wa-webhook-shared/types.ts";
 import { sendListMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
 import { supabase } from "../_shared/wa-webhook-shared/config.ts";
 import type { SupabaseClient } from "../_shared/wa-webhook-shared/deps.ts";
@@ -579,4 +579,18 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
     logError("SEND_MESSAGE_FAILED", { error: String(error) }, { correlationId: crypto.randomUUID() });
     return new Response(JSON.stringify({ error: "Failed to send message" }), { status: 500 });
   }
+}
+
+/**
+ * Check if payload contains a call event
+ */
+export function isCallEvent(payload: WhatsAppWebhookPayload): boolean {
+  return !!payload?.entry?.[0]?.changes?.[0]?.value?.call;
+}
+
+/**
+ * Extract call event from payload
+ */
+export function getCallEvent(payload: WhatsAppWebhookPayload): WhatsAppCallEvent | null {
+  return payload?.entry?.[0]?.changes?.[0]?.value?.call ?? null;
 }

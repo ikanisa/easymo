@@ -203,9 +203,9 @@ async function handleIncomingCall(
 
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('user_id, name, preferred_language')
-    .eq('whatsapp_number', fromNumber)
-    .single();
+    .select('user_id, name, preferred_language, phone_number, wa_id')
+    .or(`phone_number.eq.${fromNumber},wa_id.eq.${fromNumber}`)
+    .maybeSingle();
 
   if (profileError && profileError.code !== 'PGRST116') {
     logStructuredEvent('WA_VOICE_ERROR', {
@@ -227,45 +227,121 @@ async function handleIncomingCall(
     correlationId,
   });
 
-  let voiceGatewayResponse;
-  try {
-    voiceGatewayResponse = await fetch(`${VOICE_GATEWAY_URL}/calls/start`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Correlation-ID': correlationId },
-      body: JSON.stringify({
-        provider_call_id: callId,
-        from_number: fromNumber,
-        to_number: toNumber,
-        agent_id: 'call_center',
-        direction: 'inbound',
-        language: language === 'fr' ? 'fr-FR' : 'en-US',
-        voice_style: 'alloy',
-        system_prompt: `You are EasyMO Call Center AI speaking with ${userName}. Keep responses SHORT (1-2 sentences). You handle: Rides, Real Estate, Jobs, Business, Insurance, Legal, Pharmacy, Wallet, Payments. Be warm and helpful.`,
-        metadata: { platform: 'whatsapp', whatsapp_call_id: callId, user_id: profile?.user_id },
-      }),
-    });
-  } catch (fetchError) {
-    logStructuredEvent('WA_VOICE_ERROR', {
-      stage: 'voice_gateway_connection',
+  // Check if Voice Gateway is properly configured
+  if (!VOICE_GATEWAY_URL || VOICE_GATEWAY_URL === 'http://voice-gateway:3000') {
+    logStructuredEvent('WA_VOICE_GATEWAY_NOT_CONFIGURED', {
       callId,
-      error: fetchError instanceof Error ? fetchError.message : 'Voice Gateway connection failed',
-      voiceGatewayUrl: VOICE_GATEWAY_URL?.replace(/\/\/[^:]+:[^@]+@/, '//***:***@'),
       correlationId,
+      configuredUrl: VOICE_GATEWAY_URL,
     }, 'error');
-    throw fetchError;
+    
+    // Send a text message to inform user
+    try {
+      const messageUrl = `https://graph.facebook.com/v21.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
+      await fetch(messageUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: fromNumber,
+          type: 'text',
+          text: {
+            body: '📞 Voice calls are temporarily unavailable. Please send a text message instead, and our AI assistant will help you right away!'
+          }
+        }),
+      });
+      
+      logStructuredEvent('WA_VOICE_FALLBACK_MESSAGE_SENT', { callId, to: fromNumber.slice(-4), correlationId });
+    } catch (msgError) {
+      logStructuredEvent('WA_VOICE_FALLBACK_MESSAGE_FAILED', {
+        callId,
+        error: msgError instanceof Error ? msgError.message : String(msgError),
+        correlationId,
+      }, 'error');
+    }
+    
+    // Store the call attempt for later follow-up
+    await supabase.from('call_summaries').insert({
+      call_id: callId,
+      profile_id: profile?.user_id,
+      primary_intent: 'voice_call_failed',
+      summary_text: 'Voice call attempted but Voice Gateway not configured',
+      metadata: { from: fromNumber, reason: 'gateway_not_configured' },
+    });
+    
+    return; // Exit early - don't try to connect to unavailable gateway
   }
 
-  if (!voiceGatewayResponse.ok) {
-    const errorText = await voiceGatewayResponse.text().catch(() => 'Unable to read error response');
+  let voiceGatewayResponse;
+  let retryCount = 0;
+  const maxRetries = 2;
+
+  while (retryCount <= maxRetries) {
+    try {
+      voiceGatewayResponse = await fetch(`${VOICE_GATEWAY_URL}/calls/start`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json', 
+          'X-Correlation-ID': correlationId,
+          'X-Retry-Count': String(retryCount),
+        },
+        body: JSON.stringify({
+          provider_call_id: callId,
+          from_number: fromNumber,
+          to_number: toNumber,
+          agent_id: 'call_center',
+          direction: 'inbound',
+          language: language === 'fr' ? 'fr-FR' : language === 'rw' ? 'rw-RW' : 'en-US',
+          voice_style: 'alloy',
+          system_prompt: `You are EasyMO Call Center AI speaking with ${userName}. Keep responses SHORT (1-2 sentences). You handle: Rides, Real Estate, Jobs, Business, Insurance, Legal, Pharmacy, Wallet, Payments. Be warm and helpful.`,
+          metadata: { 
+            platform: 'whatsapp', 
+            whatsapp_call_id: callId, 
+            user_id: profile?.user_id,
+            retry_count: retryCount,
+          },
+        }),
+      });
+      
+      if (voiceGatewayResponse.ok) {
+        break; // Success, exit retry loop
+      }
+      
+      retryCount++;
+      if (retryCount <= maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 500 * retryCount)); // Exponential backoff
+      }
+    } catch (fetchError) {
+      logStructuredEvent('WA_VOICE_GATEWAY_FETCH_ERROR', {
+        callId,
+        retryCount,
+        error: fetchError instanceof Error ? fetchError.message : String(fetchError),
+        correlationId,
+      }, retryCount === maxRetries ? 'error' : 'warn');
+      
+      retryCount++;
+      if (retryCount <= maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 500 * retryCount));
+      } else {
+        throw fetchError;
+      }
+    }
+  }
+
+  if (!voiceGatewayResponse || !voiceGatewayResponse.ok) {
+    const errorText = voiceGatewayResponse ? await voiceGatewayResponse.text().catch(() => 'Unable to read error response') : 'No response';
     logStructuredEvent('WA_VOICE_ERROR', {
       stage: 'voice_gateway_response',
       callId,
-      status: voiceGatewayResponse.status,
-      statusText: voiceGatewayResponse.statusText,
+      status: voiceGatewayResponse?.status,
+      statusText: voiceGatewayResponse?.statusText,
       error: errorText,
       correlationId,
     }, 'error');
-    throw new Error(`Voice Gateway failed: ${voiceGatewayResponse.status} ${voiceGatewayResponse.statusText}`);
+    throw new Error(`Voice Gateway failed: ${voiceGatewayResponse?.status ?? 'NO_RESPONSE'} ${voiceGatewayResponse?.statusText ?? ''}`);
   }
 
   const voiceSession = await voiceGatewayResponse.json();

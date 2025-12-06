@@ -166,12 +166,21 @@ export type WhatsAppWebhookChange = {
   value?: WhatsAppChangeValue;
 };
 
+export type WhatsAppCallEvent = {
+  id: string;
+  from: string;
+  to: string;
+  event: 'ringing' | 'accepted' | 'rejected' | 'ended' | 'missed';
+  timestamp?: string;
+};
+
 export type WhatsAppChangeValue = {
   messaging_product?: string;
   metadata?: WhatsAppChangeMetadata;
   contacts?: WhatsAppContact[];
   messages?: RawWhatsAppMessage[];
   statuses?: Record<string, unknown>[];
+  call?: WhatsAppCallEvent;
   [key: string]: unknown;
 };
 
