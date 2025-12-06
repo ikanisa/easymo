@@ -476,13 +476,17 @@ BEGIN
     WHERE table_name = 'tool_enum_values' AND column_name = 'label'
   ) THEN
     ALTER TABLE public.tool_enum_values ADD COLUMN label TEXT;
-    -- Copy display_name to label if it exists
-    IF EXISTS (
-      SELECT 1 FROM information_schema.columns 
-      WHERE table_name = 'tool_enum_values' AND column_name = 'display_name'
-    ) THEN
-      EXECUTE 'UPDATE public.tool_enum_values SET label = display_name WHERE label IS NULL';
-    END IF;
+  END IF;
+  
+  -- Sync label and display_name
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'tool_enum_values' AND column_name = 'display_name'
+  ) THEN
+    -- Copy display_name to label if label is null
+    EXECUTE 'UPDATE public.tool_enum_values SET label = display_name WHERE label IS NULL AND display_name IS NOT NULL';
+    -- Copy label to display_name if display_name is null
+    EXECUTE 'UPDATE public.tool_enum_values SET display_name = label WHERE display_name IS NULL AND label IS NOT NULL';
   END IF;
   
   IF NOT EXISTS (
@@ -533,15 +537,51 @@ CREATE POLICY tool_enum_values_public_read ON public.tool_enum_values
 
 -- Insert enum values for AI tools
 -- Agent IDs for run_agent tool
-INSERT INTO public.tool_enum_values (enum_type, value, label, description, display_order) VALUES
-  ('agent_id', 'real-estate-rentals', 'Real Estate Agent', 'Property rentals and sales', 1),
-  ('agent_id', 'rides-matching', 'Rides Agent', 'Transportation and mobility', 2),
-  ('agent_id', 'jobs-marketplace', 'Jobs Agent', 'Employment and job search', 3),
-  ('agent_id', 'waiter-restaurants', 'Waiter Agent', 'Restaurant and hospitality', 4),
-  ('agent_id', 'insurance-broker', 'Insurance Agent', 'Insurance quotes and policies', 5),
-  ('agent_id', 'farmers-market', 'Farmers Agent', 'Agriculture and farming', 6),
-  ('agent_id', 'buy-and-sell', 'Buy & Sell Agent', 'Business directory', 7)
-ON CONFLICT (enum_type, value) DO NOTHING;
+-- Note: Insert uses label, but we need to handle display_name if it exists
+DO $$
+DECLARE
+  has_display_name BOOLEAN;
+BEGIN
+  -- Check if display_name column exists
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'tool_enum_values' AND column_name = 'display_name'
+  ) INTO has_display_name;
+  
+  IF has_display_name THEN
+    -- Insert with display_name
+    INSERT INTO public.tool_enum_values (enum_type, value, label, display_name, description, display_order)
+    SELECT * FROM (VALUES
+      ('agent_id', 'real-estate-rentals', 'Real Estate Agent', 'Real Estate Agent', 'Property rentals and sales', 1),
+      ('agent_id', 'rides-matching', 'Rides Agent', 'Rides Agent', 'Transportation and mobility', 2),
+      ('agent_id', 'jobs-marketplace', 'Jobs Agent', 'Jobs Agent', 'Employment and job search', 3),
+      ('agent_id', 'waiter-restaurants', 'Waiter Agent', 'Waiter Agent', 'Restaurant and hospitality', 4),
+      ('agent_id', 'insurance-broker', 'Insurance Agent', 'Insurance Agent', 'Insurance quotes and policies', 5),
+      ('agent_id', 'farmers-market', 'Farmers Agent', 'Farmers Agent', 'Agriculture and farming', 6),
+      ('agent_id', 'buy-and-sell', 'Buy & Sell Agent', 'Buy & Sell Agent', 'Business directory', 7)
+    ) AS new_values(enum_type, value, label, display_name, description, display_order)
+    WHERE NOT EXISTS (
+      SELECT 1 FROM public.tool_enum_values 
+      WHERE enum_type = new_values.enum_type AND value = new_values.value
+    );
+  ELSE
+    -- Insert without display_name
+    INSERT INTO public.tool_enum_values (enum_type, value, label, description, display_order)
+    SELECT * FROM (VALUES
+      ('agent_id', 'real-estate-rentals', 'Real Estate Agent', 'Property rentals and sales', 1),
+      ('agent_id', 'rides-matching', 'Rides Agent', 'Transportation and mobility', 2),
+      ('agent_id', 'jobs-marketplace', 'Jobs Agent', 'Employment and job search', 3),
+      ('agent_id', 'waiter-restaurants', 'Waiter Agent', 'Restaurant and hospitality', 4),
+      ('agent_id', 'insurance-broker', 'Insurance Agent', 'Insurance quotes and policies', 5),
+      ('agent_id', 'farmers-market', 'Farmers Agent', 'Agriculture and farming', 6),
+      ('agent_id', 'buy-and-sell', 'Buy & Sell Agent', 'Business directory', 7)
+    ) AS new_values(enum_type, value, label, description, display_order)
+    WHERE NOT EXISTS (
+      SELECT 1 FROM public.tool_enum_values 
+      WHERE enum_type = new_values.enum_type AND value = new_values.value
+    );
+  END IF;
+END $$;
 
 -- Verticals for broker tools (references service_verticals table)
 INSERT INTO public.tool_enum_values (enum_type, value, label, reference_table, reference_column, display_order)
@@ -554,7 +594,10 @@ SELECT
   priority as display_order
 FROM public.service_verticals
 WHERE is_active = true
-ON CONFLICT (enum_type, value) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM public.tool_enum_values tev
+    WHERE tev.enum_type = 'vertical' AND tev.value = service_verticals.slug
+  );
 
 -- =====================================================
 -- HELPER FUNCTIONS
