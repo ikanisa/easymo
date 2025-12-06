@@ -12,6 +12,13 @@ Features:
 - Supports dry-run mode for preview
 - Configurable business category and result limits
 - Structured logging and progress tracking
+- PII masking for phone numbers in logs (security compliance)
+
+Security & Compliance:
+- Uses environment variables for credentials (no secrets in code)
+- SQL injection prevention via parameterized queries
+- Phone numbers are masked in logs for PII protection
+- Service role key required for database access (server-side only)
 
 Usage:
     # Install dependencies
@@ -73,13 +80,41 @@ except ImportError as e:
 # Load environment variables
 load_dotenv()
 
-# Configure logging
+# Configure logging with structured output
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 logger = logging.getLogger(__name__)
+
+
+def mask_phone(phone: Optional[str]) -> str:
+    """Mask phone number for logging (PII protection).
+    
+    Args:
+        phone: Phone number to mask
+        
+    Returns:
+        Masked phone number (e.g., +250****5678)
+    """
+    if not phone:
+        return 'N/A'
+    
+    # Remove non-digit characters for processing
+    digits = ''.join(filter(str.isdigit, phone))
+    
+    # If phone has country code format (+XXX...), keep it
+    if phone.startswith('+') and len(digits) >= 8:
+        # Keep country code and last 4 digits
+        country_code = phone[:4]  # e.g., +250
+        last_digits = digits[-4:]
+        return f"{country_code}****{last_digits}"
+    elif len(digits) >= 8:
+        # Keep last 4 digits only
+        return f"****{digits[-4:]}"
+    else:
+        return "****"
 
 
 class GoogleMapsScraper:
@@ -727,7 +762,7 @@ Examples:
         for idx, business in enumerate(businesses, 1):
             logger.info(f"\n[{idx}/{len(businesses)}] {business.get('name', 'N/A')}")
             logger.info(f"  Address: {business.get('address', 'N/A')}")
-            logger.info(f"  Phone: {business.get('phone', 'N/A')}")
+            logger.info(f"  Phone: {mask_phone(business.get('phone'))}")
             logger.info(f"  Coordinates: {business.get('lat', 'N/A')}, {business.get('lng', 'N/A')}")
             logger.info(f"  Rating: {business.get('rating', 'N/A')}")
             logger.info(f"  Website: {business.get('website', 'N/A')}")
