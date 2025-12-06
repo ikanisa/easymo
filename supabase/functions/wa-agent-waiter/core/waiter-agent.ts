@@ -12,7 +12,7 @@
  */
 
 import { BaseAgent, type AgentProcessParams, type AgentResponse } from '../core/base-agent.ts';
-import { GeminiProvider } from '../core/providers/gemini.ts';
+import { DualAIProvider } from '../core/providers/dual-ai-provider.ts';
 import { logStructuredEvent } from '../../_shared/observability.ts';
 
 export class WaiterAgent extends BaseAgent {
@@ -20,11 +20,11 @@ export class WaiterAgent extends BaseAgent {
   name = '🍽️ Waiter AI';
   description = 'Restaurant and bar service assistant';
 
-  private aiProvider: GeminiProvider;
+  private aiProvider: DualAIProvider;
 
   constructor() {
     super();
-    this.aiProvider = new GeminiProvider();
+    this.aiProvider = new DualAIProvider();
   }
 
   async process(params: AgentProcessParams): Promise<AgentResponse> {
@@ -71,7 +71,7 @@ export class WaiterAgent extends BaseAgent {
         message: aiResponse,
         agentType: this.type,
         metadata: {
-          model: 'gemini-2.0-flash-exp',
+          model: 'gpt-5/gemini-3 (dual provider)',
           configLoadedFrom: this.cachedConfig?.loadedFrom,
         },
       };

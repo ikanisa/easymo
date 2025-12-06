@@ -86,7 +86,7 @@ export function formatPaymentInstructions(
       const paymentUrl = generateRevolutPaymentUrl(revolutLink, amount, currency, orderNumber);
       return {
         message: 
-          `�� *Pay with Revolut*\n\n` +
+          `💳 *Pay with Revolut*\n\n` +
           `Amount: ${amount.toLocaleString()} ${currency}\n\n` +
           `Tap the link below to pay securely:\n${paymentUrl}\n\n` +
           `After payment, tap "I've Paid" to confirm.`,
