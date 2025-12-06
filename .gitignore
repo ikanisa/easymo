@@ -87,3 +87,4 @@ InhouseDevSigning.*
 scripts/scraper_checkpoint.json
 scripts/businesses_kigali.json
 scripts/scraping_report_*.txt
+scripts/__pycache__/
