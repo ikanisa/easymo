@@ -3,7 +3,7 @@ import { googleSearch } from "./google_search.ts";
 
 export async function deepSearch(query: string, apiKey: string): Promise<string> {
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" }); // Using fast model for planning
+  const model = genAI.getGenerativeModel({ model: "gemini-3" });  // Per README.md: Mandatory Gemini-3
 
   // 1. Generate search queries
   const planPrompt = `User query: ${query}
@@ -44,7 +44,7 @@ export async function deepSearch(query: string, apiKey: string): Promise<string>
     
     Synthesize a comprehensive answer based on the search results. Cite sources (links) where appropriate. Format nicely.`;
     
-    const synthModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" }); // Or Pro if needed
+    const synthModel = genAI.getGenerativeModel({ model: "gemini-3" });  // Per README.md: Mandatory Gemini-3
     const synthResult = await synthModel.generateContent(synthPrompt);
     return synthResult.response.text();
 
