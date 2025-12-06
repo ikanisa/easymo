@@ -3,25 +3,34 @@
  * Hybrid approach: structured workflow + AI chat
  */
 
-import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
-import { sendListMessage, sendButtonsMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
-import { setState, getState, clearState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
+import { setState } from "../../_shared/wa-webhook-shared/state/store.ts";
+import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
+import { sendButtonsMessage, sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
+
+/**
+ * Unified state structure for Buy & Sell flow
+ * Must match handle_category.ts for consistency
+ */
+interface BuySellStateData {
+  selectedCategory: string;
+  categoryName: string;
+  categoryIcon: string;
+  waitingForLocation: boolean;
+  location?: { lat: number; lng: number };
+  businesses?: Array<{
+    id: string;
+    name: string;
+    category: string;
+    distance_km?: number;
+    address?: string;
+    phone?: string;
+  }>;
+}
 
 type BuySellState = {
   key: string;
-  data?: {
-    category?: string;
-    location?: { lat: number; lng: number };
-    businesses?: Array<{
-      id: string;
-      name: string;
-      category: string;
-      distance_km?: number;
-      address?: string;
-      phone?: string;
-    }>;
-  };
+  data?: BuySellStateData;
 };
 
 /**
@@ -117,7 +126,7 @@ export async function handleCategorySelection(
 
   const { data: category } = await ctx.supabase
     .from("buy_sell_categories")
-    .select("name, icon")
+    .select("key, name, icon")
     .eq("key", categoryKey)
     .eq("is_active", true)
     .maybeSingle();
@@ -131,10 +140,16 @@ export async function handleCategorySelection(
     return true;
   }
 
-  // Update state with selected category
+  // Update state with selected category - using consistent state structure
+  // State key: "buy_sell_location_request" matches handle_category.ts
   await setState(ctx.supabase, ctx.profileId, {
-    key: "buy_sell_awaiting_location",
-    data: { category: categoryKey }
+    key: "buy_sell_location_request",
+    data: {
+      selectedCategory: category.key,
+      categoryName: category.name,
+      categoryIcon: category.icon,
+      waitingForLocation: true,
+    } as BuySellStateData,
   });
 
   // Request location
@@ -151,7 +166,8 @@ export async function handleCategorySelection(
 
   await logStructuredEvent("BUY_SELL_CATEGORY_SELECTED", { 
     userId: ctx.profileId, 
-    category: categoryKey 
+    category: categoryKey,
+    categoryName: category.name,
   });
 
   return true;
@@ -166,17 +182,19 @@ export async function handleLocationShared(
   lng: number,
   state: BuySellState
 ): Promise<boolean> {
-  if (!ctx.profileId || !state.data?.category) return false;
+  if (!ctx.profileId || !state.data?.selectedCategory) return false;
 
-  const category = state.data.category;
+  const category = state.data.selectedCategory;
+  const categoryName = state.data.categoryName || category;
 
   try {
     // Search nearby businesses using PostGIS
+    // Use p_latitude/p_longitude to match the PostgreSQL function signature
     const { data: businesses, error } = await ctx.supabase.rpc(
       "search_businesses_nearby",
       {
-        p_lat: lat,
-        p_lng: lng,
+        p_latitude: lat,
+        p_longitude: lng,
         p_category: category,
         p_radius_km: 10,
         p_limit: 10
@@ -190,7 +208,7 @@ export async function handleLocationShared(
     if (!businesses || businesses.length === 0) {
       await sendButtonsMessage(
         ctx,
-        `📭 No ${category} found within 10km.\n\n` +
+        `📭 No ${categoryName} found within 10km.\n\n` +
         `Try:\n` +
         `• Selecting a different category\n` +
         `• Chatting with our AI assistant for alternatives`,
@@ -224,15 +242,22 @@ export async function handleLocationShared(
     // Update state with businesses
     await setState(ctx.supabase, ctx.profileId, {
       key: "buy_sell_business_list",
-      data: { category, location: { lat, lng }, businesses }
+      data: { 
+        selectedCategory: category, 
+        categoryName,
+        categoryIcon: state.data.categoryIcon || "",
+        waitingForLocation: false,
+        location: { lat, lng }, 
+        businesses 
+      } as BuySellStateData,
     });
 
     // Send business list
     await sendListMessage(
       ctx,
       {
-        title: `${category} Near You`,
-        body: `Found ${businesses.length} ${category} within 10km:`,
+        title: `${categoryName} Near You`,
+        body: `Found ${businesses.length} ${categoryName} within 10km:`,
         sectionTitle: "Businesses",
         buttonText: "View",
         rows
