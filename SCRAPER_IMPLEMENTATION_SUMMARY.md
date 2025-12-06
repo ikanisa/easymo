@@ -3,7 +3,7 @@
 ## Overview
 Successfully implemented a comprehensive Python script to extract ALL businesses from Google Maps in Kigali, Rwanda across multiple categories and sync them to the Supabase `businesses` table.
 
-**Target:** ~10,000 businesses across 50+ categories
+**Target:** ~10,000 businesses across 48 categories
 
 ## Files Created
 
@@ -65,7 +65,7 @@ Python packages:
 ## Key Features Implemented
 
 ### Multi-Category Bulk Scraping
-✅ Automatically scrapes 48+ business categories
+✅ Automatically scrapes 48 business categories
 ✅ Searches "category in Kigali, Rwanda" format
 ✅ Scrolls through lazy-loaded results
 ✅ Processes unlimited results per category (configurable)
@@ -311,4 +311,4 @@ scripts/__pycache__/
 ✅ **Compliant** with repository ground rules
 ✅ **Scalable** to ~10,000 businesses target
 
-The script is ready to use and will efficiently scrape all businesses in Kigali, Rwanda across 48+ categories.
+The script is ready to use and will efficiently scrape all businesses in Kigali, Rwanda across 48 categories.

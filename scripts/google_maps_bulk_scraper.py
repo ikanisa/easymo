@@ -5,7 +5,7 @@ Google Maps Bulk Business Scraper for Kigali, Rwanda
 This script extracts ALL businesses from Google Maps across multiple categories
 in Kigali, Rwanda and syncs them to the Supabase 'businesses' table.
 
-Target: ~10,000 businesses across 50+ categories
+Target: ~10,000 businesses across 48 categories
 """
 
 import argparse
@@ -222,8 +222,12 @@ async def extract_business_data(page: Page, element) -> Optional[Dict]:
         phone_elem = page.locator('button[data-item-id*="phone"]').first
         if await phone_elem.count() > 0:
             phone_text = await phone_elem.inner_text()
-            # Extract phone number
-            phone_match = re.search(r'[\+\d\s\-()]+', phone_text)
+            # Extract phone number - prioritize Rwanda format (+250), then other international formats
+            # Rwanda: +250 followed by 9 digits
+            phone_match = re.search(r'\+250\s?\d{3}\s?\d{3}\s?\d{3}', phone_text)
+            if not phone_match:
+                # Fallback: any international format with + prefix
+                phone_match = re.search(r'\+\d{1,3}\s?[\d\s\-()]{7,15}', phone_text)
             business['phone'] = phone_match.group(0).strip() if phone_match else None
         else:
             business['phone'] = None
@@ -376,14 +380,23 @@ def is_duplicate(business: Dict, existing: List[Dict]) -> bool:
         if place_id and existing_business.get('place_id') == place_id:
             return True
         
-        # Check name + location
+        # Check name + location using Haversine formula
         if name and existing_business.get('name', '').lower() == name:
             if lat and lng and existing_business.get('lat') and existing_business.get('lng'):
-                # Calculate distance using Haversine formula (simplified)
-                lat_diff = abs(lat - existing_business['lat'])
-                lng_diff = abs(lng - existing_business['lng'])
-                # Rough approximation: 1 degree ≈ 111km at equator
-                distance_km = ((lat_diff ** 2 + lng_diff ** 2) ** 0.5) * 111
+                # Haversine formula for distance calculation
+                import math
+                R = 6371  # Earth's radius in km
+                
+                lat1, lng1 = math.radians(lat), math.radians(lng)
+                lat2, lng2 = math.radians(existing_business['lat']), math.radians(existing_business['lng'])
+                
+                dlat = lat2 - lat1
+                dlng = lng2 - lng1
+                
+                a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlng/2)**2
+                c = 2 * math.asin(math.sqrt(a))
+                distance_km = R * c
+                
                 if distance_km < 0.1:  # Within 100m
                     return True
         
