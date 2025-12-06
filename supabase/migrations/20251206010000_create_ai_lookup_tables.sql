@@ -457,9 +457,73 @@ CREATE TABLE IF NOT EXISTS public.tool_enum_values (
   UNIQUE(enum_type, value)
 );
 
-CREATE INDEX idx_tool_enum_values_type ON public.tool_enum_values(enum_type);
-CREATE INDEX idx_tool_enum_values_active ON public.tool_enum_values(is_active);
-CREATE INDEX idx_tool_enum_values_display_order ON public.tool_enum_values(display_order);
+-- Handle existing table with enum_name column (rename to enum_type for consistency)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'tool_enum_values' AND column_name = 'enum_name'
+  ) AND NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'tool_enum_values' AND column_name = 'enum_type'
+  ) THEN
+    ALTER TABLE public.tool_enum_values RENAME COLUMN enum_name TO enum_type;
+  END IF;
+  
+  -- Add missing columns
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'tool_enum_values' AND column_name = 'label'
+  ) THEN
+    ALTER TABLE public.tool_enum_values ADD COLUMN label TEXT;
+    -- Copy display_name to label if it exists
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns 
+      WHERE table_name = 'tool_enum_values' AND column_name = 'display_name'
+    ) THEN
+      EXECUTE 'UPDATE public.tool_enum_values SET label = display_name WHERE label IS NULL';
+    END IF;
+  END IF;
+  
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'tool_enum_values' AND column_name = 'reference_table'
+  ) THEN
+    ALTER TABLE public.tool_enum_values ADD COLUMN reference_table TEXT;
+  END IF;
+  
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'tool_enum_values' AND column_name = 'reference_column'
+  ) THEN
+    ALTER TABLE public.tool_enum_values ADD COLUMN reference_column TEXT;
+  END IF;
+  
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'tool_enum_values' AND column_name = 'display_order'
+  ) THEN
+    ALTER TABLE public.tool_enum_values ADD COLUMN display_order INTEGER DEFAULT 0;
+  END IF;
+  
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'tool_enum_values' AND column_name = 'context_filter'
+  ) THEN
+    ALTER TABLE public.tool_enum_values ADD COLUMN context_filter JSONB;
+  END IF;
+  
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'tool_enum_values' AND column_name = 'updated_at'
+  ) THEN
+    ALTER TABLE public.tool_enum_values ADD COLUMN updated_at TIMESTAMPTZ DEFAULT now();
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_tool_enum_values_type ON public.tool_enum_values(enum_type);
+CREATE INDEX IF NOT EXISTS idx_tool_enum_values_active ON public.tool_enum_values(is_active);
+CREATE INDEX IF NOT EXISTS idx_tool_enum_values_display_order ON public.tool_enum_values(display_order);
 
 -- RLS policies
 ALTER TABLE public.tool_enum_values ENABLE ROW LEVEL SECURITY;
