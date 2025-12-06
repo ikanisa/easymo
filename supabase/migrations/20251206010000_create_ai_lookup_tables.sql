@@ -321,9 +321,48 @@ CREATE TABLE IF NOT EXISTS public.moderation_rules (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_moderation_rules_type ON public.moderation_rules(rule_type);
-CREATE INDEX idx_moderation_rules_active ON public.moderation_rules(is_active);
-CREATE INDEX idx_moderation_rules_category ON public.moderation_rules(category);
+-- Add missing columns if they don't exist (for existing tables)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'moderation_rules' AND column_name = 'description'
+  ) THEN
+    ALTER TABLE public.moderation_rules ADD COLUMN description TEXT;
+  END IF;
+  
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'moderation_rules' AND column_name = 'category'
+  ) THEN
+    ALTER TABLE public.moderation_rules ADD COLUMN category TEXT;
+  END IF;
+  
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'moderation_rules' AND column_name = 'severity'
+  ) THEN
+    ALTER TABLE public.moderation_rules ADD COLUMN severity TEXT DEFAULT 'medium';
+  END IF;
+  
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'moderation_rules' AND column_name = 'regex_flags'
+  ) THEN
+    ALTER TABLE public.moderation_rules ADD COLUMN regex_flags TEXT DEFAULT 'i';
+  END IF;
+  
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'moderation_rules' AND column_name = 'auto_response_template'
+  ) THEN
+    ALTER TABLE public.moderation_rules ADD COLUMN auto_response_template TEXT;
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_moderation_rules_type ON public.moderation_rules(rule_type);
+CREATE INDEX IF NOT EXISTS idx_moderation_rules_active ON public.moderation_rules(is_active);
+CREATE INDEX IF NOT EXISTS idx_moderation_rules_category ON public.moderation_rules(category);
 
 -- RLS policies
 ALTER TABLE public.moderation_rules ENABLE ROW LEVEL SECURITY;
