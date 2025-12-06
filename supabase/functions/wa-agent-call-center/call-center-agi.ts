@@ -170,7 +170,7 @@ export class CallCenterAGI extends BaseAgent {
       const aiResponse = await this.aiProvider.chat(messages, {
         temperature: 0.7,
         maxTokens: 1500,
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-3',
         tools: this.getGeminiTools(),
       });
 
@@ -199,7 +199,7 @@ export class CallCenterAGI extends BaseAgent {
         message: aiResponse,
         agentType: this.type,
         metadata: {
-          model: 'gemini-2.0-flash-exp',
+          model: 'gemini-3',
           toolsUsed,
           configSource: config?.loadedFrom || 'default',
         },

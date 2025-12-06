@@ -16,11 +16,9 @@ const supabase = createClient(
 
 const OPENAI_REALTIME_WS_URL = Deno.env.get('OPENAI_REALTIME_WS_URL') ?? 'wss://api.openai.com/v1/realtime';
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') ?? '';
-const WHATSAPP_ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN') ?? '';
-const WHATSAPP_PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') ?? '';
-const VOICE_GATEWAY_URL = Deno.env.get('VOICE_GATEWAY_URL') ?? 'http://voice-gateway:3000';
 const WHATSAPP_ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN') ?? Deno.env.get('WABA_ACCESS_TOKEN') ?? '';
 const WHATSAPP_PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') ?? Deno.env.get('WABA_PHONE_NUMBER_ID') ?? '';
+const VOICE_GATEWAY_URL = Deno.env.get('VOICE_GATEWAY_URL') ?? 'http://voice-gateway:3000';
 const MAX_VOICE_RETRIES = Number(Deno.env.get('VOICE_GATEWAY_MAX_RETRIES') ?? '2');
 
 // Validate environment variables at startup and log warnings
@@ -210,7 +208,8 @@ async function handleIncomingCall(
       error: 'Invalid phone number format',
       correlationId,
     }, 'error');
-    return; // Exit early for invalid input
+    // Return a valid error response that WhatsApp can handle
+    throw new Error('Invalid phone number format');
   }
 
   // Stage 1: Profile lookup
@@ -247,7 +246,18 @@ async function handleIncomingCall(
 
   // Build WebSocket URL with API key and session config as query parameters
   const voiceLanguage = language === 'fr' ? 'fr' : 'en';
-  const systemPrompt = `You are EasyMO Call Center AI speaking with ${userName}. Keep responses SHORT (1-2 sentences). You handle: Rides, Real Estate, Jobs, Business, Insurance, Legal, Pharmacy, Wallet, Payments. Be warm and helpful.`;
+  const systemPrompt = `You are EasyMO Call Center AI speaking with ${userName}. Keep responses SHORT (1-2 sentences max for voice). You help with:
+- Rides & Transportation (taxi, moto, shuttle)
+- Real Estate (buy, sell, rent properties)
+- Jobs (find work, post jobs)
+- Business Services (registration, consulting)
+- Insurance (health, vehicle, property)
+- Legal Services (contracts, disputes)
+- Pharmacy & Health (find medicines, clinics)
+- Farmer Services (inputs, markets, weather)
+- Wallet & Payments (balance, transfers)
+
+Be friendly, helpful, and concise. Ask clarifying questions if needed. Speak naturally as if on a phone call.`;
   
   const websocketUrl = `${OPENAI_REALTIME_WS_URL}?model=gpt-4o-realtime-preview-2024-12-17`;
   // Check if Voice Gateway is properly configured
@@ -317,7 +327,18 @@ async function handleIncomingCall(
           direction: 'inbound',
           language: language === 'fr' ? 'fr-FR' : language === 'rw' ? 'rw-RW' : 'en-US',
           voice_style: 'alloy',
-          system_prompt: `You are EasyMO Call Center AI speaking with ${userName}. Keep responses SHORT (1-2 sentences). You handle: Rides, Real Estate, Jobs, Business, Insurance, Legal, Pharmacy, Wallet, Payments. Be warm and helpful.`,
+          system_prompt: `You are EasyMO Call Center AI speaking with ${userName}. Keep responses SHORT (1-2 sentences max for voice). You help with:
+- Rides & Transportation (taxi, moto, shuttle)
+- Real Estate (buy, sell, rent properties)
+- Jobs (find work, post jobs)
+- Business Services (registration, consulting)
+- Insurance (health, vehicle, property)
+- Legal Services (contracts, disputes)
+- Pharmacy & Health (find medicines, clinics)
+- Farmer Services (inputs, markets, weather)
+- Wallet & Payments (balance, transfers)
+
+Be friendly, helpful, and concise. Ask clarifying questions if needed. Speak naturally as if on a phone call.`,
           metadata: { 
             platform: 'whatsapp', 
             whatsapp_call_id: callId, 
@@ -379,9 +400,9 @@ async function handleIncomingCall(
   logStructuredEvent('WA_VOICE_WEBSOCKET_GENERATED', {
     callId,
     language: voiceLanguage,
-    from: fromNumber.slice(-4),
+    fromLast4: fromNumber.slice(-4),
+    fromMasked: maskPhone(fromNumber),
     sessionId: voiceSession.call_id,
-    from: maskPhone(fromNumber),
     correlationId,
   });
 
