@@ -233,6 +233,7 @@ serve(async (req: Request): Promise<Response> => {
     const phone = message.from;
     let text = message.text?.body ?? '';
     let isVoiceMessage = false;
+    let detectedLanguage = 'en'; // Default to English
 
     // Handle voice/audio messages
     if (message.type === 'audio' || message.type === 'voice') {
@@ -257,10 +258,11 @@ serve(async (req: Request): Promise<Response> => {
         const { text: transcribedText, language } = await transcribeAudio(audioBuffer, 'ogg');
         
         text = transcribedText;
+        detectedLanguage = language || 'en'; // Store detected language for TTS
 
         await logStructuredEvent('CALL_CENTER_VOICE_TRANSCRIBED', {
           phone: phone.slice(-4),
-          language,
+          language: detectedLanguage,
           textLength: text.length,
           correlationId,
         });
@@ -320,8 +322,12 @@ serve(async (req: Request): Promise<Response> => {
           throw new Error('Missing WhatsApp credentials for voice response');
         }
 
-        // Convert response to audio
-        const audioBuffer = await textToSpeech(response.message, 'en', 'alloy');
+        // Convert response to audio using detected language
+        const ttsLang = detectedLanguage.startsWith('rw') ? 'rw' 
+          : detectedLanguage.startsWith('fr') ? 'fr'
+          : detectedLanguage.startsWith('sw') ? 'sw'
+          : 'en';
+        const audioBuffer = await textToSpeech(response.message, ttsLang, 'alloy');
         
         // Upload to WhatsApp
         const mediaId = await uploadWhatsAppMedia(audioBuffer, accessToken, phoneNumberId);
