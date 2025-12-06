@@ -78,6 +78,7 @@ CREATE INDEX IF NOT EXISTS idx_user_intents_profile ON public.user_intents(profi
 CREATE INDEX IF NOT EXISTS idx_user_intents_call ON public.user_intents(call_id);
 
 -- Auto-update timestamp
+DROP TRIGGER IF EXISTS update_user_intents_updated_at ON public.user_intents;
 CREATE TRIGGER update_user_intents_updated_at
   BEFORE UPDATE ON public.user_intents
   FOR EACH ROW
