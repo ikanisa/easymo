@@ -5,7 +5,10 @@
  * TIME WINDOWS:
  * - Recent searches: 30 minutes (in intent_storage.ts expiresInMinutes default)
  * - Trip matching: 48 hours (DEFAULT_WINDOW_DAYS = 2 days)
- * - Location cache: 30 minutes (LOCATION_FRESHNESS_MINUTES)
+ * - Location cache (client-side): 30 minutes (LOCATION_FRESHNESS_MINUTES)
+ * - Location freshness (SQL-side): 24 hours (SQL_LOCATION_FRESHNESS_HOURS)
+ *   This was increased from 30 minutes to fix the "No matches found" issue
+ *   when drivers/passengers haven't updated location recently.
  */
 
 // Search and matching constants
@@ -14,8 +17,10 @@ export const MOBILITY_CONFIG = {
   DEFAULT_SEARCH_RADIUS_METERS: 10_000,
   /** Maximum search radius in meters (25km) */
   MAX_SEARCH_RADIUS_METERS: 25_000,
-  /** Location cache window in minutes (30 min) - location older than this requires refresh */
+  /** Location cache window in minutes (30 min) - for client-side caching */
   LOCATION_FRESHNESS_MINUTES: 30,
+  /** SQL-side location freshness in hours (24h) - how old location can be for matching */
+  SQL_LOCATION_FRESHNESS_HOURS: 24,
   /** Recent search window in minutes (30 min) - matches LOCATION_FRESHNESS_MINUTES */
   RECENT_SEARCH_WINDOW_MINUTES: 30,
   /** Trip expiry time in minutes (90 min) */

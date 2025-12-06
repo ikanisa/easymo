@@ -891,12 +891,20 @@ async function runMatchingFallback(
       });
     }
 
+    // Log RPC call parameters for debugging
     await logStructuredEvent("MATCHES_CALL", {
       flow: "nearby",
       mode: state.mode,
       vehicle: state.vehicle,
       radius_m: radiusMeters,
+      window_days: DEFAULT_WINDOW_DAYS,
+      tripId: tempTripId,
+      pickup_lat: pickup.lat,
+      pickup_lng: pickup.lng,
+      prefer_dropoff: Boolean(dropoff),
+      max_results: max,
       wa_id: maskPhone(ctx.from),
+      rpc_function: state.mode === "drivers" ? "match_drivers_for_trip_v2" : "match_passengers_for_trip_v2",
     });
 
     const matches: MatchResult[] = state.mode === "drivers"
@@ -917,6 +925,7 @@ async function runMatchingFallback(
         DEFAULT_WINDOW_DAYS,
       );
 
+    // Log detailed match results for debugging
     await logStructuredEvent("MATCHES_RESULT", {
       flow: "nearby",
       mode: state.mode,
@@ -924,11 +933,16 @@ async function runMatchingFallback(
       tripId: tempTripId,
       searchedFor: state.mode, // "drivers" or "passengers"
       myRole: role, // opposite of mode
+      // Include first 3 match IDs for debugging (if any)
+      matchIds: matches.slice(0, 3).map(m => m.trip_id),
+      matchDistances: matches.slice(0, 3).map(m => m.distance_km),
+      matchAges: matches.slice(0, 3).map(m => m.location_age_minutes),
     });
 
     // Per requirement: Never send fallback error messages
     // Instead, proceed with database results (even if empty) and return to menu
     if (!matches.length) {
+      // Log comprehensive debug info when no matches found
       await logStructuredEvent("NO_MATCHES_FOUND", {
         tripId: tempTripId,
         mode: state.mode,
@@ -937,6 +951,13 @@ async function runMatchingFallback(
         pickup: `${pickup.lat.toFixed(4)},${pickup.lng.toFixed(4)}`,
         radiusMeters,
         windowDays: DEFAULT_WINDOW_DAYS,
+        possibleCauses: [
+          "No active trips in area",
+          "Vehicle type mismatch", 
+          "Trips expired (>24h location age)",
+          "Trips outside radius",
+        ],
+        hint: "Check mobility_trips table for open trips with role=driver/passenger",
       }, "warn");
       
       // Use specific message based on what user was searching for
