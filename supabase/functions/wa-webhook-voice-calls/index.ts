@@ -15,7 +15,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { logStructuredEvent } from '../_shared/observability.ts';
-import { generateSDPAnswer, validateSDP } from './sdp-handler.ts';
+import { createWebRTCBridge } from './webrtc-bridge.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -191,21 +191,35 @@ async function handleCallConnect(call: any, correlationId: string): Promise<void
 
   const userName = profile?.first_name || 'there';
   const language = profile?.preferred_language || 'en';
+  const voice = language === 'fr' ? 'shimmer' : 'alloy';
 
-  // Generate SDP answer from WhatsApp's SDP offer
-  let sdpAnswer: string;
+  // Build system instructions for OpenAI
+  const systemInstructions = `You are EasyMO Call Center AI speaking with ${userName}.
+Keep responses SHORT (1-2 sentences max for voice calls).
+You help with: Rides, Real Estate, Jobs, Business, Insurance, Legal, Pharmacy, Farmer Services, Wallet & Payments.
+Be friendly, helpful, and concise. Ask clarifying questions if needed.
+Speak naturally as if on a phone call in ${language === 'fr' ? 'French' : language === 'rw' ? 'Kinyarwanda' : 'English'}.`;
+
+  // Step 1: Create WebRTC Bridge with OpenAI
+  let bridgeResult;
   try {
-    sdpAnswer = generateSDPAnswer(session.sdp);
-    
-    // Log SDP for debugging
-    logStructuredEvent('WA_CALL_SDP_GENERATED', {
+    bridgeResult = await createWebRTCBridge({
       callId,
-      offerLength: session.sdp.length,
-      answerLength: sdpAnswer.length,
+      sdpOffer: session.sdp,
+      openaiApiKey: OPENAI_API_KEY,
+      openaiModel: OPENAI_REALTIME_MODEL,
+      systemInstructions,
+      voice,
+      correlationId,
+    });
+    
+    logStructuredEvent('WA_WEBRTC_BRIDGE_CREATED', {
+      callId,
+      sessionId: bridgeResult.sessionId,
       correlationId,
     });
   } catch (error) {
-    logStructuredEvent('WA_CALL_SDP_ERROR', {
+    logStructuredEvent('WA_WEBRTC_BRIDGE_ERROR', {
       callId,
       error: error instanceof Error ? error.message : String(error),
       correlationId,
@@ -213,8 +227,8 @@ async function handleCallConnect(call: any, correlationId: string): Promise<void
     return;
   }
 
-  // Step 1: Pre-accept the call (recommended by WhatsApp for faster connection)
-  const preAccepted = await preAcceptCall(callId, sdpAnswer, correlationId);
+  // Step 2: Pre-accept the call (recommended by WhatsApp for faster connection)
+  const preAccepted = await preAcceptCall(callId, bridgeResult.sdpAnswer, correlationId);
   
   if (!preAccepted) {
     logStructuredEvent('WA_CALL_PRE_ACCEPT_SKIP', { callId, correlationId }, 'warn');
@@ -231,69 +245,31 @@ async function handleCallConnect(call: any, correlationId: string): Promise<void
     metadata: {
       correlation_id: correlationId,
       user_name: userName,
+      openai_session_id: bridgeResult.sessionId,
     },
   });
 
-  // Step 2: Start voice bridge session
-  // The bridge will handle WebRTC connection and OpenAI Realtime integration
-  try {
-    logStructuredEvent('WA_CALL_STARTING_BRIDGE', {
-      callId,
-      bridgeUrl: VOICE_BRIDGE_URL,
-      correlationId,
-    });
+  // Step 3: Accept the call (after WebRTC connection is ready)
+  // Note: Media bridging happens automatically via OpenAI Realtime WebSocket
+  setTimeout(async () => {
+    try {
+      const accepted = await acceptCall(callId, bridgeResult.sdpAnswer, correlationId);
 
-    const bridgeResponse = await fetch(`${VOICE_BRIDGE_URL}/sessions/start`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+      if (accepted) {
+        logStructuredEvent('WA_CALL_FULLY_CONNECTED', {
+          callId,
+          sessionId: bridgeResult.sessionId,
+          correlationId,
+        });
+      }
+    } catch (error) {
+      logStructuredEvent('WA_CALL_ACCEPT_DELAYED_ERROR', {
         callId,
-        sdpOffer: session.sdp,
-        fromNumber,
-        toNumber,
-        userName,
-        language,
-      }),
-    });
-
-    if (!bridgeResponse.ok) {
-      const error = await bridgeResponse.text();
-      logStructuredEvent('WA_CALL_BRIDGE_FAILED', {
-        callId,
-        status: bridgeResponse.status,
-        error,
+        error: error instanceof Error ? error.message : String(error),
         correlationId,
       }, 'error');
-      return;
     }
-
-    const bridgeData = await bridgeResponse.json();
-    
-    logStructuredEvent('WA_CALL_BRIDGE_STARTED', {
-      callId,
-      sessionId: bridgeData.sessionId,
-      correlationId,
-    });
-
-    // Step 3: Accept the call with the bridge's SDP answer
-    const accepted = await acceptCall(callId, sdpAnswer, correlationId);
-
-    if (accepted) {
-      logStructuredEvent('WA_CALL_FULLY_CONNECTED', {
-        callId,
-        sessionId: bridgeData.sessionId,
-        correlationId,
-      });
-    }
-  } catch (error) {
-    logStructuredEvent('WA_CALL_BRIDGE_ERROR', {
-      callId,
-      error: error instanceof Error ? error.message : String(error),
-      correlationId,
-    }, 'error');
-  }
+  }, 1000); // Wait 1 second for WebRTC connection to establish
 }
 
 /**
