@@ -16,10 +16,10 @@ const supabase = createClient(
 
 const OPENAI_REALTIME_WS_URL = Deno.env.get('OPENAI_REALTIME_WS_URL') ?? 'wss://api.openai.com/v1/realtime';
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') ?? '';
+const OPENAI_ORG_ID = Deno.env.get('OPENAI_ORG_ID') ?? '';
+const OPENAI_REALTIME_MODEL = Deno.env.get('OPENAI_REALTIME_MODEL') ?? 'gpt-5-realtime';
 const WHATSAPP_ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN') ?? Deno.env.get('WABA_ACCESS_TOKEN') ?? '';
 const WHATSAPP_PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') ?? Deno.env.get('WABA_PHONE_NUMBER_ID') ?? '';
-const VOICE_GATEWAY_URL = Deno.env.get('VOICE_GATEWAY_URL') ?? 'http://voice-gateway:3000';
-const MAX_VOICE_RETRIES = Number(Deno.env.get('VOICE_GATEWAY_MAX_RETRIES') ?? '2');
 
 // Validate environment variables at startup and log warnings
 let envValidated = false;
