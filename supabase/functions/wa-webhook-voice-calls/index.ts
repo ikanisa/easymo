@@ -16,6 +16,7 @@ const supabase = createClient(
 
 // NO DUPLICATES - single declaration with fallbacks
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') ?? '';
+const OPENAI_ORG_ID = Deno.env.get('OPENAI_ORG_ID') ?? '';
 const OPENAI_REALTIME_MODEL = Deno.env.get('OPENAI_REALTIME_MODEL') ?? 'gpt-5-realtime';
 const WHATSAPP_ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN') ?? Deno.env.get('WABA_ACCESS_TOKEN') ?? '';
 const WHATSAPP_PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') ?? Deno.env.get('WABA_PHONE_NUMBER_ID') ?? '';
