@@ -149,7 +149,10 @@ BEGIN
     AND t.pickup_lat IS NOT NULL
     AND t.pickup_lng IS NOT NULL
     -- CRITICAL FIX: Location freshness increased from 30 minutes to 24 hours
-    -- This prevents excluding drivers who haven't updated location recently
+    -- This prevents excluding drivers who haven't updated location recently.
+    -- Note: Hardcoded to 24 hours intentionally - this is a generous window to
+    -- prevent false negatives. The _window_days parameter controls trip age instead.
+    -- See MOBILITY_CONFIG.SQL_LOCATION_FRESHNESS_HOURS in config/mobility.ts
     AND COALESCE(t.last_location_update, t.created_at) > now() - interval '24 hours'
     -- Window: Only trips created within the window (default 2 days)
     AND t.created_at > now() - (_window_days || ' days')::interval
@@ -286,6 +289,10 @@ BEGIN
     AND t.pickup_lat IS NOT NULL
     AND t.pickup_lng IS NOT NULL
     -- CRITICAL FIX: Location freshness increased from 30 minutes to 24 hours
+    -- This prevents excluding passengers who haven't updated location recently.
+    -- Note: Hardcoded to 24 hours intentionally - this is a generous window to
+    -- prevent false negatives. The _window_days parameter controls trip age instead.
+    -- See MOBILITY_CONFIG.SQL_LOCATION_FRESHNESS_HOURS in config/mobility.ts
     AND COALESCE(t.last_location_update, t.created_at) > now() - interval '24 hours'
     -- Window: Only trips created within the window (default 2 days)
     AND t.created_at > now() - (_window_days || ' days')::interval

@@ -13,17 +13,11 @@
 
 // deno-lint-ignore-file no-unused-vars
 
-import { logStructuredEvent } from '../../_shared/observability.ts';
-
-const ORCHESTRATOR_URL = Deno.env.get('MOBILITY_ORCHESTRATOR_URL') || 'http://localhost:4600';
-
 /**
  * @deprecated Use handleNearbyLocation from nearby.ts instead
  */
 export async function handleNearbyRequest(_payload: unknown): Promise<{ success: boolean; driversFound?: number; error?: string }> {
-  await logStructuredEvent('NEARBY_V2_DEPRECATED_CALL', {
-    message: 'nearby_v2.ts is deprecated. Calls should use nearby.ts instead.',
-  }, 'warn');
+  console.warn('[DEPRECATED] nearby_v2.ts::handleNearbyRequest called - use nearby.ts instead');
   
   return {
     success: false,
@@ -35,9 +29,7 @@ export async function handleNearbyRequest(_payload: unknown): Promise<{ success:
  * @deprecated Use handleNearbyResultSelection from nearby.ts instead
  */
 export async function handleDriverSelection(_payload: unknown): Promise<{ success: boolean; matchId?: string; error?: string }> {
-  await logStructuredEvent('NEARBY_V2_DEPRECATED_CALL', {
-    message: 'nearby_v2.ts is deprecated. Calls should use nearby.ts instead.',
-  }, 'warn');
+  console.warn('[DEPRECATED] nearby_v2.ts::handleDriverSelection called - use nearby.ts instead');
   
   return {
     success: false,
