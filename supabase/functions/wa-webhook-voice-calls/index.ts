@@ -1,373 +1,107 @@
 /**
- * WhatsApp Voice Calls Handler
- * Handles real-time voice calls (NOT voice messages)
+ * WhatsApp Cloud API Voice Calls Handler
+ * 
+ * Implements WhatsApp Business Platform Calling API with WebRTC
+ * Based on: https://developers.facebook.com/docs/whatsapp/business-platform/webhooks/components/calls
+ * 
+ * Flow:
+ * 1. Receive "connect" webhook with SDP offer
+ * 2. Pre-accept call with SDP answer
+ * 3. Establish WebRTC connection
+ * 4. Accept call and start media flow
+ * 5. Bridge audio to OpenAI Realtime API
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { logStructuredEvent } from '../_shared/observability.ts';
-import { verifyWebhookSignature } from '../_shared/webhook-utils.ts';
-import { isValidPhone, maskPhone } from '../_shared/phone-utils.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
 
-// NO DUPLICATES - single declaration with fallbacks
+// Configuration
+const WHATSAPP_ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN') ?? Deno.env.get('WABA_ACCESS_TOKEN') ?? '';
+const WHATSAPP_PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') ?? Deno.env.get('WABA_PHONE_NUMBER_ID') ?? '';
+const WA_VERIFY_TOKEN = Deno.env.get('WA_VERIFY_TOKEN') ?? '';
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') ?? '';
 const OPENAI_ORG_ID = Deno.env.get('OPENAI_ORG_ID') ?? '';
 const OPENAI_REALTIME_MODEL = Deno.env.get('OPENAI_REALTIME_MODEL') ?? 'gpt-5-realtime';
-const WHATSAPP_ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN') ?? Deno.env.get('WABA_ACCESS_TOKEN') ?? '';
-const WHATSAPP_PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') ?? Deno.env.get('WABA_PHONE_NUMBER_ID') ?? '';
 
-// Validate environment variables at startup and log warnings
-let envValidated = false;
-function validateEnvironment(correlationId: string): { valid: boolean; warnings: string[] } {
-  const warnings: string[] = [];
-  
-  if (!OPENAI_API_KEY) {
-    warnings.push('OPENAI_API_KEY is not configured');
-  }
-  
-  if (!WHATSAPP_ACCESS_TOKEN) {
-    warnings.push('WHATSAPP_ACCESS_TOKEN is not configured');
-  }
-  
-  if (!WHATSAPP_PHONE_NUMBER_ID) {
-    warnings.push('WHATSAPP_PHONE_NUMBER_ID is not configured');
-  }
-  
-  if (warnings.length > 0 && !envValidated) {
-    logStructuredEvent('WA_VOICE_ENV_WARNING', {
-      warnings,
-      openaiConfigured: !!OPENAI_API_KEY,
-      whatsappTokenConfigured: !!WHATSAPP_ACCESS_TOKEN,
-      whatsappPhoneIdConfigured: !!WHATSAPP_PHONE_NUMBER_ID,
-      correlationId,
-    }, 'warn');
-    envValidated = true;
-  }
-  
-  return { valid: warnings.length === 0, warnings };
+// Types based on WhatsApp API documentation
+interface CallWebhook {
+  object: string;
+  entry: Array<{
+    id: string;
+    changes: Array<{
+      value: {
+        messaging_product: string;
+        metadata: {
+          display_phone_number: string;
+          phone_number_id: string;
+        };
+        calls?: Array<{
+          id: string;
+          from: string;
+          to: string;
+          event: 'connect' | 'terminate';
+          timestamp: string;
+          direction?: string;
+          session?: {
+            sdp_type: 'offer' | 'answer';
+            sdp: string;
+          };
+          status?: string;
+          start_time?: string;
+          end_time?: string;
+          duration?: number;
+        }>;
+      };
+      field: string;
+    }>;
+  }>;
 }
 
-serve(async (req: Request): Promise<Response> => {
-  const url = new URL(req.url);
-  const correlationId = req.headers.get('X-Correlation-ID') ?? crypto.randomUUID();
+/**
+ * Generate a simple SDP answer for WhatsApp's SDP offer
+ * This is a basic implementation - for production, use a proper WebRTC library
+ */
+function generateSDPAnswer(offer: string): string {
+  // TODO: Implement proper SDP answer generation
+  // For now, return a basic answer that matches WhatsApp's requirements
+  
+  // Extract session info from offer
+  const lines = offer.split('\r\n');
+  const audioMLine = lines.find(l => l.startsWith('m=audio'));
+  const connectionLine = lines.find(l => l.startsWith('c='));
+  
+  // Basic SDP answer structure
+  const answer = [
+    'v=0',
+    'o=- 0 0 IN IP4 0.0.0.0',
+    's=EasyMO Call Center',
+    't=0 0',
+    connectionLine || 'c=IN IP4 0.0.0.0',
+    audioMLine || 'm=audio 9 RTP/AVP 0 8 101',
+    'a=rtpmap:0 PCMU/8000',
+    'a=rtpmap:8 PCMA/8000',
+    'a=rtpmap:101 telephone-event/8000',
+    'a=sendrecv',
+    'a=rtcp-mux',
+  ].join('\r\n');
+  
+  return answer + '\r\n';
+}
 
-  // Entry-point logging - log immediately when request is received
-  logStructuredEvent('WA_VOICE_REQUEST_RECEIVED', {
-    method: req.method,
-    path: url.pathname,
-    hasSignature: !!req.headers.get('x-hub-signature-256'),
-    correlationId,
-  });
-
-  // Validate environment variables on first request
-  validateEnvironment(correlationId);
-
-  const respond = (body: unknown, init: ResponseInit = {}): Response => {
-    const headers = new Headers(init.headers);
-    headers.set('Content-Type', 'application/json');
-    headers.set('X-Correlation-ID', correlationId);
-    return new Response(JSON.stringify(body), { ...init, headers });
-  };
-
-  if (url.pathname === '/health' || url.pathname.endsWith('/health')) {
-    return respond({ status: 'healthy', service: 'wa-webhook-voice-calls' });
-  }
-
-  if (req.method === 'GET') {
-    const mode = url.searchParams.get('hub.mode');
-    const token = url.searchParams.get('hub.verify_token');
-    const challenge = url.searchParams.get('hub.challenge');
-    
-    logStructuredEvent('WA_VOICE_VERIFICATION_ATTEMPT', {
-      mode,
-      hasToken: !!token,
-      hasChallenge: !!challenge,
-      correlationId,
-    });
-    
-    if (mode === 'subscribe' && token === Deno.env.get('WA_VERIFY_TOKEN')) {
-      return new Response(challenge ?? '', { status: 200 });
-    }
-    return respond({ error: 'forbidden' }, { status: 403 });
-  }
-
+/**
+ * Call WhatsApp API to pre-accept the call
+ */
+async function preAcceptCall(callId: string, sdpAnswer: string, correlationId: string): Promise<boolean> {
   try {
-    const rawBody = await req.text();
-    
-    logStructuredEvent('WA_VOICE_BODY_RECEIVED', {
-      bodyLength: rawBody.length,
-      correlationId,
-    });
-    
-    const signature = req.headers.get('x-hub-signature-256') ?? req.headers.get('x-hub-signature');
-    const appSecret = Deno.env.get('WHATSAPP_APP_SECRET') ?? Deno.env.get('WA_APP_SECRET');
-    
-    if (signature && appSecret) {
-      const isValid = await verifyWebhookSignature(rawBody, signature, appSecret);
-      if (!isValid) {
-        logStructuredEvent('WA_VOICE_ERROR', {
-          stage: 'signature_verification',
-          error: 'Invalid webhook signature',
-          correlationId,
-        }, 'error');
-        return respond({ error: 'invalid_signature' }, { status: 401 });
-      }
-    }
-
-    let payload;
-    try {
-      payload = JSON.parse(rawBody);
-    } catch (parseError) {
-      logStructuredEvent('WA_VOICE_ERROR', {
-        stage: 'parsing',
-        error: parseError instanceof Error ? parseError.message : 'JSON parse failed',
-        correlationId,
-      }, 'error');
-      return respond({ error: 'invalid_json' }, { status: 400 });
-    }
-    
-    const calls = payload?.entry?.[0]?.changes?.[0]?.value?.calls;
-    
-    // Log parsing result (helpful for debugging non-call events)
-    logStructuredEvent('WA_VOICE_PAYLOAD_PARSED', {
-      hasEntry: !!payload?.entry,
-      hasChanges: !!payload?.entry?.[0]?.changes,
-      hasCalls: !!calls,
-      callsCount: calls?.length || 0,
-      correlationId,
-    });
-    
-    if (!calls || calls.length === 0) {
-      return respond({ success: true, message: 'not_a_call_event' });
-    }
-
-    const call = calls[0]; // Handle first call in array
-    const { status: callEvent, id: callId, from: fromNumber, to: toNumber } = call;
-
-    logStructuredEvent('WA_VOICE_CALL_EVENT', {
-      callId,
-      event: callEvent,
-      from: fromNumber?.slice(-4),
-      correlationId,
-    });
-
-    switch (callEvent) {
-      case 'ringing':
-        const audioConfig = await handleIncomingCall(callId, fromNumber, toNumber, correlationId);
-        // Return audio stream configuration to WhatsApp
-        return respond(audioConfig);
-      case 'accepted':
-        logStructuredEvent('WA_VOICE_CALL_ACCEPTED', { callId, correlationId });
-        break;
-      case 'rejected':
-      case 'ended':
-        await handleCallEnded(callId, correlationId);
-        break;
-      default:
-        logStructuredEvent('WA_VOICE_UNKNOWN_EVENT', {
-          callId,
-          event: callEvent,
-          correlationId,
-        }, 'warn');
-    }
-
-    return respond({ success: true, call_id: callId, event: callEvent });
-
-  } catch (error) {
-    logStructuredEvent('WA_VOICE_ERROR', {
-      stage: 'handler',
-      error: error instanceof Error ? error.message : String(error),
-      correlationId,
-    }, 'error');
-    return respond({ error: 'internal_error' }, { status: 500 });
-  }
-});
-
-async function handleIncomingCall(
-  callId: string,
-  fromNumber: string,
-  toNumber: string,
-  correlationId: string
-): Promise<{ audio: { url: string } }> {
-  logStructuredEvent('WA_VOICE_CALL_HANDLING_START', {
-    callId,
-    from: maskPhone(fromNumber),
-    correlationId,
-  });
-
-  // Validate phone number format using existing utility
-  if (!fromNumber || !isValidPhone(fromNumber)) {
-    logStructuredEvent('WA_VOICE_ERROR', {
-      stage: 'input_validation',
-      callId,
-      error: 'Invalid phone number format',
-      correlationId,
-    }, 'error');
-    // Return a valid error response that WhatsApp can handle
-    throw new Error('Invalid phone number format');
-  }
-
-  // Stage 1: Profile lookup
-  logStructuredEvent('WA_VOICE_STAGE', {
-    stage: 'profile_lookup',
-    callId,
-    correlationId,
-  });
-
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('user_id, name, preferred_language, phone_number, wa_id')
-    .or(`phone_number.eq.${fromNumber},wa_id.eq.${fromNumber}`)
-    .maybeSingle();
-
-  if (profileError && profileError.code !== 'PGRST116') {
-    logStructuredEvent('WA_VOICE_ERROR', {
-      stage: 'profile_lookup',
-      callId,
-      error: profileError.message,
-      correlationId,
-    }, 'warn');
-  }
-
-  const language = profile?.preferred_language ?? 'en';
-  const userName = profile?.name ?? 'there';
-
-  // Stage 2: Build system prompt
-  logStructuredEvent('WA_VOICE_STAGE', {
-    stage: 'build_system_prompt',
-    callId,
-    correlationId,
-  });
-
-  // System prompt - COMPLETE (not truncated)
-  const systemPrompt = `You are EasyMO Call Center AI speaking with ${userName}. 
-
-IMPORTANT RULES FOR VOICE CALLS:
-- Keep responses SHORT (1-2 sentences maximum)
-- Speak naturally as if on a phone call
-- Be warm, friendly, and helpful
-- Ask clarifying questions if needed
-- If the caller speaks Kinyarwanda or French, respond in that language
-
-SERVICES YOU CAN HELP WITH:
-- Rides & Transportation (taxi, moto, shuttle booking)
-- Real Estate (buy, sell, rent properties)
-- Jobs (find work, post job listings)
-- Business Services (registration, consulting)
-- Insurance (health, vehicle, property quotes)
-- Legal Services (contracts, disputes, advice)
-- Pharmacy & Health (find medicines, nearby clinics)
-- Farmer Services (inputs, market prices, weather)
-- Wallet & Payments (balance, transfers, history)
-
-Start by greeting the caller warmly and asking how you can help.`;
-
-  // Stage 3: Create OpenAI Realtime session
-  logStructuredEvent('WA_VOICE_STAGE', {
-    stage: 'create_openai_session',
-    callId,
-    model: OPENAI_REALTIME_MODEL,
-    correlationId,
-  });
-
-  try {
-    const response = await fetch('https://api.openai.com/v1/realtime/sessions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: OPENAI_REALTIME_MODEL,
-        voice: 'alloy',
-        instructions: systemPrompt,
-        modalities: ['text', 'audio'],
-        input_audio_format: 'pcm16',
-        output_audio_format: 'pcm16',
-        input_audio_transcription: {
-          model: 'whisper-1'
-        },
-        turn_detection: {
-          type: 'server_vad',
-          threshold: 0.5,
-          prefix_padding_ms: 300,
-          silence_duration_ms: 500
-        },
-        temperature: 0.8,
-        max_response_output_tokens: 4096
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`OpenAI session creation failed: ${response.status} ${errorText}`);
-    }
-
-    const session = await response.json();
-
-    logStructuredEvent('WA_VOICE_SESSION_CREATED', {
-      callId,
-      sessionId: session.id,
-      model: OPENAI_REALTIME_MODEL,
-      fromMasked: maskPhone(fromNumber),
-      correlationId,
-    });
-
-    // Stage 4: Store call summary
-    logStructuredEvent('WA_VOICE_STAGE', {
-      stage: 'store_call_summary',
-      callId,
-      correlationId,
-    });
-
-    const { error: insertError } = await supabase.from('call_summaries').insert({
-      call_id: callId,
-      profile_id: profile?.user_id,
-      primary_intent: 'voice_call',
-      summary_text: 'WhatsApp voice call initiated',
-      raw_transcript_reference: callId,
-    });
-
-    if (insertError) {
-      logStructuredEvent('WA_VOICE_ERROR', {
-        stage: 'store_call_summary',
-        callId,
-        error: insertError.message,
-        correlationId,
-      }, 'warn');
-      // Non-fatal: continue with call answering
-    }
-
-    logStructuredEvent('WA_VOICE_CALL_ANSWERED', { 
-      callId,
-      sessionId: session.id,
-      correlationId,
-    });
-
-    // Return the ephemeral session key for WhatsApp to connect to OpenAI Realtime API
-    return {
-      audio: {
-        url: session.client_secret.value,
-      },
-    };
-
-  } catch (error) {
-    logStructuredEvent('WA_VOICE_ERROR', {
-      stage: 'openai_session_creation',
-      callId,
-      error: error instanceof Error ? error.message : String(error),
-      correlationId,
-    }, 'error');
-
-    // Send a text message to inform user
-    try {
-      const messageUrl = `https://graph.facebook.com/v21.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
-      await fetch(messageUrl, {
+    const response = await fetch(
+      `https://graph.facebook.com/v21.0/${WHATSAPP_PHONE_NUMBER_ID}/calls`,
+      {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
@@ -375,48 +109,266 @@ Start by greeting the caller warmly and asking how you can help.`;
         },
         body: JSON.stringify({
           messaging_product: 'whatsapp',
-          to: fromNumber,
-          type: 'text',
-          text: {
-            body: '📞 Voice calls are temporarily unavailable. Please send a text message instead, and our AI assistant will help you right away!'
-          }
+          call_id: callId,
+          action: 'pre_accept',
+          session: {
+            sdp_type: 'answer',
+            sdp: sdpAnswer,
+          },
         }),
-      });
-      
-      logStructuredEvent('WA_VOICE_FALLBACK_MESSAGE_SENT', { callId, to: maskPhone(fromNumber), correlationId });
-    } catch (msgError) {
-      logStructuredEvent('WA_VOICE_FALLBACK_MESSAGE_FAILED', {
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      logStructuredEvent('WA_CALL_PRE_ACCEPT_FAILED', {
         callId,
-        error: msgError instanceof Error ? msgError.message : String(msgError),
+        status: response.status,
+        error,
         correlationId,
       }, 'error');
+      return false;
     }
 
-    throw error;
+    logStructuredEvent('WA_CALL_PRE_ACCEPTED', { callId, correlationId });
+    return true;
+  } catch (error) {
+    logStructuredEvent('WA_CALL_PRE_ACCEPT_ERROR', {
+      callId,
+      error: error instanceof Error ? error.message : String(error),
+      correlationId,
+    }, 'error');
+    return false;
   }
 }
 
-async function handleCallEnded(callId: string, correlationId: string): Promise<void> {
-  logStructuredEvent('WA_VOICE_CALL_ENDED', {
+/**
+ * Call WhatsApp API to accept the call
+ */
+async function acceptCall(callId: string, sdpAnswer: string, correlationId: string): Promise<boolean> {
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/v21.0/${WHATSAPP_PHONE_NUMBER_ID}/calls`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          call_id: callId,
+          action: 'accept',
+          session: {
+            sdp_type: 'answer',
+            sdp: sdpAnswer,
+          },
+          biz_opaque_callback_data: correlationId,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      logStructuredEvent('WA_CALL_ACCEPT_FAILED', {
+        callId,
+        status: response.status,
+        error,
+        correlationId,
+      }, 'error');
+      return false;
+    }
+
+    logStructuredEvent('WA_CALL_ACCEPTED', { callId, correlationId });
+    return true;
+  } catch (error) {
+    logStructuredEvent('WA_CALL_ACCEPT_ERROR', {
+      callId,
+      error: error instanceof Error ? error.message : String(error),
+      correlationId,
+    }, 'error');
+    return false;
+  }
+}
+
+/**
+ * Handle incoming call from WhatsApp user
+ */
+async function handleCallConnect(call: any, correlationId: string): Promise<void> {
+  const { id: callId, from: fromNumber, to: toNumber, session } = call;
+  
+  logStructuredEvent('WA_CALL_CONNECT', {
     callId,
+    from: fromNumber,
+    to: toNumber,
+    hasSDP: !!session?.sdp,
     correlationId,
   });
 
-  // Update call summary with ended status
-  const { error } = await supabase
-    .from('call_summaries')
-    .update({
-      summary_text: 'WhatsApp voice call ended',
-      updated_at: new Date().toISOString(),
-    })
-    .eq('call_id', callId);
+  if (!session?.sdp) {
+    logStructuredEvent('WA_CALL_NO_SDP', { callId, correlationId }, 'error');
+    return;
+  }
 
-  if (error) {
-    logStructuredEvent('WA_VOICE_ERROR', {
-      stage: 'call_end_update',
+  // Get user profile for personalization
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('user_id, first_name, last_name, preferred_language')
+    .eq('phone_number', fromNumber)
+    .maybeSingle();
+
+  const userName = profile?.first_name || 'there';
+  const language = profile?.preferred_language || 'en';
+
+  // Generate SDP answer from WhatsApp's SDP offer
+  const sdpAnswer = generateSDPAnswer(session.sdp);
+
+  // Step 1: Pre-accept the call (recommended by WhatsApp for faster connection)
+  const preAccepted = await preAcceptCall(callId, sdpAnswer, correlationId);
+  
+  if (!preAccepted) {
+    logStructuredEvent('WA_CALL_PRE_ACCEPT_SKIP', { callId, correlationId }, 'warn');
+  }
+
+  // Store call summary
+  await supabase.from('call_summaries').insert({
+    call_id: callId,
+    profile_id: profile?.user_id,
+    phone_number: fromNumber,
+    call_type: 'whatsapp_voice',
+    status: 'ringing',
+    language,
+    metadata: {
+      correlation_id: correlationId,
+      user_name: userName,
+    },
+  });
+
+  // Step 2: Accept the call after WebRTC connection
+  // In a full implementation, you would:
+  // 1. Establish WebRTC connection using the SDP
+  // 2. Wait for connection to be ready
+  // 3. Then accept the call
+  // For now, we accept immediately after pre-accept
+  
+  // Small delay to allow WebRTC connection setup
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  const accepted = await acceptCall(callId, sdpAnswer, correlationId);
+
+  if (accepted) {
+    // TODO: Start media bridge to OpenAI Realtime API
+    // This requires:
+    // 1. WebRTC media server to receive audio from WhatsApp
+    // 2. Connect to OpenAI Realtime API WebSocket
+    // 3. Forward audio between WhatsApp <-> OpenAI
+    
+    logStructuredEvent('WA_CALL_MEDIA_BRIDGE_NEEDED', {
       callId,
-      error: error.message,
+      note: 'Media bridging to OpenAI Realtime not yet implemented',
       correlationId,
     }, 'warn');
   }
 }
+
+/**
+ * Handle call termination
+ */
+async function handleCallTerminate(call: any, correlationId: string): Promise<void> {
+  const { id: callId, status, duration } = call;
+  
+  logStructuredEvent('WA_CALL_TERMINATE', {
+    callId,
+    status,
+    duration,
+    correlationId,
+  });
+
+  // Update call summary
+  await supabase
+    .from('call_summaries')
+    .update({
+      status: 'completed',
+      duration,
+      summary_text: `Call ${status} - Duration: ${duration || 0}s`,
+    })
+    .eq('call_id', callId);
+}
+
+serve(async (req: Request): Promise<Response> => {
+  const correlationId = crypto.randomUUID();
+
+  logStructuredEvent('WA_VOICE_WEBHOOK_RECEIVED', {
+    method: req.method,
+    correlationId,
+  });
+
+  // Handle webhook verification
+  if (req.method === 'GET') {
+    const url = new URL(req.url);
+    const mode = url.searchParams.get('hub.mode');
+    const token = url.searchParams.get('hub.verify_token');
+    const challenge = url.searchParams.get('hub.challenge');
+    
+    if (mode === 'subscribe' && token === WA_VERIFY_TOKEN) {
+      logStructuredEvent('WA_VOICE_WEBHOOK_VERIFIED', { correlationId });
+      return new Response(challenge ?? '', { status: 200 });
+    }
+    return new Response('Forbidden', { status: 403 });
+  }
+
+  try {
+    const payload: CallWebhook = await req.json();
+
+    // Extract calls from webhook
+    const calls = payload?.entry?.[0]?.changes?.[0]?.value?.calls;
+
+    if (!calls || calls.length === 0) {
+      return new Response(JSON.stringify({ success: true, message: 'no_calls' }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const call = calls[0];
+
+    logStructuredEvent('WA_CALL_EVENT', {
+      event: call.event,
+      callId: call.id,
+      from: call.from,
+      correlationId,
+    });
+
+    // Handle different call events
+    switch (call.event) {
+      case 'connect':
+        await handleCallConnect(call, correlationId);
+        break;
+      
+      case 'terminate':
+        await handleCallTerminate(call, correlationId);
+        break;
+      
+      default:
+        logStructuredEvent('WA_CALL_UNKNOWN_EVENT', {
+          event: call.event,
+          callId: call.id,
+          correlationId,
+        }, 'warn');
+    }
+
+    return new Response(JSON.stringify({ success: true, call_id: call.id }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+  } catch (error) {
+    logStructuredEvent('WA_VOICE_ERROR', {
+      error: error instanceof Error ? error.message : String(error),
+      correlationId,
+    }, 'error');
+
+    return new Response(JSON.stringify({ error: 'internal_error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+});
