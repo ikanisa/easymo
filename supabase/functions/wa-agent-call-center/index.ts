@@ -33,12 +33,59 @@ const useAGI = Deno.env.get('CALL_CENTER_USE_AGI') !== 'false'; // Default to tr
 const agent = useAGI ? new CallCenterAGI() : new CallCenterAgent();
 const deduplicator = new MessageDeduplicator(supabase);
 
+// Voice Gateway URL validation
+const VOICE_GATEWAY_URL = Deno.env.get('VOICE_GATEWAY_URL') ?? 'http://voice-gateway:3000';
+
+// Validate environment variables on first request
+let envValidated = false;
+function validateEnvironment(correlationId: string): void {
+  if (envValidated) return;
+  
+  const warnings: string[] = [];
+  
+  if (!VOICE_GATEWAY_URL || VOICE_GATEWAY_URL === 'http://voice-gateway:3000') {
+    warnings.push('VOICE_GATEWAY_URL is not configured or using default Docker hostname');
+  }
+  
+  const accessToken = Deno.env.get('WHATSAPP_ACCESS_TOKEN') ?? Deno.env.get('WABA_ACCESS_TOKEN');
+  if (!accessToken) {
+    warnings.push('WHATSAPP_ACCESS_TOKEN is not configured');
+  }
+  
+  const phoneNumberId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') ?? Deno.env.get('WABA_PHONE_NUMBER_ID');
+  if (!phoneNumberId) {
+    warnings.push('WHATSAPP_PHONE_NUMBER_ID is not configured');
+  }
+  
+  if (warnings.length > 0) {
+    logStructuredEvent('CALL_CENTER_ENV_WARNING', {
+      warnings,
+      correlationId,
+    }, 'warn');
+  }
+  
+  envValidated = true;
+}
+
 console.log(`Call Center initialized: ${useAGI ? 'AGI (Full Tools)' : 'Basic Agent'}`);
 
 serve(async (req: Request): Promise<Response> => {
   const url = new URL(req.url);
   const correlationId = req.headers.get('X-Correlation-ID') ?? crypto.randomUUID();
   const requestId = req.headers.get('X-Request-ID') ?? crypto.randomUUID();
+  
+  // Entry-point logging - log immediately when request is received
+  logStructuredEvent('CALL_CENTER_REQUEST_RECEIVED', {
+    method: req.method,
+    path: url.pathname,
+    hasSignature: !!req.headers.get('x-hub-signature-256'),
+    userAgent: req.headers.get('user-agent')?.slice(0, 50),
+    correlationId,
+    requestId,
+  });
+
+  // Validate environment variables on first request
+  validateEnvironment(correlationId);
   
   // Check if this is an agent-to-agent consultation
   const isConsultation = req.headers.get('X-Agent-Consultation') === 'true';
@@ -111,11 +158,27 @@ serve(async (req: Request): Promise<Response> => {
 
   try {
     const rawBody = await req.text();
-    const payload = JSON.parse(rawBody);
+    
+    logStructuredEvent('CALL_CENTER_BODY_RECEIVED', {
+      bodyLength: rawBody.length,
+      correlationId,
+    });
+
+    let payload;
+    try {
+      payload = JSON.parse(rawBody);
+    } catch (parseError) {
+      logStructuredEvent('CALL_CENTER_ERROR', {
+        stage: 'parsing',
+        error: parseError instanceof Error ? parseError.message : 'JSON parse failed',
+        correlationId,
+      }, 'error');
+      return respond({ error: 'invalid_json' }, { status: 400 });
+    }
 
     // Handle agent-to-agent consultation (direct call, no WhatsApp wrapper)
     if (isConsultation && payload.message) {
-      await logStructuredEvent('CALL_CENTER_CONSULTATION', {
+      logStructuredEvent('CALL_CENTER_CONSULTATION', {
         sourceAgent,
         correlationId,
       });
@@ -142,12 +205,27 @@ serve(async (req: Request): Promise<Response> => {
     if (signature && appSecret) {
       const isValid = await verifyWebhookSignature(rawBody, signature, appSecret);
       if (!isValid && !allowUnsigned) {
+        logStructuredEvent('CALL_CENTER_ERROR', {
+          stage: 'signature_verification',
+          error: 'Invalid webhook signature',
+          correlationId,
+        }, 'error');
         return respond({ error: 'unauthorized' }, { status: 401 });
       }
     }
 
     // Extract message
     const message = payload?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+    
+    // Log parsing result for debugging
+    logStructuredEvent('CALL_CENTER_PAYLOAD_PARSED', {
+      hasEntry: !!payload?.entry,
+      hasChanges: !!payload?.entry?.[0]?.changes,
+      hasMessage: !!message,
+      messageType: message?.type || 'none',
+      correlationId,
+    });
+    
     if (!message) {
       return respond({ success: true, message: 'No message to process' });
     }
