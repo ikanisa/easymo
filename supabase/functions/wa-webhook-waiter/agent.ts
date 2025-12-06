@@ -4,8 +4,20 @@ import { logStructuredEvent } from "../_shared/observability.ts";
 import { formatPaymentInstructions, generateMoMoUSSDCode } from "./payment.ts";
 import { notifyBarNewOrder } from "./notify_bar.ts";
 import { DualAIProvider } from "./providers/dual-ai-provider.ts";
+import Fuse from "https://esm.sh/fuse.js@7.0.0";
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+
+// Malta phone validation per GROUND_RULES.md
+const MALTA_PHONE_REGEX = /^\+356\d{8}$/;
+
+/**
+ * Validate Malta phone number format (+356xxxxxxxx)
+ * Per GROUND_RULES.md: Malta phone format support required
+ */
+function isValidMaltaPhone(phone: string): boolean {
+  return MALTA_PHONE_REGEX.test(phone);
+}
 
 interface WaiterContext {
   supabase: SupabaseClient;
@@ -114,6 +126,17 @@ async function getOrCreateSession(ctx: WaiterContext): Promise<ConversationSessi
       .order("category")
       .order("name");
 
+    // Validate menu is not empty per problem statement
+    if (!menuItems || menuItems.length === 0) {
+      await sendTextMessage(ctx.from, 
+        "Sorry, the menu is currently unavailable. Please contact the bar staff.");
+      await logStructuredEvent("WAITER_EMPTY_MENU_ERROR", {
+        barId,
+        phone: ctx.from,
+      }, "error");
+      return null;
+    }
+
     const sessionId = crypto.randomUUID();
 
     const { data: newSession } = await ctx.supabase
@@ -139,7 +162,7 @@ async function getOrCreateSession(ctx: WaiterContext): Promise<ConversationSessi
       `I'm your AI waiter. I can help you:\n` +
       `• Browse our menu\n` +
       `• Place orders\n` +
-      `• Process payments\n\n` +
+      `• Get payment instructions\n\n` +
       `Just tell me what you'd like! 😊`;
 
     await sendTextMessage(ctx.from, welcomeMessage);
@@ -280,6 +303,13 @@ async function handleAIAction(
   switch (action) {
     case "add_to_cart":
       if (items && items.length > 0) {
+        // Fetch all menu items for fuzzy matching
+        const { data: allMenuItems } = await ctx.supabase
+          .from("restaurant_menu_items")
+          .select("id, name, price, description")
+          .eq("bar_id", session.bar_id)
+          .eq("is_available", true);
+
         for (const item of items) {
           let menuItem = null;
           
@@ -295,16 +325,24 @@ async function handleAIAction(
             menuItem = data;
           }
           
-          // Fall back to fuzzy name matching
-          if (!menuItem && item.name) {
-            const { data: matches } = await ctx.supabase
-              .from("restaurant_menu_items")
-              .select("id, name, price")
-              .eq("bar_id", session.bar_id)
-              .eq("is_available", true)
-              .ilike("name", `%${item.name}%`)
-              .limit(1);
-            menuItem = matches?.[0];
+          // Use Fuse.js for fuzzy name matching
+          if (!menuItem && item.name && allMenuItems && allMenuItems.length > 0) {
+            const fuse = new Fuse(allMenuItems, {
+              keys: ['name', 'description'],
+              threshold: 0.4,  // Per problem statement
+              includeScore: true,
+            });
+            
+            const results = fuse.search(item.name);
+            if (results.length > 0 && results[0].score! < 0.4) {
+              menuItem = results[0].item;
+              
+              await logStructuredEvent("WAITER_FUZZY_MATCH", {
+                searchTerm: item.name,
+                matched: menuItem.name,
+                score: results[0].score,
+              });
+            }
           }
           
           if (!menuItem) continue;
@@ -431,6 +469,10 @@ async function handleCheckout(
   );
 
   const paymentMethod = currency === "EUR" ? "revolut" : "momo";
+  
+  // NOTE: Per GROUND_RULES.md, we do NOT process payments directly.
+  // We only generate payment instructions (USSD codes/Revolut links) 
+  // for the user to complete payment themselves via mobile money or Revolut.
   const paymentInfo = formatPaymentInstructions(
     paymentMethod,
     cart.total,
