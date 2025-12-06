@@ -15,6 +15,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { logStructuredEvent } from '../_shared/observability.ts';
+import { generateSDPAnswer, validateSDP } from './sdp-handler.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -64,36 +65,6 @@ interface CallWebhook {
 }
 
 /**
- * Generate a simple SDP answer for WhatsApp's SDP offer
- * This is a basic implementation - for production, use a proper WebRTC library
- */
-function generateSDPAnswer(offer: string): string {
-  // TODO: Implement proper SDP answer generation
-  // For now, return a basic answer that matches WhatsApp's requirements
-  
-  // Extract session info from offer
-  const lines = offer.split('\r\n');
-  const audioMLine = lines.find(l => l.startsWith('m=audio'));
-  const connectionLine = lines.find(l => l.startsWith('c='));
-  
-  // Basic SDP answer structure
-  const answer = [
-    'v=0',
-    'o=- 0 0 IN IP4 0.0.0.0',
-    's=EasyMO Call Center',
-    't=0 0',
-    connectionLine || 'c=IN IP4 0.0.0.0',
-    audioMLine || 'm=audio 9 RTP/AVP 0 8 101',
-    'a=rtpmap:0 PCMU/8000',
-    'a=rtpmap:8 PCMA/8000',
-    'a=rtpmap:101 telephone-event/8000',
-    'a=sendrecv',
-    'a=rtcp-mux',
-  ].join('\r\n');
-  
-  return answer + '\r\n';
-}
-
 /**
  * Call WhatsApp API to pre-accept the call
  */
@@ -221,7 +192,25 @@ async function handleCallConnect(call: any, correlationId: string): Promise<void
   const language = profile?.preferred_language || 'en';
 
   // Generate SDP answer from WhatsApp's SDP offer
-  const sdpAnswer = generateSDPAnswer(session.sdp);
+  let sdpAnswer: string;
+  try {
+    sdpAnswer = generateSDPAnswer(session.sdp);
+    
+    // Log SDP for debugging
+    logStructuredEvent('WA_CALL_SDP_GENERATED', {
+      callId,
+      offerLength: session.sdp.length,
+      answerLength: sdpAnswer.length,
+      correlationId,
+    });
+  } catch (error) {
+    logStructuredEvent('WA_CALL_SDP_ERROR', {
+      callId,
+      error: error instanceof Error ? error.message : String(error),
+      correlationId,
+    }, 'error');
+    return;
+  }
 
   // Step 1: Pre-accept the call (recommended by WhatsApp for faster connection)
   const preAccepted = await preAcceptCall(callId, sdpAnswer, correlationId);
