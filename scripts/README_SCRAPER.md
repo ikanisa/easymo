@@ -73,6 +73,34 @@ export SUPABASE_URL=https://your-project.supabase.co
 export SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
+## Quick Start Example
+
+Here's a complete example to get started quickly:
+
+```bash
+# 1. Install dependencies
+pip3 install -r scripts/requirements-scraper.txt
+playwright install chromium
+
+# 2. Set environment variables
+export SUPABASE_URL=https://your-project.supabase.co
+export SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# 3. Test with a small dry run (no database writes)
+python3 scripts/google_maps_bulk_scraper.py \
+  --categories "pharmacy" \
+  --per-category-limit 5 \
+  --dry-run
+
+# 4. Run for real on a few categories
+python3 scripts/google_maps_bulk_scraper.py \
+  --categories "pharmacy,restaurant,bank" \
+  --per-category-limit 50
+
+# 5. Run full scrape (all categories, ~10,000 businesses)
+python3 scripts/google_maps_bulk_scraper.py
+```
+
 ## Usage
 
 ### Scrape All Categories (Default)
@@ -225,6 +253,33 @@ The script scrapes 50+ categories defined in `scripts/kigali_categories.json`:
 - paint shop
 - plumbing supplies
 - electrical supplies
+
+## Testing
+
+### Run Unit Tests
+
+The scraper includes unit tests that validate core logic without requiring internet access:
+
+```bash
+python3 scripts/test_scraper.py
+```
+
+This will test:
+- Place ID extraction from Google Maps URLs
+- Duplicate detection logic
+- Category configuration loading
+- Data transformation for database
+
+### Run Dry Run Test
+
+Test the full scraper without database writes:
+
+```bash
+python3 scripts/google_maps_bulk_scraper.py \
+  --categories "pharmacy" \
+  --per-category-limit 3 \
+  --dry-run
+```
 
 ## Troubleshooting
 
