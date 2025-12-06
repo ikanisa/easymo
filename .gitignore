@@ -15,6 +15,12 @@
 # Supabase CLI/local artifacts
 # Temporary files
 # Testing
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
 # TypeScript
 # macOS
 *.env.local

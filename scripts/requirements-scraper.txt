@@ -3,4 +3,11 @@ supabase>=2.0.0
 python-dotenv>=1.0.0
 tqdm>=4.66.0
 tenacity>=8.2.0
+# Python dependencies for Google Maps scraper
+# Install with: pip install -r scripts/requirements-scraper.txt
+# Then run: playwright install chromium
+
+playwright>=1.40.0
+supabase>=2.0.0
+python-dotenv>=1.0.0
 psycopg2-binary>=2.9.9
