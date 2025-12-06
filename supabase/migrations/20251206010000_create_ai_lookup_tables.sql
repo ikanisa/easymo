@@ -367,6 +367,7 @@ CREATE INDEX IF NOT EXISTS idx_moderation_rules_category ON public.moderation_ru
 -- RLS policies
 ALTER TABLE public.moderation_rules ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS moderation_rules_admin_all ON public.moderation_rules;
 CREATE POLICY moderation_rules_admin_all ON public.moderation_rules
   FOR ALL USING (
     EXISTS (
@@ -376,11 +377,13 @@ CREATE POLICY moderation_rules_admin_all ON public.moderation_rules
     )
   );
 
+DROP POLICY IF EXISTS moderation_rules_public_read ON public.moderation_rules;
 CREATE POLICY moderation_rules_public_read ON public.moderation_rules
   FOR SELECT USING (is_active = true);
 
--- Insert moderation rules from hardcoded OUT_OF_SCOPE_PATTERNS
-INSERT INTO public.moderation_rules (rule_type, pattern, description, category, severity) VALUES
+-- Insert moderation rules from hardcoded OUT_OF_SCOPE_PATTERNS (skip if pattern already exists)
+INSERT INTO public.moderation_rules (rule_type, pattern, description, category, severity)
+SELECT * FROM (VALUES
   ('out_of_scope', 'news|politics|election|government|president', 
    'Political and news topics', 'politics', 'medium'),
   
@@ -413,7 +416,11 @@ INSERT INTO public.moderation_rules (rule_type, pattern, description, category, 
   
   ('flagged', 'urgent|emergency|help|police', 
    'Potential emergency situations', 'safety', 'high')
-ON CONFLICT DO NOTHING;
+) AS new_rules(rule_type, pattern, description, category, severity)
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.moderation_rules 
+  WHERE pattern = new_rules.pattern
+);
 
 -- =====================================================
 -- TOOL ENUM VALUES TABLE
