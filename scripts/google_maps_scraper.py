@@ -25,11 +25,9 @@ Usage:
     pip install -r scripts/requirements-scraper.txt
     playwright install chromium
 
-    # Set environment variables
-    export SUPABASE_URL="https://your-project.supabase.co"
-    export SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
-    # OR use DATABASE_URL for direct PostgreSQL connection
-    export DATABASE_URL="postgresql://user:pass@host:port/database"
+    # Set environment variable
+    export DATABASE_URL="postgresql://postgres:password@db.xxxxx.supabase.co:5432/postgres"
+    # You can find this in: Supabase Dashboard > Settings > Database > Connection string (URI)
 
     # Run scraper
     python scripts/google_maps_scraper.py "https://www.google.com/maps/search/pharmacies/@-1.9857408,30.1006848,15z"
@@ -41,9 +39,9 @@ Usage:
     python scripts/google_maps_scraper.py --category restaurant --limit 20 "https://maps.google.com/..."
 
 Environment Variables:
-    SUPABASE_URL: Supabase project URL
-    SUPABASE_SERVICE_ROLE_KEY: Service role key for admin access
-    DATABASE_URL: Alternative PostgreSQL connection string
+    DATABASE_URL: PostgreSQL connection string (required)
+                  Example: postgresql://postgres:password@db.xxxxx.supabase.co:5432/postgres
+                  Find in: Supabase Dashboard > Settings > Database > Connection string (URI)
 
 Duplicate Detection:
     Businesses are considered duplicates if ANY of these match:
@@ -542,11 +540,6 @@ class BusinessDatabase:
             ID of the inserted business
         """
         try:
-            # Prepare location geography if coordinates available
-            location_geo = None
-            if business.get('lat') is not None and business.get('lng') is not None:
-                location_geo = f"POINT({business['lng']} {business['lat']})"
-            
             self.cursor.execute("""
                 INSERT INTO public.business (
                     name,
@@ -560,7 +553,15 @@ class BusinessDatabase:
                     status,
                     is_active
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (
+                    %s, %s, %s, %s, %s, %s,
+                    CASE 
+                        WHEN %s IS NOT NULL AND %s IS NOT NULL 
+                        THEN ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography
+                        ELSE NULL
+                    END,
+                    %s, %s, %s
+                )
                 RETURNING id
             """, (
                 business.get('name'),
@@ -569,7 +570,12 @@ class BusinessDatabase:
                 business.get('address'),
                 business.get('lat'),
                 business.get('lng'),
-                location_geo,
+                # Parameters for CASE WHEN to safely create geography
+                business.get('lng'),
+                business.get('lat'),
+                business.get('lng'),
+                business.get('lat'),
+                # Remaining fields
                 business.get('phone'),
                 'active',
                 True
@@ -593,11 +599,6 @@ class BusinessDatabase:
             category: Business category
         """
         try:
-            # Prepare location geography if coordinates available
-            location_geo = None
-            if business.get('lat') is not None and business.get('lng') is not None:
-                location_geo = f"POINT({business['lng']} {business['lat']})"
-            
             self.cursor.execute("""
                 UPDATE public.business
                 SET
@@ -607,7 +608,11 @@ class BusinessDatabase:
                     location_text = COALESCE(%s, location_text),
                     lat = COALESCE(%s, lat),
                     lng = COALESCE(%s, lng),
-                    location = COALESCE(%s::geography, location),
+                    location = CASE 
+                        WHEN %s IS NOT NULL AND %s IS NOT NULL 
+                        THEN ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography
+                        ELSE location
+                    END,
                     phone = COALESCE(%s, phone),
                     updated_at = NOW()
                 WHERE id = %s
@@ -618,7 +623,12 @@ class BusinessDatabase:
                 business.get('address'),
                 business.get('lat'),
                 business.get('lng'),
-                location_geo,
+                # Parameters for CASE WHEN to safely create geography
+                business.get('lng'),
+                business.get('lat'),
+                business.get('lng'),
+                business.get('lat'),
+                # Remaining fields
                 business.get('phone'),
                 business_id
             ))
@@ -645,36 +655,14 @@ def get_database_url() -> str:
     if database_url:
         return database_url
     
-    # Try Supabase credentials
-    supabase_url = os.getenv('SUPABASE_URL')
-    supabase_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
-    
-    if not supabase_url:
-        raise ValueError(
-            "Missing required environment variables. Set either:\n"
-            "  - DATABASE_URL, or\n"
-            "  - SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY"
-        )
-    
-    # Extract project reference from Supabase URL
-    # Format: https://xxxxx.supabase.co -> xxxxx
-    import re
-    match = re.search(r'https://([^.]+)\.supabase\.co', supabase_url)
-    if not match:
-        raise ValueError(f"Invalid SUPABASE_URL format: {supabase_url}")
-    
-    project_ref = match.group(1)
-    
-    # Construct database URL
-    # Supabase uses port 5432 for direct PostgreSQL connections
-    database_url = f"postgresql://postgres.{project_ref}:[PASSWORD]@aws-0-us-west-1.pooler.supabase.com:5432/postgres"
-    
-    logger.warning(
-        "Using SUPABASE_URL. For better performance, set DATABASE_URL directly.\n"
-        f"You can find it in Supabase Dashboard > Settings > Database > Connection string (URI)"
+    # For Supabase, DATABASE_URL is required for direct PostgreSQL connections
+    # The service role key is for Supabase API, not database connections
+    raise ValueError(
+        "Missing required environment variable: DATABASE_URL\n"
+        "Please set DATABASE_URL to your PostgreSQL connection string.\n"
+        "You can find it in Supabase Dashboard > Settings > Database > Connection string (URI)\n"
+        "Example: postgresql://postgres:[YOUR-PASSWORD]@db.xxxxx.supabase.co:5432/postgres"
     )
-    
-    return database_url
 
 
 def main():
