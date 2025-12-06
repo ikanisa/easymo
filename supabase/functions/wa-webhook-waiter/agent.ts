@@ -7,6 +7,7 @@ import { DualAIProvider } from "./providers/dual-ai-provider.ts";
 import Fuse from "https://esm.sh/fuse.js@7.0.0";
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+import { callAI } from "./ai-provider.ts";
 
 // Malta phone validation per GROUND_RULES.md
 const MALTA_PHONE_REGEX = /^\+356\d{8}$/;
@@ -235,53 +236,21 @@ If unclear, ask for clarification.`;
   const updatedMessages = [
     ...session.messages,
     { role: "user", content: userMessage },
-  ];
+  ] as Array<{ role: "user" | "assistant"; content: string }>;
 
   try {
-    const aiProvider = new DualAIProvider();
-
-    const aiResult = await aiProvider.chat([
-      { role: "system", content: systemPrompt },
-      ...updatedMessages.slice(-10).map((m) => {
-        // Ensure role is valid for DualAIProvider
-        const role = m.role === 'assistant' || m.role === 'user' ? m.role : 'user';
-        return {
-          role: role as 'user' | 'assistant',
-          content: m.content,
-        };
-      }),
-    ], {
-      temperature: 0.7,
-      maxTokens: 500,
-    });
-
-    // Log which provider was used
-    await logStructuredEvent("WAITER_AI_PROVIDER", {
-      provider: aiResult.provider,
-      model: aiResult.model,
-      fallbackUsed: aiResult.fallbackUsed,
-      sessionId: session.id,
-    });
-
-    const aiResponseText = aiResult.text;
-
-    let aiResponse: any;
-    try {
-      const jsonMatch = aiResponseText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        aiResponse = JSON.parse(jsonMatch[0]);
-      } else {
-        aiResponse = { message: aiResponseText, action: "none" };
-      }
-    } catch {
-      aiResponse = { message: aiResponseText, action: "none" };
-    }
+    // GROUND_RULES: Use dual-provider AI (GPT-5 primary, Gemini-3 fallback)
+    const aiResponse = await callAI(systemPrompt, updatedMessages);
 
     await handleAIAction(ctx, session, aiResponse, updatedMessages);
 
     return true;
   } catch (error) {
     console.error("waiter_ai.error", error);
+    await logStructuredEvent("WAITER_AI_ERROR", {
+      error: error instanceof Error ? error.message : String(error),
+      from: ctx.from,
+    }, "error");
     await sendTextMessage(ctx.from, "Sorry, I'm having trouble right now. Please try again.");
     return true;
   }
@@ -438,7 +407,8 @@ async function handleCheckout(
 
   const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}`;
   
-  const { data: order, error } = await ctx.supabase
+  // GROUND_RULES: Do NOT track payment_status - customer pays directly
+  const { data: order, error} = await ctx.supabase
     .from("orders")
     .insert({
       bar_id: session.bar_id,
@@ -449,6 +419,7 @@ async function handleCheckout(
       visitor_phone: ctx.from,
       dine_in_table: session.table_number,
       waiter_session_id: session.session_id,
+      payment_method: currency === "EUR" ? "revolut" : "momo",
     })
     .select("id")
     .single();
@@ -481,6 +452,15 @@ async function handleCheckout(
     paymentSettings
   );
 
+  // Store payment link for reference only (not tracking payment)
+  await ctx.supabase
+    .from("orders")
+    .update({
+      payment_link: paymentInfo.url,
+      payment_ussd_code: paymentMethod === "momo" ? generateMoMoUSSDCode(cart.total) : null,
+    })
+    .eq("id", order.id);
+
   await ctx.supabase
     .from("waiter_conversations")
     .update({
@@ -496,14 +476,13 @@ async function handleCheckout(
     .map(i => `${i.quantity}x ${i.name}`)
     .join("\n");
 
-  await sendTextMessage(ctx.from,
-    `✅ *Order Confirmed!*\n\n` +
-    `📋 Order #${orderNumber}\n` +
-    `📍 Table: ${session.table_number || "N/A"}\n\n` +
-    `*Items:*\n${itemsList}\n\n` +
-    `💰 *Total: ${cart.total.toLocaleString()} ${currency}*\n\n` +
-    `${paymentInfo.message}\n\n` +
-    `Your order has been sent to the kitchen! 🍽️`
+  // GROUND_RULES: Do NOT track payment status - customer pays directly via USSD/Revolut
+  await sendButtonsMessage(
+    { from: ctx.from } as any,
+    `✅ *Order Confirmed!*\n\n📋 Order #${orderNumber}\n📍 Table: ${session.table_number || "N/A"}\n\n*Items:*\n${itemsList}\n\n💰 *Total: ${cart.total.toLocaleString()} ${currency}*\n\n${paymentInfo.message}\n\n_Your order will be prepared once payment is received._`,
+    [
+      { id: "waiter_help", title: "❓ Need Help" },
+    ]
   );
 
   await logStructuredEvent("WAITER_ORDER_CREATED", {
