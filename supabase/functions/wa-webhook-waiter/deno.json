@@ -1,6 +1,11 @@
 {
   "name": "wa-webhook-waiter",
   "version": "1.0.0",
+  "imports": {
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2"
+  },
+  "compilerOptions": {
+    "strict": true
   "description": "WhatsApp Waiter AI agent for restaurant/bar ordering",
   "imports": {
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.86.0",

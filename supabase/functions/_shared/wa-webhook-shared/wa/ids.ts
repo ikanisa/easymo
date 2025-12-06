@@ -199,6 +199,46 @@ export const IDS = {
   TRIP_PAYMENT_PAID: "trip_payment_paid",
   TRIP_PAYMENT_SKIP: "trip_payment_skip",
   
+  // Phase 2-5: My Business Workflow - Bars & Restaurants
+  MY_BARS_RESTAURANTS: "my_bars_restaurants",
+  
+  // Business Search & Claim
+  BUSINESS_SEARCH: "business_search",
+  BUSINESS_CLAIM: "business_claim",
+  BUSINESS_CLAIM_CONFIRM: "business_claim_confirm",
+  BUSINESS_ADD_MANUAL: "business_add_manual",
+  BUSINESS_ADD_CONFIRM: "business_add_confirm",
+  
+  // Bar/Restaurant Management
+  BAR_UPLOAD_MENU: "bar_upload_menu",
+  BAR_MANAGE_MENU: "bar_manage_menu",
+  BAR_VIEW_ORDERS: "bar_view_orders",
+  BAR_VIEW_ORDER_HISTORY: "bar_view_order_history",
+  
+  // Menu Item Actions
+  MENU_ITEM_ADD: "menu_item_add",
+  MENU_SAVE_ALL: "menu_save_all",
+  MENU_REVIEW_ITEMS: "menu_review_items",
+  MENU_VIEW_ALL: "menu_view_all",
+  MENU_EDIT_NAME: "menu_edit_name",
+  MENU_EDIT_PRICE: "menu_edit_price",
+  MENU_EDIT_DESC: "menu_edit_desc",
+  MENU_EDIT_CATEGORY: "menu_edit_category",
+  MENU_TOGGLE_AVAILABLE: "menu_toggle_available",
+  MENU_SET_PROMO: "menu_set_promo",
+  MENU_DELETE_ITEM: "menu_delete_item",
+  
+  // Waiter AI Agent
+  WAITER_START: "waiter_start",
+  WAITER_ADD_ITEM: "waiter_add_item",
+  WAITER_VIEW_CART: "waiter_view_cart",
+  WAITER_CHECKOUT: "waiter_checkout",
+  WAITER_PAY_MOMO: "waiter_pay_momo",
+  WAITER_PAY_REVOLUT: "waiter_pay_revolut",
+  WAITER_CONFIRM_PAID: "waiter_confirm_paid",
+  WAITER_CLEAR_CART: "waiter_clear_cart",
+  WAITER_ADD_MORE: "waiter_add_more",
+  WAITER_HELP: "waiter_help",
   // Business Management - My Bars & Restaurants
   MY_BARS_RESTAURANTS: "my_bars_restaurants",
   BUSINESS_SEARCH: "business_search",
