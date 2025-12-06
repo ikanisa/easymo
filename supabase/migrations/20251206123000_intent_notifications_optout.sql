@@ -31,6 +31,7 @@ CREATE INDEX IF NOT EXISTS idx_notification_prefs_phone ON public.intent_notific
 CREATE INDEX IF NOT EXISTS idx_notification_prefs_enabled ON public.intent_notification_preferences(notifications_enabled);
 
 -- Auto-update timestamp
+DROP TRIGGER IF EXISTS update_notification_prefs_updated_at ON public.intent_notification_preferences;
 CREATE TRIGGER update_notification_prefs_updated_at
   BEFORE UPDATE ON public.intent_notification_preferences
   FOR EACH ROW
@@ -43,6 +44,7 @@ CREATE TRIGGER update_notification_prefs_updated_at
 ALTER TABLE public.intent_notification_preferences ENABLE ROW LEVEL SECURITY;
 
 -- Service role has full access
+DROP POLICY IF EXISTS "Service role has full access to notification preferences" ON public.intent_notification_preferences;
 CREATE POLICY "Service role has full access to notification preferences"
   ON public.intent_notification_preferences
   FOR ALL
@@ -51,12 +53,14 @@ CREATE POLICY "Service role has full access to notification preferences"
   WITH CHECK (true);
 
 -- Users can view and update their own preferences
+DROP POLICY IF EXISTS "Users can view their own notification preferences" ON public.intent_notification_preferences;
 CREATE POLICY "Users can view their own notification preferences"
   ON public.intent_notification_preferences
   FOR SELECT
   TO authenticated
   USING (profile_id = auth.uid());
 
+DROP POLICY IF EXISTS "Users can update their own notification preferences" ON public.intent_notification_preferences;
 CREATE POLICY "Users can update their own notification preferences"
   ON public.intent_notification_preferences
   FOR UPDATE
