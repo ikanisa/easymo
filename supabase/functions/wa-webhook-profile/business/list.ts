@@ -12,9 +12,10 @@ export async function listMyBusinesses(
   if (!ctx.profileId) return false;
 
   const { data: businesses, error } = await ctx.supabase
-    .from("businesses")
-    .select("id, name, category, status")
-    .eq("owner_id", ctx.profileId)
+    .from("business")
+    .select("id, name, category_name, location_text, is_active, bar_id, tag")
+    .eq("owner_user_id", ctx.profileId)
+    .eq("is_active", true)
     .order("created_at", { ascending: false })
     .limit(20);
 
@@ -41,9 +42,9 @@ export async function listMyBusinesses(
   }
 
   const rows = businesses.map((b) => ({
-    id: `BIZ::${b.id}`,
+    id: `biz::${b.id}`,
     title: b.name,
-    description: `${b.category || "General"} • ${b.status || "Active"}`,
+    description: b.location_text || b.category_name || "Business",
   }));
 
   rows.push(
@@ -100,10 +101,10 @@ export async function handleBusinessSelection(
   if (!ctx.profileId) return false;
 
   const { data: business, error } = await ctx.supabase
-    .from("businesses")
+    .from("business")
     .select("*")
     .eq("id", businessId)
-    .eq("owner_id", ctx.profileId)
+    .eq("owner_user_id", ctx.profileId)
     .single();
 
   if (error || !business) {
@@ -115,44 +116,20 @@ export async function handleBusinessSelection(
     return true;
   }
 
-  const details = [
-    `*${business.name}*`,
-    business.category ? `Category: ${business.category}` : null,
-    business.description ? `\n${business.description}` : null,
-    business.location ? `\n📍 ${business.location}` : null,
-    business.phone_number ? `📞 ${business.phone_number}` : null,
-    business.status ? `\nStatus: ${business.status}` : null,
-  ]
-    .filter(Boolean)
-    .join("\n");
-
-  await sendListMessage(
-    ctx,
-    {
-      title: "🏪 Business Details",
-      body: details,
-      sectionTitle: "Actions",
-      buttonText: "Choose",
-      rows: [
-        {
-          id: `EDIT_BIZ::${businessId}`,
-          title: "✏️ Edit",
-          description: "Update business information",
-        },
-        {
-          id: `DELETE_BIZ::${businessId}`,
-          title: "🗑️ Delete",
-          description: "Remove this business",
-        },
-        {
-          id: IDS.MY_BUSINESSES,
-          title: "← Back",
-          description: "Return to businesses list",
-        },
-      ],
+  // ⚡ CRITICAL: Store bar_id in state for menu management
+  await setState(ctx.supabase, ctx.profileId, {
+    key: "business_detail",
+    data: {
+      businessId: business.id,
+      barId: business.bar_id || null,
+      businessName: business.name,
     },
-    { emoji: "🏪" },
-  );
+  });
 
-  return true;
+  // Forward to main webhook's business detail handler
+  const { showBusinessDetail } = await import(
+    "../../wa-webhook/domains/business/management.ts"
+  );
+  
+  return await showBusinessDetail(ctx, businessId);
 }

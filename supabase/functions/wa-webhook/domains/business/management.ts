@@ -32,6 +32,26 @@ type Business = {
   owner_user_id?: string | null;
 };
 
+/**
+ * Detect business type based on category, tag, or explicit business_type field
+ */
+function getBusinessType(business: Business & { business_type?: string | null }): "restaurant" | "bar" | "shop" | "pharmacy" | null {
+  // Check explicit type first
+  if (business.business_type) {
+    return business.business_type as any;
+  }
+  
+  // Fallback to tag-based detection
+  const slug = `${business.category_name ?? ""} ${business.tag ?? ""}`.toLowerCase();
+  if (!slug.trim()) return null;
+  
+  if (slug.includes("bar") || slug.includes("restaurant")) return "restaurant";
+  if (slug.includes("pharmacy")) return "pharmacy";
+  if (slug.includes("shop") || slug.includes("quincaillerie")) return "shop";
+  
+  return null;
+}
+
 function isBarBusinessRecord(business: Pick<Business, "category_name" | "tag">): boolean {
   const slug = `${business.category_name ?? ""} ${business.tag ?? ""}`.toLowerCase();
   if (!slug.trim()) return false;
@@ -156,10 +176,10 @@ export async function showBusinessDetail(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
 
-  // Fetch business details
+  // Fetch business details (include business_type if exists)
   const { data: business, error } = await ctx.supabase
     .from("business")
-    .select("id, name, category_name, location_text, is_active, owner_whatsapp, owner_user_id, bar_id, tag")
+    .select("id, name, category_name, location_text, is_active, owner_whatsapp, owner_user_id, bar_id, tag, business_type")
     .eq("id", businessId)
     .or(
       `owner_user_id.eq.${ctx.profileId},owner_whatsapp.eq.${ctx.from}`,
@@ -176,9 +196,11 @@ export async function showBusinessDetail(
     return true;
   }
 
+  // ⚡ NEW: Use business type detection
+  const businessType = getBusinessType(business as any);
   const canManageVenue = Boolean(
     business.bar_id &&
-      isBarBusinessRecord(business) &&
+      (businessType === "restaurant" || businessType === "bar") &&
       business.owner_user_id === ctx.profileId,
   );
 
@@ -188,11 +210,13 @@ export async function showBusinessDetail(
       businessId,
       businessName: business.name,
       barId: business.bar_id ?? null,
+      businessType: businessType || "general",
     },
   });
 
   const rows: BusinessListRow[] = [];
 
+  // ⚡ Show menu management only for restaurants/bars with bar_id
   if (canManageVenue) {
     rows.push(
       {

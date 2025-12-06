@@ -278,6 +278,49 @@ serve(async (req: Request): Promise<Response> => {
           handled = await handleBusinessSelection(ctx, businessId);
         }
         
+        // ⚡ NEW: Business Detail Selection (lowercase prefix)
+        else if (id.startsWith("biz::")) {
+          const businessId = id.replace("biz::", "");
+          const { handleBusinessSelection } = await import("./business/list.ts");
+          handled = await handleBusinessSelection(ctx, businessId);
+        }
+        
+        // ⚡ NEW: Manage Menu (Restaurant/Bar only)
+        else if (id === IDS.BUSINESS_MANAGE_MENU && state?.key === "business_detail") {
+          const { startRestaurantManager } = await import(
+            "../wa-webhook/domains/vendor/restaurant.ts"
+          );
+          const barId = state.data?.barId as string;
+          if (barId) {
+            handled = await startRestaurantManager(ctx, { barId, initialAction: "menu" });
+          } else {
+            await sendButtonsMessage(
+              ctx,
+              "⚠️ This business is not set up for menu management yet.",
+              [{ id: IDS.MY_BUSINESSES, title: "← Back to Businesses" }],
+            );
+            handled = true;
+          }
+        }
+        
+        // ⚡ NEW: View Orders (Restaurant/Bar only)
+        else if (id === IDS.BUSINESS_VIEW_ORDERS && state?.key === "business_detail") {
+          const { startRestaurantManager } = await import(
+            "../wa-webhook/domains/vendor/restaurant.ts"
+          );
+          const barId = state.data?.barId as string;
+          if (barId) {
+            handled = await startRestaurantManager(ctx, { barId, initialAction: "orders" });
+          } else {
+            await sendButtonsMessage(
+              ctx,
+              "⚠️ This business is not set up for order management yet.",
+              [{ id: IDS.MY_BUSINESSES, title: "← Back to Businesses" }],
+            );
+            handled = true;
+          }
+        }
+        
         // My Jobs
         else if (id === IDS.MY_JOBS || id === "MY_JOBS" || id === "my_jobs") {
           const { listMyJobs } = await import("./jobs/list.ts");
