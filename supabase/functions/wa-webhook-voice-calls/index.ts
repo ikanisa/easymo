@@ -29,6 +29,7 @@ const WA_VERIFY_TOKEN = Deno.env.get('WA_VERIFY_TOKEN') ?? '';
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') ?? '';
 const OPENAI_ORG_ID = Deno.env.get('OPENAI_ORG_ID') ?? '';
 const OPENAI_REALTIME_MODEL = Deno.env.get('OPENAI_REALTIME_MODEL') ?? 'gpt-5-realtime';
+const VOICE_BRIDGE_URL = Deno.env.get('VOICE_BRIDGE_URL') ?? 'http://localhost:3100';
 
 // Types based on WhatsApp API documentation
 interface CallWebhook {
@@ -233,30 +234,65 @@ async function handleCallConnect(call: any, correlationId: string): Promise<void
     },
   });
 
-  // Step 2: Accept the call after WebRTC connection
-  // In a full implementation, you would:
-  // 1. Establish WebRTC connection using the SDP
-  // 2. Wait for connection to be ready
-  // 3. Then accept the call
-  // For now, we accept immediately after pre-accept
-  
-  // Small delay to allow WebRTC connection setup
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  const accepted = await acceptCall(callId, sdpAnswer, correlationId);
-
-  if (accepted) {
-    // TODO: Start media bridge to OpenAI Realtime API
-    // This requires:
-    // 1. WebRTC media server to receive audio from WhatsApp
-    // 2. Connect to OpenAI Realtime API WebSocket
-    // 3. Forward audio between WhatsApp <-> OpenAI
-    
-    logStructuredEvent('WA_CALL_MEDIA_BRIDGE_NEEDED', {
+  // Step 2: Start voice bridge session
+  // The bridge will handle WebRTC connection and OpenAI Realtime integration
+  try {
+    logStructuredEvent('WA_CALL_STARTING_BRIDGE', {
       callId,
-      note: 'Media bridging to OpenAI Realtime not yet implemented',
+      bridgeUrl: VOICE_BRIDGE_URL,
       correlationId,
-    }, 'warn');
+    });
+
+    const bridgeResponse = await fetch(`${VOICE_BRIDGE_URL}/sessions/start`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        callId,
+        sdpOffer: session.sdp,
+        fromNumber,
+        toNumber,
+        userName,
+        language,
+      }),
+    });
+
+    if (!bridgeResponse.ok) {
+      const error = await bridgeResponse.text();
+      logStructuredEvent('WA_CALL_BRIDGE_FAILED', {
+        callId,
+        status: bridgeResponse.status,
+        error,
+        correlationId,
+      }, 'error');
+      return;
+    }
+
+    const bridgeData = await bridgeResponse.json();
+    
+    logStructuredEvent('WA_CALL_BRIDGE_STARTED', {
+      callId,
+      sessionId: bridgeData.sessionId,
+      correlationId,
+    });
+
+    // Step 3: Accept the call with the bridge's SDP answer
+    const accepted = await acceptCall(callId, sdpAnswer, correlationId);
+
+    if (accepted) {
+      logStructuredEvent('WA_CALL_FULLY_CONNECTED', {
+        callId,
+        sessionId: bridgeData.sessionId,
+        correlationId,
+      });
+    }
+  } catch (error) {
+    logStructuredEvent('WA_CALL_BRIDGE_ERROR', {
+      callId,
+      error: error instanceof Error ? error.message : String(error),
+      correlationId,
+    }, 'error');
   }
 }
 
@@ -272,6 +308,19 @@ async function handleCallTerminate(call: any, correlationId: string): Promise<vo
     duration,
     correlationId,
   });
+
+  // Notify voice bridge to stop session
+  try {
+    await fetch(`${VOICE_BRIDGE_URL}/sessions/${callId}/stop`, {
+      method: 'POST',
+    });
+  } catch (error) {
+    logStructuredEvent('WA_CALL_BRIDGE_STOP_ERROR', {
+      callId,
+      error: error instanceof Error ? error.message : String(error),
+      correlationId,
+    }, 'warn');
+  }
 
   // Update call summary
   await supabase
