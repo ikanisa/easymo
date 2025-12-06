@@ -204,6 +204,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Trigger to auto-queue intents
+DROP TRIGGER IF EXISTS auto_queue_intent ON public.user_intents;
 CREATE TRIGGER auto_queue_intent
   AFTER INSERT ON public.user_intents
   FOR EACH ROW
