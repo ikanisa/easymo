@@ -240,7 +240,7 @@ export async function textToSpeech(
  */
 async function synthesizeWithGoogle(
   text: string,
-  language: "rw" | "en" | "fr",
+  language: "rw" | "en" | "fr" | "sw",
   correlationId: string
 ): Promise<ArrayBuffer> {
   const apiKey = Deno.env.get('GOOGLE_CLOUD_API_KEY');
