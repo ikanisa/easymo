@@ -9,11 +9,10 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { EventEmitter } from 'events';
 import WebSocket from 'ws';
 
-import { AGI_TOOL_DEFINITIONS, executeAGITool, formatToolResult, type ToolExecutionContext } from './agi-tools';
 import { config } from './config';
 import { logger } from './logger';
 import { AGIBridge, ToolCall } from './agi-bridge';
-import { loadRealtimeFunctions, buildCallCenterPrompt } from './realtime-functions-dynamic';
+import { REALTIME_FUNCTIONS, buildCallCenterPrompt } from './realtime-functions';
 
 export type CallState = 'ringing' | 'answered' | 'in_progress' | 'ending' | 'ended';
 
@@ -262,10 +261,18 @@ export class CallSession extends EventEmitter {
   private initializeRealtimeSession(): void {
     if (this.realtimeWs?.readyState !== WebSocket.OPEN) return;
 
+    // Get user context for personalized prompt
+    const userContext = this.config.metadata?.userContext as Record<string, unknown> || {};
+    const userName = this.config.metadata?.userName as string | undefined;
+
     // Build session configuration with AGI tools
     const sessionConfig: Record<string, unknown> = {
       voice: this.config.voiceStyle || 'alloy',
-      instructions: this.config.systemPrompt || this.buildDefaultPrompt(),
+      instructions: this.config.systemPrompt || buildCallCenterPrompt({
+        language: this.config.language || 'en',
+        userName,
+        userContext,
+      }),
       input_audio_format: 'g711_ulaw',
       output_audio_format: 'g711_ulaw',
       turn_detection: {
@@ -278,15 +285,17 @@ export class CallSession extends EventEmitter {
       input_audio_transcription: {
         model: 'whisper-1',
       },
+      temperature: 0.8,
+      max_response_output_tokens: 4096,
     };
 
-    // Add AGI tools if enabled
+    // Add AGI tools if enabled - use REALTIME_FUNCTIONS which has all Call Center AGI tools
     if (this.config.enableTools) {
-      sessionConfig.tools = AGI_TOOL_DEFINITIONS;
+      sessionConfig.tools = REALTIME_FUNCTIONS;
       sessionConfig.tool_choice = 'auto';
       logger.info({ 
         callId: this.callId, 
-        toolCount: AGI_TOOL_DEFINITIONS.length,
+        toolCount: REALTIME_FUNCTIONS.length,
         msg: 'realtime.tools_configured' 
       });
     }
@@ -294,113 +303,13 @@ export class CallSession extends EventEmitter {
     this.realtimeWs.send(JSON.stringify({
       type: 'session.update',
       session: sessionConfig,
-    // Get user context for personalized prompt
-    const userContext = this.config.metadata?.userContext || {};
-    const userName = this.config.metadata?.userName as string | undefined;
-
-    this.realtimeWs.send(JSON.stringify({
-      type: 'session.update',
-      session: {
-        voice: this.config.voiceStyle || 'alloy',
-        instructions: this.config.systemPrompt || buildCallCenterPrompt({
-          language: this.config.language || 'en',
-          userName,
-          userContext,
-        }),
-        tools: REALTIME_FUNCTIONS, // Add all AGI tools
-        tool_choice: 'auto', // Let AI decide when to use tools
-        input_audio_format: 'g711_ulaw',
-        output_audio_format: 'g711_ulaw',
-        turn_detection: {
-          type: 'server_vad',
-          threshold: 0.5,
-          prefix_padding_ms: 300,
-          silence_duration_ms: 500,
-        },
-        temperature: 0.8,
-        max_response_output_tokens: 4096,
-      },
     }));
 
     logger.info({
       callId: this.callId,
-      toolsCount: REALTIME_FUNCTIONS.length,
+      toolsCount: this.config.enableTools ? REALTIME_FUNCTIONS.length : 0,
       msg: 'realtime.session_initialized_with_tools',
     });
-  }
-
-  /**
-   * Handle function call from OpenAI Realtime API
-   */
-  private async handleFunctionCall(event: {
-    call_id: string;
-    name: string;
-    arguments: string;
-  }): Promise<void> {
-    logger.info({ 
-      callId: this.callId, 
-      functionName: event.name, 
-      msg: 'realtime.function_call_received' 
-    });
-
-    try {
-      // Parse function arguments
-      const args = JSON.parse(event.arguments || '{}');
-
-      // Build execution context
-      const context: ToolExecutionContext = {
-        callId: this.callId,
-        fromNumber: this.config.fromNumber,
-        userId: this.userId ?? undefined,
-        language: this.config.language,
-        supabaseUrl: config.SUPABASE_URL,
-        supabaseKey: config.SUPABASE_SERVICE_ROLE_KEY,
-      };
-
-      // Execute the tool
-      const result = await executeAGITool(event.name, args, context);
-
-      // Send result back to OpenAI Realtime API
-      if (this.realtimeWs?.readyState === WebSocket.OPEN) {
-        const response = formatToolResult(event.call_id, result);
-        this.realtimeWs.send(JSON.stringify(response));
-
-        // Trigger response generation
-        this.realtimeWs.send(JSON.stringify({ type: 'response.create' }));
-      }
-
-      // Log tool usage in transcript
-      await this.addTranscript({
-        role: 'system',
-        text: `[Tool: ${event.name}] ${result.success ? 'Success' : `Error: ${result.error}`}`,
-        timestamp: new Date(),
-      });
-
-      // Emit tool event for monitoring
-      this.emit('tool_executed', {
-        name: event.name,
-        args,
-        result,
-      });
-
-    } catch (error) {
-      logger.error({ 
-        callId: this.callId, 
-        functionName: event.name, 
-        error, 
-        msg: 'realtime.function_call_error' 
-      });
-
-      // Send error result back
-      if (this.realtimeWs?.readyState === WebSocket.OPEN) {
-        const errorResult = formatToolResult(event.call_id, {
-          success: false,
-          error: error instanceof Error ? error.message : 'Function execution failed',
-        });
-        this.realtimeWs.send(JSON.stringify(errorResult));
-        this.realtimeWs.send(JSON.stringify({ type: 'response.create' }));
-      }
-    }
   }
 
   private handleRealtimeEvent(event: Record<string, unknown>): void {
@@ -440,12 +349,23 @@ export class CallSession extends EventEmitter {
         break;
 
       case 'response.function_call_arguments.done':
-        // Function call requested by AI
-        this.handleFunctionCall({
-          call_id: event.call_id as string,
-          name: event.name as string,
-          arguments: event.arguments as string,
-        });
+        // Function/tool call from AI - route via AGI Bridge
+        try {
+          const args = typeof event.arguments === 'string' 
+            ? JSON.parse(event.arguments as string) 
+            : event.arguments;
+          this.handleToolCall({
+            id: event.call_id as string,
+            name: event.name as string,
+            arguments: args as Record<string, unknown>,
+          });
+        } catch (parseError) {
+          logger.error({ 
+            callId: this.callId, 
+            error: parseError, 
+            msg: 'realtime.function_args_parse_error' 
+          });
+        }
         break;
 
       case 'response.done': {
@@ -462,15 +382,6 @@ export class CallSession extends EventEmitter {
         }
         break;
       }
-
-      case 'response.function_call_arguments.done':
-        // Function/tool call from AI
-        this.handleToolCall({
-          id: event.call_id,
-          name: event.name,
-          arguments: JSON.parse(event.arguments),
-        });
-        break;
 
       case 'error':
         logger.error({ callId: this.callId, error: event.error, msg: 'realtime.error' });

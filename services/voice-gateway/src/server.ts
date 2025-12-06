@@ -12,7 +12,6 @@ import { WebSocket,WebSocketServer } from 'ws';
 
 import { config, validateConfig } from './config';
 import { logger } from './logger';
-import { CallSessionConfig,sessionManager } from './session';
 import { sessionManager, CallSessionConfig } from './session';
 import { SIPHandler } from './sip-handler';
 

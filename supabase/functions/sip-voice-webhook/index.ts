@@ -18,6 +18,12 @@ const SIP_PROVIDER = Deno.env.get('SIP_PROVIDER') || 'auto';
 
 // Provider configurations
 const PROVIDERS = {
+  twilio: {
+    name: 'Twilio',
+    accountSid: Deno.env.get('TWILIO_ACCOUNT_SID'),
+    authToken: Deno.env.get('TWILIO_AUTH_TOKEN'),
+    phoneNumber: Deno.env.get('TWILIO_PHONE_NUMBER'),
+  },
   mtn: {
     name: 'MTN Rwanda',
     username: Deno.env.get('MTN_SIP_USERNAME'),
@@ -44,6 +50,11 @@ const PROVIDERS = {
 function detectProvider(req: Request): string {
   const userAgent = req.headers.get('User-Agent') || '';
   
+  // Twilio detection
+  if (userAgent.includes('TwilioProxy') || userAgent.includes('Twilio')) {
+    return 'twilio';
+  }
+  
   const origin = req.headers.get('Origin') || '';
   if (origin.includes('mtn.rw')) {
     return 'mtn';
@@ -64,7 +75,7 @@ function detectProvider(req: Request): string {
 /**
  * Parse call parameters based on provider
  */
-async function parseCallParams(req: Request, provider: string): Promise<any> {
+async function parseCallParams(req: Request, _provider: string): Promise<Record<string, string>> {
   const contentType = req.headers.get('Content-Type') || '';
   
   if (contentType.includes('application/x-www-form-urlencoded')) {
@@ -79,7 +90,7 @@ async function parseCallParams(req: Request, provider: string): Promise<any> {
     return params;
   } else if (contentType.includes('application/json')) {
     // Some providers use JSON
-    return await req.json();
+    return await req.json() as Record<string, string>;
   }
   
   return {};
@@ -88,13 +99,22 @@ async function parseCallParams(req: Request, provider: string): Promise<any> {
 /**
  * Extract call details based on provider format
  */
-function extractCallDetails(params: any, provider: string): {
+function extractCallDetails(params: Record<string, string>, provider: string): {
   callId: string;
   from: string;
   to: string;
   status?: string;
 } {
   switch (provider) {
+    case 'twilio':
+      // Twilio uses CallSid, From, To, CallStatus
+      return {
+        callId: params.CallSid || crypto.randomUUID(),
+        from: params.From || params.Caller || 'unknown',
+        to: params.To || params.Called || 'unknown',
+        status: params.CallStatus,
+      };
+      
     case 'mtn':
       return {
         callId: params.call_id || params.session_id || crypto.randomUUID(),
@@ -126,9 +146,22 @@ function extractCallDetails(params: any, provider: string): {
  * Generate TwiML/XML response based on provider
  */
 function generateVoiceResponse(provider: string, callId: string, streamUrl: string): string {
-  const wsUrl = streamUrl.replace('http', 'ws');
+  const wsUrl = streamUrl.replace('http', 'ws').replace('https', 'wss');
   
   switch (provider) {
+    case 'twilio':
+      // Twilio TwiML with Media Streams for bidirectional audio
+      return `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say voice="Polly.Amy" language="en-GB">Welcome to Easy M O. Connecting you to our AI assistant.</Say>
+  <Connect>
+    <Stream url="${wsUrl}/stream/${callId}">
+      <Parameter name="callId" value="${callId}"/>
+      <Parameter name="provider" value="twilio"/>
+    </Stream>
+  </Connect>
+</Response>`;
+
     case 'mtn':
       // MTN Rwanda typically uses similar XML format
       return `<?xml version="1.0" encoding="UTF-8"?>
@@ -152,7 +185,9 @@ function generateVoiceResponse(provider: string, callId: string, streamUrl: stri
       return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>Welcome to EasyMO.</Say>
-  <Stream>${wsUrl}/stream/${callId}</Stream>
+  <Connect>
+    <Stream url="${wsUrl}/stream/${callId}" />
+  </Connect>
 </Response>`;
   }
 }
