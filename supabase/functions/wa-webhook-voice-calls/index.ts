@@ -14,7 +14,7 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
 
-const OPENAI_REALTIME_WS_URL = Deno.env.get('OPENAI_REALTIME_WS_URL') ?? 'wss://api.openai.com/v1/realtime';
+// NO DUPLICATES - single declaration with fallbacks
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') ?? '';
 const OPENAI_ORG_ID = Deno.env.get('OPENAI_ORG_ID') ?? '';
 const OPENAI_REALTIME_MODEL = Deno.env.get('OPENAI_REALTIME_MODEL') ?? 'gpt-5-realtime';
@@ -237,37 +237,133 @@ async function handleIncomingCall(
   const language = profile?.preferred_language ?? 'en';
   const userName = profile?.name ?? 'there';
 
-  // Stage 2: Generate ephemeral OpenAI Realtime WebSocket URL
+  // Stage 2: Build system prompt
   logStructuredEvent('WA_VOICE_STAGE', {
-    stage: 'openai_websocket_url_generation',
+    stage: 'build_system_prompt',
     callId,
     correlationId,
   });
 
-  // Build WebSocket URL with API key and session config as query parameters
-  const voiceLanguage = language === 'fr' ? 'fr' : 'en';
-  const systemPrompt = `You are EasyMO Call Center AI speaking with ${userName}. Keep responses SHORT (1-2 sentences max for voice). You help with:
-- Rides & Transportation (taxi, moto, shuttle)
-- Real Estate (buy, sell, rent properties)
-- Jobs (find work, post jobs)
-- Business Services (registration, consulting)
-- Insurance (health, vehicle, property)
-- Legal Services (contracts, disputes)
-- Pharmacy & Health (find medicines, clinics)
-- Farmer Services (inputs, markets, weather)
-- Wallet & Payments (balance, transfers)
+  // System prompt - COMPLETE (not truncated)
+  const systemPrompt = `You are EasyMO Call Center AI speaking with ${userName}. 
 
-Be friendly, helpful, and concise. Ask clarifying questions if needed. Speak naturally as if on a phone call.`;
-  
-  const websocketUrl = `${OPENAI_REALTIME_WS_URL}?model=gpt-4o-realtime-preview-2024-12-17`;
-  // Check if Voice Gateway is properly configured
-  if (!VOICE_GATEWAY_URL || VOICE_GATEWAY_URL === 'http://voice-gateway:3000') {
-    logStructuredEvent('WA_VOICE_GATEWAY_NOT_CONFIGURED', {
+IMPORTANT RULES FOR VOICE CALLS:
+- Keep responses SHORT (1-2 sentences maximum)
+- Speak naturally as if on a phone call
+- Be warm, friendly, and helpful
+- Ask clarifying questions if needed
+- If the caller speaks Kinyarwanda or French, respond in that language
+
+SERVICES YOU CAN HELP WITH:
+- Rides & Transportation (taxi, moto, shuttle booking)
+- Real Estate (buy, sell, rent properties)
+- Jobs (find work, post job listings)
+- Business Services (registration, consulting)
+- Insurance (health, vehicle, property quotes)
+- Legal Services (contracts, disputes, advice)
+- Pharmacy & Health (find medicines, nearby clinics)
+- Farmer Services (inputs, market prices, weather)
+- Wallet & Payments (balance, transfers, history)
+
+Start by greeting the caller warmly and asking how you can help.`;
+
+  // Stage 3: Create OpenAI Realtime session
+  logStructuredEvent('WA_VOICE_STAGE', {
+    stage: 'create_openai_session',
+    callId,
+    model: OPENAI_REALTIME_MODEL,
+    correlationId,
+  });
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/realtime/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: OPENAI_REALTIME_MODEL,
+        voice: 'alloy',
+        instructions: systemPrompt,
+        modalities: ['text', 'audio'],
+        input_audio_format: 'pcm16',
+        output_audio_format: 'pcm16',
+        input_audio_transcription: {
+          model: 'whisper-1'
+        },
+        turn_detection: {
+          type: 'server_vad',
+          threshold: 0.5,
+          prefix_padding_ms: 300,
+          silence_duration_ms: 500
+        },
+        temperature: 0.8,
+        max_response_output_tokens: 4096
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`OpenAI session creation failed: ${response.status} ${errorText}`);
+    }
+
+    const session = await response.json();
+
+    logStructuredEvent('WA_VOICE_SESSION_CREATED', {
+      callId,
+      sessionId: session.id,
+      model: OPENAI_REALTIME_MODEL,
+      fromMasked: maskPhone(fromNumber),
+      correlationId,
+    });
+
+    // Stage 4: Store call summary
+    logStructuredEvent('WA_VOICE_STAGE', {
+      stage: 'store_call_summary',
       callId,
       correlationId,
-      configuredUrl: VOICE_GATEWAY_URL,
+    });
+
+    const { error: insertError } = await supabase.from('call_summaries').insert({
+      call_id: callId,
+      profile_id: profile?.user_id,
+      primary_intent: 'voice_call',
+      summary_text: 'WhatsApp voice call initiated',
+      raw_transcript_reference: callId,
+    });
+
+    if (insertError) {
+      logStructuredEvent('WA_VOICE_ERROR', {
+        stage: 'store_call_summary',
+        callId,
+        error: insertError.message,
+        correlationId,
+      }, 'warn');
+      // Non-fatal: continue with call answering
+    }
+
+    logStructuredEvent('WA_VOICE_CALL_ANSWERED', { 
+      callId,
+      sessionId: session.id,
+      correlationId,
+    });
+
+    // Return the ephemeral session key for WhatsApp to connect to OpenAI Realtime API
+    return {
+      audio: {
+        url: session.client_secret.value,
+      },
+    };
+
+  } catch (error) {
+    logStructuredEvent('WA_VOICE_ERROR', {
+      stage: 'openai_session_creation',
+      callId,
+      error: error instanceof Error ? error.message : String(error),
+      correlationId,
     }, 'error');
-    
+
     // Send a text message to inform user
     try {
       const messageUrl = `https://graph.facebook.com/v21.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
@@ -295,165 +391,9 @@ Be friendly, helpful, and concise. Ask clarifying questions if needed. Speak nat
         correlationId,
       }, 'error');
     }
-    
-    // Store the call attempt for later follow-up (mask phone number for privacy)
-    await supabase.from('call_summaries').insert({
-      call_id: callId,
-      profile_id: profile?.user_id,
-      primary_intent: 'voice_call_failed',
-      summary_text: 'Voice call attempted but Voice Gateway not configured',
-      metadata: { from_masked: maskPhone(fromNumber), reason: 'gateway_not_configured' },
-    });
-    
-    return; // Exit early - don't try to connect to unavailable gateway
+
+    throw error;
   }
-
-  let voiceGatewayResponse;
-
-  for (let attempt = 0; attempt <= MAX_VOICE_RETRIES; attempt++) {
-    try {
-      voiceGatewayResponse = await fetch(`${VOICE_GATEWAY_URL}/calls/start`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json', 
-          'X-Correlation-ID': correlationId,
-          'X-Retry-Count': String(attempt),
-        },
-        body: JSON.stringify({
-          provider_call_id: callId,
-          from_number: fromNumber,
-          to_number: toNumber,
-          agent_id: 'call_center',
-          direction: 'inbound',
-          language: language === 'fr' ? 'fr-FR' : language === 'rw' ? 'rw-RW' : 'en-US',
-          voice_style: 'alloy',
-          system_prompt: `You are EasyMO Call Center AI speaking with ${userName}. Keep responses SHORT (1-2 sentences max for voice). You help with:
-- Rides & Transportation (taxi, moto, shuttle)
-- Real Estate (buy, sell, rent properties)
-- Jobs (find work, post jobs)
-- Business Services (registration, consulting)
-- Insurance (health, vehicle, property)
-- Legal Services (contracts, disputes)
-- Pharmacy & Health (find medicines, clinics)
-- Farmer Services (inputs, markets, weather)
-- Wallet & Payments (balance, transfers)
-
-Be friendly, helpful, and concise. Ask clarifying questions if needed. Speak naturally as if on a phone call.`,
-          metadata: { 
-            platform: 'whatsapp', 
-            whatsapp_call_id: callId, 
-            user_id: profile?.user_id,
-            retry_count: attempt,
-          },
-        }),
-      });
-      
-      if (voiceGatewayResponse.ok) {
-        break; // Success, exit retry loop
-      }
-      
-      // Log non-success response
-      logStructuredEvent('WA_VOICE_GATEWAY_NON_OK_RESPONSE', {
-        callId,
-        attempt,
-        status: voiceGatewayResponse.status,
-        correlationId,
-      }, attempt === MAX_VOICE_RETRIES ? 'error' : 'warn');
-      
-      // Wait before retry (but not after last attempt)
-      if (attempt < MAX_VOICE_RETRIES) {
-        await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1))); // Exponential backoff
-      }
-    } catch (fetchError) {
-      logStructuredEvent('WA_VOICE_GATEWAY_FETCH_ERROR', {
-        callId,
-        attempt,
-        error: fetchError instanceof Error ? fetchError.message : String(fetchError),
-        correlationId,
-      }, attempt === MAX_VOICE_RETRIES ? 'error' : 'warn');
-      
-      // If this was the last attempt, re-throw the error
-      if (attempt === MAX_VOICE_RETRIES) {
-        throw fetchError;
-      }
-      
-      // Wait before retry
-      await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
-    }
-  }
-
-  if (!voiceGatewayResponse || !voiceGatewayResponse.ok) {
-    const errorText = voiceGatewayResponse ? await voiceGatewayResponse.text().catch(() => 'Unable to read error response') : 'No response';
-    logStructuredEvent('WA_VOICE_ERROR', {
-      stage: 'voice_gateway_response',
-      callId,
-      status: voiceGatewayResponse?.status,
-      statusText: voiceGatewayResponse?.statusText,
-      error: errorText,
-      correlationId,
-    }, 'error');
-    throw new Error(`Voice Gateway failed: ${voiceGatewayResponse?.status ?? 'NO_RESPONSE'} ${voiceGatewayResponse?.statusText ?? ''}`);
-  }
-
-  const voiceSession = await voiceGatewayResponse.json();
-
-  logStructuredEvent('WA_VOICE_WEBSOCKET_GENERATED', {
-    callId,
-    language: voiceLanguage,
-    fromLast4: fromNumber.slice(-4),
-    fromMasked: maskPhone(fromNumber),
-    sessionId: voiceSession.call_id,
-    correlationId,
-  });
-
-  // Stage 3: Store call summary
-  logStructuredEvent('WA_VOICE_STAGE', {
-    stage: 'store_call_summary',
-    callId,
-    correlationId,
-  });
-
-  const { error: insertError } = await supabase.from('call_summaries').insert({
-    call_id: callId,
-    profile_id: profile?.user_id,
-    primary_intent: 'voice_call',
-    summary_text: 'WhatsApp voice call initiated',
-    raw_transcript_reference: callId,
-  });
-
-  if (insertError) {
-    logStructuredEvent('WA_VOICE_ERROR', {
-      stage: 'store_call_summary',
-      callId,
-      error: insertError.message,
-      correlationId,
-    }, 'warn');
-    // Non-fatal: continue with call answering
-  }
-
-  // Stage 4: Return audio stream configuration in webhook response
-  // Per WhatsApp Cloud API Calling docs: respond to the webhook with audio config
-  // NO separate API call needed - the webhook response itself contains the stream URL
-  logStructuredEvent('WA_VOICE_STAGE', {
-    stage: 'prepare_audio_response',
-    callId,
-    websocketConfigured: true,
-    correlationId,
-  });
-
-  logStructuredEvent('WA_VOICE_CALL_ANSWERED', { 
-    callId,
-    audioStreamUrl: 'OpenAI Realtime WebSocket',
-    correlationId,
-  });
-
-  // Return the audio stream configuration to WhatsApp
-  // This instructs WhatsApp to connect the call audio to the OpenAI Realtime API
-  return {
-    audio: {
-      url: websocketUrl,
-    },
-  };
 }
 
 async function handleCallEnded(callId: string, correlationId: string): Promise<void> {
