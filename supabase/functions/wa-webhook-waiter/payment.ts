@@ -88,8 +88,7 @@ export function formatPaymentInstructions(
         message: 
           `💳 *Pay with Revolut*\n\n` +
           `Amount: ${amount.toLocaleString()} ${currency}\n\n` +
-          `Tap the link below to pay securely:\n${paymentUrl}\n\n` +
-          `After payment, tap "I've Paid" to confirm.`,
+          `Tap the link below to pay securely:\n${paymentUrl}`,
         url: paymentUrl,
       };
     }
