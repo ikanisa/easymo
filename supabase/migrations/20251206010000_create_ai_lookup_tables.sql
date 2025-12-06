@@ -584,20 +584,48 @@ BEGIN
 END $$;
 
 -- Verticals for broker tools (references service_verticals table)
-INSERT INTO public.tool_enum_values (enum_type, value, label, reference_table, reference_column, display_order)
-SELECT 
-  'vertical' as enum_type,
-  slug as value,
-  name as label,
-  'service_verticals' as reference_table,
-  'slug' as reference_column,
-  priority as display_order
-FROM public.service_verticals
-WHERE is_active = true
-  AND NOT EXISTS (
-    SELECT 1 FROM public.tool_enum_values tev
-    WHERE tev.enum_type = 'vertical' AND tev.value = service_verticals.slug
-  );
+DO $$
+DECLARE
+  has_display_name BOOLEAN;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'tool_enum_values' AND column_name = 'display_name'
+  ) INTO has_display_name;
+  
+  IF has_display_name THEN
+    INSERT INTO public.tool_enum_values (enum_type, value, label, display_name, reference_table, reference_column, display_order)
+    SELECT 
+      'vertical' as enum_type,
+      slug as value,
+      name as label,
+      name as display_name,
+      'service_verticals' as reference_table,
+      'slug' as reference_column,
+      priority as display_order
+    FROM public.service_verticals
+    WHERE is_active = true
+      AND NOT EXISTS (
+        SELECT 1 FROM public.tool_enum_values tev
+        WHERE tev.enum_type = 'vertical' AND tev.value = service_verticals.slug
+      );
+  ELSE
+    INSERT INTO public.tool_enum_values (enum_type, value, label, reference_table, reference_column, display_order)
+    SELECT 
+      'vertical' as enum_type,
+      slug as value,
+      name as label,
+      'service_verticals' as reference_table,
+      'slug' as reference_column,
+      priority as display_order
+    FROM public.service_verticals
+    WHERE is_active = true
+      AND NOT EXISTS (
+        SELECT 1 FROM public.tool_enum_values tev
+        WHERE tev.enum_type = 'vertical' AND tev.value = service_verticals.slug
+      );
+  END IF;
+END $$;
 
 -- =====================================================
 -- HELPER FUNCTIONS
