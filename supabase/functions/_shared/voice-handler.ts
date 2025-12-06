@@ -191,7 +191,7 @@ async function transcribeWithGoogle(
  */
 export async function textToSpeech(
   text: string,
-  language: "rw" | "en" | "fr" = "en",
+  language: "rw" | "en" | "fr" | "sw" = "en",
   voice: string = "alloy"
 ): Promise<Uint8Array> {
   const correlationId = crypto.randomUUID();
@@ -240,7 +240,7 @@ export async function textToSpeech(
  */
 async function synthesizeWithGoogle(
   text: string,
-  language: "rw" | "en" | "fr",
+  language: "rw" | "en" | "fr" | "sw",
   correlationId: string
 ): Promise<ArrayBuffer> {
   const apiKey = Deno.env.get('GOOGLE_CLOUD_API_KEY');
@@ -253,6 +253,7 @@ async function synthesizeWithGoogle(
     'rw': { languageCode: 'rw-RW', name: 'rw-RW-Standard-A', ssmlGender: 'FEMALE' },
     'en': { languageCode: 'en-US', name: 'en-US-Neural2-F', ssmlGender: 'FEMALE' },
     'fr': { languageCode: 'fr-FR', name: 'fr-FR-Neural2-A', ssmlGender: 'FEMALE' },
+    'sw': { languageCode: 'sw-KE', name: 'sw-KE-Standard-A', ssmlGender: 'FEMALE' },
   };
 
   const voice = voiceMap[language] || voiceMap['en'];
