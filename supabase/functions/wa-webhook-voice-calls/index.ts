@@ -29,7 +29,7 @@ const WA_VERIFY_TOKEN = Deno.env.get('WA_VERIFY_TOKEN') ?? '';
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') ?? '';
 const OPENAI_ORG_ID = Deno.env.get('OPENAI_ORG_ID') ?? '';
 const OPENAI_REALTIME_MODEL = Deno.env.get('OPENAI_REALTIME_MODEL') ?? 'gpt-5-realtime';
-const VOICE_BRIDGE_URL = Deno.env.get('VOICE_BRIDGE_URL') ?? 'http://localhost:3100';
+const VOICE_MEDIA_SERVER_URL = Deno.env.get('VOICE_MEDIA_SERVER_URL') ?? 'http://voice-media-server:8080';
 
 // Types based on WhatsApp API documentation
 interface CallWebhook {
@@ -200,26 +200,40 @@ You help with: Rides, Real Estate, Jobs, Business, Insurance, Legal, Pharmacy, F
 Be friendly, helpful, and concise. Ask clarifying questions if needed.
 Speak naturally as if on a phone call in ${language === 'fr' ? 'French' : language === 'rw' ? 'Kinyarwanda' : 'English'}.`;
 
-  // Step 1: Create WebRTC Bridge with OpenAI
-  let bridgeResult;
+  // Step 1: Create WebRTC session via media server
+  let sdpAnswer: string;
+  let sessionId: string;
+  
   try {
-    bridgeResult = await createWebRTCBridge({
-      callId,
-      sdpOffer: session.sdp,
-      openaiApiKey: OPENAI_API_KEY,
-      openaiModel: OPENAI_REALTIME_MODEL,
-      systemInstructions,
-      voice,
-      correlationId,
-    });
+    const mediaServerResponse = await fetch(
+      `${VOICE_MEDIA_SERVER_URL}/sessions/${callId}/webrtc`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sdpOffer: session.sdp,
+          openaiModel: OPENAI_REALTIME_MODEL,
+          systemInstructions,
+          voice,
+        }),
+      }
+    );
+
+    if (!mediaServerResponse.ok) {
+      throw new Error(`Media server error: ${mediaServerResponse.status}`);
+    }
+
+    const result = await mediaServerResponse.json();
+    sdpAnswer = result.sdpAnswer;
+    sessionId = result.sessionId || callId;
     
-    logStructuredEvent('WA_WEBRTC_BRIDGE_CREATED', {
+    logStructuredEvent('WA_MEDIA_SERVER_SESSION_CREATED', {
       callId,
-      sessionId: bridgeResult.sessionId,
+      sessionId,
       correlationId,
     });
   } catch (error) {
-    logStructuredEvent('WA_WEBRTC_BRIDGE_ERROR', {
+    logStructuredEvent('WA_MEDIA_SERVER_ERROR', {
       callId,
       error: error instanceof Error ? error.message : String(error),
       correlationId,
@@ -228,7 +242,7 @@ Speak naturally as if on a phone call in ${language === 'fr' ? 'French' : langua
   }
 
   // Step 2: Pre-accept the call (recommended by WhatsApp for faster connection)
-  const preAccepted = await preAcceptCall(callId, bridgeResult.sdpAnswer, correlationId);
+  const preAccepted = await preAcceptCall(callId, sdpAnswer, correlationId);
   
   if (!preAccepted) {
     logStructuredEvent('WA_CALL_PRE_ACCEPT_SKIP', { callId, correlationId }, 'warn');
@@ -245,20 +259,19 @@ Speak naturally as if on a phone call in ${language === 'fr' ? 'French' : langua
     metadata: {
       correlation_id: correlationId,
       user_name: userName,
-      openai_session_id: bridgeResult.sessionId,
+      openai_session_id: sessionId,
     },
   });
 
   // Step 3: Accept the call (after WebRTC connection is ready)
-  // Note: Media bridging happens automatically via OpenAI Realtime WebSocket
   setTimeout(async () => {
     try {
-      const accepted = await acceptCall(callId, bridgeResult.sdpAnswer, correlationId);
+      const accepted = await acceptCall(callId, sdpAnswer, correlationId);
 
       if (accepted) {
         logStructuredEvent('WA_CALL_FULLY_CONNECTED', {
           callId,
-          sessionId: bridgeResult.sessionId,
+          sessionId,
           correlationId,
         });
       }
@@ -285,13 +298,13 @@ async function handleCallTerminate(call: any, correlationId: string): Promise<vo
     correlationId,
   });
 
-  // Notify voice bridge to stop session
+  // Notify media server to stop session
   try {
-    await fetch(`${VOICE_BRIDGE_URL}/sessions/${callId}/stop`, {
-      method: 'POST',
+    await fetch(`${VOICE_MEDIA_SERVER_URL}/sessions/${callId}`, {
+      method: 'DELETE',
     });
   } catch (error) {
-    logStructuredEvent('WA_CALL_BRIDGE_STOP_ERROR', {
+    logStructuredEvent('WA_MEDIA_SERVER_STOP_ERROR', {
       callId,
       error: error instanceof Error ? error.message : String(error),
       correlationId,
