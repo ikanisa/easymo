@@ -50,7 +50,7 @@ export class StreamingHandler {
 
     try {
       const body: Record<string, any> = {
-        model: request.model || "gpt-4o-mini",
+        model: request.model || "gpt-5",  // Per README.md: Mandatory GPT-5
         messages: request.messages,
         temperature: request.temperature ?? 0.7,
         max_tokens: request.maxTokens ?? 1000,
@@ -168,7 +168,7 @@ export class StreamingHandler {
 
                 await logStructuredEvent("OPENAI_STREAMING_COMPLETE", {
                   correlation_id: request.correlationId,
-                  model: request.model || "gpt-4o-mini",
+                  model: request.model || "gpt-5",  // Per README.md: Mandatory GPT-5
                   latency_ms: latencyMs,
                   tokens: json.usage.total_tokens,
                   content_length: fullContent.length,

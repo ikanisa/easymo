@@ -13,7 +13,7 @@ export interface ChatOptions {
 
 export class GeminiProvider {
   private client: GoogleGenerativeAI;
-  private defaultModel = 'gemini-2.0-flash-exp';
+  private defaultModel = 'gemini-3';  // Per README.md: Mandatory Gemini-3 for AI features
 
   constructor() {
     const apiKey = Deno.env.get('GOOGLE_AI_API_KEY') || Deno.env.get('GEMINI_API_KEY');

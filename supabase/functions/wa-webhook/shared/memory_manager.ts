@@ -304,7 +304,7 @@ export class MemoryManager {
 
       const response = await openai.createChatCompletion(
         {
-          model: "gpt-4o-mini",
+          model: "gpt-5"  // Per README.md: Mandatory GPT-5,
           messages: [
             {
               role: "system",
@@ -530,7 +530,7 @@ Return in JSON format: {"facts": [], "preferences": [], "decisions": []}`;
 
       const response = await openai.createChatCompletion(
         {
-          model: "gpt-4o-mini",
+          model: "gpt-5"  // Per README.md: Mandatory GPT-5,
           messages: [
             {
               role: "system",

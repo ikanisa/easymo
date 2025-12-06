@@ -13,7 +13,7 @@ const supabase = createClient(
 );
 
 const genAI = new GoogleGenerativeAI(Deno.env.get("GEMINI_API_KEY")!);
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+const model = genAI.getGenerativeModel({ model: "gemini-3" });  // Per README.md: Mandatory Gemini-3
 
 serve(async (req) => {
   try {

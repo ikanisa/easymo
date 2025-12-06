@@ -72,7 +72,7 @@ export class FarmerAgent extends BaseAgent {
         message: aiResponse,
         agentType: this.type,
         metadata: {
-          model: 'gemini-2.0-flash-exp',
+          model: 'gemini-3',  // Per README.md: Mandatory Gemini-3 for AI features
           configLoadedFrom: this.cachedConfig?.loadedFrom,
         },
       };
