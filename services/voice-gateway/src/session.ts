@@ -351,14 +351,26 @@ export class CallSession extends EventEmitter {
       case 'response.function_call_arguments.done':
         // Function/tool call from AI - route via AGI Bridge
         try {
-          const args = typeof event.arguments === 'string' 
-            ? JSON.parse(event.arguments as string) 
-            : event.arguments;
-          this.handleToolCall({
-            id: event.call_id as string,
-            name: event.name as string,
-            arguments: args as Record<string, unknown>,
-          });
+          const rawArgs = event.arguments;
+          const args = typeof rawArgs === 'string' 
+            ? JSON.parse(rawArgs) 
+            : rawArgs;
+          
+          // Validate args is an object before passing to handleToolCall
+          if (args && typeof args === 'object' && !Array.isArray(args)) {
+            this.handleToolCall({
+              id: event.call_id as string,
+              name: event.name as string,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              arguments: args as Record<string, any>,
+            });
+          } else {
+            logger.error({ 
+              callId: this.callId, 
+              msg: 'realtime.function_args_invalid_type',
+              argsType: typeof args,
+            });
+          }
         } catch (parseError) {
           logger.error({ 
             callId: this.callId, 
