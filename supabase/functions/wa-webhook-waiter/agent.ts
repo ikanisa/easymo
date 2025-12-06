@@ -3,6 +3,7 @@ import { sendTextMessage, sendButtonsMessage } from "../_shared/wa-webhook-share
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { formatPaymentInstructions, generateMoMoUSSDCode } from "./payment.ts";
 import { notifyBarNewOrder } from "./notify_bar.ts";
+import { DualAIProvider } from "./providers/dual-ai-provider.ts";
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
@@ -214,29 +215,28 @@ If unclear, ask for clarification.`;
   ];
 
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            { role: "user", parts: [{ text: systemPrompt }] },
-            ...updatedMessages.slice(-10).map((m) => ({
-              role: m.role === "user" ? "user" : "model",
-              parts: [{ text: m.content }],
-            })),
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 500,
-          },
-        }),
-      }
-    );
+    const aiProvider = new DualAIProvider();
 
-    const data = await response.json();
-    const aiResponseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const aiResult = await aiProvider.chat([
+      { role: "system", content: systemPrompt },
+      ...updatedMessages.slice(-10).map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      })),
+    ], {
+      temperature: 0.7,
+      maxTokens: 500,
+    });
+
+    // Log which provider was used
+    await logStructuredEvent("WAITER_AI_PROVIDER", {
+      provider: aiResult.provider,
+      model: aiResult.model,
+      fallbackUsed: aiResult.fallbackUsed,
+      sessionId: session.id,
+    });
+
+    const aiResponseText = aiResult.text;
 
     let aiResponse: any;
     try {
@@ -407,8 +407,6 @@ async function handleCheckout(
       visitor_phone: ctx.from,
       dine_in_table: session.table_number,
       waiter_session_id: session.session_id,
-      payment_status: "pending",
-      payment_method: currency === "EUR" ? "revolut" : "momo",
     })
     .select("id")
     .single();
@@ -438,14 +436,6 @@ async function handleCheckout(
   );
 
   await ctx.supabase
-    .from("orders")
-    .update({
-      payment_link: paymentInfo.url,
-      payment_ussd_code: paymentMethod === "momo" ? generateMoMoUSSDCode(cart.total) : null,
-    })
-    .eq("id", order.id);
-
-  await ctx.supabase
     .from("waiter_conversations")
     .update({
       current_order_id: order.id,
@@ -460,13 +450,14 @@ async function handleCheckout(
     .map(i => `${i.quantity}x ${i.name}`)
     .join("\n");
 
-  await sendButtonsMessage(
-    { from: ctx.from } as any,
-    `✅ *Order Confirmed!*\n\n📋 Order #${orderNumber}\n📍 Table: ${session.table_number || "N/A"}\n\n*Items:*\n${itemsList}\n\n💰 *Total: ${cart.total.toLocaleString()} ${currency}*\n\n${paymentInfo.message}`,
-    [
-      { id: "waiter_confirm_paid", title: "✅ I've Paid" },
-      { id: "waiter_help", title: "❓ Need Help" },
-    ]
+  await sendTextMessage(ctx.from,
+    `✅ *Order Confirmed!*\n\n` +
+    `📋 Order #${orderNumber}\n` +
+    `📍 Table: ${session.table_number || "N/A"}\n\n` +
+    `*Items:*\n${itemsList}\n\n` +
+    `💰 *Total: ${cart.total.toLocaleString()} ${currency}*\n\n` +
+    `${paymentInfo.message}\n\n` +
+    `Your order has been sent to the kitchen! 🍽️`
   );
 
   await logStructuredEvent("WAITER_ORDER_CREATED", {
@@ -505,19 +496,6 @@ async function handleInteractiveMessage(
         .update({ current_cart: { items: [], total: 0 } })
         .eq("id", session.id);
       await sendTextMessage(ctx.from, "🗑️ Cart cleared! What would you like to order?");
-      break;
-    
-    case "waiter_confirm_paid":
-      if (session.current_order_id) {
-        await ctx.supabase
-          .from("orders")
-          .update({ payment_status: "confirmed" })
-          .eq("id", session.current_order_id);
-      }
-      await sendTextMessage(ctx.from, 
-        "✅ Thank you! Your payment has been noted.\n\n" +
-        "Your order is being prepared. We'll let you know when it's ready! 🍽️"
-      );
       break;
     
     case "waiter_help":

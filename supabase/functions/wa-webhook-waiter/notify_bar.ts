@@ -90,6 +90,33 @@ export async function notifyBarNewOrder(
 }
 
 /**
+ * Format phone number with country code
+ * Supports Rwanda (+250, 9 digits) and Malta (+356, 8 digits)
+ */
+function formatPhoneNumber(phone: string): string {
+  let cleaned = phone.replace(/\D/g, "");
+  
+  // Rwanda: 9 digits without country code
+  if (cleaned.length === 9 && !cleaned.startsWith("250") && !cleaned.startsWith("356")) {
+    // Assume Rwanda if 9 digits
+    cleaned = "250" + cleaned;
+  }
+  // Malta: 8 digits without country code  
+  else if (cleaned.length === 8 && !cleaned.startsWith("356")) {
+    cleaned = "356" + cleaned;
+  }
+  // Already has country code
+  else if (cleaned.length === 12 && cleaned.startsWith("250")) {
+    // Rwanda with country code - OK
+  }
+  else if (cleaned.length === 11 && cleaned.startsWith("356")) {
+    // Malta with country code - OK
+  }
+  
+  return cleaned;
+}
+
+/**
  * Send WhatsApp message via Meta API
  */
 async function sendWhatsAppMessage(to: string, text: string): Promise<boolean> {
@@ -98,10 +125,7 @@ async function sendWhatsAppMessage(to: string, text: string): Promise<boolean> {
     return false;
   }
 
-  let phone = to.replace(/\D/g, "");
-  if (!phone.startsWith("250") && phone.length === 9) {
-    phone = "250" + phone;
-  }
+  const phone = formatPhoneNumber(to);
 
   try {
     const response = await fetch(
