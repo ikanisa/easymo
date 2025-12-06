@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendText, sendButtonsMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
+import { sendTextMessage, sendButtonsMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { formatPaymentInstructions, generateMoMoUSSDCode } from "./payment.ts";
 import { notifyBarNewOrder } from "./notify_bar.ts";
@@ -40,7 +40,7 @@ export async function handleWaiterMessage(ctx: WaiterContext): Promise<boolean> 
   const session = await getOrCreateSession(ctx);
   
   if (!session) {
-    await sendText(ctx.from, 
+    await sendTextMessage(ctx.from, 
       "👋 Welcome! Please scan the QR code at your table to start ordering."
     );
     return true;
@@ -65,7 +65,8 @@ async function getOrCreateSession(ctx: WaiterContext): Promise<ConversationSessi
         id,
         name,
         phone,
-        payment_settings
+        payment_settings,
+        currency
       )
     `)
     .eq("visitor_phone", ctx.from)
@@ -80,9 +81,77 @@ async function getOrCreateSession(ctx: WaiterContext): Promise<ConversationSessi
       bar_info: existing.bars ? {
         name: existing.bars.name,
         phone: existing.bars.phone,
-        currency: existing.bars.payment_settings?.currency || "RWF",
+        currency: existing.bars.currency || existing.bars.payment_settings?.currency || "RWF",
         payment_settings: existing.bars.payment_settings,
       } : undefined,
+    };
+  }
+
+  // Try to create session from QR code deep link
+  const messageText = ctx.message.text?.body || "";
+  const qrMatch = messageText.match(/TABLE-([A-Z0-9]+)-BAR-([a-f0-9-]+)/i);
+  
+  if (qrMatch) {
+    const tableNumber = qrMatch[1];
+    const barId = qrMatch[2];
+
+    const { data: bar } = await ctx.supabase
+      .from("bars")
+      .select("id, name, phone, payment_settings, currency")
+      .eq("id", barId)
+      .single();
+
+    if (!bar) {
+      return null;
+    }
+
+    const { data: menuItems } = await ctx.supabase
+      .from("restaurant_menu_items")
+      .select("id, name, description, price, currency, category, is_available")
+      .eq("bar_id", barId)
+      .eq("is_available", true)
+      .order("category")
+      .order("name");
+
+    const sessionId = crypto.randomUUID();
+
+    const { data: newSession } = await ctx.supabase
+      .from("waiter_conversations")
+      .insert({
+        session_id: sessionId,
+        bar_id: barId,
+        visitor_phone: ctx.from,
+        table_number: tableNumber,
+        status: "active",
+        messages: [],
+        current_cart: { items: [], total: 0 },
+      })
+      .select()
+      .single();
+
+    if (!newSession) {
+      return null;
+    }
+
+    const welcomeMessage = `👋 Welcome to ${bar.name}!\n\n` +
+      `You're at Table ${tableNumber}.\n\n` +
+      `I'm your AI waiter. I can help you:\n` +
+      `• Browse our menu\n` +
+      `• Place orders\n` +
+      `• Process payments\n\n` +
+      `Just tell me what you'd like! 😊`;
+
+    await sendTextMessage(ctx.from, welcomeMessage);
+
+    return {
+      ...newSession,
+      bars: bar,
+      bar_info: {
+        name: bar.name,
+        phone: bar.phone,
+        currency: bar.currency || bar.payment_settings?.currency || "RWF",
+        payment_settings: bar.payment_settings,
+      },
     };
   }
 
@@ -100,7 +169,7 @@ async function processWithAI(
     .eq("bar_id", session.bar_id)
     .eq("is_available", true)
     .order("category")
-    .order("sort_order");
+    .order("name");
 
   const menuText = (menuItems || []).map((item) => 
     `- ${item.name} (${item.category}): ${item.price} ${item.currency}${item.description ? ` - ${item.description}` : ""}`
@@ -186,7 +255,7 @@ If unclear, ask for clarification.`;
     return true;
   } catch (error) {
     console.error("waiter_ai.error", error);
-    await sendText(ctx.from, "Sorry, I'm having trouble right now. Please try again.");
+    await sendTextMessage(ctx.from, "Sorry, I'm having trouble right now. Please try again.");
     return true;
   }
 }
@@ -208,20 +277,42 @@ async function handleAIAction(
     case "add_to_cart":
       if (items && items.length > 0) {
         for (const item of items) {
-          const existing = updatedCart.items.find(i => i.id === item.id);
+          let menuItem = null;
+          
+          // Try exact ID match first
+          if (item.id) {
+            const { data } = await ctx.supabase
+              .from("restaurant_menu_items")
+              .select("id, name, price")
+              .eq("id", item.id)
+              .eq("bar_id", session.bar_id)
+              .eq("is_available", true)
+              .maybeSingle();
+            menuItem = data;
+          }
+          
+          // Fall back to fuzzy name matching
+          if (!menuItem && item.name) {
+            const { data: matches } = await ctx.supabase
+              .from("restaurant_menu_items")
+              .select("id, name, price")
+              .eq("bar_id", session.bar_id)
+              .eq("is_available", true)
+              .ilike("name", `%${item.name}%`)
+              .limit(1);
+            menuItem = matches?.[0];
+          }
+          
+          if (!menuItem) continue;
+          
+          const existing = updatedCart.items.find(i => i.id === menuItem!.id);
           if (existing) {
             existing.quantity += item.quantity || 1;
           } else {
-            const { data: menuItem } = await ctx.supabase
-              .from("restaurant_menu_items")
-              .select("price")
-              .eq("id", item.id)
-              .single();
-            
             updatedCart.items.push({
-              id: item.id,
-              name: item.name,
-              price: menuItem?.price || 0,
+              id: menuItem.id,
+              name: menuItem.name,
+              price: menuItem.price,
               quantity: item.quantity || 1,
             });
           }
@@ -279,7 +370,7 @@ async function handleAIAction(
       ]
     );
   } else {
-    await sendText(ctx.from, message);
+    await sendTextMessage(ctx.from, message);
   }
 }
 
@@ -289,19 +380,26 @@ async function handleCheckout(
   cart: ConversationSession["current_cart"]
 ): Promise<void> {
   if (cart.items.length === 0) {
-    await sendText(ctx.from, "Your cart is empty! Tell me what you'd like to order.");
+    await sendTextMessage(ctx.from, "Your cart is empty! Tell me what you'd like to order.");
     return;
   }
 
-  const currency = session.bar_info?.currency || "RWF";
-  const paymentSettings = session.bar_info?.payment_settings || {};
+  // Use bar's currency column, fall back to payment_settings, then default
+  const { data: bar } = await ctx.supabase
+    .from("bars")
+    .select("currency, payment_settings")
+    .eq("id", session.bar_id)
+    .single();
+
+  const currency = bar?.currency || bar?.payment_settings?.currency || "RWF";
+  const paymentSettings = bar?.payment_settings || {};
 
   const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}`;
   
   const { data: order, error } = await ctx.supabase
     .from("orders")
     .insert({
-      business_id: session.bar_id,
+      bar_id: session.bar_id,
       order_number: orderNumber,
       status: "pending",
       total_amount: cart.total,
@@ -316,7 +414,7 @@ async function handleCheckout(
     .single();
 
   if (error || !order) {
-    await sendText(ctx.from, "Sorry, couldn't create your order. Please try again.");
+    await sendTextMessage(ctx.from, "Sorry, couldn't create your order. Please try again.");
     return;
   }
 
@@ -398,7 +496,7 @@ async function handleInteractiveMessage(
       break;
     
     case "waiter_add_more":
-      await sendText(ctx.from, "What else would you like to order? 🍽️");
+      await sendTextMessage(ctx.from, "What else would you like to order? 🍽️");
       break;
     
     case "waiter_clear_cart":
@@ -406,7 +504,7 @@ async function handleInteractiveMessage(
         .from("waiter_conversations")
         .update({ current_cart: { items: [], total: 0 } })
         .eq("id", session.id);
-      await sendText(ctx.from, "🗑️ Cart cleared! What would you like to order?");
+      await sendTextMessage(ctx.from, "🗑️ Cart cleared! What would you like to order?");
       break;
     
     case "waiter_confirm_paid":
@@ -416,14 +514,14 @@ async function handleInteractiveMessage(
           .update({ payment_status: "confirmed" })
           .eq("id", session.current_order_id);
       }
-      await sendText(ctx.from, 
+      await sendTextMessage(ctx.from, 
         "✅ Thank you! Your payment has been noted.\n\n" +
         "Your order is being prepared. We'll let you know when it's ready! 🍽️"
       );
       break;
     
     case "waiter_help":
-      await sendText(ctx.from,
+      await sendTextMessage(ctx.from,
         "Need help? Here are your options:\n\n" +
         "• Type what you want to order\n" +
         "• Say 'menu' to see the full menu\n" +

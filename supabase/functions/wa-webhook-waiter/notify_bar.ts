@@ -22,12 +22,6 @@ interface Session {
 
 /**
  * Notify bar/restaurant of a new order via WhatsApp
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.86.0";
-import { logStructuredEvent } from "../_shared/observability.ts";
-
-/**
- * Notify bar owner of new order via WhatsApp
- * Sends formatted order details to bar's registered WhatsApp number
  */
 export async function notifyBarNewOrder(
   supabase: SupabaseClient,
@@ -91,90 +85,6 @@ export async function notifyBarNewOrder(
       orderId,
       error: error instanceof Error ? error.message : String(error),
     }, "error");
-  cart: Array<{
-    name: string;
-    quantity: number;
-    price: number;
-    currency: string;
-  }>,
-  session: {
-    visitorPhone: string;
-    dineInTable?: string;
-    totalAmount: number;
-    currency: string;
-  },
-): Promise<boolean> {
-  try {
-    // Get bar details and owner contact
-    const { data: bar, error: barError } = await supabase
-      .from("bars")
-      .select("name, owner_whatsapp, business_id")
-      .eq("id", barId)
-      .single();
-
-    if (barError || !bar || !bar.owner_whatsapp) {
-      console.error("notify_bar.no_owner_contact", { barId, error: barError });
-      return false;
-    }
-
-    // Get business details for fallback contact
-    const { data: business } = await supabase
-      .from("business")
-      .select("owner_whatsapp")
-      .eq("id", bar.business_id)
-      .single();
-
-    const ownerContact = bar.owner_whatsapp || business?.owner_whatsapp;
-    
-    if (!ownerContact) {
-      console.error("notify_bar.no_contact_available", { barId });
-      return false;
-    }
-
-    // Format order notification message
-    const message = formatOrderNotification(
-      bar.name,
-      orderNumber,
-      cart,
-      session,
-    );
-
-    // STUB: WhatsApp message sending not implemented
-    // In production, this should:
-    // - Use WhatsApp Cloud API to send message
-    // - Handle delivery failures and retries
-    // - Track message status
-    // For now, we log the intent
-    console.log("notify_bar.stub_message", {
-      to: ownerContact,
-      orderNumber,
-      message,
-      warning: "WhatsApp sending not implemented - message logged only",
-    });
-
-    await logStructuredEvent("BAR_ORDER_NOTIFICATION_LOGGED", {
-      barId,
-      orderId,
-      orderNumber,
-      ownerContact,
-      totalAmount: session.totalAmount,
-      status: "stub_only",
-    });
-
-    // Update order to mark as notified
-    await supabase
-      .from("orders")
-      .update({ bar_notified: true })
-      .eq("id", orderId);
-
-    return true;
-  } catch (err) {
-    console.error("notify_bar.exception", err);
-    await logStructuredEvent("BAR_NOTIFICATION_ERROR", {
-      barId,
-      orderId,
-      error: err instanceof Error ? err.message : String(err),
-    });
     return false;
   }
 }
@@ -221,50 +131,8 @@ async function sendWhatsAppMessage(to: string, text: string): Promise<boolean> {
     return true;
   } catch (error) {
     console.error("WhatsApp send error:", error);
- * Format order notification message for bar owner
- */
-function formatOrderNotification(
-  barName: string,
-  orderNumber: string,
-  cart: Array<{
-    name: string;
-    quantity: number;
-    price: number;
-    currency: string;
-  }>,
-  session: {
-    visitorPhone: string;
-    dineInTable?: string;
-    totalAmount: number;
-    currency: string;
-  },
-): string {
-  const itemsList = cart
-    .map((item) => {
-      const itemTotal = item.quantity * item.price;
-      return `  ${item.quantity}x ${item.name} - ${itemTotal.toLocaleString()} ${item.currency}`;
-    })
-    .join("\n");
-
-  const table = session.dineInTable || "Not specified";
-  
-  const message = [
-    `🔔 *NEW ORDER #${orderNumber}*`,
-    "",
-    `🏪 ${barName}`,
-    `📍 Table: ${table}`,
-    "",
-    `🍽️ *Items:*`,
-    itemsList,
-    "",
-    `💰 *Total: ${session.totalAmount.toLocaleString()} ${session.currency}*`,
-    "",
-    `📞 Customer: ${session.visitorPhone}`,
-    "",
-    "Reply to this message to contact the customer.",
-  ].join("\n");
-
-  return message;
+    return false;
+  }
 }
 
 /**
@@ -308,18 +176,12 @@ export async function notifyCustomerOrderUpdate(
       "Reply 'HELP' for assistance.",
     ].join("\n");
 
-    // TODO: Send WhatsApp message to customer
+    await sendWhatsAppMessage(customerPhone, message);
+
     await logStructuredEvent("CUSTOMER_ORDER_UPDATE_SENT", {
       customerPhone,
       orderNumber,
       status,
-    });
-
-    console.log("notify_customer.message_sent", {
-      to: customerPhone,
-      orderNumber,
-      status,
-      message,
     });
 
     return true;
