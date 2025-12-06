@@ -87,7 +87,7 @@ Please provide a helpful response.`;
       const aiResponse = await this.aiProvider.chat(messages, {
         temperature: 0.7,
         maxTokens: 1000,
-        model: 'gemini-3',
+        model: 'gpt-5', // Primary model per README
       });
 
       // If query is very specialized and we should consult another agent
@@ -125,7 +125,7 @@ Please provide a helpful response.`;
         message: finalResponse,
         agentType: this.type,
         metadata: {
-          model: 'gemini-3',
+          model: 'gpt-5', // Primary model per README
           consultedAgent: consultationResult ? bestAgent?.agentType : null,
           matchedSpecialist: bestAgent?.agentType,
         },
