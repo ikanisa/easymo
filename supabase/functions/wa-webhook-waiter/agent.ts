@@ -3,8 +3,7 @@ import { sendTextMessage, sendButtonsMessage } from "../_shared/wa-webhook-share
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { formatPaymentInstructions, generateMoMoUSSDCode } from "./payment.ts";
 import { notifyBarNewOrder } from "./notify_bar.ts";
-
-const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+import { callAI } from "./ai-provider.ts";
 
 interface WaiterContext {
   supabase: SupabaseClient;
@@ -211,50 +210,21 @@ If unclear, ask for clarification.`;
   const updatedMessages = [
     ...session.messages,
     { role: "user", content: userMessage },
-  ];
+  ] as Array<{ role: "user" | "assistant"; content: string }>;
 
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            { role: "user", parts: [{ text: systemPrompt }] },
-            ...updatedMessages.slice(-10).map((m) => ({
-              role: m.role === "user" ? "user" : "model",
-              parts: [{ text: m.content }],
-            })),
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 500,
-          },
-        }),
-      }
-    );
-
-    const data = await response.json();
-    const aiResponseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-    let aiResponse: any;
-    try {
-      const jsonMatch = aiResponseText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        aiResponse = JSON.parse(jsonMatch[0]);
-      } else {
-        aiResponse = { message: aiResponseText, action: "none" };
-      }
-    } catch {
-      aiResponse = { message: aiResponseText, action: "none" };
-    }
+    // GROUND_RULES: Use dual-provider AI (GPT-5 primary, Gemini-3 fallback)
+    const aiResponse = await callAI(systemPrompt, updatedMessages);
 
     await handleAIAction(ctx, session, aiResponse, updatedMessages);
 
     return true;
   } catch (error) {
     console.error("waiter_ai.error", error);
+    await logStructuredEvent("WAITER_AI_ERROR", {
+      error: error instanceof Error ? error.message : String(error),
+      from: ctx.from,
+    }, "error");
     await sendTextMessage(ctx.from, "Sorry, I'm having trouble right now. Please try again.");
     return true;
   }
@@ -396,7 +366,8 @@ async function handleCheckout(
 
   const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}`;
   
-  const { data: order, error } = await ctx.supabase
+  // GROUND_RULES: Do NOT track payment_status - customer pays directly
+  const { data: order, error} = await ctx.supabase
     .from("orders")
     .insert({
       bar_id: session.bar_id,
@@ -407,7 +378,6 @@ async function handleCheckout(
       visitor_phone: ctx.from,
       dine_in_table: session.table_number,
       waiter_session_id: session.session_id,
-      payment_status: "pending",
       payment_method: currency === "EUR" ? "revolut" : "momo",
     })
     .select("id")
@@ -437,6 +407,7 @@ async function handleCheckout(
     paymentSettings
   );
 
+  // Store payment link for reference only (not tracking payment)
   await ctx.supabase
     .from("orders")
     .update({
@@ -460,11 +431,11 @@ async function handleCheckout(
     .map(i => `${i.quantity}x ${i.name}`)
     .join("\n");
 
+  // GROUND_RULES: Do NOT track payment status - customer pays directly via USSD/Revolut
   await sendButtonsMessage(
     { from: ctx.from } as any,
-    `✅ *Order Confirmed!*\n\n📋 Order #${orderNumber}\n📍 Table: ${session.table_number || "N/A"}\n\n*Items:*\n${itemsList}\n\n💰 *Total: ${cart.total.toLocaleString()} ${currency}*\n\n${paymentInfo.message}`,
+    `✅ *Order Confirmed!*\n\n📋 Order #${orderNumber}\n📍 Table: ${session.table_number || "N/A"}\n\n*Items:*\n${itemsList}\n\n💰 *Total: ${cart.total.toLocaleString()} ${currency}*\n\n${paymentInfo.message}\n\n_Your order will be prepared once payment is received._`,
     [
-      { id: "waiter_confirm_paid", title: "✅ I've Paid" },
       { id: "waiter_help", title: "❓ Need Help" },
     ]
   );
@@ -505,19 +476,6 @@ async function handleInteractiveMessage(
         .update({ current_cart: { items: [], total: 0 } })
         .eq("id", session.id);
       await sendTextMessage(ctx.from, "🗑️ Cart cleared! What would you like to order?");
-      break;
-    
-    case "waiter_confirm_paid":
-      if (session.current_order_id) {
-        await ctx.supabase
-          .from("orders")
-          .update({ payment_status: "confirmed" })
-          .eq("id", session.current_order_id);
-      }
-      await sendTextMessage(ctx.from, 
-        "✅ Thank you! Your payment has been noted.\n\n" +
-        "Your order is being prepared. We'll let you know when it's ready! 🍽️"
-      );
       break;
     
     case "waiter_help":

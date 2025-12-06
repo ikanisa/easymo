@@ -99,8 +99,15 @@ async function sendWhatsAppMessage(to: string, text: string): Promise<boolean> {
   }
 
   let phone = to.replace(/\D/g, "");
+  
+  // Handle Rwanda phones (+250)
   if (!phone.startsWith("250") && phone.length === 9) {
     phone = "250" + phone;
+  }
+  
+  // Handle Malta phones (+356)
+  if (!phone.startsWith("356") && phone.length === 8) {
+    phone = "356" + phone;
   }
 
   try {
