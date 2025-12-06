@@ -652,6 +652,7 @@ END;
 $$;
 
 -- Function to check if query is out of scope
+DROP FUNCTION IF EXISTS public.is_query_out_of_scope(TEXT);
 CREATE OR REPLACE FUNCTION public.is_query_out_of_scope(p_query TEXT)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -676,6 +677,7 @@ END;
 $$;
 
 -- Function to detect vertical from query keywords
+DROP FUNCTION IF EXISTS public.detect_vertical_from_query(TEXT);
 CREATE OR REPLACE FUNCTION public.detect_vertical_from_query(p_query TEXT)
 RETURNS TEXT
 LANGUAGE plpgsql
