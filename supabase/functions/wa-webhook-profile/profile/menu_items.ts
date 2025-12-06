@@ -1,12 +1,7 @@
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
-import { sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
-import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
-import { setState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
 
-export const PROFILE_STATE_HOME = "profile_home";
-
-type ProfileMenuItem = {
+export type ProfileMenuItem = {
   item_key: string;
   display_order: number;
   icon: string;
@@ -18,77 +13,109 @@ type ProfileMenuItem = {
 };
 
 /**
- * Get user's country code from profile or default to RW
+ * Fetch dynamic profile menu items from database using get_profile_menu_items_v2 RPC
+ * This function queries the database and filters menu items based on:
+ * - User's country
+ * - User's language preference
+ * - User's business ownership (shows "My Bars & Restaurants" only for bar/restaurant owners)
  */
-async function getUserCountry(ctx: RouterContext): Promise<string> {
-  if (!ctx.profileId) return "RW";
-  
-  try {
-    const { data, error } = await ctx.supabase
-      .from("profiles")
-      .select("country, metadata")
-      .eq("user_id", ctx.profileId)
-      .single();
-    
-    if (error || !data) return "RW";
-    
-    // Check country field or metadata
-    if (data.country) return data.country;
-    if (data.metadata && typeof data.metadata === "object") {
-      const meta = data.metadata as Record<string, unknown>;
-      if (meta.country && typeof meta.country === "string") {
-        return meta.country;
-      }
-    }
-  } catch (err) {
-    console.error("profile.get_country_error", err);
-  }
-  
-  return "RW"; // Default to Rwanda
-}
-
-/**
- * Fetch dynamic profile menu items from database using v2 function
- */
-async function fetchProfileMenuItems(
+export async function fetchDynamicProfileMenuItems(
   ctx: RouterContext,
   countryCode: string,
   language: string,
 ): Promise<ProfileMenuItem[]> {
+  if (!ctx.profileId) {
+    console.warn("menu_items.no_profile_id");
+    return getFallbackMenuItems();
+  }
+
   try {
     const { data, error } = await ctx.supabase.rpc(
       "get_profile_menu_items_v2",
       {
-        p_user_id: ctx.profileId || "00000000-0000-0000-0000-000000000000",
+        p_user_id: ctx.profileId,
         p_country_code: countryCode,
         p_language: language,
       },
     );
 
     if (error) {
-      console.error("profile.fetch_menu_error", error);
+      console.error("menu_items.fetch_error", error);
       await logStructuredEvent("PROFILE_MENU_FETCH_ERROR", {
         error: error.message,
         country: countryCode,
         language,
+        userId: ctx.profileId,
       });
       return getFallbackMenuItems();
     }
 
     if (!data || data.length === 0) {
-      console.warn("profile.no_menu_items", { countryCode, language });
+      console.warn("menu_items.no_data", { countryCode, language });
       return getFallbackMenuItems();
     }
 
+    // Log successful fetch for analytics
+    await logStructuredEvent("PROFILE_MENU_FETCHED", {
+      userId: ctx.profileId,
+      country: countryCode,
+      language,
+      itemCount: data.length,
+      hasBarRestaurant: data[0]?.metadata?.has_bar_restaurant || false,
+    });
+
     return data as ProfileMenuItem[];
   } catch (err) {
-    console.error("profile.fetch_menu_exception", err);
+    console.error("menu_items.fetch_exception", err);
+    await logStructuredEvent("PROFILE_MENU_FETCH_EXCEPTION", {
+      error: err instanceof Error ? err.message : String(err),
+      userId: ctx.profileId,
+    });
     return getFallbackMenuItems();
   }
 }
 
 /**
+ * Check if user owns any bar or restaurant businesses
+ * Used for conditional menu item visibility
+ */
+export async function userHasBarRestaurant(
+  ctx: RouterContext,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+
+  try {
+    const { data, error } = await ctx.supabase
+      .from("business")
+      .select("id, category_name, tag")
+      .eq("owner_user_id", ctx.profileId)
+      .eq("is_active", true)
+      .limit(100); // Check up to 100 businesses
+
+    if (error || !data || data.length === 0) {
+      return false;
+    }
+
+    // Check if any business is a bar or restaurant
+    return data.some((business) => {
+      const categoryText = `${business.category_name || ""} ${business.tag || ""}`.toLowerCase();
+      return (
+        categoryText.includes("bar") ||
+        categoryText.includes("restaurant") ||
+        categoryText.includes("pub") ||
+        categoryText.includes("cafe") ||
+        categoryText.includes("bistro")
+      );
+    });
+  } catch (err) {
+    console.error("menu_items.check_bar_restaurant_error", err);
+    return false;
+  }
+}
+
+/**
  * Fallback menu items if database fetch fails
+ * Returns a minimal set of core profile menu options
  */
 function getFallbackMenuItems(): ProfileMenuItem[] {
   return [
@@ -173,52 +200,4 @@ function getFallbackMenuItems(): ProfileMenuItem[] {
       metadata: {},
     },
   ];
-}
-
-export async function startProfile(
-  ctx: RouterContext,
-  _state: { key: string; data?: Record<string, unknown> },
-): Promise<boolean> {
-  if (!ctx.profileId) return false;
-
-  await setState(ctx.supabase, ctx.profileId, {
-    key: PROFILE_STATE_HOME,
-    data: {},
-  });
-
-  // Get user's country and language
-  const countryCode = await getUserCountry(ctx);
-  const language = ctx.locale || "en";
-
-  // Fetch dynamic menu items
-  const menuItems = await fetchProfileMenuItems(ctx, countryCode, language);
-
-  // Log menu display for analytics
-  await logStructuredEvent("PROFILE_MENU_DISPLAYED", {
-    userId: ctx.profileId,
-    country: countryCode,
-    language,
-    itemCount: menuItems.length,
-  });
-
-  // Convert to list message format
-  const rows = menuItems.map((item) => ({
-    id: item.action_target, // The IDS constant value
-    title: `${item.icon} ${item.title}`,
-    description: item.description,
-  }));
-
-  await sendListMessage(
-    ctx,
-    {
-      title: "👤 Profile",
-      body: "Manage your account, wallet, businesses, jobs, properties, vehicles and more.",
-      sectionTitle: "Profile",
-      buttonText: "View",
-      rows,
-    },
-    { emoji: "👤" },
-  );
-
-  return true;
 }
