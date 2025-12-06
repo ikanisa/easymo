@@ -6,11 +6,14 @@ WORKDIR /app
 RUN apk add --no-cache python3 make g++ 
 
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci
 
 COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
+
+# Remove dev dependencies
+RUN npm prune --production
 
 EXPOSE 8080
 

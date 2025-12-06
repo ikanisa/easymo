@@ -5,8 +5,8 @@
 
 import express from 'express';
 import { createServer } from 'http';
-import { WebSocketServer } from 'ws';
-import { RTCPeerConnection, RTCSessionDescription } from 'wrtc';
+import { WebSocketServer, WebSocket as WSWebSocket } from 'ws';
+import { RTCPeerConnection, RTCSessionDescription } from '@roamhq/wrtc';
 import { createClient } from '@supabase/supabase-js';
 import pino from 'pino';
 
@@ -27,8 +27,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 interface CallSession {
   callId: string;
   peerConnection: RTCPeerConnection;
-  openaiWs?: WebSocket;
-  audioTrack?: MediaStreamTrack;
+  openaiWs?: WSWebSocket;
+  audioTrack?: any;
   createdAt: Date;
 }
 
@@ -63,7 +63,7 @@ app.post('/sessions/:callId/webrtc', async (req, res) => {
     });
 
     // Handle incoming audio track
-    peerConnection.ontrack = (event) => {
+    peerConnection.ontrack = (event: any) => {
       logger.info({ callId }, 'Received audio track from WhatsApp');
       const audioTrack = event.track;
       
@@ -105,7 +105,7 @@ app.post('/sessions/:callId/webrtc', async (req, res) => {
 });
 
 // Stream audio from WhatsApp to OpenAI Realtime API
-async function streamToOpenAI(callId: string, audioTrack: MediaStreamTrack) {
+async function streamToOpenAI(callId: string, audioTrack: any) {
   const session = activeSessions.get(callId);
   if (!session) return;
 
@@ -113,7 +113,7 @@ async function streamToOpenAI(callId: string, audioTrack: MediaStreamTrack) {
     logger.info({ callId }, 'Connecting to OpenAI Realtime API');
 
     // Connect to OpenAI Realtime API via WebSocket
-    const openaiWs = new WebSocket(
+    const openaiWs = new WSWebSocket(
       `wss://api.openai.com/v1/realtime?model=${OPENAI_REALTIME_MODEL}`,
       {
         headers: {
