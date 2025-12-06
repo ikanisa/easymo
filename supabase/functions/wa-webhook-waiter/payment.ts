@@ -3,29 +3,6 @@
  * Supports MOMO USSD (Rwanda) and Revolut (Europe/Malta)
  */
 
-/**
- * Generate MOMO USSD code display string
- * Format for MTN Rwanda: *182*8*1*AMOUNT#
- */
-export function generateMoMoUSSDCode(amount: number): string {
-  return `*182*8*1*${Math.round(amount)}#`;
-}
-
-/**
- * Generate MOMO USSD payment URL for auto-dial
- */
-export function generateMoMoPaymentUrl(amount: number): string {
-  const ussdCode = generateMoMoUSSDCode(amount);
-  return `tel:${encodeURIComponent(ussdCode)}`;
-}
-
-/**
- * Generate Revolut payment URL
- * Supports:
- * - Rwanda: MTN MoMo USSD (*182*8*1*AMOUNT#)
- * - Malta/Europe: Revolut payment links
- */
-
 // MTN MoMo USSD constants for Rwanda
 const MOMO_USSD_PREFIX = "*182*8*1*";
 const MOMO_USSD_SUFFIX = "#";
@@ -109,7 +86,7 @@ export function formatPaymentInstructions(
       const paymentUrl = generateRevolutPaymentUrl(revolutLink, amount, currency, orderNumber);
       return {
         message: 
-          `�� *Pay with Revolut*\n\n` +
+          `💳 *Pay with Revolut*\n\n` +
           `Amount: ${amount.toLocaleString()} ${currency}\n\n` +
           `Tap the link below to pay securely:\n${paymentUrl}\n\n` +
           `After payment, tap "I've Paid" to confirm.`,
@@ -126,79 +103,6 @@ export function formatPaymentInstructions(
           `Please pay the waiter when your order is served.\nOrder #${orderNumber}`,
       };
   }
-  currency: string = "EUR",
-  orderNumber: string,
-): string {
-  // Revolut.me link format: https://revolut.me/username
-  // With amount: https://revolut.me/username/AMOUNT.CURRENCY
-  const formattedAmount = amount.toFixed(2);
-  return `${revolutMeLink}/${formattedAmount}.${currency}?description=Order ${orderNumber}`;
-}
-
-/**
- * Format payment instructions for customer
- * Returns message text and optional payment URL/USSD code
- */
-export function formatPaymentInstructions(
-  method: "momo" | "revolut",
-  amount: number,
-  currency: string,
-  orderNumber: string,
-  paymentSettings: {
-    revolutMeLink?: string;
-  },
-): {
-  message: string;
-  url?: string;
-  ussdCode?: string;
-} {
-  if (method === "momo") {
-    const ussdCode = generateMoMoUSSDCode(amount);
-    const url = generateMoMoPaymentUrl(amount);
-    
-    return {
-      message:
-        `💳 *Payment Instructions*\n\n` +
-        `Amount: *${amount.toLocaleString()} ${currency}*\n` +
-        `Order: #${orderNumber}\n\n` +
-        `*MTN MoMo USSD Payment:*\n` +
-        `Dial: \`${ussdCode}\`\n\n` +
-        `Or tap the link below to open your dialer:\n` +
-        `${url}\n\n` +
-        `After payment, reply "PAID" to confirm.`,
-      url,
-      ussdCode,
-    };
-  } else if (method === "revolut") {
-    if (!paymentSettings.revolutMeLink) {
-      return {
-        message: "⚠️ Revolut payment not configured for this venue.",
-      };
-    }
-
-    const url = generateRevolutPaymentUrl(
-      paymentSettings.revolutMeLink,
-      amount,
-      currency,
-      orderNumber,
-    );
-
-    return {
-      message:
-        `💳 *Payment Instructions*\n\n` +
-        `Amount: *${amount.toFixed(2)} ${currency}*\n` +
-        `Order: #${orderNumber}\n\n` +
-        `*Pay with Revolut:*\n` +
-        `Tap the link below to complete payment:\n` +
-        `${url}\n\n` +
-        `After payment, reply "PAID" to confirm.`,
-      url,
-    };
-  }
-
-  return {
-    message: "⚠️ Invalid payment method.",
-  };
 }
 
 /**

@@ -56,7 +56,32 @@ export async function handleWaiterMessage(ctx: WaiterContext): Promise<boolean> 
   return await processWithAI(ctx, session, messageText);
 }
 
+/**
+ * Parse QR code deep link from incoming message
+ * Supports formats:
+ * - "START bar-uuid-here A5"
+ * - "TABLE A5 BAR bar-uuid-here"
+ */
+function parseQRDeepLink(message: string): { barId: string; tableNumber?: string } | null {
+  // Handle format: "START uuid-bar-id A5" or "START uuid-bar-id"
+  // UUID pattern: 8-4-4-4-12 hex characters
+  const uuidPattern = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
+  const startMatch = message.match(new RegExp(`^START\\s+(${uuidPattern})\\s*(\\S+)?$`, 'i'));
+  if (startMatch) {
+    return { barId: startMatch[1], tableNumber: startMatch[2] };
+  }
+  
+  // Handle format: "TABLE A5 BAR uuid-bar-id"
+  const tableMatch = message.match(new RegExp(`TABLE[:\\s]+(\\S+)\\s+BAR[:\\s]+(${uuidPattern})`, 'i'));
+  if (tableMatch) {
+    return { barId: tableMatch[2], tableNumber: tableMatch[1] };
+  }
+  
+  return null;
+}
+
 async function getOrCreateSession(ctx: WaiterContext): Promise<ConversationSession | null> {
+  // First, check for existing active session
   const { data: existing } = await ctx.supabase
     .from("waiter_conversations")
     .select(`
@@ -69,7 +94,7 @@ async function getOrCreateSession(ctx: WaiterContext): Promise<ConversationSessi
       )
     `)
     .eq("visitor_phone", ctx.from)
-    .eq("status", "active")
+    .eq("session_state", "active")
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -77,6 +102,12 @@ async function getOrCreateSession(ctx: WaiterContext): Promise<ConversationSessi
   if (existing) {
     return {
       ...existing,
+      status: existing.session_state,
+      session_id: existing.id,
+      messages: existing.ai_context?.messages || [],
+      current_cart: existing.cart || { items: [], total: 0 },
+      current_order_id: null,
+      table_number: existing.dine_in_table,
       bar_info: existing.bars ? {
         name: existing.bars.name,
         phone: existing.bars.phone,
@@ -86,7 +117,77 @@ async function getOrCreateSession(ctx: WaiterContext): Promise<ConversationSessi
     };
   }
 
-  return null;
+  // No existing session - try to parse QR deep link from message
+  const messageText = ctx.message.text?.body || "";
+  const qrData = parseQRDeepLink(messageText);
+  
+  if (!qrData) {
+    // No QR data found, cannot create session
+    return null;
+  }
+
+  // Fetch bar details
+  const { data: bar } = await ctx.supabase
+    .from("bars")
+    .select("id, name, phone, payment_settings")
+    .eq("id", qrData.barId)
+    .single();
+
+  if (!bar) {
+    await logStructuredEvent("WAITER_INVALID_BAR", {
+      barId: qrData.barId,
+      from: ctx.from,
+    });
+    return null;
+  }
+
+  // Create new session
+  const { data: newSession, error } = await ctx.supabase
+    .from("waiter_conversations")
+    .insert({
+      bar_id: bar.id,
+      visitor_phone: ctx.from,
+      dine_in_table: qrData.tableNumber,
+      session_state: "active",
+      cart: { items: [], total: 0 },
+      ai_context: { messages: [] },
+      currency: bar.payment_settings?.currency || "RWF",
+    })
+    .select()
+    .single();
+
+  if (error || !newSession) {
+    await logStructuredEvent("WAITER_SESSION_CREATE_ERROR", {
+      error: error?.message,
+      barId: qrData.barId,
+      from: ctx.from,
+    }, "error");
+    return null;
+  }
+
+  await logStructuredEvent("WAITER_SESSION_CREATED", {
+    sessionId: newSession.id,
+    barId: bar.id,
+    barName: bar.name,
+    tableNumber: qrData.tableNumber,
+    from: ctx.from,
+  });
+
+  return {
+    ...newSession,
+    status: newSession.session_state,
+    session_id: newSession.id,
+    messages: [],
+    current_cart: { items: [], total: 0 },
+    current_order_id: null,
+    table_number: newSession.dine_in_table,
+    bar_info: {
+      name: bar.name,
+      phone: bar.phone,
+      currency: bar.payment_settings?.currency || "RWF",
+      payment_settings: bar.payment_settings,
+    },
+  };
 }
 
 async function processWithAI(
@@ -99,8 +200,7 @@ async function processWithAI(
     .select("id, name, description, price, currency, category, is_available")
     .eq("bar_id", session.bar_id)
     .eq("is_available", true)
-    .order("category")
-    .order("sort_order");
+    .order("category");
 
   const menuText = (menuItems || []).map((item) => 
     `- ${item.name} (${item.category}): ${item.price} ${item.currency}${item.description ? ` - ${item.description}` : ""}`
@@ -208,20 +308,29 @@ async function handleAIAction(
     case "add_to_cart":
       if (items && items.length > 0) {
         for (const item of items) {
-          const existing = updatedCart.items.find(i => i.id === item.id);
+          // Search for menu item by name (AI returns names, not IDs)
+          const { data: menuItem } = await ctx.supabase
+            .from("restaurant_menu_items")
+            .select("id, name, price")
+            .eq("bar_id", session.bar_id)
+            .ilike("name", `%${item.name}%`)
+            .eq("is_available", true)
+            .limit(1)
+            .maybeSingle();
+          
+          if (!menuItem) {
+            // Item not found in menu, skip it
+            continue;
+          }
+          
+          const existing = updatedCart.items.find(i => i.id === menuItem.id);
           if (existing) {
             existing.quantity += item.quantity || 1;
           } else {
-            const { data: menuItem } = await ctx.supabase
-              .from("restaurant_menu_items")
-              .select("price")
-              .eq("id", item.id)
-              .single();
-            
             updatedCart.items.push({
-              id: item.id,
-              name: item.name,
-              price: menuItem?.price || 0,
+              id: menuItem.id,
+              name: menuItem.name,
+              price: menuItem.price || 0,
               quantity: item.quantity || 1,
             });
           }
@@ -257,10 +366,10 @@ async function handleAIAction(
   await ctx.supabase
     .from("waiter_conversations")
     .update({
-      messages: updatedMessages,
-      current_cart: updatedCart,
-      table_number: updatedTable,
-      updated_at: new Date().toISOString(),
+      ai_context: { messages: updatedMessages },
+      cart: updatedCart,
+      dine_in_table: updatedTable,
+      last_message_at: new Date().toISOString(),
     })
     .eq("id", session.id);
 
@@ -301,7 +410,7 @@ async function handleCheckout(
   const { data: order, error } = await ctx.supabase
     .from("orders")
     .insert({
-      business_id: session.bar_id,
+      bar_id: session.bar_id,
       order_number: orderNumber,
       status: "pending",
       total_amount: cart.total,
@@ -350,9 +459,9 @@ async function handleCheckout(
   await ctx.supabase
     .from("waiter_conversations")
     .update({
-      current_order_id: order.id,
-      status: "order_placed",
-      current_cart: { items: [], total: 0 },
+      session_state: "checkout",
+      cart: { items: [], total: 0 },
+      total_amount: cart.total,
     })
     .eq("id", session.id);
 
@@ -404,17 +513,27 @@ async function handleInteractiveMessage(
     case "waiter_clear_cart":
       await ctx.supabase
         .from("waiter_conversations")
-        .update({ current_cart: { items: [], total: 0 } })
+        .update({ cart: { items: [], total: 0 }, total_amount: 0 })
         .eq("id", session.id);
       await sendText(ctx.from, "🗑️ Cart cleared! What would you like to order?");
       break;
     
     case "waiter_confirm_paid":
-      if (session.current_order_id) {
+      // Find the most recent order for this session
+      const { data: recentOrder } = await ctx.supabase
+        .from("orders")
+        .select("id")
+        .eq("visitor_phone", ctx.from)
+        .eq("bar_id", session.bar_id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (recentOrder) {
         await ctx.supabase
           .from("orders")
           .update({ payment_status: "confirmed" })
-          .eq("id", session.current_order_id);
+          .eq("id", recentOrder.id);
       }
       await sendText(ctx.from, 
         "✅ Thank you! Your payment has been noted.\n\n" +
