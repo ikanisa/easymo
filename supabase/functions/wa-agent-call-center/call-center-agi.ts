@@ -947,7 +947,7 @@ export class CallCenterAGI extends BaseAgent {
                      Format as a clear numbered list.`;
 
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: 'gpt-5', // Primary model per README
         messages: [
           {
             role: 'system',
@@ -1039,7 +1039,7 @@ export class CallCenterAGI extends BaseAgent {
       const openai = getOpenAIClient();
       
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: 'gpt-5', // Primary model per README
         messages: [
           {
             role: 'system',
