@@ -259,7 +259,7 @@ async def extract_business_data(page: Page, element) -> Optional[Dict]:
         else:
             business['operating_hours'] = None
         
-        business['scraped_at'] = datetime.utcnow().isoformat()
+        business['scraped_at'] = datetime.now().isoformat()
         
         return business
         
@@ -638,7 +638,7 @@ async def main():
                             'categories_processed': scraper_state['categories_processed'],
                             'businesses_found': scraper_state['businesses_found'],
                             'stats': scraper_state['stats'],
-                            'last_updated': datetime.utcnow().isoformat()
+                            'last_updated': datetime.now().isoformat()
                         })
                         
                         pbar.update(1)
