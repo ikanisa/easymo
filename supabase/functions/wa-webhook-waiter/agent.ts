@@ -219,10 +219,14 @@ If unclear, ask for clarification.`;
 
     const aiResult = await aiProvider.chat([
       { role: "system", content: systemPrompt },
-      ...updatedMessages.slice(-10).map((m) => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-      })),
+      ...updatedMessages.slice(-10).map((m) => {
+        // Ensure role is valid for DualAIProvider
+        const role = m.role === 'assistant' || m.role === 'user' ? m.role : 'user';
+        return {
+          role: role as 'user' | 'assistant',
+          content: m.content,
+        };
+      }),
     ], {
       temperature: 0.7,
       maxTokens: 500,

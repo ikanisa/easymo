@@ -94,25 +94,23 @@ export async function notifyBarNewOrder(
  * Supports Rwanda (+250, 9 digits) and Malta (+356, 8 digits)
  */
 function formatPhoneNumber(phone: string): string {
-  let cleaned = phone.replace(/\D/g, "");
+  const cleaned = phone.replace(/\D/g, "");
   
   // Rwanda: 9 digits without country code
-  if (cleaned.length === 9 && !cleaned.startsWith("250") && !cleaned.startsWith("356")) {
-    // Assume Rwanda if 9 digits
-    cleaned = "250" + cleaned;
+  if (cleaned.length === 9) {
+    return "250" + cleaned;
   }
   // Malta: 8 digits without country code  
-  else if (cleaned.length === 8 && !cleaned.startsWith("356")) {
-    cleaned = "356" + cleaned;
+  else if (cleaned.length === 8) {
+    return "356" + cleaned;
   }
-  // Already has country code
-  else if (cleaned.length === 12 && cleaned.startsWith("250")) {
-    // Rwanda with country code - OK
-  }
-  else if (cleaned.length === 11 && cleaned.startsWith("356")) {
-    // Malta with country code - OK
+  // Already has country code (12 for Rwanda, 11 for Malta)
+  else if ((cleaned.length === 12 && cleaned.startsWith("250")) ||
+           (cleaned.length === 11 && cleaned.startsWith("356"))) {
+    return cleaned;
   }
   
+  // Return as-is if doesn't match expected format
   return cleaned;
 }
 
