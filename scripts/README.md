@@ -78,6 +78,96 @@ This directory contains various automation scripts for the EasyMO platform.
 
 ---
 
+## 🗺️ Data Extraction & Import Scripts
+
+### Google Maps Business Scraper
+
+**Purpose:** Extract business information from Google Maps search results and sync to Supabase with duplicate detection.
+
+#### Setup
+
+```bash
+# Install Python dependencies
+pip install -r scripts/requirements-scraper.txt
+
+# Install Playwright browser
+playwright install chromium
+
+# Set environment variables
+export SUPABASE_URL="https://your-project.supabase.co"
+export SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+# OR use direct PostgreSQL connection
+export DATABASE_URL="postgresql://user:pass@host:port/database"
+```
+
+#### Usage Examples
+
+```bash
+# Basic usage - extract pharmacies
+python scripts/google_maps_scraper.py "https://www.google.com/maps/search/pharmacies/@-1.9857408,30.1006848,15z"
+
+# Dry run - preview without inserting to database
+python scripts/google_maps_scraper.py --dry-run "https://maps.google.com/search/pharmacies/@-1.9,30.1,15z"
+
+# Custom category and limit
+python scripts/google_maps_scraper.py --category restaurant --limit 20 "https://maps.google.com/..."
+
+# Visible browser mode (for debugging)
+python scripts/google_maps_scraper.py --no-headless "https://maps.google.com/..."
+```
+
+#### Features
+
+- **Data Extraction:** Scrapes name, address, phone, lat/lng, rating, website, and opening hours
+- **Duplicate Detection:** Checks for duplicates by name (case-insensitive), location proximity (~100m), or phone number
+- **Update Existing:** Updates existing records instead of creating duplicates
+- **Dry Run Mode:** Preview businesses before inserting to database
+- **Progress Tracking:** Detailed logging of processing and results
+- **Error Handling:** Graceful handling of network issues and rate limiting
+
+#### Duplicate Detection Logic
+
+The script identifies duplicates using any of these criteria:
+1. **Name match:** Case-insensitive exact name match
+2. **Location proximity:** Within ~100 meters using PostGIS spatial queries
+3. **Phone match:** Matching phone number (normalized)
+
+When a duplicate is found, the existing record is updated with new information instead of creating a new entry.
+
+#### Output
+
+The script provides detailed progress output:
+```
+📍 Step 1: Scraping Google Maps...
+✅ Found 15 businesses
+
+💾 Step 2: Syncing to database...
+[1/15] Processing: Pharmacy ABC
+  ⚠️  Duplicate found (by name): Pharmacy ABC
+  ✅ Updated existing business
+[2/15] Processing: Pharmacy XYZ
+  ✅ Inserted new business (ID: 123...)
+
+Summary
+================================================================================
+Total businesses found: 15
+✅ New businesses added: 8
+🔄 Existing businesses updated: 5
+❌ Errors: 2
+```
+
+### Other Data Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `extract_coordinates.py` | Extract coordinates from Google Maps URLs in business table |
+| `extract_coordinates_from_maps.py` | Extract coordinates using geocoding API |
+| `extract_coordinates_no_api.py` | Extract coordinates without API |
+| `geocode-data.sh` | Geocode location data |
+| `import-business-directory.mjs` | Import business directory data |
+
+---
+
 ## 🗄️ Database & Migration Scripts
 
 | Script | Purpose |
