@@ -90,7 +90,7 @@ BEGIN
       OR EXISTS (
         SELECT 1
         FROM unnest(pmi.requires_business_category) AS required_cat
-        FROM unnest(v_user_business_categories) AS user_cat
+        CROSS JOIN unnest(v_user_business_categories) AS user_cat
         WHERE user_cat ILIKE '%' || required_cat || '%'
       )
     )

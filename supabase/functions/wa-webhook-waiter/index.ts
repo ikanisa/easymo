@@ -71,19 +71,25 @@ serve(async (req: Request): Promise<Response> => {
       await logStructuredEvent("WAITER_WEBHOOK_RECEIVED", {
         requestId,
         from: payload?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from,
+        status: "stub_handler",
       });
 
-      // TODO: Implement full waiter AI agent logic
-      // 1. Parse incoming WhatsApp message
-      // 2. Get/create conversation session
-      // 3. Process message with AI
-      // 4. Handle menu browsing, cart management
-      // 5. Process checkout and payments
-      // 6. Notify bar owner
+      // CRITICAL: This is a STUB implementation
+      // The webhook accepts traffic but does NOT process it
+      // Production implementation requires:
+      // 1. Parse incoming WhatsApp message from payload
+      // 2. Get/create conversation session from waiter_conversations table
+      // 3. Process message with AI (OpenAI/Gemini)
+      // 4. Handle menu browsing, cart management, checkout
+      // 5. Generate payment links (MoMo/Revolut)
+      // 6. Send responses via WhatsApp Cloud API
+      // 7. Notify bar owner of new orders
+      // WITHOUT these implementations, this webhook will silently fail in production
 
-      await logStructuredEvent("WAITER_MESSAGE_PROCESSED", {
+      await logStructuredEvent("WAITER_MESSAGE_STUB_WARNING", {
         requestId,
-        status: "placeholder",
+        warning: "Message received but not processed - stub implementation only",
+        from: payload?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from,
       });
 
       return respond({ success: true }, { status: 200 });

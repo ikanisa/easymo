@@ -58,20 +58,26 @@ export async function notifyBarNewOrder(
       session,
     );
 
-    // Send WhatsApp message to bar owner
-    // TODO: Integrate with WhatsApp Cloud API to send message
-    await logStructuredEvent("BAR_ORDER_NOTIFICATION_SENT", {
+    // STUB: WhatsApp message sending not implemented
+    // In production, this should:
+    // - Use WhatsApp Cloud API to send message
+    // - Handle delivery failures and retries
+    // - Track message status
+    // For now, we log the intent
+    console.log("notify_bar.stub_message", {
+      to: ownerContact,
+      orderNumber,
+      message,
+      warning: "WhatsApp sending not implemented - message logged only",
+    });
+
+    await logStructuredEvent("BAR_ORDER_NOTIFICATION_LOGGED", {
       barId,
       orderId,
       orderNumber,
       ownerContact,
       totalAmount: session.totalAmount,
-    });
-
-    console.log("notify_bar.message_sent", {
-      to: ownerContact,
-      orderNumber,
-      message,
+      status: "stub_only",
     });
 
     // Update order to mark as notified

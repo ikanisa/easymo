@@ -5,13 +5,18 @@
  * - Malta/Europe: Revolut payment links
  */
 
+// MTN MoMo USSD constants for Rwanda
+const MOMO_USSD_PREFIX = "*182*8*1*";
+const MOMO_USSD_SUFFIX = "#";
+const MOMO_USSD_PATTERN = /^\*182\*8\*1\*\d+#$/;
+
 /**
  * Generate MTN MoMo USSD payment code for Rwanda
  * Format: *182*8*1*AMOUNT#
  */
 export function generateMoMoUSSDCode(amount: number): string {
   const roundedAmount = Math.round(amount);
-  return `*182*8*1*${roundedAmount}#`;
+  return `${MOMO_USSD_PREFIX}${roundedAmount}${MOMO_USSD_SUFFIX}`;
 }
 
 /**
@@ -111,14 +116,16 @@ export function formatPaymentInstructions(
  * Validate MOMO USSD code format
  */
 export function isValidMoMoUSSDCode(code: string): boolean {
-  const pattern = /^\*182\*8\*1\*\d+#$/;
-  return pattern.test(code);
+  return MOMO_USSD_PATTERN.test(code);
 }
 
 /**
  * Extract amount from MOMO USSD code
  */
 export function extractAmountFromUSSD(code: string): number | null {
-  const match = code.match(/^\*182\*8\*1\*(\d+)#$/);
-  return match ? parseInt(match[1], 10) : null;
+  const match = code.match(MOMO_USSD_PATTERN);
+  if (!match) return null;
+  // Extract the amount between prefix and suffix
+  const amountStr = code.replace(MOMO_USSD_PREFIX, "").replace(MOMO_USSD_SUFFIX, "");
+  return parseInt(amountStr, 10);
 }
