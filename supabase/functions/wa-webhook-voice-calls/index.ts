@@ -7,6 +7,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { logStructuredEvent } from '../_shared/observability.ts';
 import { verifyWebhookSignature } from '../_shared/webhook-utils.ts';
+import { isValidPhone, maskPhone } from '../_shared/phone-utils.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -16,6 +17,7 @@ const supabase = createClient(
 const VOICE_GATEWAY_URL = Deno.env.get('VOICE_GATEWAY_URL') ?? 'http://voice-gateway:3000';
 const WHATSAPP_ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN') ?? Deno.env.get('WABA_ACCESS_TOKEN') ?? '';
 const WHATSAPP_PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') ?? Deno.env.get('WABA_PHONE_NUMBER_ID') ?? '';
+const MAX_VOICE_RETRIES = Number(Deno.env.get('VOICE_GATEWAY_MAX_RETRIES') ?? '2');
 
 // Validate environment variables at startup and log warnings
 let envValidated = false;
@@ -190,13 +192,12 @@ async function handleIncomingCall(
 ): Promise<void> {
   logStructuredEvent('WA_VOICE_CALL_HANDLING_START', {
     callId,
-    from: fromNumber?.slice(-4),
+    from: maskPhone(fromNumber),
     correlationId,
   });
 
-  // Validate phone number format (E.164 format: +[country code][number])
-  const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-  if (!fromNumber || !phoneRegex.test(fromNumber)) {
+  // Validate phone number format using existing utility
+  if (!fromNumber || !isValidPhone(fromNumber)) {
     logStructuredEvent('WA_VOICE_ERROR', {
       stage: 'input_validation',
       callId,
@@ -266,7 +267,7 @@ async function handleIncomingCall(
         }),
       });
       
-      logStructuredEvent('WA_VOICE_FALLBACK_MESSAGE_SENT', { callId, to: fromNumber.slice(-4), correlationId });
+      logStructuredEvent('WA_VOICE_FALLBACK_MESSAGE_SENT', { callId, to: maskPhone(fromNumber), correlationId });
     } catch (msgError) {
       logStructuredEvent('WA_VOICE_FALLBACK_MESSAGE_FAILED', {
         callId,
@@ -281,16 +282,15 @@ async function handleIncomingCall(
       profile_id: profile?.user_id,
       primary_intent: 'voice_call_failed',
       summary_text: 'Voice call attempted but Voice Gateway not configured',
-      metadata: { from_last4: fromNumber.slice(-4), reason: 'gateway_not_configured' },
+      metadata: { from_masked: maskPhone(fromNumber), reason: 'gateway_not_configured' },
     });
     
     return; // Exit early - don't try to connect to unavailable gateway
   }
 
   let voiceGatewayResponse;
-  const maxRetries = 2;
 
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+  for (let attempt = 0; attempt <= MAX_VOICE_RETRIES; attempt++) {
     try {
       voiceGatewayResponse = await fetch(`${VOICE_GATEWAY_URL}/calls/start`, {
         method: 'POST',
@@ -327,10 +327,10 @@ async function handleIncomingCall(
         attempt,
         status: voiceGatewayResponse.status,
         correlationId,
-      }, attempt === maxRetries ? 'error' : 'warn');
+      }, attempt === MAX_VOICE_RETRIES ? 'error' : 'warn');
       
       // Wait before retry (but not after last attempt)
-      if (attempt < maxRetries) {
+      if (attempt < MAX_VOICE_RETRIES) {
         await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1))); // Exponential backoff
       }
     } catch (fetchError) {
@@ -339,10 +339,10 @@ async function handleIncomingCall(
         attempt,
         error: fetchError instanceof Error ? fetchError.message : String(fetchError),
         correlationId,
-      }, attempt === maxRetries ? 'error' : 'warn');
+      }, attempt === MAX_VOICE_RETRIES ? 'error' : 'warn');
       
       // If this was the last attempt, re-throw the error
-      if (attempt === maxRetries) {
+      if (attempt === MAX_VOICE_RETRIES) {
         throw fetchError;
       }
       
@@ -369,7 +369,7 @@ async function handleIncomingCall(
   logStructuredEvent('WA_VOICE_CALL_SESSION_CREATED', {
     callId,
     sessionId: voiceSession.call_id,
-    from: fromNumber.slice(-4),
+    from: maskPhone(fromNumber),
     correlationId,
   });
 
