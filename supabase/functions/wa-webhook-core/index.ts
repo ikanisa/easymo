@@ -189,7 +189,8 @@ serve(async (req: Request): Promise<Response> => {
     }
     
     // Check if this is a call event BEFORE routing messages
-    const callEvent = payload?.entry?.[0]?.changes?.[0]?.value?.call;
+    const calls = payload?.entry?.[0]?.changes?.[0]?.value?.calls;
+    const callEvent = calls?.[0]; // Get first call from array
     if (callEvent) {
       log("CORE_CALL_EVENT_DETECTED", { 
         callId: callEvent.id,
