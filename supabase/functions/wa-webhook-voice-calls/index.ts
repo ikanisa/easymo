@@ -194,6 +194,18 @@ async function handleIncomingCall(
     correlationId,
   });
 
+  // Validate phone number format (E.164 format: +[country code][number])
+  const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+  if (!fromNumber || !phoneRegex.test(fromNumber)) {
+    logStructuredEvent('WA_VOICE_ERROR', {
+      stage: 'input_validation',
+      callId,
+      error: 'Invalid phone number format',
+      correlationId,
+    }, 'error');
+    return; // Exit early for invalid input
+  }
+
   // Stage 1: Profile lookup
   logStructuredEvent('WA_VOICE_STAGE', {
     stage: 'profile_lookup',
@@ -263,30 +275,29 @@ async function handleIncomingCall(
       }, 'error');
     }
     
-    // Store the call attempt for later follow-up
+    // Store the call attempt for later follow-up (mask phone number for privacy)
     await supabase.from('call_summaries').insert({
       call_id: callId,
       profile_id: profile?.user_id,
       primary_intent: 'voice_call_failed',
       summary_text: 'Voice call attempted but Voice Gateway not configured',
-      metadata: { from: fromNumber, reason: 'gateway_not_configured' },
+      metadata: { from_last4: fromNumber.slice(-4), reason: 'gateway_not_configured' },
     });
     
     return; // Exit early - don't try to connect to unavailable gateway
   }
 
   let voiceGatewayResponse;
-  let retryCount = 0;
   const maxRetries = 2;
 
-  while (retryCount <= maxRetries) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       voiceGatewayResponse = await fetch(`${VOICE_GATEWAY_URL}/calls/start`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json', 
           'X-Correlation-ID': correlationId,
-          'X-Retry-Count': String(retryCount),
+          'X-Retry-Count': String(attempt),
         },
         body: JSON.stringify({
           provider_call_id: callId,
@@ -301,7 +312,7 @@ async function handleIncomingCall(
             platform: 'whatsapp', 
             whatsapp_call_id: callId, 
             user_id: profile?.user_id,
-            retry_count: retryCount,
+            retry_count: attempt,
           },
         }),
       });
@@ -310,24 +321,33 @@ async function handleIncomingCall(
         break; // Success, exit retry loop
       }
       
-      retryCount++;
-      if (retryCount <= maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, 500 * retryCount)); // Exponential backoff
+      // Log non-success response
+      logStructuredEvent('WA_VOICE_GATEWAY_NON_OK_RESPONSE', {
+        callId,
+        attempt,
+        status: voiceGatewayResponse.status,
+        correlationId,
+      }, attempt === maxRetries ? 'error' : 'warn');
+      
+      // Wait before retry (but not after last attempt)
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1))); // Exponential backoff
       }
     } catch (fetchError) {
       logStructuredEvent('WA_VOICE_GATEWAY_FETCH_ERROR', {
         callId,
-        retryCount,
+        attempt,
         error: fetchError instanceof Error ? fetchError.message : String(fetchError),
         correlationId,
-      }, retryCount === maxRetries ? 'error' : 'warn');
+      }, attempt === maxRetries ? 'error' : 'warn');
       
-      retryCount++;
-      if (retryCount <= maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, 500 * retryCount));
-      } else {
+      // If this was the last attempt, re-throw the error
+      if (attempt === maxRetries) {
         throw fetchError;
       }
+      
+      // Wait before retry
+      await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
     }
   }
 
