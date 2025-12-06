@@ -740,3 +740,79 @@ model Reservation {
   @@index([tenantId, startTime])
   @@map("reservations")
 }
+
+// ===== Bars / Restaurant Management =====
+
+model Bar {
+  id                   String   @id @default(uuid()) @db.Uuid
+  slug                 String   @unique
+  name                 String
+  locationText         String?  @map("location_text")
+  country              String?
+  cityArea             String?  @map("city_area")
+  currency             String?
+  momoCode             String?  @map("momo_code")
+  isActive             Boolean  @default(true) @map("is_active")
+  claimed              Boolean  @default(false)
+  publishedMenuVersion String?  @map("published_menu_version")
+  lat                  Float?
+  lng                  Float?
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  barNumbers           BarNumber[]
+  barSettings          BarSettings?
+  waiterConversations  WaiterConversation[]
+
+  @@index([slug])
+  @@index([country])
+  @@index([cityArea])
+  @@index([isActive])
+  @@map("bars")
+}
+
+model BarNumber {
+  id        String   @id @default(uuid()) @db.Uuid
+  barId     String   @db.Uuid @map("bar_id")
+  bar       Bar      @relation(fields: [barId], references: [id], onDelete: Cascade)
+  phoneE164 String   @map("phone_e164")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([barId])
+  @@index([phoneE164])
+  @@map("bar_numbers")
+}
+
+model BarSettings {
+  id                        String   @id @default(uuid()) @db.Uuid
+  barId                     String   @unique @db.Uuid @map("bar_id")
+  bar                       Bar      @relation(fields: [barId], references: [id], onDelete: Cascade)
+  allowDirectCustomerChat   Boolean  @default(false) @map("allow_direct_customer_chat")
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+
+  @@map("bar_settings")
+}
+
+model WaiterConversation {
+  id             String   @id @default(uuid()) @db.Uuid
+  barId          String   @db.Uuid @map("bar_id")
+  bar            Bar      @relation(fields: [barId], references: [id], onDelete: Cascade)
+  visitorPhone   String   @map("visitor_phone")
+  visitorName    String?  @map("visitor_name")
+  dineInTable    String?  @map("dine_in_table")
+  sessionState   String   @default("active") @map("session_state") // active, ordering, checkout, completed, abandoned
+  cart           Json     @default("[]")
+  totalAmount    Decimal  @default(0) @db.Decimal(10, 2) @map("total_amount")
+  currency       String   @default("RWF")
+  aiContext      Json     @default("{}") @map("ai_context")
+  lastMessageAt  DateTime @default(now()) @map("last_message_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  completedAt    DateTime? @map("completed_at")
+
+  @@index([barId])
+  @@index([visitorPhone])
+  @@index([sessionState])
+  @@index([barId, visitorPhone, sessionState])
+  @@map("waiter_conversations")
+}

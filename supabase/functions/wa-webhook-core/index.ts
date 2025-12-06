@@ -176,6 +176,18 @@ serve(async (req: Request): Promise<Response> => {
     
     log("CORE_WEBHOOK_RECEIVED", { payloadType: typeof payload });
     
+    // Check for intent notification opt-out/opt-in FIRST (before any routing)
+    const { handleIntentOptOut } = await import("./handlers/intent-opt-out.ts");
+    const optOutHandled = await handleIntentOptOut(payload, supabase);
+    if (optOutHandled) {
+      log("INTENT_OPT_OUT_HANDLED", {});
+      // Return success to Meta - handler already sent response to user
+      return finalize(
+        json({ success: true, handled: "opt_out" }, { status: 200 }),
+        "wa-webhook-core"
+      );
+    }
+    
     // Check if this is a call event BEFORE routing messages
     const callEvent = payload?.entry?.[0]?.changes?.[0]?.value?.call;
     if (callEvent) {
