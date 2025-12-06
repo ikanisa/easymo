@@ -87,6 +87,38 @@ class GoogleMapsScraper:
             pass
         return None
     
+    def _format_rwanda_phone(self, phone: str) -> str:
+        """
+        Format phone number to Rwanda standard: +250XXXXXXXXX
+        Examples:
+          0788 767 816 -> +250788767816
+          788 767 816 -> +250788767816
+          +250788767816 -> +250788767816
+        """
+        if not phone:
+            return ""
+        
+        # Remove all spaces, dashes, parentheses
+        phone = phone.replace(" ", "").replace("-", "").replace("(", "").replace(")", "").replace(".", "")
+        
+        # Remove leading zeros
+        phone = phone.lstrip("0")
+        
+        # If already has +250, just return cleaned version
+        if phone.startswith("+250"):
+            return phone
+        
+        # If starts with 250, add +
+        if phone.startswith("250"):
+            return "+" + phone
+        
+        # Otherwise, add +250 prefix (assuming Rwanda number)
+        if len(phone) >= 9:  # Rwanda numbers are 9 digits after country code
+            return "+250" + phone
+        
+        # Invalid number
+        return ""
+    
     def _extract_business_details(self) -> Optional[Dict]:
         """Extract business details from open details panel"""
         details = {}
@@ -144,7 +176,9 @@ class GoogleMapsScraper:
                 phone_button = self.driver.find_element(By.CSS_SELECTOR, 'button[data-tooltip="Copy phone number"]')
                 phone_text = phone_button.get_attribute('aria-label')
                 if phone_text:
-                    details['phone'] = phone_text.replace('Phone: ', '').strip()
+                    raw_phone = phone_text.replace('Phone: ', '').strip()
+                    # Format to Rwanda standard: +250XXXXXXXXX
+                    details['phone'] = self._format_rwanda_phone(raw_phone)
             except:
                 details['phone'] = ""
             
@@ -248,15 +282,18 @@ class GoogleMapsScraper:
                         business['source'] = 'Google Maps'
                         business['scraped_at'] = datetime.utcnow().isoformat()
                         
-                        # Only add if has phone number
-                        if business.get('phone'):
+                        # Only add if has phone number AND it's properly formatted
+                        if business.get('phone') and business['phone'].startswith('+250') and len(business['phone']) == 13:
                             businesses.append(business)
                             processed += 1
                             
                             if processed % 10 == 0:
-                                print(f"  Processed {processed}/{max_results} (with phone)...")
+                                print(f"  Processed {processed}/{max_results} (with valid phone)...")
                         else:
-                            print(f"  ⊘ Skipped {business['name']} (no phone)")
+                            if business.get('phone'):
+                                print(f"  ⊘ Skipped {business['name']} (invalid phone: {business.get('phone')})")
+                            else:
+                                print(f"  ⊘ Skipped {business['name']} (no phone)")
                     
                 except Exception as e:
                     print(f"  Error processing business {idx}: {e}")
