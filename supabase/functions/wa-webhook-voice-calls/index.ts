@@ -29,7 +29,7 @@ const WA_VERIFY_TOKEN = Deno.env.get('WA_VERIFY_TOKEN') ?? '';
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') ?? '';
 const OPENAI_ORG_ID = Deno.env.get('OPENAI_ORG_ID') ?? '';
 const OPENAI_REALTIME_MODEL = Deno.env.get('OPENAI_REALTIME_MODEL') ?? 'gpt-5-realtime';
-const VOICE_MEDIA_SERVER_URL = Deno.env.get('VOICE_MEDIA_SERVER_URL') ?? 'http://voice-media-server:8080';
+const WEBRTC_BRIDGE_URL = Deno.env.get('WEBRTC_BRIDGE_URL') ?? 'http://localhost:8080';
 
 // Types based on WhatsApp API documentation
 interface CallWebhook {
@@ -200,40 +200,44 @@ You help with: Rides, Real Estate, Jobs, Business, Insurance, Legal, Pharmacy, F
 Be friendly, helpful, and concise. Ask clarifying questions if needed.
 Speak naturally as if on a phone call in ${language === 'fr' ? 'French' : language === 'rw' ? 'Kinyarwanda' : 'English'}.`;
 
-  // Step 1: Create WebRTC session via media server
+  // Step 1: Create WebRTC bridge session
   let sdpAnswer: string;
   let sessionId: string;
   
   try {
-    const mediaServerResponse = await fetch(
-      `${VOICE_MEDIA_SERVER_URL}/sessions/${callId}/webrtc`,
+    const bridgeResponse = await fetch(
+      `${WEBRTC_BRIDGE_URL}/bridge/start`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          callId,
           sdpOffer: session.sdp,
-          openaiModel: OPENAI_REALTIME_MODEL,
-          systemInstructions,
-          voice,
+          from: fromNumber,
+          sessionConfig: {
+            voice,
+            instructions: systemInstructions,
+            temperature: 0.8,
+          },
         }),
       }
     );
 
-    if (!mediaServerResponse.ok) {
-      throw new Error(`Media server error: ${mediaServerResponse.status}`);
+    if (!bridgeResponse.ok) {
+      throw new Error(`WebRTC bridge error: ${bridgeResponse.status}`);
     }
 
-    const result = await mediaServerResponse.json();
+    const result = await bridgeResponse.json();
     sdpAnswer = result.sdpAnswer;
-    sessionId = result.sessionId || callId;
+    sessionId = result.callId;
     
-    logStructuredEvent('WA_MEDIA_SERVER_SESSION_CREATED', {
+    logStructuredEvent('WA_WEBRTC_BRIDGE_CREATED', {
       callId,
       sessionId,
       correlationId,
     });
   } catch (error) {
-    logStructuredEvent('WA_MEDIA_SERVER_ERROR', {
+    logStructuredEvent('WA_WEBRTC_BRIDGE_ERROR', {
       callId,
       error: error instanceof Error ? error.message : String(error),
       correlationId,
@@ -298,13 +302,15 @@ async function handleCallTerminate(call: any, correlationId: string): Promise<vo
     correlationId,
   });
 
-  // Notify media server to stop session
+  // Notify WebRTC bridge to stop session
   try {
-    await fetch(`${VOICE_MEDIA_SERVER_URL}/sessions/${callId}`, {
-      method: 'DELETE',
+    await fetch(`${WEBRTC_BRIDGE_URL}/bridge/stop`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ callId }),
     });
   } catch (error) {
-    logStructuredEvent('WA_MEDIA_SERVER_STOP_ERROR', {
+    logStructuredEvent('WA_WEBRTC_BRIDGE_STOP_ERROR', {
       callId,
       error: error instanceof Error ? error.message : String(error),
       correlationId,
