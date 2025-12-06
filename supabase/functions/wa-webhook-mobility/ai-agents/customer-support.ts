@@ -128,7 +128,7 @@ export async function handleCustomerSupportMessage(
         "Authorization": `Bearer ${OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: agentConfig.model_name || "gpt-4o-mini",
+        model: agentConfig.model_name || "gpt-5",  // Per README.md: Mandatory GPT-5
         messages: messages,
         temperature: agentConfig.temperature || 0.7,
         max_tokens: agentConfig.max_tokens || 1000,

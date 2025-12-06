@@ -8,7 +8,7 @@
 import type { SupabaseClient } from "../deps.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
-const OPENAI_VISION_MODEL = Deno.env.get("OPENAI_VISION_MODEL") ?? "gpt-4o-mini";
+const OPENAI_VISION_MODEL = Deno.env.get("OPENAI_VISION_MODEL") ?? "gpt-5";  // Per README.md: Use GPT-5 (but prefer Gemini-3 for vision)
 const OPENAI_BASE_URL = Deno.env.get("OPENAI_BASE_URL") ?? "https://api.openai.com/v1";
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? "";
 

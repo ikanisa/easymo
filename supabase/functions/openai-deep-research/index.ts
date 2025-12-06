@@ -678,7 +678,7 @@ Search result text:
 ${text}`;
 
     const extractionResponse = await createChatCompletion({
-      model: "gpt-4o-mini",
+      model: "gpt-5",  // Per README.md: Mandatory GPT-5
       messages: [
         {
           role: "system",
@@ -820,7 +820,7 @@ async function geocodeAddress(address: string, city: string, country: string): P
     const prompt = `Given the address "${address}, ${city}, ${country}", provide the most accurate latitude and longitude coordinates. Respond ONLY with JSON: {"latitude": -1.234, "longitude": 30.123}`;
     
     const response = await createChatCompletion({
-      model: "gpt-4o-mini",
+      model: "gpt-5",  // Per README.md: Mandatory GPT-5
       messages: [{ role: "user", content: prompt }],
       temperature: 0.1,
       max_tokens: 100
