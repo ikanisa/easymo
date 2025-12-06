@@ -48,7 +48,10 @@ export class VoiceCallSession extends EventEmitter {
     this.log = options.logger;
     this.audioProcessor = new AudioProcessor(this.log);
     this.startTime = Date.now();
+    this.sdpOffer = options.sdpOffer; // Store the SDP offer
   }
+
+  private sdpOffer: string;
 
   /**
    * Start the voice call session
@@ -121,11 +124,9 @@ export class VoiceCallSession extends EventEmitter {
       }
     };
 
-    // Set remote description (WhatsApp's offer)
-    // TODO: Get actual SDP offer from webhook
-    const offerSdp = ''; // This will be passed from webhook
+    // Set remote description (WhatsApp's SDP offer)
     await this.peerConnection.setRemoteDescription(
-      new RTCSessionDescription({ type: 'offer', sdp: offerSdp })
+      new RTCSessionDescription({ type: 'offer', sdp: this.sdpOffer })
     );
 
     // Create answer
