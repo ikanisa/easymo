@@ -11,6 +11,7 @@ Target: ~10,000 businesses across 48 categories
 import argparse
 import asyncio
 import json
+import math
 import os
 import random
 import re
@@ -45,6 +46,13 @@ SCROLL_DELAY = 1.5  # Delay between scrolls (seconds)
 
 # Batch size for database operations
 BATCH_SIZE = 100
+
+# Duplicate detection
+DUPLICATE_DISTANCE_THRESHOLD_KM = 0.1  # 100 meters
+
+# Phone number patterns
+RWANDA_PHONE_PATTERN = r'\+250\s?\d{3}\s?\d{3}\s?\d{3}'  # Rwanda: +250 XXX XXX XXX
+INTERNATIONAL_PHONE_PATTERN = r'\+\d{1,3}\s?[\d\s\-()]{7,15}'  # Generic international format
 
 # User agents for rotation
 USER_AGENTS = [
@@ -223,11 +231,10 @@ async def extract_business_data(page: Page, element) -> Optional[Dict]:
         if await phone_elem.count() > 0:
             phone_text = await phone_elem.inner_text()
             # Extract phone number - prioritize Rwanda format (+250), then other international formats
-            # Rwanda: +250 followed by 9 digits
-            phone_match = re.search(r'\+250\s?\d{3}\s?\d{3}\s?\d{3}', phone_text)
+            phone_match = re.search(RWANDA_PHONE_PATTERN, phone_text)
             if not phone_match:
                 # Fallback: any international format with + prefix
-                phone_match = re.search(r'\+\d{1,3}\s?[\d\s\-()]{7,15}', phone_text)
+                phone_match = re.search(INTERNATIONAL_PHONE_PATTERN, phone_text)
             business['phone'] = phone_match.group(0).strip() if phone_match else None
         else:
             business['phone'] = None
@@ -366,7 +373,7 @@ def is_duplicate(business: Dict, existing: List[Dict]) -> bool:
     """
     Check if business is a duplicate based on:
     1. Google Maps place ID
-    2. Exact name match + location within 100m
+    2. Exact name match + location within DUPLICATE_DISTANCE_THRESHOLD_KM
     3. Phone number match
     """
     place_id = business.get('place_id')
@@ -384,7 +391,6 @@ def is_duplicate(business: Dict, existing: List[Dict]) -> bool:
         if name and existing_business.get('name', '').lower() == name:
             if lat and lng and existing_business.get('lat') and existing_business.get('lng'):
                 # Haversine formula for distance calculation
-                import math
                 R = 6371  # Earth's radius in km
                 
                 lat1, lng1 = math.radians(lat), math.radians(lng)
@@ -397,7 +403,7 @@ def is_duplicate(business: Dict, existing: List[Dict]) -> bool:
                 c = 2 * math.asin(math.sqrt(a))
                 distance_km = R * c
                 
-                if distance_km < 0.1:  # Within 100m
+                if distance_km < DUPLICATE_DISTANCE_THRESHOLD_KM:
                     return True
         
         # Check phone number
