@@ -9,6 +9,7 @@
 | **Organization ID** | `org-4Kr7lOqpDhJErYgyGzwgSduN` |
 | **Project ID** | `proj_BL7HHgepm76lhElLqmfOckIU` |
 | **Webhook Secret** | `whsec_7B7U3XqU7ZuFzUvBauNsYDITpdGbPXcIAavH1XtH9d4=` |
+| **Realtime Model** | `gpt-5-realtime` |
 
 ### SIP URI for Carriers
 
@@ -33,8 +34,20 @@ Set these in Supabase Edge Functions:
 supabase secrets set OPENAI_ORG_ID="org-4Kr7lOqpDhJErYgyGzwgSduN"
 supabase secrets set OPENAI_PROJECT_ID="proj_BL7HHgepm76lhElLqmfOckIU"
 supabase secrets set OPENAI_WEBHOOK_SECRET="whsec_7B7U3XqU7ZuFzUvBauNsYDITpdGbPXcIAavH1XtH9d4="
-supabase secrets set OPENAI_REALTIME_MODEL="gpt-4o-realtime-preview-2024-12-17"
+supabase secrets set OPENAI_REALTIME_MODEL="gpt-5-realtime"
 ```
+
+---
+
+## Mandatory AI Models (Per README)
+
+| Provider | Model | Usage |
+|----------|-------|-------|
+| **OpenAI** | `gpt-5` | Primary for all AI operations |
+| **OpenAI** | `gpt-5-realtime` | Voice calls (Realtime API) |
+| **Google** | `gemini-3` | Fallback only |
+
+⚠️ **IMPORTANT**: Always use GPT-5 models. Other models (gpt-4o, gemini-2.0-flash-exp, etc.) are prohibited per GROUND_RULES.
 
 ---
 
@@ -73,7 +86,7 @@ Phone Call Flow (SIP):
                                                                        │
                                                                        ▼
 ┌──────────────┐     ┌──────────────┐     ┌──────────────────────────────────┐
-│ User hears   │◄────│ OpenAI       │◄────│ openai-sip-webhook Edge Function │
+│ User hears   │◄────│ GPT-5        │◄────│ openai-sip-webhook Edge Function │
 │ AI response  │     │ Realtime API │     │ Accepts call + configures AI     │
 └──────────────┘     └──────────────┘     └──────────────────────────────────┘
 
@@ -85,7 +98,7 @@ WhatsApp Voice Call Flow:
                                                           │
                                                           ▼
 ┌──────────────┐     ┌──────────────┐     ┌──────────────────────────────────┐
-│ User hears   │◄────│ OpenAI       │◄────│ Returns audio config to WhatsApp │
+│ User hears   │◄────│ GPT-5        │◄────│ Returns audio config to WhatsApp │
 │ AI response  │     │ Realtime API │     │ Direct WebSocket connection      │
 └──────────────┘     └──────────────┘     └──────────────────────────────────┘
 ```
@@ -112,13 +125,13 @@ supabase functions list
 2. Go to EasyMO business chat
 3. Tap the phone icon 📞
 4. Select "Voice Call"
-5. AI should answer and greet you
+5. GPT-5 AI should answer and greet you
 
 ### Test Phone Call (When SIP Ready)
 1. Call your EasyMO DID number
 2. OpenAI receives call via SIP
 3. Webhook fires to your endpoint
-4. AI answers and assists caller
+4. GPT-5 AI answers and assists caller
 
 ---
 
@@ -144,3 +157,4 @@ curl -X POST https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/openai-sip-we
 
 **Last Updated:** 2025-12-06
 **Configuration Status:** ✅ Complete
+**AI Model:** GPT-5 Realtime (Mandatory)
