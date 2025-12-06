@@ -3,29 +3,6 @@
  * Supports MOMO USSD (Rwanda) and Revolut (Europe/Malta)
  */
 
-/**
- * Generate MOMO USSD code display string
- * Format for MTN Rwanda: *182*8*1*AMOUNT#
- */
-export function generateMoMoUSSDCode(amount: number): string {
-  return `*182*8*1*${Math.round(amount)}#`;
-}
-
-/**
- * Generate MOMO USSD payment URL for auto-dial
- */
-export function generateMoMoPaymentUrl(amount: number): string {
-  const ussdCode = generateMoMoUSSDCode(amount);
-  return `tel:${encodeURIComponent(ussdCode)}`;
-}
-
-/**
- * Generate Revolut payment URL
- * Supports:
- * - Rwanda: MTN MoMo USSD (*182*8*1*AMOUNT#)
- * - Malta/Europe: Revolut payment links
- */
-
 // MTN MoMo USSD constants for Rwanda
 const MOMO_USSD_PREFIX = "*182*8*1*";
 const MOMO_USSD_SUFFIX = "#";
@@ -109,7 +86,7 @@ export function formatPaymentInstructions(
       const paymentUrl = generateRevolutPaymentUrl(revolutLink, amount, currency, orderNumber);
       return {
         message: 
-          `�� *Pay with Revolut*\n\n` +
+          `💳 *Pay with Revolut*\n\n` +
           `Amount: ${amount.toLocaleString()} ${currency}\n\n` +
           `Tap the link below to pay securely:\n${paymentUrl}\n\n` +
           `After payment, tap "I've Paid" to confirm.`,

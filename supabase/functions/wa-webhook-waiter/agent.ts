@@ -64,13 +64,15 @@ export async function handleWaiterMessage(ctx: WaiterContext): Promise<boolean> 
  */
 function parseQRDeepLink(message: string): { barId: string; tableNumber?: string } | null {
   // Handle format: "START uuid-bar-id A5" or "START uuid-bar-id"
-  const startMatch = message.match(/^START\s+([a-f0-9-]{36})\s*(\S+)?$/i);
+  // UUID pattern: 8-4-4-4-12 hex characters
+  const uuidPattern = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
+  const startMatch = message.match(new RegExp(`^START\\s+(${uuidPattern})\\s*(\\S+)?$`, 'i'));
   if (startMatch) {
     return { barId: startMatch[1], tableNumber: startMatch[2] };
   }
   
   // Handle format: "TABLE A5 BAR uuid-bar-id"
-  const tableMatch = message.match(/TABLE[:\s]+(\S+)\s+BAR[:\s]+([a-f0-9-]{36})/i);
+  const tableMatch = message.match(new RegExp(`TABLE[:\\s]+(\\S+)\\s+BAR[:\\s]+(${uuidPattern})`, 'i'));
   if (tableMatch) {
     return { barId: tableMatch[2], tableNumber: tableMatch[1] };
   }
