@@ -127,7 +127,7 @@ export async function processNextJob(
     return { status: "no_job" };
   }
 
-  await logStructuredEvent("LOG", { data: "ocr.job_start", { jobId: job.id, barId: job.bar_id } });
+  await logStructuredEvent("LOG", { data: "ocr.job_start", jobId: job.id, barId: job.bar_id });
   let menuId: string | null = null;
   try {
     const file = await activeDeps.downloadSourceFile(job.source_file_id);
