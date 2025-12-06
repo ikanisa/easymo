@@ -3,8 +3,7 @@ import { sendText, sendButtonsMessage } from "../_shared/wa-webhook-shared/utils
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { formatPaymentInstructions, generateMoMoUSSDCode } from "./payment.ts";
 import { notifyBarNewOrder } from "./notify_bar.ts";
-
-const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+import { DualAIProvider } from "./providers/dual-ai-provider.ts";
 
 interface WaiterContext {
   supabase: SupabaseClient;
@@ -245,29 +244,24 @@ If unclear, ask for clarification.`;
   ];
 
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            { role: "user", parts: [{ text: systemPrompt }] },
-            ...updatedMessages.slice(-10).map((m) => ({
-              role: m.role === "user" ? "user" : "model",
-              parts: [{ text: m.content }],
-            })),
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 500,
-          },
-        }),
-      }
-    );
+    // Use DualAIProvider with automatic failover (OpenAI GPT-5 → Gemini-3)
+    const aiProvider = new DualAIProvider();
+    const aiResult = await aiProvider.chat([
+      { role: "system", content: systemPrompt },
+      ...updatedMessages.slice(-10),
+    ], {
+      temperature: 0.7,
+      maxTokens: 500,
+    });
 
-    const data = await response.json();
-    const aiResponseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    // Log which provider was used
+    await logStructuredEvent("WAITER_AI_RESPONSE", {
+      provider: aiResult.provider,
+      model: aiResult.model,
+      fallbackUsed: aiResult.fallbackUsed,
+    });
+
+    const aiResponseText = aiResult.text;
 
     let aiResponse: any;
     try {
