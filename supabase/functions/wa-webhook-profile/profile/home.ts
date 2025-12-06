@@ -48,7 +48,7 @@ async function getUserCountry(ctx: RouterContext): Promise<string> {
 }
 
 /**
- * Fetch dynamic profile menu items from database
+ * Fetch dynamic profile menu items from database using v2 function
  */
 async function fetchProfileMenuItems(
   ctx: RouterContext,
@@ -57,7 +57,7 @@ async function fetchProfileMenuItems(
 ): Promise<ProfileMenuItem[]> {
   try {
     const { data, error } = await ctx.supabase.rpc(
-      "get_profile_menu_items",
+      "get_profile_menu_items_v2",
       {
         p_user_id: ctx.profileId || "00000000-0000-0000-0000-000000000000",
         p_country_code: countryCode,

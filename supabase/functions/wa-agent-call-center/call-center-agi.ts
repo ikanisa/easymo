@@ -121,6 +121,9 @@ export class CallCenterAGI extends BaseAgent {
     tools.set('supabase_log_call_summary', this.logCallSummary.bind(this));
     tools.set('get_call_metadata', this.getCallMetadata.bind(this));
 
+    // Intent recording (CRITICAL: Record complete user intents)
+    tools.set('record_user_intent', this.recordUserIntent.bind(this));
+
     // Deep Search (real-time web search - no data stored)
     // Deep Search (OpenAI Deep Research API)
     tools.set('deep_search_jobs', this.deepSearchJobs.bind(this));
@@ -259,6 +262,89 @@ export class CallCenterAGI extends BaseAgent {
           },
           required: ['agent_id', 'intent'],
         },
+      },
+      {
+        name: 'record_user_intent',
+        description: 'Record a complete user intent for matching and WhatsApp notification. ONLY call this when ALL required information has been collected and confirmed with the user. This is the PRIMARY way to handle most service requests.',
+        parameters: {
+          type: 'object',
+          properties: {
+            intent_type: {
+              type: 'string',
+              enum: [
+                'job_seeker', 'job_poster',
+                'property_seeker', 'property_lister',
+                'farmer_seller', 'farmer_buyer',
+                'ride_request', 'insurance_inquiry',
+                'legal_inquiry', 'pharmacy_inquiry',
+                'marketplace_seller', 'marketplace_buyer',
+                'vendor_inquiry', 'general_inquiry'
+              ],
+              description: 'Type of user intent'
+            },
+            location: {
+              type: 'string',
+              description: 'User location - REQUIRED for all intents. City, neighborhood, or area name (e.g., "Kimironko", "Kigali", "Sliema")'
+            },
+            location_coords: {
+              type: 'object',
+              description: 'Optional GPS coordinates',
+              properties: {
+                lat: { type: 'number', description: 'Latitude' },
+                lng: { type: 'number', description: 'Longitude' }
+              }
+            },
+            details: {
+              type: 'object',
+              description: 'Service-specific details collected from user. Include ALL collected information.',
+              properties: {
+                // Property
+                listing_type: { type: 'string', enum: ['rent', 'buy'], description: 'For property: rent or buy' },
+                bedrooms: { type: 'integer', description: 'Number of bedrooms' },
+                max_budget: { type: 'number', description: 'Maximum budget/price' },
+                amenities: { type: 'array', items: { type: 'string' }, description: 'Desired amenities' },
+                // Jobs
+                job_type: { type: 'string', enum: ['full_time', 'part_time', 'gig', 'contract'], description: 'Type of employment' },
+                skills: { type: 'array', items: { type: 'string' }, description: 'Skills or experience' },
+                job_title: { type: 'string', description: 'Job title (for job posting)' },
+                salary_expectation: { type: 'number', description: 'Expected salary' },
+                pay_range: { type: 'string', description: 'Pay range for job posting' },
+                description: { type: 'string', description: 'Job description' },
+                // Farmers
+                product_type: { type: 'string', description: 'Type of produce' },
+                quantity: { type: 'number', description: 'Quantity available or needed' },
+                unit: { type: 'string', enum: ['kg', 'tons', 'pieces', 'bundles'], description: 'Unit of measurement' },
+                price_per_unit: { type: 'number', description: 'Price per unit' },
+                available_date: { type: 'string', description: 'When produce is available' },
+                organic: { type: 'boolean', description: 'Is organic' },
+                // Rides
+                pickup_location: { type: 'string', description: 'Pickup location' },
+                dropoff_location: { type: 'string', description: 'Dropoff location' },
+                scheduled_time: { type: 'string', description: 'When ride is needed' },
+                vehicle_type: { type: 'string', description: 'Preferred vehicle type' },
+                passengers: { type: 'integer', description: 'Number of passengers' },
+                // Insurance
+                insurance_type: { type: 'string', enum: ['health', 'vehicle', 'property', 'life'], description: 'Type of insurance' },
+                coverage_amount: { type: 'number', description: 'Desired coverage amount' },
+              }
+            },
+            urgency: {
+              type: 'string',
+              enum: ['immediate', 'within_week', 'flexible'],
+              description: 'How urgently the user needs this. Default: flexible'
+            },
+            language: {
+              type: 'string',
+              enum: ['en', 'rw', 'fr', 'sw'],
+              description: 'Language the user was speaking'
+            },
+            call_id: {
+              type: 'string',
+              description: 'Call ID from get_call_metadata if available'
+            }
+          },
+          required: ['intent_type', 'location', 'details', 'language']
+        }
       },
       {
         name: 'deep_search_jobs',
@@ -730,6 +816,87 @@ export class CallCenterAGI extends BaseAgent {
   }
 
   // ================================================================
+  // USER INTENT RECORDING (CRITICAL - Complete structured intents)
+  // ================================================================
+
+  /**
+   * Record a complete user intent for matching and notification
+   * ONLY call this when ALL required information has been collected
+   */
+  private async recordUserIntent(args: any, supabase: SupabaseClient, phone: string): Promise<ToolExecutionResult> {
+    try {
+      // Validate required fields
+      if (!args.intent_type || !args.location || !args.details) {
+        return {
+          success: false,
+          error: 'Missing required fields: intent_type, location, and details are required',
+        };
+      }
+
+      await logStructuredEvent('RECORDING_USER_INTENT', {
+        intentType: args.intent_type,
+        location: args.location,
+        phone: phone.slice(-4),
+      });
+
+      // Get or create profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_id, name')
+        .or(`whatsapp_e164.eq.${phone},wa_id.eq.${phone}`)
+        .maybeSingle();
+
+      const profileId = profile?.user_id;
+
+      // Record the structured intent
+      const { data, error } = await supabase
+        .from('user_intents')
+        .insert({
+          profile_id: profileId,
+          phone_number: phone,
+          intent_type: args.intent_type,
+          location_text: args.location,
+          location_coords: args.location_coords,
+          details: args.details,
+          urgency: args.urgency || 'flexible',
+          language: args.language || 'en',
+          status: 'pending_match',
+          source: 'voice_call',
+          call_id: args.call_id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await logStructuredEvent('USER_INTENT_RECORDED', {
+        intentId: data.id,
+        intentType: args.intent_type,
+        location: args.location,
+        phone: phone.slice(-4),
+      });
+
+      return {
+        success: true,
+        data: {
+          intent_id: data.id,
+          message: 'Intent recorded successfully. User will be notified via WhatsApp when matches are found.',
+        },
+      };
+    } catch (error) {
+      await logStructuredEvent('USER_INTENT_RECORDING_ERROR', {
+        error: error instanceof Error ? error.message : String(error),
+        phone: phone.slice(-4),
+      }, 'error');
+
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to record intent',
+      };
+    }
+  }
+
+  // ================================================================
   // DEEP SEARCH TOOLS (Real-time web search - no data stored)
   // ================================================================
 
@@ -937,31 +1104,151 @@ export class CallCenterAGI extends BaseAgent {
   }
 
   getDefaultSystemPrompt(): string {
-    return `You are the EasyMO Call Center AI - the single front-door for all EasyMO services.
+    return `You are EasyMO Call Center AI - the ONLY entry point for all EasyMO services in Rwanda and Malta.
 
-CHANNEL: Voice calls (WhatsApp audio and phone)
-STYLE: Short, clear, natural voice responses
+═══════════════════════════════════════════════════════════════════
+🎯 PRIMARY OBJECTIVE
+═══════════════════════════════════════════════════════════════════
+Your MAIN goal is to:
+1. UNDERSTAND what the user needs (their complete intent)
+2. COLLECT all required information for that service
+3. RECORD the structured intent in the database using record_user_intent
+4. Ensure the user is notified when a match is found
 
-SERVICES YOU HANDLE:
-- Rides & Delivery
-- Real Estate
-- Jobs & Employment
-- Marketplace (Farmers, Vendors)
-- Insurance
-- Legal/Notary
-- Pharmacy
-- Wallet & Tokens
-- MoMo QR Payments
+═══════════════════════════════════════════════════════════════════
+🛡️ GUARDRAILS - STRICT BOUNDARIES
+═══════════════════════════════════════════════════════════════════
+You ONLY discuss topics related to EasyMO services. If user goes off-topic:
+- Politely redirect: "I can only help with EasyMO services. Let me know if you need help with transportation, housing, jobs, or our other services."
+- Never engage in: politics, religion, personal opinions, general knowledge questions, entertainment, or non-EasyMO topics
+- If user insists on off-topic: "I understand, but I'm specifically designed to help with EasyMO services. Is there something I can help you with today?"
 
-CONVERSATION:
-- Warm greeting
-- One question at a time
-- Confirm understanding
-- Number choices clearly
-- Mirror caller's language
+PROHIBITED RESPONSES:
+❌ General knowledge answers (weather, news, sports)
+❌ Personal advice unrelated to services
+❌ Opinions on controversial topics
+❌ Technical support for non-EasyMO products
+❌ Entertainment (jokes, stories, games)
 
-TOOLS: Use tools to help users - create profiles, search knowledge, route to specialists.
+═══════════════════════════════════════════════════════════════════
+🏢 SERVICES YOU HANDLE (ONLY THESE)
+═══════════════════════════════════════════════════════════════════
+1. 🚕 RIDES & DELIVERY - Book trips, register as driver, track rides
+2. 🏠 REAL ESTATE - Find rentals, list properties, property inquiries
+3. 👔 JOBS - Find jobs, post jobs, register as job seeker
+4. 🌾 FARMERS MARKET - List produce, find buyers, connect farmers
+5. 🛍️ MARKETPLACE - Buy/sell items, vendor registration
+6. 🛡️ INSURANCE - Get quotes, file claims, policy inquiries
+7. ⚖️ LEGAL/NOTARY - Legal documents, notary services
+8. 💊 PHARMACY - Medicine inquiries, pharmacy locator
+9. 💰 WALLET & TOKENS - Balance, transfers, earn tokens
+10. 📱 MOMO PAYMENTS - QR payments, payment links
 
-You are patient, helpful, and voice-optimized.`;
+═══════════════════════════════════════════════════════════════════
+📍 LOCATION IS MANDATORY
+═══════════════════════════════════════════════════════════════════
+For ALL service requests, you MUST collect the user's location:
+- Ask: "Where are you located?" or "Which area/neighborhood?"
+- Accept: City names (Kigali, Sliema), neighborhoods (Kimironko, Nyamirambo), landmarks
+- If unclear, ask for clarification: "Is that in Kigali or another city?"
+- Store the location with the intent
+
+Location examples to recognize:
+- Rwanda: Kigali, Kimironko, Nyamirambo, Remera, Gisozi, Kacyiru, Gasabo, Nyarugenge, Musanze, Huye
+- Malta: Valletta, Sliema, St. Julian's, Birkirkara, Mosta, Qormi, Zabbar
+
+═══════════════════════════════════════════════════════════════════
+📋 INTENT COLLECTION REQUIREMENTS (BY SERVICE)
+═══════════════════════════════════════════════════════════════════
+
+🏠 REAL ESTATE (Looking for house/apartment):
+Required: location, listing_type (rent/buy), bedrooms, max_budget
+Optional: amenities, preferred_floor, parking, furnished
+Ask until complete: "How many bedrooms do you need?" "What's your maximum budget?"
+
+👔 JOBS (Looking for work):
+Required: location, job_type (full-time/part-time/gig), skills/experience
+Optional: salary_expectation, availability, preferred_industry
+Ask until complete: "What type of work are you looking for?" "What are your main skills?"
+
+👔 JOBS (Posting a job):
+Required: location, job_title, job_type, pay_range, description
+Optional: requirements, contact_preference
+Ask until complete: "What is the job title?" "What will you pay?"
+
+🌾 FARMERS (Selling produce):
+Required: location, product_type, quantity, unit (kg/tons), available_date
+Optional: price_per_unit, delivery_available, organic
+Ask until complete: "What are you selling?" "How much do you have (in kg or tons)?"
+
+🌾 FARMERS (Buying produce):
+Required: location, product_type, quantity_needed, delivery_location
+Optional: max_price, preferred_delivery_date
+Ask until complete: "What produce are you looking for?" "How much do you need?"
+
+🚕 RIDES:
+Required: pickup_location, dropoff_location, when (now/scheduled)
+Optional: vehicle_type, passengers, special_needs
+Ask until complete: "Where do you want to go?" "When do you need the ride?"
+
+🛡️ INSURANCE:
+Required: insurance_type (health/vehicle/property/life), location
+Optional: current_provider, coverage_amount
+Ask until complete: "What type of insurance are you interested in?"
+
+═══════════════════════════════════════════════════════════════════
+🔄 CONVERSATION FLOW
+═══════════════════════════════════════════════════════════════════
+1. GREET warmly (use their name if known)
+2. IDENTIFY the service they need
+3. COLLECT required information one question at a time
+4. CONFIRM all details before recording
+5. RECORD the structured intent using record_user_intent tool
+6. INFORM user: "I've recorded your request. You'll receive a WhatsApp message when we find matches for you."
+7. ASK if they need anything else
+
+EXAMPLE:
+User: "I need a house"
+Agent: "I can help you find a house! Are you looking to rent or buy?"
+User: "Rent"
+Agent: "Great! Which area are you looking in?"
+User: "Kimironko"
+Agent: "How many bedrooms do you need?"
+User: "2"
+Agent: "And what's your maximum budget per month?"
+User: "300,000 RWF"
+Agent: "Perfect! Let me confirm: You're looking for a 2-bedroom house to rent in Kimironko, with a maximum budget of 300,000 RWF per month. Is that correct?"
+User: "Yes"
+Agent: [Calls record_user_intent] "I've saved your request. You'll receive a WhatsApp message with matching properties. Is there anything else I can help you with?"
+
+═══════════════════════════════════════════════════════════════════
+🗣️ VOICE OPTIMIZATION
+═══════════════════════════════════════════════════════════════════
+- Keep responses SHORT (1-2 sentences max)
+- Speak naturally, like a helpful friend
+- Confirm understanding before moving on
+- Use numbers for choices: "Press 1 for rent, 2 for buy"
+- Avoid technical jargon
+- Mirror the user's language (English, Kinyarwanda, French)
+
+═══════════════════════════════════════════════════════════════════
+🌍 LANGUAGES
+═══════════════════════════════════════════════════════════════════
+Respond in the user's language:
+- English (default)
+- Kinyarwanda: "Muraho! Nabafasha iki?"
+- French: "Bonjour! Comment puis-je vous aider?"
+- Detect and switch automatically
+
+═══════════════════════════════════════════════════════════════════
+⚠️ ALWAYS REMEMBER
+═══════════════════════════════════════════════════════════════════
+- You are the VOICE of EasyMO - be warm, professional, helpful
+- NEVER make up information - if unsure, say "Let me check that for you"
+- NEVER promise specific results - say "I'll help connect you with options"
+- ALWAYS collect location - it's essential for all services
+- ALWAYS confirm before recording an intent
+- ALWAYS inform user they'll receive WhatsApp notifications
+- ONLY discuss EasyMO services - politely redirect off-topic requests`;
   }
 }

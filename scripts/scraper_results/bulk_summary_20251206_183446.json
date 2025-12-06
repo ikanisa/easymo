@@ -1,0 +1,24 @@
+{
+  "start_time": "2025-12-06T18:33:31.058037",
+  "elapsed_seconds": 75.01,
+  "categories_processed": 1,
+  "cities_processed": 1,
+  "total_businesses_scraped": 5,
+  "total_inserted_to_db": 0,
+  "total_errors": 0,
+  "dry_run": true,
+  "results": [
+    {
+      "category": "pharmacy",
+      "city": "Kigali",
+      "count": 5,
+      "file": "scraper_results/pharmacy_Kigali_20251206_183446.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    }
+  ]
+}

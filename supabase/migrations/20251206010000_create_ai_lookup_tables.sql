@@ -321,13 +321,58 @@ CREATE TABLE IF NOT EXISTS public.moderation_rules (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_moderation_rules_type ON public.moderation_rules(rule_type);
-CREATE INDEX idx_moderation_rules_active ON public.moderation_rules(is_active);
-CREATE INDEX idx_moderation_rules_category ON public.moderation_rules(category);
+-- Add missing columns if they don't exist (for existing tables)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'moderation_rules' AND column_name = 'description'
+  ) THEN
+    ALTER TABLE public.moderation_rules ADD COLUMN description TEXT;
+  END IF;
+  
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'moderation_rules' AND column_name = 'category'
+  ) THEN
+    ALTER TABLE public.moderation_rules ADD COLUMN category TEXT;
+  END IF;
+  
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'moderation_rules' AND column_name = 'severity'
+  ) THEN
+    ALTER TABLE public.moderation_rules ADD COLUMN severity TEXT DEFAULT 'medium';
+  END IF;
+  
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'moderation_rules' AND column_name = 'regex_flags'
+  ) THEN
+    ALTER TABLE public.moderation_rules ADD COLUMN regex_flags TEXT DEFAULT 'i';
+  END IF;
+  
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'moderation_rules' AND column_name = 'auto_response_template'
+  ) THEN
+    ALTER TABLE public.moderation_rules ADD COLUMN auto_response_template TEXT;
+  END IF;
+END $$;
+
+-- Update check constraint to include new rule types
+ALTER TABLE public.moderation_rules DROP CONSTRAINT IF EXISTS moderation_rules_rule_type_check;
+ALTER TABLE public.moderation_rules ADD CONSTRAINT moderation_rules_rule_type_check 
+  CHECK (rule_type IN ('out_of_scope', 'prohibited', 'sensitive', 'blocked', 'flagged', 'allowed'));
+
+CREATE INDEX IF NOT EXISTS idx_moderation_rules_type ON public.moderation_rules(rule_type);
+CREATE INDEX IF NOT EXISTS idx_moderation_rules_active ON public.moderation_rules(is_active);
+CREATE INDEX IF NOT EXISTS idx_moderation_rules_category ON public.moderation_rules(category);
 
 -- RLS policies
 ALTER TABLE public.moderation_rules ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS moderation_rules_admin_all ON public.moderation_rules;
 CREATE POLICY moderation_rules_admin_all ON public.moderation_rules
   FOR ALL USING (
     EXISTS (
@@ -337,11 +382,13 @@ CREATE POLICY moderation_rules_admin_all ON public.moderation_rules
     )
   );
 
+DROP POLICY IF EXISTS moderation_rules_public_read ON public.moderation_rules;
 CREATE POLICY moderation_rules_public_read ON public.moderation_rules
   FOR SELECT USING (is_active = true);
 
--- Insert moderation rules from hardcoded OUT_OF_SCOPE_PATTERNS
-INSERT INTO public.moderation_rules (rule_type, pattern, description, category, severity) VALUES
+-- Insert moderation rules from hardcoded OUT_OF_SCOPE_PATTERNS (skip if pattern already exists)
+INSERT INTO public.moderation_rules (rule_type, pattern, description, category, severity)
+SELECT * FROM (VALUES
   ('out_of_scope', 'news|politics|election|government|president', 
    'Political and news topics', 'politics', 'medium'),
   
@@ -374,7 +421,11 @@ INSERT INTO public.moderation_rules (rule_type, pattern, description, category, 
   
   ('flagged', 'urgent|emergency|help|police', 
    'Potential emergency situations', 'safety', 'high')
-ON CONFLICT DO NOTHING;
+) AS new_rules(rule_type, pattern, description, category, severity)
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.moderation_rules 
+  WHERE pattern = new_rules.pattern
+);
 
 -- =====================================================
 -- TOOL ENUM VALUES TABLE
@@ -406,9 +457,77 @@ CREATE TABLE IF NOT EXISTS public.tool_enum_values (
   UNIQUE(enum_type, value)
 );
 
-CREATE INDEX idx_tool_enum_values_type ON public.tool_enum_values(enum_type);
-CREATE INDEX idx_tool_enum_values_active ON public.tool_enum_values(is_active);
-CREATE INDEX idx_tool_enum_values_display_order ON public.tool_enum_values(display_order);
+-- Handle existing table with enum_name column (rename to enum_type for consistency)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'tool_enum_values' AND column_name = 'enum_name'
+  ) AND NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'tool_enum_values' AND column_name = 'enum_type'
+  ) THEN
+    ALTER TABLE public.tool_enum_values RENAME COLUMN enum_name TO enum_type;
+  END IF;
+  
+  -- Add missing columns
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'tool_enum_values' AND column_name = 'label'
+  ) THEN
+    ALTER TABLE public.tool_enum_values ADD COLUMN label TEXT;
+  END IF;
+  
+  -- Sync label and display_name
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'tool_enum_values' AND column_name = 'display_name'
+  ) THEN
+    -- Copy display_name to label if label is null
+    EXECUTE 'UPDATE public.tool_enum_values SET label = display_name WHERE label IS NULL AND display_name IS NOT NULL';
+    -- Copy label to display_name if display_name is null
+    EXECUTE 'UPDATE public.tool_enum_values SET display_name = label WHERE display_name IS NULL AND label IS NOT NULL';
+  END IF;
+  
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'tool_enum_values' AND column_name = 'reference_table'
+  ) THEN
+    ALTER TABLE public.tool_enum_values ADD COLUMN reference_table TEXT;
+  END IF;
+  
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'tool_enum_values' AND column_name = 'reference_column'
+  ) THEN
+    ALTER TABLE public.tool_enum_values ADD COLUMN reference_column TEXT;
+  END IF;
+  
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'tool_enum_values' AND column_name = 'display_order'
+  ) THEN
+    ALTER TABLE public.tool_enum_values ADD COLUMN display_order INTEGER DEFAULT 0;
+  END IF;
+  
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'tool_enum_values' AND column_name = 'context_filter'
+  ) THEN
+    ALTER TABLE public.tool_enum_values ADD COLUMN context_filter JSONB;
+  END IF;
+  
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'tool_enum_values' AND column_name = 'updated_at'
+  ) THEN
+    ALTER TABLE public.tool_enum_values ADD COLUMN updated_at TIMESTAMPTZ DEFAULT now();
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_tool_enum_values_type ON public.tool_enum_values(enum_type);
+CREATE INDEX IF NOT EXISTS idx_tool_enum_values_active ON public.tool_enum_values(is_active);
+CREATE INDEX IF NOT EXISTS idx_tool_enum_values_display_order ON public.tool_enum_values(display_order);
 
 -- RLS policies
 ALTER TABLE public.tool_enum_values ENABLE ROW LEVEL SECURITY;
@@ -418,34 +537,102 @@ CREATE POLICY tool_enum_values_public_read ON public.tool_enum_values
 
 -- Insert enum values for AI tools
 -- Agent IDs for run_agent tool
-INSERT INTO public.tool_enum_values (enum_type, value, label, description, display_order) VALUES
-  ('agent_id', 'real-estate-rentals', 'Real Estate Agent', 'Property rentals and sales', 1),
-  ('agent_id', 'rides-matching', 'Rides Agent', 'Transportation and mobility', 2),
-  ('agent_id', 'jobs-marketplace', 'Jobs Agent', 'Employment and job search', 3),
-  ('agent_id', 'waiter-restaurants', 'Waiter Agent', 'Restaurant and hospitality', 4),
-  ('agent_id', 'insurance-broker', 'Insurance Agent', 'Insurance quotes and policies', 5),
-  ('agent_id', 'farmers-market', 'Farmers Agent', 'Agriculture and farming', 6),
-  ('agent_id', 'buy-and-sell', 'Buy & Sell Agent', 'Business directory', 7)
-ON CONFLICT (enum_type, value) DO NOTHING;
+-- Note: Insert uses label, but we need to handle display_name if it exists
+DO $$
+DECLARE
+  has_display_name BOOLEAN;
+BEGIN
+  -- Check if display_name column exists
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'tool_enum_values' AND column_name = 'display_name'
+  ) INTO has_display_name;
+  
+  IF has_display_name THEN
+    -- Insert with display_name
+    INSERT INTO public.tool_enum_values (enum_type, value, label, display_name, description, display_order)
+    SELECT * FROM (VALUES
+      ('agent_id', 'real-estate-rentals', 'Real Estate Agent', 'Real Estate Agent', 'Property rentals and sales', 1),
+      ('agent_id', 'rides-matching', 'Rides Agent', 'Rides Agent', 'Transportation and mobility', 2),
+      ('agent_id', 'jobs-marketplace', 'Jobs Agent', 'Jobs Agent', 'Employment and job search', 3),
+      ('agent_id', 'waiter-restaurants', 'Waiter Agent', 'Waiter Agent', 'Restaurant and hospitality', 4),
+      ('agent_id', 'insurance-broker', 'Insurance Agent', 'Insurance Agent', 'Insurance quotes and policies', 5),
+      ('agent_id', 'farmers-market', 'Farmers Agent', 'Farmers Agent', 'Agriculture and farming', 6),
+      ('agent_id', 'buy-and-sell', 'Buy & Sell Agent', 'Buy & Sell Agent', 'Business directory', 7)
+    ) AS new_values(enum_type, value, label, display_name, description, display_order)
+    WHERE NOT EXISTS (
+      SELECT 1 FROM public.tool_enum_values 
+      WHERE enum_type = new_values.enum_type AND value = new_values.value
+    );
+  ELSE
+    -- Insert without display_name
+    INSERT INTO public.tool_enum_values (enum_type, value, label, description, display_order)
+    SELECT * FROM (VALUES
+      ('agent_id', 'real-estate-rentals', 'Real Estate Agent', 'Property rentals and sales', 1),
+      ('agent_id', 'rides-matching', 'Rides Agent', 'Transportation and mobility', 2),
+      ('agent_id', 'jobs-marketplace', 'Jobs Agent', 'Employment and job search', 3),
+      ('agent_id', 'waiter-restaurants', 'Waiter Agent', 'Restaurant and hospitality', 4),
+      ('agent_id', 'insurance-broker', 'Insurance Agent', 'Insurance quotes and policies', 5),
+      ('agent_id', 'farmers-market', 'Farmers Agent', 'Agriculture and farming', 6),
+      ('agent_id', 'buy-and-sell', 'Buy & Sell Agent', 'Business directory', 7)
+    ) AS new_values(enum_type, value, label, description, display_order)
+    WHERE NOT EXISTS (
+      SELECT 1 FROM public.tool_enum_values 
+      WHERE enum_type = new_values.enum_type AND value = new_values.value
+    );
+  END IF;
+END $$;
 
 -- Verticals for broker tools (references service_verticals table)
-INSERT INTO public.tool_enum_values (enum_type, value, label, reference_table, reference_column, display_order)
-SELECT 
-  'vertical' as enum_type,
-  slug as value,
-  name as label,
-  'service_verticals' as reference_table,
-  'slug' as reference_column,
-  priority as display_order
-FROM public.service_verticals
-WHERE is_active = true
-ON CONFLICT (enum_type, value) DO NOTHING;
+DO $$
+DECLARE
+  has_display_name BOOLEAN;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'tool_enum_values' AND column_name = 'display_name'
+  ) INTO has_display_name;
+  
+  IF has_display_name THEN
+    INSERT INTO public.tool_enum_values (enum_type, value, label, display_name, reference_table, reference_column, display_order)
+    SELECT 
+      'vertical' as enum_type,
+      slug as value,
+      name as label,
+      name as display_name,
+      'service_verticals' as reference_table,
+      'slug' as reference_column,
+      priority as display_order
+    FROM public.service_verticals
+    WHERE is_active = true
+      AND NOT EXISTS (
+        SELECT 1 FROM public.tool_enum_values tev
+        WHERE tev.enum_type = 'vertical' AND tev.value = service_verticals.slug
+      );
+  ELSE
+    INSERT INTO public.tool_enum_values (enum_type, value, label, reference_table, reference_column, display_order)
+    SELECT 
+      'vertical' as enum_type,
+      slug as value,
+      name as label,
+      'service_verticals' as reference_table,
+      'slug' as reference_column,
+      priority as display_order
+    FROM public.service_verticals
+    WHERE is_active = true
+      AND NOT EXISTS (
+        SELECT 1 FROM public.tool_enum_values tev
+        WHERE tev.enum_type = 'vertical' AND tev.value = service_verticals.slug
+      );
+  END IF;
+END $$;
 
 -- =====================================================
 -- HELPER FUNCTIONS
 -- =====================================================
 
 -- Function to get active enum values for a tool parameter
+DROP FUNCTION IF EXISTS public.get_tool_enum_values(TEXT);
 CREATE OR REPLACE FUNCTION public.get_tool_enum_values(p_enum_type TEXT)
 RETURNS TABLE(value TEXT, label TEXT, description TEXT) 
 LANGUAGE plpgsql
@@ -465,6 +652,7 @@ END;
 $$;
 
 -- Function to check if query is out of scope
+DROP FUNCTION IF EXISTS public.is_query_out_of_scope(TEXT);
 CREATE OR REPLACE FUNCTION public.is_query_out_of_scope(p_query TEXT)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -489,6 +677,7 @@ END;
 $$;
 
 -- Function to detect vertical from query keywords
+DROP FUNCTION IF EXISTS public.detect_vertical_from_query(TEXT);
 CREATE OR REPLACE FUNCTION public.detect_vertical_from_query(p_query TEXT)
 RETURNS TEXT
 LANGUAGE plpgsql

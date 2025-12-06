@@ -1,0 +1,135 @@
+[
+  {
+    "bar_id": "4d514423-222a-4b51-83ed-5202d3bf005b",
+    "bar_name": "Zion Reggae Bar",
+    "item_name": "Americano",
+    "price": 1.6,
+    "category": "Coffees & Teas"
+  },
+  {
+    "bar_id": "4d514423-222a-4b51-83ed-5202d3bf005b",
+    "bar_name": "Zion Reggae Bar",
+    "item_name": "Aperol Spritz",
+    "price": 8.0,
+    "category": "Ap\u00e9ritifs"
+  },
+  {
+    "bar_id": "4d514423-222a-4b51-83ed-5202d3bf005b",
+    "bar_name": "Zion Reggae Bar",
+    "item_name": "Asahi",
+    "price": 4.5,
+    "category": "Bottled Beer & Ciders"
+  },
+  {
+    "bar_id": "4d514423-222a-4b51-83ed-5202d3bf005b",
+    "bar_name": "Zion Reggae Bar",
+    "item_name": "Avocado Sauce",
+    "price": 1.5,
+    "category": "Burger Extras"
+  },
+  {
+    "bar_id": "4d514423-222a-4b51-83ed-5202d3bf005b",
+    "bar_name": "Zion Reggae Bar",
+    "item_name": "Bajtra Spritz",
+    "price": 8.0,
+    "category": "Ap\u00e9ritifs"
+  },
+  {
+    "bar_id": "4d514423-222a-4b51-83ed-5202d3bf005b",
+    "bar_name": "Zion Reggae Bar",
+    "item_name": "Barbera D'Alba Superiore   Italy",
+    "price": 26.5,
+    "category": "Red Wines"
+  },
+  {
+    "bar_id": "4d514423-222a-4b51-83ed-5202d3bf005b",
+    "bar_name": "Zion Reggae Bar",
+    "item_name": "Beef Carpaccio",
+    "price": 11.5,
+    "category": "Starters to Share Crudit\u00e9s & Carpaccio"
+  },
+  {
+    "bar_id": "4d514423-222a-4b51-83ed-5202d3bf005b",
+    "bar_name": "Zion Reggae Bar",
+    "item_name": "Beef Rib Eye",
+    "price": 28.5,
+    "category": "Mains"
+  },
+  {
+    "bar_id": "4d514423-222a-4b51-83ed-5202d3bf005b",
+    "bar_name": "Zion Reggae Bar",
+    "item_name": "Beef Teriyaki",
+    "price": 13.5,
+    "category": "Salads"
+  },
+  {
+    "bar_id": "4d514423-222a-4b51-83ed-5202d3bf005b",
+    "bar_name": "Zion Reggae Bar",
+    "item_name": "Beef Teriyaki Wrap",
+    "price": 10.0,
+    "category": "Wraps Served Until 6PM)"
+  },
+  {
+    "bar_id": "4d514423-222a-4b51-83ed-5202d3bf005b",
+    "bar_name": "Zion Reggae Bar",
+    "item_name": "Beer Tower 3L)",
+    "price": 25.0,
+    "category": "Tap Beer & Beer Tower"
+  },
+  {
+    "bar_id": "4d514423-222a-4b51-83ed-5202d3bf005b",
+    "bar_name": "Zion Reggae Bar",
+    "item_name": "Beetroot Carpaccio",
+    "price": 8.5,
+    "category": "Starters to Share Crudit\u00e9s & Carpaccio"
+  },
+  {
+    "bar_id": "4d514423-222a-4b51-83ed-5202d3bf005b",
+    "bar_name": "Zion Reggae Bar",
+    "item_name": "Berry Mule",
+    "price": 10.0,
+    "category": "Signature Cocktails"
+  },
+  {
+    "bar_id": "4d514423-222a-4b51-83ed-5202d3bf005b",
+    "bar_name": "Zion Reggae Bar",
+    "item_name": "Black Tea with Fresh Milk",
+    "price": 1.0,
+    "category": "Coffees & Teas"
+  },
+  {
+    "bar_id": "4d514423-222a-4b51-83ed-5202d3bf005b",
+    "bar_name": "Zion Reggae Bar",
+    "item_name": "Blooming Rose",
+    "price": 6.0,
+    "category": "Mocktails Non Alcoholic Cocktails)"
+  },
+  {
+    "bar_id": "4d514423-222a-4b51-83ed-5202d3bf005b",
+    "bar_name": "Zion Reggae Bar",
+    "item_name": "Blueberry Dream",
+    "price": 6.5,
+    "category": "Smoothies & Fresh Juices"
+  },
+  {
+    "bar_id": "4d514423-222a-4b51-83ed-5202d3bf005b",
+    "bar_name": "Zion Reggae Bar",
+    "item_name": "Boost Your Smoothie",
+    "price": 0.5,
+    "category": "Smoothies & Fresh Juices"
+  },
+  {
+    "bar_id": "4d514423-222a-4b51-83ed-5202d3bf005b",
+    "bar_name": "Zion Reggae Bar",
+    "item_name": "Bruschetta Mare e Monti",
+    "price": 13.0,
+    "category": "Starters to Share   Sharing Platters"
+  },
+  {
+    "bar_id": "4d514423-222a-4b51-83ed-5202d3bf005b",
+    "bar_name": "Zion Reggae Bar",
+    "item_name": "Caponata",
+    "price": 3.0,
+    "category": "Sides & Extras"
+  }
+]

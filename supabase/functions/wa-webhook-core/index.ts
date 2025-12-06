@@ -175,6 +175,59 @@ serve(async (req: Request): Promise<Response> => {
     }
     
     log("CORE_WEBHOOK_RECEIVED", { payloadType: typeof payload });
+    
+    // Check for intent notification opt-out/opt-in FIRST (before any routing)
+    const { handleIntentOptOut } = await import("./handlers/intent-opt-out.ts");
+    const optOutHandled = await handleIntentOptOut(payload, supabase);
+    if (optOutHandled) {
+      log("INTENT_OPT_OUT_HANDLED", {});
+      // Return success to Meta - handler already sent response to user
+      return finalize(
+        json({ success: true, handled: "opt_out" }, { status: 200 }),
+        "wa-webhook-core"
+      );
+    }
+    
+    // Check if this is a call event BEFORE routing messages
+    const callEvent = payload?.entry?.[0]?.changes?.[0]?.value?.call;
+    if (callEvent) {
+      log("CORE_CALL_EVENT_DETECTED", { 
+        callId: callEvent.id,
+        event: callEvent.event,
+        from: callEvent.from?.slice(-4),
+      });
+      
+      // Forward directly to voice-calls handler
+      const voiceCallsUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/wa-webhook-voice-calls`;
+      try {
+        const forwardResponse = await fetch(voiceCallsUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Correlation-ID": correlationId,
+            "X-Request-ID": requestId,
+            "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify(payload),
+        });
+        
+        log("CORE_CALL_FORWARDED", {
+          callId: callEvent.id,
+          status: forwardResponse.status,
+        });
+        
+        return finalize(forwardResponse, "wa-webhook-voice-calls");
+      } catch (forwardError) {
+        log("CORE_CALL_FORWARD_ERROR", {
+          callId: callEvent.id,
+          error: forwardError instanceof Error ? forwardError.message : String(forwardError),
+        }, "error");
+        
+        // Return success to Meta to prevent retries, but log the error
+        return json({ success: true, error: "voice_call_forward_failed" }, { status: 200 });
+      }
+    }
+    
     const decision = await routeIncomingPayload(payload);
     log("CORE_ROUTING_DECISION", { 
       service: decision.service, 

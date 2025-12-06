@@ -81,4 +81,12 @@ yarn-error.log*
 *.mobileprovision
 InhouseDevSigning.*
 *.certSigningRequest
-\n# Backup files\n*.bak\n*backup*\n*.backup
+# Backup files
+*.bak
+*backup*
+*.backup
+
+# Google Maps Scraper
+.env.scraper
+data/*.json
+data/pharmacies*.json
