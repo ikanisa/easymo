@@ -360,6 +360,11 @@ BEGIN
   END IF;
 END $$;
 
+-- Update check constraint to include new rule types
+ALTER TABLE public.moderation_rules DROP CONSTRAINT IF EXISTS moderation_rules_rule_type_check;
+ALTER TABLE public.moderation_rules ADD CONSTRAINT moderation_rules_rule_type_check 
+  CHECK (rule_type IN ('out_of_scope', 'prohibited', 'sensitive', 'blocked', 'flagged', 'allowed'));
+
 CREATE INDEX IF NOT EXISTS idx_moderation_rules_type ON public.moderation_rules(rule_type);
 CREATE INDEX IF NOT EXISTS idx_moderation_rules_active ON public.moderation_rules(is_active);
 CREATE INDEX IF NOT EXISTS idx_moderation_rules_category ON public.moderation_rules(category);
