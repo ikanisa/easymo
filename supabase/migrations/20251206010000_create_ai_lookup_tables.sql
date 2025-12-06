@@ -632,6 +632,7 @@ END $$;
 -- =====================================================
 
 -- Function to get active enum values for a tool parameter
+DROP FUNCTION IF EXISTS public.get_tool_enum_values(TEXT);
 CREATE OR REPLACE FUNCTION public.get_tool_enum_values(p_enum_type TEXT)
 RETURNS TABLE(value TEXT, label TEXT, description TEXT) 
 LANGUAGE plpgsql
