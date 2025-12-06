@@ -116,7 +116,7 @@ export const defaultAIAgentConfig: AIAgentConfig = {
   
   model: {
     provider: "openai",
-    defaultModel: "gpt-4o-mini",
+    defaultModel: "gpt-5",  // Per README.md: Mandatory GPT-5
     fallbackModel: "gpt-3.5-turbo",
     temperature: 0.7,
     maxTokens: 1000,

@@ -110,7 +110,7 @@ export const webhookConfig = {
   aiAgents: {
     enabled: getEnv("ENABLE_AI_AGENTS") === "true",
     redisUrl: getEnv("REDIS_URL") ?? "redis://localhost:6379",
-    defaultModel: getEnv("AI_DEFAULT_MODEL") || "gpt-4o-mini",
+    defaultModel: getEnv("AI_DEFAULT_MODEL") || "gpt-5",  // Per README.md: Mandatory GPT-5
     maxTokens: parseInt(getEnv("AI_MAX_TOKENS") || "1000"),
     temperature: parseFloat(getEnv("AI_TEMPERATURE") || "0.7"),
   },

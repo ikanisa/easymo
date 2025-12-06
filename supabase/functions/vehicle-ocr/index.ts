@@ -184,7 +184,7 @@ async function extractCertificateData(fileUrl: string): Promise<{
       "Authorization": `Bearer ${OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
-      model: "gpt-4o",
+      model: "gpt-5",  // Per README.md: Mandatory GPT-5 for AI features
       messages: [
         {
           role: "system",

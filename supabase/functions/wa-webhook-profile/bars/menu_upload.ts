@@ -263,7 +263,7 @@ Extract ALL visible items. If price is unclear, estimate based on similar items 
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3:generateContent?key=${GEMINI_API_KEY}`,  // Per README.md: Mandatory Gemini-3
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

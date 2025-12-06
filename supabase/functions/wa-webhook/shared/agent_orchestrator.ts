@@ -188,7 +188,7 @@ Respond with just the agent type (e.g., "rides").`,
 
     const response = await this.openai.createChatCompletion({
       messages,
-      model: "gpt-4o-mini",
+      model: "gpt-5"  // Per README.md: Mandatory GPT-5,
       temperature: 0.3,
       max_tokens: 50,
       user: context.userId,
@@ -233,7 +233,7 @@ Respond with just the agent type (e.g., "rides").`,
     // Execute LLM call
     let response = await this.openai.createChatCompletion({
       messages,
-      model: "gpt-4o-mini",
+      model: "gpt-5"  // Per README.md: Mandatory GPT-5,
       temperature: agent.temperature,
       max_tokens: agent.maxTokens,
       tools: tools.length > 0 ? tools : undefined,
@@ -299,7 +299,7 @@ Respond with just the agent type (e.g., "rides").`,
       // Get next response
       response = await this.openai.createChatCompletion({
         messages,
-        model: "gpt-4o-mini",
+        model: "gpt-5"  // Per README.md: Mandatory GPT-5,
         temperature: agent.temperature,
         max_tokens: agent.maxTokens,
         tools,

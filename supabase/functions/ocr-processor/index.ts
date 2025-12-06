@@ -13,7 +13,7 @@ const MENU_MEDIA_BUCKET = Deno.env.get("MENU_MEDIA_BUCKET") ??
   "menu-source-files";
 const OCR_RESULT_BUCKET = Deno.env.get("OCR_RESULT_BUCKET") ?? "ocr-json-cache";
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
-const OPENAI_MODEL = Deno.env.get("OPENAI_VISION_MODEL") ?? "gpt-4o-mini";
+const OPENAI_MODEL = Deno.env.get("OPENAI_VISION_MODEL") ?? "gpt-5";  // Per README.md: Use GPT-5 (but prefer Gemini-3 for vision)
 const OPENAI_BASE_URL = Deno.env.get("OPENAI_BASE_URL") ??
   "https://api.openai.com/v1";
 const MAX_JOB_ATTEMPTS = parsePositiveInteger(

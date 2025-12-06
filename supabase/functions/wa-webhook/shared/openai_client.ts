@@ -72,7 +72,7 @@ export interface ChatCompletionResponse {
 export class OpenAIClient {
   private apiKey: string;
   private baseURL = "https://api.openai.com/v1";
-  private defaultModel = "gpt-4o-mini";
+  private defaultModel = "gpt-5";  // Per README.md: Mandatory GPT-5
   private maxRetries = 3;
   private retryDelay = 1000;
 
