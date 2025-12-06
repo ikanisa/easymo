@@ -72,11 +72,11 @@ DROP POLICY IF EXISTS "menu_upload_read_own_bar" ON public.menu_upload_requests;
 CREATE POLICY "menu_upload_read_own_bar" ON public.menu_upload_requests
   FOR SELECT
   USING (
-    uploaded_by = auth.uid()
+    uploaded_by = auth.uid()::TEXT
     OR EXISTS (
       SELECT 1 FROM public.bar_managers bm
       WHERE bm.bar_id = menu_upload_requests.bar_id
-        AND bm.user_id = auth.uid()
+        AND bm.user_id::TEXT = auth.uid()::TEXT
         AND bm.is_active = true
     )
   );
@@ -85,11 +85,11 @@ DROP POLICY IF EXISTS "menu_upload_insert_own_bar" ON public.menu_upload_request
 CREATE POLICY "menu_upload_insert_own_bar" ON public.menu_upload_requests
   FOR INSERT
   WITH CHECK (
-    uploaded_by = auth.uid()
+    uploaded_by = auth.uid()::TEXT
     AND EXISTS (
       SELECT 1 FROM public.bar_managers bm
       WHERE bm.bar_id = bar_id
-        AND bm.user_id = auth.uid()
+        AND bm.user_id::TEXT = auth.uid()::TEXT
         AND bm.is_active = true
     )
   );
