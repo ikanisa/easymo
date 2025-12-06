@@ -42,7 +42,11 @@ serve(async (req: Request) => {
   try {
     await logStructuredEvent('INTENT_PROCESSOR_START', {});
 
-    // Get queued intents (limit 10 per run)
+    // Calculate time window (last 24 hours)
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+    // Get queued intents within time window (limit 10 per run)
     const { data: queue, error: queueError } = await supabase
       .from('intent_processing_queue')
       .select(`
@@ -53,6 +57,7 @@ serve(async (req: Request) => {
         user_intents (*)
       `)
       .eq('status', 'queued')
+      .gte('created_at', twentyFourHoursAgo.toISOString())
       .order('priority', { ascending: true })
       .order('created_at', { ascending: true })
       .limit(10);
@@ -101,18 +106,43 @@ serve(async (req: Request) => {
 
           if (matchError) throw matchError;
 
-          // Send WhatsApp notification
-          await sendMatchNotification(intent, matches);
+          // Check if user has opted out of notifications
+          const { data: notifPref } = await supabase
+            .from('intent_notification_preferences')
+            .select('notifications_enabled')
+            .eq('phone_number', intent.phone_number)
+            .maybeSingle();
 
-          // Update intent status
-          await supabase
-            .from('user_intents')
-            .update({ 
-              status: 'notified', 
-              matched_at: new Date().toISOString(),
-              notified_at: new Date().toISOString(),
-            })
-            .eq('id', intent.id);
+          const notificationsEnabled = notifPref?.notifications_enabled ?? true;
+
+          if (notificationsEnabled) {
+            // Send WhatsApp notification
+            await sendMatchNotification(intent, matches);
+            
+            // Update intent status
+            await supabase
+              .from('user_intents')
+              .update({ 
+                status: 'notified', 
+                matched_at: new Date().toISOString(),
+                notified_at: new Date().toISOString(),
+              })
+              .eq('id', intent.id);
+          } else {
+            // User opted out - just mark as matched without notification
+            await supabase
+              .from('user_intents')
+              .update({ 
+                status: 'matched', 
+                matched_at: new Date().toISOString(),
+              })
+              .eq('id', intent.id);
+
+            await logStructuredEvent('INTENT_NOTIFICATION_SKIPPED', {
+              intentId: intent.id,
+              reason: 'User opted out',
+            });
+          }
         } else {
           // No matches found - keep as pending for retry
           await supabase
@@ -353,11 +383,12 @@ function calculatePropertyScore(property: any, intent: UserIntent): number {
 }
 
 /**
- * Send WhatsApp notification with matches
+ * Send WhatsApp notification with matches and opt-out button
  */
 async function sendMatchNotification(intent: UserIntent, matches: Match[]) {
   const message = formatMatchesForWhatsApp(intent, matches);
 
+  // Send interactive message with button
   const response = await fetch(
     `https://graph.facebook.com/v21.0/${WA_PHONE_NUMBER_ID}/messages`,
     {
@@ -369,14 +400,31 @@ async function sendMatchNotification(intent: UserIntent, matches: Match[]) {
       body: JSON.stringify({
         messaging_product: 'whatsapp',
         to: intent.phone_number,
-        type: 'text',
-        text: { body: message },
+        type: 'interactive',
+        interactive: {
+          type: 'button',
+          body: {
+            text: message
+          },
+          action: {
+            buttons: [
+              {
+                type: 'reply',
+                reply: {
+                  id: `stop_notifications_${intent.id}`,
+                  title: '🔕 Stop notifications'
+                }
+              }
+            ]
+          }
+        }
       }),
     }
   );
 
   if (!response.ok) {
-    throw new Error(`WhatsApp API error: ${response.statusText}`);
+    const errorText = await response.text();
+    throw new Error(`WhatsApp API error: ${response.statusText} - ${errorText}`);
   }
 
   // Mark matches as notified
@@ -410,7 +458,7 @@ function formatMatchesForWhatsApp(intent: UserIntent, matches: Match[]): string 
     ? `\n\n📋 Plus ${matches.length - 3} more options available!`
     : '';
 
-  return `${header}\n\n${matchList}${footer}\n\n💬 Reply "more" for additional options or "details [number]" for more info.`;
+  return `${header}\n\n${matchList}${footer}\n\n💬 Reply "more" to see all options or "details [number]" for info.`;
 }
 
 /**

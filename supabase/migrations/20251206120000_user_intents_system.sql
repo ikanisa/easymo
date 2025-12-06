@@ -78,6 +78,7 @@ CREATE INDEX IF NOT EXISTS idx_user_intents_profile ON public.user_intents(profi
 CREATE INDEX IF NOT EXISTS idx_user_intents_call ON public.user_intents(call_id);
 
 -- Auto-update timestamp
+DROP TRIGGER IF EXISTS update_user_intents_updated_at ON public.user_intents;
 CREATE TRIGGER update_user_intents_updated_at
   BEFORE UPDATE ON public.user_intents
   FOR EACH ROW
@@ -143,6 +144,7 @@ ALTER TABLE public.intent_processing_queue ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.intent_matches ENABLE ROW LEVEL SECURITY;
 
 -- Service role has full access
+DROP POLICY IF EXISTS "Service role has full access to user_intents" ON public.user_intents;
 CREATE POLICY "Service role has full access to user_intents"
   ON public.user_intents
   FOR ALL
@@ -150,6 +152,7 @@ CREATE POLICY "Service role has full access to user_intents"
   USING (true)
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Service role has full access to intent_processing_queue" ON public.intent_processing_queue;
 CREATE POLICY "Service role has full access to intent_processing_queue"
   ON public.intent_processing_queue
   FOR ALL
@@ -157,6 +160,7 @@ CREATE POLICY "Service role has full access to intent_processing_queue"
   USING (true)
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Service role has full access to intent_matches" ON public.intent_matches;
 CREATE POLICY "Service role has full access to intent_matches"
   ON public.intent_matches
   FOR ALL
@@ -165,6 +169,7 @@ CREATE POLICY "Service role has full access to intent_matches"
   WITH CHECK (true);
 
 -- Users can view their own intents
+DROP POLICY IF EXISTS "Users can view their own intents" ON public.user_intents;
 CREATE POLICY "Users can view their own intents"
   ON public.user_intents
   FOR SELECT
@@ -199,6 +204,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Trigger to auto-queue intents
+DROP TRIGGER IF EXISTS auto_queue_intent ON public.user_intents;
 CREATE TRIGGER auto_queue_intent
   AFTER INSERT ON public.user_intents
   FOR EACH ROW
