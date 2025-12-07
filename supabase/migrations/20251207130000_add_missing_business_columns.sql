@@ -31,15 +31,17 @@ CREATE INDEX IF NOT EXISTS idx_business_category_name
   WHERE category_name IS NOT NULL;
 
 -- For existing businesses that came from bars table, set bar_id = id
--- This makes them self-referencing for menu purposes
--- Only update if the business exists in the bars table (migrated data)
+-- This makes them self-referencing for menu purposes.
+-- Business logic: A bar/restaurant business serves as its own "bar identity" for menu management.
+-- The restaurant_menu_items table references bar_id, which points to the business that owns the menu.
+-- For migrated data from the bars table, bar_id = business.id creates this self-reference.
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'bars' AND table_schema = 'public') THEN
-    UPDATE public.business 
-    SET bar_id = id 
-    WHERE bar_id IS NULL 
-      AND EXISTS (SELECT 1 FROM public.bars WHERE bars.id = business.id);
+    UPDATE public.business AS b
+    SET bar_id = b.id 
+    WHERE b.bar_id IS NULL 
+      AND EXISTS (SELECT 1 FROM public.bars WHERE bars.id = b.id);
   END IF;
 END $$;
 
