@@ -241,6 +241,9 @@ export class ToolExecutor {
       case "search_businesses":
         return await this.searchBusinessDirectory(inputs);
       
+      case "search_suppliers":
+        return await this.searchSuppliers(inputs, context);
+      
       case "get_nearby_listings":
         return await this.getNearbyListings(inputs, context);
       
@@ -875,6 +878,97 @@ export class ToolExecutor {
 
     if (error) throw error;
     return data;
+  }
+
+  /**
+   * Search preferred suppliers by product with location-based priority
+   */
+  private async searchSuppliers(
+    inputs: Record<string, unknown>,
+    context: ToolExecutionContext
+  ): Promise<unknown> {
+    const productQuery = inputs.product_query as string || inputs.query as string;
+    const quantity = inputs.quantity as number || 1;
+    const unit = inputs.unit as string;
+    let userLat = inputs.user_lat as number;
+    let userLng = inputs.user_lng as number;
+    const radiusKm = inputs.max_radius_km as number || 10;
+    const category = inputs.category as string;
+
+    if (!productQuery) {
+      throw new Error("product_query is required for searching suppliers");
+    }
+
+    // If lat/lng not provided, try to get from user profile
+    if (!userLat || !userLng) {
+      const { data: profile } = await this.supabase
+        .from("profiles")
+        .select("lat, lng")
+        .eq("user_id", context.userId)
+        .single();
+      
+      if (profile?.lat && profile?.lng) {
+        userLat = profile.lat;
+        userLng = profile.lng;
+      }
+    }
+
+    // Search preferred suppliers using the RPC function
+    const { data, error } = await this.supabase.rpc("search_preferred_suppliers", {
+      p_product_query: productQuery,
+      p_user_lat: userLat || null,
+      p_user_lng: userLng || null,
+      p_radius_km: radiusKm,
+      p_limit: 5
+    });
+
+    if (error) {
+      console.error("Error searching preferred suppliers:", error);
+      throw new Error(`Supplier search failed: ${error.message}`);
+    }
+
+    // Format results for the AI agent with benefits highlighted
+    const formattedResults = data?.map((supplier: any) => {
+      const benefits = supplier.benefits || [];
+      const benefitsText = benefits.map((b: any) => {
+        if (b.type === 'discount') {
+          return `✅ ${b.discount_percent}% discount for EasyMO users`;
+        } else if (b.type === 'free_delivery') {
+          return `✅ Free delivery over ${b.min_order} RWF`;
+        } else if (b.type === 'cashback') {
+          return `✅ ${b.discount_percent}% cashback`;
+        }
+        return `✅ ${b.name}`;
+      }).join('\n');
+
+      const totalPrice = (supplier.price_per_unit || 0) * quantity;
+      
+      // Calculate discount if applicable
+      let discountedPrice = totalPrice;
+      const discountBenefit = benefits.find((b: any) => b.type === 'discount');
+      if (discountBenefit && totalPrice >= (discountBenefit.min_order || 0)) {
+        const discount = totalPrice * (discountBenefit.discount_percent / 100);
+        discountedPrice = totalPrice - Math.min(discount, discountBenefit.max_discount_amount || discount);
+      }
+
+      return {
+        ...supplier,
+        total_price: totalPrice,
+        discounted_price: discountedPrice,
+        benefits_text: benefitsText,
+        has_discount: discountedPrice < totalPrice,
+        savings: totalPrice - discountedPrice
+      };
+    }) || [];
+
+    return {
+      suppliers: formattedResults,
+      total_found: formattedResults.length,
+      product_query: productQuery,
+      quantity,
+      unit,
+      search_location: userLat && userLng ? { lat: userLat, lng: userLng } : null
+    };
   }
 
   /**

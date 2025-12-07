@@ -1,0 +1,47 @@
+# Fly.io configuration for WhatsApp Voice Bridge
+
+app = "whatsapp-voice-bridge"
+primary_region = "iad"  # US East (Ashburn)
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  LOG_LEVEL = "info"
+  PORT = "8080"
+  OPENAI_ORG_ID = "org-4Kr7lOqpDhJErYgyGzwgSduN"
+  OPENAI_PROJECT_ID = "proj_BL7HHgepm76lhElLqmfOckIU"
+  OPENAI_REALTIME_MODEL = "gpt-5-realtime"
+  SUPABASE_URL = "https://lhbowpbcpwoiparwnwgt.supabase.co"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 8080
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 25
+    soft_limit = 20
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256
