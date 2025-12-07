@@ -22,7 +22,7 @@ CREATE INDEX IF NOT EXISTS idx_profiles_whatsapp_jid ON profiles(whatsapp_jid) W
 -- 2) Create omnichannel_sessions table
 CREATE TABLE IF NOT EXISTS omnichannel_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  profile_id UUID NOT NULL REFERENCES profiles(user_id) ON DELETE CASCADE,
   call_id UUID REFERENCES calls(id) ON DELETE SET NULL,
   primary_channel TEXT NOT NULL CHECK (primary_channel IN ('voice', 'whatsapp', 'sms')),
   active_channels TEXT[] DEFAULT ARRAY['voice', 'whatsapp', 'sms']::TEXT[],
@@ -52,7 +52,7 @@ COMMENT ON COLUMN omnichannel_sessions.expires_at IS 'Session expiry time (defau
 CREATE TABLE IF NOT EXISTS message_delivery_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   session_id UUID REFERENCES omnichannel_sessions(id) ON DELETE SET NULL,
-  profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  profile_id UUID NOT NULL REFERENCES profiles(user_id) ON DELETE CASCADE,
   channel TEXT NOT NULL CHECK (channel IN ('whatsapp', 'sms')),
   direction TEXT NOT NULL CHECK (direction IN ('outbound', 'inbound')),
   message_type TEXT NOT NULL,

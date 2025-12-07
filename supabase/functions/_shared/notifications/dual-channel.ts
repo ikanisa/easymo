@@ -17,6 +17,10 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
 
+// Constants
+const SMS_MAX_LENGTH_SINGLE = 160;
+const SMS_MAX_LENGTH_3_SEGMENTS = 480;
+
 export interface DualChannelConfig {
   whatsappAccessToken: string;
   whatsappPhoneNumberId: string;
@@ -184,7 +188,7 @@ export async function sendDualChannelNotification(
   if (profile?.allows_sms !== false) {
     try {
       const smsMessage = formatForSMS(notification);
-      const smsSegments = formatSMSMessage(smsMessage, 480); // Support up to 3 segments
+      const smsSegments = formatSMSMessage(smsMessage, SMS_MAX_LENGTH_3_SEGMENTS); // Support up to 3 segments
 
       // Send all SMS segments
       for (let i = 0; i < smsSegments.length; i++) {

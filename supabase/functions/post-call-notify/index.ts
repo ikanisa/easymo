@@ -134,7 +134,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // 2. Get user profile
-    const { data: profile, error: profileError } = await supabase
+    let { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('phone_number', fromNumber)

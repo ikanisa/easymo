@@ -44,29 +44,36 @@ interface SMSInboundPayload {
 /**
  * Verify MTN webhook signature
  */
-function verifyMTNSignature(payload: string, signature: string): boolean {
+async function verifyMTNSignature(payload: string, signature: string): Promise<boolean> {
   if (!MTN_WEBHOOK_SECRET || !signature) {
     return false;
   }
 
-  // MTN uses HMAC-SHA256 for webhook signatures
-  const encoder = new TextEncoder();
-  const keyData = encoder.encode(MTN_WEBHOOK_SECRET);
-  const messageData = encoder.encode(payload);
+  try {
+    // MTN uses HMAC-SHA256 for webhook signatures
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(MTN_WEBHOOK_SECRET);
+    const messageData = encoder.encode(payload);
 
-  return crypto.subtle.importKey(
-    'raw',
-    keyData,
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  ).then(key => 
-    crypto.subtle.sign('HMAC', key, messageData)
-  ).then(signatureBuffer => {
+    const key = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    const signatureBuffer = await crypto.subtle.sign('HMAC', key, messageData);
     const signatureArray = Array.from(new Uint8Array(signatureBuffer));
     const signatureHex = signatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
     return signatureHex === signature;
-  }).catch(() => false);
+  } catch (error) {
+    logStructuredEvent('MTN_SIGNATURE_VERIFICATION_ERROR', {
+      error: error instanceof Error ? error.message : String(error),
+    }, 'error');
+    return false;
+  }
 }
 
 /**
@@ -181,7 +188,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // 1. Look up profile by phone number
-    const { data: profile, error: profileError } = await supabase
+    let { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('phone_number', phoneNumber)
