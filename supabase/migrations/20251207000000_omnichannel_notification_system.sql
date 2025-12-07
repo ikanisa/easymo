@@ -1,0 +1,254 @@
+-- ============================================================================
+-- Omni-Channel Notification System
+-- Enables dual WhatsApp + SMS notifications after calls with session persistence
+-- ============================================================================
+
+BEGIN;
+
+-- 1) Extend profiles table for omni-channel support
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS whatsapp_jid TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS has_whatsapp BOOLEAN DEFAULT false;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS allows_sms BOOLEAN DEFAULT true;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS last_active_channel TEXT CHECK (last_active_channel IN ('voice', 'whatsapp', 'sms'));
+
+COMMENT ON COLUMN profiles.whatsapp_jid IS 'WhatsApp JID (e.g., 250788123456@s.whatsapp.net)';
+COMMENT ON COLUMN profiles.has_whatsapp IS 'User has WhatsApp capability (auto-detected from messages)';
+COMMENT ON COLUMN profiles.allows_sms IS 'User allows SMS notifications (default true)';
+COMMENT ON COLUMN profiles.last_active_channel IS 'Last channel user interacted from';
+
+-- Create index for WhatsApp JID lookups
+CREATE INDEX IF NOT EXISTS idx_profiles_whatsapp_jid ON profiles(whatsapp_jid) WHERE whatsapp_jid IS NOT NULL;
+
+-- 2) Create omnichannel_sessions table
+CREATE TABLE IF NOT EXISTS omnichannel_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  call_id UUID REFERENCES calls(id) ON DELETE SET NULL,
+  primary_channel TEXT NOT NULL CHECK (primary_channel IN ('voice', 'whatsapp', 'sms')),
+  active_channels TEXT[] DEFAULT ARRAY['voice', 'whatsapp', 'sms']::TEXT[],
+  last_agent_id TEXT,
+  last_intent TEXT,
+  context JSONB DEFAULT '{}'::jsonb,
+  summary_sent_whatsapp BOOLEAN DEFAULT false,
+  summary_sent_sms BOOLEAN DEFAULT false,
+  started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at TIMESTAMPTZ DEFAULT (now() + interval '24 hours'),
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'closed', 'follow_up'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_omnichannel_sessions_profile ON omnichannel_sessions(profile_id);
+CREATE INDEX IF NOT EXISTS idx_omnichannel_sessions_status ON omnichannel_sessions(status);
+CREATE INDEX IF NOT EXISTS idx_omnichannel_sessions_call_id ON omnichannel_sessions(call_id) WHERE call_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_omnichannel_sessions_expires_at ON omnichannel_sessions(expires_at);
+
+COMMENT ON TABLE omnichannel_sessions IS 'Tracks user sessions across voice, WhatsApp, and SMS channels';
+COMMENT ON COLUMN omnichannel_sessions.primary_channel IS 'Channel that initiated the session';
+COMMENT ON COLUMN omnichannel_sessions.active_channels IS 'Array of channels where session is active';
+COMMENT ON COLUMN omnichannel_sessions.context IS 'Shared context data accessible across all channels';
+COMMENT ON COLUMN omnichannel_sessions.expires_at IS 'Session expiry time (default 24 hours from creation)';
+
+-- 3) Create message_delivery_log table
+CREATE TABLE IF NOT EXISTS message_delivery_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id UUID REFERENCES omnichannel_sessions(id) ON DELETE SET NULL,
+  profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  channel TEXT NOT NULL CHECK (channel IN ('whatsapp', 'sms')),
+  direction TEXT NOT NULL CHECK (direction IN ('outbound', 'inbound')),
+  message_type TEXT NOT NULL,
+  content TEXT NOT NULL,
+  external_message_id TEXT,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'delivered', 'failed', 'read')),
+  error_message TEXT,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_message_delivery_log_session ON message_delivery_log(session_id) WHERE session_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_message_delivery_log_profile ON message_delivery_log(profile_id);
+CREATE INDEX IF NOT EXISTS idx_message_delivery_log_channel ON message_delivery_log(channel);
+CREATE INDEX IF NOT EXISTS idx_message_delivery_log_status ON message_delivery_log(status);
+CREATE INDEX IF NOT EXISTS idx_message_delivery_log_created_at ON message_delivery_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_message_delivery_log_external_id ON message_delivery_log(external_message_id) WHERE external_message_id IS NOT NULL;
+
+COMMENT ON TABLE message_delivery_log IS 'Audit log for all WhatsApp and SMS message deliveries';
+COMMENT ON COLUMN message_delivery_log.channel IS 'Delivery channel: whatsapp or sms';
+COMMENT ON COLUMN message_delivery_log.direction IS 'Message direction: outbound or inbound';
+COMMENT ON COLUMN message_delivery_log.message_type IS 'Type of message (e.g., call_summary, response, notification)';
+COMMENT ON COLUMN message_delivery_log.external_message_id IS 'Message ID from WhatsApp or SMS provider';
+
+-- 4) Add RLS policies for omnichannel_sessions
+ALTER TABLE omnichannel_sessions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own omnichannel sessions"
+  ON omnichannel_sessions FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = omnichannel_sessions.profile_id
+      AND profiles.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Service role has full access to omnichannel sessions"
+  ON omnichannel_sessions FOR ALL
+  USING (auth.jwt() ->> 'role' = 'service_role')
+  WITH CHECK (auth.jwt() ->> 'role' = 'service_role');
+
+-- 5) Add RLS policies for message_delivery_log
+ALTER TABLE message_delivery_log ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own message logs"
+  ON message_delivery_log FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = message_delivery_log.profile_id
+      AND profiles.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Service role has full access to message logs"
+  ON message_delivery_log FOR ALL
+  USING (auth.jwt() ->> 'role' = 'service_role')
+  WITH CHECK (auth.jwt() ->> 'role' = 'service_role');
+
+-- 6) Create helper function to get or create omnichannel session
+CREATE OR REPLACE FUNCTION get_or_create_omnichannel_session(
+  p_profile_id UUID,
+  p_primary_channel TEXT DEFAULT 'voice',
+  p_call_id UUID DEFAULT NULL,
+  p_agent_id TEXT DEFAULT NULL,
+  p_intent TEXT DEFAULT NULL
+) RETURNS UUID AS $$
+DECLARE
+  v_session_id UUID;
+BEGIN
+  -- Try to find an active session
+  SELECT id INTO v_session_id
+  FROM omnichannel_sessions
+  WHERE profile_id = p_profile_id
+    AND status = 'active'
+    AND expires_at > now()
+  ORDER BY updated_at DESC
+  LIMIT 1;
+
+  -- If no active session found, create one
+  IF v_session_id IS NULL THEN
+    INSERT INTO omnichannel_sessions (
+      profile_id,
+      call_id,
+      primary_channel,
+      last_agent_id,
+      last_intent,
+      status
+    ) VALUES (
+      p_profile_id,
+      p_call_id,
+      p_primary_channel,
+      p_agent_id,
+      p_intent,
+      'active'
+    )
+    RETURNING id INTO v_session_id;
+  ELSE
+    -- Update existing session
+    UPDATE omnichannel_sessions
+    SET
+      call_id = COALESCE(p_call_id, call_id),
+      last_agent_id = COALESCE(p_agent_id, last_agent_id),
+      last_intent = COALESCE(p_intent, last_intent),
+      updated_at = now(),
+      expires_at = now() + interval '24 hours'
+    WHERE id = v_session_id;
+  END IF;
+
+  RETURN v_session_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION get_or_create_omnichannel_session IS 'Gets active session or creates new one, extends expiry on access';
+
+-- 7) Create function to update session status
+CREATE OR REPLACE FUNCTION update_omnichannel_session_status(
+  p_session_id UUID,
+  p_status TEXT,
+  p_context JSONB DEFAULT NULL
+) RETURNS BOOLEAN AS $$
+BEGIN
+  UPDATE omnichannel_sessions
+  SET
+    status = p_status,
+    context = COALESCE(p_context, context),
+    updated_at = now()
+  WHERE id = p_session_id;
+
+  RETURN FOUND;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION update_omnichannel_session_status IS 'Updates session status and optionally merges context data';
+
+-- 8) Create function to log message delivery
+CREATE OR REPLACE FUNCTION log_message_delivery(
+  p_session_id UUID,
+  p_profile_id UUID,
+  p_channel TEXT,
+  p_direction TEXT,
+  p_message_type TEXT,
+  p_content TEXT,
+  p_external_message_id TEXT DEFAULT NULL,
+  p_status TEXT DEFAULT 'pending',
+  p_metadata JSONB DEFAULT '{}'
+) RETURNS UUID AS $$
+DECLARE
+  v_log_id UUID;
+BEGIN
+  INSERT INTO message_delivery_log (
+    session_id,
+    profile_id,
+    channel,
+    direction,
+    message_type,
+    content,
+    external_message_id,
+    status,
+    metadata
+  ) VALUES (
+    p_session_id,
+    p_profile_id,
+    p_channel,
+    p_direction,
+    p_message_type,
+    p_content,
+    p_external_message_id,
+    p_status,
+    p_metadata
+  )
+  RETURNING id INTO v_log_id;
+
+  RETURN v_log_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION log_message_delivery IS 'Logs a message delivery attempt or receipt to audit trail';
+
+-- 9) Create function to clean up expired sessions
+CREATE OR REPLACE FUNCTION cleanup_expired_omnichannel_sessions() RETURNS INTEGER AS $$
+DECLARE
+  v_deleted_count INTEGER;
+BEGIN
+  UPDATE omnichannel_sessions
+  SET status = 'closed'
+  WHERE status = 'active'
+    AND expires_at < now();
+
+  GET DIAGNOSTICS v_deleted_count = ROW_COUNT;
+
+  RETURN v_deleted_count;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION cleanup_expired_omnichannel_sessions IS 'Closes expired sessions, called by cron job';
+
+COMMIT;
