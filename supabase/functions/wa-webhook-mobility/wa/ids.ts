@@ -148,6 +148,7 @@ export const IDS = {
   GO_OFFLINE: "go_offline",
   UPDATE_LOCATION: "update_location",
   USE_CACHED_LOCATION: "use_cached_location",
+  USE_LAST_LOCATION: "USE_LAST_LOCATION",
   SHARE_NEW_LOCATION: "share_new_location",
   // Trip Lifecycle
   TRIP_START: "TRIP_START",
