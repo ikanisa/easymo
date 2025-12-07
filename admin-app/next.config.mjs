@@ -66,9 +66,23 @@ const nextConfig = {
           '@radix-ui/react-slot',
         ]
       : undefined,
+    // Include workspace packages in standalone output for Docker/monorepo builds
+    outputFileTracingIncludes: {
+      '/*': [
+        '../packages/shared/dist/**/*',
+        '../packages/commons/dist/**/*',
+        '../packages/ui/dist/**/*',
+        '../packages/video-agent-schema/dist/**/*',
+      ],
+    },
   },
   
-  serverExternalPackages: ['@easymo/commons'],
+  serverExternalPackages: [
+    '@easymo/commons',
+    '@easymo/ui',
+    '@easymo/video-agent-schema',
+    '@va/shared',
+  ],
   
   typescript: {
     // Allow build to complete - type errors should be fixed separately

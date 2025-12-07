@@ -1,0 +1,34 @@
+[
+  {
+    "name": "QUINCAILLERIE Shukuru",
+    "rating": 5.0,
+    "review_count": 1,
+    "category_type": "Hardware store",
+    "address": "Gisenyi",
+    "phone": "+250783005274",
+    "website": "",
+    "place_id": "0x19dd05e85cca1c2d:0x6a86d32917b86aa6",
+    "external_id": "0x19dd05e85cca1c2d:0x6a86d32917b86aa6",
+    "category": "hardware store",
+    "city": "Gisenyi",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T13:27:12.642543"
+  },
+  {
+    "name": "NATURAL AFRICA LTD",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Hardware store",
+    "address": "8782+MXP, Unnamed Road, Gisenyi, Gisenyi",
+    "phone": "+250785310052",
+    "website": "",
+    "place_id": "0x19dd05cbd41a5f21:0xe3d4e5b48767629",
+    "external_id": "0x19dd05cbd41a5f21:0xe3d4e5b48767629",
+    "category": "hardware store",
+    "city": "Gisenyi",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T13:27:28.618790"
+  }
+]

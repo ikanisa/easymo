@@ -1,0 +1,34 @@
+[
+  {
+    "name": "ALPHA Pro-line",
+    "rating": 4.5,
+    "review_count": 2,
+    "category_type": "Key duplication service",
+    "address": "KK 8 Ave, Kigali",
+    "phone": "0788 305 197",
+    "website": "",
+    "place_id": "0x19dca6476118406f:0x3e59c70418e9e074",
+    "external_id": "0x19dca6476118406f:0x3e59c70418e9e074",
+    "category": "locksmith",
+    "city": "Kigali",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T13:36:48.389343"
+  },
+  {
+    "name": "Pure Pro Ltd /Car Glass Repair",
+    "rating": 4.2,
+    "review_count": 5,
+    "category_type": "Auto glass shop",
+    "address": "KG 4 Airport Road, Kigali",
+    "phone": "0788 500 637",
+    "website": "https://www.google.com/url?q=http://www.carglass.rw/&opi=79508299&sa=U&ved=0ahUKEwit36yqzKuRAxUpNvsDHWk1O4oQ61gIEigO&usg=AOvVaw2SFWKBDxMr0FrTni8-reOW",
+    "place_id": "0x19dca685a8779fb9:0x6d450f57c32b368c",
+    "external_id": "0x19dca685a8779fb9:0x6d450f57c32b368c",
+    "category": "locksmith",
+    "city": "Kigali",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T13:36:55.369118"
+  }
+]

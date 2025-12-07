@@ -17,8 +17,9 @@ COPY admin-app ./admin-app
 # Install all dependencies (includes workspace packages)
 RUN pnpm install --frozen-lockfile
 
-# Build shared workspace packages that admin-app depends on
+# Build shared workspace packages that admin-app depends on (in dependency order)
 RUN pnpm --filter @va/shared build
+RUN pnpm --filter @easymo/video-agent-schema build
 RUN pnpm --filter @easymo/commons build
 RUN pnpm --filter @easymo/ui build
 
@@ -44,10 +45,21 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy the standalone output
-COPY --from=builder /app/admin-app/.next/standalone ./
-COPY --from=builder /app/admin-app/.next/static ./admin-app/.next/static
-COPY --from=builder /app/admin-app/public ./admin-app/public
+# Copy the standalone output from admin-app build
+COPY --from=builder --chown=nextjs:nodejs /app/admin-app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/admin-app/.next/static ./admin-app/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/admin-app/public ./admin-app/public
+
+# Copy workspace packages dist to the standalone location
+# Next.js standalone expects these in the node_modules structure
+COPY --from=builder --chown=nextjs:nodejs /app/packages/shared/dist ./node_modules/@va/shared/dist
+COPY --from=builder --chown=nextjs:nodejs /app/packages/shared/package.json ./node_modules/@va/shared/
+COPY --from=builder --chown=nextjs:nodejs /app/packages/commons/dist ./node_modules/@easymo/commons/dist
+COPY --from=builder --chown=nextjs:nodejs /app/packages/commons/package.json ./node_modules/@easymo/commons/
+COPY --from=builder --chown=nextjs:nodejs /app/packages/ui/dist ./node_modules/@easymo/ui/dist
+COPY --from=builder --chown=nextjs:nodejs /app/packages/ui/package.json ./node_modules/@easymo/ui/
+COPY --from=builder --chown=nextjs:nodejs /app/packages/video-agent-schema/dist ./node_modules/@easymo/video-agent-schema/dist
+COPY --from=builder --chown=nextjs:nodejs /app/packages/video-agent-schema/package.json ./node_modules/@easymo/video-agent-schema/
 
 USER nextjs
 
