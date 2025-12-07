@@ -95,7 +95,7 @@ export class AudioProcessor {
    * Resample PCM audio using simple linear interpolation
    * For production, use a proper resampling library
    */
-  private resample(pcm: Buffer, fromRate: number, toRate: number): Buffer {
+  resample(pcm: Buffer, fromRate: number, toRate: number): Buffer {
     if (fromRate === toRate) {
       return pcm;
     }

@@ -32,10 +32,11 @@ declare module 'wrtc' {
   export class MediaStream {
     constructor();
     getTracks(): MediaStreamTrack[];
+    getAudioTracks(): MediaStreamTrack[];
     addTrack(track: MediaStreamTrack): void;
   }
 
-  export interface MediaStreamTrack {
+  export class MediaStreamTrack {
     kind: string;
     id: string;
     enabled: boolean;
