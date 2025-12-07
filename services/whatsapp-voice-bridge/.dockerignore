@@ -1,6 +1,11 @@
 node_modules
-dist
+npm-debug.log
 .env
+.env.local
+.env.*.local
+dist
+coverage
 .git
-*.md
-*.log
+.gitignore
+README.md
+.DS_Store
