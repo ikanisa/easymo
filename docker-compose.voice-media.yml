@@ -1,27 +1,33 @@
 version: '3.8'
 
 services:
-  webrtc-bridge:
+  voice-media-bridge:
     build:
-      context: ./services/webrtc-media-bridge
+      context: ./services/voice-media-bridge
       dockerfile: Dockerfile
-    container_name: easymo-webrtc-bridge
+    container_name: easymo-voice-media-bridge
     ports:
       - "8080:8080"
-      - "8081:8081"
-      - "10000-10100:10000-10100/udp"
+      - "10000-10100:10000-10100/udp"  # RTP ports for WebRTC
     environment:
       - PORT=8080
-      - WS_PORT=8081
       - LOG_LEVEL=info
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_ORG_ID=${OPENAI_ORG_ID}
       - OPENAI_REALTIME_MODEL=gpt-5-realtime
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - easymo
+
+networks:
+  easymo:
+    driver: bridge
+

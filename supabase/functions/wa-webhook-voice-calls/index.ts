@@ -206,7 +206,7 @@ Speak naturally as if on a phone call in ${language === 'fr' ? 'French' : langua
   
   try {
     const bridgeResponse = await fetch(
-      `${WEBRTC_BRIDGE_URL}/bridge/start`,
+      `${WEBRTC_BRIDGE_URL}/api/sessions`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -214,10 +214,10 @@ Speak naturally as if on a phone call in ${language === 'fr' ? 'French' : langua
           callId,
           sdpOffer: session.sdp,
           from: fromNumber,
-          sessionConfig: {
+          config: {
             voice,
             instructions: systemInstructions,
-            temperature: 0.8,
+            model: OPENAI_REALTIME_MODEL,
           },
         }),
       }

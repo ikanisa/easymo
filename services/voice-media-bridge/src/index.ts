@@ -1,5 +1,5 @@
 import express from 'express';
-import { WebSocket, WebSocketServer } from 'ws';
+import { WebSocket } from 'ws';
 import pino from 'pino';
 import dotenv from 'dotenv';
 
@@ -15,20 +15,19 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'healthy', service: 'voice-media-bridge' });
 });
 
-const wss = new WebSocketServer({ noServer: true });
-
 interface CallSession {
   callId: string;
   sdpOffer: string;
   sdpAnswer: string | null;
   openaiWs: WebSocket | null;
+  config: any;
   createdAt: number;
 }
 
 const activeSessions = new Map<string, CallSession>();
 
 app.post('/api/sessions', async (req, res) => {
-  const { callId, sdpOffer } = req.body;
+  const { callId, sdpOffer, config } = req.body;
 
   if (!callId || !sdpOffer) {
     return res.status(400).json({ error: 'Missing callId or sdpOffer' });
@@ -45,11 +44,14 @@ app.post('/api/sessions', async (req, res) => {
       sdpOffer,
       sdpAnswer,
       openaiWs: null,
+      config: config || {},
       createdAt: Date.now(),
     };
 
     activeSessions.set(callId, session);
-    connectToOpenAI(session);
+
+    // Connect to OpenAI Realtime
+    await connectToOpenAI(session);
 
     logger.info({ callId, sessionsCount: activeSessions.size }, 'Session created');
 
@@ -77,61 +79,66 @@ app.delete('/api/sessions/:callId', (req, res) => {
   res.json({ success: true });
 });
 
-function connectToOpenAI(session: CallSession): void {
-  const { callId } = session;
+async function connectToOpenAI(session: CallSession): Promise<void> {
+  const { callId, config } = session;
   const apiKey = process.env.OPENAI_API_KEY;
-  const model = process.env.OPENAI_REALTIME_MODEL || 'gpt-4o-realtime-preview';
+  const model = process.env.OPENAI_REALTIME_MODEL || 'gpt-5-realtime';
 
   if (!apiKey) {
     logger.error('OPENAI_API_KEY not set');
-    return;
+    throw new Error('OPENAI_API_KEY not configured');
   }
 
   const wsUrl = `wss://api.openai.com/v1/realtime?model=${model}`;
 
-  const ws = new WebSocket(wsUrl, {
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'OpenAI-Beta': 'realtime=v1',
-    },
-  });
-
-  ws.on('open', () => {
-    logger.info({ callId }, 'Connected to OpenAI Realtime API');
-
-    ws.send(JSON.stringify({
-      type: 'session.update',
-      session: {
-        modalities: ['text', 'audio'],
-        instructions: 'You are EasyMO Call Center AI. Keep responses SHORT (1-2 sentences max). Be helpful and friendly.',
-        voice: 'alloy',
-        input_audio_format: 'pcm16',
-        output_audio_format: 'pcm16',
-        input_audio_transcription: { model: 'whisper-1' },
-        turn_detection: {
-          type: 'server_vad',
-          threshold: 0.5,
-          prefix_padding_ms: 300,
-          silence_duration_ms: 500,
-        },
+  return new Promise((resolve, reject) => {
+    const ws = new WebSocket(wsUrl, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'OpenAI-Beta': 'realtime=v1',
       },
-    }));
-  });
+    });
 
-  ws.on('message', (data: Buffer) => {
-    handleOpenAIMessage(session, data);
-  });
+    ws.on('open', () => {
+      logger.info({ callId }, 'Connected to OpenAI Realtime API');
 
-  ws.on('error', (error) => {
-    logger.error({ callId, error }, 'OpenAI WebSocket error');
-  });
+      // Configure session
+      ws.send(JSON.stringify({
+        type: 'session.update',
+        session: {
+          modalities: ['text', 'audio'],
+          instructions: config.instructions || 'You are a helpful assistant.',
+          voice: config.voice || 'alloy',
+          input_audio_format: 'pcm16',
+          output_audio_format: 'pcm16',
+          input_audio_transcription: { model: 'whisper-1' },
+          turn_detection: {
+            type: 'server_vad',
+            threshold: 0.5,
+            prefix_padding_ms: 300,
+            silence_duration_ms: 500,
+          },
+        },
+      }));
 
-  ws.on('close', () => {
-    logger.info({ callId }, 'OpenAI WebSocket closed');
-    cleanupSession(callId);
-  });
+      session.openaiWs = ws;
+      resolve();
+    });
 
-  session.openaiWs = ws;
+    ws.on('message', (data: Buffer) => {
+      handleOpenAIMessage(session, data);
+    });
+
+    ws.on('error', (error) => {
+      logger.error({ callId, error }, 'OpenAI WebSocket error');
+      reject(error);
+    });
+
+    ws.on('close', () => {
+      logger.info({ callId }, 'OpenAI WebSocket closed');
+      cleanupSession(callId);
+    });
+  });
 }
 
 function handleOpenAIMessage(session: CallSession, data: Buffer): void {
@@ -139,10 +146,23 @@ function handleOpenAIMessage(session: CallSession, data: Buffer): void {
     const message = JSON.parse(data.toString());
 
     switch (message.type) {
+      case 'session.updated':
+        logger.info({ callId: session.callId }, 'OpenAI session configured');
+        break;
+
       case 'response.audio.delta':
-        if (message.delta) {
-          sendAudioToWhatsApp(session, Buffer.from(message.delta, 'base64'));
-        }
+        // Audio from OpenAI - would send to WhatsApp via WebRTC
+        logger.debug({ 
+          callId: session.callId, 
+          size: message.delta?.length || 0 
+        }, 'Received audio from OpenAI');
+        break;
+
+      case 'response.audio_transcript.delta':
+        logger.debug({ 
+          callId: session.callId, 
+          transcript: message.delta 
+        }, 'AI transcript');
         break;
 
       case 'response.done':
@@ -150,7 +170,10 @@ function handleOpenAIMessage(session: CallSession, data: Buffer): void {
         break;
 
       case 'error':
-        logger.error({ callId: session.callId, error: message.error }, 'OpenAI error');
+        logger.error({ 
+          callId: session.callId, 
+          error: message.error 
+        }, 'OpenAI error');
         break;
     }
   } catch (error) {
@@ -159,36 +182,45 @@ function handleOpenAIMessage(session: CallSession, data: Buffer): void {
 }
 
 function generateSDPAnswer(offer: string): string {
-  // Parse offer to extract media info
+  // Parse the offer to extract necessary information
   const lines = offer.split('\r\n');
-  const audioCodec = lines.find(l => l.includes('a=rtpmap') && (l.includes('opus') || l.includes('PCMU')));
   
-  // Generate minimal valid SDP answer
-  return [
+  // Extract media info
+  const audioLine = lines.find(l => l.startsWith('m=audio'));
+  const iceUfragLine = lines.find(l => l.startsWith('a=ice-ufrag:'));
+  const icePwdLine = lines.find(l => l.startsWith('a=ice-pwd:'));
+  const fingerprintLine = lines.find(l => l.startsWith('a=fingerprint:'));
+  
+  // Find codec info
+  const rtpmapLines = lines.filter(l => l.startsWith('a=rtpmap:'));
+  const opusLine = rtpmapLines.find(l => l.includes('opus')) || rtpmapLines[0];
+  const codecId = opusLine?.split(':')[1]?.split(' ')[0] || '111';
+  
+  // Generate SDP answer matching the offer
+  const answer = [
     'v=0',
-    'o=- 0 0 IN IP4 0.0.0.0',
+    'o=- 0 0 IN IP4 127.0.0.1',
     's=EasyMO Voice Bridge',
     't=0 0',
     'a=group:BUNDLE 0',
     'a=msid-semantic: WMS',
-    'm=audio 9 UDP/TLS/RTP/SAVPF 111',
-    'c=IN IP4 0.0.0.0',
-    'a=rtcp:9 IN IP4 0.0.0.0',
-    'a=ice-ufrag:easymo',
-    'a=ice-pwd:easymovoicebridge123456789012',
-    'a=fingerprint:sha-256 00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00',
+    audioLine || 'm=audio 9 UDP/TLS/RTP/SAVPF 111',
+    'c=IN IP4 127.0.0.1',
+    'a=rtcp:9 IN IP4 127.0.0.1',
+    iceUfragLine || 'a=ice-ufrag:easymo',
+    icePwdLine || 'a=ice-pwd:easymovoicebridge123456',
+    fingerprintLine || 'a=fingerprint:sha-256 00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00',
     'a=setup:active',
     'a=mid:0',
     'a=sendrecv',
     'a=rtcp-mux',
-    'a=rtpmap:111 opus/48000/2',
-    'a=fmtp:111 minptime=10;useinbandfec=1',
+    `a=rtpmap:${codecId} opus/48000/2`,
+    `a=fmtp:${codecId} minptime=10;useinbandfec=1`,
   ].join('\r\n') + '\r\n';
-}
 
-function sendAudioToWhatsApp(session: CallSession, audioData: Buffer): void {
-  // TODO: Implement RTP packetization and send to WhatsApp
-  logger.debug({ callId: session.callId, size: audioData.length }, 'Audio from OpenAI (not yet sent to WhatsApp)');
+  logger.debug({ offerLength: offer.length, answerLength: answer.length }, 'Generated SDP answer');
+  
+  return answer;
 }
 
 function cleanupSession(callId: string): void {
@@ -204,9 +236,10 @@ function cleanupSession(callId: string): void {
   logger.info({ callId, remainingSessions: activeSessions.size }, 'Session cleaned up');
 }
 
+// Cleanup stale sessions every 5 minutes
 setInterval(() => {
   const now = Date.now();
-  const maxAge = 30 * 60 * 1000;
+  const maxAge = 30 * 60 * 1000; // 30 minutes
 
   for (const [callId, session] of activeSessions.entries()) {
     if (now - session.createdAt > maxAge) {
@@ -217,13 +250,7 @@ setInterval(() => {
 }, 5 * 60 * 1000);
 
 const server = app.listen(port, () => {
-  logger.info({ port }, 'Voice Media Bridge started');
-});
-
-server.on('upgrade', (request, socket, head) => {
-  wss.handleUpgrade(request, socket, head, (ws) => {
-    wss.emit('connection', ws, request);
-  });
+  logger.info({ port, service: 'voice-media-bridge' }, 'Service started');
 });
 
 process.on('SIGTERM', () => {
