@@ -314,6 +314,32 @@ async function processQueueRow(
         sent: notifyResult.sent,
         failed: notifyResult.failed,
       });
+      
+      // Log warnings if no notifications were sent
+      if (notifyResult.sent === 0) {
+        logStructuredEvent("INS_OCR_ADMIN_NOTIFY_WARN", {
+          leadId,
+          queueId: row.id,
+          sent: 0,
+          failed: notifyResult.failed,
+          message: "No admin notifications sent - check admin configuration",
+        }, "warn");
+      }
+      
+      // Log errors if any notification attempts failed
+      if (notifyResult.errors.length > 0) {
+        logStructuredEvent("INS_OCR_ADMIN_NOTIFY_ERRORS", {
+          leadId,
+          queueId: row.id,
+          errorCount: notifyResult.errors.length,
+          errors: notifyResult.errors,
+        }, "error");
+        console.error("insurance-ocr.admin_notify_errors", {
+          leadId,
+          errors: notifyResult.errors,
+        });
+      }
+      
       // Send summary to user
       const userSummary = buildUserSummary(normalized);
       await sendText(row.wa_id, userSummary);

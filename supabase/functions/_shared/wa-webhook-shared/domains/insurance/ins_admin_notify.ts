@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.76.1";
 import { sendText } from "../../wa/client.ts";
 import type { InsuranceExtraction } from "./ins_normalize.ts";
+import { logStructuredEvent } from "../../../observability.ts";
 
 export interface AdminNotificationPayload {
   leadId: string;
@@ -75,10 +76,47 @@ export async function notifyInsuranceAdmins(
   payload: AdminNotificationPayload,
 ): Promise<{ sent: number; failed: number; errors: string[] }> {
   const { leadId, userWaId, extracted } = payload;
-  const targets = dedupeAdmins(await resolveAdminTargets(client));
+  
+  logStructuredEvent("INSURANCE_ADMIN_NOTIFY_START", {
+    leadId,
+    userWaId: userWaId.slice(0, 8) + "***", // Mask PII
+  }, "info");
 
-  if (!targets.length) {
+  const { targets, resolutionSource } = await resolveAdminTargets(client);
+  const dedupedTargets = dedupeAdmins(targets);
+
+  if (!dedupedTargets.length) {
     console.warn("insurance.no_active_admins");
+    logStructuredEvent("INSURANCE_ADMIN_NO_TARGETS", {
+      leadId,
+      userWaId: userWaId.slice(0, 8) + "***",
+      checkedSources: ["insurance_admin_contacts", "insurance_admins", "INSURANCE_ADMIN_FALLBACK_WA_IDS"],
+      message: "No active admin contacts found in any source. Please configure admin contacts.",
+    }, "error");
+    
+    // Insert critical alert to notifications table for monitoring
+    try {
+      await client.from("notifications").insert({
+        to_wa_id: userWaId,
+        notification_type: "system_alert",
+        payload: {
+          alert_type: "CRITICAL",
+          event: "INSURANCE_ADMIN_NO_TARGETS",
+          leadId,
+          message: "Insurance admin notification failed: No admin contacts configured. Please add contacts to insurance_admin_contacts table or set INSURANCE_ADMIN_FALLBACK_WA_IDS environment variable.",
+          fix_instructions: [
+            "Add admin contacts to insurance_admin_contacts table with contact_type='whatsapp' and is_active=true",
+            "OR set INSURANCE_ADMIN_FALLBACK_WA_IDS environment variable (comma-separated WhatsApp IDs)",
+            "OR add entries to insurance_admins table with is_active=true",
+          ],
+        },
+        status: "queued",
+        retry_count: 0,
+      });
+    } catch (alertError) {
+      console.error("Failed to insert system alert:", alertError);
+    }
+    
     return { sent: 0, failed: 0, errors: ["No active admins found"] };
   }
 
@@ -86,13 +124,19 @@ export async function notifyInsuranceAdmins(
   
   console.log("insurance.sending_to_all_admins", {
     leadId,
-    totalAdmins: targets.length,
-    adminWaIds: targets.map(t => normalizeAdminWaId(t.waId)).filter(Boolean),
+    totalAdmins: dedupedTargets.length,
+    adminWaIds: dedupedTargets.map(t => normalizeAdminWaId(t.waId)).filter(Boolean),
   });
+  
+  logStructuredEvent("INSURANCE_ADMIN_NOTIFY_SENDING", {
+    leadId,
+    totalAdmins: dedupedTargets.length,
+    resolutionSource,
+  }, "info");
 
   // Send to ALL admins concurrently (not sequentially)
   const results = await Promise.allSettled(
-    targets.map((admin) => sendToAdmin(client, admin, message, leadId, userWaId, extracted))
+    dedupedTargets.map((admin) => sendToAdmin(client, admin, message, leadId, userWaId, extracted, resolutionSource, dedupedTargets.length))
   );
 
   // Aggregate results
@@ -107,12 +151,12 @@ export async function notifyInsuranceAdmins(
       } else {
         failed++;
         if (result.value.error) {
-          errors.push(`${targets[index].waId}: ${result.value.error}`);
+          errors.push(`${dedupedTargets[index].waId}: ${result.value.error}`);
         }
       }
     } else {
       failed++;
-      errors.push(`${targets[index].waId}: ${result.reason}`);
+      errors.push(`${dedupedTargets[index].waId}: ${result.reason}`);
     }
   });
 
@@ -120,8 +164,17 @@ export async function notifyInsuranceAdmins(
     leadId,
     sent,
     failed,
-    totalAdmins: targets.length,
+    totalAdmins: dedupedTargets.length,
   });
+  
+  logStructuredEvent("INSURANCE_ADMIN_NOTIFY_COMPLETE", {
+    leadId,
+    sent,
+    failed,
+    totalAdmins: dedupedTargets.length,
+    resolutionSource,
+    hasErrors: errors.length > 0,
+  }, sent === 0 && failed > 0 ? "error" : "info");
 
   return { sent, failed, errors };
 }
@@ -134,6 +187,8 @@ async function sendToAdmin(
   leadId: string,
   userWaId: string,
   extracted: InsuranceExtraction,
+  resolutionSource: string,
+  resolvedTargetsCount: number,
 ): Promise<{ success: boolean; error?: string }> {
   const adminWaId = normalizeAdminWaId(admin.waId);
   if (!adminWaId) {
@@ -149,6 +204,12 @@ async function sendToAdmin(
     messageLength: message.length,
     leadId,
   });
+  
+  logStructuredEvent("INSURANCE_ADMIN_SEND_ATTEMPT", {
+    leadId,
+    adminWaId: adminWaId.slice(0, 8) + "***", // Mask PII
+    messageLength: message.length,
+  }, "info");
 
   try {
     await sendText(adminWaId, message);
@@ -157,6 +218,10 @@ async function sendToAdmin(
       admin: adminWaId,
       leadId,
     });
+    logStructuredEvent("INSURANCE_ADMIN_SEND_SUCCESS", {
+      leadId,
+      adminWaId: adminWaId.slice(0, 8) + "***", // Mask PII
+    }, "info");
   } catch (error) {
     const errMsg = error instanceof Error ? error.message : String(error ?? "unknown");
     lastError = errMsg;
@@ -165,6 +230,12 @@ async function sendToAdmin(
       error: errMsg,
       errorStack: error instanceof Error ? error.stack : undefined,
     });
+    logStructuredEvent("INSURANCE_ADMIN_SEND_FAILED", {
+      leadId,
+      adminWaId: adminWaId.slice(0, 8) + "***", // Mask PII
+      error: errMsg,
+      attemptType: "direct_send",
+    }, "error");
     try {
       const templateName = Deno.env.get("WA_INSURANCE_ADMIN_TEMPLATE") ?? "insurance_admin_alert";
       const lang = Deno.env.get("WA_TEMPLATE_LANG") ?? "en";
@@ -177,10 +248,21 @@ async function sendToAdmin(
       });
       delivered = true;
       lastError = null;
+      logStructuredEvent("INSURANCE_ADMIN_SEND_SUCCESS", {
+        leadId,
+        adminWaId: adminWaId.slice(0, 8) + "***", // Mask PII
+        attemptType: "template_fallback",
+      }, "info");
     } catch (tplError) {
       const tplMsg = tplError instanceof Error ? tplError.message : String(tplError ?? "unknown");
       lastError = `${errMsg} | tpl:${tplMsg}`;
       console.error("insurance.admin_template_send_fail", { admin: adminWaId, error: tplMsg });
+      logStructuredEvent("INSURANCE_ADMIN_SEND_FAILED", {
+        leadId,
+        adminWaId: adminWaId.slice(0, 8) + "***", // Mask PII
+        error: tplMsg,
+        attemptType: "template_fallback",
+      }, "error");
     }
   }
 
@@ -195,6 +277,8 @@ async function sendToAdmin(
         extracted,
         lead_id: leadId,
         user_wa_id: userWaId,
+        resolved_targets_count: resolvedTargetsCount,
+        resolution_source: resolutionSource,
       },
       status: delivered ? "sent" : "queued",
       sent_at: delivered ? now : null,
@@ -283,9 +367,9 @@ export async function sendDirectAdminNotification(
   }
 }
 
-async function resolveAdminTargets(client: SupabaseClient): Promise<AdminTarget[]> {
+async function resolveAdminTargets(client: SupabaseClient): Promise<{ targets: AdminTarget[]; resolutionSource: string }> {
   const contacts = await fetchActiveContacts(client);
-  if (contacts.length) return contacts;
+  if (contacts.length) return { targets: contacts, resolutionSource: "insurance_admin_contacts" };
 
   const { data: admins, error } = await client
     .from("insurance_admins")
@@ -295,7 +379,7 @@ async function resolveAdminTargets(client: SupabaseClient): Promise<AdminTarget[
 
   if (error) {
     console.error("insurance.admin_fetch_fail", error);
-    return [];
+    return { targets: [], resolutionSource: "none" };
   }
 
   const mapped = (admins ?? [])
@@ -307,13 +391,16 @@ async function resolveAdminTargets(client: SupabaseClient): Promise<AdminTarget[
     }))
     .filter((entry) => entry.waId && entry.waId.length >= 8);
 
-  if (mapped.length) return mapped;
+  if (mapped.length) return { targets: mapped, resolutionSource: "insurance_admins" };
 
   const fallbackAdmins = getFallbackAdminIds();
-  return fallbackAdmins.map((waId) => ({
-    waId,
-    name: "fallback",
-  }));
+  return { 
+    targets: fallbackAdmins.map((waId) => ({
+      waId,
+      name: "fallback",
+    })), 
+    resolutionSource: fallbackAdmins.length > 0 ? "INSURANCE_ADMIN_FALLBACK_WA_IDS" : "none" 
+  };
 }
 
 async function fetchActiveContacts(client: SupabaseClient): Promise<AdminTarget[]> {
