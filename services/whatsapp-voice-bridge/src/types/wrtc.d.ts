@@ -32,6 +32,8 @@ declare module 'wrtc' {
   export class MediaStream {
     constructor();
     getTracks(): MediaStreamTrack[];
+    getAudioTracks(): MediaStreamTrack[];
+    getVideoTracks(): MediaStreamTrack[];
     addTrack(track: MediaStreamTrack): void;
   }
 
@@ -39,6 +41,7 @@ declare module 'wrtc' {
     kind: string;
     id: string;
     enabled: boolean;
+    stop(): void;
   }
 
   export interface RTCConfiguration {
@@ -75,5 +78,32 @@ declare module 'wrtc' {
 
   export interface RTCRtpSender {
     track: MediaStreamTrack | null;
+  }
+
+  // Nonstandard APIs
+  export const nonstandard: {
+    RTCAudioSink: typeof RTCAudioSink;
+    RTCAudioSource: typeof RTCAudioSource;
+    RTCVideoSink: any;
+    RTCVideoSource: any;
+    i420ToRgba: any;
+    rgbaToI420: any;
+  };
+
+  export interface AudioFrame {
+    samples: Int16Array;
+    sampleRate: number;
+  }
+
+  export class RTCAudioSink {
+    constructor(track: MediaStreamTrack);
+    ondata: ((frame: AudioFrame) => void) | null;
+    stop(): void;
+  }
+
+  export class RTCAudioSource {
+    constructor();
+    createTrack(): MediaStreamTrack;
+    onData(frame: AudioFrame): void;
   }
 }
