@@ -166,14 +166,14 @@ CREATE TRIGGER trg_update_last_location_at
 CREATE OR REPLACE FUNCTION auto_populate_geography()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Auto-populate pickup geography from lat/lng
+  -- Auto-populate pickup geometry from lat/lng (rides_trips uses GEOMETRY not GEOGRAPHY)
   IF NEW.pickup_latitude IS NOT NULL AND NEW.pickup_longitude IS NOT NULL THEN
-    NEW.pickup = ST_SetSRID(ST_MakePoint(NEW.pickup_longitude, NEW.pickup_latitude), 4326)::geography;
+    NEW.pickup = ST_SetSRID(ST_MakePoint(NEW.pickup_longitude, NEW.pickup_latitude), 4326);
   END IF;
   
-  -- Auto-populate dropoff geography from lat/lng
+  -- Auto-populate dropoff geometry from lat/lng
   IF NEW.dropoff_latitude IS NOT NULL AND NEW.dropoff_longitude IS NOT NULL THEN
-    NEW.dropoff = ST_SetSRID(ST_MakePoint(NEW.dropoff_longitude, NEW.dropoff_latitude), 4326)::geography;
+    NEW.dropoff = ST_SetSRID(ST_MakePoint(NEW.dropoff_longitude, NEW.dropoff_latitude), 4326);
   END IF;
   
   RETURN NEW;
@@ -269,35 +269,26 @@ CREATE TRIGGER trg_validate_coordinates
 -- Backfill missing geography data for existing trips
 -- ============================================================================
 
--- Fix rides_trips
+-- Fix rides_trips (uses GEOMETRY not GEOGRAPHY)
 UPDATE rides_trips
-SET pickup = ST_SetSRID(ST_MakePoint(pickup_longitude, pickup_latitude), 4326)::geography
+SET pickup = ST_SetSRID(ST_MakePoint(pickup_longitude, pickup_latitude), 4326)
 WHERE pickup IS NULL 
   AND pickup_latitude IS NOT NULL 
   AND pickup_longitude IS NOT NULL;
 
 UPDATE rides_trips
-SET dropoff = ST_SetSRID(ST_MakePoint(dropoff_longitude, dropoff_latitude), 4326)::geography
+SET dropoff = ST_SetSRID(ST_MakePoint(dropoff_longitude, dropoff_latitude), 4326)
 WHERE dropoff IS NULL 
   AND dropoff_latitude IS NOT NULL 
   AND dropoff_longitude IS NOT NULL;
 
--- Fix mobility_trips
-UPDATE mobility_trips
-SET pickup_geog = ST_SetSRID(ST_MakePoint(pickup_lng, pickup_lat), 4326)::geography
-WHERE pickup_geog IS NULL 
-  AND pickup_lat IS NOT NULL 
-  AND pickup_lng IS NOT NULL;
-
-UPDATE mobility_trips
-SET dropoff_geog = ST_SetSRID(ST_MakePoint(dropoff_lng, dropoff_lat), 4326)::geography
-WHERE dropoff_geog IS NULL 
-  AND dropoff_lat IS NOT NULL 
-  AND dropoff_lng IS NOT NULL;
+-- mobility_trips uses GENERATED columns - they auto-populate, no manual UPDATE needed
 
 -- ============================================================================
 -- Create monitoring view for location health
 -- ============================================================================
+
+DROP VIEW IF EXISTS mobility_location_health CASCADE;
 
 CREATE OR REPLACE VIEW mobility_location_health AS
 SELECT 
@@ -315,10 +306,10 @@ SELECT
   'mobility_trips',
   COUNT(*),
   COUNT(CASE WHEN pickup_geog IS NULL AND pickup_lat IS NOT NULL THEN 1 END),
-  COUNT(CASE WHEN updated_at > now() - interval '30 minutes' THEN 1 END),
-  COUNT(CASE WHEN updated_at > now() - interval '60 minutes' THEN 1 END),
-  COUNT(CASE WHEN updated_at <= now() - interval '60 minutes' THEN 1 END),
-  AVG(EXTRACT(EPOCH FROM (now() - updated_at)) / 60)::numeric(10,2)
+  COUNT(CASE WHEN COALESCE(last_location_update, created_at) > now() - interval '30 minutes' THEN 1 END),
+  COUNT(CASE WHEN COALESCE(last_location_update, created_at) > now() - interval '60 minutes' THEN 1 END),
+  COUNT(CASE WHEN COALESCE(last_location_update, created_at) <= now() - interval '60 minutes' THEN 1 END),
+  AVG(EXTRACT(EPOCH FROM (now() - COALESCE(last_location_update, created_at))) / 60)::numeric(10,2)
 FROM mobility_trips
 WHERE status = 'open';
 

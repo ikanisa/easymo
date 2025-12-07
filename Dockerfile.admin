@@ -1,0 +1,60 @@
+# Multi-stage build for admin-app in pnpm monorepo
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Install pnpm
+RUN npm install -g pnpm@10.18.3
+
+# Copy workspace and TypeScript configuration files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY tsconfig*.json ./
+
+# Copy all packages and admin-app
+COPY packages ./packages
+COPY admin-app ./admin-app
+
+# Install all dependencies (includes workspace packages)
+RUN pnpm install --frozen-lockfile
+
+# Build shared workspace packages that admin-app depends on
+RUN pnpm --filter @va/shared build
+RUN pnpm --filter @easymo/commons build
+RUN pnpm --filter @easymo/ui build
+
+# Build admin-app with standalone output
+WORKDIR /app/admin-app
+
+# Set dummy build-time env vars (actual values provided at runtime via Cloud Run)
+ENV NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder-anon-key
+ENV SUPABASE_URL=https://placeholder.supabase.co
+ENV SUPABASE_SERVICE_ROLE_KEY=placeholder-service-role-key
+
+RUN pnpm build
+
+# Production stage
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy the standalone output
+COPY --from=builder /app/admin-app/.next/standalone ./
+COPY --from=builder /app/admin-app/.next/static ./admin-app/.next/static
+COPY --from=builder /app/admin-app/public ./admin-app/public
+
+USER nextjs
+
+EXPOSE 8080
+
+ENV PORT=8080
+ENV HOSTNAME="0.0.0.0"
+
+# The standalone output creates server.js in admin-app directory
+CMD ["node", "admin-app/server.js"]
