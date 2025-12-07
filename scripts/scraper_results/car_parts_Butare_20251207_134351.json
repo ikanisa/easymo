@@ -1,0 +1,34 @@
+[
+  {
+    "name": "K-spare Parts Ltd",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Auto parts store",
+    "address": "rwanda, Butare",
+    "phone": "+250788765439",
+    "website": "",
+    "place_id": "0x19c30d068175103f:0x64e1d973d2c51442",
+    "external_id": "0x19c30d068175103f:0x64e1d973d2c51442",
+    "category": "car parts",
+    "city": "Butare",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T12:43:35.360312"
+  },
+  {
+    "name": "Piece De Rechange Chez Omyzo",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Auto parts store",
+    "address": "rwanda, Butare",
+    "phone": "+250788532090",
+    "website": "",
+    "place_id": "0x19c30dc245faa1ad:0x7031d99f7c1a8094",
+    "external_id": "0x19c30dc245faa1ad:0x7031d99f7c1a8094",
+    "category": "car parts",
+    "city": "Butare",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T12:43:51.199731"
+  }
+]

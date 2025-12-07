@@ -1,0 +1,245 @@
+name: Deploy to Google Cloud Run
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'admin-app/**'
+      - 'services/**'
+      - '.github/workflows/gcp-deploy-services.yml'
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to deploy'
+        required: true
+        type: choice
+        options:
+          - all
+          - admin
+          - voice-bridge
+          - voice-gateway
+          - vendor-service
+          - webrtc-bridge
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || 'easymoai' }}
+  REGION: ${{ secrets.GCP_REGION || 'europe-west1' }}
+  REGISTRY: ${{ secrets.GCP_REGION || 'europe-west1' }}-docker.pkg.dev
+
+jobs:
+  # =========================================================================
+  # Build and Deploy Admin PWA
+  # =========================================================================
+  deploy-admin:
+    if: |
+      (github.event_name == 'workflow_dispatch' && 
+       (github.event.inputs.service == 'all' || github.event.inputs.service == 'admin')) ||
+      (github.event_name == 'push' && contains(join(github.event.commits.*.modified, ' '), 'admin-app/'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGISTRY }}
+      
+      - name: Build and Push Image
+        run: |
+          cd admin-app
+          IMAGE_TAG=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/easymo-repo/admin:${{ github.sha }}
+          docker build -t $IMAGE_TAG .
+          docker push $IMAGE_TAG
+          docker tag $IMAGE_TAG ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/easymo-repo/admin:latest
+          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/easymo-repo/admin:latest
+      
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy easymo-admin \
+            --image ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/easymo-repo/admin:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --allow-unauthenticated=false \
+            --memory 1Gi \
+            --cpu 1 \
+            --min-instances 0 \
+            --max-instances 10 \
+            --port 3000 \
+            --set-env-vars "NODE_ENV=production" \
+            --set-env-vars "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.SUPABASE_URL }}" \
+            --set-env-vars "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" \
+            --quiet
+
+  # =========================================================================
+  # Build and Deploy Voice Bridge
+  # =========================================================================
+  deploy-voice-bridge:
+    if: |
+      (github.event_name == 'workflow_dispatch' && 
+       (github.event.inputs.service == 'all' || github.event.inputs.service == 'voice-bridge')) ||
+      (github.event_name == 'push' && contains(join(github.event.commits.*.modified, ' '), 'services/whatsapp-voice-bridge/'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGISTRY }}
+      
+      - name: Build and Push Image
+        run: |
+          cd services/whatsapp-voice-bridge
+          IMAGE_TAG=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/easymo-repo/voice-bridge:${{ github.sha }}
+          docker build -t $IMAGE_TAG .
+          docker push $IMAGE_TAG
+          docker tag $IMAGE_TAG ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/easymo-repo/voice-bridge:latest
+          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/easymo-repo/voice-bridge:latest
+      
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy easymo-voice-bridge \
+            --image ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/easymo-repo/voice-bridge:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --memory 512Mi \
+            --cpu 1 \
+            --timeout 300 \
+            --concurrency 80 \
+            --min-instances 0 \
+            --max-instances 10 \
+            --port 8080 \
+            --set-env-vars "NODE_ENV=production,LOG_LEVEL=info,OPENAI_REALTIME_MODEL=gpt-4o-realtime-preview,SUPABASE_URL=${{ secrets.SUPABASE_URL }}" \
+            --update-secrets "OPENAI_API_KEY=openai-api-key:latest,SUPABASE_SERVICE_ROLE_KEY=supabase-service-role-key:latest" \
+            --quiet
+
+  # =========================================================================
+  # Build and Deploy Voice Gateway
+  # =========================================================================
+  deploy-voice-gateway:
+    if: |
+      (github.event_name == 'workflow_dispatch' && 
+       (github.event.inputs.service == 'all' || github.event.inputs.service == 'voice-gateway')) ||
+      (github.event_name == 'push' && contains(join(github.event.commits.*.modified, ' '), 'services/voice-gateway/'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGISTRY }}
+      
+      - name: Build and Push Image
+        run: |
+          cd services/voice-gateway
+          IMAGE_TAG=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/easymo-repo/voice-gateway:${{ github.sha }}
+          docker build -t $IMAGE_TAG .
+          docker push $IMAGE_TAG
+          docker tag $IMAGE_TAG ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/easymo-repo/voice-gateway:latest
+          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/easymo-repo/voice-gateway:latest
+      
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy easymo-voice-gateway \
+            --image ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/easymo-repo/voice-gateway:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --memory 512Mi \
+            --cpu 1 \
+            --timeout 300 \
+            --concurrency 50 \
+            --min-instances 0 \
+            --max-instances 10 \
+            --port 8080 \
+            --set-env-vars "NODE_ENV=production,SUPABASE_URL=${{ secrets.SUPABASE_URL }}" \
+            --update-secrets "OPENAI_API_KEY=openai-api-key:latest,SUPABASE_SERVICE_ROLE_KEY=supabase-service-role-key:latest" \
+            --quiet
+
+  # =========================================================================
+  # Build and Deploy Vendor Service
+  # =========================================================================
+  deploy-vendor-service:
+    if: |
+      (github.event_name == 'workflow_dispatch' && 
+       (github.event.inputs.service == 'all' || github.event.inputs.service == 'vendor-service')) ||
+      (github.event_name == 'push' && contains(join(github.event.commits.*.modified, ' '), 'services/vendor-service/'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGISTRY }}
+      
+      - name: Build and Push Image
+        run: |
+          cd services/vendor-service
+          IMAGE_TAG=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/easymo-repo/vendor-service:${{ github.sha }}
+          docker build -t $IMAGE_TAG .
+          docker push $IMAGE_TAG
+          docker tag $IMAGE_TAG ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/easymo-repo/vendor-service:latest
+          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/easymo-repo/vendor-service:latest
+      
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy easymo-vendor-service \
+            --image ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/easymo-repo/vendor-service:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --memory 256Mi \
+            --cpu 1 \
+            --min-instances 0 \
+            --max-instances 5 \
+            --port 8080 \
+            --set-env-vars "NODE_ENV=production,SUPABASE_URL=${{ secrets.SUPABASE_URL }}" \
+            --update-secrets "SUPABASE_SERVICE_ROLE_KEY=supabase-service-role-key:latest" \
+            --quiet

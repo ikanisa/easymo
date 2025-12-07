@@ -1,0 +1,13 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-f'
+      - 'Dockerfile'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/easymoai/easymo-repo/admin:latest'
+      - '.'
+    dir: 'admin-app'
+images:
+  - 'europe-west1-docker.pkg.dev/easymoai/easymo-repo/admin:latest'
+timeout: 1200s
