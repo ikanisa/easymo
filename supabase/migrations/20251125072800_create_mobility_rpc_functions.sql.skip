@@ -154,7 +154,7 @@ BEGIN
       ST_SetSRID(ST_MakePoint(p_longitude, p_latitude), 4326)::geography
     ) as distance_meters,
     p.phone,
-    p.full_name,
+    p.display_name,
     COALESCE(p.metadata->>'vehicle_type', 'standard') as vehicle_type
   FROM public.profiles p
   INNER JOIN public.rides_driver_status rds ON rds.driver_id = p.id

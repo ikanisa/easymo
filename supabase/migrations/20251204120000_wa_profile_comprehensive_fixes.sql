@@ -304,7 +304,7 @@ END $$;
 CREATE OR REPLACE VIEW public.active_profile_users AS
 SELECT 
   p.user_id,
-  p.full_name,
+  p.display_name,
   p.phone_number,
   p.language,
   wb.balance as wallet_balance,
@@ -325,7 +325,7 @@ LEFT JOIN public.saved_locations sl ON sl.user_id = p.user_id
 LEFT JOIN public.businesses b ON b.owner_user_id = p.user_id AND b.deleted_at IS NULL
 LEFT JOIN public.jobs j ON j.creator_user_id = p.user_id AND j.deleted_at IS NULL
 LEFT JOIN public.properties pr ON pr.owner_user_id = p.user_id AND pr.deleted_at IS NULL
-GROUP BY p.user_id, p.full_name, p.phone_number, p.language, wb.balance, p.created_at
+GROUP BY p.user_id, p.display_name, p.phone_number, p.language, wb.balance, p.created_at
 ORDER BY last_activity DESC NULLS LAST;
 
 COMMENT ON VIEW public.active_profile_users IS

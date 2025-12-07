@@ -105,7 +105,7 @@ BEGIN
     (t.vehicle_type = v_vehicle_type) AS is_exact_match,
     EXTRACT(EPOCH FROM (now() - COALESCE(t.last_location_at, t.created_at)))::integer / 60 AS location_age_minutes,
     t.number_plate,
-    p.full_name AS driver_name,
+    COALESCE(p.display_name, p.phone_number, 'Driver') AS driver_name,
     'driver'::text AS role
   FROM public.rides_trips t
   INNER JOIN public.profiles p ON p.user_id = t.creator_user_id
@@ -225,7 +225,7 @@ BEGIN
     (t.vehicle_type = v_vehicle_type) AS is_exact_match,
     EXTRACT(EPOCH FROM (now() - COALESCE(t.last_location_at, t.created_at)))::integer / 60 AS location_age_minutes,
     NULL::text AS number_plate,  -- Passengers don't have plates
-    p.full_name AS driver_name,  -- Actually passenger name, but keeping field name for consistency
+    COALESCE(p.display_name, p.phone_number, 'Driver') AS driver_name,  -- Actually passenger name, but keeping field name for consistency
     'passenger'::text AS role
   FROM public.rides_trips t
   INNER JOIN public.profiles p ON p.user_id = t.creator_user_id

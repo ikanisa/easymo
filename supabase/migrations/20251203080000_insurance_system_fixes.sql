@@ -232,7 +232,7 @@ BEGIN
     dic.policy_expiry,
     dic.created_at,
     COALESCE(p.phone_number, p.wa_id) AS user_phone,
-    p.full_name AS user_name
+    COALESCE(p.display_name, p.phone_number, 'Unknown') AS user_name
   FROM public.driver_insurance_certificates dic
   INNER JOIN public.profiles p ON p.user_id = dic.user_id
   WHERE dic.status = 'pending'
@@ -272,7 +272,7 @@ BEGIN
     imr.status,
     imr.created_at,
     COALESCE(p.phone_number, p.wa_id) AS user_phone,
-    p.full_name AS user_name
+    COALESCE(p.display_name, p.phone_number, 'Unknown') AS user_name
   FROM public.insurance_manual_reviews imr
   INNER JOIN public.profiles p ON p.user_id = imr.user_id
   WHERE imr.status = p_status
@@ -305,7 +305,7 @@ BEGIN
     dic.vehicle_plate,
     dic.policy_expiry,
     COALESCE(p.phone_number, p.wa_id) AS user_phone,
-    p.full_name AS user_name
+    COALESCE(p.display_name, p.phone_number, 'Unknown') AS user_name
   FROM public.driver_insurance_certificates dic
   INNER JOIN public.profiles p ON p.user_id = dic.user_id
   WHERE dic.status = 'approved'
