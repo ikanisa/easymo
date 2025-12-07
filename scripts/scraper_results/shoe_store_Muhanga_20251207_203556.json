@@ -1,0 +1,34 @@
+[
+  {
+    "name": "RW Footwear Hub – Sneakers, Sport, Casual & Classic Shoes",
+    "rating": 4.9,
+    "review_count": 69,
+    "category_type": "Shoe store",
+    "address": "6GCG3344+5H Downtown Building, Kigali",
+    "phone": "+250782061537",
+    "website": "",
+    "place_id": "0x19dca56e99b9d64b:0x5995dc7cc54371af",
+    "external_id": "0x19dca56e99b9d64b:0x5995dc7cc54371af",
+    "category": "shoe store",
+    "city": "Muhanga",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T19:35:40.604343"
+  },
+  {
+    "name": "MUHANGA Shoes Making & Repairing",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Shoe factory",
+    "address": "WP7X+MVX, Stade Muhanga, Muhanga",
+    "phone": "+250783215047",
+    "website": "",
+    "place_id": "0x19dccb0fe2016c87:0x596fee03a57d1f67",
+    "external_id": "0x19dccb0fe2016c87:0x596fee03a57d1f67",
+    "category": "shoe store",
+    "city": "Muhanga",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T19:35:56.398676"
+  }
+]

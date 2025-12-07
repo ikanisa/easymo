@@ -1,0 +1,50 @@
+[
+  {
+    "name": "luxe classic store",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Clothing store",
+    "address": "gahogo near plateau du centre, Muhanga",
+    "phone": "+250780791919",
+    "website": "",
+    "place_id": "0x19dccb63dd029bf9:0x991eb1d3cf489b23",
+    "external_id": "0x19dccb63dd029bf9:0x991eb1d3cf489b23",
+    "category": "clothing store",
+    "city": "Muhanga",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T19:33:38.481251"
+  },
+  {
+    "name": "Boutique La Difference",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Clothing store",
+    "address": "Muhanga",
+    "phone": "+250788486148",
+    "website": "",
+    "place_id": "0x19dccbaa44cca8a1:0x8a20b23dd7c08a17",
+    "external_id": "0x19dccbaa44cca8a1:0x8a20b23dd7c08a17",
+    "category": "clothing store",
+    "city": "Muhanga",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T19:34:07.137505"
+  },
+  {
+    "name": "Ntakwasa collection",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Clothing store",
+    "address": "WQ82+XF9, Muhanga",
+    "phone": "+250732351102",
+    "website": "https://www.google.com/url?q=https://www.instagram.com/ntakwasa_collection%3Figsh%3DMWVheDhpc2Z3c2FoOQ%3D%3D&opi=79508299&sa=U&ved=0ahUKEwiUqZaZnKyRAxU0Q6QEHcHODWkQ61gIDygM&usg=AOvVaw2Ovd-HH5ZzMrRkxPfxJeHO",
+    "place_id": "0x19dccb003efc58d7:0xeed943b0416c8f3d",
+    "external_id": "0x19dccb003efc58d7:0xeed943b0416c8f3d",
+    "category": "clothing store",
+    "city": "Muhanga",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T19:34:19.878811"
+  }
+]

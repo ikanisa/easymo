@@ -1,0 +1,50 @@
+[
+  {
+    "name": "Pfunda classic barber shop",
+    "rating": 5.0,
+    "review_count": 1,
+    "category_type": "Barber shop",
+    "address": "Kivu belt road-ezine-pfunda Rugerero- rubavu, Rugerero",
+    "phone": "+250796049970",
+    "website": "",
+    "place_id": "0x19dd053c9f25fd2b:0x634ecce21d9622c3",
+    "external_id": "0x19dd053c9f25fd2b:0x634ecce21d9622c3",
+    "category": "barbershop",
+    "city": "Gisenyi",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T15:10:19.127540"
+  },
+  {
+    "name": "Happy Care Salon",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Beauty salon",
+    "address": "labrevis & labamba street, Gisenyi",
+    "phone": "+250790137269",
+    "website": "",
+    "place_id": "0x4fe68bbbae8f1849:0x6ae21ef48acc617c",
+    "external_id": "0x4fe68bbbae8f1849:0x6ae21ef48acc617c",
+    "category": "barbershop",
+    "city": "Gisenyi",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T15:10:34.912875"
+  },
+  {
+    "name": "HOUSE OF NAILS",
+    "rating": 4.7,
+    "review_count": 3,
+    "category_type": "Nail salon",
+    "address": "Gisenyi Kigali, Avenue du Commerce, Gisenyi",
+    "phone": "+250784012488",
+    "website": "",
+    "place_id": "0x19dd0530c541952b:0x19d1ca910daf4e30",
+    "external_id": "0x19dd0530c541952b:0x19d1ca910daf4e30",
+    "category": "barbershop",
+    "city": "Gisenyi",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T15:10:44.685197"
+  }
+]

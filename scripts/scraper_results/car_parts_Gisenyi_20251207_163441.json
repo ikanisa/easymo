@@ -1,0 +1,50 @@
+[
+  {
+    "name": "Garage MEDECAR LTD",
+    "rating": 4.5,
+    "review_count": 4,
+    "category_type": "Auto repair shop",
+    "address": "8737+67W, Gisenyi",
+    "phone": "+250788359625",
+    "website": "https://www.google.com/url?q=http://garagemedecar.com/&opi=79508299&sa=U&ved=0ahUKEwjImrjH5quRAxVQOfsDHTbiFdcQ61gIESgN&usg=AOvVaw2fhg1kpijmNRj1goK2ahsY",
+    "place_id": "0x19dd055ebd303b7d:0xecb05e75a96c898c",
+    "external_id": "0x19dd055ebd303b7d:0xecb05e75a96c898c",
+    "category": "car parts",
+    "city": "Gisenyi",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T15:34:15.564897"
+  },
+  {
+    "name": "GERMAN EXPERT GARAGE",
+    "rating": 4.1,
+    "review_count": 8,
+    "category_type": "Auto repair shop",
+    "address": "Rubavu",
+    "phone": "+250788653350",
+    "website": "",
+    "place_id": "0x19dd05a82a96df93:0xd099849a2186c93",
+    "external_id": "0x19dd05a82a96df93:0xd099849a2186c93",
+    "category": "car parts",
+    "city": "Gisenyi",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T15:34:25.401216"
+  },
+  {
+    "name": "Jeannine",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Auto parts store",
+    "address": "876V+76P, Rubavu",
+    "phone": "+250780126577",
+    "website": "",
+    "place_id": "0x19dd0500383548f7:0x43d07796b367aae2",
+    "external_id": "0x19dd0500383548f7:0x43d07796b367aae2",
+    "category": "car parts",
+    "city": "Gisenyi",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T15:34:41.251781"
+  }
+]

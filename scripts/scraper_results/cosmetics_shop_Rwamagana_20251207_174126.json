@@ -1,0 +1,34 @@
+[
+  {
+    "name": "MUGABO COSMETICS SHOP",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Cosmetics store",
+    "address": "Near the ADEPR Church, plage, main street, Rwamagana",
+    "phone": "+250788885779",
+    "website": "",
+    "place_id": "0x19db4538aa03d12f:0x14572024e8af5382",
+    "external_id": "0x19db4538aa03d12f:0x14572024e8af5382",
+    "category": "cosmetics shop",
+    "city": "Rwamagana",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T16:41:10.124863"
+  },
+  {
+    "name": "GNVG COMPANY LTD",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Cosmetics store",
+    "address": "4F63+32, Muhazi",
+    "phone": "+250783322560",
+    "website": "",
+    "place_id": "0x19db4165335da1a9:0x22fbdac2639ad052",
+    "external_id": "0x19db4165335da1a9:0x22fbdac2639ad052",
+    "category": "cosmetics shop",
+    "city": "Rwamagana",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T16:41:25.967928"
+  }
+]

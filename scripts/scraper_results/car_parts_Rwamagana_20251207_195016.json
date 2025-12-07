@@ -1,0 +1,18 @@
+[
+  {
+    "name": "Spare parts",
+    "rating": 5.0,
+    "review_count": 1,
+    "category_type": "Auto parts store",
+    "address": "29R4+XX, Bicumbi",
+    "phone": "+250789786398",
+    "website": "",
+    "place_id": "0x19db45fbcb97ea57:0x4b772d7ee3546d6a",
+    "external_id": "0x19db45fbcb97ea57:0x4b772d7ee3546d6a",
+    "category": "car parts",
+    "city": "Rwamagana",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T18:49:57.460125"
+  }
+]

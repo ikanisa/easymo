@@ -1,0 +1,34 @@
+[
+  {
+    "name": "Indatwa Garage",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Mechanic",
+    "address": "3C2P+5J2, Rwamagana",
+    "phone": "+250788412241",
+    "website": "",
+    "place_id": "0x19db47007eb46f15:0x7d10c589b80fb3c5",
+    "external_id": "0x19db47007eb46f15:0x7d10c589b80fb3c5",
+    "category": "mechanic",
+    "city": "Rwamagana",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T18:51:49.621791"
+  },
+  {
+    "name": "VIP Garage",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Mechanic",
+    "address": "3C2P+2HH, Rwamagana",
+    "phone": "+250788497031",
+    "website": "",
+    "place_id": "0x19db4700205f2ebf:0x222d1602811bc3d3",
+    "external_id": "0x19db4700205f2ebf:0x222d1602811bc3d3",
+    "category": "mechanic",
+    "city": "Rwamagana",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T18:52:05.430867"
+  }
+]

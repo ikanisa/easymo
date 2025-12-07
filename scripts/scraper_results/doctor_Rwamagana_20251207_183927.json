@@ -1,0 +1,50 @@
+[
+  {
+    "name": "St Therese clinic",
+    "rating": 4.7,
+    "review_count": 6,
+    "category_type": "Medical clinic",
+    "address": "Rwamagana",
+    "phone": "+250789388306",
+    "website": "",
+    "place_id": "0x19db47f7c233af73:0x5ea457697fca00e7",
+    "external_id": "0x19db47f7c233af73:0x5ea457697fca00e7",
+    "category": "doctor",
+    "city": "Rwamagana",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T17:38:20.363888"
+  },
+  {
+    "name": "St simon medical clinic",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Medical clinic",
+    "address": "rwanda, Rwamagana",
+    "phone": "+250788544691",
+    "website": "",
+    "place_id": "0x19db4582b97b19fd:0x457e194508353a2f",
+    "external_id": "0x19db4582b97b19fd:0x457e194508353a2f",
+    "category": "doctor",
+    "city": "Rwamagana",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T17:38:48.947595"
+  },
+  {
+    "name": "Ivuriro humura ltd",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Medical clinic",
+    "address": "2CVP+6R6, Rwamagana",
+    "phone": "+250786245163",
+    "website": "",
+    "place_id": "0x19db47c77b3b6443:0x8539b0059b6761b4",
+    "external_id": "0x19db47c77b3b6443:0x8539b0059b6761b4",
+    "category": "doctor",
+    "city": "Rwamagana",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T17:39:14.474894"
+  }
+]

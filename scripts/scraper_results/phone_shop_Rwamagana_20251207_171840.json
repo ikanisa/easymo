@@ -1,0 +1,18 @@
+[
+  {
+    "name": "Diamond Infinix Shop",
+    "rating": 4.5,
+    "review_count": 2,
+    "category_type": "Cell phone store",
+    "address": "Rwamagana",
+    "phone": "+250785548717",
+    "website": "",
+    "place_id": "0x19db4588e47cb13f:0x77ee417a3f32872b",
+    "external_id": "0x19db4588e47cb13f:0x77ee417a3f32872b",
+    "category": "phone shop",
+    "city": "Rwamagana",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T16:18:02.812281"
+  }
+]
