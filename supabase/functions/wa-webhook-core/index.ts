@@ -8,6 +8,7 @@ import { checkRateLimit, cleanupRateLimitState } from "../_shared/service-resili
 import { maskPhone } from "../_shared/phone-utils.ts";
 import { logError } from "../_shared/correlation-logging.ts";
 import { storeDLQEntry } from "../_shared/dlq-manager.ts";
+import { checkRequiredEnv, REQUIRED_CORE_VARS } from "../_shared/env-check.ts";
 // Phase 2: Enhanced security modules
 import { createSecurityMiddleware } from "../_shared/security/middleware.ts";
 import { verifyWebhookRequest } from "../_shared/security/signature.ts";
@@ -94,6 +95,41 @@ serve(async (req: Request): Promise<Response> => {
       log("CORE_HEALTH_ERROR", { error: message }, "error");
       return json({ status: "unhealthy", service: "wa-webhook-core", error: message }, { status: 503 });
     }
+  }
+
+  // Configuration check endpoint
+  if (url.pathname === "/config-check" || url.pathname.endsWith("/config-check")) {
+    // Use the env-check utility to validate required vars
+    const envCheck = checkRequiredEnv(REQUIRED_CORE_VARS);
+    
+    const configStatus = {
+      service: "wa-webhook-core",
+      timestamp: new Date().toISOString(),
+      environment: {
+        // Core Supabase
+        SUPABASE_URL: !!Deno.env.get("SUPABASE_URL"),
+        SUPABASE_SERVICE_ROLE_KEY: !!Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
+        
+        // WhatsApp
+        WA_PHONE_ID: !!Deno.env.get("WA_PHONE_ID") || !!Deno.env.get("WHATSAPP_PHONE_NUMBER_ID"),
+        WA_TOKEN: !!Deno.env.get("WA_TOKEN") || !!Deno.env.get("WHATSAPP_ACCESS_TOKEN"),
+        WA_APP_SECRET: !!Deno.env.get("WA_APP_SECRET") || !!Deno.env.get("WHATSAPP_APP_SECRET"),
+        WA_VERIFY_TOKEN: !!Deno.env.get("WA_VERIFY_TOKEN") || !!Deno.env.get("WHATSAPP_VERIFY_TOKEN"),
+        
+        // AI Providers
+        OPENAI_API_KEY: !!Deno.env.get("OPENAI_API_KEY"),
+        GEMINI_API_KEY: !!Deno.env.get("GEMINI_API_KEY"),
+        
+        // Optional
+        UPSTASH_REDIS_URL: !!Deno.env.get("UPSTASH_REDIS_URL"),
+        UPSTASH_REDIS_TOKEN: !!Deno.env.get("UPSTASH_REDIS_TOKEN"),
+      },
+      missing: envCheck.missing,
+      warnings: envCheck.warnings,
+    };
+    
+    log("CORE_CONFIG_CHECK", { missing: configStatus.missing, warnings: configStatus.warnings });
+    return json(configStatus, { status: configStatus.missing.length > 0 ? 503 : 200 });
   }
 
   // WhatsApp verification handshake (GET)
