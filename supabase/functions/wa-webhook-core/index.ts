@@ -8,6 +8,7 @@ import { checkRateLimit, cleanupRateLimitState } from "../_shared/service-resili
 import { maskPhone } from "../_shared/phone-utils.ts";
 import { logError } from "../_shared/correlation-logging.ts";
 import { storeDLQEntry } from "../_shared/dlq-manager.ts";
+import { checkRequiredEnv, REQUIRED_CORE_VARS } from "../_shared/env-check.ts";
 // Phase 2: Enhanced security modules
 import { createSecurityMiddleware } from "../_shared/security/middleware.ts";
 import { verifyWebhookRequest } from "../_shared/security/signature.ts";
@@ -98,6 +99,9 @@ serve(async (req: Request): Promise<Response> => {
 
   // Configuration check endpoint
   if (url.pathname === "/config-check" || url.pathname.endsWith("/config-check")) {
+    // Use the env-check utility to validate required vars
+    const envCheck = checkRequiredEnv(REQUIRED_CORE_VARS);
+    
     const configStatus = {
       service: "wa-webhook-core",
       timestamp: new Date().toISOString(),
@@ -120,23 +124,11 @@ serve(async (req: Request): Promise<Response> => {
         UPSTASH_REDIS_URL: !!Deno.env.get("UPSTASH_REDIS_URL"),
         UPSTASH_REDIS_TOKEN: !!Deno.env.get("UPSTASH_REDIS_TOKEN"),
       },
-      missing: [] as string[],
+      missing: envCheck.missing,
+      warnings: envCheck.warnings,
     };
     
-    // Check required vars
-    const required = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "WA_PHONE_ID", "WA_TOKEN", "WA_APP_SECRET", "WA_VERIFY_TOKEN"];
-    for (const key of required) {
-      if (!configStatus.environment[key as keyof typeof configStatus.environment]) {
-        configStatus.missing.push(key);
-      }
-    }
-    
-    // Warn about AI providers
-    if (!configStatus.environment.OPENAI_API_KEY && !configStatus.environment.GEMINI_API_KEY) {
-      configStatus.missing.push("OPENAI_API_KEY or GEMINI_API_KEY (OCR will fail)");
-    }
-    
-    log("CORE_CONFIG_CHECK", { missing: configStatus.missing });
+    log("CORE_CONFIG_CHECK", { missing: configStatus.missing, warnings: configStatus.warnings });
     return json(configStatus, { status: configStatus.missing.length > 0 ? 503 : 200 });
   }
 
