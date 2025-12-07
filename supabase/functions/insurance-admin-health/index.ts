@@ -14,6 +14,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.76.1";
 import { logStructuredEvent } from "../_shared/observability.ts";
 
+// Constants
+const MIN_WHATSAPP_ID_LENGTH = 8;
+
 interface HealthCheckResult {
   healthy: boolean;
   timestamp: string;
@@ -132,7 +135,7 @@ serve(async (req: Request): Promise<Response> => {
         result.sources.insurance_admins.error = error.message;
       } else {
         const validAdmins = (admins ?? []).filter(
-          (a) => a.wa_id && String(a.wa_id).trim().length >= 8
+          (a) => a.wa_id && String(a.wa_id).trim().length >= MIN_WHATSAPP_ID_LENGTH
         );
         result.sources.insurance_admins.count = validAdmins.length;
         result.sources.insurance_admins.configured = validAdmins.length > 0;
@@ -147,7 +150,7 @@ serve(async (req: Request): Promise<Response> => {
     if (fallbackIds.trim()) {
       const ids = fallbackIds.split(",")
         .map((id) => id.trim())
-        .filter((id) => id.length >= 8);
+        .filter((id) => id.length >= MIN_WHATSAPP_ID_LENGTH);
       result.sources.env_fallback.configured = ids.length > 0;
       result.sources.env_fallback.count = ids.length;
       // Don't expose the actual IDs, just indicate they're set

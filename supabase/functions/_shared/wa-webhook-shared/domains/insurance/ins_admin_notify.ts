@@ -3,6 +3,9 @@ import { sendText } from "../../wa/client.ts";
 import type { InsuranceExtraction } from "./ins_normalize.ts";
 import { logStructuredEvent } from "../../../observability.ts";
 
+// Constants
+const MIN_WHATSAPP_ID_LENGTH = 8;
+
 export interface AdminNotificationPayload {
   leadId: string;
   userWaId: string;
@@ -66,9 +69,10 @@ function normalizeAdminWaId(value: string | null | undefined): string {
 function getFallbackAdminIds(): string[] {
   const raw = Deno.env.get("INSURANCE_ADMIN_FALLBACK_WA_IDS") ?? "";
   if (!raw.trim()) return [];
+  const MIN_WHATSAPP_ID_LENGTH = 8;
   return raw.split(",")
     .map((entry) => normalizeAdminWaId(entry))
-    .filter((entry) => entry.length >= 8);
+    .filter((entry) => entry.length >= MIN_WHATSAPP_ID_LENGTH);
 }
 
 export async function notifyInsuranceAdmins(
@@ -94,15 +98,18 @@ export async function notifyInsuranceAdmins(
       message: "No active admin contacts found in any source. Please configure admin contacts.",
     }, "error");
     
-    // Insert critical alert to notifications table for monitoring
+    // Insert critical alert to notifications table for ADMIN monitoring (not sent to user)
+    // This creates an internal alert record that can be monitored by ops team
     try {
+      const systemAlertWaId = Deno.env.get("SYSTEM_ALERT_ADMIN_WA_ID") ?? "+250000000000"; // Placeholder
       await client.from("notifications").insert({
-        to_wa_id: userWaId,
+        to_wa_id: systemAlertWaId, // System admin contact, NOT the user
         notification_type: "system_alert",
         payload: {
           alert_type: "CRITICAL",
           event: "INSURANCE_ADMIN_NO_TARGETS",
           leadId,
+          userWaId: userWaId.slice(0, 8) + "***", // Masked
           message: "Insurance admin notification failed: No admin contacts configured. Please add contacts to insurance_admin_contacts table or set INSURANCE_ADMIN_FALLBACK_WA_IDS environment variable.",
           fix_instructions: [
             "Add admin contacts to insurance_admin_contacts table with contact_type='whatsapp' and is_active=true",
@@ -136,7 +143,15 @@ export async function notifyInsuranceAdmins(
 
   // Send to ALL admins concurrently (not sequentially)
   const results = await Promise.allSettled(
-    dedupedTargets.map((admin) => sendToAdmin(client, admin, message, leadId, userWaId, extracted, resolutionSource, dedupedTargets.length))
+    dedupedTargets.map((admin) => sendToAdmin(client, {
+      admin,
+      message,
+      leadId,
+      userWaId,
+      extracted,
+      resolutionSource,
+      resolvedTargetsCount: dedupedTargets.length,
+    }))
   );
 
   // Aggregate results
@@ -179,17 +194,23 @@ export async function notifyInsuranceAdmins(
   return { sent, failed, errors };
 }
 
+// Options for sendToAdmin function
+interface SendToAdminOptions {
+  admin: AdminTarget;
+  message: string;
+  leadId: string;
+  userWaId: string;
+  extracted: InsuranceExtraction;
+  resolutionSource: string;
+  resolvedTargetsCount: number;
+}
+
 // Helper function to send notification to a single admin
 async function sendToAdmin(
   client: SupabaseClient,
-  admin: AdminTarget,
-  message: string,
-  leadId: string,
-  userWaId: string,
-  extracted: InsuranceExtraction,
-  resolutionSource: string,
-  resolvedTargetsCount: number,
+  options: SendToAdminOptions,
 ): Promise<{ success: boolean; error?: string }> {
+  const { admin, message, leadId, userWaId, extracted, resolutionSource, resolvedTargetsCount } = options;
   const adminWaId = normalizeAdminWaId(admin.waId);
   if (!adminWaId) {
     return { success: false, error: "Missing admin wa_id" };
@@ -389,7 +410,7 @@ async function resolveAdminTargets(client: SupabaseClient): Promise<{ targets: A
       ),
       name: admin.name ?? "Insurance Admin",
     }))
-    .filter((entry) => entry.waId && entry.waId.length >= 8);
+    .filter((entry) => entry.waId && entry.waId.length >= MIN_WHATSAPP_ID_LENGTH);
 
   if (mapped.length) return { targets: mapped, resolutionSource: "insurance_admins" };
 
@@ -423,7 +444,7 @@ async function fetchActiveContacts(client: SupabaseClient): Promise<AdminTarget[
         waId: normalizeAdminWaId(contact.contact_value ?? ""),
         name: contact.display_name ?? "Insurance Admin",
       }))
-      .filter((entry) => entry.waId && entry.waId.length >= 8);
+      .filter((entry) => entry.waId && entry.waId.length >= MIN_WHATSAPP_ID_LENGTH);
   } catch (err) {
     console.error("insurance.admin_contacts_fetch_error", err);
     return [];
