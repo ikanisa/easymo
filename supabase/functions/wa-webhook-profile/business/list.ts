@@ -12,10 +12,10 @@ export async function listMyBusinesses(
   if (!ctx.profileId) return false;
 
   const { data: businesses, error } = await ctx.supabase
-    .from("business")
-    .select("id, name, category_name, location_text, is_active, bar_id, tag")
-    .eq("owner_user_id", ctx.profileId)
-    .eq("is_active", true)
+    .from("businesses")
+    .select("id, name, category, address, status")
+    .eq("profile_id", ctx.profileId)
+    .eq("status", "active")
     .order("created_at", { ascending: false })
     .limit(20);
 
@@ -44,7 +44,7 @@ export async function listMyBusinesses(
   const rows = businesses.map((b) => ({
     id: `biz::${b.id}`,
     title: b.name,
-    description: b.location_text || b.category_name || "Business",
+    description: b.address || b.category || "Business",
   }));
 
   rows.push(
