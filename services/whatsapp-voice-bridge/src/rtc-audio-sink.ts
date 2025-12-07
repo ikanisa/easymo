@@ -7,11 +7,12 @@
  */
 
 import { Logger } from 'pino';
-import { MediaStreamTrack } from 'wrtc';
-// @ts-ignore - nonstandard is not in the types but exists
+import { MediaStreamTrack, RTCAudioSink, RTCAudioSource } from 'wrtc';
+// Import nonstandard module
 import { nonstandard } from 'wrtc';
 
-const { RTCAudioSink, RTCAudioSource } = nonstandard;
+// Extract the actual classes from nonstandard
+const { RTCAudioSink: AudioSink, RTCAudioSource: AudioSource } = nonstandard;
 
 export interface AudioFrame {
   samples: Int16Array;
@@ -23,13 +24,13 @@ export interface AudioFrame {
  * Receives audio from a WebRTC MediaStreamTrack
  */
 export class AudioSinkWrapper {
-  private sink: any;
+  private sink: RTCAudioSink;
   private log: Logger;
   private onAudioCallback?: (frame: AudioFrame) => void;
 
   constructor(track: MediaStreamTrack, logger: Logger) {
     this.log = logger;
-    this.sink = new RTCAudioSink(track);
+    this.sink = new AudioSink(track);
 
     this.sink.ondata = (data: AudioFrame) => {
       if (this.onAudioCallback) {
@@ -66,7 +67,7 @@ export class AudioSinkWrapper {
  * Sends audio to a WebRTC MediaStreamTrack
  */
 export class AudioSourceWrapper {
-  private source: any;
+  private source: RTCAudioSource;
   private track: MediaStreamTrack | null = null;
   private log: Logger;
   private sampleRate: number;
@@ -74,7 +75,7 @@ export class AudioSourceWrapper {
   constructor(logger: Logger, sampleRate: number = 48000) {
     this.log = logger;
     this.sampleRate = sampleRate;
-    this.source = new RTCAudioSource();
+    this.source = new AudioSource();
     this.track = this.source.createTrack();
 
     this.log.info({ sampleRate }, 'Audio source created');

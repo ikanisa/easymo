@@ -214,9 +214,10 @@ export class VoiceCallSession extends EventEmitter {
     this.audioSource = new AudioSourceWrapper(this.log, 48000);
 
     // Add audio track to peer connection
+    // Note: MediaStream is just a container for addTrack API requirement
     const audioTrack = this.audioSource.getTrack();
-    const stream = new MediaStream();
-    this.peerConnection!.addTrack(audioTrack, stream);
+    const audioStream = new MediaStream();
+    this.peerConnection!.addTrack(audioTrack, audioStream);
 
     this.log.info('Audio source track added to peer connection');
     
@@ -330,6 +331,11 @@ export class VoiceCallSession extends EventEmitter {
           chunk.copy(padded);
           samples = new Int16Array(padded.buffer, padded.byteOffset, chunkSamples);
         } else {
+          // This shouldn't happen but log if it does
+          this.log.warn({ 
+            chunkLength: chunk.length, 
+            expectedLength: chunkBytes 
+          }, 'Unexpected chunk size, skipping');
           continue;
         }
 
