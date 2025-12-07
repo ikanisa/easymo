@@ -59,6 +59,60 @@ app.get('/health', (req, res) => {
 /**
  * Start a new voice call session
  * Called by wa-webhook-voice-calls Edge Function
+ * 
+ * API endpoint: POST /api/sessions
+ * Accepts: { callId, sdpOffer, from, config }
+ * Returns: { sdpAnswer, callId }
+ */
+app.post('/api/sessions', async (req, res) => {
+  const { callId, sdpOffer, from, config } = req.body;
+
+  if (!callId || !sdpOffer) {
+    return res.status(400).json({ error: 'Missing callId or sdpOffer' });
+  }
+
+  try {
+    log.info({ callId, from }, 'Starting new voice call session via API');
+
+    // Create new session
+    const session = new VoiceCallSession({
+      callId,
+      sdpOffer,
+      fromNumber: from,
+      toNumber: config?.to,
+      supabase,
+      logger: log.child({ callId }),
+    });
+
+    // Start the session
+    const sdpAnswer = await session.start();
+
+    // Store session
+    activeSessions.set(callId, session);
+
+    // Clean up when session ends
+    session.on('ended', () => {
+      log.info({ callId }, 'Session ended, cleaning up');
+      activeSessions.delete(callId);
+    });
+
+    res.json({
+      sdpAnswer,
+      callId,
+      sessionId: session.id,
+    });
+  } catch (error) {
+    log.error({ error, callId }, 'Failed to start session');
+    res.status(500).json({
+      error: 'Failed to start session',
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+/**
+ * Start a new voice call session (legacy endpoint)
+ * Called by wa-webhook-voice-calls Edge Function
  */
 app.post('/sessions/start', async (req, res) => {
   const { callId, sdpOffer, fromNumber, toNumber } = req.body;
