@@ -46,11 +46,10 @@ import { readLastLocation } from "../locations/favorites.ts";
 import { sortMatches } from "../../_shared/wa-webhook-shared/utils/sortMatches.ts";
 import { 
   getCachedLocation,
-  saveLocationToCache,
   hasAnyRecentLocation,
   getLastLocation,
 } from "../locations/cache.ts";
-import { saveRecentLocation } from "../locations/recent.ts";
+import { saveUserLocation } from "../locations/save_location.ts";
 
 // Use centralized config for all mobility constants
 const DEFAULT_WINDOW_DAYS = MOBILITY_CONFIG.DEFAULT_WINDOW_DAYS;
@@ -445,16 +444,8 @@ export async function handleNearbyLocation(
     // We'll update state again after trip creation to include the ID
   }
 
-  // Save location to cache (30 min TTL for auto-reuse)
-  if (ctx.profileId) {
-    try {
-      await saveLocationToCache(ctx.supabase, ctx.profileId, coords);
-      await saveRecentLocation(ctx, coords, 'mobility');
-    } catch (error) {
-      console.error("mobility.save_location_cache_fail", error);
-      // Don't fail the search if cache save fails
-    }
-  }
+  // Save location to cache and history
+  await saveUserLocation(ctx, coords, 'mobility');
 
   try {
     await storeNearbyIntent(ctx.supabase, ctx.profileId, state.mode, {
@@ -856,9 +847,11 @@ async function promptShareLocation(
   });
   
   const instructions = t(ctx.locale, "location.share.instructions");
+  const baseBody = t(ctx.locale, "mobility.nearby.share_location", { instructions });
+  // Add hint about "Last Location" button if user has recent location
   const body = hasRecent 
-    ? `📍 Share your location to find nearby drivers.\n\nOr tap "Last Location" to use your recent location.`
-    : t(ctx.locale, "mobility.nearby.share_location", { instructions });
+    ? `${baseBody}\n\nℹ️ Tap "Last Location" to reuse your recent location.`
+    : baseBody;
     
   try {
     await sendButtonsMessage(

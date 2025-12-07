@@ -43,10 +43,9 @@ import { buildSaveRows } from "../../locations/save.ts";
 import { sortMatches } from "../../../_shared/wa-webhook-shared/utils/sortMatches.ts";
 import { 
   getCachedLocation,
-  saveLocationToCache,
   hasAnyRecentLocation,
 } from "../../locations/cache.ts";
-import { saveRecentLocation } from "../../locations/recent.ts";
+import { saveUserLocation } from "../../locations/save_location.ts";
 
 // Use centralized config for consistency (avoid duplicate const declarations)
 const DEFAULT_TIMEZONE = "Africa/Kigali";
@@ -363,16 +362,8 @@ export async function handleScheduleLocation(
 ): Promise<boolean> {
   if (!ctx.profileId || !state.role || !state.vehicle) return false;
   
-  // Save location to cache (30 min TTL for auto-reuse)
-  if (ctx.profileId) {
-    try {
-      await saveLocationToCache(ctx.supabase, ctx.profileId, coords);
-      await saveRecentLocation(ctx, coords, 'mobility');
-    } catch (error) {
-      console.error("schedule.save_location_cache_fail", error);
-      // Don't fail if cache save fails
-    }
-  }
+  // Save location to cache and history
+  await saveUserLocation(ctx, coords, 'mobility');
   
   await setState(ctx.supabase, ctx.profileId, {
     key: "schedule_dropoff",
