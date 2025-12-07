@@ -28,7 +28,7 @@ const WHATSAPP_PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') ?? Den
 const WA_VERIFY_TOKEN = Deno.env.get('WA_VERIFY_TOKEN') ?? '';
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') ?? '';
 const OPENAI_ORG_ID = Deno.env.get('OPENAI_ORG_ID') ?? '';
-const OPENAI_REALTIME_MODEL = Deno.env.get('OPENAI_REALTIME_MODEL') ?? 'gpt-5-realtime';
+const OPENAI_REALTIME_MODEL = Deno.env.get('OPENAI_REALTIME_MODEL') ?? 'gpt-4o-realtime-preview';
 const WEBRTC_BRIDGE_URL = Deno.env.get('VOICE_BRIDGE_URL') ?? Deno.env.get('WEBRTC_BRIDGE_URL') ?? 'http://localhost:8080';
 
 // Types based on WhatsApp API documentation

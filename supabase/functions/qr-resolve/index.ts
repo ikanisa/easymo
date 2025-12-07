@@ -40,19 +40,51 @@ serve(async (req: Request): Promise<Response> => {
         { status: 500 },
       );
     }
-    const { barSlug, tableLabel } = await verifyQrPayload(
-      body.token,
-      secrets,
-    );
-    const { data: barRow, error: barError } = await supabase
-      .from("bars")
-      .select("id, slug, bar_tables(id, label, qr_payload)")
-      .eq("slug", barSlug)
-      .maybeSingle();
-    if (barError || !barRow) throw new Error("Bar not found");
-    const matchTable = (barRow.bar_tables ?? []).find((t: any) =>
-      normalize(t.label) === tableLabel || t.qr_payload === body.token
-    );
+
+    // Try new format first: TABLE-{label}-BAR-{barId}
+    const newFormatMatch = body.token.match(/^TABLE-([A-Z0-9\s]+)-BAR-([a-f0-9-]+)$/i);
+    
+    let barRow;
+    let matchTable;
+    
+    if (newFormatMatch) {
+      // New format (WhatsApp deep link style)
+      const tableLabel = newFormatMatch[1].trim();
+      const barId = newFormatMatch[2];
+      
+      const { data: bar, error: barError } = await supabase
+        .from("bars")
+        .select("id, slug, bar_tables(id, label, qr_payload)")
+        .eq("id", barId)
+        .maybeSingle();
+      
+      if (barError || !bar) throw new Error("Bar not found");
+      barRow = bar;
+      
+      matchTable = (bar.bar_tables ?? []).find((t: any) =>
+        normalize(t.label) === normalize(tableLabel)
+      );
+    } else {
+      // Old format: B:{slug} T:{label} K:{signature}
+      const { barSlug, tableLabel } = await verifyQrPayload(
+        body.token,
+        secrets,
+      );
+      
+      const { data: bar, error: barError } = await supabase
+        .from("bars")
+        .select("id, slug, bar_tables(id, label, qr_payload)")
+        .eq("slug", barSlug)
+        .maybeSingle();
+        
+      if (barError || !bar) throw new Error("Bar not found");
+      barRow = bar;
+      
+      matchTable = (barRow.bar_tables ?? []).find((t: any) =>
+        normalize(t.label) === tableLabel || t.qr_payload === body.token
+      );
+    }
+    
     if (!matchTable) throw new Error("Table not found");
 
     const profile = await ensureProfile(supabase, body.wa_id);
@@ -60,12 +92,18 @@ serve(async (req: Request): Promise<Response> => {
       key: "qr_session",
       data: { bar_id: barRow.id, table_label: matchTable.label },
     });
+    
+    // Increment scan count using the database function
+    await supabase.rpc('increment_qr_scan', { p_token: body.token });
+
     await logStructuredEvent("QR_RESOLVE_OK", {
       wa_id: `***${body.wa_id.slice(-4)}`,
-      bar_slug: barSlug,
+      bar_id: barRow.id,
       table_label: matchTable.label,
       duration_ms: Date.now() - started,
+      format: newFormatMatch ? 'new' : 'legacy',
     });
+    
     return new Response(
       JSON.stringify({
         ok: true,

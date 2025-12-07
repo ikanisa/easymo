@@ -166,7 +166,7 @@ export class VoiceCallSession extends EventEmitter {
 
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY!;
     const OPENAI_ORG_ID = process.env.OPENAI_ORG_ID!;
-    const model = process.env.OPENAI_REALTIME_MODEL || 'gpt-5-realtime';
+    const model = process.env.OPENAI_REALTIME_MODEL || 'gpt-4o-realtime-preview';
 
     return new Promise((resolve, reject) => {
       const url = `wss://api.openai.com/v1/realtime?model=${model}`;

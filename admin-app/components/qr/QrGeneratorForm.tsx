@@ -7,6 +7,8 @@ import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
 import { useToast } from "@/components/ui/ToastProvider";
 import { getAdminApiPath } from "@/lib/routes";
 import type { Bar } from "@/lib/schemas";
+import { QrRangeGenerator } from "./QrRangeGenerator";
+import { QrBatchDownloader } from "./QrBatchDownloader";
 
 import styles from "./QrGeneratorForm.module.css";
 
@@ -23,6 +25,8 @@ interface TokenResult {
   createdAt: string;
   printed: boolean;
   lastScanAt: string | null;
+  qrImageUrl?: string | null;
+  whatsappDeepLink?: string | null;
 }
 
 export function QrGeneratorForm({ bars }: QrGeneratorFormProps) {
@@ -32,6 +36,7 @@ export function QrGeneratorForm({ bars }: QrGeneratorFormProps) {
   const [tokens, setTokens] = useState<TokenResult[] | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showRangeGenerator, setShowRangeGenerator] = useState(false);
   const [integration, setIntegration] = useState<
     {
       target: string;
@@ -43,6 +48,12 @@ export function QrGeneratorForm({ bars }: QrGeneratorFormProps) {
   const { pushToast } = useToast();
 
   const selectedBar = bars.find((bar) => bar.id === barId);
+
+  const handleRangeGenerate = (labels: string) => {
+    setTableLabels(labels);
+    setShowRangeGenerator(false);
+    pushToast(`Generated labels: ${labels.split(',').length} tables`, 'success');
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -107,12 +118,28 @@ export function QrGeneratorForm({ bars }: QrGeneratorFormProps) {
         </label>
         <label>
           <span>Table labels (comma separated)</span>
-          <input
-            value={tableLabels}
-            onChange={(event) => setTableLabels(event.target.value)}
-            placeholder="Table 1, Table 2"
-          />
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <input
+              value={tableLabels}
+              onChange={(event) => setTableLabels(event.target.value)}
+              placeholder="Table 1, Table 2, Table 3"
+              style={{ flex: 1 }}
+            />
+            <Button
+              type="button"
+              onClick={() => setShowRangeGenerator(!showRangeGenerator)}
+              variant="outline"
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              {showRangeGenerator ? 'Hide Range' : 'Generate Range'}
+            </Button>
+          </div>
         </label>
+        {showRangeGenerator && (
+          <div style={{ marginTop: '12px' }}>
+            <QrRangeGenerator onGenerate={handleRangeGenerate} />
+          </div>
+        )}
         <label>
           <span>Batch count</span>
           <input
@@ -144,11 +171,32 @@ export function QrGeneratorForm({ bars }: QrGeneratorFormProps) {
         ? (
           <div className={styles.results}>
             <h4>Generated tokens</h4>
+            
+            {/* Add batch downloader if QR images exist */}
+            {tokens.some(t => t.qrImageUrl) && (
+              <div style={{ marginBottom: '16px' }}>
+                <QrBatchDownloader 
+                  tokens={tokens.map(t => ({
+                    id: t.id,
+                    tableLabel: t.tableLabel,
+                    token: t.token,
+                    qrImageUrl: t.qrImageUrl
+                  }))}
+                  barName={selectedBar?.name ?? 'Bar'}
+                />
+              </div>
+            )}
+            
             <ul>
               {tokens.map((token) => (
                 <li key={token.id}>
                   <strong>{token.token}</strong> – {token.tableLabel}{" "}
                   ({new Date(token.createdAt).toLocaleString()})
+                  {token.qrImageUrl && (
+                    <span style={{ marginLeft: '8px', color: 'green', fontSize: '12px' }}>
+                      ✓ QR Image
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>

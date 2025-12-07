@@ -1,9 +1,7 @@
 import { IDS } from "../wa-webhook/wa/ids.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { resolveOpenAiResponseText } from "../_shared/wa-webhook-shared/utils/openai_responses.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
 import { SupabaseRest } from "./supabase_rest.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ??
   Deno.env.get("SERVICE_URL") ?? "";
@@ -555,7 +553,7 @@ async function publishMenu(
     filters: [{ column: "id", operator: "eq", value: menuId }],
   });
   if (publishResult.error) {
-    await logStructuredEvent("ERROR", { data: "ocr.publish.publish_fail", publishResult.error });
+    await logStructuredEvent("ERROR", { data: "ocr.publish.publish_fail", error: publishResult.error });
     throw new Error(publishResult.error.message);
   }
 

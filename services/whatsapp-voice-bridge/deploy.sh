@@ -51,7 +51,7 @@ gcloud run deploy $SERVICE_NAME \
   --set-env-vars "PORT=8080" \
   --set-env-vars "OPENAI_ORG_ID=org-4Kr7lOqpDhJErYgyGzwgSduN" \
   --set-env-vars "OPENAI_PROJECT_ID=proj_BL7HHgepm76lhElLqmfOckIU" \
-  --set-env-vars "OPENAI_REALTIME_MODEL=gpt-5-realtime" \
+  --set-env-vars "OPENAI_REALTIME_MODEL=gpt-4o-realtime-preview" \
   --set-env-vars "SUPABASE_URL=https://lhbowpbcpwoiparwnwgt.supabase.co" \
   --set-env-vars "OPENAI_API_KEY=$OPENAI_API_KEY" \
   --set-env-vars "SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY"

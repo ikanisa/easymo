@@ -7,6 +7,7 @@ import { createHandler } from '@/app/api/withObservability';
 import { recordAudit } from '@/lib/server/audit';
 import { logStructured } from '@/lib/server/logger';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
+import { generateTableQrCode } from '@/lib/qr/qr-image-generator';
 
 const requestSchema = z.object({
   stationId: z.string().uuid(),
@@ -48,10 +49,21 @@ export const POST = createHandler('admin_api.qr.generate', async (request: Reque
     return jsonError({ error: 'station_not_found', message: 'Station not found.' }, 404);
   }
 
+  const botNumber = process.env.WA_BOT_NUMBER_E164 || process.env.NEXT_PUBLIC_WA_BOT_NUMBER_E164 || '';
+  if (!botNumber) {
+    logStructured({
+      event: 'qr_generate_missing_bot_number',
+      status: 'warning',
+      message: 'WA_BOT_NUMBER_E164 not configured'
+    });
+  }
+
   const rows = [] as {
     station_id: string;
     table_label: string;
     token: string;
+    qr_image_url: string | null;
+    whatsapp_deep_link: string | null;
   }[];
   const responseTokens: {
     id: string;
@@ -62,24 +74,54 @@ export const POST = createHandler('admin_api.qr.generate', async (request: Reque
     createdAt: string;
     printed: boolean;
     lastScanAt: string | null;
+    qrImageUrl: string | null;
+    whatsappDeepLink: string | null;
   }[] = [];
 
   const createdAt = new Date().toISOString();
 
+  // Generate QR codes with images
   for (let i = 0; i < payload.batchCount; i += 1) {
     for (const label of payload.tableLabels) {
-      rows.push({
-        station_id: payload.stationId,
-        table_label: label,
-        token: generateToken()
-      });
+      try {
+        const { dataUrl, deepLink, payload: qrPayload } = await generateTableQrCode(
+          payload.stationId,
+          label,
+          botNumber,
+          { width: 512, errorCorrectionLevel: 'M' }
+        );
+
+        rows.push({
+          station_id: payload.stationId,
+          table_label: label,
+          token: qrPayload,
+          qr_image_url: dataUrl,
+          whatsapp_deep_link: deepLink
+        });
+      } catch (error) {
+        // Fallback to text-only token if QR generation fails
+        logStructured({
+          event: 'qr_image_generation_failed',
+          status: 'error',
+          message: error instanceof Error ? error.message : 'Unknown error',
+          details: { label, stationId: payload.stationId }
+        });
+        
+        rows.push({
+          station_id: payload.stationId,
+          table_label: label,
+          token: generateToken(),
+          qr_image_url: null,
+          whatsapp_deep_link: null
+        });
+      }
     }
   }
 
   const { data, error } = await adminClient
     .from('qr_tokens')
     .insert(rows)
-    .select('id, station_id, table_label, token, printed, created_at, last_scan_at');
+    .select('id, station_id, table_label, token, printed, created_at, last_scan_at, qr_image_url, whatsapp_deep_link');
 
   if (error || !data) {
     logStructured({
@@ -101,7 +143,9 @@ export const POST = createHandler('admin_api.qr.generate', async (request: Reque
       token: row.token,
       createdAt: row.created_at ?? createdAt,
       printed: row.printed ?? false,
-      lastScanAt: row.last_scan_at ?? null
+      lastScanAt: row.last_scan_at ?? null,
+      qrImageUrl: row.qr_image_url ?? null,
+      whatsappDeepLink: row.whatsapp_deep_link ?? null
     });
   }
 
