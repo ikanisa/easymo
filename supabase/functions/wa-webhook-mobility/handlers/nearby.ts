@@ -44,6 +44,13 @@ import { buildSaveRows } from "../locations/save.ts";
 import { checkLocationCache } from "./location_cache.ts";
 import { readLastLocation } from "../locations/favorites.ts";
 import { sortMatches } from "../../_shared/wa-webhook-shared/utils/sortMatches.ts";
+import { 
+  getCachedLocation,
+  saveLocationToCache,
+  hasAnyRecentLocation,
+  getLastLocation,
+} from "../locations/cache.ts";
+import { saveRecentLocation } from "../locations/recent.ts";
 
 // Use centralized config for all mobility constants
 const DEFAULT_WINDOW_DAYS = MOBILITY_CONFIG.DEFAULT_WINDOW_DAYS;
@@ -345,6 +352,19 @@ export async function handleVehicleSelection(
   if (state.mode === "passengers") {
     await updateStoredVehicleType(ctx.supabase, ctx.profileId, vehicleType);
   }
+  
+  // Check cache first (30 min TTL)
+  const cached = await getCachedLocation(ctx.supabase, ctx.profileId);
+  if (cached && cached.isValid) {
+    // Use cached location directly, skip prompt
+    await setState(ctx.supabase, ctx.profileId, {
+      key: "mobility_nearby_location",
+      data: { mode: state.mode, vehicle: vehicleType },
+    });
+    return await handleNearbyLocation(ctx, { mode: state.mode, vehicle: vehicleType }, { lat: cached.lat, lng: cached.lng });
+  }
+  
+  // Cache expired or doesn't exist - prompt with "Use Last Location" button
   await setState(ctx.supabase, ctx.profileId, {
     key: "mobility_nearby_location",
     data: { mode: state.mode, vehicle: vehicleType },
@@ -423,6 +443,17 @@ export async function handleNearbyLocation(
   if (isDriverRequest) {
     updatedState = { ...state, pickup };
     // We'll update state again after trip creation to include the ID
+  }
+
+  // Save location to cache (30 min TTL for auto-reuse)
+  if (ctx.profileId) {
+    try {
+      await saveLocationToCache(ctx.supabase, ctx.profileId, coords);
+      await saveRecentLocation(ctx, coords, 'mobility');
+    } catch (error) {
+      console.error("mobility.save_location_cache_fail", error);
+      // Don't fail the search if cache save fails
+    }
   }
 
   try {
@@ -801,18 +832,34 @@ async function promptShareLocation(
   options: { allowVehicleChange?: boolean } = {},
 ): Promise<void> {
   const buttons: ButtonSpec[] = [];
+  
+  // Check if user has recent location for "Use Last Location" button
+  const hasRecent = ctx.profileId ? await hasAnyRecentLocation(ctx.supabase, ctx.profileId) : false;
+  
+  if (hasRecent) {
+    buttons.push({
+      id: IDS.USE_LAST_LOCATION,
+      title: "🕐 Last Location",
+    });
+  }
+  
   if (options.allowVehicleChange) {
     buttons.push({
       id: IDS.MOBILITY_CHANGE_VEHICLE,
       title: t(ctx.locale, "mobility.nearby.change_vehicle"),
     });
   }
+  
   buttons.push({
     id: IDS.LOCATION_SAVED_LIST,
     title: t(ctx.locale, "location.saved.button"),
   });
+  
   const instructions = t(ctx.locale, "location.share.instructions");
-  const body = t(ctx.locale, "mobility.nearby.share_location", { instructions });
+  const body = hasRecent 
+    ? `📍 Share your location to find nearby drivers.\n\nOr tap "Last Location" to use your recent location.`
+    : t(ctx.locale, "mobility.nearby.share_location", { instructions });
+    
   try {
     await sendButtonsMessage(
       ctx,

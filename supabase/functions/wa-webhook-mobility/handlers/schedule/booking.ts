@@ -41,6 +41,12 @@ import {
 } from "../../locations/favorites.ts";
 import { buildSaveRows } from "../../locations/save.ts";
 import { sortMatches } from "../../../_shared/wa-webhook-shared/utils/sortMatches.ts";
+import { 
+  getCachedLocation,
+  saveLocationToCache,
+  hasAnyRecentLocation,
+} from "../../locations/cache.ts";
+import { saveRecentLocation } from "../../locations/recent.ts";
 
 // Use centralized config for consistency (avoid duplicate const declarations)
 const DEFAULT_TIMEZONE = "Africa/Kigali";
@@ -221,14 +227,13 @@ export async function handleScheduleRole(
     });
     if (!ready) return true;
     
-    // Check cache for driver
-    const last = await readLastLocation(ctx);
-    const fresh = checkLocationCache(last?.capturedAt ?? null);
-    if (!fresh.needsRefresh && last) {
-      const { lat, lng } = last;
+    // Check cache first (30 min TTL)
+    const cached = await getCachedLocation(ctx.supabase, ctx.profileId);
+    if (cached && cached.isValid) {
+      // Use cached location directly, skip prompt
       const vehicle = storedVehicle ?? "veh_moto";
       await setState(ctx.supabase, ctx.profileId, { key: "schedule_location", data: { role, vehicle } });
-      return await handleScheduleLocation(ctx, { role, vehicle }, { lat, lng });
+      return await handleScheduleLocation(ctx, { role, vehicle }, { lat: cached.lat, lng: cached.lng });
     }
 
     if (storedVehicle) {
@@ -239,21 +244,31 @@ export async function handleScheduleRole(
       await sendButtonsMessage(
         ctx,
         t(ctx.locale, "schedule.pickup.prompt"),
-        sharePickupButtons(ctx, role, { allowChange: true }),
+        await sharePickupButtons(ctx, role, { allowChange: true }),
       );
       return true;
     }
-  } else if (storedVehicle) {
-    await setState(ctx.supabase, ctx.profileId, {
-      key: "schedule_location",
-      data: { role, vehicle: storedVehicle },
-    });
-    await sendButtonsMessage(
-      ctx,
-      t(ctx.locale, "schedule.pickup.prompt"),
-      sharePickupButtons(ctx, role),
-    );
-    return true;
+  } else {
+    // Check cache for passengers too
+    const cached = await getCachedLocation(ctx.supabase, ctx.profileId);
+    if (cached && cached.isValid && storedVehicle) {
+      // Use cached location directly, skip prompt
+      await setState(ctx.supabase, ctx.profileId, { key: "schedule_location", data: { role, vehicle: storedVehicle } });
+      return await handleScheduleLocation(ctx, { role, vehicle: storedVehicle }, { lat: cached.lat, lng: cached.lng });
+    }
+    
+    if (storedVehicle) {
+      await setState(ctx.supabase, ctx.profileId, {
+        key: "schedule_location",
+        data: { role, vehicle: storedVehicle },
+      });
+      await sendButtonsMessage(
+        ctx,
+        t(ctx.locale, "schedule.pickup.prompt"),
+        await sharePickupButtons(ctx, role),
+      );
+      return true;
+    }
   }
 
   await promptScheduleVehicleSelection(ctx, role);
@@ -315,7 +330,7 @@ export async function handleScheduleVehicle(
     await sendButtonsMessage(
       ctx,
       body,
-      sharePickupButtons(ctx, state.role, {
+      await sharePickupButtons(ctx, state.role, {
         allowChange: state.role === "driver",
       }),
     );
@@ -347,6 +362,18 @@ export async function handleScheduleLocation(
   coords: { lat: number; lng: number },
 ): Promise<boolean> {
   if (!ctx.profileId || !state.role || !state.vehicle) return false;
+  
+  // Save location to cache (30 min TTL for auto-reuse)
+  if (ctx.profileId) {
+    try {
+      await saveLocationToCache(ctx.supabase, ctx.profileId, coords);
+      await saveRecentLocation(ctx, coords, 'mobility');
+    } catch (error) {
+      console.error("schedule.save_location_cache_fail", error);
+      // Don't fail if cache save fails
+    }
+  }
+  
   await setState(ctx.supabase, ctx.profileId, {
     key: "schedule_dropoff",
     data: {
@@ -943,22 +970,35 @@ export function isScheduleResult(id: string): boolean {
   return id.startsWith("MTCH::");
 }
 
-function sharePickupButtons(
+async function sharePickupButtons(
   ctx: RouterContext,
   role?: "driver" | "passenger",
   options: { allowChange?: boolean } = {},
-): ButtonSpec[] {
+): Promise<ButtonSpec[]> {
   const buttons: ButtonSpec[] = [];
+  
+  // Check if user has recent location for "Use Last Location" button
+  const hasRecent = ctx.profileId ? await hasAnyRecentLocation(ctx.supabase, ctx.profileId) : false;
+  
+  if (hasRecent) {
+    buttons.push({
+      id: IDS.USE_LAST_LOCATION,
+      title: "🕐 Last Location",
+    });
+  }
+  
   if (role === "driver" && options.allowChange) {
     buttons.push({
       id: IDS.MOBILITY_CHANGE_VEHICLE,
       title: t(ctx.locale, "mobility.nearby.change_vehicle"),
     });
   }
+  
   buttons.push({
     id: IDS.LOCATION_SAVED_LIST,
     title: t(ctx.locale, "location.saved.button"),
   });
+  
   const [primary, ...rest] = buttons;
   return buildButtons(primary, ...rest);
 }

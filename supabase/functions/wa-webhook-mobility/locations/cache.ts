@@ -77,3 +77,41 @@ export async function hasValidCachedLocation(
   const cached = await getCachedLocation(client, userId);
   return cached !== null && cached.isValid;
 }
+
+/**
+ * Check if user has ANY recent location (for "Use Last Location" button)
+ * This doesn't enforce the 30-min TTL - just checks if we have coordinates
+ */
+export async function hasAnyRecentLocation(
+  client: SupabaseClient,
+  userId: string,
+): Promise<boolean> {
+  const { data } = await client
+    .from('recent_locations')
+    .select('id')
+    .eq('user_id', userId)
+    .order('captured_at', { ascending: false })
+    .limit(1);
+  
+  return data !== null && data.length > 0;
+}
+
+/**
+ * Get last location regardless of TTL (for "Use Last Location" button)
+ */
+export async function getLastLocation(
+  client: SupabaseClient,
+  userId: string,
+): Promise<{ lat: number; lng: number } | null> {
+  const { data } = await client
+    .from('recent_locations')
+    .select('lat, lng')
+    .eq('user_id', userId)
+    .order('captured_at', { ascending: false })
+    .limit(1);
+  
+  if (data && data.length > 0) {
+    return { lat: data[0].lat, lng: data[0].lng };
+  }
+  return null;
+}

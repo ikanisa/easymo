@@ -313,6 +313,23 @@ serve(async (req: Request): Promise<Response> => {
           handled = await handleChangeVehicleRequest(ctx, state?.data as any);
         } else if (id === IDS.USE_CACHED_LOCATION && state?.key === "mobility_nearby_location") {
           handled = await handleUseCachedLocation(ctx, state.data as any);
+        } else if (id === IDS.USE_LAST_LOCATION && state?.key === "mobility_nearby_location") {
+          // Get the last known location (even if > 30 min old)
+          if (!ctx.profileId) {
+            handled = false;
+          } else {
+            const { getLastLocation } = await import("./locations/cache.ts");
+            const lastLoc = await getLastLocation(ctx.supabase, ctx.profileId);
+            
+            if (lastLoc?.lat && lastLoc?.lng) {
+              // Use this location and continue the flow
+              handled = await handleNearbyLocation(ctx, state.data as any, { lat: lastLoc.lat, lng: lastLoc.lng });
+            } else {
+              // No previous location found
+              await sendText(ctx.from, "No previous location found. Please share your location.");
+              handled = true;
+            }
+          }
         } else if (id === IDS.USE_CACHED_LOCATION && state?.key === "go_online_prompt") {
           handled = await handleGoOnlineUseCached(ctx);
         } else if (id === IDS.LOCATION_SAVED_LIST && state?.key === "mobility_nearby_location") {
@@ -356,6 +373,21 @@ serve(async (req: Request): Promise<Response> => {
            // Schedule refresh might need its own key or reuse nearby results structure
            // Checking schedule.ts: handleScheduleRefresh uses state.tripId
            handled = await handleScheduleRefresh(ctx, state?.data as any);
+        } else if (id === IDS.USE_LAST_LOCATION && state?.key === "schedule_location") {
+          // Handle "Use Last Location" for schedule pickup
+          if (!ctx.profileId) {
+            handled = false;
+          } else {
+            const { getLastLocation } = await import("./locations/cache.ts");
+            const lastLoc = await getLastLocation(ctx.supabase, ctx.profileId);
+            
+            if (lastLoc?.lat && lastLoc?.lng) {
+              handled = await handleScheduleLocation(ctx, state.data as any, { lat: lastLoc.lat, lng: lastLoc.lng });
+            } else {
+              await sendText(ctx.from, "No previous location found. Please share your location.");
+              handled = true;
+            }
+          }
         } else if (id === IDS.LOCATION_SAVED_LIST && state?.key === "schedule_location") {
            handled = await startScheduleSavedLocationPicker(ctx, state.data as any, "pickup");
         } else if (id === IDS.LOCATION_SAVED_LIST && state?.key === "schedule_dropoff") {
