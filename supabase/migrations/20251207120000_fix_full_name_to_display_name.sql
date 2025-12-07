@@ -1,50 +1,28 @@
 -- ============================================================================
--- DEFINITIVE FIX FOR MOBILITY MATCHING FUNCTIONS
+-- FIX: Replace p.full_name with p.display_name in all functions
 -- ============================================================================
--- Migration: 20251206090000_fix_mobility_matching_definitive.sql
+-- Issue: profiles table uses display_name, not full_name
+-- Error: column p.full_name does not exist (PostgreSQL error 42703)
 -- 
--- PROBLEM: Users get "No matches found" even when active rides exist in DB.
+-- This migration recreates all database functions and views that incorrectly
+-- reference p.full_name to use p.display_name instead.
 -- 
--- ROOT CAUSES FIXED:
--- 1. Table name consistency: Uses `mobility_trips` (V2 table - where app writes)
--- 2. Location freshness: Increased from 30 minutes to 24 hours
--- 3. Expiry handling: NULL expires_at now accepted (never expires)
--- 4. Return columns: All required fields for TypeScript interfaces
+-- Affected functions:
+-- 1. match_drivers_for_trip_v2 - Driver matching for mobility
+-- 2. match_passengers_for_trip_v2 - Passenger matching for mobility
+-- 3. get_pending_certificates - Insurance certificates
+-- 4. get_manual_reviews - Manual review queue
+-- 5. get_expiring_insurance - Expiring insurance policies
 -- 
--- IMPORTANT: The edge functions write to `mobility_trips` (V2 schema),
--- so the matching functions must also query from `mobility_trips`.
--- 
--- V2 Schema differences from V1:
--- - pickup_lat/pickup_lng instead of pickup_latitude/pickup_longitude
--- - pickup_geog is auto-generated (STORED) from lat/lng
--- - last_location_update instead of last_location_at
--- - No ref_code column (use substring of id)
--- - No number_plate column (fetch from profiles.metadata)
--- 
--- This migration drops and recreates the matching functions with:
--- - Correct table reference (`mobility_trips`)
--- - 24-hour location freshness window (was 30 minutes)
--- - NULL expires_at handling (treat as never expires)
--- - All required return columns
--- - Proper grants for service_role, authenticated, anon
+-- Affected views:
+-- 1. active_profile_users - Profile monitoring view
 -- ============================================================================
 
 BEGIN;
 
 -- ============================================================================
--- DROP EXISTING FUNCTIONS
+-- 1. Fix match_drivers_for_trip_v2
 -- ============================================================================
-DROP FUNCTION IF EXISTS public.match_drivers_for_trip_v2 CASCADE;
-DROP FUNCTION IF EXISTS public.match_passengers_for_trip_v2 CASCADE;
-
--- ============================================================================
--- MATCH DRIVERS FOR TRIP V2
--- ============================================================================
--- Called by passengers to find nearby drivers
--- Returns drivers within radius who have recent location updates
--- Uses V2 schema (mobility_trips table)
--- ============================================================================
-
 CREATE OR REPLACE FUNCTION public.match_drivers_for_trip_v2(
   _trip_id uuid,
   _limit integer DEFAULT 9,
@@ -118,13 +96,13 @@ BEGIN
     CASE
       WHEN _prefer_dropoff AND v_dropoff_lat IS NOT NULL AND t.dropoff_lat IS NOT NULL THEN
         ROUND(
-          ST_Distance(
-            t.dropoff_geog,
+          (ST_Distance(
+            ST_SetSRID(ST_MakePoint(t.dropoff_lng, t.dropoff_lat), 4326)::geography,
             ST_SetSRID(ST_MakePoint(v_dropoff_lng, v_dropoff_lat), 4326)::geography
-          )::numeric,
+          ))::numeric,
           0
         )
-      ELSE NULL
+      ELSE NULL::numeric
     END AS drop_bonus_m,
     t.pickup_text,
     t.dropoff_text,
@@ -148,11 +126,7 @@ BEGIN
     -- Location must exist
     AND t.pickup_lat IS NOT NULL
     AND t.pickup_lng IS NOT NULL
-    -- CRITICAL FIX: Location freshness increased from 30 minutes to 24 hours
-    -- This prevents excluding drivers who haven't updated location recently.
-    -- Note: Hardcoded to 24 hours intentionally - this is a generous window to
-    -- prevent false negatives. The _window_days parameter controls trip age instead.
-    -- See MOBILITY_CONFIG.SQL_LOCATION_FRESHNESS_HOURS in config/mobility.ts
+    -- Location freshness: 24 hours window
     AND COALESCE(t.last_location_update, t.created_at) > now() - interval '24 hours'
     -- Window: Only trips created within the window (default 2 days)
     AND t.created_at > now() - (_window_days || ' days')::interval
@@ -175,17 +149,9 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION public.match_drivers_for_trip_v2 IS 
-  'Find nearby drivers for a passenger trip. Uses mobility_trips (V2) table with 24-hour location freshness window.';
-
 -- ============================================================================
--- MATCH PASSENGERS FOR TRIP V2
+-- 2. Fix match_passengers_for_trip_v2
 -- ============================================================================
--- Called by drivers to find nearby passengers
--- Returns passengers within radius who have recent location updates
--- Uses V2 schema (mobility_trips table)
--- ============================================================================
-
 CREATE OR REPLACE FUNCTION public.match_passengers_for_trip_v2(
   _trip_id uuid,
   _limit integer DEFAULT 9,
@@ -222,7 +188,7 @@ DECLARE
   v_vehicle_type text;
   v_pickup_geog geography;
 BEGIN
-  -- Get the requesting trip's location and vehicle type from V2 table
+  -- Get the requesting trip's location and vehicle type
   SELECT 
     t.pickup_lat,
     t.pickup_lng,
@@ -259,13 +225,13 @@ BEGIN
     CASE
       WHEN _prefer_dropoff AND v_dropoff_lat IS NOT NULL AND t.dropoff_lat IS NOT NULL THEN
         ROUND(
-          ST_Distance(
-            t.dropoff_geog,
+          (ST_Distance(
+            ST_SetSRID(ST_MakePoint(t.dropoff_lng, t.dropoff_lat), 4326)::geography,
             ST_SetSRID(ST_MakePoint(v_dropoff_lng, v_dropoff_lat), 4326)::geography
-          )::numeric,
+          ))::numeric,
           0
         )
-      ELSE NULL
+      ELSE NULL::numeric
     END AS drop_bonus_m,
     t.pickup_text,
     t.dropoff_text,
@@ -288,11 +254,7 @@ BEGIN
     -- Location must exist
     AND t.pickup_lat IS NOT NULL
     AND t.pickup_lng IS NOT NULL
-    -- CRITICAL FIX: Location freshness increased from 30 minutes to 24 hours
-    -- This prevents excluding passengers who haven't updated location recently.
-    -- Note: Hardcoded to 24 hours intentionally - this is a generous window to
-    -- prevent false negatives. The _window_days parameter controls trip age instead.
-    -- See MOBILITY_CONFIG.SQL_LOCATION_FRESHNESS_HOURS in config/mobility.ts
+    -- Location freshness: 24 hours window
     AND COALESCE(t.last_location_update, t.created_at) > now() - interval '24 hours'
     -- Window: Only trips created within the window (default 2 days)
     AND t.created_at > now() - (_window_days || ' days')::interval
@@ -315,35 +277,167 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION public.match_passengers_for_trip_v2 IS 
-  'Find nearby passengers for a driver trip. Uses mobility_trips (V2) table with 24-hour location freshness window.';
-
 -- ============================================================================
--- GRANT PERMISSIONS
+-- 3. Fix get_pending_certificates
 -- ============================================================================
-GRANT EXECUTE ON FUNCTION public.match_drivers_for_trip_v2 TO service_role, authenticated, anon;
-GRANT EXECUTE ON FUNCTION public.match_passengers_for_trip_v2 TO service_role, authenticated, anon;
-
--- ============================================================================
--- VERIFICATION
--- ============================================================================
-DO $$
+CREATE OR REPLACE FUNCTION public.get_pending_certificates(
+  p_limit INTEGER DEFAULT 50
+) RETURNS TABLE (
+  id UUID,
+  user_id UUID,
+  vehicle_plate TEXT,
+  insurer_name TEXT,
+  policy_number TEXT,
+  policy_expiry DATE,
+  created_at TIMESTAMPTZ,
+  user_phone TEXT,
+  user_name TEXT
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
 BEGIN
-  -- Verify functions exist
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_proc WHERE proname = 'match_drivers_for_trip_v2'
-  ) THEN
-    RAISE EXCEPTION 'Function match_drivers_for_trip_v2 was not created';
-  END IF;
-  
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_proc WHERE proname = 'match_passengers_for_trip_v2'
-  ) THEN
-    RAISE EXCEPTION 'Function match_passengers_for_trip_v2 was not created';
-  END IF;
-  
-  RAISE NOTICE 'Matching functions created successfully with V2 schema and 24-hour location freshness';
+  RETURN QUERY
+  SELECT 
+    dic.id,
+    dic.user_id,
+    dic.vehicle_plate,
+    dic.insurer_name,
+    dic.policy_number,
+    dic.policy_expiry,
+    dic.created_at,
+    COALESCE(p.phone_number, p.wa_id) AS user_phone,
+    COALESCE(p.display_name, p.phone_number, 'Unknown') AS user_name
+  FROM public.driver_insurance_certificates dic
+  INNER JOIN public.profiles p ON p.user_id = dic.user_id
+  WHERE dic.status = 'pending'
+  ORDER BY dic.created_at ASC
+  LIMIT p_limit;
 END;
 $$;
 
+-- ============================================================================
+-- 4. Fix get_manual_reviews
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public.get_manual_reviews(
+  p_status TEXT DEFAULT 'pending',
+  p_limit INTEGER DEFAULT 50
+) RETURNS TABLE (
+  id UUID,
+  user_id UUID,
+  media_url TEXT,
+  ocr_attempts INTEGER,
+  last_ocr_error TEXT,
+  status TEXT,
+  created_at TIMESTAMPTZ,
+  user_phone TEXT,
+  user_name TEXT
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    imr.id,
+    imr.user_id,
+    imr.media_url,
+    imr.ocr_attempts,
+    imr.last_ocr_error,
+    imr.status,
+    imr.created_at,
+    COALESCE(p.phone_number, p.wa_id) AS user_phone,
+    COALESCE(p.display_name, p.phone_number, 'Unknown') AS user_name
+  FROM public.insurance_manual_reviews imr
+  INNER JOIN public.profiles p ON p.user_id = imr.user_id
+  WHERE imr.status = p_status
+  ORDER BY imr.created_at ASC
+  LIMIT p_limit;
+END;
+$$;
+
+-- ============================================================================
+-- 5. Fix get_expiring_insurance
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public.get_expiring_insurance(
+  p_days_before INTEGER DEFAULT 7
+) RETURNS TABLE (
+  id UUID,
+  user_id UUID,
+  vehicle_plate TEXT,
+  policy_expiry DATE,
+  user_phone TEXT,
+  user_name TEXT
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    dic.id,
+    dic.user_id,
+    dic.vehicle_plate,
+    dic.policy_expiry,
+    COALESCE(p.phone_number, p.wa_id) AS user_phone,
+    COALESCE(p.display_name, p.phone_number, 'Unknown') AS user_name
+  FROM public.driver_insurance_certificates dic
+  INNER JOIN public.profiles p ON p.user_id = dic.user_id
+  WHERE dic.status = 'active'
+    AND dic.policy_expiry BETWEEN CURRENT_DATE AND (CURRENT_DATE + (p_days_before || ' days')::interval)
+  ORDER BY dic.policy_expiry ASC;
+END;
+$$;
+
+-- ============================================================================
+-- 6. Fix active_profile_users view
+-- ============================================================================
+CREATE OR REPLACE VIEW public.active_profile_users AS
+SELECT 
+  p.user_id,
+  p.display_name,
+  p.phone_number,
+  p.language,
+  wb.balance as wallet_balance,
+  COUNT(DISTINCT sl.id) as saved_locations_count,
+  COUNT(DISTINCT b.id) as businesses_count,
+  COUNT(DISTINCT j.id) as jobs_count,
+  COUNT(DISTINCT pr.id) as properties_count,
+  p.created_at as profile_created_at,
+  MAX(GREATEST(
+    COALESCE(sl.updated_at, sl.created_at),
+    COALESCE(b.updated_at, b.created_at),
+    COALESCE(j.updated_at, j.created_at),
+    COALESCE(pr.updated_at, pr.created_at)
+  )) as last_activity
+FROM public.profiles p
+LEFT JOIN public.wallet_balance wb ON wb.user_id = p.user_id
+LEFT JOIN public.saved_locations sl ON sl.user_id = p.user_id
+LEFT JOIN public.businesses b ON b.owner_user_id = p.user_id AND b.deleted_at IS NULL
+LEFT JOIN public.jobs j ON j.creator_user_id = p.user_id AND j.deleted_at IS NULL
+LEFT JOIN public.properties pr ON pr.owner_user_id = p.user_id AND pr.deleted_at IS NULL
+GROUP BY p.user_id, p.display_name, p.phone_number, p.language, wb.balance, p.created_at
+ORDER BY last_activity DESC NULLS LAST;
+
+COMMENT ON VIEW public.active_profile_users IS
+  'Profile overview for admin monitoring - Fixed to use display_name instead of full_name';
+
 COMMIT;
+
+-- ============================================================================
+-- VERIFICATION QUERIES (Run manually to verify fix)
+-- ============================================================================
+-- These queries should return 0 rows after this migration is applied:
+--
+-- -- Check for functions still using p.full_name
+-- SELECT routine_name, routine_definition
+-- FROM information_schema.routines 
+-- WHERE routine_schema = 'public' 
+--   AND routine_definition ILIKE '%p.full_name%';
+--
+-- -- Check for views still using p.full_name in wrong context
+-- SELECT table_name, view_definition
+-- FROM information_schema.views 
+-- WHERE table_schema = 'public' 
+--   AND view_definition ILIKE '%p.full_name%';
+-- ============================================================================
