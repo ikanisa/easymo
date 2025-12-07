@@ -69,27 +69,34 @@ export class VoiceCallSession extends EventEmitter {
    * Returns SDP answer for WhatsApp
    */
   async start(): Promise<string> {
-    this.log.info('Starting voice call session');
+    this.log.info({ callId: this.callId, from: this.fromNumber }, '=== STARTING VOICE CALL SESSION ===');
 
     try {
       // Step 1: Create WebRTC peer connection
+      this.log.info('STEP 1: Setting up WebRTC peer connection...');
       await this.setupWebRTC();
+      this.log.info('✓ WebRTC setup complete');
 
       // Step 2: Connect to OpenAI Realtime
+      this.log.info('STEP 2: Connecting to OpenAI Realtime API...');
       await this.connectToOpenAI();
+      this.log.info('✓ OpenAI connection established');
 
       // Step 3: Set up audio bridging
+      this.log.info('STEP 3: Setting up audio bridging...');
       this.setupAudioBridge();
+      this.log.info('✓ Audio bridge configured');
 
       this.status = 'connected';
-      this.log.info('Voice call session started successfully');
+      this.log.info('=== VOICE CALL SESSION READY ===');
 
       // Get SDP answer from peer connection
       const answer = this.peerConnection!.localDescription!.sdp;
+      this.log.info({ answerLength: answer.length }, 'Returning SDP answer');
       return answer;
 
     } catch (error) {
-      this.log.error({ error }, 'Failed to start session');
+      this.log.error({ error: error instanceof Error ? error.message : String(error), stack: error instanceof Error ? error.stack : undefined }, '✗ FAILED TO START SESSION');
       await this.stop();
       throw error;
     }
@@ -243,17 +250,16 @@ export class VoiceCallSession extends EventEmitter {
   private handleIncomingAudio(track: MediaStreamTrack): void {
     this.log.info({ trackId: track.id }, 'Processing incoming audio from WhatsApp');
     
-    // Get audio track
-    const audioTrack = stream.getAudioTracks()[0];
-    if (!audioTrack) {
-      this.log.warn('No audio track found in stream');
+    // Audio track is already provided
+    if (!track) {
+      this.log.warn('No audio track provided');
       return;
     }
 
-    this.log.info({ trackId: audioTrack.id }, 'Audio track ready for processing');
+    this.log.info({ trackId: track.id }, 'Audio track ready for processing');
 
     // Create audio sink to receive samples from WebRTC
-    this.audioSink = new AudioSinkWrapper(audioTrack, this.log);
+    this.audioSink = new AudioSinkWrapper(track, this.log);
 
     // Set up callback to process incoming audio
     this.audioSink.onAudio((frame: AudioFrame) => {
@@ -369,10 +375,7 @@ export class VoiceCallSession extends EventEmitter {
       }
     } catch (error) {
       this.log.error({ error }, 'Failed to send buffered audio');
-    // Attach audio sink to receive raw PCM samples
-    this.audioIO.attachSink(track, (samples) => {
-      this.processIncomingAudio(samples);
-    });
+    }
   }
 
   /**
@@ -452,13 +455,9 @@ export class VoiceCallSession extends EventEmitter {
         outputBytes: pcm48k.length,
         bufferedChunks: this.audioBuffer.length,
       }, 'Buffered audio for WhatsApp');
-      const pcm24k = this.audioProcessor.decodeFromBase64(audioBase64);
-
-      // Resample from 24kHz to 8kHz for WhatsApp
-      const pcm8k = this.audioProcessor.resample(pcm24k, 24000, 8000);
 
       // Convert Buffer to Int16Array
-      const samples = new Int16Array(pcm8k.buffer, pcm8k.byteOffset, pcm8k.length / 2);
+      const samples = new Int16Array(pcm48k.buffer, pcm48k.byteOffset, pcm48k.length / 2);
 
       // Send via RTCAudioSource
       this.audioIO.sendAudio(samples);
