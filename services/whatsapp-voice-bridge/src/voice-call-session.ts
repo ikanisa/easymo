@@ -13,7 +13,6 @@ import WebSocket from 'ws';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Logger } from 'pino';
 import { AudioProcessor } from './audio-processor';
-import { AudioSinkWrapper, AudioSourceWrapper, AudioFrame } from './rtc-audio-sink';
 import { RTCAudioIO } from './rtc-audio-io';
 
 interface SessionOptions {
@@ -42,8 +41,6 @@ export class VoiceCallSession extends EventEmitter {
   private readonly log: Logger;
   
   // Audio streaming components
-  private audioSink: AudioSinkWrapper | null = null;
-  private audioSource: AudioSourceWrapper | null = null;
   private audioBuffer: Buffer[] = [];
   private audioInterval: NodeJS.Timeout | null = null;
 
@@ -221,17 +218,6 @@ export class VoiceCallSession extends EventEmitter {
   private setupAudioBridge(): void {
     this.log.info('Setting up audio bridge');
     
-    // Create audio source for sending audio to WhatsApp
-    this.audioSource = new AudioSourceWrapper(this.log, 48000);
-
-    // Add audio track to peer connection
-    // Note: MediaStream is just a container for addTrack API requirement
-    const audioTrack = this.audioSource.getTrack();
-    const audioStream = new MediaStream();
-    this.peerConnection!.addTrack(audioTrack, audioStream);
-
-    this.log.info('Audio source track added to peer connection');
-    
     // Start audio processing loop
     this.processAudioLoop();
     this.log.info('Audio bridge ready - incoming/outgoing tracks configured');
@@ -243,47 +229,28 @@ export class VoiceCallSession extends EventEmitter {
   private handleIncomingAudio(track: MediaStreamTrack): void {
     this.log.info({ trackId: track.id }, 'Processing incoming audio from WhatsApp');
     
-    // Get audio track
-    const audioTrack = stream.getAudioTracks()[0];
-    if (!audioTrack) {
-      this.log.warn('No audio track found in stream');
-      return;
-    }
-
-    this.log.info({ trackId: audioTrack.id }, 'Audio track ready for processing');
-
-    // Create audio sink to receive samples from WebRTC
-    this.audioSink = new AudioSinkWrapper(audioTrack, this.log);
-
-    // Set up callback to process incoming audio
-    this.audioSink.onAudio((frame: AudioFrame) => {
-      this.processIncomingAudioFrame(frame);
+    // Attach audio sink to receive raw PCM samples
+    this.audioIO.attachSink(track, (samples) => {
+      this.processIncomingAudioSamples(samples);
     });
   }
 
   /**
-   * Process incoming audio frame from WhatsApp
-   * Convert from 48kHz stereo to 24kHz mono and send to OpenAI
+   * Process incoming audio samples from WhatsApp (via RTCAudioSink)
+   * Samples are raw PCM16 at 8kHz mono
    */
-  private processIncomingAudioFrame(frame: AudioFrame): void {
+  private processIncomingAudioSamples(samples: Int16Array): void {
     try {
-      // Validate sample rate
-      if (frame.sampleRate < 8000 || frame.sampleRate > 48000) {
-        this.log.warn({ sampleRate: frame.sampleRate }, 'Unexpected sample rate, skipping frame');
-        return;
-      }
-
       // Convert Int16Array to Buffer
-      const buffer = Buffer.from(frame.samples.buffer);
+      const pcm8k = Buffer.from(samples.buffer);
 
-      // Resample from WebRTC's sample rate to OpenAI's 24kHz
-      // Note: WebRTC typically provides 48kHz stereo, OpenAI expects 24kHz mono
-      const resampled = this.audioProcessor.resample(buffer, frame.sampleRate, 24000);
+      // Resample from 8kHz to 24kHz for OpenAI
+      const pcm24k = this.audioProcessor.resample(pcm8k, 8000, 24000);
 
-      // Encode to base64 for OpenAI
-      const base64Audio = this.audioProcessor.encodeToBase64(resampled);
+      // Encode to base64
+      const base64Audio = this.audioProcessor.encodeToBase64(pcm24k);
 
-      // Send to OpenAI
+      // Send to OpenAI Realtime API
       if (this.openaiWs && this.openaiWs.readyState === WebSocket.OPEN) {
         this.openaiWs.send(JSON.stringify({
           type: 'input_audio_buffer.append',
@@ -291,14 +258,14 @@ export class VoiceCallSession extends EventEmitter {
         }));
 
         this.log.debug({ 
-          inputSamples: frame.samples.length,
-          inputRate: frame.sampleRate,
-          outputSamples: resampled.length / 2,
+          inputSamples: samples.length,
+          inputRate: 8000,
+          outputBytes: pcm24k.length,
           outputRate: 24000,
         }, 'Sent audio to OpenAI');
       }
     } catch (error) {
-      this.log.error({ error }, 'Failed to process incoming audio frame');
+      this.log.error({ error }, 'Failed to process incoming audio samples');
     }
   }
 
@@ -311,7 +278,7 @@ export class VoiceCallSession extends EventEmitter {
     
     // Send buffered audio to WhatsApp every 10ms (matching WebRTC's chunk size)
     this.audioInterval = setInterval(() => {
-      if (this.audioBuffer.length > 0 && this.audioSource) {
+      if (this.audioBuffer.length > 0) {
         this.sendBufferedAudioToWhatsApp();
       }
     }, 10); // 10ms intervals for 48kHz = 480 samples per chunk
@@ -321,7 +288,7 @@ export class VoiceCallSession extends EventEmitter {
    * Send buffered audio to WhatsApp
    */
   private sendBufferedAudioToWhatsApp(): void {
-    if (!this.audioSource || this.audioBuffer.length === 0) {
+    if (this.audioBuffer.length === 0) {
       return;
     }
 
@@ -330,71 +297,17 @@ export class VoiceCallSession extends EventEmitter {
       const combined = Buffer.concat(this.audioBuffer);
       this.audioBuffer = [];
 
-      // Calculate chunk size (10ms at 48kHz = 480 samples = 960 bytes for 16-bit)
-      const sampleRate = 48000;
-      const chunkSamples = Math.floor(sampleRate * 0.01); // 480 samples
-      const chunkBytes = chunkSamples * 2; // 2 bytes per sample (16-bit)
+      // Convert Buffer to Int16Array for audioIO
+      const samples = new Int16Array(combined.buffer, combined.byteOffset, combined.length / 2);
 
-      // Process in 10ms chunks
-      for (let offset = 0; offset < combined.length; offset += chunkBytes) {
-        const chunk = combined.slice(offset, Math.min(offset + chunkBytes, combined.length));
-        
-        // Ensure chunk is the right size (pad if necessary)
-        let samples: Int16Array;
-        if (chunk.length === chunkBytes) {
-          // Create new Int16Array and copy to avoid alignment issues
-          samples = new Int16Array(chunkSamples);
-          for (let i = 0; i < chunkSamples; i++) {
-            samples[i] = chunk.readInt16LE(i * 2);
-          }
-        } else if (chunk.length < chunkBytes) {
-          // Pad with silence
-          samples = new Int16Array(chunkSamples);
-          const actualSamples = chunk.length / 2;
-          for (let i = 0; i < actualSamples; i++) {
-            samples[i] = chunk.readInt16LE(i * 2);
-          }
-          // Rest of samples array is already zeros (silence)
-        } else {
-          // This shouldn't happen but log if it does
-          this.log.warn({ 
-            chunkLength: chunk.length, 
-            expectedLength: chunkBytes 
-          }, 'Unexpected chunk size, skipping');
-          continue;
-        }
+      // Send via RTCAudioIO
+      this.audioIO.sendAudio(samples);
 
-        // Send to audio source
-        this.audioSource.sendAudio(samples, sampleRate);
-      }
+      this.log.debug({ 
+        sampleCount: samples.length,
+      }, 'Sent buffered audio to WhatsApp');
     } catch (error) {
       this.log.error({ error }, 'Failed to send buffered audio');
-    // Attach audio sink to receive raw PCM samples
-    this.audioIO.attachSink(track, (samples) => {
-      this.processIncomingAudio(samples);
-    });
-  }
-
-  /**
-   * Process incoming audio samples from WhatsApp (via RTCAudioSink)
-   * Samples are raw PCM16 at 8kHz mono
-   */
-  private processIncomingAudio(samples: Int16Array): void {
-    // Convert Int16Array to Buffer
-    const pcm8k = Buffer.from(samples.buffer);
-
-    // Resample from 8kHz to 24kHz for OpenAI
-    const pcm24k = this.audioProcessor.resample(pcm8k, 8000, 24000);
-
-    // Encode to base64
-    const base64Audio = this.audioProcessor.encodeToBase64(pcm24k);
-
-    // Send to OpenAI Realtime API
-    if (this.openaiWs && this.openaiWs.readyState === WebSocket.OPEN) {
-      this.openaiWs.send(JSON.stringify({
-        type: 'input_audio_buffer.append',
-        audio: base64Audio,
-      }));
     }
   }
 
@@ -452,18 +365,6 @@ export class VoiceCallSession extends EventEmitter {
         outputBytes: pcm48k.length,
         bufferedChunks: this.audioBuffer.length,
       }, 'Buffered audio for WhatsApp');
-      const pcm24k = this.audioProcessor.decodeFromBase64(audioBase64);
-
-      // Resample from 24kHz to 8kHz for WhatsApp
-      const pcm8k = this.audioProcessor.resample(pcm24k, 24000, 8000);
-
-      // Convert Buffer to Int16Array
-      const samples = new Int16Array(pcm8k.buffer, pcm8k.byteOffset, pcm8k.length / 2);
-
-      // Send via RTCAudioSource
-      this.audioIO.sendAudio(samples);
-
-      this.log.debug({ sampleCount: samples.length }, 'Sent audio to WhatsApp');
     } catch (error) {
       this.log.error({ error }, 'Failed to send audio to WhatsApp');
     }
@@ -484,18 +385,6 @@ export class VoiceCallSession extends EventEmitter {
     if (this.audioInterval) {
       clearInterval(this.audioInterval);
       this.audioInterval = null;
-    }
-
-    // Stop audio sink
-    if (this.audioSink) {
-      this.audioSink.stop();
-      this.audioSink = null;
-    }
-
-    // Stop audio source
-    if (this.audioSource) {
-      this.audioSource.stop();
-      this.audioSource = null;
     }
 
     // Clear audio buffer
