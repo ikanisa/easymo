@@ -145,7 +145,7 @@ export async function processNextJob(
       menuId,
     });
     await activeDeps.publishMenu(job.bar_id, menuId);
-    await logStructuredEvent("LOG", { data: "ocr.job_succeeded", { jobId: job.id, resultPath, menuId } });
+    await logStructuredEvent("LOG", { data: "ocr.job_succeeded", jobId: job.id, resultPath, menuId });
     await activeDeps.notifyMenuReady(job.bar_id);
     return { status: "processed", jobId: job.id };
   } catch (error) {
@@ -153,7 +153,7 @@ export async function processNextJob(
       errorMessage: error instanceof Error ? error.message : String(error),
       menuId,
     });
-    await logStructuredEvent("ERROR", { data: "ocr.job_failed", { jobId: job.id, error, menuId } });
+    await logStructuredEvent("ERROR", { data: "ocr.job_failed", jobId: job.id, error, menuId });
     throw error;
   }
 }
@@ -545,7 +545,7 @@ async function publishMenu(
     ],
   });
   if (archiveResult.error) {
-    await logStructuredEvent("ERROR", { data: "ocr.publish.archive_fail", archiveResult.error });
+    await logStructuredEvent("ERROR", { data: "ocr.publish.archive_fail", error: archiveResult.error });
   }
 
   const publishResult = await client.update("menus", {
@@ -807,9 +807,9 @@ async function sendMenuReadyNotification(
     if (insertResult.error) {
       throw new Error(insertResult.error.message);
     }
-    await logStructuredEvent("LOG", { data: "ocr.notify_menu_ready_done", { barId } });
+    await logStructuredEvent("LOG", { data: "ocr.notify_menu_ready_done", barId });
   } catch (error) {
-    await logStructuredEvent("ERROR", { data: "ocr.notify_menu_ready_fail", error, { barId } });
+    await logStructuredEvent("ERROR", { data: "ocr.notify_menu_ready_fail", error, barId });
   }
 }
 
