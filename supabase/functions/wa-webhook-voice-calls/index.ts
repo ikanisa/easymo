@@ -326,6 +326,35 @@ async function handleCallTerminate(call: any, correlationId: string): Promise<vo
       summary_text: `Call ${status} - Duration: ${duration || 0}s`,
     })
     .eq('call_id', callId);
+
+  // Trigger post-call notification to send summary via WhatsApp AND SMS
+  try {
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+    const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    
+    await fetch(`${SUPABASE_URL}/functions/v1/post-call-notify`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        call_id: callId,
+        phone_number: call.from,
+      }),
+    });
+
+    logStructuredEvent('POST_CALL_NOTIFY_TRIGGERED', {
+      callId,
+      correlationId,
+    });
+  } catch (error) {
+    logStructuredEvent('POST_CALL_NOTIFY_TRIGGER_ERROR', {
+      callId,
+      error: error instanceof Error ? error.message : String(error),
+      correlationId,
+    }, 'warn');
+  }
 }
 
 serve(async (req: Request): Promise<Response> => {
