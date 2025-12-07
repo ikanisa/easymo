@@ -7,7 +7,7 @@
  */
 
 import { Logger } from 'pino';
-import { MediaStreamTrack, RTCAudioSink, RTCAudioSource } from 'wrtc';
+import { MediaStreamTrack } from 'wrtc';
 // Import nonstandard module
 import { nonstandard } from 'wrtc';
 
@@ -24,7 +24,7 @@ export interface AudioFrame {
  * Receives audio from a WebRTC MediaStreamTrack
  */
 export class AudioSinkWrapper {
-  private sink: RTCAudioSink;
+  private sink: InstanceType<typeof AudioSink>;
   private log: Logger;
   private onAudioCallback?: (frame: AudioFrame) => void;
 
@@ -67,7 +67,7 @@ export class AudioSinkWrapper {
  * Sends audio to a WebRTC MediaStreamTrack
  */
 export class AudioSourceWrapper {
-  private source: RTCAudioSource;
+  private source: InstanceType<typeof AudioSource>;
   private track: MediaStreamTrack | null = null;
   private log: Logger;
   private sampleRate: number;

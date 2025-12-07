@@ -255,6 +255,12 @@ export class VoiceCallSession extends EventEmitter {
    */
   private processIncomingAudioFrame(frame: AudioFrame): void {
     try {
+      // Validate sample rate
+      if (frame.sampleRate < 8000 || frame.sampleRate > 48000) {
+        this.log.warn({ sampleRate: frame.sampleRate }, 'Unexpected sample rate, skipping frame');
+        return;
+      }
+
       // Convert Int16Array to Buffer
       const buffer = Buffer.from(frame.samples.buffer);
 
@@ -324,12 +330,19 @@ export class VoiceCallSession extends EventEmitter {
         // Ensure chunk is the right size (pad if necessary)
         let samples: Int16Array;
         if (chunk.length === chunkBytes) {
-          samples = new Int16Array(chunk.buffer, chunk.byteOffset, chunkSamples);
+          // Create new Int16Array and copy to avoid alignment issues
+          samples = new Int16Array(chunkSamples);
+          for (let i = 0; i < chunkSamples; i++) {
+            samples[i] = chunk.readInt16LE(i * 2);
+          }
         } else if (chunk.length < chunkBytes) {
           // Pad with silence
-          const padded = Buffer.alloc(chunkBytes);
-          chunk.copy(padded);
-          samples = new Int16Array(padded.buffer, padded.byteOffset, chunkSamples);
+          samples = new Int16Array(chunkSamples);
+          const actualSamples = chunk.length / 2;
+          for (let i = 0; i < actualSamples; i++) {
+            samples[i] = chunk.readInt16LE(i * 2);
+          }
+          // Rest of samples array is already zeros (silence)
         } else {
           // This shouldn't happen but log if it does
           this.log.warn({ 
