@@ -40,8 +40,10 @@ BEGIN
     AND contact_type = 'whatsapp';
   
   -- If no active WhatsApp contacts, seed defaults
+  -- NOTE: Replace these placeholder numbers with your actual admin contacts
   IF contact_count = 0 THEN
-    -- Insert default admin contacts (these are from the original schema)
+    -- Insert default admin contacts
+    -- IMPORTANT: Update these contact values with your actual admin WhatsApp numbers
     INSERT INTO public.insurance_admin_contacts (contact_type, contact_value, display_name, display_order, is_active) 
     VALUES
       ('whatsapp', '+250795588248', 'Insurance Support Team 1', 1, true),
@@ -52,14 +54,14 @@ BEGIN
     
     seeded := TRUE;
     
-    RAISE NOTICE 'Insurance admin contacts seeded: Added % default admin contacts', 4;
+    RAISE NOTICE 'Insurance admin contacts seeded: Added default admin contacts';
   ELSE
     RAISE NOTICE 'Insurance admin contacts already configured: Found % active WhatsApp contacts', contact_count;
   END IF;
   
   -- Log the seeding action for monitoring
   IF seeded THEN
-    RAISE WARNING 'IMPORTANT: Default insurance admin contacts were seeded. Please verify these contacts are correct and update if needed.';
+    RAISE WARNING 'IMPORTANT: Default insurance admin contacts were seeded from migration. Please verify these contacts are correct and update if needed in the insurance_admin_contacts table.';
   END IF;
 END;
 $$;

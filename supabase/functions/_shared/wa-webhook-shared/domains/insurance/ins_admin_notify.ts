@@ -69,7 +69,6 @@ function normalizeAdminWaId(value: string | null | undefined): string {
 function getFallbackAdminIds(): string[] {
   const raw = Deno.env.get("INSURANCE_ADMIN_FALLBACK_WA_IDS") ?? "";
   if (!raw.trim()) return [];
-  const MIN_WHATSAPP_ID_LENGTH = 8;
   return raw.split(",")
     .map((entry) => normalizeAdminWaId(entry))
     .filter((entry) => entry.length >= MIN_WHATSAPP_ID_LENGTH);
@@ -101,25 +100,31 @@ export async function notifyInsuranceAdmins(
     // Insert critical alert to notifications table for ADMIN monitoring (not sent to user)
     // This creates an internal alert record that can be monitored by ops team
     try {
-      const systemAlertWaId = Deno.env.get("SYSTEM_ALERT_ADMIN_WA_ID") ?? "+250000000000"; // Placeholder
-      await client.from("notifications").insert({
-        to_wa_id: systemAlertWaId, // System admin contact, NOT the user
-        notification_type: "system_alert",
-        payload: {
-          alert_type: "CRITICAL",
-          event: "INSURANCE_ADMIN_NO_TARGETS",
-          leadId,
-          userWaId: userWaId.slice(0, 8) + "***", // Masked
-          message: "Insurance admin notification failed: No admin contacts configured. Please add contacts to insurance_admin_contacts table or set INSURANCE_ADMIN_FALLBACK_WA_IDS environment variable.",
-          fix_instructions: [
-            "Add admin contacts to insurance_admin_contacts table with contact_type='whatsapp' and is_active=true",
-            "OR set INSURANCE_ADMIN_FALLBACK_WA_IDS environment variable (comma-separated WhatsApp IDs)",
-            "OR add entries to insurance_admins table with is_active=true",
-          ],
-        },
-        status: "queued",
-        retry_count: 0,
-      });
+      // Use configured system alert admin WA ID, or skip alert if not configured
+      // Set SYSTEM_ALERT_ADMIN_WA_ID env var to enable system alerts
+      const systemAlertWaId = Deno.env.get("SYSTEM_ALERT_ADMIN_WA_ID");
+      if (systemAlertWaId) {
+        await client.from("notifications").insert({
+          to_wa_id: systemAlertWaId, // System admin contact, NOT the user
+          notification_type: "system_alert",
+          payload: {
+            alert_type: "CRITICAL",
+            event: "INSURANCE_ADMIN_NO_TARGETS",
+            leadId,
+            userWaId: userWaId.slice(0, 8) + "***", // Masked
+            message: "Insurance admin notification failed: No admin contacts configured. Please add contacts to insurance_admin_contacts table or set INSURANCE_ADMIN_FALLBACK_WA_IDS environment variable.",
+            fix_instructions: [
+              "Add admin contacts to insurance_admin_contacts table with contact_type='whatsapp' and is_active=true",
+              "OR set INSURANCE_ADMIN_FALLBACK_WA_IDS environment variable (comma-separated WhatsApp IDs)",
+              "OR add entries to insurance_admins table with is_active=true",
+            ],
+          },
+          status: "queued",
+          retry_count: 0,
+        });
+      } else {
+        console.warn("SYSTEM_ALERT_ADMIN_WA_ID not configured - system alert not sent");
+      }
     } catch (alertError) {
       console.error("Failed to insert system alert:", alertError);
     }
@@ -142,6 +147,7 @@ export async function notifyInsuranceAdmins(
   }, "info");
 
   // Send to ALL admins concurrently (not sequentially)
+  const resolvedTargetsCount = dedupedTargets.length;
   const results = await Promise.allSettled(
     dedupedTargets.map((admin) => sendToAdmin(client, {
       admin,
@@ -150,7 +156,7 @@ export async function notifyInsuranceAdmins(
       userWaId,
       extracted,
       resolutionSource,
-      resolvedTargetsCount: dedupedTargets.length,
+      resolvedTargetsCount,
     }))
   );
 
