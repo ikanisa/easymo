@@ -1,0 +1,50 @@
+[
+  {
+    "name": "IHAHA Technologies Ltd",
+    "rating": 4.3,
+    "review_count": 79,
+    "category_type": "Electronics store",
+    "address": "KN 82 st KN 2 ST, Kn 5 Kisementi, Kigali",
+    "phone": "0788 291 402",
+    "website": "https://www.google.com/url?q=https://ihaha.rw/&opi=79508299&sa=U&ved=0ahUKEwjUquScnaqRAxWbUkEAHYTqDIAQ61gIFCgQ&usg=AOvVaw2oBUMLXbUZFclUVijBOrDs",
+    "place_id": "0x19dca4225a811f71:0x1f2527b649770708",
+    "external_id": "0x19dca4225a811f71:0x1f2527b649770708",
+    "category": "computer store",
+    "city": "Kigali",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T00:33:30.737969"
+  },
+  {
+    "name": "TECHZONE APPLE STORE SERVICE CENTER WARRANTY REPAIRS SALES SERVICE HP DELL LENOVO HUAWEI SAMSUNG ASUS ANTISTACTIC EQUIPPED",
+    "rating": 4.8,
+    "review_count": 99,
+    "category_type": "Computer store",
+    "address": "Kigali City Tower, KN 2 St, Kigali",
+    "phone": "0733 113 113",
+    "website": "https://www.google.com/url?q=https://www.qrcodechimp.com/page/rqhujhhzx0jg%3Fv%3Dchk1677176836&opi=79508299&sa=U&ved=0ahUKEwjEqIagnaqRAxWFVUEAHYC1IGQQ61gIFCgQ&usg=AOvVaw2eLnI1AsUBgDxtaAA9dodm",
+    "place_id": "0x19dca5b42270ad3f:0x9379226113a84fdf",
+    "external_id": "0x19dca5b42270ad3f:0x9379226113a84fdf",
+    "category": "computer store",
+    "city": "Kigali",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T00:33:37.511634"
+  },
+  {
+    "name": "Microzone Ltd",
+    "rating": 4.6,
+    "review_count": 11,
+    "category_type": "Computer accessories store",
+    "address": "Kigali City Mall Shop # 2.11, (UTC), 1st Floor Kigali Rwanda",
+    "phone": "0788 306 603",
+    "website": "https://www.google.com/url?q=http://www.microzone.rw/&opi=79508299&sa=U&ved=0ahUKEwjg3MSpnaqRAxV1QkEAHcxyALoQ61gIECgM&usg=AOvVaw2lYEU9x2S4ACfenJoWRvBy",
+    "place_id": "0x19dca551b0b28423:0x5223cc076ce1a9dc",
+    "external_id": "0x19dca551b0b28423:0x5223cc076ce1a9dc",
+    "category": "computer store",
+    "city": "Kigali",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T00:33:57.415164"
+  }
+]
