@@ -372,6 +372,5 @@ gcloud run services logs tail easymo-voice-bridge --region europe-west1
 
 ---
 
-**Last Updated**: 2025-12-07  
 **Decision**: Keep webhooks on Supabase  
-**Review Date**: Q2 2026 (or when traffic exceeds 5M messages/day)
+**Review Trigger**: When traffic exceeds 5M messages/day or compute requirements change significantly

@@ -141,12 +141,21 @@ enable_apis() {
 build_and_push() {
     local service_name=$1
     local dockerfile_path=$2
-    local context_dir=${3:-.}
+    local context_dir=${3:-'.'}
     
     log_info "Building ${service_name}..."
     
+    # Check if git is available and we're in a git repository
+    local git_sha=""
+    if command -v git &> /dev/null && git rev-parse --git-dir &> /dev/null 2>&1; then
+        git_sha=$(git rev-parse --short HEAD)
+    else
+        git_sha="latest"
+        log_warning "Git not available or not in a git repository. Using 'latest' as tag."
+    fi
+    
     local image_tag="${REGISTRY_URL}/${service_name}:latest"
-    local sha_tag="${REGISTRY_URL}/${service_name}:$(git rev-parse --short HEAD)"
+    local sha_tag="${REGISTRY_URL}/${service_name}:${git_sha}"
     
     # Build using Cloud Build (faster, cached)
     if gcloud builds submit \
@@ -155,11 +164,15 @@ build_and_push() {
         "${context_dir}" \
         --quiet; then
         
-        # Tag as latest
-        gcloud artifacts docker tags add \
-            "${sha_tag}" \
-            "${image_tag}" \
-            --quiet 2>/dev/null || true
+        # Tag as latest (if different from sha tag)
+        if [ "${sha_tag}" != "${image_tag}" ]; then
+            if ! gcloud artifacts docker tags add \
+                "${sha_tag}" \
+                "${image_tag}" \
+                --quiet 2>/dev/null; then
+                log_warning "Failed to tag ${service_name} as latest, but build succeeded"
+            fi
+        fi
         
         log_success "Built and pushed: ${service_name}"
         echo "${image_tag}"
