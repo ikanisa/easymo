@@ -91,6 +91,12 @@
    - Quick enable all
    - Troubleshooting
 
+9. **[whatsapp-webhooks.md](./whatsapp-webhooks.md)**
+   - Why keep webhooks on Supabase
+   - Performance & cost comparison
+   - Hybrid architecture
+   - Migration path if needed
+
 ---
 
 ## 🎯 Deployment Phases
@@ -153,7 +159,36 @@
 
 ## 🛠️ Common Tasks
 
-### Build & Deploy a Service
+### Automated Deployment (Recommended)
+
+Use the automated deployment script for complete phased deployment:
+
+```bash
+# Deploy all services (all phases)
+./scripts/gcp-deploy-all.sh
+
+# Deploy Phase 1 only (Core services)
+./scripts/gcp-deploy-all.sh --phase 1
+
+# Deploy Phase 2 only (Voice & Media)
+./scripts/gcp-deploy-all.sh --phase 2
+
+# Deploy Phase 3 only (Supporting services)
+./scripts/gcp-deploy-all.sh --phase 3
+
+# Get help
+./scripts/gcp-deploy-all.sh --help
+```
+
+**Features**:
+- Automated preflight checks
+- API enablement
+- Artifact Registry setup
+- Phased deployment (Phase 1, 2, 3)
+- Colored output and error handling
+- Service URL summary
+
+### Build & Deploy a Service (Manual)
 
 ```bash
 # 1. Build image
