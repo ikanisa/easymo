@@ -140,11 +140,16 @@ export async function handler(req: Request): Promise<Response> {
 
   // Require at least one OCR provider (OpenAI or Gemini)
   if (!hasAnyOCRProvider()) {
+    logStructuredEvent("INS_OCR_NO_PROVIDER", {
+      openaiConfigured: !!Deno.env.get("OPENAI_API_KEY"),
+      geminiConfigured: !!Deno.env.get("GEMINI_API_KEY"),
+    }, "error");
+    
     return json(
       {
         error: "no_ocr_provider",
-        message:
-          "Neither OPENAI_API_KEY nor GEMINI_API_KEY configured; cannot process OCR.",
+        message: "Neither OPENAI_API_KEY nor GEMINI_API_KEY configured. Please set at least one in Supabase Edge Function secrets.",
+        help: "Run: supabase secrets set OPENAI_API_KEY=sk-... or supabase secrets set GEMINI_API_KEY=...",
       },
       503,
     );

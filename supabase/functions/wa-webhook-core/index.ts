@@ -96,6 +96,50 @@ serve(async (req: Request): Promise<Response> => {
     }
   }
 
+  // Configuration check endpoint
+  if (url.pathname === "/config-check" || url.pathname.endsWith("/config-check")) {
+    const configStatus = {
+      service: "wa-webhook-core",
+      timestamp: new Date().toISOString(),
+      environment: {
+        // Core Supabase
+        SUPABASE_URL: !!Deno.env.get("SUPABASE_URL"),
+        SUPABASE_SERVICE_ROLE_KEY: !!Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
+        
+        // WhatsApp
+        WA_PHONE_ID: !!Deno.env.get("WA_PHONE_ID") || !!Deno.env.get("WHATSAPP_PHONE_NUMBER_ID"),
+        WA_TOKEN: !!Deno.env.get("WA_TOKEN") || !!Deno.env.get("WHATSAPP_ACCESS_TOKEN"),
+        WA_APP_SECRET: !!Deno.env.get("WA_APP_SECRET") || !!Deno.env.get("WHATSAPP_APP_SECRET"),
+        WA_VERIFY_TOKEN: !!Deno.env.get("WA_VERIFY_TOKEN") || !!Deno.env.get("WHATSAPP_VERIFY_TOKEN"),
+        
+        // AI Providers
+        OPENAI_API_KEY: !!Deno.env.get("OPENAI_API_KEY"),
+        GEMINI_API_KEY: !!Deno.env.get("GEMINI_API_KEY"),
+        
+        // Optional
+        UPSTASH_REDIS_URL: !!Deno.env.get("UPSTASH_REDIS_URL"),
+        UPSTASH_REDIS_TOKEN: !!Deno.env.get("UPSTASH_REDIS_TOKEN"),
+      },
+      missing: [] as string[],
+    };
+    
+    // Check required vars
+    const required = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "WA_PHONE_ID", "WA_TOKEN", "WA_APP_SECRET", "WA_VERIFY_TOKEN"];
+    for (const key of required) {
+      if (!configStatus.environment[key as keyof typeof configStatus.environment]) {
+        configStatus.missing.push(key);
+      }
+    }
+    
+    // Warn about AI providers
+    if (!configStatus.environment.OPENAI_API_KEY && !configStatus.environment.GEMINI_API_KEY) {
+      configStatus.missing.push("OPENAI_API_KEY or GEMINI_API_KEY (OCR will fail)");
+    }
+    
+    log("CORE_CONFIG_CHECK", { missing: configStatus.missing });
+    return json(configStatus, { status: configStatus.missing.length > 0 ? 503 : 200 });
+  }
+
   // WhatsApp verification handshake (GET)
   if (req.method === "GET") {
     const mode = url.searchParams.get("hub.mode");
