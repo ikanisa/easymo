@@ -30,18 +30,18 @@ CREATE INDEX IF NOT EXISTS idx_business_category_name
   ON public.business(category_name) 
   WHERE category_name IS NOT NULL;
 
--- For existing businesses that are bars/restaurants, set bar_id = id
+-- For existing businesses that came from bars table, set bar_id = id
 -- This makes them self-referencing for menu purposes
-UPDATE public.business 
-SET bar_id = id 
-WHERE bar_id IS NULL 
-  AND (
-    category_name ILIKE '%bar%' 
-    OR category_name ILIKE '%restaurant%'
-    OR category_name ILIKE '%cafe%'
-    OR tag ILIKE '%bar%'
-    OR tag ILIKE '%restaurant%'
-  );
+-- Only update if the business exists in the bars table (migrated data)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'bars' AND table_schema = 'public') THEN
+    UPDATE public.business 
+    SET bar_id = id 
+    WHERE bar_id IS NULL 
+      AND EXISTS (SELECT 1 FROM public.bars WHERE bars.id = business.id);
+  END IF;
+END $$;
 
 COMMENT ON COLUMN public.business.tag IS 'Business category tag/slug for filtering (e.g., restaurant, pharmacy, salon)';
 COMMENT ON COLUMN public.business.bar_id IS 'UUID linking to bar/restaurant identity for menu management. Often self-referencing (bar_id = id).';
