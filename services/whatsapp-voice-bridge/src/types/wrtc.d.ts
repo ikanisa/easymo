@@ -37,7 +37,7 @@ declare module 'wrtc' {
     addTrack(track: MediaStreamTrack): void;
   }
 
-  export interface MediaStreamTrack {
+  export class MediaStreamTrack {
     kind: string;
     id: string;
     enabled: boolean;

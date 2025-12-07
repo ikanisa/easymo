@@ -8,12 +8,13 @@
  */
 
 import { EventEmitter } from 'events';
-import { RTCPeerConnection, RTCSessionDescription, MediaStream } from 'wrtc';
+import { RTCPeerConnection, RTCSessionDescription, MediaStream, MediaStreamTrack } from 'wrtc';
 import WebSocket from 'ws';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Logger } from 'pino';
 import { AudioProcessor } from './audio-processor';
 import { AudioSinkWrapper, AudioSourceWrapper, AudioFrame } from './rtc-audio-sink';
+import { RTCAudioIO } from './rtc-audio-io';
 
 interface SessionOptions {
   callId: string;
@@ -30,8 +31,10 @@ export class VoiceCallSession extends EventEmitter {
   private peerConnection: RTCPeerConnection | null = null;
   private openaiWs: WebSocket | null = null;
   private audioProcessor: AudioProcessor;
+  private audioIO: RTCAudioIO;
   private startTime: number;
   private status: 'starting' | 'connected' | 'ended' = 'starting';
+  private incomingPayloadType: number = 0; // Track codec used by WhatsApp
   
   private readonly fromNumber: string;
   private readonly toNumber: string;
@@ -54,6 +57,7 @@ export class VoiceCallSession extends EventEmitter {
     this.supabase = options.supabase;
     this.log = options.logger;
     this.audioProcessor = new AudioProcessor(this.log);
+    this.audioIO = new RTCAudioIO(this.log);
     this.startTime = Date.now();
     this.sdpOffer = options.sdpOffer; // Store the SDP offer
   }
@@ -127,9 +131,16 @@ export class VoiceCallSession extends EventEmitter {
       this.log.info({ track: event.track.kind }, 'Received media track from WhatsApp');
       
       if (event.track.kind === 'audio') {
-        this.handleIncomingAudio(event.streams[0]);
+        this.handleIncomingAudio(event.track);
       }
     };
+
+    // Add outgoing audio track for sending to WhatsApp
+    const outgoingTrack = this.audioIO.createSource(8000); // 8kHz for WhatsApp
+    const stream = new MediaStream();
+    stream.addTrack(outgoingTrack);
+    this.peerConnection.addTrack(outgoingTrack, stream);
+    this.log.info('Added outgoing audio track to peer connection');
 
     // Set remote description (WhatsApp's SDP offer)
     await this.peerConnection.setRemoteDescription(
@@ -223,13 +234,14 @@ export class VoiceCallSession extends EventEmitter {
     
     // Start audio processing loop
     this.processAudioLoop();
+    this.log.info('Audio bridge ready - incoming/outgoing tracks configured');
   }
 
   /**
    * Handle incoming audio from WhatsApp
    */
-  private handleIncomingAudio(stream: MediaStream): void {
-    this.log.info('Processing incoming audio from WhatsApp');
+  private handleIncomingAudio(track: MediaStreamTrack): void {
+    this.log.info({ trackId: track.id }, 'Processing incoming audio from WhatsApp');
     
     // Get audio track
     const audioTrack = stream.getAudioTracks()[0];
@@ -357,6 +369,32 @@ export class VoiceCallSession extends EventEmitter {
       }
     } catch (error) {
       this.log.error({ error }, 'Failed to send buffered audio');
+    // Attach audio sink to receive raw PCM samples
+    this.audioIO.attachSink(track, (samples) => {
+      this.processIncomingAudio(samples);
+    });
+  }
+
+  /**
+   * Process incoming audio samples from WhatsApp (via RTCAudioSink)
+   * Samples are raw PCM16 at 8kHz mono
+   */
+  private processIncomingAudio(samples: Int16Array): void {
+    // Convert Int16Array to Buffer
+    const pcm8k = Buffer.from(samples.buffer);
+
+    // Resample from 8kHz to 24kHz for OpenAI
+    const pcm24k = this.audioProcessor.resample(pcm8k, 8000, 24000);
+
+    // Encode to base64
+    const base64Audio = this.audioProcessor.encodeToBase64(pcm24k);
+
+    // Send to OpenAI Realtime API
+    if (this.openaiWs && this.openaiWs.readyState === WebSocket.OPEN) {
+      this.openaiWs.send(JSON.stringify({
+        type: 'input_audio_buffer.append',
+        audio: base64Audio,
+      }));
     }
   }
 
@@ -396,6 +434,7 @@ export class VoiceCallSession extends EventEmitter {
   /**
    * Send audio to WhatsApp via WebRTC
    * Converts base64 PCM from OpenAI (24kHz) to format for WebRTC (48kHz)
+   * audioBase64 is PCM16 at 24kHz from OpenAI
    */
   private sendAudioToWhatsApp(audioBase64: string): void {
     try {
@@ -413,6 +452,18 @@ export class VoiceCallSession extends EventEmitter {
         outputBytes: pcm48k.length,
         bufferedChunks: this.audioBuffer.length,
       }, 'Buffered audio for WhatsApp');
+      const pcm24k = this.audioProcessor.decodeFromBase64(audioBase64);
+
+      // Resample from 24kHz to 8kHz for WhatsApp
+      const pcm8k = this.audioProcessor.resample(pcm24k, 24000, 8000);
+
+      // Convert Buffer to Int16Array
+      const samples = new Int16Array(pcm8k.buffer, pcm8k.byteOffset, pcm8k.length / 2);
+
+      // Send via RTCAudioSource
+      this.audioIO.sendAudio(samples);
+
+      this.log.debug({ sampleCount: samples.length }, 'Sent audio to WhatsApp');
     } catch (error) {
       this.log.error({ error }, 'Failed to send audio to WhatsApp');
     }
@@ -461,6 +512,9 @@ export class VoiceCallSession extends EventEmitter {
       this.openaiWs.close();
       this.openaiWs = null;
     }
+
+    // Stop audio I/O
+    this.audioIO.stop();
 
     // Update database
     await this.supabase
