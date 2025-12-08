@@ -1,0 +1,50 @@
+[
+  {
+    "name": "Garage MEDECAR LTD",
+    "rating": 4.5,
+    "review_count": 4,
+    "category_type": "Auto repair shop",
+    "address": "8737+67W, Gisenyi",
+    "phone": "0788 359 625",
+    "website": "https://www.google.com/url?q=http://garagemedecar.com/&opi=79508299&sa=U&ved=0ahUKEwi3mvadsq2RAxXdVUEAHYNAFDEQ61gIESgN&usg=AOvVaw1V0w-t-8ngU96RRQmXehV6",
+    "place_id": "0x19dd055ebd303b7d:0xecb05e75a96c898c",
+    "external_id": "0x19dd055ebd303b7d:0xecb05e75a96c898c",
+    "category": "auto parts",
+    "city": "Gisenyi",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-08T06:45:29.202829"
+  },
+  {
+    "name": "CHRISFIXT CAR SPARE PART SHOP",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Auto parts store",
+    "address": "Kibabi, Goma, Congo - Kinshasa",
+    "phone": "+243 978 575 720",
+    "website": "",
+    "place_id": "0x19dd05a6227816e1:0xf237ea4bb3139f5e",
+    "external_id": "0x19dd05a6227816e1:0xf237ea4bb3139f5e",
+    "category": "auto parts",
+    "city": "Gisenyi",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-08T06:45:44.952128"
+  },
+  {
+    "name": "Jeannine",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Auto parts store",
+    "address": "876V+76P, Rubavu",
+    "phone": "0780 126 577",
+    "website": "",
+    "place_id": "0x19dd0500383548f7:0x43d07796b367aae2",
+    "external_id": "0x19dd0500383548f7:0x43d07796b367aae2",
+    "category": "auto parts",
+    "city": "Gisenyi",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-08T06:46:00.801608"
+  }
+]

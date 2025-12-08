@@ -1,0 +1,34 @@
+[
+  {
+    "name": "Salon De Coiffure High Class",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Hair salon",
+    "address": "Muhanga",
+    "phone": "+250788749027",
+    "website": "",
+    "place_id": "0x19dccb47fab2437f:0x8e2d76aaaeb128c8",
+    "external_id": "0x19dccb47fab2437f:0x8e2d76aaaeb128c8",
+    "category": "salon",
+    "city": "Muhanga",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T21:25:36.776500"
+  },
+  {
+    "name": "Saloon Top Model",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Hair salon",
+    "address": "Muhanga",
+    "phone": "+250788574684",
+    "website": "",
+    "place_id": "0x19dccbd557f984a9:0x2eb3f648e0109d35",
+    "external_id": "0x19dccbd557f984a9:0x2eb3f648e0109d35",
+    "category": "salon",
+    "city": "Muhanga",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T21:25:52.549187"
+  }
+]

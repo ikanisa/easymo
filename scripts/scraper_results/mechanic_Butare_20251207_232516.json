@@ -1,0 +1,50 @@
+[
+  {
+    "name": "S.J.C GARAGE Ltd",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Mechanic",
+    "address": "9PWJ+H3, Butare",
+    "phone": "0788 582 039",
+    "website": "",
+    "place_id": "0x19c30d000fe8882d:0xa59fceca5dcbf966",
+    "external_id": "0x19c30d000fe8882d:0xa59fceca5dcbf966",
+    "category": "mechanic",
+    "city": "Butare",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T22:23:40.385078"
+  },
+  {
+    "name": "Auto Restore Shop Ltd",
+    "rating": 4.0,
+    "review_count": 7,
+    "category_type": "Car repair and maintenance service",
+    "address": "PRISON DE KARUBANDA, Butare",
+    "phone": "0788 426 457",
+    "website": "",
+    "place_id": "0x19c30c5718663b57:0x60b18346370b1575",
+    "external_id": "0x19c30c5718663b57:0x60b18346370b1575",
+    "category": "mechanic",
+    "city": "Butare",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T22:23:50.193956"
+  },
+  {
+    "name": "Spare Fam Ltd",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Auto repair shop",
+    "address": "rwanda,huye district, Butare",
+    "phone": "0782 987 653",
+    "website": "",
+    "place_id": "0x19c30d22ceb723cb:0x87738e064cc897aa",
+    "external_id": "0x19c30d22ceb723cb:0x87738e064cc897aa",
+    "category": "mechanic",
+    "city": "Butare",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T22:24:05.941826"
+  }
+]

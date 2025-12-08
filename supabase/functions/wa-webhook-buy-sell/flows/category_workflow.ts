@@ -195,7 +195,7 @@ export async function handleLocationShared(
       {
         p_latitude: lat,
         p_longitude: lng,
-        p_category: category,
+        p_category_key: category,
         p_radius_km: 10,
         p_limit: 10
       }

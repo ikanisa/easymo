@@ -1,39 +1,45 @@
 #!/bin/bash
+# Deploy Buy & Sell Category Filtering Fix
+# Date: 2025-12-08
+
 set -e
 
-echo "🔧 Deploying Buy & Sell Fix"
-echo "============================"
+echo "=========================================="
+echo "Buy & Sell Category Filtering Fix"
+echo "=========================================="
 echo ""
 
 # Check if we're in the right directory
-if [ ! -f "supabase/migrations/20251205234500_fix_search_businesses_function_final.sql" ]; then
+if [ ! -f "supabase/migrations/20251208084500_fix_buy_sell_category_filtering.sql" ]; then
   echo "❌ Error: Migration file not found"
-  echo "Please run this script from the repository root"
+  echo "   Please run from /Users/jeanbosco/workspace/easymo"
   exit 1
 fi
 
-echo "📋 Step 1: Applying database migration..."
-cd supabase
-supabase db push --include-all
+echo "✅ Migration file found"
+echo ""
+
+# Try Supabase CLI first
+echo "📋 Deploying via Supabase CLI..."
+if command -v supabase &> /dev/null; then
+  supabase db push --include-all
+  
+  if [ $? -eq 0 ]; then
+    echo ""
+    echo "✅ Migration deployed successfully!"
+    echo ""
+    echo "📊 Testing the fix..."
+    echo "Run: SELECT * FROM search_businesses_nearby(-1.9915565, 30.1059093, 'Salon', 10, 9);"
+    echo ""
+    exit 0
+  fi
+fi
 
 echo ""
-echo "✅ Step 2: Verifying function exists..."
-psql $DATABASE_URL -c "\df search_businesses_nearby" || echo "⚠️  Could not verify (DATABASE_URL not set)"
-
+echo "⚠️  Supabase CLI failed or not available"
 echo ""
-echo "📊 Step 3: Checking for businesses in database..."
-psql $DATABASE_URL -c "SELECT category, COUNT(*) as count FROM businesses WHERE is_active = true GROUP BY category LIMIT 10;" || echo "⚠️  Could not check (DATABASE_URL not set)"
-
-echo ""
-echo "🎯 Step 4: Testing function..."
-psql $DATABASE_URL -c "SELECT name, category, distance_km FROM search_businesses_nearby(-1.9536, 30.0606, 'Pharmacy', 10, 5);" || echo "⚠️  Could not test (DATABASE_URL not set)"
-
-echo ""
-echo "✅ Deployment Complete!"
-echo ""
-echo "Next steps:"
-echo "1. If no businesses found, run: psql \$DATABASE_URL -f supabase/seed_sample_businesses.sql"
-echo "2. Test via WhatsApp: Send '🛒 Buy & Sell' → Select 'Pharmacies' → Share location"
-echo "3. Monitor logs: tail -f /path/to/edge-function-logs"
-echo ""
-echo "📖 Full documentation: COMPLETE_BUY_SELL_DIAGNOSIS_AND_FIX.md"
+echo "Manual deployment options:"
+echo "1. Set DATABASE_URL and run: psql \$DATABASE_URL -f supabase/migrations/20251208084500_fix_buy_sell_category_filtering.sql"
+echo "2. Apply via Supabase Dashboard"
+echo "3. See: BUY_SELL_CATEGORY_FIX_SUMMARY.md"
+exit 1

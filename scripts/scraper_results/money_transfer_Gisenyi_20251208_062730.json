@@ -1,0 +1,50 @@
+[
+  {
+    "name": "Western Union",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Money transfer service",
+    "address": "Gisenyi",
+    "phone": "0788 777 010",
+    "website": "",
+    "place_id": "0x19dd0707193a14f9:0x623a6413a2a40a5c",
+    "external_id": "0x19dd0707193a14f9:0x623a6413a2a40a5c",
+    "category": "money transfer",
+    "city": "Gisenyi",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-08T05:26:49.151033"
+  },
+  {
+    "name": "Congolais Money Transfer Agency",
+    "rating": 4.0,
+    "review_count": 1,
+    "category_type": "Non-profit organization",
+    "address": "8737+J84, Gisenyi",
+    "phone": "0787 489 547",
+    "website": "",
+    "place_id": "0x19dd05003fad2c33:0xfdd8d3294c1ae3c9",
+    "external_id": "0x19dd05003fad2c33:0xfdd8d3294c1ae3c9",
+    "category": "money transfer",
+    "city": "Gisenyi",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-08T05:26:58.995936"
+  },
+  {
+    "name": "Western Union",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Money transfer service",
+    "address": "Gisenyi",
+    "phone": "0788 568 097",
+    "website": "https://www.google.com/url?q=https://www.westernunion.com/%3Futm_source%3Dexnetworkmaps%26utm_medium%3Dpml-yext&opi=79508299&sa=U&ved=0ahUKEwiulY_boK2RAxWPWUEAHaT9KNsQ61gIDigL&usg=AOvVaw0Ect6nPelU8JhNSqo330M-",
+    "place_id": "0x19dd0568efec281d:0xa8ad06d4f5e72a42",
+    "external_id": "0x19dd0568efec281d:0xa8ad06d4f5e72a42",
+    "category": "money transfer",
+    "city": "Gisenyi",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-08T05:27:11.825078"
+  }
+]

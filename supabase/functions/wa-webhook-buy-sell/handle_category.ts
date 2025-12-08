@@ -14,6 +14,10 @@ interface BuySellState {
   categoryName: string;
   categoryIcon: string;
   waitingForLocation: boolean;
+  latitude?: number;
+  longitude?: number;
+  offset?: number; // For pagination
+  totalAvailable?: number; // Total businesses available
 }
 
 export async function handleCategorySelection(
@@ -127,15 +131,15 @@ export async function handleLocationShared(
       longitude,
     });
 
-    // Search for nearby businesses
+    // Search for nearby businesses (fetch 10 to check if more available)
     const { data: businesses, error } = await supabase.rpc(
       "search_businesses_nearby",
       {
         p_latitude: latitude,
         p_longitude: longitude,
-        p_category: state.selectedCategory,
+        p_category_key: state.selectedCategory,
         p_radius_km: 10,
-        p_limit: 9,
+        p_limit: 19, // Fetch 19 to show 9 and check if more exist
       }
     );
 
@@ -169,10 +173,14 @@ export async function handleLocationShared(
       return;
     }
 
-    // Format results
-    let message = `📍 *Found ${businesses.length} ${state.categoryName}* near you:\n\n`;
+    // Show first 9 businesses
+    const displayBusinesses = businesses.slice(0, 9);
+    const hasMore = businesses.length > 9;
 
-    businesses.forEach((biz: any, index: number) => {
+    // Format results
+    let message = `📍 *Found ${displayBusinesses.length}${hasMore ? '+' : ''} ${state.categoryName}* near you:\n\n`;
+
+    displayBusinesses.forEach((biz: any, index: number) => {
       const distance = biz.distance_km
         ? `${biz.distance_km.toFixed(1)}km away`
         : "Distance unknown";
@@ -189,14 +197,49 @@ export async function handleLocationShared(
 
     await sendText(userPhone, message);
 
-    await logStructuredEvent("BUY_SELL_RESULTS_SENT", {
-      userId: profile.user_id,
-      category: state.selectedCategory,
-      resultCount: businesses.length,
-    });
+    // If there are more businesses, store state and send "Show More" button
+    if (hasMore) {
+      // Update state with location and offset for pagination
+      await setState(supabase, profile.user_id, {
+        key: "buy_sell_results",
+        data: {
+          selectedCategory: state.selectedCategory,
+          categoryName: state.categoryName,
+          categoryIcon: state.categoryIcon,
+          waitingForLocation: false,
+          latitude,
+          longitude,
+          offset: 9, // Next page starts at index 9
+          totalAvailable: businesses.length,
+        } as BuySellState,
+      });
 
-    // Clear state after successful search
-    await setState(supabase, profile.user_id, { key: "home", data: {} });
+      // Send "Show More" button using the WhatsApp client
+      const { sendButtons } = await import("../_shared/wa-webhook-shared/wa/client.ts");
+      await sendButtons(userPhone, {
+        body: `💡 Showing ${displayBusinesses.length} of ${businesses.length}+ businesses nearby`,
+        buttons: [
+          { id: "buy_sell_show_more", title: "📋 Show More" },
+          { id: "buy_sell_new_search", title: "🔄 New Search" },
+        ],
+      });
+
+      await logStructuredEvent("BUY_SELL_RESULTS_SENT_WITH_MORE", {
+        userId: profile.user_id,
+        category: state.selectedCategory,
+        resultCount: displayBusinesses.length,
+        hasMore: true,
+      });
+    } else {
+      // No more businesses, clear state
+      await setState(supabase, profile.user_id, { key: "home", data: {} });
+
+      await logStructuredEvent("BUY_SELL_RESULTS_SENT", {
+        userId: profile.user_id,
+        category: state.selectedCategory,
+        resultCount: displayBusinesses.length,
+      });
+    }
   } catch (error) {
     await logStructuredEvent("BUY_SELL_LOCATION_ERROR", {
       error: error instanceof Error ? error.message : String(error),

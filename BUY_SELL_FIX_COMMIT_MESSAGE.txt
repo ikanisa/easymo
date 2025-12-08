@@ -1,0 +1,56 @@
+fix(buy-sell): Correct category filtering in search_businesses_nearby function
+
+PROBLEM:
+When users select a category from Buy & Sell and share their location,
+they receive "No results" messages even when matching businesses exist
+in the database.
+
+ROOT CAUSE:
+The search_businesses_nearby() function was filtering by the wrong column:
+- Used: WHERE b.category = p_category
+- Should use: JOIN with buy_sell_categories and filter by key
+
+The 'category' column contains raw scraped values (e.g., "beauty_salon"),
+but the function receives the category KEY from buy_sell_categories table
+(e.g., "Salon"). This mismatch caused zero results.
+
+SOLUTION:
+✅ Updated search_businesses_nearby() to JOIN with buy_sell_categories
+✅ Filter by c.key matching the passed category key parameter
+✅ Added performance indexes on buy_sell_category_id and key columns
+✅ Lat/lng column names already correct (no changes needed)
+
+CHANGES:
+- Migration: supabase/migrations/20251208084500_fix_buy_sell_category_filtering.sql
+- Docs: BUY_SELL_CATEGORY_FIX_SUMMARY.md
+- Docs: BUY_SELL_FIX_QUICK_START.md
+- Script: deploy-buy-sell-fix.sh
+
+TECHNICAL DETAILS:
+- Function now uses: INNER JOIN buy_sell_categories c ON b.buy_sell_category_id = c.id
+- Filter condition: WHERE c.key = p_category_key
+- Added indexes for performance on JOIN columns
+- Returns buy_sell_category (human-readable) in results
+
+WORKFLOW:
+1. User selects: "💇 Salons & Barbers" (ID: "category_Salon")
+2. System extracts key: "Salon"
+3. Queries categories: SELECT ... WHERE key = 'Salon'
+4. Stores in state: selectedCategory = "Salon"
+5. User shares location: lat/lng
+6. Calls: search_businesses_nearby(-1.99, 30.10, 'Salon', 10, 9)
+7. Function JOINs: businesses ⟕ buy_sell_categories ON category_id
+8. Filters: WHERE c.key = 'Salon' AND within 10km
+9. Returns: Top 9 salons sorted by distance
+
+OBSERVABILITY:
+Before: {"event":"BUY_SELL_NO_RESULTS","category":"Salon"}
+After:  {"event":"BUY_SELL_RESULTS_SENT","category":"Salon","resultCount":9}
+
+DEPLOYMENT:
+./deploy-buy-sell-fix.sh
+
+TESTING:
+SELECT * FROM search_businesses_nearby(-1.9915565, 30.1059093, 'Salon', 10, 9);
+
+Related: #buy-sell #location-search #category-filtering

@@ -1,0 +1,50 @@
+[
+  {
+    "name": "HR Auto Mods Ltd",
+    "rating": 5.0,
+    "review_count": 5,
+    "category_type": "Auto repair shop",
+    "address": "Near Ahazaza Primary School, DR4 Astardi Road, Muhanga",
+    "phone": "+250792009210",
+    "website": "",
+    "place_id": "0x19dccb6a2b192699:0xb9d1d8a0d718c961",
+    "external_id": "0x19dccb6a2b192699:0xb9d1d8a0d718c961",
+    "category": "auto spare parts",
+    "city": "Muhanga",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T22:10:08.371391"
+  },
+  {
+    "name": "TRUCK&TRACTOR SPARE PARTS LTD",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Auto parts market",
+    "address": "jua kari, Magerwa road, Kigali",
+    "phone": "+250784169852",
+    "website": "",
+    "place_id": "0x19dca7c04555d5a5:0xf43bff8095031407",
+    "external_id": "0x19dca7c04555d5a5:0xf43bff8095031407",
+    "category": "auto spare parts",
+    "city": "Muhanga",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T22:10:24.107265"
+  },
+  {
+    "name": "HR Auto Mods Ltd Office",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Auto repair shop",
+    "address": "NR1, Muhanga",
+    "phone": "+250792009210",
+    "website": "",
+    "place_id": "0x19dccb4d384cedd7:0x50f22ac5f44def67",
+    "external_id": "0x19dccb4d384cedd7:0x50f22ac5f44def67",
+    "category": "auto spare parts",
+    "city": "Muhanga",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T22:10:39.952619"
+  }
+]

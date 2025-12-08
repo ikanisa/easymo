@@ -1,0 +1,18 @@
+[
+  {
+    "name": "HR Auto Mods Ltd",
+    "rating": 5.0,
+    "review_count": 5,
+    "category_type": "Auto repair shop",
+    "address": "Near Ahazaza Primary School, DR4 Astardi Road, Muhanga",
+    "phone": "+250792009210",
+    "website": "",
+    "place_id": "0x19dccb6a2b192699:0xb9d1d8a0d718c961",
+    "external_id": "0x19dccb6a2b192699:0xb9d1d8a0d718c961",
+    "category": "car parts",
+    "city": "Muhanga",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T22:09:14.944128"
+  }
+]

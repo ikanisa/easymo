@@ -1,0 +1,34 @@
+[
+  {
+    "name": "KCB ATM - Huye",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "ATM",
+    "address": "Public Relationship Services, Path Main Building_Main library, Butare",
+    "phone": "0788 309 026",
+    "website": "",
+    "place_id": "0x19c30c867faa7397:0x88ea162c26eaa226",
+    "external_id": "0x19c30c867faa7397:0x88ea162c26eaa226",
+    "category": "atm",
+    "city": "Butare",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T21:13:21.266272"
+  },
+  {
+    "name": "KCB ATM - UNR Huye",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Addiction treatment center",
+    "address": "National University Of Rwanda, Butare 6275",
+    "phone": "0788 309 026",
+    "website": "",
+    "place_id": "0x19c30c867faa7397:0x74926b1ec5dd7d00",
+    "external_id": "0x19c30c867faa7397:0x74926b1ec5dd7d00",
+    "category": "atm",
+    "city": "Butare",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T21:13:37.072268"
+  }
+]

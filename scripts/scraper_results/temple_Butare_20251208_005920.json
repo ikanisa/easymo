@@ -1,0 +1,49 @@
+[
+  {
+    "name": "Eden Temple International",
+    "rating": 4.3,
+    "review_count": 4,
+    "category_type": "Church",
+    "address": "9PHV+QPJ, Butare",
+    "phone": "0788 779 799",
+    "website": "https://www.google.com/url?q=http://www.edenschild.net/&opi=79508299&sa=U&ved=0ahUKEwiU5sui16yRAxWnQ6QEHU2bJ00Q61gIESgN&usg=AOvVaw10DbNB42dsijRelFq5jmwn",
+    "place_id": "0x19c30c80208d0a65:0x2532a7ac8d391c8e",
+    "external_id": "0x19c30c80208d0a65:0x2532a7ac8d391c8e",
+    "category": "temple",
+    "city": "Butare",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T23:58:31.570315"
+  },
+  {
+    "name": "Monastère de Gihindamuyaga",
+    "rating": 3.9,
+    "review_count": 7,
+    "category_type": "Religious destination",
+    "address": "CPX6+F59, Butare",
+    "phone": "0788 520 243",
+    "website": "https://www.google.com/url?q=http://www.gihindamuyaga.org/&opi=79508299&sa=U&ved=0ahUKEwiZgsqq16yRAxV8VKQEHc9rMAUQ61gIESgN&usg=AOvVaw13AEKfvtsg-HUci8ycRpGH",
+    "place_id": "0x19c30d2765768061:0x7a72b13fc1f5ef16",
+    "external_id": "0x19c30d2765768061:0x7a72b13fc1f5ef16",
+    "category": "temple",
+    "city": "Butare",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T23:58:48.284885"
+  },
+  {
+    "name": "ZION TEMPLE CELEBRATION CENTER HUYE PARISH",
+    "rating": 0.0,
+    "review_count": 0,
+    "address": "9PXR+QQV, Butare",
+    "phone": "0788 737 156",
+    "website": "",
+    "place_id": "0x19c30d41f87d65e7:0x34bfd1965986513e",
+    "external_id": "0x19c30d41f87d65e7:0x34bfd1965986513e",
+    "category": "temple",
+    "city": "Butare",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T23:59:20.336105"
+  }
+]

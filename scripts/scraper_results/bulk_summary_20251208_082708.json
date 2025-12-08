@@ -1,0 +1,5082 @@
+{
+  "start_time": "2025-12-06T20:38:38.555966",
+  "elapsed_seconds": 128909.93,
+  "categories_processed": 104,
+  "cities_processed": 5,
+  "total_businesses_scraped": 6794,
+  "total_inserted_to_db": 2741,
+  "total_errors": 234,
+  "dry_run": false,
+  "results": [
+    {
+      "category": "restaurant",
+      "city": "Kigali",
+      "count": 39,
+      "file": "scraper_results/restaurant_Kigali_20251206_204424.json",
+      "stats": {
+        "inserted": 14,
+        "duplicates": 25,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "cafe",
+      "city": "Kigali",
+      "count": 40,
+      "file": "scraper_results/cafe_Kigali_20251206_205033.json",
+      "stats": {
+        "inserted": 9,
+        "duplicates": 31,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "bar",
+      "city": "Kigali",
+      "count": 36,
+      "file": "scraper_results/bar_Kigali_20251206_205718.json",
+      "stats": {
+        "inserted": 31,
+        "duplicates": 5,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "bakery",
+      "city": "Kigali",
+      "count": 40,
+      "file": "scraper_results/bakery_Kigali_20251206_210429.json",
+      "stats": {
+        "inserted": 31,
+        "duplicates": 9,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "fast food",
+      "city": "Kigali",
+      "count": 40,
+      "file": "scraper_results/fast_food_Kigali_20251206_211102.json",
+      "stats": {
+        "inserted": 32,
+        "duplicates": 8,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "pizza",
+      "city": "Kigali",
+      "count": 39,
+      "file": "scraper_results/pizza_Kigali_20251206_211733.json",
+      "stats": {
+        "inserted": 27,
+        "duplicates": 12,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "barbecue",
+      "city": "Kigali",
+      "count": 38,
+      "file": "scraper_results/barbecue_Kigali_20251206_212424.json",
+      "stats": {
+        "inserted": 24,
+        "duplicates": 14,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "ice cream",
+      "city": "Kigali",
+      "count": 26,
+      "file": "scraper_results/ice_cream_Kigali_20251206_213102.json",
+      "stats": {
+        "inserted": 18,
+        "duplicates": 8,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "coffee shop",
+      "city": "Kigali",
+      "count": 39,
+      "file": "scraper_results/coffee_shop_Kigali_20251206_213725.json",
+      "stats": {
+        "inserted": 14,
+        "duplicates": 25,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "pub",
+      "city": "Kigali",
+      "count": 33,
+      "file": "scraper_results/pub_Kigali_20251206_214406.json",
+      "stats": {
+        "inserted": 5,
+        "duplicates": 28,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "nightclub",
+      "city": "Kigali",
+      "count": 37,
+      "file": "scraper_results/nightclub_Kigali_20251206_215033.json",
+      "stats": {
+        "inserted": 18,
+        "duplicates": 19,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "food court",
+      "city": "Kigali",
+      "count": 38,
+      "file": "scraper_results/food_court_Kigali_20251206_215712.json",
+      "stats": {
+        "inserted": 11,
+        "duplicates": 27,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "hotel",
+      "city": "Kigali",
+      "count": 39,
+      "file": "scraper_results/hotel_Kigali_20251206_220544.json",
+      "stats": {
+        "inserted": 8,
+        "duplicates": 31,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "motel",
+      "city": "Kigali",
+      "count": 37,
+      "file": "scraper_results/motel_Kigali_20251206_221558.json",
+      "stats": {
+        "inserted": 21,
+        "duplicates": 16,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "guest house",
+      "city": "Kigali",
+      "count": 20,
+      "file": "scraper_results/guest_house_Kigali_20251206_222056.json",
+      "stats": {
+        "inserted": 14,
+        "duplicates": 6,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "lodge",
+      "city": "Kigali",
+      "count": 37,
+      "file": "scraper_results/lodge_Kigali_20251206_222950.json",
+      "stats": {
+        "inserted": 26,
+        "duplicates": 11,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "hostel",
+      "city": "Kigali",
+      "count": 37,
+      "file": "scraper_results/hostel_Kigali_20251206_223946.json",
+      "stats": {
+        "inserted": 24,
+        "duplicates": 13,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "resort",
+      "city": "Kigali",
+      "count": 39,
+      "file": "scraper_results/resort_Kigali_20251206_224840.json",
+      "stats": {
+        "inserted": 24,
+        "duplicates": 15,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "pharmacy",
+      "city": "Kigali",
+      "count": 49,
+      "file": "scraper_results/pharmacy_Kigali_20251206_230039.json",
+      "stats": {
+        "inserted": 18,
+        "duplicates": 31,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "hospital",
+      "city": "Kigali",
+      "count": 52,
+      "file": "scraper_results/hospital_Kigali_20251206_231035.json",
+      "stats": {
+        "inserted": 34,
+        "duplicates": 18,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "clinic",
+      "city": "Kigali",
+      "count": 39,
+      "file": "scraper_results/clinic_Kigali_20251206_231948.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 37,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "doctor",
+      "city": "Kigali",
+      "count": 57,
+      "file": "scraper_results/doctor_Kigali_20251206_232904.json",
+      "stats": {
+        "inserted": 23,
+        "duplicates": 21,
+        "errors": 13
+      },
+      "success": true
+    },
+    {
+      "category": "dentist",
+      "city": "Kigali",
+      "count": 48,
+      "file": "scraper_results/dentist_Kigali_20251206_233737.json",
+      "stats": {
+        "inserted": 32,
+        "duplicates": 11,
+        "errors": 5
+      },
+      "success": true
+    },
+    {
+      "category": "laboratory",
+      "city": "Kigali",
+      "count": 51,
+      "file": "scraper_results/laboratory_Kigali_20251206_234823.json",
+      "stats": {
+        "inserted": 35,
+        "duplicates": 10,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "medical center",
+      "city": "Kigali",
+      "count": 46,
+      "file": "scraper_results/medical_center_Kigali_20251206_235902.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 24,
+        "errors": 19
+      },
+      "success": true
+    },
+    {
+      "category": "physiotherapy",
+      "city": "Kigali",
+      "count": 36,
+      "file": "scraper_results/physiotherapy_Kigali_20251207_000614.json",
+      "stats": {
+        "inserted": 21,
+        "duplicates": 8,
+        "errors": 7
+      },
+      "success": true
+    },
+    {
+      "category": "optical store",
+      "city": "Kigali",
+      "count": 21,
+      "file": "scraper_results/optical_store_Kigali_20251207_001002.json",
+      "stats": {
+        "inserted": 17,
+        "duplicates": 2,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "veterinary",
+      "city": "Kigali",
+      "count": 21,
+      "file": "scraper_results/veterinary_Kigali_20251207_001524.json",
+      "stats": {
+        "inserted": 20,
+        "duplicates": 1,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "supermarket",
+      "city": "Kigali",
+      "count": 38,
+      "file": "scraper_results/supermarket_Kigali_20251207_002230.json",
+      "stats": {
+        "inserted": 6,
+        "duplicates": 32,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "grocery store",
+      "city": "Kigali",
+      "count": 38,
+      "file": "scraper_results/grocery_store_Kigali_20251207_002929.json",
+      "stats": {
+        "inserted": 5,
+        "duplicates": 30,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "convenience store",
+      "city": "Kigali",
+      "count": 26,
+      "file": "scraper_results/convenience_store_Kigali_20251207_003711.json",
+      "stats": {
+        "inserted": 10,
+        "duplicates": 15,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "shopping mall",
+      "city": "Kigali",
+      "count": 30,
+      "file": "scraper_results/shopping_mall_Kigali_20251207_004457.json",
+      "stats": {
+        "inserted": 24,
+        "duplicates": 6,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "market",
+      "city": "Kigali",
+      "count": 33,
+      "file": "scraper_results/market_Kigali_20251207_005807.json",
+      "stats": {
+        "inserted": 29,
+        "duplicates": 3,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "boutique",
+      "city": "Kigali",
+      "count": 39,
+      "file": "scraper_results/boutique_Kigali_20251207_010557.json",
+      "stats": {
+        "inserted": 19,
+        "duplicates": 20,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "clothing store",
+      "city": "Kigali",
+      "count": 37,
+      "file": "scraper_results/clothing_store_Kigali_20251207_011222.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 37,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "shoe store",
+      "city": "Kigali",
+      "count": 39,
+      "file": "scraper_results/shoe_store_Kigali_20251207_011956.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 37,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "electronics store",
+      "city": "Kigali",
+      "count": 32,
+      "file": "scraper_results/electronics_store_Kigali_20251207_012546.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 32,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "phone shop",
+      "city": "Kigali",
+      "count": 37,
+      "file": "scraper_results/phone_shop_Kigali_20251207_013257.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 35,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "computer store",
+      "city": "Kigali",
+      "count": 3,
+      "file": "scraper_results/computer_store_Kigali_20251207_013402.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 2,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "furniture store",
+      "city": "Kigali",
+      "count": 26,
+      "file": "scraper_results/furniture_store_Kigali_20251207_062424.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 23,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "hardware store",
+      "city": "Kigali",
+      "count": 33,
+      "file": "scraper_results/hardware_store_Kigali_20251207_063239.json",
+      "stats": {
+        "inserted": 6,
+        "duplicates": 27,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "bookstore",
+      "city": "Kigali",
+      "count": 35,
+      "file": "scraper_results/bookstore_Kigali_20251207_064015.json",
+      "stats": {
+        "inserted": 25,
+        "duplicates": 10,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "jewelry store",
+      "city": "Kigali",
+      "count": 36,
+      "file": "scraper_results/jewelry_store_Kigali_20251207_064729.json",
+      "stats": {
+        "inserted": 29,
+        "duplicates": 4,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "cosmetics",
+      "city": "Kigali",
+      "count": 39,
+      "file": "scraper_results/cosmetics_Kigali_20251207_065522.json",
+      "stats": {
+        "inserted": 7,
+        "duplicates": 28,
+        "errors": 4
+      },
+      "success": true
+    },
+    {
+      "category": "beauty supply",
+      "city": "Kigali",
+      "count": 57,
+      "file": "scraper_results/beauty_supply_Kigali_20251207_070630.json",
+      "stats": {
+        "inserted": 15,
+        "duplicates": 33,
+        "errors": 9
+      },
+      "success": true
+    },
+    {
+      "category": "salon",
+      "city": "Kigali",
+      "count": 38,
+      "file": "scraper_results/salon_Kigali_20251207_071342.json",
+      "stats": {
+        "inserted": 5,
+        "duplicates": 26,
+        "errors": 7
+      },
+      "success": true
+    },
+    {
+      "category": "barbershop",
+      "city": "Kigali",
+      "count": 33,
+      "file": "scraper_results/barbershop_Kigali_20251207_072157.json",
+      "stats": {
+        "inserted": 6,
+        "duplicates": 3,
+        "errors": 24
+      },
+      "success": true
+    },
+    {
+      "category": "spa",
+      "city": "Kigali",
+      "count": 40,
+      "file": "scraper_results/spa_Kigali_20251207_072758.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 3,
+        "errors": 37
+      },
+      "success": true
+    },
+    {
+      "category": "beauty salon",
+      "city": "Kigali",
+      "count": 38,
+      "file": "scraper_results/beauty_salon_Kigali_20251207_073521.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 26,
+        "errors": 9
+      },
+      "success": true
+    },
+    {
+      "category": "nail salon",
+      "city": "Kigali",
+      "count": 36,
+      "file": "scraper_results/nail_salon_Kigali_20251207_074307.json",
+      "stats": {
+        "inserted": 13,
+        "duplicates": 13,
+        "errors": 10
+      },
+      "success": true
+    },
+    {
+      "category": "laundry",
+      "city": "Kigali",
+      "count": 51,
+      "file": "scraper_results/laundry_Kigali_20251207_075630.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 3,
+        "errors": 46
+      },
+      "success": true
+    },
+    {
+      "category": "dry cleaning",
+      "city": "Kigali",
+      "count": 57,
+      "file": "scraper_results/dry_cleaning_Kigali_20251207_080923.json",
+      "stats": {
+        "inserted": 12,
+        "duplicates": 3,
+        "errors": 42
+      },
+      "success": true
+    },
+    {
+      "category": "tailor",
+      "city": "Kigali",
+      "count": 32,
+      "file": "scraper_results/tailor_Kigali_20251207_081832.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 2,
+        "errors": 29
+      },
+      "success": true
+    },
+    {
+      "category": "repair shop",
+      "city": "Kigali",
+      "count": 54,
+      "file": "scraper_results/repair_shop_Kigali_20251207_083019.json",
+      "stats": {
+        "inserted": 25,
+        "duplicates": 2,
+        "errors": 27
+      },
+      "success": true
+    },
+    {
+      "category": "bank",
+      "city": "Kigali",
+      "count": 32,
+      "file": "scraper_results/bank_Kigali_20251207_084153.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 30,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "atm",
+      "city": "Kigali",
+      "count": 11,
+      "file": "scraper_results/atm_Kigali_20251207_085505.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 8,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "money transfer",
+      "city": "Kigali",
+      "count": 57,
+      "file": "scraper_results/money_transfer_Kigali_20251207_090749.json",
+      "stats": {
+        "inserted": 44,
+        "duplicates": 13,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "forex bureau",
+      "city": "Kigali",
+      "count": 31,
+      "file": "scraper_results/forex_bureau_Kigali_20251207_091453.json",
+      "stats": {
+        "inserted": 19,
+        "duplicates": 5,
+        "errors": 7
+      },
+      "success": true
+    },
+    {
+      "category": "insurance",
+      "city": "Kigali",
+      "count": 47,
+      "file": "scraper_results/insurance_Kigali_20251207_092725.json",
+      "stats": {
+        "inserted": 45,
+        "duplicates": 1,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "accounting",
+      "city": "Kigali",
+      "count": 52,
+      "file": "scraper_results/accounting_Kigali_20251207_093934.json",
+      "stats": {
+        "inserted": 51,
+        "duplicates": 1,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "financial advisor",
+      "city": "Kigali",
+      "count": 59,
+      "file": "scraper_results/financial_advisor_Kigali_20251207_095041.json",
+      "stats": {
+        "inserted": 43,
+        "duplicates": 2,
+        "errors": 14
+      },
+      "success": true
+    },
+    {
+      "category": "school",
+      "city": "Kigali",
+      "count": 42,
+      "file": "scraper_results/school_Kigali_20251207_100631.json",
+      "stats": {
+        "inserted": 11,
+        "duplicates": 29,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "university",
+      "city": "Kigali",
+      "count": 5,
+      "file": "scraper_results/university_Kigali_20251207_100837.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 0,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "college",
+      "city": "Kigali",
+      "count": 49,
+      "file": "scraper_results/college_Kigali_20251207_102030.json",
+      "stats": {
+        "inserted": 35,
+        "duplicates": 7,
+        "errors": 7
+      },
+      "success": true
+    },
+    {
+      "category": "training center",
+      "city": "Kigali",
+      "count": 54,
+      "file": "scraper_results/training_center_Kigali_20251207_103145.json",
+      "stats": {
+        "inserted": 48,
+        "duplicates": 2,
+        "errors": 4
+      },
+      "success": true
+    },
+    {
+      "category": "kindergarten",
+      "city": "Kigali",
+      "count": 45,
+      "file": "scraper_results/kindergarten_Kigali_20251207_104508.json",
+      "stats": {
+        "inserted": 35,
+        "duplicates": 10,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "library",
+      "city": "Kigali",
+      "count": 0,
+      "file": "scraper_results/library_Kigali_20251207_104545.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "tutoring",
+      "city": "Kigali",
+      "count": 38,
+      "file": "scraper_results/tutoring_Kigali_20251207_105401.json",
+      "stats": {
+        "inserted": 34,
+        "duplicates": 1,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "gas station",
+      "city": "Kigali",
+      "count": 25,
+      "file": "scraper_results/gas_station_Kigali_20251207_110638.json",
+      "stats": {
+        "inserted": 24,
+        "duplicates": 1,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "car wash",
+      "city": "Kigali",
+      "count": 43,
+      "file": "scraper_results/car_wash_Kigali_20251207_111917.json",
+      "stats": {
+        "inserted": 37,
+        "duplicates": 2,
+        "errors": 4
+      },
+      "success": true
+    },
+    {
+      "category": "car repair",
+      "city": "Kigali",
+      "count": 54,
+      "file": "scraper_results/car_repair_Kigali_20251207_113108.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 25,
+        "errors": 25
+      },
+      "success": true
+    },
+    {
+      "category": "mechanic",
+      "city": "Kigali",
+      "count": 55,
+      "file": "scraper_results/mechanic_Kigali_20251207_114315.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 22,
+        "errors": 32
+      },
+      "success": true
+    },
+    {
+      "category": "auto parts",
+      "city": "Kigali",
+      "count": 37,
+      "file": "scraper_results/auto_parts_Kigali_20251207_115125.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 9,
+        "errors": 25
+      },
+      "success": true
+    },
+    {
+      "category": "tire shop",
+      "city": "Kigali",
+      "count": 52,
+      "file": "scraper_results/tire_shop_Kigali_20251207_120316.json",
+      "stats": {
+        "inserted": 13,
+        "duplicates": 15,
+        "errors": 24
+      },
+      "success": true
+    },
+    {
+      "category": "car dealer",
+      "city": "Kigali",
+      "count": 38,
+      "file": "scraper_results/car_dealer_Kigali_20251207_120946.json",
+      "stats": {
+        "inserted": 28,
+        "duplicates": 2,
+        "errors": 8
+      },
+      "success": true
+    },
+    {
+      "category": "lawyer",
+      "city": "Kigali",
+      "count": 56,
+      "file": "scraper_results/lawyer_Kigali_20251207_122022.json",
+      "stats": {
+        "inserted": 49,
+        "duplicates": 2,
+        "errors": 5
+      },
+      "success": true
+    },
+    {
+      "category": "law firm",
+      "city": "Kigali",
+      "count": 55,
+      "file": "scraper_results/law_firm_Kigali_20251207_123125.json",
+      "stats": {
+        "inserted": 11,
+        "duplicates": 1,
+        "errors": 43
+      },
+      "success": true
+    },
+    {
+      "category": "real estate",
+      "city": "Kigali",
+      "count": 55,
+      "file": "scraper_results/real_estate_Kigali_20251207_124118.json",
+      "stats": {
+        "inserted": 54,
+        "duplicates": 1,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "architect",
+      "city": "Kigali",
+      "count": 52,
+      "file": "scraper_results/architect_Kigali_20251207_125306.json",
+      "stats": {
+        "inserted": 49,
+        "duplicates": 2,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "engineer",
+      "city": "Kigali",
+      "count": 55,
+      "file": "scraper_results/engineer_Kigali_20251207_130417.json",
+      "stats": {
+        "inserted": 49,
+        "duplicates": 4,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "consultant",
+      "city": "Kigali",
+      "count": 57,
+      "file": "scraper_results/consultant_Kigali_20251207_131435.json",
+      "stats": {
+        "inserted": 44,
+        "duplicates": 7,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "printing",
+      "city": "Kigali",
+      "count": 56,
+      "file": "scraper_results/printing_Kigali_20251207_132619.json",
+      "stats": {
+        "inserted": 51,
+        "duplicates": 3,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "advertising",
+      "city": "Kigali",
+      "count": 58,
+      "file": "scraper_results/advertising_Kigali_20251207_133638.json",
+      "stats": {
+        "inserted": 55,
+        "duplicates": 3,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "construction",
+      "city": "Kigali",
+      "count": 55,
+      "file": "scraper_results/construction_Kigali_20251207_134706.json",
+      "stats": {
+        "inserted": 42,
+        "duplicates": 2,
+        "errors": 11
+      },
+      "success": true
+    },
+    {
+      "category": "plumber",
+      "city": "Kigali",
+      "count": 23,
+      "file": "scraper_results/plumber_Kigali_20251207_135154.json",
+      "stats": {
+        "inserted": 18,
+        "duplicates": 2,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "electrician",
+      "city": "Kigali",
+      "count": 55,
+      "file": "scraper_results/electrician_Kigali_20251207_140434.json",
+      "stats": {
+        "inserted": 35,
+        "duplicates": 6,
+        "errors": 14
+      },
+      "success": true
+    },
+    {
+      "category": "carpenter",
+      "city": "Kigali",
+      "count": 43,
+      "file": "scraper_results/carpenter_Kigali_20251207_141452.json",
+      "stats": {
+        "inserted": 39,
+        "duplicates": 1,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "painter",
+      "city": "Kigali",
+      "count": 56,
+      "file": "scraper_results/painter_Kigali_20251207_142640.json",
+      "stats": {
+        "inserted": 44,
+        "duplicates": 3,
+        "errors": 9
+      },
+      "success": true
+    },
+    {
+      "category": "hardware",
+      "city": "Kigali",
+      "count": 35,
+      "file": "scraper_results/hardware_Kigali_20251207_143555.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 0,
+        "errors": 31
+      },
+      "success": true
+    },
+    {
+      "category": "locksmith",
+      "city": "Kigali",
+      "count": 2,
+      "file": "scraper_results/locksmith_Kigali_20251207_143655.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 1,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "cleaning service",
+      "city": "Kigali",
+      "count": 57,
+      "file": "scraper_results/cleaning_service_Kigali_20251207_144837.json",
+      "stats": {
+        "inserted": 25,
+        "duplicates": 26,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "gym",
+      "city": "Kigali",
+      "count": 39,
+      "file": "scraper_results/gym_Kigali_20251207_145540.json",
+      "stats": {
+        "inserted": 36,
+        "duplicates": 2,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "fitness center",
+      "city": "Kigali",
+      "count": 32,
+      "file": "scraper_results/fitness_center_Kigali_20251207_150204.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 24,
+        "errors": 5
+      },
+      "success": true
+    },
+    {
+      "category": "sports club",
+      "city": "Kigali",
+      "count": 55,
+      "file": "scraper_results/sports_club_Kigali_20251207_151255.json",
+      "stats": {
+        "inserted": 24,
+        "duplicates": 20,
+        "errors": 11
+      },
+      "success": true
+    },
+    {
+      "category": "cinema",
+      "city": "Kigali",
+      "count": 18,
+      "file": "scraper_results/cinema_Kigali_20251207_151748.json",
+      "stats": {
+        "inserted": 18,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "theater",
+      "city": "Kigali",
+      "count": 24,
+      "file": "scraper_results/theater_Kigali_20251207_152333.json",
+      "stats": {
+        "inserted": 7,
+        "duplicates": 14,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "event venue",
+      "city": "Kigali",
+      "count": 36,
+      "file": "scraper_results/event_venue_Kigali_20251207_153019.json",
+      "stats": {
+        "inserted": 33,
+        "duplicates": 2,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "photography",
+      "city": "Kigali",
+      "count": 53,
+      "file": "scraper_results/photography_Kigali_20251207_154121.json",
+      "stats": {
+        "inserted": 49,
+        "duplicates": 3,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "travel agency",
+      "city": "Kigali",
+      "count": 59,
+      "file": "scraper_results/travel_agency_Kigali_20251207_155018.json",
+      "stats": {
+        "inserted": 58,
+        "duplicates": 0,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "church",
+      "city": "Kigali",
+      "count": 21,
+      "file": "scraper_results/church_Kigali_20251207_155800.json",
+      "stats": {
+        "inserted": 20,
+        "duplicates": 1,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "mosque",
+      "city": "Kigali",
+      "count": 8,
+      "file": "scraper_results/mosque_Kigali_20251207_160652.json",
+      "stats": {
+        "inserted": 8,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "temple",
+      "city": "Kigali",
+      "count": 23,
+      "file": "scraper_results/temple_Kigali_20251207_161447.json",
+      "stats": {
+        "inserted": 15,
+        "duplicates": 0,
+        "errors": 8
+      },
+      "success": true
+    },
+    {
+      "category": "community center",
+      "city": "Kigali",
+      "count": 21,
+      "file": "scraper_results/community_center_Kigali_20251207_162328.json",
+      "stats": {
+        "inserted": 10,
+        "duplicates": 1,
+        "errors": 10
+      },
+      "success": true
+    },
+    {
+      "category": "NGO",
+      "city": "Kigali",
+      "count": 54,
+      "file": "scraper_results/NGO_Kigali_20251207_163302.json",
+      "stats": {
+        "inserted": 51,
+        "duplicates": 2,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "restaurant",
+      "city": "Butare",
+      "count": 27,
+      "file": "scraper_results/restaurant_Butare_20251207_164047.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 20,
+        "errors": 7
+      },
+      "success": true
+    },
+    {
+      "category": "cafe",
+      "city": "Butare",
+      "count": 27,
+      "file": "scraper_results/cafe_Butare_20251207_164824.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 17,
+        "errors": 9
+      },
+      "success": true
+    },
+    {
+      "category": "bar",
+      "city": "Butare",
+      "count": 22,
+      "file": "scraper_results/bar_Butare_20251207_165700.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 21,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "bakery",
+      "city": "Butare",
+      "count": 25,
+      "file": "scraper_results/bakery_Butare_20251207_170252.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 13,
+        "errors": 12
+      },
+      "success": true
+    },
+    {
+      "category": "fast food",
+      "city": "Butare",
+      "count": 26,
+      "file": "scraper_results/fast_food_Butare_20251207_171111.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 21,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "pizza",
+      "city": "Butare",
+      "count": 18,
+      "file": "scraper_results/pizza_Butare_20251207_171648.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 13,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "barbecue",
+      "city": "Butare",
+      "count": 25,
+      "file": "scraper_results/barbecue_Butare_20251207_172518.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 20,
+        "errors": 5
+      },
+      "success": true
+    },
+    {
+      "category": "ice cream",
+      "city": "Butare",
+      "count": 33,
+      "file": "scraper_results/ice_cream_Butare_20251207_173248.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 21,
+        "errors": 12
+      },
+      "success": true
+    },
+    {
+      "category": "coffee shop",
+      "city": "Butare",
+      "count": 29,
+      "file": "scraper_results/coffee_shop_Butare_20251207_174024.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 17,
+        "errors": 11
+      },
+      "success": true
+    },
+    {
+      "category": "pub",
+      "city": "Butare",
+      "count": 22,
+      "file": "scraper_results/pub_Butare_20251207_174911.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 18,
+        "errors": 4
+      },
+      "success": true
+    },
+    {
+      "category": "nightclub",
+      "city": "Butare",
+      "count": 6,
+      "file": "scraper_results/nightclub_Butare_20251207_175248.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 6,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "food court",
+      "city": "Butare",
+      "count": 23,
+      "file": "scraper_results/food_court_Butare_20251207_180101.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 19,
+        "errors": 4
+      },
+      "success": true
+    },
+    {
+      "category": "hotel",
+      "city": "Butare",
+      "count": 31,
+      "file": "scraper_results/hotel_Butare_20251207_180950.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 3,
+        "errors": 28
+      },
+      "success": true
+    },
+    {
+      "category": "motel",
+      "city": "Butare",
+      "count": 31,
+      "file": "scraper_results/motel_Butare_20251207_181857.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 3,
+        "errors": 24
+      },
+      "success": true
+    },
+    {
+      "category": "guest house",
+      "city": "Butare",
+      "count": 7,
+      "file": "scraper_results/guest_house_Butare_20251207_182122.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 2,
+        "errors": 4
+      },
+      "success": true
+    },
+    {
+      "category": "lodge",
+      "city": "Butare",
+      "count": 32,
+      "file": "scraper_results/lodge_Butare_20251207_183349.json",
+      "stats": {
+        "inserted": 9,
+        "duplicates": 3,
+        "errors": 20
+      },
+      "success": true
+    },
+    {
+      "category": "hostel",
+      "city": "Butare",
+      "count": 26,
+      "file": "scraper_results/hostel_Butare_20251207_184145.json",
+      "stats": {
+        "inserted": 5,
+        "duplicates": 2,
+        "errors": 19
+      },
+      "success": true
+    },
+    {
+      "category": "resort",
+      "city": "Butare",
+      "count": 34,
+      "file": "scraper_results/resort_Butare_20251207_185030.json",
+      "stats": {
+        "inserted": 13,
+        "duplicates": 1,
+        "errors": 20
+      },
+      "success": true
+    },
+    {
+      "category": "pharmacy",
+      "city": "Butare",
+      "count": 8,
+      "file": "scraper_results/pharmacy_Butare_20251207_185516.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 8
+      },
+      "success": true
+    },
+    {
+      "category": "hospital",
+      "city": "Butare",
+      "count": 10,
+      "file": "scraper_results/hospital_Butare_20251207_190336.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 9
+      },
+      "success": true
+    },
+    {
+      "category": "clinic",
+      "city": "Butare",
+      "count": 18,
+      "file": "scraper_results/clinic_Butare_20251207_191801.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 18
+      },
+      "success": true
+    },
+    {
+      "category": "doctor",
+      "city": "Butare",
+      "count": 10,
+      "file": "scraper_results/doctor_Butare_20251207_192359.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 10
+      },
+      "success": true
+    },
+    {
+      "category": "dentist",
+      "city": "Butare",
+      "count": 0,
+      "file": "scraper_results/dentist_Butare_20251207_192423.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "laboratory",
+      "city": "Butare",
+      "count": 4,
+      "file": "scraper_results/laboratory_Butare_20251207_192749.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 4
+      },
+      "success": true
+    },
+    {
+      "category": "medical center",
+      "city": "Butare",
+      "count": 18,
+      "file": "scraper_results/medical_center_Butare_20251207_194153.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 17
+      },
+      "success": true
+    },
+    {
+      "category": "physiotherapy",
+      "city": "Butare",
+      "count": 15,
+      "file": "scraper_results/physiotherapy_Butare_20251207_194840.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 1,
+        "errors": 13
+      },
+      "success": true
+    },
+    {
+      "category": "optical store",
+      "city": "Butare",
+      "count": 0,
+      "file": "scraper_results/optical_store_Butare_20251207_194943.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "veterinary",
+      "city": "Butare",
+      "count": 1,
+      "file": "scraper_results/veterinary_Butare_20251207_195053.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "supermarket",
+      "city": "Butare",
+      "count": 7,
+      "file": "scraper_results/supermarket_Butare_20251207_195314.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 7
+      },
+      "success": true
+    },
+    {
+      "category": "grocery store",
+      "city": "Butare",
+      "count": 10,
+      "file": "scraper_results/grocery_store_Butare_20251207_195719.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 10
+      },
+      "success": true
+    },
+    {
+      "category": "convenience store",
+      "city": "Butare",
+      "count": 19,
+      "file": "scraper_results/convenience_store_Butare_20251207_200412.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 19
+      },
+      "success": true
+    },
+    {
+      "category": "shopping mall",
+      "city": "Butare",
+      "count": 26,
+      "file": "scraper_results/shopping_mall_Butare_20251207_201235.json",
+      "stats": {
+        "inserted": 9,
+        "duplicates": 5,
+        "errors": 12
+      },
+      "success": true
+    },
+    {
+      "category": "market",
+      "city": "Butare",
+      "count": 6,
+      "file": "scraper_results/market_Butare_20251207_201640.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "boutique",
+      "city": "Butare",
+      "count": 33,
+      "file": "scraper_results/boutique_Butare_20251207_202548.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 32
+      },
+      "success": true
+    },
+    {
+      "category": "clothing store",
+      "city": "Butare",
+      "count": 28,
+      "file": "scraper_results/clothing_store_Butare_20251207_203546.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 27
+      },
+      "success": true
+    },
+    {
+      "category": "shoe store",
+      "city": "Butare",
+      "count": 8,
+      "file": "scraper_results/shoe_store_Butare_20251207_203906.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 8
+      },
+      "success": true
+    },
+    {
+      "category": "electronics store",
+      "city": "Butare",
+      "count": 11,
+      "file": "scraper_results/electronics_store_Butare_20251207_204251.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 11
+      },
+      "success": true
+    },
+    {
+      "category": "phone shop",
+      "city": "Butare",
+      "count": 22,
+      "file": "scraper_results/phone_shop_Butare_20251207_205010.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 22
+      },
+      "success": true
+    },
+    {
+      "category": "computer store",
+      "city": "Butare",
+      "count": 8,
+      "file": "scraper_results/computer_store_Butare_20251207_205225.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 8
+      },
+      "success": true
+    },
+    {
+      "category": "furniture store",
+      "city": "Butare",
+      "count": 6,
+      "file": "scraper_results/furniture_store_Butare_20251207_205421.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "hardware store",
+      "city": "Butare",
+      "count": 2,
+      "file": "scraper_results/hardware_store_Butare_20251207_205514.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "bookstore",
+      "city": "Butare",
+      "count": 7,
+      "file": "scraper_results/bookstore_Butare_20251207_205812.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 0,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "jewelry store",
+      "city": "Butare",
+      "count": 2,
+      "file": "scraper_results/jewelry_store_Butare_20251207_205910.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "cosmetics",
+      "city": "Butare",
+      "count": 22,
+      "file": "scraper_results/cosmetics_Butare_20251207_210841.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 21
+      },
+      "success": true
+    },
+    {
+      "category": "beauty supply",
+      "city": "Butare",
+      "count": 36,
+      "file": "scraper_results/beauty_supply_Butare_20251207_212222.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 34
+      },
+      "success": true
+    },
+    {
+      "category": "salon",
+      "city": "Butare",
+      "count": 9,
+      "file": "scraper_results/salon_Butare_20251207_212545.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 9
+      },
+      "success": true
+    },
+    {
+      "category": "barbershop",
+      "city": "Butare",
+      "count": 8,
+      "file": "scraper_results/barbershop_Butare_20251207_212841.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 8
+      },
+      "success": true
+    },
+    {
+      "category": "spa",
+      "city": "Butare",
+      "count": 35,
+      "file": "scraper_results/spa_Butare_20251207_213630.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 1,
+        "errors": 34
+      },
+      "success": true
+    },
+    {
+      "category": "beauty salon",
+      "city": "Butare",
+      "count": 9,
+      "file": "scraper_results/beauty_salon_Butare_20251207_213953.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 9
+      },
+      "success": true
+    },
+    {
+      "category": "nail salon",
+      "city": "Butare",
+      "count": 6,
+      "file": "scraper_results/nail_salon_Butare_20251207_214224.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "laundry",
+      "city": "Butare",
+      "count": 0,
+      "file": "scraper_results/laundry_Butare_20251207_214245.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "dry cleaning",
+      "city": "Butare",
+      "count": 0,
+      "file": "scraper_results/dry_cleaning_Butare_20251207_214304.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "tailor",
+      "city": "Butare",
+      "count": 38,
+      "file": "scraper_results/tailor_Butare_20251207_215337.json",
+      "stats": {
+        "inserted": 7,
+        "duplicates": 0,
+        "errors": 31
+      },
+      "success": true
+    },
+    {
+      "category": "repair shop",
+      "city": "Butare",
+      "count": 39,
+      "file": "scraper_results/repair_shop_Butare_20251207_220705.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 4,
+        "errors": 33
+      },
+      "success": true
+    },
+    {
+      "category": "bank",
+      "city": "Butare",
+      "count": 4,
+      "file": "scraper_results/bank_Butare_20251207_221200.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "atm",
+      "city": "Butare",
+      "count": 2,
+      "file": "scraper_results/atm_Butare_20251207_221415.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "money transfer",
+      "city": "Butare",
+      "count": 5,
+      "file": "scraper_results/money_transfer_Butare_20251207_221547.json",
+      "stats": {
+        "inserted": 5,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "forex bureau",
+      "city": "Butare",
+      "count": 19,
+      "file": "scraper_results/forex_bureau_Butare_20251207_222044.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 17
+      },
+      "success": true
+    },
+    {
+      "category": "insurance",
+      "city": "Butare",
+      "count": 2,
+      "file": "scraper_results/insurance_Butare_20251207_222237.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "accounting",
+      "city": "Butare",
+      "count": 10,
+      "file": "scraper_results/accounting_Butare_20251207_222611.json",
+      "stats": {
+        "inserted": 5,
+        "duplicates": 1,
+        "errors": 4
+      },
+      "success": true
+    },
+    {
+      "category": "financial advisor",
+      "city": "Butare",
+      "count": 8,
+      "file": "scraper_results/financial_advisor_Butare_20251207_222910.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 7
+      },
+      "success": true
+    },
+    {
+      "category": "school",
+      "city": "Butare",
+      "count": 26,
+      "file": "scraper_results/school_Butare_20251207_224546.json",
+      "stats": {
+        "inserted": 26,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "university",
+      "city": "Butare",
+      "count": 0,
+      "file": "scraper_results/university_Butare_20251207_224617.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "college",
+      "city": "Butare",
+      "count": 22,
+      "file": "scraper_results/college_Butare_20251207_225518.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 3,
+        "errors": 16
+      },
+      "success": true
+    },
+    {
+      "category": "training center",
+      "city": "Butare",
+      "count": 7,
+      "file": "scraper_results/training_center_Butare_20251207_225813.json",
+      "stats": {
+        "inserted": 6,
+        "duplicates": 1,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "kindergarten",
+      "city": "Butare",
+      "count": 3,
+      "file": "scraper_results/kindergarten_Butare_20251207_225955.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "library",
+      "city": "Butare",
+      "count": 0,
+      "file": "scraper_results/library_Butare_20251207_230221.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "tutoring",
+      "city": "Butare",
+      "count": 8,
+      "file": "scraper_results/tutoring_Butare_20251207_230500.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "gas station",
+      "city": "Butare",
+      "count": 4,
+      "file": "scraper_results/gas_station_Butare_20251207_230719.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "car wash",
+      "city": "Butare",
+      "count": 38,
+      "file": "scraper_results/car_wash_Butare_20251207_231958.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 1,
+        "errors": 35
+      },
+      "success": true
+    },
+    {
+      "category": "car repair",
+      "city": "Butare",
+      "count": 5,
+      "file": "scraper_results/car_repair_Butare_20251207_232257.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 5
+      },
+      "success": true
+    },
+    {
+      "category": "mechanic",
+      "city": "Butare",
+      "count": 3,
+      "file": "scraper_results/mechanic_Butare_20251207_232516.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "auto parts",
+      "city": "Butare",
+      "count": 2,
+      "file": "scraper_results/auto_parts_Butare_20251207_232613.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "tire shop",
+      "city": "Butare",
+      "count": 7,
+      "file": "scraper_results/tire_shop_Butare_20251207_232918.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "car dealer",
+      "city": "Butare",
+      "count": 5,
+      "file": "scraper_results/car_dealer_Butare_20251207_233209.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 1,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "lawyer",
+      "city": "Butare",
+      "count": 2,
+      "file": "scraper_results/lawyer_Butare_20251207_233342.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "law firm",
+      "city": "Butare",
+      "count": 2,
+      "file": "scraper_results/law_firm_Butare_20251207_233452.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "real estate",
+      "city": "Butare",
+      "count": 14,
+      "file": "scraper_results/real_estate_Butare_20251207_235133.json",
+      "stats": {
+        "inserted": 14,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "architect",
+      "city": "Butare",
+      "count": 4,
+      "file": "scraper_results/architect_Butare_20251207_235307.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 0,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "engineer",
+      "city": "Butare",
+      "count": 4,
+      "file": "scraper_results/engineer_Butare_20251207_235451.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "consultant",
+      "city": "Butare",
+      "count": 12,
+      "file": "scraper_results/consultant_Butare_20251207_235907.json",
+      "stats": {
+        "inserted": 5,
+        "duplicates": 1,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "printing",
+      "city": "Butare",
+      "count": 2,
+      "file": "scraper_results/printing_Butare_20251208_000003.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "advertising",
+      "city": "Butare",
+      "count": 14,
+      "file": "scraper_results/advertising_Butare_20251208_000330.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 0,
+        "errors": 10
+      },
+      "success": true
+    },
+    {
+      "category": "construction",
+      "city": "Butare",
+      "count": 8,
+      "file": "scraper_results/construction_Butare_20251208_000828.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 0,
+        "errors": 5
+      },
+      "success": true
+    },
+    {
+      "category": "plumber",
+      "city": "Butare",
+      "count": 7,
+      "file": "scraper_results/plumber_Butare_20251208_001023.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 7
+      },
+      "success": true
+    },
+    {
+      "category": "electrician",
+      "city": "Butare",
+      "count": 9,
+      "file": "scraper_results/electrician_Butare_20251208_001255.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 8
+      },
+      "success": true
+    },
+    {
+      "category": "carpenter",
+      "city": "Butare",
+      "count": 0,
+      "file": "scraper_results/carpenter_Butare_20251208_001319.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "painter",
+      "city": "Butare",
+      "count": 16,
+      "file": "scraper_results/painter_Butare_20251208_001808.json",
+      "stats": {
+        "inserted": 8,
+        "duplicates": 0,
+        "errors": 8
+      },
+      "success": true
+    },
+    {
+      "category": "hardware",
+      "city": "Butare",
+      "count": 2,
+      "file": "scraper_results/hardware_Butare_20251208_001904.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "locksmith",
+      "city": "Butare",
+      "count": 0,
+      "file": "scraper_results/locksmith_Butare_20251208_001925.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "cleaning service",
+      "city": "Butare",
+      "count": 8,
+      "file": "scraper_results/cleaning_service_Butare_20251208_002122.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "gym",
+      "city": "Butare",
+      "count": 1,
+      "file": "scraper_results/gym_Butare_20251208_002255.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "fitness center",
+      "city": "Butare",
+      "count": 1,
+      "file": "scraper_results/fitness_center_Butare_20251208_002404.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "sports club",
+      "city": "Butare",
+      "count": 6,
+      "file": "scraper_results/sports_club_Butare_20251208_002639.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 1,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "cinema",
+      "city": "Butare",
+      "count": 0,
+      "file": "scraper_results/cinema_Butare_20251208_002702.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "theater",
+      "city": "Butare",
+      "count": 0,
+      "file": "scraper_results/theater_Butare_20251208_002720.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "event venue",
+      "city": "Butare",
+      "count": 16,
+      "file": "scraper_results/event_venue_Butare_20251208_003331.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 4,
+        "errors": 10
+      },
+      "success": true
+    },
+    {
+      "category": "photography",
+      "city": "Butare",
+      "count": 44,
+      "file": "scraper_results/photography_Butare_20251208_004436.json",
+      "stats": {
+        "inserted": 23,
+        "duplicates": 0,
+        "errors": 21
+      },
+      "success": true
+    },
+    {
+      "category": "travel agency",
+      "city": "Butare",
+      "count": 6,
+      "file": "scraper_results/travel_agency_Butare_20251208_004629.json",
+      "stats": {
+        "inserted": 6,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "church",
+      "city": "Butare",
+      "count": 8,
+      "file": "scraper_results/church_Butare_20251208_005603.json",
+      "stats": {
+        "inserted": 7,
+        "duplicates": 0,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "mosque",
+      "city": "Butare",
+      "count": 2,
+      "file": "scraper_results/mosque_Butare_20251208_005741.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "temple",
+      "city": "Butare",
+      "count": 3,
+      "file": "scraper_results/temple_Butare_20251208_005920.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "community center",
+      "city": "Butare",
+      "count": 7,
+      "file": "scraper_results/community_center_Butare_20251208_010348.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "NGO",
+      "city": "Butare",
+      "count": 26,
+      "file": "scraper_results/NGO_Butare_20251208_011213.json",
+      "stats": {
+        "inserted": 12,
+        "duplicates": 0,
+        "errors": 14
+      },
+      "success": true
+    },
+    {
+      "category": "restaurant",
+      "city": "Gisenyi",
+      "count": 34,
+      "file": "scraper_results/restaurant_Gisenyi_20251208_011923.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 2,
+        "errors": 29
+      },
+      "success": true
+    },
+    {
+      "category": "cafe",
+      "city": "Gisenyi",
+      "count": 35,
+      "file": "scraper_results/cafe_Gisenyi_20251208_012623.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 1,
+        "errors": 34
+      },
+      "success": true
+    },
+    {
+      "category": "bar",
+      "city": "Gisenyi",
+      "count": 28,
+      "file": "scraper_results/bar_Gisenyi_20251208_013454.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 1,
+        "errors": 25
+      },
+      "success": true
+    },
+    {
+      "category": "bakery",
+      "city": "Gisenyi",
+      "count": 25,
+      "file": "scraper_results/bakery_Gisenyi_20251208_013957.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 24
+      },
+      "success": true
+    },
+    {
+      "category": "fast food",
+      "city": "Gisenyi",
+      "count": 30,
+      "file": "scraper_results/fast_food_Gisenyi_20251208_014651.json",
+      "stats": {
+        "inserted": 7,
+        "duplicates": 1,
+        "errors": 22
+      },
+      "success": true
+    },
+    {
+      "category": "pizza",
+      "city": "Gisenyi",
+      "count": 2,
+      "file": "scraper_results/pizza_Gisenyi_20251208_014751.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "barbecue",
+      "city": "Gisenyi",
+      "count": 33,
+      "file": "scraper_results/barbecue_Gisenyi_20251208_015511.json",
+      "stats": {
+        "inserted": 6,
+        "duplicates": 1,
+        "errors": 26
+      },
+      "success": true
+    },
+    {
+      "category": "ice cream",
+      "city": "Gisenyi",
+      "count": 33,
+      "file": "scraper_results/ice_cream_Gisenyi_20251208_020222.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 1,
+        "errors": 32
+      },
+      "success": true
+    },
+    {
+      "category": "coffee shop",
+      "city": "Gisenyi",
+      "count": 13,
+      "file": "scraper_results/coffee_shop_Gisenyi_20251208_020503.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 12
+      },
+      "success": true
+    },
+    {
+      "category": "pub",
+      "city": "Gisenyi",
+      "count": 30,
+      "file": "scraper_results/pub_Gisenyi_20251208_021306.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 1,
+        "errors": 27
+      },
+      "success": true
+    },
+    {
+      "category": "nightclub",
+      "city": "Gisenyi",
+      "count": 11,
+      "file": "scraper_results/nightclub_Gisenyi_20251208_021702.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 10
+      },
+      "success": true
+    },
+    {
+      "category": "food court",
+      "city": "Gisenyi",
+      "count": 33,
+      "file": "scraper_results/food_court_Gisenyi_20251208_022428.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 1,
+        "errors": 31
+      },
+      "success": true
+    },
+    {
+      "category": "hotel",
+      "city": "Gisenyi",
+      "count": 41,
+      "file": "scraper_results/hotel_Gisenyi_20251208_023246.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 39
+      },
+      "success": true
+    },
+    {
+      "category": "motel",
+      "city": "Gisenyi",
+      "count": 33,
+      "file": "scraper_results/motel_Gisenyi_20251208_024023.json",
+      "stats": {
+        "inserted": 6,
+        "duplicates": 1,
+        "errors": 26
+      },
+      "success": true
+    },
+    {
+      "category": "guest house",
+      "city": "Gisenyi",
+      "count": 25,
+      "file": "scraper_results/guest_house_Gisenyi_20251208_024656.json",
+      "stats": {
+        "inserted": 13,
+        "duplicates": 2,
+        "errors": 10
+      },
+      "success": true
+    },
+    {
+      "category": "lodge",
+      "city": "Gisenyi",
+      "count": 36,
+      "file": "scraper_results/lodge_Gisenyi_20251208_025544.json",
+      "stats": {
+        "inserted": 8,
+        "duplicates": 2,
+        "errors": 26
+      },
+      "success": true
+    },
+    {
+      "category": "hostel",
+      "city": "Gisenyi",
+      "count": 36,
+      "file": "scraper_results/hostel_Gisenyi_20251208_030453.json",
+      "stats": {
+        "inserted": 8,
+        "duplicates": 6,
+        "errors": 22
+      },
+      "success": true
+    },
+    {
+      "category": "resort",
+      "city": "Gisenyi",
+      "count": 40,
+      "file": "scraper_results/resort_Gisenyi_20251208_031324.json",
+      "stats": {
+        "inserted": 6,
+        "duplicates": 2,
+        "errors": 32
+      },
+      "success": true
+    },
+    {
+      "category": "pharmacy",
+      "city": "Gisenyi",
+      "count": 5,
+      "file": "scraper_results/pharmacy_Gisenyi_20251208_031608.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 5
+      },
+      "success": true
+    },
+    {
+      "category": "hospital",
+      "city": "Gisenyi",
+      "count": 6,
+      "file": "scraper_results/hospital_Gisenyi_20251208_031800.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "clinic",
+      "city": "Gisenyi",
+      "count": 31,
+      "file": "scraper_results/clinic_Gisenyi_20251208_033113.json",
+      "stats": {
+        "inserted": 14,
+        "duplicates": 0,
+        "errors": 17
+      },
+      "success": true
+    },
+    {
+      "category": "doctor",
+      "city": "Gisenyi",
+      "count": 8,
+      "file": "scraper_results/doctor_Gisenyi_20251208_033357.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 8
+      },
+      "success": true
+    },
+    {
+      "category": "dentist",
+      "city": "Gisenyi",
+      "count": 0,
+      "file": "scraper_results/dentist_Gisenyi_20251208_033420.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "laboratory",
+      "city": "Gisenyi",
+      "count": 2,
+      "file": "scraper_results/laboratory_Gisenyi_20251208_033520.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "medical center",
+      "city": "Gisenyi",
+      "count": 28,
+      "file": "scraper_results/medical_center_Gisenyi_20251208_034921.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 27
+      },
+      "success": true
+    },
+    {
+      "category": "physiotherapy",
+      "city": "Gisenyi",
+      "count": 12,
+      "file": "scraper_results/physiotherapy_Gisenyi_20251208_035251.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 0,
+        "errors": 9
+      },
+      "success": true
+    },
+    {
+      "category": "optical store",
+      "city": "Gisenyi",
+      "count": 11,
+      "file": "scraper_results/optical_store_Gisenyi_20251208_035552.json",
+      "stats": {
+        "inserted": 6,
+        "duplicates": 0,
+        "errors": 5
+      },
+      "success": true
+    },
+    {
+      "category": "veterinary",
+      "city": "Gisenyi",
+      "count": 13,
+      "file": "scraper_results/veterinary_Gisenyi_20251208_040019.json",
+      "stats": {
+        "inserted": 6,
+        "duplicates": 0,
+        "errors": 7
+      },
+      "success": true
+    },
+    {
+      "category": "supermarket",
+      "city": "Gisenyi",
+      "count": 12,
+      "file": "scraper_results/supermarket_Gisenyi_20251208_040420.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 12
+      },
+      "success": true
+    },
+    {
+      "category": "grocery store",
+      "city": "Gisenyi",
+      "count": 11,
+      "file": "scraper_results/grocery_store_Gisenyi_20251208_040742.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 11
+      },
+      "success": true
+    },
+    {
+      "category": "convenience store",
+      "city": "Gisenyi",
+      "count": 32,
+      "file": "scraper_results/convenience_store_Gisenyi_20251208_041507.json",
+      "stats": {
+        "inserted": 5,
+        "duplicates": 0,
+        "errors": 27
+      },
+      "success": true
+    },
+    {
+      "category": "shopping mall",
+      "city": "Gisenyi",
+      "count": 25,
+      "file": "scraper_results/shopping_mall_Gisenyi_20251208_042310.json",
+      "stats": {
+        "inserted": 9,
+        "duplicates": 0,
+        "errors": 16
+      },
+      "success": true
+    },
+    {
+      "category": "market",
+      "city": "Gisenyi",
+      "count": 8,
+      "file": "scraper_results/market_Gisenyi_20251208_042641.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 7
+      },
+      "success": true
+    },
+    {
+      "category": "boutique",
+      "city": "Gisenyi",
+      "count": 27,
+      "file": "scraper_results/boutique_Gisenyi_20251208_043345.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 0,
+        "errors": 24
+      },
+      "success": true
+    },
+    {
+      "category": "clothing store",
+      "city": "Gisenyi",
+      "count": 24,
+      "file": "scraper_results/clothing_store_Gisenyi_20251208_044201.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 23
+      },
+      "success": true
+    },
+    {
+      "category": "shoe store",
+      "city": "Gisenyi",
+      "count": 4,
+      "file": "scraper_results/shoe_store_Gisenyi_20251208_044344.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 4
+      },
+      "success": true
+    },
+    {
+      "category": "electronics store",
+      "city": "Gisenyi",
+      "count": 35,
+      "file": "scraper_results/electronics_store_Gisenyi_20251208_045132.json",
+      "stats": {
+        "inserted": 10,
+        "duplicates": 0,
+        "errors": 25
+      },
+      "success": true
+    },
+    {
+      "category": "phone shop",
+      "city": "Gisenyi",
+      "count": 33,
+      "file": "scraper_results/phone_shop_Gisenyi_20251208_045948.json",
+      "stats": {
+        "inserted": 5,
+        "duplicates": 0,
+        "errors": 28
+      },
+      "success": true
+    },
+    {
+      "category": "computer store",
+      "city": "Gisenyi",
+      "count": 34,
+      "file": "scraper_results/computer_store_Gisenyi_20251208_050801.json",
+      "stats": {
+        "inserted": 14,
+        "duplicates": 0,
+        "errors": 20
+      },
+      "success": true
+    },
+    {
+      "category": "furniture store",
+      "city": "Gisenyi",
+      "count": 10,
+      "file": "scraper_results/furniture_store_Gisenyi_20251208_051104.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 9
+      },
+      "success": true
+    },
+    {
+      "category": "hardware store",
+      "city": "Gisenyi",
+      "count": 2,
+      "file": "scraper_results/hardware_store_Gisenyi_20251208_051159.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "bookstore",
+      "city": "Gisenyi",
+      "count": 31,
+      "file": "scraper_results/bookstore_Gisenyi_20251208_052021.json",
+      "stats": {
+        "inserted": 12,
+        "duplicates": 1,
+        "errors": 18
+      },
+      "success": true
+    },
+    {
+      "category": "jewelry store",
+      "city": "Gisenyi",
+      "count": 21,
+      "file": "scraper_results/jewelry_store_Gisenyi_20251208_052705.json",
+      "stats": {
+        "inserted": 9,
+        "duplicates": 0,
+        "errors": 12
+      },
+      "success": true
+    },
+    {
+      "category": "cosmetics",
+      "city": "Gisenyi",
+      "count": 43,
+      "file": "scraper_results/cosmetics_Gisenyi_20251208_053950.json",
+      "stats": {
+        "inserted": 8,
+        "duplicates": 0,
+        "errors": 35
+      },
+      "success": true
+    },
+    {
+      "category": "beauty supply",
+      "city": "Gisenyi",
+      "count": 31,
+      "file": "scraper_results/beauty_supply_Gisenyi_20251208_054852.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 0,
+        "errors": 28
+      },
+      "success": true
+    },
+    {
+      "category": "salon",
+      "city": "Gisenyi",
+      "count": 5,
+      "file": "scraper_results/salon_Gisenyi_20251208_055111.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 5
+      },
+      "success": true
+    },
+    {
+      "category": "barbershop",
+      "city": "Gisenyi",
+      "count": 3,
+      "file": "scraper_results/barbershop_Gisenyi_20251208_055236.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "spa",
+      "city": "Gisenyi",
+      "count": 15,
+      "file": "scraper_results/spa_Gisenyi_20251208_055607.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 15
+      },
+      "success": true
+    },
+    {
+      "category": "beauty salon",
+      "city": "Gisenyi",
+      "count": 5,
+      "file": "scraper_results/beauty_salon_Gisenyi_20251208_055816.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 5
+      },
+      "success": true
+    },
+    {
+      "category": "nail salon",
+      "city": "Gisenyi",
+      "count": 2,
+      "file": "scraper_results/nail_salon_Gisenyi_20251208_055908.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "laundry",
+      "city": "Gisenyi",
+      "count": 12,
+      "file": "scraper_results/laundry_Gisenyi_20251208_060422.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 0,
+        "errors": 9
+      },
+      "success": true
+    },
+    {
+      "category": "dry cleaning",
+      "city": "Gisenyi",
+      "count": 7,
+      "file": "scraper_results/dry_cleaning_Gisenyi_20251208_060658.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "tailor",
+      "city": "Gisenyi",
+      "count": 0,
+      "file": "scraper_results/tailor_Gisenyi_20251208_060724.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "repair shop",
+      "city": "Gisenyi",
+      "count": 44,
+      "file": "scraper_results/repair_shop_Gisenyi_20251208_062015.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 0,
+        "errors": 40
+      },
+      "success": true
+    },
+    {
+      "category": "bank",
+      "city": "Gisenyi",
+      "count": 5,
+      "file": "scraper_results/bank_Gisenyi_20251208_062405.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 0,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "atm",
+      "city": "Gisenyi",
+      "count": 1,
+      "file": "scraper_results/atm_Gisenyi_20251208_062608.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "money transfer",
+      "city": "Gisenyi",
+      "count": 3,
+      "file": "scraper_results/money_transfer_Gisenyi_20251208_062730.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 1,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "forex bureau",
+      "city": "Gisenyi",
+      "count": 0,
+      "file": "scraper_results/forex_bureau_Gisenyi_20251208_062753.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "insurance",
+      "city": "Gisenyi",
+      "count": 0,
+      "file": "scraper_results/insurance_Gisenyi_20251208_062845.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "accounting",
+      "city": "Gisenyi",
+      "count": 25,
+      "file": "scraper_results/accounting_Gisenyi_20251208_063626.json",
+      "stats": {
+        "inserted": 21,
+        "duplicates": 0,
+        "errors": 4
+      },
+      "success": true
+    },
+    {
+      "category": "financial advisor",
+      "city": "Gisenyi",
+      "count": 7,
+      "file": "scraper_results/financial_advisor_Gisenyi_20251208_063847.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 0,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "school",
+      "city": "Gisenyi",
+      "count": 24,
+      "file": "scraper_results/school_Gisenyi_20251208_065533.json",
+      "stats": {
+        "inserted": 24,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "university",
+      "city": "Gisenyi",
+      "count": 0,
+      "file": "scraper_results/university_Gisenyi_20251208_065604.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "college",
+      "city": "Gisenyi",
+      "count": 9,
+      "file": "scraper_results/college_Gisenyi_20251208_065912.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 0,
+        "errors": 5
+      },
+      "success": true
+    },
+    {
+      "category": "training center",
+      "city": "Gisenyi",
+      "count": 41,
+      "file": "scraper_results/training_center_Gisenyi_20251208_071210.json",
+      "stats": {
+        "inserted": 26,
+        "duplicates": 0,
+        "errors": 15
+      },
+      "success": true
+    },
+    {
+      "category": "kindergarten",
+      "city": "Gisenyi",
+      "count": 11,
+      "file": "scraper_results/kindergarten_Gisenyi_20251208_071843.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 10
+      },
+      "success": true
+    },
+    {
+      "category": "library",
+      "city": "Gisenyi",
+      "count": 0,
+      "file": "scraper_results/library_Gisenyi_20251208_071908.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "tutoring",
+      "city": "Gisenyi",
+      "count": 12,
+      "file": "scraper_results/tutoring_Gisenyi_20251208_072258.json",
+      "stats": {
+        "inserted": 6,
+        "duplicates": 0,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "gas station",
+      "city": "Gisenyi",
+      "count": 3,
+      "file": "scraper_results/gas_station_Gisenyi_20251208_072503.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "car wash",
+      "city": "Gisenyi",
+      "count": 0,
+      "file": "scraper_results/car_wash_Gisenyi_20251208_072620.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "car repair",
+      "city": "Gisenyi",
+      "count": 14,
+      "file": "scraper_results/car_repair_Gisenyi_20251208_073100.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 0,
+        "errors": 11
+      },
+      "success": true
+    },
+    {
+      "category": "mechanic",
+      "city": "Gisenyi",
+      "count": 41,
+      "file": "scraper_results/mechanic_Gisenyi_20251208_074426.json",
+      "stats": {
+        "inserted": 6,
+        "duplicates": 0,
+        "errors": 35
+      },
+      "success": true
+    },
+    {
+      "category": "auto parts",
+      "city": "Gisenyi",
+      "count": 3,
+      "file": "scraper_results/auto_parts_Gisenyi_20251208_074601.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "tire shop",
+      "city": "Gisenyi",
+      "count": 11,
+      "file": "scraper_results/tire_shop_Gisenyi_20251208_074925.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 1,
+        "errors": 7
+      },
+      "success": true
+    },
+    {
+      "category": "car dealer",
+      "city": "Gisenyi",
+      "count": 36,
+      "file": "scraper_results/car_dealer_Gisenyi_20251208_075958.json",
+      "stats": {
+        "inserted": 15,
+        "duplicates": 0,
+        "errors": 21
+      },
+      "success": true
+    },
+    {
+      "category": "lawyer",
+      "city": "Gisenyi",
+      "count": 16,
+      "file": "scraper_results/lawyer_Gisenyi_20251208_080453.json",
+      "stats": {
+        "inserted": 7,
+        "duplicates": 2,
+        "errors": 7
+      },
+      "success": true
+    },
+    {
+      "category": "law firm",
+      "city": "Gisenyi",
+      "count": 7,
+      "file": "scraper_results/law_firm_Gisenyi_20251208_080756.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "real estate",
+      "city": "Gisenyi",
+      "count": 16,
+      "file": "scraper_results/real_estate_Gisenyi_20251208_081820.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 16
+      },
+      "success": true
+    },
+    {
+      "category": "architect",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "engineer",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "consultant",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "printing",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "advertising",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "construction",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "plumber",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "electrician",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "carpenter",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "painter",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "hardware",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "locksmith",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "cleaning service",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "gym",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "fitness center",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "sports club",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "cinema",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "theater",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "event venue",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "photography",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "travel agency",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "church",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "mosque",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "temple",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "community center",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "NGO",
+      "city": "Gisenyi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "restaurant",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "cafe",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "bar",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "bakery",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "fast food",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "pizza",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "barbecue",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "ice cream",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "coffee shop",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "pub",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "nightclub",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "food court",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "hotel",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "motel",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "guest house",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "lodge",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "hostel",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "resort",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "pharmacy",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "hospital",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "clinic",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "doctor",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "dentist",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "laboratory",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "medical center",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "physiotherapy",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "optical store",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "veterinary",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "supermarket",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "grocery store",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "convenience store",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "shopping mall",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "market",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "boutique",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "clothing store",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "shoe store",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "electronics store",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "phone shop",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "computer store",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "furniture store",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "hardware store",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "bookstore",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "jewelry store",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "cosmetics",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "beauty supply",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "salon",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "barbershop",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "spa",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "beauty salon",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "nail salon",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "laundry",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "dry cleaning",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "tailor",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "repair shop",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "bank",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "atm",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "money transfer",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "forex bureau",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "insurance",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "accounting",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "financial advisor",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "school",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "university",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "college",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "training center",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "kindergarten",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "library",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "tutoring",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "gas station",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "car wash",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "car repair",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "mechanic",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "auto parts",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "tire shop",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "car dealer",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "lawyer",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "law firm",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "real estate",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "architect",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "engineer",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "consultant",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "printing",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "advertising",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "construction",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "plumber",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "electrician",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "carpenter",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "painter",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "hardware",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "locksmith",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "cleaning service",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "gym",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "fitness center",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "sports club",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "cinema",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "theater",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "event venue",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "photography",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "travel agency",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "church",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "mosque",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "temple",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "community center",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "NGO",
+      "city": "Rwamagana",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "restaurant",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "cafe",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "bar",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "bakery",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "fast food",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "pizza",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "barbecue",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "ice cream",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "coffee shop",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "pub",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "nightclub",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "food court",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "hotel",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "motel",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "guest house",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "lodge",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "hostel",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "resort",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "pharmacy",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "hospital",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "clinic",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "doctor",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "dentist",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "laboratory",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "medical center",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "physiotherapy",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "optical store",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "veterinary",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "supermarket",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "grocery store",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "convenience store",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "shopping mall",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "market",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "boutique",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "clothing store",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "shoe store",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "electronics store",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "phone shop",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "computer store",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "furniture store",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "hardware store",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "bookstore",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "jewelry store",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "cosmetics",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "beauty supply",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "salon",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "barbershop",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "spa",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "beauty salon",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "nail salon",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "laundry",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "dry cleaning",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "tailor",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "repair shop",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "bank",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "atm",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "money transfer",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "forex bureau",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "insurance",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "accounting",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "financial advisor",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "school",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "university",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "college",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "training center",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "kindergarten",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "library",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "tutoring",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "gas station",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "car wash",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "car repair",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "mechanic",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "auto parts",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "tire shop",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "car dealer",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "lawyer",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "law firm",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "real estate",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "architect",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "engineer",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "consultant",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "printing",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "advertising",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "construction",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "plumber",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "electrician",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "carpenter",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "painter",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "hardware",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "locksmith",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "cleaning service",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "gym",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "fitness center",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "sports club",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "cinema",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "theater",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "event venue",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "photography",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "travel agency",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "church",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "mosque",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "temple",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "community center",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "NGO",
+      "city": "Muhanga",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    }
+  ]
+}

@@ -236,6 +236,25 @@ serve(async (req: Request): Promise<Response> => {
         }
       }
       
+      // Check for button replies (pagination)
+      if (message.type === "interactive" && message.interactive?.button_reply?.id) {
+        const buttonId = message.interactive.button_reply.id;
+        
+        // Handle "Show More" button
+        if (buttonId === "buy_sell_show_more") {
+          const { handleShowMore } = await import("./handle_pagination.ts");
+          await handleShowMore(userPhone);
+          return respond({ success: true, message: "show_more_processed" });
+        }
+        
+        // Handle "New Search" button
+        if (buttonId === "buy_sell_new_search") {
+          const { handleNewSearch } = await import("./handle_pagination.ts");
+          await handleNewSearch(userPhone);
+          return respond({ success: true, message: "new_search_requested" });
+        }
+      }
+      
       // Handle location sharing
       else if (message.type === "location" && message.location) {
         const { handleLocationShared } = await import("./handle_category.ts");

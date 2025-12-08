@@ -1,0 +1,34 @@
+[
+  {
+    "name": "Pizzeria Italiano al Lago Kivu",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Pizza restaurant",
+    "address": "77V7+PF6, Ave de la Production, Gisenyi",
+    "phone": "0787 243 064",
+    "website": "",
+    "place_id": "0x19dd05016e326c23:0x3432985e384996aa",
+    "external_id": "0x19dd05016e326c23:0x3432985e384996aa",
+    "category": "pizza",
+    "city": "Gisenyi",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-08T00:47:41.588181"
+  },
+  {
+    "name": "PARIZIA (Quick service delivery restaurant)",
+    "rating": 4.0,
+    "review_count": 19,
+    "category_type": "Grill",
+    "address": "Kivumu, Gisenyi",
+    "phone": "0784 406 660",
+    "website": "",
+    "place_id": "0x19dd054a3ffef1d9:0x2a7d64239fbd5969",
+    "external_id": "0x19dd054a3ffef1d9:0x2a7d64239fbd5969",
+    "category": "pizza",
+    "city": "Gisenyi",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-08T00:47:51.344921"
+  }
+]

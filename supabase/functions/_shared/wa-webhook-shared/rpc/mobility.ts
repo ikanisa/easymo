@@ -59,6 +59,7 @@ export async function insertTrip(
     pickupText?: string;
     scheduledAt?: Date | string;
     recurrence?: RecurrenceType;
+    recurrenceId?: string;
   },
 ): Promise<string> {
   // For scheduled trips, use longer expiry (7 days) or default from config
@@ -73,21 +74,21 @@ export async function insertTrip(
     : null;
 
   const { data, error } = await client
-    .from("rides_trips")
+    .from("trips")
     .insert({
-      creator_user_id: params.userId,
+      user_id: params.userId,
       role: params.role,
       vehicle_type: params.vehicleType,
-      pickup_latitude: params.lat,
-      pickup_longitude: params.lng,
-      pickup: `SRID=4326;POINT(${params.lng} ${params.lat})`,
+      trip_kind: isScheduled ? "scheduled" : "request",
+      pickup_lat: params.lat,
+      pickup_lng: params.lng,
       pickup_radius_m: params.radiusMeters,
       pickup_text: params.pickupText ?? null,
-      status: isScheduled ? "scheduled" : "open",
+      status: "active",
       expires_at: expires,
-      scheduled_at: scheduledAtStr,
-      recurrence: params.recurrence ?? null,
-      last_location_at: new Date().toISOString(),
+      scheduled_for: scheduledAtStr,
+      recurrence_id: params.recurrenceId ?? null,
+      metadata: params.recurrence ? { recurrence: params.recurrence } : {},
     })
     .select("id")
     .single();
@@ -106,11 +107,10 @@ export async function updateTripDropoff(
   },
 ): Promise<void> {
   const { error } = await client
-    .from("rides_trips")
+    .from("trips")
     .update({
-      dropoff_latitude: params.lat,
-      dropoff_longitude: params.lng,
-      dropoff: `SRID=4326;POINT(${params.lng} ${params.lat})`,
+      dropoff_lat: params.lat,
+      dropoff_lng: params.lng,
       dropoff_text: params.dropoffText ?? null,
       dropoff_radius_m: params.radiusMeters ?? null,
     })

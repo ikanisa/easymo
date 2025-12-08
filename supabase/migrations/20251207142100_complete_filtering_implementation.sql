@@ -225,10 +225,10 @@ $$;
 -- STEP 4: Add helpful comments
 -- ============================================================================
 
-COMMENT ON FUNCTION get_buy_sell_categories IS 'Get all active categories with business counts for a specific country';
-COMMENT ON FUNCTION get_businesses_by_category_key IS 'Get paginated businesses for a specific category';
-COMMENT ON FUNCTION search_businesses IS 'Search businesses across all or specific categories';
-COMMENT ON FUNCTION refresh_category_counts IS 'Refresh the materialized view for category counts';
+COMMENT ON FUNCTION get_buy_sell_categories(TEXT) IS 'Get all active categories with business counts for a specific country';
+COMMENT ON FUNCTION get_businesses_by_category_key(TEXT, TEXT, TEXT, INTEGER, INTEGER) IS 'Get paginated businesses for a specific category';
+COMMENT ON FUNCTION search_businesses(TEXT, TEXT, TEXT, TEXT, INTEGER) IS 'Search businesses across all or specific categories';
+COMMENT ON FUNCTION refresh_category_counts() IS 'Refresh the materialized view for category counts';
 
 -- ============================================================================
 -- STEP 5: Verification
@@ -252,16 +252,6 @@ SELECT
   COUNT(*)
 FROM businesses
 WHERE buy_sell_category_id IS NULL AND category IS NOT NULL;
-
--- Test functions
-SELECT '=== Test: Get categories with counts ===' as test;
-SELECT * FROM get_buy_sell_categories('RW') LIMIT 5;
-
-SELECT '=== Test: Get businesses by category ===' as test;
-SELECT name, city, rating FROM get_businesses_by_category_key('Restaurant', NULL, 'RW', 5);
-
-SELECT '=== Test: Search businesses ===' as test;
-SELECT name, category, city FROM search_businesses('hotel', NULL, NULL, 'RW', 5);
 
 COMMIT;
 

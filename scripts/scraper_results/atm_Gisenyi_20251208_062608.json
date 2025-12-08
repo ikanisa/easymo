@@ -1,0 +1,18 @@
+[
+  {
+    "name": "I&M Bank Rubavu",
+    "rating": 3.1,
+    "review_count": 7,
+    "category_type": "Bank",
+    "address": "Gisenyi",
+    "phone": "0788 162 666",
+    "website": "https://www.google.com/url?q=https://www.imbankgroup.com/rw&opi=79508299&sa=U&ved=0ahUKEwik3Mm_oK2RAxX7dUEAHTrHF9cQ61gIECgM&usg=AOvVaw2X8X4DPWlvuc0nezUSCkgO",
+    "place_id": "0x19dd05a682f60f45:0xa3c953feeae65291",
+    "external_id": "0x19dd05a682f60f45:0xa3c953feeae65291",
+    "category": "atm",
+    "city": "Gisenyi",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-08T05:26:08.002192"
+  }
+]

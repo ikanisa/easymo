@@ -1,0 +1,33 @@
+[
+  {
+    "name": "Ineza Boutique",
+    "rating": 3.0,
+    "review_count": 8,
+    "category_type": "Boutique",
+    "address": "9PVP+5QG near CHUB, Chub Road, Butare",
+    "phone": "0787 001 247",
+    "website": "",
+    "place_id": "0x19c30d9f9fc774f3:0x4ae410912257aadd",
+    "external_id": "0x19c30d9f9fc774f3:0x4ae410912257aadd",
+    "category": "jewelry store",
+    "city": "Butare",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T19:58:51.101165"
+  },
+  {
+    "name": "BERWA FASHION SHOP LTD",
+    "rating": 0.0,
+    "review_count": 0,
+    "address": "9PHR+CH2 MUKONI, Butare",
+    "phone": "0781 946 311",
+    "website": "",
+    "place_id": "0x19c30b7d745b3349:0x8af49a9e0eadb2c2",
+    "external_id": "0x19c30b7d745b3349:0x8af49a9e0eadb2c2",
+    "category": "jewelry store",
+    "city": "Butare",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T19:59:10.005065"
+  }
+]

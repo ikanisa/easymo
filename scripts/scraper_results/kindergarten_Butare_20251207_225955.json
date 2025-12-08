@@ -1,0 +1,50 @@
+[
+  {
+    "name": "Nursery School Saint Josepha Rosella",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Preschool",
+    "address": "Avenue Buye, Butare",
+    "phone": "0784 338 504",
+    "website": "",
+    "place_id": "0x19c30cf691de9c37:0xc5fdf0e78236acb5",
+    "external_id": "0x19c30cf691de9c37:0xc5fdf0e78236acb5",
+    "category": "kindergarten",
+    "city": "Butare",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T21:59:32.994748"
+  },
+  {
+    "name": "Petit Seminaire de Baptiste",
+    "rating": 5.0,
+    "review_count": 4,
+    "category_type": "Educational institution",
+    "address": "CQ62+HMV, Butare",
+    "phone": "0787 978 117",
+    "website": "",
+    "place_id": "0x19c30cfcf12ea059:0x4bb5777ffcb1c2db",
+    "external_id": "0x19c30cfcf12ea059:0x4bb5777ffcb1c2db",
+    "category": "kindergarten",
+    "city": "Butare",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T21:59:42.817234"
+  },
+  {
+    "name": "Mutware Educate",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Education center",
+    "address": "KG622 Street RN1, Butare, RW Kigali & Huye",
+    "phone": "0784 885 454",
+    "website": "https://www.google.com/url?q=http://www.mutwareducate.com/&opi=79508299&sa=U&ved=0ahUKEwjN2r7evKyRAxWST6QEHTDgBG0Q61gIDigL&usg=AOvVaw262_qNgc24IBwcHPZGHxpB",
+    "place_id": "0x19c30b06f9a5e0b5:0xa61b7738aac4b3c1",
+    "external_id": "0x19c30b06f9a5e0b5:0xa61b7738aac4b3c1",
+    "category": "kindergarten",
+    "city": "Butare",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T21:59:55.595686"
+  }
+]

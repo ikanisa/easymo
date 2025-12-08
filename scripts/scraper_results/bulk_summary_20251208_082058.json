@@ -1,0 +1,3207 @@
+{
+  "start_time": "2025-12-07T06:27:19.646421",
+  "elapsed_seconds": 93219.15,
+  "categories_processed": 30,
+  "cities_processed": 10,
+  "total_businesses_scraped": 5722,
+  "total_inserted_to_db": 1630,
+  "total_errors": 81,
+  "dry_run": false,
+  "results": [
+    {
+      "category": "supermarket",
+      "city": "Kigali",
+      "count": 39,
+      "file": "scraper_results/supermarket_Kigali_20251207_063350.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 39,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "shop",
+      "city": "Kigali",
+      "count": 38,
+      "file": "scraper_results/shop_Kigali_20251207_064032.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 35,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "store",
+      "city": "Kigali",
+      "count": 38,
+      "file": "scraper_results/store_Kigali_20251207_064735.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 38,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "electronics store",
+      "city": "Kigali",
+      "count": 38,
+      "file": "scraper_results/electronics_store_Kigali_20251207_065437.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 34,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "phone shop",
+      "city": "Kigali",
+      "count": 37,
+      "file": "scraper_results/phone_shop_Kigali_20251207_070148.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 35,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "hardware store",
+      "city": "Kigali",
+      "count": 32,
+      "file": "scraper_results/hardware_store_Kigali_20251207_071037.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 23,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "clothing store",
+      "city": "Kigali",
+      "count": 39,
+      "file": "scraper_results/clothing_store_Kigali_20251207_071707.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 36,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "shoe store",
+      "city": "Kigali",
+      "count": 38,
+      "file": "scraper_results/shoe_store_Kigali_20251207_072504.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 33,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "furniture store",
+      "city": "Kigali",
+      "count": 37,
+      "file": "scraper_results/furniture_store_Kigali_20251207_073156.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 33,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "cosmetics shop",
+      "city": "Kigali",
+      "count": 39,
+      "file": "scraper_results/cosmetics_shop_Kigali_20251207_073943.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 24,
+        "errors": 11
+      },
+      "success": true
+    },
+    {
+      "category": "beauty supply store",
+      "city": "Kigali",
+      "count": 58,
+      "file": "scraper_results/beauty_supply_store_Kigali_20251207_075055.json",
+      "stats": {
+        "inserted": 5,
+        "duplicates": 22,
+        "errors": 31
+      },
+      "success": true
+    },
+    {
+      "category": "restaurant",
+      "city": "Kigali",
+      "count": 40,
+      "file": "scraper_results/restaurant_Kigali_20251207_075646.json",
+      "stats": {
+        "inserted": 6,
+        "duplicates": 33,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "hotel",
+      "city": "Kigali",
+      "count": 38,
+      "file": "scraper_results/hotel_Kigali_20251207_080536.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 37,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "cafe",
+      "city": "Kigali",
+      "count": 40,
+      "file": "scraper_results/cafe_Kigali_20251207_081142.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 39,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "bar",
+      "city": "Kigali",
+      "count": 33,
+      "file": "scraper_results/bar_Kigali_20251207_081859.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 29,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "bakery",
+      "city": "Kigali",
+      "count": 38,
+      "file": "scraper_results/bakery_Kigali_20251207_082559.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 35,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "pharmacy",
+      "city": "Kigali",
+      "count": 56,
+      "file": "scraper_results/pharmacy_Kigali_20251207_083704.json",
+      "stats": {
+        "inserted": 10,
+        "duplicates": 40,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "clinic",
+      "city": "Kigali",
+      "count": 51,
+      "file": "scraper_results/clinic_Kigali_20251207_084717.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 21,
+        "errors": 26
+      },
+      "success": true
+    },
+    {
+      "category": "hospital",
+      "city": "Kigali",
+      "count": 52,
+      "file": "scraper_results/hospital_Kigali_20251207_085657.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 17,
+        "errors": 33
+      },
+      "success": true
+    },
+    {
+      "category": "doctor",
+      "city": "Kigali",
+      "count": 57,
+      "file": "scraper_results/doctor_Kigali_20251207_090659.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 24,
+        "errors": 32
+      },
+      "success": true
+    },
+    {
+      "category": "medical center",
+      "city": "Kigali",
+      "count": 48,
+      "file": "scraper_results/medical_center_Kigali_20251207_091733.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 24,
+        "errors": 24
+      },
+      "success": true
+    },
+    {
+      "category": "salon",
+      "city": "Kigali",
+      "count": 38,
+      "file": "scraper_results/salon_Kigali_20251207_092500.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 30,
+        "errors": 7
+      },
+      "success": true
+    },
+    {
+      "category": "barbershop",
+      "city": "Kigali",
+      "count": 32,
+      "file": "scraper_results/barbershop_Kigali_20251207_093359.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 3,
+        "errors": 25
+      },
+      "success": true
+    },
+    {
+      "category": "spa",
+      "city": "Kigali",
+      "count": 40,
+      "file": "scraper_results/spa_Kigali_20251207_094108.json",
+      "stats": {
+        "inserted": 5,
+        "duplicates": 4,
+        "errors": 31
+      },
+      "success": true
+    },
+    {
+      "category": "laundry",
+      "city": "Kigali",
+      "count": 37,
+      "file": "scraper_results/laundry_Kigali_20251207_095005.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 3,
+        "errors": 34
+      },
+      "success": true
+    },
+    {
+      "category": "repair shop",
+      "city": "Kigali",
+      "count": 44,
+      "file": "scraper_results/repair_shop_Kigali_20251207_100042.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 15,
+        "errors": 27
+      },
+      "success": true
+    },
+    {
+      "category": "tailor",
+      "city": "Kigali",
+      "count": 32,
+      "file": "scraper_results/tailor_Kigali_20251207_101003.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 1,
+        "errors": 30
+      },
+      "success": true
+    },
+    {
+      "category": "car parts",
+      "city": "Kigali",
+      "count": 30,
+      "file": "scraper_results/car_parts_Kigali_20251207_101803.json",
+      "stats": {
+        "inserted": 12,
+        "duplicates": 3,
+        "errors": 15
+      },
+      "success": true
+    },
+    {
+      "category": "auto spare parts",
+      "city": "Kigali",
+      "count": 36,
+      "file": "scraper_results/auto_spare_parts_Kigali_20251207_102559.json",
+      "stats": {
+        "inserted": 5,
+        "duplicates": 6,
+        "errors": 25
+      },
+      "success": true
+    },
+    {
+      "category": "mechanic",
+      "city": "Kigali",
+      "count": 54,
+      "file": "scraper_results/mechanic_Kigali_20251207_103833.json",
+      "stats": {
+        "inserted": 18,
+        "duplicates": 15,
+        "errors": 21
+      },
+      "success": true
+    },
+    {
+      "category": "supermarket",
+      "city": "Butare",
+      "count": 7,
+      "file": "scraper_results/supermarket_Butare_20251207_104127.json",
+      "stats": {
+        "inserted": 7,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "shop",
+      "city": "Butare",
+      "count": 29,
+      "file": "scraper_results/shop_Butare_20251207_105008.json",
+      "stats": {
+        "inserted": 22,
+        "duplicates": 0,
+        "errors": 7
+      },
+      "success": true
+    },
+    {
+      "category": "store",
+      "city": "Butare",
+      "count": 31,
+      "file": "scraper_results/store_Butare_20251207_105926.json",
+      "stats": {
+        "inserted": 10,
+        "duplicates": 0,
+        "errors": 21
+      },
+      "success": true
+    },
+    {
+      "category": "electronics store",
+      "city": "Butare",
+      "count": 11,
+      "file": "scraper_results/electronics_store_Butare_20251207_110319.json",
+      "stats": {
+        "inserted": 9,
+        "duplicates": 0,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "phone shop",
+      "city": "Butare",
+      "count": 24,
+      "file": "scraper_results/phone_shop_Butare_20251207_111118.json",
+      "stats": {
+        "inserted": 5,
+        "duplicates": 0,
+        "errors": 19
+      },
+      "success": true
+    },
+    {
+      "category": "hardware store",
+      "city": "Butare",
+      "count": 2,
+      "file": "scraper_results/hardware_store_Butare_20251207_111215.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "clothing store",
+      "city": "Butare",
+      "count": 28,
+      "file": "scraper_results/clothing_store_Butare_20251207_112229.json",
+      "stats": {
+        "inserted": 9,
+        "duplicates": 0,
+        "errors": 19
+      },
+      "success": true
+    },
+    {
+      "category": "shoe store",
+      "city": "Butare",
+      "count": 8,
+      "file": "scraper_results/shoe_store_Butare_20251207_112554.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 7
+      },
+      "success": true
+    },
+    {
+      "category": "furniture store",
+      "city": "Butare",
+      "count": 6,
+      "file": "scraper_results/furniture_store_Butare_20251207_112751.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 0,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "cosmetics shop",
+      "city": "Butare",
+      "count": 27,
+      "file": "scraper_results/cosmetics_shop_Butare_20251207_113626.json",
+      "stats": {
+        "inserted": 9,
+        "duplicates": 0,
+        "errors": 18
+      },
+      "success": true
+    },
+    {
+      "category": "beauty supply store",
+      "city": "Butare",
+      "count": 14,
+      "file": "scraper_results/beauty_supply_store_Butare_20251207_114150.json",
+      "stats": {
+        "inserted": 8,
+        "duplicates": 0,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "restaurant",
+      "city": "Butare",
+      "count": 27,
+      "file": "scraper_results/restaurant_Butare_20251207_114929.json",
+      "stats": {
+        "inserted": 20,
+        "duplicates": 0,
+        "errors": 7
+      },
+      "success": true
+    },
+    {
+      "category": "hotel",
+      "city": "Butare",
+      "count": 30,
+      "file": "scraper_results/hotel_Butare_20251207_115827.json",
+      "stats": {
+        "inserted": 24,
+        "duplicates": 0,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "cafe",
+      "city": "Butare",
+      "count": 27,
+      "file": "scraper_results/cafe_Butare_20251207_120605.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 1,
+        "errors": 23
+      },
+      "success": true
+    },
+    {
+      "category": "bar",
+      "city": "Butare",
+      "count": 22,
+      "file": "scraper_results/bar_Butare_20251207_121447.json",
+      "stats": {
+        "inserted": 8,
+        "duplicates": 0,
+        "errors": 14
+      },
+      "success": true
+    },
+    {
+      "category": "bakery",
+      "city": "Butare",
+      "count": 25,
+      "file": "scraper_results/bakery_Butare_20251207_122047.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 1,
+        "errors": 23
+      },
+      "success": true
+    },
+    {
+      "category": "pharmacy",
+      "city": "Butare",
+      "count": 8,
+      "file": "scraper_results/pharmacy_Butare_20251207_122529.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 0,
+        "errors": 5
+      },
+      "success": true
+    },
+    {
+      "category": "clinic",
+      "city": "Butare",
+      "count": 18,
+      "file": "scraper_results/clinic_Butare_20251207_123952.json",
+      "stats": {
+        "inserted": 17,
+        "duplicates": 1,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "hospital",
+      "city": "Butare",
+      "count": 9,
+      "file": "scraper_results/hospital_Butare_20251207_124816.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 9
+      },
+      "success": true
+    },
+    {
+      "category": "doctor",
+      "city": "Butare",
+      "count": 10,
+      "file": "scraper_results/doctor_Butare_20251207_125409.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 10
+      },
+      "success": true
+    },
+    {
+      "category": "medical center",
+      "city": "Butare",
+      "count": 16,
+      "file": "scraper_results/medical_center_Butare_20251207_130623.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 16
+      },
+      "success": true
+    },
+    {
+      "category": "salon",
+      "city": "Butare",
+      "count": 9,
+      "file": "scraper_results/salon_Butare_20251207_130943.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 8
+      },
+      "success": true
+    },
+    {
+      "category": "barbershop",
+      "city": "Butare",
+      "count": 14,
+      "file": "scraper_results/barbershop_Butare_20251207_131348.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 14
+      },
+      "success": true
+    },
+    {
+      "category": "spa",
+      "city": "Butare",
+      "count": 36,
+      "file": "scraper_results/spa_Butare_20251207_132127.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 0,
+        "errors": 32
+      },
+      "success": true
+    },
+    {
+      "category": "laundry",
+      "city": "Butare",
+      "count": 0,
+      "file": "scraper_results/laundry_Butare_20251207_132200.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "repair shop",
+      "city": "Butare",
+      "count": 43,
+      "file": "scraper_results/repair_shop_Butare_20251207_133455.json",
+      "stats": {
+        "inserted": 16,
+        "duplicates": 4,
+        "errors": 23
+      },
+      "success": true
+    },
+    {
+      "category": "tailor",
+      "city": "Butare",
+      "count": 27,
+      "file": "scraper_results/tailor_Butare_20251207_134243.json",
+      "stats": {
+        "inserted": 10,
+        "duplicates": 0,
+        "errors": 17
+      },
+      "success": true
+    },
+    {
+      "category": "car parts",
+      "city": "Butare",
+      "count": 2,
+      "file": "scraper_results/car_parts_Butare_20251207_134351.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "auto spare parts",
+      "city": "Butare",
+      "count": 4,
+      "file": "scraper_results/auto_spare_parts_Butare_20251207_134551.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 4
+      },
+      "success": true
+    },
+    {
+      "category": "mechanic",
+      "city": "Butare",
+      "count": 3,
+      "file": "scraper_results/mechanic_Butare_20251207_134810.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "supermarket",
+      "city": "Gisenyi",
+      "count": 16,
+      "file": "scraper_results/supermarket_Gisenyi_20251207_135302.json",
+      "stats": {
+        "inserted": 16,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "shop",
+      "city": "Gisenyi",
+      "count": 33,
+      "file": "scraper_results/shop_Gisenyi_20251207_140110.json",
+      "stats": {
+        "inserted": 22,
+        "duplicates": 1,
+        "errors": 10
+      },
+      "success": true
+    },
+    {
+      "category": "store",
+      "city": "Gisenyi",
+      "count": 33,
+      "file": "scraper_results/store_Gisenyi_20251207_140951.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 0,
+        "errors": 29
+      },
+      "success": true
+    },
+    {
+      "category": "electronics store",
+      "city": "Gisenyi",
+      "count": 28,
+      "file": "scraper_results/electronics_store_Gisenyi_20251207_141813.json",
+      "stats": {
+        "inserted": 17,
+        "duplicates": 1,
+        "errors": 10
+      },
+      "success": true
+    },
+    {
+      "category": "phone shop",
+      "city": "Gisenyi",
+      "count": 33,
+      "file": "scraper_results/phone_shop_Gisenyi_20251207_142623.json",
+      "stats": {
+        "inserted": 5,
+        "duplicates": 0,
+        "errors": 28
+      },
+      "success": true
+    },
+    {
+      "category": "hardware store",
+      "city": "Gisenyi",
+      "count": 2,
+      "file": "scraper_results/hardware_store_Gisenyi_20251207_142728.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "clothing store",
+      "city": "Gisenyi",
+      "count": 23,
+      "file": "scraper_results/clothing_store_Gisenyi_20251207_143632.json",
+      "stats": {
+        "inserted": 10,
+        "duplicates": 0,
+        "errors": 13
+      },
+      "success": true
+    },
+    {
+      "category": "shoe store",
+      "city": "Gisenyi",
+      "count": 4,
+      "file": "scraper_results/shoe_store_Gisenyi_20251207_143814.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 4
+      },
+      "success": true
+    },
+    {
+      "category": "furniture store",
+      "city": "Gisenyi",
+      "count": 14,
+      "file": "scraper_results/furniture_store_Gisenyi_20251207_144223.json",
+      "stats": {
+        "inserted": 5,
+        "duplicates": 0,
+        "errors": 9
+      },
+      "success": true
+    },
+    {
+      "category": "cosmetics shop",
+      "city": "Gisenyi",
+      "count": 26,
+      "file": "scraper_results/cosmetics_shop_Gisenyi_20251207_145101.json",
+      "stats": {
+        "inserted": 13,
+        "duplicates": 2,
+        "errors": 11
+      },
+      "success": true
+    },
+    {
+      "category": "beauty supply store",
+      "city": "Gisenyi",
+      "count": 9,
+      "file": "scraper_results/beauty_supply_store_Gisenyi_20251207_145529.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 3,
+        "errors": 5
+      },
+      "success": true
+    },
+    {
+      "category": "restaurant",
+      "city": "Gisenyi",
+      "count": 32,
+      "file": "scraper_results/restaurant_Gisenyi_20251207_150321.json",
+      "stats": {
+        "inserted": 28,
+        "duplicates": 0,
+        "errors": 4
+      },
+      "success": true
+    },
+    {
+      "category": "hotel",
+      "city": "Gisenyi",
+      "count": 39,
+      "file": "scraper_results/hotel_Gisenyi_20251207_151155.json",
+      "stats": {
+        "inserted": 34,
+        "duplicates": 4,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "cafe",
+      "city": "Gisenyi",
+      "count": 33,
+      "file": "scraper_results/cafe_Gisenyi_20251207_151924.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 16,
+        "errors": 13
+      },
+      "success": true
+    },
+    {
+      "category": "bar",
+      "city": "Gisenyi",
+      "count": 30,
+      "file": "scraper_results/bar_Gisenyi_20251207_152744.json",
+      "stats": {
+        "inserted": 17,
+        "duplicates": 1,
+        "errors": 12
+      },
+      "success": true
+    },
+    {
+      "category": "bakery",
+      "city": "Gisenyi",
+      "count": 23,
+      "file": "scraper_results/bakery_Gisenyi_20251207_153247.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 21
+      },
+      "success": true
+    },
+    {
+      "category": "pharmacy",
+      "city": "Gisenyi",
+      "count": 5,
+      "file": "scraper_results/pharmacy_Gisenyi_20251207_153525.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "clinic",
+      "city": "Gisenyi",
+      "count": 17,
+      "file": "scraper_results/clinic_Gisenyi_20251207_154847.json",
+      "stats": {
+        "inserted": 17,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "hospital",
+      "city": "Gisenyi",
+      "count": 7,
+      "file": "scraper_results/hospital_Gisenyi_20251207_155054.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "doctor",
+      "city": "Gisenyi",
+      "count": 6,
+      "file": "scraper_results/doctor_Gisenyi_20251207_155308.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 5
+      },
+      "success": true
+    },
+    {
+      "category": "medical center",
+      "city": "Gisenyi",
+      "count": 21,
+      "file": "scraper_results/medical_center_Gisenyi_20251207_160713.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 0,
+        "errors": 17
+      },
+      "success": true
+    },
+    {
+      "category": "salon",
+      "city": "Gisenyi",
+      "count": 5,
+      "file": "scraper_results/salon_Gisenyi_20251207_160924.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "barbershop",
+      "city": "Gisenyi",
+      "count": 3,
+      "file": "scraper_results/barbershop_Gisenyi_20251207_161057.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "spa",
+      "city": "Gisenyi",
+      "count": 17,
+      "file": "scraper_results/spa_Gisenyi_20251207_161502.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 0,
+        "errors": 13
+      },
+      "success": true
+    },
+    {
+      "category": "laundry",
+      "city": "Gisenyi",
+      "count": 8,
+      "file": "scraper_results/laundry_Gisenyi_20251207_161944.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 7
+      },
+      "success": true
+    },
+    {
+      "category": "repair shop",
+      "city": "Gisenyi",
+      "count": 37,
+      "file": "scraper_results/repair_shop_Gisenyi_20251207_163235.json",
+      "stats": {
+        "inserted": 11,
+        "duplicates": 0,
+        "errors": 26
+      },
+      "success": true
+    },
+    {
+      "category": "tailor",
+      "city": "Gisenyi",
+      "count": 0,
+      "file": "scraper_results/tailor_Gisenyi_20251207_163311.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "car parts",
+      "city": "Gisenyi",
+      "count": 3,
+      "file": "scraper_results/car_parts_Gisenyi_20251207_163441.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "auto spare parts",
+      "city": "Gisenyi",
+      "count": 5,
+      "file": "scraper_results/auto_spare_parts_Gisenyi_20251207_163644.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 5
+      },
+      "success": true
+    },
+    {
+      "category": "mechanic",
+      "city": "Gisenyi",
+      "count": 30,
+      "file": "scraper_results/mechanic_Gisenyi_20251207_164958.json",
+      "stats": {
+        "inserted": 8,
+        "duplicates": 0,
+        "errors": 22
+      },
+      "success": true
+    },
+    {
+      "category": "supermarket",
+      "city": "Rwamagana",
+      "count": 13,
+      "file": "scraper_results/supermarket_Rwamagana_20251207_165331.json",
+      "stats": {
+        "inserted": 12,
+        "duplicates": 0,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "shop",
+      "city": "Rwamagana",
+      "count": 37,
+      "file": "scraper_results/shop_Rwamagana_20251207_170213.json",
+      "stats": {
+        "inserted": 31,
+        "duplicates": 0,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "store",
+      "city": "Rwamagana",
+      "count": 35,
+      "file": "scraper_results/store_Rwamagana_20251207_171155.json",
+      "stats": {
+        "inserted": 7,
+        "duplicates": 0,
+        "errors": 28
+      },
+      "success": true
+    },
+    {
+      "category": "electronics store",
+      "city": "Rwamagana",
+      "count": 19,
+      "file": "scraper_results/electronics_store_Rwamagana_20251207_171724.json",
+      "stats": {
+        "inserted": 14,
+        "duplicates": 0,
+        "errors": 5
+      },
+      "success": true
+    },
+    {
+      "category": "phone shop",
+      "city": "Rwamagana",
+      "count": 1,
+      "file": "scraper_results/phone_shop_Rwamagana_20251207_171840.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "hardware store",
+      "city": "Rwamagana",
+      "count": 4,
+      "file": "scraper_results/hardware_store_Rwamagana_20251207_172022.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "clothing store",
+      "city": "Rwamagana",
+      "count": 35,
+      "file": "scraper_results/clothing_store_Rwamagana_20251207_173003.json",
+      "stats": {
+        "inserted": 19,
+        "duplicates": 0,
+        "errors": 16
+      },
+      "success": true
+    },
+    {
+      "category": "shoe store",
+      "city": "Rwamagana",
+      "count": 6,
+      "file": "scraper_results/shoe_store_Rwamagana_20251207_173246.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "furniture store",
+      "city": "Rwamagana",
+      "count": 37,
+      "file": "scraper_results/furniture_store_Rwamagana_20251207_174017.json",
+      "stats": {
+        "inserted": 21,
+        "duplicates": 0,
+        "errors": 16
+      },
+      "success": true
+    },
+    {
+      "category": "cosmetics shop",
+      "city": "Rwamagana",
+      "count": 2,
+      "file": "scraper_results/cosmetics_shop_Rwamagana_20251207_174126.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "beauty supply store",
+      "city": "Rwamagana",
+      "count": 36,
+      "file": "scraper_results/beauty_supply_store_Rwamagana_20251207_174942.json",
+      "stats": {
+        "inserted": 12,
+        "duplicates": 0,
+        "errors": 24
+      },
+      "success": true
+    },
+    {
+      "category": "restaurant",
+      "city": "Rwamagana",
+      "count": 34,
+      "file": "scraper_results/restaurant_Rwamagana_20251207_175752.json",
+      "stats": {
+        "inserted": 29,
+        "duplicates": 0,
+        "errors": 5
+      },
+      "success": true
+    },
+    {
+      "category": "hotel",
+      "city": "Rwamagana",
+      "count": 37,
+      "file": "scraper_results/hotel_Rwamagana_20251207_180617.json",
+      "stats": {
+        "inserted": 28,
+        "duplicates": 0,
+        "errors": 9
+      },
+      "success": true
+    },
+    {
+      "category": "cafe",
+      "city": "Rwamagana",
+      "count": 32,
+      "file": "scraper_results/cafe_Rwamagana_20251207_181404.json",
+      "stats": {
+        "inserted": 8,
+        "duplicates": 0,
+        "errors": 24
+      },
+      "success": true
+    },
+    {
+      "category": "bar",
+      "city": "Rwamagana",
+      "count": 31,
+      "file": "scraper_results/bar_Rwamagana_20251207_182220.json",
+      "stats": {
+        "inserted": 20,
+        "duplicates": 0,
+        "errors": 11
+      },
+      "success": true
+    },
+    {
+      "category": "bakery",
+      "city": "Rwamagana",
+      "count": 13,
+      "file": "scraper_results/bakery_Rwamagana_20251207_182624.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 11
+      },
+      "success": true
+    },
+    {
+      "category": "pharmacy",
+      "city": "Rwamagana",
+      "count": 15,
+      "file": "scraper_results/pharmacy_Rwamagana_20251207_183044.json",
+      "stats": {
+        "inserted": 8,
+        "duplicates": 0,
+        "errors": 7
+      },
+      "success": true
+    },
+    {
+      "category": "clinic",
+      "city": "Rwamagana",
+      "count": 7,
+      "file": "scraper_results/clinic_Rwamagana_20251207_183422.json",
+      "stats": {
+        "inserted": 7,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "hospital",
+      "city": "Rwamagana",
+      "count": 4,
+      "file": "scraper_results/hospital_Rwamagana_20251207_183745.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "doctor",
+      "city": "Rwamagana",
+      "count": 3,
+      "file": "scraper_results/doctor_Rwamagana_20251207_183927.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "medical center",
+      "city": "Rwamagana",
+      "count": 11,
+      "file": "scraper_results/medical_center_Rwamagana_20251207_184829.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 0,
+        "errors": 8
+      },
+      "success": true
+    },
+    {
+      "category": "salon",
+      "city": "Rwamagana",
+      "count": 51,
+      "file": "scraper_results/salon_Rwamagana_20251207_185951.json",
+      "stats": {
+        "inserted": 18,
+        "duplicates": 0,
+        "errors": 33
+      },
+      "success": true
+    },
+    {
+      "category": "barbershop",
+      "city": "Rwamagana",
+      "count": 31,
+      "file": "scraper_results/barbershop_Rwamagana_20251207_190911.json",
+      "stats": {
+        "inserted": 8,
+        "duplicates": 0,
+        "errors": 23
+      },
+      "success": true
+    },
+    {
+      "category": "spa",
+      "city": "Rwamagana",
+      "count": 58,
+      "file": "scraper_results/spa_Rwamagana_20251207_191910.json",
+      "stats": {
+        "inserted": 18,
+        "duplicates": 0,
+        "errors": 40
+      },
+      "success": true
+    },
+    {
+      "category": "laundry",
+      "city": "Rwamagana",
+      "count": 48,
+      "file": "scraper_results/laundry_Rwamagana_20251207_193215.json",
+      "stats": {
+        "inserted": 7,
+        "duplicates": 0,
+        "errors": 41
+      },
+      "success": true
+    },
+    {
+      "category": "repair shop",
+      "city": "Rwamagana",
+      "count": 27,
+      "file": "scraper_results/repair_shop_Rwamagana_20251207_194319.json",
+      "stats": {
+        "inserted": 13,
+        "duplicates": 0,
+        "errors": 14
+      },
+      "success": true
+    },
+    {
+      "category": "tailor",
+      "city": "Rwamagana",
+      "count": 22,
+      "file": "scraper_results/tailor_Rwamagana_20251207_194914.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 0,
+        "errors": 18
+      },
+      "success": true
+    },
+    {
+      "category": "car parts",
+      "city": "Rwamagana",
+      "count": 1,
+      "file": "scraper_results/car_parts_Rwamagana_20251207_195016.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "auto spare parts",
+      "city": "Rwamagana",
+      "count": 1,
+      "file": "scraper_results/auto_spare_parts_Rwamagana_20251207_195109.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "mechanic",
+      "city": "Rwamagana",
+      "count": 2,
+      "file": "scraper_results/mechanic_Rwamagana_20251207_195237.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "supermarket",
+      "city": "Muhanga",
+      "count": 0,
+      "file": "scraper_results/supermarket_Muhanga_20251207_195326.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "shop",
+      "city": "Muhanga",
+      "count": 22,
+      "file": "scraper_results/shop_Muhanga_20251207_200156.json",
+      "stats": {
+        "inserted": 22,
+        "duplicates": 0,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "store",
+      "city": "Muhanga",
+      "count": 24,
+      "file": "scraper_results/store_Muhanga_20251207_201049.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 0,
+        "errors": 21
+      },
+      "success": true
+    },
+    {
+      "category": "electronics store",
+      "city": "Muhanga",
+      "count": 12,
+      "file": "scraper_results/electronics_store_Muhanga_20251207_201442.json",
+      "stats": {
+        "inserted": 7,
+        "duplicates": 0,
+        "errors": 5
+      },
+      "success": true
+    },
+    {
+      "category": "phone shop",
+      "city": "Muhanga",
+      "count": 23,
+      "file": "scraper_results/phone_shop_Muhanga_20251207_202318.json",
+      "stats": {
+        "inserted": 5,
+        "duplicates": 0,
+        "errors": 18
+      },
+      "success": true
+    },
+    {
+      "category": "hardware store",
+      "city": "Muhanga",
+      "count": 27,
+      "file": "scraper_results/hardware_store_Muhanga_20251207_203208.json",
+      "stats": {
+        "inserted": 15,
+        "duplicates": 0,
+        "errors": 12
+      },
+      "success": true
+    },
+    {
+      "category": "clothing store",
+      "city": "Muhanga",
+      "count": 3,
+      "file": "scraper_results/clothing_store_Muhanga_20251207_203446.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "shoe store",
+      "city": "Muhanga",
+      "count": 2,
+      "file": "scraper_results/shoe_store_Muhanga_20251207_203556.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "furniture store",
+      "city": "Muhanga",
+      "count": 34,
+      "file": "scraper_results/furniture_store_Muhanga_20251207_204308.json",
+      "stats": {
+        "inserted": 9,
+        "duplicates": 0,
+        "errors": 25
+      },
+      "success": true
+    },
+    {
+      "category": "cosmetics shop",
+      "city": "Muhanga",
+      "count": 38,
+      "file": "scraper_results/cosmetics_shop_Muhanga_20251207_205146.json",
+      "stats": {
+        "inserted": 7,
+        "duplicates": 0,
+        "errors": 31
+      },
+      "success": true
+    },
+    {
+      "category": "beauty supply store",
+      "city": "Muhanga",
+      "count": 35,
+      "file": "scraper_results/beauty_supply_store_Muhanga_20251207_210058.json",
+      "stats": {
+        "inserted": 8,
+        "duplicates": 4,
+        "errors": 23
+      },
+      "success": true
+    },
+    {
+      "category": "restaurant",
+      "city": "Muhanga",
+      "count": 25,
+      "file": "scraper_results/restaurant_Muhanga_20251207_210937.json",
+      "stats": {
+        "inserted": 17,
+        "duplicates": 0,
+        "errors": 8
+      },
+      "success": true
+    },
+    {
+      "category": "hotel",
+      "city": "Muhanga",
+      "count": 34,
+      "file": "scraper_results/hotel_Muhanga_20251207_211840.json",
+      "stats": {
+        "inserted": 13,
+        "duplicates": 1,
+        "errors": 20
+      },
+      "success": true
+    },
+    {
+      "category": "cafe",
+      "city": "Muhanga",
+      "count": 23,
+      "file": "scraper_results/cafe_Muhanga_20251207_212732.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 0,
+        "errors": 19
+      },
+      "success": true
+    },
+    {
+      "category": "bar",
+      "city": "Muhanga",
+      "count": 20,
+      "file": "scraper_results/bar_Muhanga_20251207_213643.json",
+      "stats": {
+        "inserted": 9,
+        "duplicates": 0,
+        "errors": 11
+      },
+      "success": true
+    },
+    {
+      "category": "bakery",
+      "city": "Muhanga",
+      "count": 32,
+      "file": "scraper_results/bakery_Muhanga_20251207_214430.json",
+      "stats": {
+        "inserted": 9,
+        "duplicates": 0,
+        "errors": 23
+      },
+      "success": true
+    },
+    {
+      "category": "pharmacy",
+      "city": "Muhanga",
+      "count": 5,
+      "file": "scraper_results/pharmacy_Muhanga_20251207_214654.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 0,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "clinic",
+      "city": "Muhanga",
+      "count": 11,
+      "file": "scraper_results/clinic_Muhanga_20251207_215403.json",
+      "stats": {
+        "inserted": 9,
+        "duplicates": 0,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "hospital",
+      "city": "Muhanga",
+      "count": 30,
+      "file": "scraper_results/hospital_Muhanga_20251207_220649.json",
+      "stats": {
+        "inserted": 7,
+        "duplicates": 0,
+        "errors": 23
+      },
+      "success": true
+    },
+    {
+      "category": "doctor",
+      "city": "Muhanga",
+      "count": 12,
+      "file": "scraper_results/doctor_Muhanga_20251207_221247.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 12
+      },
+      "success": true
+    },
+    {
+      "category": "medical center",
+      "city": "Muhanga",
+      "count": 14,
+      "file": "scraper_results/medical_center_Muhanga_20251207_222433.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 12
+      },
+      "success": true
+    },
+    {
+      "category": "salon",
+      "city": "Muhanga",
+      "count": 2,
+      "file": "scraper_results/salon_Muhanga_20251207_222552.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 1,
+        "errors": 0
+      },
+      "success": true
+    },
+    {
+      "category": "barbershop",
+      "city": "Muhanga",
+      "count": 33,
+      "file": "scraper_results/barbershop_Muhanga_20251207_223424.json",
+      "stats": {
+        "inserted": 7,
+        "duplicates": 1,
+        "errors": 25
+      },
+      "success": true
+    },
+    {
+      "category": "spa",
+      "city": "Muhanga",
+      "count": 58,
+      "file": "scraper_results/spa_Muhanga_20251207_224435.json",
+      "stats": {
+        "inserted": 14,
+        "duplicates": 0,
+        "errors": 44
+      },
+      "success": true
+    },
+    {
+      "category": "laundry",
+      "city": "Muhanga",
+      "count": 4,
+      "file": "scraper_results/laundry_Muhanga_20251207_224619.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "repair shop",
+      "city": "Muhanga",
+      "count": 32,
+      "file": "scraper_results/repair_shop_Muhanga_20251207_225701.json",
+      "stats": {
+        "inserted": 18,
+        "duplicates": 0,
+        "errors": 14
+      },
+      "success": true
+    },
+    {
+      "category": "tailor",
+      "city": "Muhanga",
+      "count": 33,
+      "file": "scraper_results/tailor_Muhanga_20251207_230808.json",
+      "stats": {
+        "inserted": 7,
+        "duplicates": 0,
+        "errors": 26
+      },
+      "success": true
+    },
+    {
+      "category": "car parts",
+      "city": "Muhanga",
+      "count": 1,
+      "file": "scraper_results/car_parts_Muhanga_20251207_230915.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 1
+      },
+      "success": true
+    },
+    {
+      "category": "auto spare parts",
+      "city": "Muhanga",
+      "count": 3,
+      "file": "scraper_results/auto_spare_parts_Muhanga_20251207_231040.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "mechanic",
+      "city": "Muhanga",
+      "count": 32,
+      "file": "scraper_results/mechanic_Muhanga_20251207_232114.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 0,
+        "errors": 29
+      },
+      "success": true
+    },
+    {
+      "category": "supermarket",
+      "city": "Musanze",
+      "count": 31,
+      "file": "scraper_results/supermarket_Musanze_20251207_232921.json",
+      "stats": {
+        "inserted": 19,
+        "duplicates": 0,
+        "errors": 12
+      },
+      "success": true
+    },
+    {
+      "category": "shop",
+      "city": "Musanze",
+      "count": 31,
+      "file": "scraper_results/shop_Musanze_20251207_233723.json",
+      "stats": {
+        "inserted": 29,
+        "duplicates": 0,
+        "errors": 2
+      },
+      "success": true
+    },
+    {
+      "category": "store",
+      "city": "Musanze",
+      "count": 31,
+      "file": "scraper_results/store_Musanze_20251207_234555.json",
+      "stats": {
+        "inserted": 8,
+        "duplicates": 0,
+        "errors": 23
+      },
+      "success": true
+    },
+    {
+      "category": "electronics store",
+      "city": "Musanze",
+      "count": 33,
+      "file": "scraper_results/electronics_store_Musanze_20251207_235421.json",
+      "stats": {
+        "inserted": 24,
+        "duplicates": 0,
+        "errors": 9
+      },
+      "success": true
+    },
+    {
+      "category": "phone shop",
+      "city": "Musanze",
+      "count": 30,
+      "file": "scraper_results/phone_shop_Musanze_20251208_000256.json",
+      "stats": {
+        "inserted": 8,
+        "duplicates": 0,
+        "errors": 22
+      },
+      "success": true
+    },
+    {
+      "category": "hardware store",
+      "city": "Musanze",
+      "count": 19,
+      "file": "scraper_results/hardware_store_Musanze_20251208_000829.json",
+      "stats": {
+        "inserted": 7,
+        "duplicates": 0,
+        "errors": 12
+      },
+      "success": true
+    },
+    {
+      "category": "clothing store",
+      "city": "Musanze",
+      "count": 40,
+      "file": "scraper_results/clothing_store_Musanze_20251208_001646.json",
+      "stats": {
+        "inserted": 19,
+        "duplicates": 0,
+        "errors": 21
+      },
+      "success": true
+    },
+    {
+      "category": "shoe store",
+      "city": "Musanze",
+      "count": 26,
+      "file": "scraper_results/shoe_store_Musanze_20251208_002357.json",
+      "stats": {
+        "inserted": 13,
+        "duplicates": 1,
+        "errors": 12
+      },
+      "success": true
+    },
+    {
+      "category": "furniture store",
+      "city": "Musanze",
+      "count": 29,
+      "file": "scraper_results/furniture_store_Musanze_20251208_003019.json",
+      "stats": {
+        "inserted": 9,
+        "duplicates": 1,
+        "errors": 19
+      },
+      "success": true
+    },
+    {
+      "category": "cosmetics shop",
+      "city": "Musanze",
+      "count": 38,
+      "file": "scraper_results/cosmetics_shop_Musanze_20251208_003818.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 0,
+        "errors": 34
+      },
+      "success": true
+    },
+    {
+      "category": "beauty supply store",
+      "city": "Musanze",
+      "count": 13,
+      "file": "scraper_results/beauty_supply_store_Musanze_20251208_004159.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 11
+      },
+      "success": true
+    },
+    {
+      "category": "restaurant",
+      "city": "Musanze",
+      "count": 37,
+      "file": "scraper_results/restaurant_Musanze_20251208_004906.json",
+      "stats": {
+        "inserted": 31,
+        "duplicates": 0,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "hotel",
+      "city": "Musanze",
+      "count": 35,
+      "file": "scraper_results/hotel_Musanze_20251208_005721.json",
+      "stats": {
+        "inserted": 31,
+        "duplicates": 1,
+        "errors": 3
+      },
+      "success": true
+    },
+    {
+      "category": "cafe",
+      "city": "Musanze",
+      "count": 36,
+      "file": "scraper_results/cafe_Musanze_20251208_010435.json",
+      "stats": {
+        "inserted": 8,
+        "duplicates": 0,
+        "errors": 28
+      },
+      "success": true
+    },
+    {
+      "category": "bar",
+      "city": "Musanze",
+      "count": 29,
+      "file": "scraper_results/bar_Musanze_20251208_011243.json",
+      "stats": {
+        "inserted": 17,
+        "duplicates": 0,
+        "errors": 12
+      },
+      "success": true
+    },
+    {
+      "category": "bakery",
+      "city": "Musanze",
+      "count": 32,
+      "file": "scraper_results/bakery_Musanze_20251208_011949.json",
+      "stats": {
+        "inserted": 16,
+        "duplicates": 0,
+        "errors": 16
+      },
+      "success": true
+    },
+    {
+      "category": "pharmacy",
+      "city": "Musanze",
+      "count": 48,
+      "file": "scraper_results/pharmacy_Musanze_20251208_013304.json",
+      "stats": {
+        "inserted": 30,
+        "duplicates": 0,
+        "errors": 18
+      },
+      "success": true
+    },
+    {
+      "category": "clinic",
+      "city": "Musanze",
+      "count": 27,
+      "file": "scraper_results/clinic_Musanze_20251208_014604.json",
+      "stats": {
+        "inserted": 10,
+        "duplicates": 0,
+        "errors": 17
+      },
+      "success": true
+    },
+    {
+      "category": "hospital",
+      "city": "Musanze",
+      "count": 21,
+      "file": "scraper_results/hospital_Musanze_20251208_015454.json",
+      "stats": {
+        "inserted": 9,
+        "duplicates": 0,
+        "errors": 12
+      },
+      "success": true
+    },
+    {
+      "category": "doctor",
+      "city": "Musanze",
+      "count": 17,
+      "file": "scraper_results/doctor_Musanze_20251208_015939.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 0,
+        "errors": 14
+      },
+      "success": true
+    },
+    {
+      "category": "medical center",
+      "city": "Musanze",
+      "count": 32,
+      "file": "scraper_results/medical_center_Musanze_20251208_021213.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 0,
+        "errors": 28
+      },
+      "success": true
+    },
+    {
+      "category": "salon",
+      "city": "Musanze",
+      "count": 20,
+      "file": "scraper_results/salon_Musanze_20251208_021758.json",
+      "stats": {
+        "inserted": 12,
+        "duplicates": 0,
+        "errors": 8
+      },
+      "success": true
+    },
+    {
+      "category": "barbershop",
+      "city": "Musanze",
+      "count": 17,
+      "file": "scraper_results/barbershop_Musanze_20251208_022229.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 17
+      },
+      "success": true
+    },
+    {
+      "category": "spa",
+      "city": "Musanze",
+      "count": 8,
+      "file": "scraper_results/spa_Musanze_20251208_022410.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 6
+      },
+      "success": true
+    },
+    {
+      "category": "laundry",
+      "city": "Musanze",
+      "count": 19,
+      "file": "scraper_results/laundry_Musanze_20251208_022909.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 1,
+        "errors": 15
+      },
+      "success": true
+    },
+    {
+      "category": "repair shop",
+      "city": "Musanze",
+      "count": 49,
+      "file": "scraper_results/repair_shop_Musanze_20251208_024116.json",
+      "stats": {
+        "inserted": 23,
+        "duplicates": 1,
+        "errors": 25
+      },
+      "success": true
+    },
+    {
+      "category": "tailor",
+      "city": "Musanze",
+      "count": 23,
+      "file": "scraper_results/tailor_Musanze_20251208_024836.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 0,
+        "errors": 19
+      },
+      "success": true
+    },
+    {
+      "category": "car parts",
+      "city": "Musanze",
+      "count": 34,
+      "file": "scraper_results/car_parts_Musanze_20251208_025636.json",
+      "stats": {
+        "inserted": 12,
+        "duplicates": 0,
+        "errors": 22
+      },
+      "success": true
+    },
+    {
+      "category": "auto spare parts",
+      "city": "Musanze",
+      "count": 36,
+      "file": "scraper_results/auto_spare_parts_Musanze_20251208_030432.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 34
+      },
+      "success": true
+    },
+    {
+      "category": "mechanic",
+      "city": "Musanze",
+      "count": 47,
+      "file": "scraper_results/mechanic_Musanze_20251208_031708.json",
+      "stats": {
+        "inserted": 8,
+        "duplicates": 5,
+        "errors": 34
+      },
+      "success": true
+    },
+    {
+      "category": "supermarket",
+      "city": "Nyanza",
+      "count": 29,
+      "file": "scraper_results/supermarket_Nyanza_20251208_032420.json",
+      "stats": {
+        "inserted": 11,
+        "duplicates": 0,
+        "errors": 18
+      },
+      "success": true
+    },
+    {
+      "category": "shop",
+      "city": "Nyanza",
+      "count": 33,
+      "file": "scraper_results/shop_Nyanza_20251208_033337.json",
+      "stats": {
+        "inserted": 9,
+        "duplicates": 3,
+        "errors": 21
+      },
+      "success": true
+    },
+    {
+      "category": "store",
+      "city": "Nyanza",
+      "count": 29,
+      "file": "scraper_results/store_Nyanza_20251208_034200.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 27
+      },
+      "success": true
+    },
+    {
+      "category": "electronics store",
+      "city": "Nyanza",
+      "count": 11,
+      "file": "scraper_results/electronics_store_Nyanza_20251208_034405.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 9
+      },
+      "success": true
+    },
+    {
+      "category": "phone shop",
+      "city": "Nyanza",
+      "count": 35,
+      "file": "scraper_results/phone_shop_Nyanza_20251208_035242.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 33
+      },
+      "success": true
+    },
+    {
+      "category": "hardware store",
+      "city": "Nyanza",
+      "count": 27,
+      "file": "scraper_results/hardware_store_Nyanza_20251208_040205.json",
+      "stats": {
+        "inserted": 10,
+        "duplicates": 0,
+        "errors": 17
+      },
+      "success": true
+    },
+    {
+      "category": "clothing store",
+      "city": "Nyanza",
+      "count": 38,
+      "file": "scraper_results/clothing_store_Nyanza_20251208_040928.json",
+      "stats": {
+        "inserted": 11,
+        "duplicates": 0,
+        "errors": 27
+      },
+      "success": true
+    },
+    {
+      "category": "shoe store",
+      "city": "Nyanza",
+      "count": 38,
+      "file": "scraper_results/shoe_store_Nyanza_20251208_041752.json",
+      "stats": {
+        "inserted": 10,
+        "duplicates": 0,
+        "errors": 28
+      },
+      "success": true
+    },
+    {
+      "category": "furniture store",
+      "city": "Nyanza",
+      "count": 22,
+      "file": "scraper_results/furniture_store_Nyanza_20251208_042410.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 0,
+        "errors": 19
+      },
+      "success": true
+    },
+    {
+      "category": "cosmetics shop",
+      "city": "Nyanza",
+      "count": 39,
+      "file": "scraper_results/cosmetics_shop_Nyanza_20251208_043212.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 39
+      },
+      "success": true
+    },
+    {
+      "category": "beauty supply store",
+      "city": "Nyanza",
+      "count": 20,
+      "file": "scraper_results/beauty_supply_store_Nyanza_20251208_043845.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 19
+      },
+      "success": true
+    },
+    {
+      "category": "restaurant",
+      "city": "Nyanza",
+      "count": 30,
+      "file": "scraper_results/restaurant_Nyanza_20251208_044637.json",
+      "stats": {
+        "inserted": 20,
+        "duplicates": 0,
+        "errors": 10
+      },
+      "success": true
+    },
+    {
+      "category": "hotel",
+      "city": "Nyanza",
+      "count": 39,
+      "file": "scraper_results/hotel_Nyanza_20251208_045539.json",
+      "stats": {
+        "inserted": 13,
+        "duplicates": 0,
+        "errors": 26
+      },
+      "success": true
+    },
+    {
+      "category": "cafe",
+      "city": "Nyanza",
+      "count": 36,
+      "file": "scraper_results/cafe_Nyanza_20251208_050214.json",
+      "stats": {
+        "inserted": 8,
+        "duplicates": 0,
+        "errors": 28
+      },
+      "success": true
+    },
+    {
+      "category": "bar",
+      "city": "Nyanza",
+      "count": 29,
+      "file": "scraper_results/bar_Nyanza_20251208_051013.json",
+      "stats": {
+        "inserted": 8,
+        "duplicates": 0,
+        "errors": 21
+      },
+      "success": true
+    },
+    {
+      "category": "bakery",
+      "city": "Nyanza",
+      "count": 36,
+      "file": "scraper_results/bakery_Nyanza_20251208_051713.json",
+      "stats": {
+        "inserted": 7,
+        "duplicates": 0,
+        "errors": 29
+      },
+      "success": true
+    },
+    {
+      "category": "pharmacy",
+      "city": "Nyanza",
+      "count": 51,
+      "file": "scraper_results/pharmacy_Nyanza_20251208_052957.json",
+      "stats": {
+        "inserted": 10,
+        "duplicates": 0,
+        "errors": 41
+      },
+      "success": true
+    },
+    {
+      "category": "clinic",
+      "city": "Nyanza",
+      "count": 50,
+      "file": "scraper_results/clinic_Nyanza_20251208_054121.json",
+      "stats": {
+        "inserted": 4,
+        "duplicates": 1,
+        "errors": 45
+      },
+      "success": true
+    },
+    {
+      "category": "hospital",
+      "city": "Nyanza",
+      "count": 44,
+      "file": "scraper_results/hospital_Nyanza_20251208_055230.json",
+      "stats": {
+        "inserted": 8,
+        "duplicates": 0,
+        "errors": 36
+      },
+      "success": true
+    },
+    {
+      "category": "doctor",
+      "city": "Nyanza",
+      "count": 16,
+      "file": "scraper_results/doctor_Nyanza_20251208_055652.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 16
+      },
+      "success": true
+    },
+    {
+      "category": "medical center",
+      "city": "Nyanza",
+      "count": 41,
+      "file": "scraper_results/medical_center_Nyanza_20251208_060917.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 0,
+        "errors": 38
+      },
+      "success": true
+    },
+    {
+      "category": "salon",
+      "city": "Nyanza",
+      "count": 38,
+      "file": "scraper_results/salon_Nyanza_20251208_061642.json",
+      "stats": {
+        "inserted": 5,
+        "duplicates": 0,
+        "errors": 33
+      },
+      "success": true
+    },
+    {
+      "category": "barbershop",
+      "city": "Nyanza",
+      "count": 17,
+      "file": "scraper_results/barbershop_Nyanza_20251208_062104.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 16
+      },
+      "success": true
+    },
+    {
+      "category": "spa",
+      "city": "Nyanza",
+      "count": 42,
+      "file": "scraper_results/spa_Nyanza_20251208_062746.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 0,
+        "errors": 39
+      },
+      "success": true
+    },
+    {
+      "category": "laundry",
+      "city": "Nyanza",
+      "count": 21,
+      "file": "scraper_results/laundry_Nyanza_20251208_063236.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 21
+      },
+      "success": true
+    },
+    {
+      "category": "repair shop",
+      "city": "Nyanza",
+      "count": 17,
+      "file": "scraper_results/repair_shop_Nyanza_20251208_063627.json",
+      "stats": {
+        "inserted": 2,
+        "duplicates": 0,
+        "errors": 15
+      },
+      "success": true
+    },
+    {
+      "category": "tailor",
+      "city": "Nyanza",
+      "count": 17,
+      "file": "scraper_results/tailor_Nyanza_20251208_064345.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 16
+      },
+      "success": true
+    },
+    {
+      "category": "car parts",
+      "city": "Nyanza",
+      "count": 33,
+      "file": "scraper_results/car_parts_Nyanza_20251208_065201.json",
+      "stats": {
+        "inserted": 5,
+        "duplicates": 0,
+        "errors": 28
+      },
+      "success": true
+    },
+    {
+      "category": "auto spare parts",
+      "city": "Nyanza",
+      "count": 35,
+      "file": "scraper_results/auto_spare_parts_Nyanza_20251208_070011.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 0,
+        "errors": 34
+      },
+      "success": true
+    },
+    {
+      "category": "mechanic",
+      "city": "Nyanza",
+      "count": 53,
+      "file": "scraper_results/mechanic_Nyanza_20251208_071246.json",
+      "stats": {
+        "inserted": 5,
+        "duplicates": 0,
+        "errors": 48
+      },
+      "success": true
+    },
+    {
+      "category": "supermarket",
+      "city": "Karongi",
+      "count": 32,
+      "file": "scraper_results/supermarket_Karongi_20251208_072017.json",
+      "stats": {
+        "inserted": 11,
+        "duplicates": 0,
+        "errors": 21
+      },
+      "success": true
+    },
+    {
+      "category": "shop",
+      "city": "Karongi",
+      "count": 34,
+      "file": "scraper_results/shop_Karongi_20251208_072747.json",
+      "stats": {
+        "inserted": 19,
+        "duplicates": 0,
+        "errors": 15
+      },
+      "success": true
+    },
+    {
+      "category": "store",
+      "city": "Karongi",
+      "count": 39,
+      "file": "scraper_results/store_Karongi_20251208_073439.json",
+      "stats": {
+        "inserted": 3,
+        "duplicates": 0,
+        "errors": 36
+      },
+      "success": true
+    },
+    {
+      "category": "electronics store",
+      "city": "Karongi",
+      "count": 34,
+      "file": "scraper_results/electronics_store_Karongi_20251208_074214.json",
+      "stats": {
+        "inserted": 16,
+        "duplicates": 2,
+        "errors": 16
+      },
+      "success": true
+    },
+    {
+      "category": "phone shop",
+      "city": "Karongi",
+      "count": 37,
+      "file": "scraper_results/phone_shop_Karongi_20251208_074956.json",
+      "stats": {
+        "inserted": 6,
+        "duplicates": 5,
+        "errors": 26
+      },
+      "success": true
+    },
+    {
+      "category": "hardware store",
+      "city": "Karongi",
+      "count": 16,
+      "file": "scraper_results/hardware_store_Karongi_20251208_075352.json",
+      "stats": {
+        "inserted": 1,
+        "duplicates": 1,
+        "errors": 14
+      },
+      "success": true
+    },
+    {
+      "category": "clothing store",
+      "city": "Karongi",
+      "count": 37,
+      "file": "scraper_results/clothing_store_Karongi_20251208_080149.json",
+      "stats": {
+        "inserted": 12,
+        "duplicates": 0,
+        "errors": 25
+      },
+      "success": true
+    },
+    {
+      "category": "shoe store",
+      "city": "Karongi",
+      "count": 38,
+      "file": "scraper_results/shoe_store_Karongi_20251208_081041.json",
+      "stats": {
+        "inserted": 8,
+        "duplicates": 0,
+        "errors": 30
+      },
+      "success": true
+    },
+    {
+      "category": "furniture store",
+      "city": "Karongi",
+      "count": 36,
+      "file": "scraper_results/furniture_store_Karongi_20251208_081758.json",
+      "stats": {
+        "inserted": 0,
+        "duplicates": 0,
+        "errors": 36
+      },
+      "success": true
+    },
+    {
+      "category": "cosmetics shop",
+      "city": "Karongi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "beauty supply store",
+      "city": "Karongi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "restaurant",
+      "city": "Karongi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "hotel",
+      "city": "Karongi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "cafe",
+      "city": "Karongi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "bar",
+      "city": "Karongi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "bakery",
+      "city": "Karongi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "pharmacy",
+      "city": "Karongi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "clinic",
+      "city": "Karongi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "hospital",
+      "city": "Karongi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "doctor",
+      "city": "Karongi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "medical center",
+      "city": "Karongi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "salon",
+      "city": "Karongi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "barbershop",
+      "city": "Karongi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "spa",
+      "city": "Karongi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "laundry",
+      "city": "Karongi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "repair shop",
+      "city": "Karongi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "tailor",
+      "city": "Karongi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "car parts",
+      "city": "Karongi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "auto spare parts",
+      "city": "Karongi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "mechanic",
+      "city": "Karongi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "supermarket",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "shop",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "store",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "electronics store",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "phone shop",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "hardware store",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "clothing store",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "shoe store",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "furniture store",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "cosmetics shop",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "beauty supply store",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "restaurant",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "hotel",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "cafe",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "bar",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "bakery",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "pharmacy",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "clinic",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "hospital",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "doctor",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "medical center",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "salon",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "barbershop",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "spa",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "laundry",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "repair shop",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "tailor",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "car parts",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "auto spare parts",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "mechanic",
+      "city": "Rusizi",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "supermarket",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "shop",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "store",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "electronics store",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "phone shop",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "hardware store",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "clothing store",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "shoe store",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "furniture store",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "cosmetics shop",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "beauty supply store",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "restaurant",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "hotel",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "cafe",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "bar",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "bakery",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "pharmacy",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "clinic",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "hospital",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "doctor",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "medical center",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "salon",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "barbershop",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "spa",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "laundry",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "repair shop",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "tailor",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "car parts",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "auto spare parts",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    },
+    {
+      "category": "mechanic",
+      "city": "Nyagatare",
+      "count": 0,
+      "error": "Could not reach host. Are you offline?",
+      "success": false
+    }
+  ]
+}

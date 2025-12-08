@@ -1,0 +1,34 @@
+[
+  {
+    "name": "Masjid Istiqama",
+    "rating": 5.0,
+    "review_count": 1,
+    "category_type": "Mosque",
+    "address": "9PVP+2XP, Butare",
+    "phone": "0790 030 536",
+    "website": "",
+    "place_id": "0x19c30d5e76b27ad3:0xe2f0aa054b23599f",
+    "external_id": "0x19c30d5e76b27ad3:0xe2f0aa054b23599f",
+    "category": "mosque",
+    "city": "Butare",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T23:56:41.091707"
+  },
+  {
+    "name": "Matyazo Masjid Ridh wani",
+    "rating": 5.0,
+    "review_count": 1,
+    "category_type": "Mosque",
+    "address": "CP47+MCP, Butare",
+    "phone": "0728 809 251",
+    "website": "",
+    "place_id": "0x19c30df25fa2e7d7:0x844401ff5f34e512",
+    "external_id": "0x19c30df25fa2e7d7:0x844401ff5f34e512",
+    "category": "mosque",
+    "city": "Butare",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T23:57:03.700630"
+  }
+]

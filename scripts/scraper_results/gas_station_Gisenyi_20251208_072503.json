@@ -1,0 +1,50 @@
+[
+  {
+    "name": "UNO Petroleum - Rubavu",
+    "rating": 5.0,
+    "review_count": 1,
+    "category_type": "Gas station",
+    "address": "8757+H4Q, Gisenyi",
+    "phone": "0794 105 364",
+    "website": "",
+    "place_id": "0x19dd050034853f1b:0x86a454e590054f37",
+    "external_id": "0x19dd050034853f1b:0x86a454e590054f37",
+    "category": "gas station",
+    "city": "Gisenyi",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-08T06:23:39.820263"
+  },
+  {
+    "name": "OM Station",
+    "rating": 3.0,
+    "review_count": 13,
+    "category_type": "Gas station",
+    "address": "Gisenyi",
+    "phone": "0788 535 879",
+    "website": "https://www.google.com/url?q=https://stationom.com/&opi=79508299&sa=U&ved=0ahUKEwjDjuGwra2RAxX_T0EAHUDlPEgQ61gIECgM&usg=AOvVaw1Itq3o0ExZx8HO4Ogd__iF",
+    "place_id": "0x19dd05be9434d1b7:0x176c66cbb71e8bce",
+    "external_id": "0x19dd05be9434d1b7:0x176c66cbb71e8bce",
+    "category": "gas station",
+    "city": "Gisenyi",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-08T06:23:46.668545"
+  },
+  {
+    "name": "Merez Petrol Station",
+    "rating": 3.7,
+    "review_count": 16,
+    "category_type": "Gas station",
+    "address": "77W6+R9Q, Ave de Independance, Gisenyi",
+    "phone": "0788 307 575",
+    "website": "https://www.google.com/url?q=http://www.merezpetroleum.com/&opi=79508299&sa=U&ved=0ahUKEwjWxpfAra2RAxVVQkEAHQzVHwkQ61gIEygP&usg=AOvVaw1c02jekm6k0W4k6KiH6_XE",
+    "place_id": "0x19dd050bd6606855:0x31ed46e290494135",
+    "external_id": "0x19dd050bd6606855:0x31ed46e290494135",
+    "category": "gas station",
+    "city": "Gisenyi",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-08T06:24:18.915764"
+  }
+]

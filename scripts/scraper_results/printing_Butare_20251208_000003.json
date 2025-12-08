@@ -1,0 +1,34 @@
+[
+  {
+    "name": "J&A TECHNOLOGY Ltd",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Digital printing service",
+    "address": "Butare",
+    "phone": "0793 481 404",
+    "website": "",
+    "place_id": "0x19c30b8628465845:0xeca0970184c88b12",
+    "external_id": "0x19c30b8628465845:0xeca0970184c88b12",
+    "category": "printing",
+    "city": "Butare",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T22:59:50.286758"
+  },
+  {
+    "name": "PAPETERIE SMARTLAUNCH@NET LTD",
+    "rating": 0.0,
+    "review_count": 0,
+    "category_type": "Stationery wholesaler",
+    "address": "SH 508 Ave, Butare",
+    "phone": "0788 684 603",
+    "website": "https://www.google.com/url?q=http://smartlaunchnet.com/&opi=79508299&sa=U&ved=0ahUKEwiNz_OWyqyRAxUgQ6QEHZsjHiEQ61gIECgN&usg=AOvVaw1OeVij7TQ7yp1I-cWZWG4B",
+    "place_id": "0x19dca1388a6680c1:0x8e68644c969cadb3",
+    "external_id": "0x19dca1388a6680c1:0x8e68644c969cadb3",
+    "category": "printing",
+    "city": "Butare",
+    "country": "Rwanda",
+    "source": "Google Maps",
+    "scraped_at": "2025-12-07T23:00:03.082458"
+  }
+]

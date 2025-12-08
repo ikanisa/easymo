@@ -506,6 +506,17 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
     selection: selection 
   }, { correlationId });
   
+  // Check for help/support keywords
+  if (normalizedText && /^(help|support|assist|contact|help me|need help|customer service)$/i.test(normalizedText)) {
+    logInfo("HELP_REQUEST_DETECTED", { from: phoneNumber }, { correlationId: crypto.randomUUID() });
+    
+    // Import and call the help handler
+    const { handleHelpRequest } = await import("./handlers/help-support.ts");
+    await handleHelpRequest(phoneNumber);
+    
+    return new Response(JSON.stringify({ success: true, help_sent: true }), { status: 200 });
+  }
+  
   if (selection === "menu" || selection === "home") {
     logInfo("MENU_REQUESTED", { from: phoneNumber }, { correlationId });
     if (phoneNumber) await clearActiveService(supabase, phoneNumber);
