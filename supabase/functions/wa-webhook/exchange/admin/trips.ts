@@ -2,19 +2,12 @@ import type { FlowExchangeRequest, FlowExchangeResponse } from "../../types.ts";
 import { supabase } from "../../config.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
 import { recordAdminAudit } from "./audit.ts";
-import {
-  matchDriversForTrip,
-  matchPassengersForTrip,
-} from "../../rpc/mobility.ts";
 
 const OPEN_LIMIT = 9;
 const MATCH_LIMIT = 9;
-const MATCH_RADIUS_METERS = 20000;
-const MATCH_WINDOW_DAYS = 30;
+const MATCH_RADIUS_METERS = 10000;
 const ALLOWED_STATUS = new Set([
   "open",
-  "matched",
-  "closed",
   "expired",
   "cancelled",
 ]);
@@ -60,7 +53,7 @@ async function listOpenTrips(
   req: FlowExchangeRequest,
 ): Promise<FlowExchangeResponse> {
   const { data, error } = await supabase
-    .from("rides_trips")
+    .from("trips")
     .select(
       "id, role, vehicle_type, status, pickup_text, dropoff_text, created_at",
     )
@@ -97,7 +90,7 @@ async function runMatchNow(
     };
   }
   const { data: trip, error } = await supabase
-    .from("rides_trips")
+    .from("trips")
     .select("id, role, vehicle_type")
     .eq("id", tripId)
     .maybeSingle();
@@ -112,32 +105,40 @@ async function runMatchNow(
     action: "admin_match_now",
     targetId: tripId,
   });
-  const matches = trip.role === "passenger"
-    ? await matchDriversForTrip(
-      supabase,
-      tripId,
-      MATCH_LIMIT,
-      false,
-      MATCH_RADIUS_METERS,
-      MATCH_WINDOW_DAYS,
-    )
-    : await matchPassengersForTrip(
-      supabase,
-      tripId,
-      MATCH_LIMIT,
-      false,
-      MATCH_RADIUS_METERS,
-      MATCH_WINDOW_DAYS,
-    );
+  
+  // Use new RPC functions for finding nearby trips
+  const { data: matches, error: matchError } = trip.role === "passenger"
+    ? await supabase.rpc("find_nearby_drivers", {
+        p_passenger_trip_id: tripId,
+        p_limit: MATCH_LIMIT,
+        p_radius_m: MATCH_RADIUS_METERS,
+      })
+    : await supabase.rpc("find_nearby_passengers", {
+        p_driver_trip_id: tripId,
+        p_limit: MATCH_LIMIT,
+        p_radius_m: MATCH_RADIUS_METERS,
+      });
+  
+  if (matchError) {
+    await logStructuredEvent("ADMIN_TRIPS_MATCH_FAIL", {
+      trip_id: tripId,
+      error: matchError.message,
+    });
+    return {
+      next_screen_id: req.screen_id,
+      messages: [{ level: "error", text: "Failed to find matches." }],
+    };
+  }
+  
   await logStructuredEvent("ADMIN_TRIPS_MATCH_RESULT", {
     trip_id: tripId,
-    count: matches.length,
+    count: matches?.length ?? 0,
   });
   return {
     next_screen_id: "s_trip_matches",
     data: {
       trip_id: tripId,
-      matches,
+      matches: matches ?? [],
     },
   };
 }
@@ -162,7 +163,7 @@ async function updateTripStatus(
     };
   }
   const { data: before, error } = await supabase
-    .from("rides_trips")
+    .from("trips")
     .select("id, status")
     .eq("id", tripId)
     .maybeSingle();
@@ -173,7 +174,7 @@ async function updateTripStatus(
     };
   }
   const { error: updateError } = await supabase
-    .from("rides_trips")
+    .from("trips")
     .update({ status: newStatus })
     .eq("id", tripId);
   if (updateError) {
@@ -214,7 +215,7 @@ async function expireTrip(
     };
   }
   const { error } = await supabase
-    .from("rides_trips")
+    .from("trips")
     .update({ status: "expired" })
     .eq("id", tripId);
   if (error) {

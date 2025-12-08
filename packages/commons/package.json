@@ -24,7 +24,7 @@
   "dependencies": {
     "cls-hooked": "^4.2.2",
     "cors": "^2.8.5",
-    "express": "^4.19.2",
+    "express": "^4.22.1",
     "helmet": "^8.0.0",
     "ioredis": "^5.4.1",
     "jose": "^5.9.3",

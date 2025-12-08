@@ -54,7 +54,7 @@ export async function getTripById(
   tripId: string,
 ): Promise<any> {
   const { data: trip, error } = await ctx.supabase
-    .from("rides_trips")
+    .from("trips")
     .select("*")
     .eq("id", tripId)
     .single();
@@ -82,7 +82,7 @@ export async function updateTripStatus(
   };
 
   const { error } = await ctx.supabase
-    .from("rides_trips")
+    .from("trips")
     .update(updates)
     .eq("id", tripId);
 

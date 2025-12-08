@@ -38,7 +38,7 @@ async function matchDiag(
     };
   }
   const { data: trip, error } = await supabase
-    .from("rides_trips")
+    .from("trips")
     .select("id, role, vehicle_type, status")
     .eq("id", tripId)
     .maybeSingle();
