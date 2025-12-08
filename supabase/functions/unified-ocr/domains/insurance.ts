@@ -294,8 +294,24 @@ function bytesToBase64(bytes: Uint8Array): string {
 
 function buildInsurancePrompt() {
   return {
-    system: "You are an expert at extracting information from insurance certificates. Extract all policy details accurately. All fields are required.",
-    user: "Extract all fields from this insurance certificate: policy_no (string), insurer (string), effective_from (YYYY-MM-DD string), expires_on (YYYY-MM-DD string), coverage_amount (number or null if not found), beneficiary (string, use 'Unknown' if not found), policy_type (string, e.g., 'Motor', 'Health', 'Life'). Return complete JSON with all 7 fields.",
+    system: "You are an expert at extracting information from motor insurance certificates. Extract all policy details accurately.",
+    user: `Extract the following fields from this motor insurance certificate:
+- insurer_name: Name of the insurance company (string)
+- policy_number: Policy number (string)
+- certificate_number: Certificate number (string)
+- policy_inception: Policy start date in YYYY-MM-DD format (string)
+- policy_expiry: Policy expiry date in YYYY-MM-DD format (string)
+- registration_plate: Vehicle registration/plate number (string or null)
+- vin_chassis: VIN or chassis number (string or null)
+- make: Vehicle make/manufacturer (string or null)
+- model: Vehicle model (string or null)
+- vehicle_year: Vehicle year (integer or null)
+- carte_jaune_number: Yellow card number if present (string or null)
+- carte_jaune_expiry: Yellow card expiry in YYYY-MM-DD if present (string or null)
+- usage: Vehicle usage type (string or null)
+- licensed_to_carry: Number of passengers licensed to carry (integer or null)
+
+Return JSON with these exact field names. If a field is not found, use null for optional fields.`,
   };
 }
 
