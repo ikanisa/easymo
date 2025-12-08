@@ -115,6 +115,9 @@ BEGIN
 END;
 $$;
 
+-- Drop existing function to allow signature change  
+DROP FUNCTION IF EXISTS public.match_passengers_for_trip_v2(uuid, integer, boolean, integer, integer);
+
 -- 2. Fix match_passengers_for_trip_v2 to include 'open' status
 CREATE OR REPLACE FUNCTION public.match_passengers_for_trip_v2(
   _trip_id uuid,
@@ -224,13 +227,18 @@ BEGIN
 END;
 $$;
 
--- 3. Add scheduled_at and recurrence columns to rides_trips if not exists
-ALTER TABLE rides_trips 
-  ADD COLUMN IF NOT EXISTS scheduled_at timestamptz,
-  ADD COLUMN IF NOT EXISTS recurrence text CHECK (recurrence IN ('once', 'daily', 'weekdays', 'weekly', 'monthly'));
-
-CREATE INDEX IF NOT EXISTS idx_rides_trips_scheduled ON rides_trips(scheduled_at) 
-  WHERE scheduled_at IS NOT NULL AND status = 'scheduled';
+-- 3. Add scheduled_at and recurrence columns to rides_trips if table exists
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'rides_trips') THEN
+    ALTER TABLE rides_trips 
+      ADD COLUMN IF NOT EXISTS scheduled_at timestamptz,
+      ADD COLUMN IF NOT EXISTS recurrence text CHECK (recurrence IN ('once', 'daily', 'weekdays', 'weekly', 'monthly'));
+    
+    CREATE INDEX IF NOT EXISTS idx_rides_trips_scheduled ON rides_trips(scheduled_at) 
+      WHERE scheduled_at IS NOT NULL AND status = 'scheduled';
+  END IF;
+END $$;
 
 -- 4. Create mobility_intents table for better intent tracking
 CREATE TABLE IF NOT EXISTS mobility_intents (

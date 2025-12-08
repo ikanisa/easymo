@@ -538,59 +538,55 @@ export async function processInsuranceDocument(
 export async function handleInsuranceHelp(ctx: RouterContext): Promise<boolean> {
   const { sendText } = await import("../../_shared/wa-webhook-shared/wa/client.ts");
   const { sendButtonsMessage, homeOnly } = await import("../../_shared/wa-webhook-shared/utils/reply.ts");
-  const { IDS } = await import("../../_shared/wa-webhook-shared/wa/ids.ts");
   
-  // Use correct column names: channel, destination (not contact_type, contact_value)
   const { data: contacts } = await ctx.supabase
     .from('insurance_admin_contacts')
-    .select('id, display_name, channel, destination, is_active, display_order')
+    .select('id, channel, destination, display_name, is_active')
     .eq('is_active', true)
-    .eq('channel', 'whatsapp')  // Filter for WhatsApp contacts
-    .order('display_order', { ascending: true });
+    .order('created_at');
 
   if (!contacts || contacts.length === 0) {
     await sendButtonsMessage(
       ctx,
-      'Insurance support contacts are currently unavailable. Please try again later.\n\nYou can chat with our AI assistant instead.',
-      [
-        { id: IDS.SALES_AGENT, title: "💬 Chat with AI" },
-        { id: IDS.BACK_MENU, title: "🏠 Home" }
-      ]
+      'Insurance support contacts are currently unavailable. Please try again later.',
+      homeOnly()
     );
     return true;
   }
 
   // Build contact list with WhatsApp links
-  const contactLinks = contacts
+  const whatsappContacts = contacts.filter((c: any) => 
+    String(c.channel || '').toLowerCase() === 'whatsapp'
+  );
+
+  if (whatsappContacts.length === 0) {
+    await sendButtonsMessage(
+      ctx,
+      'No WhatsApp contacts available. Please try again later.',
+      homeOnly()
+    );
+    return true;
+  }
+
+  const contactLinks = whatsappContacts
     .map((c: any) => {
-      // Use "destination" column (not contact_value)
+      // Format phone number for WhatsApp (remove + and spaces)
       const phone = c.destination.replace(/[^0-9]/g, '');
       const whatsappUrl = `https://wa.me/${phone}`;
       return `• *${c.display_name}*\n  ${whatsappUrl}`;
     })
     .join('\n\n');
 
-  const message = `🆘 *Help & Support*\n\n` +
-    `Contact our team for assistance:\n\n${contactLinks}\n\n` +
-    `_Tap any link above to start chatting on WhatsApp._\n\n` +
-    `Or chat with our AI assistant for immediate help.`;
+  const message = `🏥 *Motor Insurance Support*\n\n` +
+    `Contact our insurance team for help:\n\n${contactLinks}\n\n` +
+    `_Tap any link above to start chatting on WhatsApp._`;
 
   await sendText(ctx.from, message);
-
-  // Show buttons for AI chat option
-  await sendButtonsMessage(
-    ctx,
-    "Need immediate help?",
-    [
-      { id: IDS.SALES_AGENT, title: "💬 Chat with AI" },
-      { id: IDS.BACK_MENU, title: "🏠 Home" }
-    ]
-  );
 
   await logStructuredEvent('INSURANCE_HELP_REQUESTED', { 
     profile_id: ctx.profileId, 
     wa_id: ctx.from,
-    contacts_count: contacts.length
+    contacts_count: whatsappContacts.length
   });
   
   return true;

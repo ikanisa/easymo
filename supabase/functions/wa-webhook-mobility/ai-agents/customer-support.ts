@@ -223,7 +223,7 @@ export async function escalateToHumanSupport(ctx: RouterContext): Promise<boolea
   }
 
   const contactList = contacts
-    .map((c: any) => `${c.display_name}: ${c.contact_value}`)
+    .map((c: any) => `${c.display_name}: ${c.destination}`)
     .join('\n');
 
   const message = `👥 *Human Support Team*\n\n` +

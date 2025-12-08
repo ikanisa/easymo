@@ -91,16 +91,16 @@ export async function handleHelpRequest(
     }
 
     message += "\n_Tap any link above to start chatting on WhatsApp._\n\n";
-    message += "Or chat with our AI Sales Agent for immediate help.\n";
+    message += "Or chat with our AI assistant for immediate help.\n";
 
     await sendText(phoneNumber, message);
 
     // Send buttons for AI agent option
-    const { sendButtons } = await import("../_shared/wa-webhook-shared/wa/client.ts");
+    const { sendButtons } = await import("../../_shared/wa-webhook-shared/wa/client.ts");
     await sendButtons(phoneNumber, {
       body: "Choose an option:",
       buttons: [
-        { id: "chat_sales_agent", title: "💬 Chat with AI" },
+        { id: "call_center", title: "💬 Chat with AI" },
         { id: "home", title: "🏠 Home" },
       ],
     });

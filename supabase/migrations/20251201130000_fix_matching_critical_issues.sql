@@ -14,19 +14,23 @@ DROP FUNCTION IF EXISTS public.update_location_timestamp();
 -- 1. ADD LOCATION FRESHNESS TRACKING
 -- ============================================================================
 -- Add last_location_at to track when user's location was last updated
-ALTER TABLE rides_trips 
-  ADD COLUMN IF NOT EXISTS last_location_at timestamptz DEFAULT now();
-
--- Update existing records to use created_at as fallback
-UPDATE rides_trips 
-SET last_location_at = created_at 
-WHERE last_location_at IS NULL;
-
--- Create index for efficient location freshness queries
--- Note: Cannot use expires_at > now() in index predicate as now() is not IMMUTABLE
-CREATE INDEX IF NOT EXISTS idx_rides_trips_location_freshness 
-  ON rides_trips(last_location_at, status, expires_at) 
-  WHERE status IN ('open', 'pending', 'active');
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'rides_trips') THEN
+    ALTER TABLE rides_trips 
+      ADD COLUMN IF NOT EXISTS last_location_at timestamptz DEFAULT now();
+    
+    -- Update existing records to use created_at as fallback
+    UPDATE rides_trips 
+    SET last_location_at = created_at 
+    WHERE last_location_at IS NULL;
+    
+    -- Create index for efficient location freshness queries
+    CREATE INDEX IF NOT EXISTS idx_rides_trips_location_freshness 
+      ON rides_trips(last_location_at, status, expires_at) 
+      WHERE status IN ('open', 'pending', 'active');
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 2. ADD SEARCH RADIUS CONFIGURATION
@@ -310,23 +314,29 @@ $$;
 -- ============================================================================
 -- 6. CREATE MONITORING VIEW FOR LOCATION FRESHNESS
 -- ============================================================================
-CREATE OR REPLACE VIEW mobility_location_health AS
-SELECT 
-  role,
-  status,
-  COUNT(*) AS total_trips,
-  COUNT(*) FILTER (WHERE last_location_at > now() - interval '30 minutes') AS fresh_locations_30min,
-  COUNT(*) FILTER (WHERE last_location_at > now() - interval '60 minutes') AS fresh_locations_60min,
-  COUNT(*) FILTER (WHERE last_location_at IS NULL) AS missing_location_timestamp,
-  ROUND(
-    100.0 * COUNT(*) FILTER (WHERE last_location_at > now() - interval '30 minutes') / NULLIF(COUNT(*), 0),
-    2
-  ) AS fresh_percentage_30min
-FROM rides_trips
-WHERE status IN ('open', 'pending', 'active')
-  AND expires_at > now()
-GROUP BY role, status
-ORDER BY role, status;
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'rides_trips') THEN
+    EXECUTE '
+    CREATE OR REPLACE VIEW mobility_location_health AS
+    SELECT 
+      role,
+      status,
+      COUNT(*) AS total_trips,
+      COUNT(*) FILTER (WHERE last_location_at > now() - interval ''30 minutes'') AS fresh_locations_30min,
+      COUNT(*) FILTER (WHERE last_location_at > now() - interval ''60 minutes'') AS fresh_locations_60min,
+      COUNT(*) FILTER (WHERE last_location_at IS NULL) AS missing_location_timestamp,
+      ROUND(
+        100.0 * COUNT(*) FILTER (WHERE last_location_at > now() - interval ''30 minutes'') / NULLIF(COUNT(*), 0),
+        2
+      ) AS fresh_percentage_30min
+    FROM rides_trips
+    WHERE status IN (''open'', ''pending'', ''active'')
+      AND expires_at > now()
+    GROUP BY role, status
+    ORDER BY role, status';
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 7. ADD TRIGGER TO AUTO-UPDATE last_location_at ON LOCATION CHANGES
@@ -345,10 +355,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trg_update_location_timestamp ON rides_trips;
-CREATE TRIGGER trg_update_location_timestamp
-  BEFORE UPDATE ON rides_trips
-  FOR EACH ROW
-  EXECUTE FUNCTION update_location_timestamp();
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'rides_trips') THEN
+    DROP TRIGGER IF EXISTS trg_update_location_timestamp ON rides_trips;
+    CREATE TRIGGER trg_update_location_timestamp
+      BEFORE UPDATE ON rides_trips
+      FOR EACH ROW
+      EXECUTE FUNCTION update_location_timestamp();
+  END IF;
+END $$;
 
 COMMIT;
