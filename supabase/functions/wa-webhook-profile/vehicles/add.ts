@@ -204,12 +204,16 @@ export async function handleVehicleInsuranceUpload(
         mime_type: media.mime,
       });
 
-    // Call insurance OCR function
+    // Call unified OCR function with vehicle domain
     const { data: ocrResult, error: ocrError } = await ctx.supabase.functions.invoke(
-      "insurance-ocr",
+      "unified-ocr",
       {
         body: {
-          inline: { signedUrl, mime: media.mime },
+          domain: "vehicle",
+          profile_id: ctx.profileId,
+          org_id: "default", // TODO: Get from context
+          vehicle_plate: "PENDING", // Will be extracted from OCR
+          file_url: signedUrl,
         },
       },
     );

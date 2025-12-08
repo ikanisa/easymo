@@ -250,7 +250,7 @@ async function maybeEnqueueForWorker(
   }
   try {
     // Fire-and-forget: attempt to wake the worker; ignore errors
-    await sharedSupabase.functions.invoke("ocr-processor");
+    await sharedSupabase.functions.invoke("unified-ocr", { body: { domain: "menu" } });
   } catch (_err) {
     /* noop */
   }

@@ -154,7 +154,6 @@ $$ LANGUAGE plpgsql;
 
 -- Apply trigger to rides_trips
 DROP TRIGGER IF EXISTS trg_update_last_location_at ON rides_trips;
-DROP TRIGGER IF EXISTS trg_update_last_location_at ON ; -- FIXME: add table name
 CREATE TRIGGER trg_update_last_location_at
   BEFORE UPDATE ON rides_trips
   FOR EACH ROW
@@ -183,7 +182,6 @@ $$ LANGUAGE plpgsql;
 
 -- Apply trigger to rides_trips
 DROP TRIGGER IF EXISTS trg_auto_populate_geography ON rides_trips;
-DROP TRIGGER IF EXISTS trg_auto_populate_geography ON ; -- FIXME: add table name
 CREATE TRIGGER trg_auto_populate_geography
   BEFORE INSERT OR UPDATE ON rides_trips
   FOR EACH ROW
@@ -212,7 +210,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_auto_populate_mobility_geography ON mobility_trips;
-DROP TRIGGER IF EXISTS trg_auto_populate_mobility_geography ON ; -- FIXME: add table name
 CREATE TRIGGER trg_auto_populate_mobility_geography
   BEFORE INSERT OR UPDATE ON mobility_trips
   FOR EACH ROW
@@ -257,14 +254,12 @@ $$ LANGUAGE plpgsql;
 
 -- Apply validation to both tables
 DROP TRIGGER IF EXISTS trg_validate_coordinates ON rides_trips;
-DROP TRIGGER IF EXISTS trg_validate_coordinates ON ; -- FIXME: add table name
 CREATE TRIGGER trg_validate_coordinates
   BEFORE INSERT OR UPDATE ON rides_trips
   FOR EACH ROW
   EXECUTE FUNCTION validate_coordinates();
 
 DROP TRIGGER IF EXISTS trg_validate_coordinates ON mobility_trips;
-DROP TRIGGER IF EXISTS trg_validate_coordinates ON ; -- FIXME: add table name
 CREATE TRIGGER trg_validate_coordinates
   BEFORE INSERT OR UPDATE ON mobility_trips
   FOR EACH ROW

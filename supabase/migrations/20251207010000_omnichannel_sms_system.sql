@@ -102,7 +102,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trigger_update_omnichannel_session_timestamp ON public.omnichannel_sessions;
-DROP TRIGGER IF EXISTS trigger_update_omnichannel_session_timestamp ON ; -- FIXME: add table name
 CREATE TRIGGER trigger_update_omnichannel_session_timestamp
   BEFORE UPDATE ON public.omnichannel_sessions
   FOR EACH ROW

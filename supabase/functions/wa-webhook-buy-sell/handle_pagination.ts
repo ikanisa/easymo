@@ -168,13 +168,26 @@ export async function handleNewSearch(userPhone: string): Promise<void> {
       userId: profile.user_id,
     });
 
-    await sendText(
-      userPhone,
-      "🔄 Starting new search...\n\nPlease select 🛒 Buy & Sell from the menu."
-    );
+    // Show categories list immediately instead of asking user to select from menu
+    const { showBuySellCategories } = await import("./show_categories.ts");
+    const { getCountryCode } = await import("../_shared/phone-utils.ts");
+    
+    // Map country code to format expected by categories
+    const countryCode = getCountryCode(userPhone);
+    const userCountry = mapCountry(countryCode);
+    
+    await showBuySellCategories(userPhone, userCountry);
   } catch (error) {
     await logStructuredEvent("BUY_SELL_NEW_SEARCH_ERROR", {
       error: error instanceof Error ? error.message : String(error),
     });
   }
+}
+
+// Map country code to expected format
+function mapCountry(countryCode: string | null): string {
+  if (!countryCode) return "RW";
+  const code = countryCode.toUpperCase();
+  if (["RW", "BI", "CD", "TZ", "MT"].includes(code)) return code;
+  return "RW"; // Default to Rwanda
 }

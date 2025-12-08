@@ -42,24 +42,28 @@ export async function showBuySellCategories(
   const hasMore = endIndex < categories.length;
   const totalPages = Math.ceil(categories.length / ITEMS_PER_PAGE);
 
-  // Get country-specific names or default
+  // Calculate counts
+  const shownCount = startIndex + paginatedCategories.length;
+  
+  // Use ENGLISH names only (never translate to Kinyarwanda or other languages)
   const rows = paginatedCategories.map(cat => {
-    let displayName = cat.name;
-    
-    // Use country-specific name if available
-    if (cat.country_specific_names?.[userCountry]?.name) {
-      displayName = cat.country_specific_names[userCountry].name;
-    }
-
     return {
       id: `category_${cat.key}`,
-      title: `${cat.icon} ${displayName}`,
+      title: `${cat.icon} ${cat.name}`,
       description: `Find nearby ${cat.name.toLowerCase()}`,
     };
   });
 
-  // Show categories list
-  const shownCount = startIndex + paginatedCategories.length;
+  // Add "Show More" as a list item if there are more categories
+  if (hasMore) {
+    rows.push({
+      id: "buy_sell_show_more_categories",
+      title: "📋 See More Categories",
+      description: `View ${categories.length - shownCount} more categories`,
+    });
+  }
+
+  // Show categories list (single message only)
   const headerText = `🛒 *Buy & Sell*\n\nShowing ${shownCount} of ${categories.length} categories\n\nChoose a category to find nearby businesses:`;
 
   await sendList(userPhone, {
@@ -73,9 +77,8 @@ export async function showBuySellCategories(
     ],
   });
 
-  // If there are more categories, show "Show More" button
+  // Store pagination state if there are more categories
   if (hasMore) {
-    // Store pagination state
     const profile = await ensureProfile(supabase, userPhone);
     await setState(supabase, profile.user_id, {
       key: "buy_sell_menu_pagination",
@@ -84,29 +87,14 @@ export async function showBuySellCategories(
         totalCategories: categories.length,
       } as CategoryMenuState,
     });
-
-    await sendButtons(
-      userPhone,
-      `💡 Showing ${shownCount} of ${categories.length} categories`,
-      [
-        { id: "buy_sell_show_more_categories", title: "📋 See More" },
-        { id: "home", title: "🏠 Home" },
-      ]
-    );
-
-    await logStructuredEvent("BUY_SELL_CATEGORIES_SENT_WITH_MORE", {
-      page,
-      shown: paginatedCategories.length,
-      total: categories.length,
-      hasMore: true,
-    });
-  } else {
-    await logStructuredEvent("BUY_SELL_CATEGORIES_SENT", {
-      page,
-      shown: paginatedCategories.length,
-      total: categories.length,
-    });
   }
+
+  await logStructuredEvent("BUY_SELL_CATEGORIES_SENT", {
+    page,
+    shown: paginatedCategories.length,
+    total: categories.length,
+    hasMore,
+  });
 }
 
 /**

@@ -9,10 +9,27 @@ BEGIN;
 -- ============================================================================
 
 -- Add constraints and status to wallet_accounts
-ALTER TABLE wallet_accounts
-  ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active' CHECK (status IN ('active', 'frozen', 'suspended')),
-  ADD COLUMN IF NOT EXISTS currency TEXT DEFAULT 'RWF',
-  ADD CONSTRAINT wallet_accounts_tokens_non_negative CHECK (tokens >= 0);
+-- Add wallet account columns
+DO $$ 
+BEGIN
+  -- Add columns if they don't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'wallet_accounts' AND column_name = 'status') THEN
+    ALTER TABLE wallet_accounts ADD COLUMN status TEXT DEFAULT 'active' CHECK (status IN ('active', 'frozen', 'suspended'));
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'wallet_accounts' AND column_name = 'currency') THEN
+    ALTER TABLE wallet_accounts ADD COLUMN currency TEXT DEFAULT 'RWF';
+  END IF;
+  
+  -- Add constraint if it doesn't exist
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint 
+    WHERE conname = 'wallet_accounts_tokens_non_negative' 
+    AND conrelid = 'wallet_accounts'::regclass
+  ) THEN
+    ALTER TABLE wallet_accounts ADD CONSTRAINT wallet_accounts_tokens_non_negative CHECK (tokens >= 0);
+  END IF;
+END $$;
 
 -- Add balance snapshots to wallet_entries
 ALTER TABLE wallet_entries

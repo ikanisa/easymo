@@ -1157,7 +1157,7 @@ export class AgentOrchestrator {
       }));
     } else if (intent.type === "find_passenger") {
       // Find passengers along route
-      // Query rides_trips for pending requests (passengers looking for rides)
+      // Query trips for pending requests (passengers looking for rides)
       // This would match drivers with passengers going the same route
       console.log(JSON.stringify({
         event: "PASSENGER_MATCHING_REQUESTED",
@@ -1165,7 +1165,7 @@ export class AgentOrchestrator {
       }));
     } else if (intent.type === "schedule_trip") {
       // Create scheduled trip
-      // Insert into rides_trips with scheduled_at
+      // Insert into trips with scheduled_at
       const { createTripRequest } = await import(
         "../wa-webhook-shared/tools/rides-matcher.ts"
       );
@@ -1186,10 +1186,10 @@ export class AgentOrchestrator {
       }
     } else if (intent.type === "cancel_trip") {
       // Cancel existing trip
-      // Update rides_trips status to 'cancelled'
+      // Update trips status to 'cancelled'
       // Find user's active trips and cancel them
       const { data: activeTrips } = await this.supabase
-        .from("rides_trips")
+        .from("trips")
         .select("id")
         .eq("passenger_id", context.userId)
         .in("status", ["pending", "scheduled", "matched"])
@@ -1198,7 +1198,7 @@ export class AgentOrchestrator {
       
       if (activeTrips && activeTrips.length > 0) {
         await this.supabase
-          .from("rides_trips")
+          .from("trips")
           .update({ status: "cancelled", cancelled_at: new Date().toISOString() })
           .eq("id", activeTrips[0].id);
         

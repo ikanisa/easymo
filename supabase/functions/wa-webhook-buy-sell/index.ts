@@ -237,7 +237,7 @@ serve(async (req: Request): Promise<Response> => {
         return respond({ success: true, message: "location_processed" });
       }
 
-      // Home/menu commands -> show categories
+      // Home/menu commands -> show categories ONLY (no welcome text)
       const lower = text.toLowerCase();
       if (
         !text ||
@@ -248,15 +248,18 @@ serve(async (req: Request): Promise<Response> => {
       ) {
         const userCountry = mapCountry(getCountryCode(userPhone));
         await showBuySellCategories(userPhone, userCountry);
-        return respond({ success: true, message: "menu_rendered" });
+        
+        const duration = Date.now() - startTime;
+        recordMetric("buy_sell.message.processed", 1, {
+          duration_ms: duration,
+        });
+        
+        return respond({ success: true, message: "categories_shown" });
       }
 
-      // Fallback: keep user in Buy & Sell flow and show menu
-      await sendText(
-        userPhone,
-        "🛒 Buy & Sell\n\nI can help you find nearby businesses. Sharing your location gives the best matches. Type *menu* to see categories.",
-      );
-      await showBuySellCategories(userPhone, "RW");
+      // Fallback: unknown message - show categories without extra text
+      const userCountry = mapCountry(getCountryCode(userPhone));
+      await showBuySellCategories(userPhone, userCountry);
 
       const duration = Date.now() - startTime;
       recordMetric("buy_sell.message.processed", 1, {

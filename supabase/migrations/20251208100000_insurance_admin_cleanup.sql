@@ -78,7 +78,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_insurance_admin_contacts_updated_at ON public.insurance_admin_contacts;
-DROP TRIGGER IF EXISTS trg_insurance_admin_contacts_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER trg_insurance_admin_contacts_updated_at
   BEFORE UPDATE ON public.insurance_admin_contacts
   FOR EACH ROW
@@ -182,7 +181,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_insurance_admin_notifications_updated_at ON public.insurance_admin_notifications;
-DROP TRIGGER IF EXISTS trg_insurance_admin_notifications_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER trg_insurance_admin_notifications_updated_at
   BEFORE UPDATE ON public.insurance_admin_notifications
   FOR EACH ROW

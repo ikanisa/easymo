@@ -78,7 +78,7 @@ export class RidesAgent {
 
     // Create trip request
     const { data: trip, error: tripError } = await this.supabase
-      .from("rides_trips")
+      .from("trips")
       .insert({
         rider_user_id: userId,
         pickup_address: pickupAddress,
@@ -175,7 +175,7 @@ export class RidesAgent {
     }
 
     const { data: trip, error } = await this.supabase
-      .from("rides_trips")
+      .from("trips")
       .insert({
         rider_user_id: userId,
         pickup_address: pickupAddress,
@@ -208,7 +208,7 @@ export class RidesAgent {
     const { tripId } = payload;
 
     const { data: trip, error } = await this.supabase
-      .from("rides_trips")
+      .from("trips")
       .update({ status: "cancelled" })
       .eq("id", tripId)
       .or(`rider_user_id.eq.${userId},driver_user_id.eq.${userId}`)

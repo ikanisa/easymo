@@ -91,35 +91,30 @@ $$ LANGUAGE plpgsql;
 
 -- Trigger on system instructions changes
 DROP TRIGGER IF EXISTS trigger_invalidate_on_instructions_change ON ai_agent_system_instructions;
-DROP TRIGGER IF EXISTS trigger_invalidate_on_instructions_change ON ; -- FIXME: add table name
 CREATE TRIGGER trigger_invalidate_on_instructions_change
 AFTER INSERT OR UPDATE OR DELETE ON ai_agent_system_instructions
 FOR EACH ROW EXECUTE FUNCTION notify_agent_config_change();
 
 -- Trigger on persona changes
 DROP TRIGGER IF EXISTS trigger_invalidate_on_persona_change ON ai_agent_personas;
-DROP TRIGGER IF EXISTS trigger_invalidate_on_persona_change ON ; -- FIXME: add table name
 CREATE TRIGGER trigger_invalidate_on_persona_change
 AFTER INSERT OR UPDATE OR DELETE ON ai_agent_personas
 FOR EACH ROW EXECUTE FUNCTION notify_agent_config_change();
 
 -- Trigger on tool changes
 DROP TRIGGER IF EXISTS trigger_invalidate_on_tool_change ON ai_agent_tools;
-DROP TRIGGER IF EXISTS trigger_invalidate_on_tool_change ON ; -- FIXME: add table name
 CREATE TRIGGER trigger_invalidate_on_tool_change
 AFTER INSERT OR UPDATE OR DELETE ON ai_agent_tools
 FOR EACH ROW EXECUTE FUNCTION notify_agent_config_change();
 
 -- Trigger on task changes
 DROP TRIGGER IF EXISTS trigger_invalidate_on_task_change ON ai_agent_tasks;
-DROP TRIGGER IF EXISTS trigger_invalidate_on_task_change ON ; -- FIXME: add table name
 CREATE TRIGGER trigger_invalidate_on_task_change
 AFTER INSERT OR UPDATE OR DELETE ON ai_agent_tasks
 FOR EACH ROW EXECUTE FUNCTION notify_agent_config_change();
 
 -- Trigger on knowledge base changes
 DROP TRIGGER IF EXISTS trigger_invalidate_on_kb_change ON ai_agent_knowledge_bases;
-DROP TRIGGER IF EXISTS trigger_invalidate_on_kb_change ON ; -- FIXME: add table name
 CREATE TRIGGER trigger_invalidate_on_kb_change
 AFTER INSERT OR UPDATE OR DELETE ON ai_agent_knowledge_bases
 FOR EACH ROW EXECUTE FUNCTION notify_agent_config_change();

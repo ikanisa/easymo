@@ -244,7 +244,7 @@ export async function createTripRequest(
     }
 
     const { data, error } = await supabase
-      .from("rides_trips")
+      .from("trips")
       .insert(tripData)
       .select("id")
       .single();

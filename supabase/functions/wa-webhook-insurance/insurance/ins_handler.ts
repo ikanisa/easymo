@@ -290,7 +290,7 @@ async function maybeEnqueueForWorker(
   }
   try {
     // Fire-and-forget: attempt to wake the worker; ignore errors
-    await sharedSupabase.functions.invoke("insurance-ocr");
+    await sharedSupabase.functions.invoke("unified-ocr");
   } catch (_err) {
     /* noop */
   }
@@ -311,9 +311,10 @@ async function processInlineOcr(
 ): Promise<boolean> {
   try {
     const { data, error } = await sharedSupabase.functions.invoke(
-      "insurance-ocr",
+      "unified-ocr",
       {
         body: {
+          domain: "insurance",
           inline: { signedUrl: params.signedUrl, mime: params.mime },
         },
       },

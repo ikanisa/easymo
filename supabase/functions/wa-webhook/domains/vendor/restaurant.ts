@@ -534,7 +534,7 @@ export async function handleMenuFileUpload(
 
   // Trigger OCR processing asynchronously
   try {
-    await ctx.supabase.functions.invoke("ocr-processor", {
+    await ctx.supabase.functions.invoke("unified-ocr", { body: { domain: "menu" } }, {
       body: { uploadRequestId: uploadRequest.id },
     });
   } catch (err) {

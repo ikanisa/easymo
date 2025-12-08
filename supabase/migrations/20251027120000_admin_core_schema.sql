@@ -18,7 +18,16 @@ create table if not exists public.notifications (
   created_at timestamptz default now()
 );
 
-alter table public.notifications add column metadata jsonb;
+-- Add metadata column if it doesn't exist
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'notifications' AND column_name = 'metadata'
+  ) THEN
+    ALTER TABLE public.notifications ADD COLUMN metadata jsonb;
+  END IF;
+END $$;
 
 
 COMMIT;

@@ -138,7 +138,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trg_trips_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER trg_trips_updated_at
   BEFORE UPDATE ON public.trips
   FOR EACH ROW

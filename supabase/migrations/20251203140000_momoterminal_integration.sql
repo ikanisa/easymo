@@ -267,7 +267,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_update_device_stats ON momo_transactions;
-DROP TRIGGER IF EXISTS trg_update_device_stats ON ; -- FIXME: add table name
 CREATE TRIGGER trg_update_device_stats
     AFTER INSERT ON momo_transactions
     FOR EACH ROW

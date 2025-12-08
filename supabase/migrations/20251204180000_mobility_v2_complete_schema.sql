@@ -358,25 +358,21 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trg_mobility_trip_matches_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER trg_mobility_trip_matches_updated_at
   BEFORE UPDATE ON mobility_trip_matches
   FOR EACH ROW
   EXECUTE FUNCTION mobility_update_updated_at();
 
-DROP TRIGGER IF EXISTS trg_mobility_driver_metrics_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER trg_mobility_driver_metrics_updated_at
   BEFORE UPDATE ON mobility_driver_metrics
   FOR EACH ROW
   EXECUTE FUNCTION mobility_update_updated_at();
 
-DROP TRIGGER IF EXISTS trg_mobility_passenger_metrics_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER trg_mobility_passenger_metrics_updated_at
   BEFORE UPDATE ON mobility_passenger_metrics
   FOR EACH ROW
   EXECUTE FUNCTION mobility_update_updated_at();
 
-DROP TRIGGER IF EXISTS trg_mobility_pricing_config_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER trg_mobility_pricing_config_updated_at
   BEFORE UPDATE ON mobility_pricing_config
   FOR EACH ROW
@@ -486,7 +482,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trg_mobility_update_metrics_on_match ON ; -- FIXME: add table name
 CREATE TRIGGER trg_mobility_update_metrics_on_match
   AFTER UPDATE ON mobility_trip_matches
   FOR EACH ROW

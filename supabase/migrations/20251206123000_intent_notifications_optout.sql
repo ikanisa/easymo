@@ -32,7 +32,6 @@ CREATE INDEX IF NOT EXISTS idx_notification_prefs_enabled ON public.intent_notif
 
 -- Auto-update timestamp
 DROP TRIGGER IF EXISTS update_notification_prefs_updated_at ON public.intent_notification_preferences;
-DROP TRIGGER IF EXISTS update_notification_prefs_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER update_notification_prefs_updated_at
   BEFORE UPDATE ON public.intent_notification_preferences
   FOR EACH ROW

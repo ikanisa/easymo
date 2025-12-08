@@ -144,6 +144,7 @@ CREATE INDEX IF NOT EXISTS idx_job_categories_display_order ON public.job_catego
 -- RLS policies
 ALTER TABLE public.job_categories ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS job_categories_public_read ON public.job_categories;
 CREATE POLICY job_categories_public_read ON public.job_categories
   FOR SELECT USING (is_active = true);
 
@@ -225,6 +226,7 @@ CREATE INDEX IF NOT EXISTS idx_property_types_commercial ON public.property_type
 -- RLS policies
 ALTER TABLE public.property_types ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS property_types_public_read ON public.property_types;
 CREATE POLICY property_types_public_read ON public.property_types
   FOR SELECT USING (is_active = true);
 
@@ -280,6 +282,7 @@ CREATE INDEX IF NOT EXISTS idx_insurance_types_display_order ON public.insurance
 -- RLS policies
 ALTER TABLE public.insurance_types ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS insurance_types_public_read ON public.insurance_types;
 CREATE POLICY insurance_types_public_read ON public.insurance_types
   FOR SELECT USING (is_active = true);
 
@@ -533,6 +536,7 @@ CREATE INDEX IF NOT EXISTS idx_tool_enum_values_display_order ON public.tool_enu
 -- RLS policies
 ALTER TABLE public.tool_enum_values ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS tool_enum_values_public_read ON public.tool_enum_values;
 CREATE POLICY tool_enum_values_public_read ON public.tool_enum_values
   FOR SELECT USING (is_active = true);
 
@@ -734,27 +738,27 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS update_service_verticals_updated_at ON ; -- FIXME: add table name
+DROP TRIGGER IF EXISTS update_service_verticals_updated_at ON public.service_verticals;
 CREATE TRIGGER update_service_verticals_updated_at BEFORE UPDATE ON public.service_verticals
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_job_categories_updated_at ON ; -- FIXME: add table name
+DROP TRIGGER IF EXISTS update_job_categories_updated_at ON public.job_categories;
 CREATE TRIGGER update_job_categories_updated_at BEFORE UPDATE ON public.job_categories
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_property_types_updated_at ON ; -- FIXME: add table name
+DROP TRIGGER IF EXISTS update_property_types_updated_at ON public.property_types;
 CREATE TRIGGER update_property_types_updated_at BEFORE UPDATE ON public.property_types
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_insurance_types_updated_at ON ; -- FIXME: add table name
+DROP TRIGGER IF EXISTS update_insurance_types_updated_at ON public.insurance_types;
 CREATE TRIGGER update_insurance_types_updated_at BEFORE UPDATE ON public.insurance_types
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_moderation_rules_updated_at ON ; -- FIXME: add table name
+DROP TRIGGER IF EXISTS update_moderation_rules_updated_at ON public.moderation_rules;
 CREATE TRIGGER update_moderation_rules_updated_at BEFORE UPDATE ON public.moderation_rules
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_tool_enum_values_updated_at ON ; -- FIXME: add table name
+DROP TRIGGER IF EXISTS update_tool_enum_values_updated_at ON public.tool_enum_values;
 CREATE TRIGGER update_tool_enum_values_updated_at BEFORE UPDATE ON public.tool_enum_values
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
