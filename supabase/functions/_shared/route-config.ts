@@ -76,7 +76,8 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
       // Wallet menu keys
       "wallet", "token_transfer", "momo_qr", "momo qr", "momoqr",
       // Profile menu keys
-      "profile", "profile_assets", "my_business", "my_businesses",
+      "profile", "my_account", "my account", "account", "profile_assets", 
+      "my_business", "my_businesses",
       "my_jobs", "my_properties", "saved_locations",
       // Legacy numeric
       "5",

@@ -116,6 +116,13 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
   
   const routingText = routingMessage ? getRoutingText(routingMessage) : null;
   const phoneNumber = routingMessage?.from ?? null;
+  
+  // Log the extracted routing info for debugging
+  logInfo("ROUTING_EXTRACTION", {
+    messageType: routingMessage?.type,
+    routingText,
+    phoneNumber: phoneNumber ? (phoneNumber.length >= 4 ? phoneNumber.slice(-4) : "SHORT") : null,
+  }, { correlationId: crypto.randomUUID() });
 
   if (routingText) {
     const normalized = routingText.trim().toLowerCase();
@@ -472,11 +479,12 @@ async function fetchHomeMenuItems(): Promise<WhatsAppHomeMenuItem[]> {
 }
 
 async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers): Promise<Response> {
-  logInfo("HANDLE_HOME_MENU_START", {}, { correlationId: crypto.randomUUID() });
+  const correlationId = crypto.randomUUID();
+  logInfo("HANDLE_HOME_MENU_START", {}, { correlationId });
   
   const message = getFirstMessage(payload);
   if (!message) {
-    logInfo("NO_MESSAGE_IN_PAYLOAD", {}, { correlationId: crypto.randomUUID() });
+    logInfo("NO_MESSAGE_IN_PAYLOAD", {}, { correlationId });
     return new Response(JSON.stringify({ success: true, message: "No message to process" }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
@@ -489,22 +497,52 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
   const normalizedText = text?.trim().toLowerCase() ?? null;
   const selection = interactiveId ?? normalizedText;
   
-  logInfo("MESSAGE_RECEIVED", { from: phoneNumber, text: selection ?? null }, { correlationId: crypto.randomUUID() });
+  logInfo("MESSAGE_RECEIVED", { 
+    from: phoneNumber, 
+    messageType: message.type,
+    text: text,
+    interactiveId: interactiveId,
+    normalizedText: normalizedText,
+    selection: selection 
+  }, { correlationId });
   
   if (selection === "menu" || selection === "home") {
-    logInfo("MENU_REQUESTED", { from: phoneNumber }, { correlationId: crypto.randomUUID() });
+    logInfo("MENU_REQUESTED", { from: phoneNumber }, { correlationId });
     if (phoneNumber) await clearActiveService(supabase, phoneNumber);
   } else if (selection) {
     const isInteractive = Boolean(interactiveId);
     const targetService = SERVICE_KEY_MAP[selection] ?? (isInteractive ? FALLBACK_SERVICE : null);
+    const foundInMap = !!SERVICE_KEY_MAP[selection];
+    
+    const allKeys = Object.keys(SERVICE_KEY_MAP);
+    logInfo("ROUTING_DECISION", { 
+      selection, 
+      isInteractive, 
+      targetService,
+      foundInMap,
+      // Only log keys if not found to help debug
+      availableKeys: foundInMap ? undefined : allKeys.slice(0, 10).join(", ") + (allKeys.length > 10 ? "..." : "")
+    }, { correlationId });
+    
     if (targetService) {
-      logInfo("ROUTING_TO_SERVICE", { service: targetService, selection }, { correlationId: crypto.randomUUID() });
+      logInfo("ROUTING_TO_SERVICE", { service: targetService, selection }, { correlationId });
       if (phoneNumber) await setActiveService(supabase, phoneNumber, targetService);
       const url = `${MICROSERVICES_BASE_URL}/${targetService}`;
       const forwardHeaders = new Headers(headers);
       forwardHeaders.set("Content-Type", "application/json");
       forwardHeaders.set("X-Routed-From", "wa-webhook-core");
       forwardHeaders.set("X-Menu-Selection", selection);
+      
+      // Include service role key for internal service-to-service auth
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (serviceRoleKey) {
+        forwardHeaders.set("Authorization", `Bearer ${serviceRoleKey}`);
+      } else {
+        logWarn("MISSING_SERVICE_ROLE_KEY", { 
+          targetService,
+          message: "Service role key not found - authorization may fail"
+        }, { correlationId });
+      }
 
       try {
         const response = await fetch(url, {
@@ -516,7 +554,7 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
           logWarn(
             "WA_CORE_MENU_SERVICE_NOT_FOUND",
             { service: targetService, status: response.status },
-            { correlationId: crypto.randomUUID() },
+            { correlationId },
           );
           console.warn(JSON.stringify({
             event: "WA_CORE_MENU_FALLBACK",
@@ -524,22 +562,24 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
             service: targetService,
           }));
         } else {
-          logInfo("FORWARDED", { service: targetService, status: response.status }, { correlationId: crypto.randomUUID() });
+          logInfo("FORWARDED", { service: targetService, status: response.status }, { correlationId });
           return response;
         }
       } catch (error) {
-        logError("FORWARD_FAILED", { service: targetService, error: String(error) }, { correlationId: crypto.randomUUID() });
+        logError("FORWARD_FAILED", { service: targetService, error: String(error) }, { correlationId });
       }
     } else if (!isInteractive) {
-      logInfo("TEXT_NOT_RECOGNIZED", { input: selection }, { correlationId: crypto.randomUUID() });
+      logInfo("TEXT_NOT_RECOGNIZED", { input: selection }, { correlationId });
       if (phoneNumber) await clearActiveService(supabase, phoneNumber);
+    } else {
+      logInfo("INTERACTIVE_NOT_MAPPED", { input: selection, willUseFallback: false }, { correlationId });
     }
   } else if (phoneNumber) {
     await clearActiveService(supabase, phoneNumber);
   }
 
   // Show home menu - interactive list message
-  logInfo("SHOWING_HOME_MENU", { to: phoneNumber }, { correlationId: crypto.randomUUID() });
+  logInfo("SHOWING_HOME_MENU", { to: phoneNumber }, { correlationId });
 
   const ctx: RouterContext = {
     supabase,
@@ -559,7 +599,7 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
 
     // Fallback if no items found (shouldn't happen if DB is populated)
     if (rows.length === 0) {
-      logWarn("NO_ACTIVE_MENU_ITEMS", { message: "No active menu items found in DB, using fallback" }, { correlationId: crypto.randomUUID() });
+      logWarn("NO_ACTIVE_MENU_ITEMS", { message: "No active menu items found in DB, using fallback" }, { correlationId });
       rows.push(
         { id: "rides", title: "Rides & Transport", description: "Request a ride or delivery" },
         { id: "insurance", title: "Insurance", description: "Buy or manage insurance" },
@@ -570,6 +610,11 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
         { id: "ai_agents", title: "AI Support", description: "Chat with our AI assistant" }
       );
     }
+
+    logInfo("HOME_MENU_ITEMS_LOADED", { 
+      count: rows.length, 
+      menuKeys: rows.map(r => r.id).join(", ")
+    }, { correlationId });
 
     await sendListMessage(ctx, {
       title: "easyMO Services",
@@ -582,7 +627,7 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
     console.log(JSON.stringify({ event: "MENU_SENT_SUCCESS", to: phoneNumber, itemCount: rows.length }));
     return new Response(JSON.stringify({ success: true, menu_shown: true }), { status: 200 });
   } catch (error) {
-    logError("SEND_MESSAGE_FAILED", { error: String(error) }, { correlationId: crypto.randomUUID() });
+    logError("SEND_MESSAGE_FAILED", { error: String(error) }, { correlationId });
     return new Response(JSON.stringify({ error: "Failed to send message" }), { status: 500 });
   }
 }
