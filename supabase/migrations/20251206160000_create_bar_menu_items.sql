@@ -62,6 +62,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trigger_bar_menu_items_updated_at ON public.bar_menu_items;
+DROP TRIGGER IF EXISTS trigger_bar_menu_items_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER trigger_bar_menu_items_updated_at
     BEFORE UPDATE ON public.bar_menu_items
     FOR EACH ROW

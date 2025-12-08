@@ -75,6 +75,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS admin_notifications_updated_at ON admin_notifications;
+DROP TRIGGER IF EXISTS admin_notifications_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER admin_notifications_updated_at
   BEFORE UPDATE ON admin_notifications
   FOR EACH ROW

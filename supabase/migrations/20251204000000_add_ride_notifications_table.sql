@@ -35,6 +35,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_ride_notifications_updated_at ON public.ride_notifications;
+DROP TRIGGER IF EXISTS trg_ride_notifications_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER trg_ride_notifications_updated_at
   BEFORE UPDATE ON public.ride_notifications
   FOR EACH ROW

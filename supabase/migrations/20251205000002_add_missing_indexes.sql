@@ -37,6 +37,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_increment_version ON mobility_trip_matches;
+DROP TRIGGER IF EXISTS trg_increment_version ON ; -- FIXME: add table name
 CREATE TRIGGER trg_increment_version
   BEFORE UPDATE ON mobility_trip_matches
   FOR EACH ROW

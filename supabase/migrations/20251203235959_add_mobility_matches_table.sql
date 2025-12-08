@@ -103,6 +103,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_mobility_matches_updated_at ON public.mobility_matches;
+DROP TRIGGER IF EXISTS trg_mobility_matches_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER trg_mobility_matches_updated_at
   BEFORE UPDATE ON public.mobility_matches
   FOR EACH ROW

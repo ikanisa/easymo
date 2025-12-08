@@ -82,6 +82,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_ride_requests_updated_at ON ride_requests;
+DROP TRIGGER IF EXISTS trg_ride_requests_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER trg_ride_requests_updated_at
   BEFORE UPDATE ON ride_requests
   FOR EACH ROW
@@ -240,6 +241,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_rides_driver_status_updated_at ON rides_driver_status;
+DROP TRIGGER IF EXISTS trg_rides_driver_status_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER trg_rides_driver_status_updated_at
   BEFORE UPDATE ON rides_driver_status
   FOR EACH ROW

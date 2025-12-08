@@ -101,6 +101,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS saved_locations_updated_at_trigger ON saved_locations;
+DROP TRIGGER IF EXISTS saved_locations_updated_at_trigger ON ; -- FIXME: add table name
 CREATE TRIGGER saved_locations_updated_at_trigger
   BEFORE UPDATE ON saved_locations
   FOR EACH ROW

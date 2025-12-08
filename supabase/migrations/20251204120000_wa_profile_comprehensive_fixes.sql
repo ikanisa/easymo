@@ -33,6 +33,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS tr_saved_locations_timestamp ON public.saved_locations;
+DROP TRIGGER IF EXISTS tr_saved_locations_timestamp ON ; -- FIXME: add table name
 CREATE TRIGGER tr_saved_locations_timestamp
 BEFORE UPDATE ON public.saved_locations
 FOR EACH ROW

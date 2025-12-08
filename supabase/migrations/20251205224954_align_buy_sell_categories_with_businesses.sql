@@ -6,6 +6,9 @@ BEGIN;
 -- First, let's see what categories actually exist in businesses table
 -- and update buy_sell_categories to match
 
+-- Temporarily set NULL on businesses that reference categories we're about to delete
+UPDATE businesses SET buy_sell_category_id = NULL WHERE buy_sell_category_id IS NOT NULL;
+
 -- Clear existing categories
 DELETE FROM buy_sell_categories;
 

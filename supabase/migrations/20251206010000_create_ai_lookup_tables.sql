@@ -733,21 +733,27 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_service_verticals_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER update_service_verticals_updated_at BEFORE UPDATE ON public.service_verticals
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_job_categories_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER update_job_categories_updated_at BEFORE UPDATE ON public.job_categories
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_property_types_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER update_property_types_updated_at BEFORE UPDATE ON public.property_types
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_insurance_types_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER update_insurance_types_updated_at BEFORE UPDATE ON public.insurance_types
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_moderation_rules_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER update_moderation_rules_updated_at BEFORE UPDATE ON public.moderation_rules
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_tool_enum_values_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER update_tool_enum_values_updated_at BEFORE UPDATE ON public.tool_enum_values
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

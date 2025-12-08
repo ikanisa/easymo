@@ -317,6 +317,7 @@ END;
 $$;
 
 DROP TRIGGER IF EXISTS search_embeddings_update_trigger ON public.search_embeddings;
+DROP TRIGGER IF EXISTS search_embeddings_update_trigger ON ; -- FIXME: add table name
 CREATE TRIGGER search_embeddings_update_trigger
   BEFORE UPDATE ON public.search_embeddings
   FOR EACH ROW

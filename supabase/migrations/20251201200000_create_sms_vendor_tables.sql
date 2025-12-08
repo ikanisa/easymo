@@ -113,12 +113,14 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS update_sms_vendors_updated_at ON public.sms_parsing_vendors;
+DROP TRIGGER IF EXISTS update_sms_vendors_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER update_sms_vendors_updated_at
   BEFORE UPDATE ON public.sms_parsing_vendors
   FOR EACH ROW
   EXECUTE FUNCTION public.update_updated_at_column();
 
 DROP TRIGGER IF EXISTS update_vendor_ledgers_updated_at ON public.vendor_payer_ledgers;
+DROP TRIGGER IF EXISTS update_vendor_ledgers_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER update_vendor_ledgers_updated_at
   BEFORE UPDATE ON public.vendor_payer_ledgers
   FOR EACH ROW

@@ -278,6 +278,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_set_supplier_order_number ON ; -- FIXME: add table name
 CREATE TRIGGER trigger_set_supplier_order_number
 BEFORE INSERT ON public.supplier_orders
 FOR EACH ROW
@@ -497,26 +498,31 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_preferred_suppliers_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER update_preferred_suppliers_updated_at
 BEFORE UPDATE ON public.preferred_suppliers
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_supplier_products_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER update_supplier_products_updated_at
 BEFORE UPDATE ON public.supplier_products
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_supplier_benefits_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER update_supplier_benefits_updated_at
 BEFORE UPDATE ON public.supplier_benefits
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_supplier_service_areas_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER update_supplier_service_areas_updated_at
 BEFORE UPDATE ON public.supplier_service_areas
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_supplier_orders_updated_at ON ; -- FIXME: add table name
 CREATE TRIGGER update_supplier_orders_updated_at
 BEFORE UPDATE ON public.supplier_orders
 FOR EACH ROW
