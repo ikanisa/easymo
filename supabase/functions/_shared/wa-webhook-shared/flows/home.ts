@@ -3,10 +3,8 @@ import { setState } from "../state/store.ts";
 import { IDS } from "../wa/ids.ts";
 import { maskPhone } from "./support.ts";
 import { sendListMessage } from "../utils/reply.ts";
-import {
-  evaluateMotorInsuranceGate,
-  recordMotorInsuranceHidden,
-} from "../domains/insurance/gate.ts";
+// REMOVED: import { evaluateMotorInsuranceGate, recordMotorInsuranceHidden } from "../domains/insurance/gate.ts";
+// Gate functionality temporarily disabled - file removed
 import { t, type TranslationKey } from "../i18n/translator.ts";
 import {
   fetchActiveMenuItems,
@@ -36,10 +34,8 @@ export async function sendHomeMenu(
   ctx: RouterContext,
   page = 0,
 ): Promise<void> {
-  const gate = await evaluateMotorInsuranceGate(ctx);
-  if (!gate.allowed) {
-    await recordMotorInsuranceHidden(ctx, gate, "menu");
-  }
+  // Gate functionality temporarily disabled - showing all menu items
+  const gate = { allowed: true };
   const rows = await buildRows({
     showInsurance: gate.allowed,
     locale: ctx.locale,

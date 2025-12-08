@@ -240,11 +240,18 @@ serve(async (req: Request): Promise<Response> => {
       if (message.type === "interactive" && message.interactive?.button_reply?.id) {
         const buttonId = message.interactive.button_reply.id;
         
-        // Handle "Show More" button
+        // Handle "Show More" button for business results
         if (buttonId === "buy_sell_show_more") {
           const { handleShowMore } = await import("./handle_pagination.ts");
           await handleShowMore(userPhone);
           return respond({ success: true, message: "show_more_processed" });
+        }
+        
+        // Handle "Show More Categories" button
+        if (buttonId === "buy_sell_show_more_categories") {
+          const { handleShowMoreCategories } = await import("./show_categories.ts");
+          await handleShowMoreCategories(userPhone);
+          return respond({ success: true, message: "show_more_categories_processed" });
         }
         
         // Handle "New Search" button
