@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
+import { ConfidenceBadge } from "@/components/sms/ConfidenceBadge";
+import { ParserBadge } from "@/components/sms/ParserBadge";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -208,6 +210,41 @@ export function SmsVendorDetailClient({ vendorId }: Props) {
         </div>
       </div>
 
+      {/* AI Parser Usage Card */}
+      <div className="mb-6">
+        <div className="bg-[var(--aurora-surface)] border border-[var(--aurora-border)] rounded-xl p-6">
+          <h3 className="text-sm font-medium text-[var(--aurora-text-secondary)] mb-4">
+            AI Parser Usage
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex justify-between items-center">
+              <span className="flex items-center gap-2 text-[var(--aurora-text-primary)]">
+                <span>🤖</span> OpenAI (Primary)
+              </span>
+              <span className="font-medium text-green-500">
+                {stats?.parserBreakdown?.openai ?? 0}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="flex items-center gap-2 text-[var(--aurora-text-primary)]">
+                <span>✨</span> Gemini (Fallback)
+              </span>
+              <span className="font-medium text-blue-500">
+                {stats?.parserBreakdown?.gemini ?? 0}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="flex items-center gap-2 text-[var(--aurora-text-primary)]">
+                <span>📝</span> Regex (Offline)
+              </span>
+              <span className="font-medium text-gray-500">
+                {stats?.parserBreakdown?.regex ?? 0}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Vendor Info */}
       <SectionCard
         title="Vendor Information"
@@ -338,6 +375,12 @@ export function SmsVendorDetailClient({ vendorId }: Props) {
                     Provider
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-[var(--aurora-text-secondary)]">
+                    Parsed By
+                  </th>
+                  <th className="text-right py-3 px-4 font-medium text-[var(--aurora-text-secondary)]">
+                    Confidence
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-[var(--aurora-text-secondary)]">
                     Status
                   </th>
                 </tr>
@@ -359,6 +402,12 @@ export function SmsVendorDetailClient({ vendorId }: Props) {
                     </td>
                     <td className="py-3 px-4 text-[var(--aurora-text-secondary)] uppercase">
                       {txn.provider || "—"}
+                    </td>
+                    <td className="py-3 px-4">
+                      <ParserBadge parser={txn.parsedBy} />
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <ConfidenceBadge confidence={txn.aiConfidence} />
                     </td>
                     <td className="py-3 px-4">
                       <Badge variant={txn.status === "parsed" ? "green" : txn.status === "error" ? "red" : "gray"}>

@@ -55,6 +55,7 @@ export interface VendorTransaction {
   parsedJson: Record<string, unknown> | null;
   status: "raw" | "parsed" | "matched" | "error";
   createdAt: string;
+  parsedBy: "openai" | "gemini" | "regex" | null;
 }
 
 export interface VendorLedger {
@@ -77,6 +78,11 @@ export interface VendorStats {
   uniquePayers: number;
   thisMonthRevenue: number;
   thisMonthTransactions: number;
+  parserBreakdown: {
+    openai: number;
+    gemini: number;
+    regex: number;
+  };
 }
 
 export interface VendorReport {
