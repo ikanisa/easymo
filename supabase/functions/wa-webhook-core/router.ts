@@ -121,7 +121,7 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
   logInfo("ROUTING_EXTRACTION", {
     messageType: routingMessage?.type,
     routingText,
-    phoneNumber: phoneNumber?.slice(-4), // Last 4 digits for privacy
+    phoneNumber: phoneNumber && phoneNumber.length >= 4 ? phoneNumber.slice(-4) : "****",
   }, { correlationId: crypto.randomUUID() });
 
   if (routingText) {
