@@ -217,13 +217,46 @@ ON CONFLICT (agent_type) DO NOTHING;
 -- BACKWARD COMPATIBLE VIEWS
 -- =====================================================
 
--- Drop existing tables if they exist (they'll be replaced by views)
--- Note: Some objects may be views/schemas, not tables. Commented out to avoid errors.
--- DROP TABLE IF EXISTS marketplace_listings CASCADE;
--- DROP TABLE IF EXISTS jobs CASCADE;
--- DROP TABLE IF EXISTS properties CASCADE;
--- DROP TABLE IF EXISTS job_applications CASCADE;
--- DROP TABLE IF EXISTS property_inquiries CASCADE;
+-- Drop existing tables/views if they exist (they'll be replaced by views)
+DO $$
+BEGIN
+  DROP TABLE IF EXISTS marketplace_listings CASCADE;
+EXCEPTION
+  WHEN OTHERS THEN
+    DROP VIEW IF EXISTS marketplace_listings CASCADE;
+END $$;
+
+DO $$
+BEGIN
+  DROP TABLE IF EXISTS jobs CASCADE;
+EXCEPTION
+  WHEN OTHERS THEN
+    DROP VIEW IF EXISTS jobs CASCADE;
+END $$;
+
+DO $$
+BEGIN
+  DROP TABLE IF EXISTS properties CASCADE;
+EXCEPTION
+  WHEN OTHERS THEN
+    DROP VIEW IF EXISTS properties CASCADE;
+END $$;
+
+DO $$
+BEGIN
+  DROP TABLE IF EXISTS job_applications CASCADE;
+EXCEPTION
+  WHEN OTHERS THEN
+    DROP VIEW IF EXISTS job_applications CASCADE;
+END $$;
+
+DO $$
+BEGIN
+  DROP TABLE IF EXISTS property_inquiries CASCADE;
+EXCEPTION
+  WHEN OTHERS THEN
+    DROP VIEW IF EXISTS property_inquiries CASCADE;
+END $$;
 
 -- Marketplace listings view
 CREATE OR REPLACE VIEW marketplace_listings AS
