@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@easymo/commons": "workspace:*",
-    "@supabase/supabase-js": "^2.39.0",
+    "@supabase/supabase-js": "^2.86.2",
     "axios": "^1.13.1",
     "express": "^4.22.1",
     "zod": "^3.25.76",

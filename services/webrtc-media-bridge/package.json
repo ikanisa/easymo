@@ -11,6 +11,8 @@
     "docker:run": "docker run -p 8080:8080 -p 10000-10100:10000-10100/udp easymo-webrtc-bridge"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.86.2",
+    "express": "^4.18.2",
     "@supabase/supabase-js": "^2.39.0",
     "express": "^4.22.1",
     "ws": "^8.16.0",

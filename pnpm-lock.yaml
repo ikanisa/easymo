@@ -17,8 +17,8 @@ importers:
         specifier: workspace:*
         version: link:packages/ui
       '@supabase/supabase-js':
-        specifier: ^2.79.0
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
       '@tauri-apps/api':
         specifier: ^2.0.0
         version: 2.9.1
@@ -169,13 +169,13 @@ importers:
         version: 10.27.0(@opentelemetry/context-async-hooks@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/core@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(next@15.1.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(webpack@5.97.1(esbuild@0.23.1))
       '@supabase/auth-helpers-nextjs':
         specifier: ^0.15.0
-        version: 0.15.0(@supabase/supabase-js@2.86.0)
+        version: 0.15.0(@supabase/supabase-js@2.86.2)
       '@supabase/ssr':
         specifier: ^0.8.0
-        version: 0.8.0(@supabase/supabase-js@2.86.0)
+        version: 0.8.0(@supabase/supabase-js@2.86.2)
       '@supabase/supabase-js':
-        specifier: ^2.76.1
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
       '@tanstack/query-async-storage-persister':
         specifier: ^5.90.14
         version: 5.90.14
@@ -386,10 +386,10 @@ importers:
     dependencies:
       '@supabase/ssr':
         specifier: ^0.8.0
-        version: 0.8.0(@supabase/supabase-js@2.86.0)
+        version: 0.8.0(@supabase/supabase-js@2.86.2)
       '@supabase/supabase-js':
-        specifier: ^2.76.1
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
       '@tanstack/react-query':
         specifier: ^5.62.14
         version: 5.90.11(react@19.2.0)
@@ -494,8 +494,8 @@ importers:
   packages/agent-config:
     dependencies:
       '@supabase/supabase-js':
-        specifier: ^2.39.0
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -510,8 +510,8 @@ importers:
         specifier: ^0.24.1
         version: 0.24.1
       '@supabase/supabase-js':
-        specifier: ^2.76.1
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
       axios:
         specifier: ^1.13.2
         version: 1.13.2
@@ -556,8 +556,8 @@ importers:
         specifier: ^0.24.1
         version: 0.24.1
       '@supabase/supabase-js':
-        specifier: ^2.76.1
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
       ioredis:
         specifier: ^5.4.1
         version: 5.8.2
@@ -620,8 +620,8 @@ importers:
         specifier: ^1.1.3
         version: 1.1.3
       '@supabase/supabase-js':
-        specifier: ^2.45.6
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
       axios:
         specifier: ^1.7.9
         version: 1.13.2
@@ -666,8 +666,8 @@ importers:
         specifier: workspace:*
         version: link:../commons
       '@supabase/supabase-js':
-        specifier: ^2.38.4
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -985,10 +985,10 @@ importers:
         version: 2.2.0(react@18.3.1)
       '@supabase/ssr':
         specifier: ^0.8.0
-        version: 0.8.0(@supabase/supabase-js@2.86.0)
+        version: 0.8.0(@supabase/supabase-js@2.86.2)
       '@supabase/supabase-js':
-        specifier: ^2.39.0
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
       clsx:
         specifier: ^2.0.0
         version: 2.1.1
@@ -1078,8 +1078,8 @@ importers:
         specifier: ^5.22.0
         version: 5.22.0(prisma@5.22.0)
       '@supabase/supabase-js':
-        specifier: ^2.79.0
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
       helmet:
         specifier: ^8.0.0
         version: 8.1.0
@@ -1295,8 +1295,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/commons
       '@supabase/supabase-js':
-        specifier: ^2.39.0
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
       dotenv:
         specifier: ^16.4.7
         version: 16.6.1
@@ -1341,8 +1341,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/commons
       '@supabase/supabase-js':
-        specifier: ^2.39.0
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
       axios:
         specifier: ^1.13.1
         version: 1.13.2
@@ -1387,8 +1387,8 @@ importers:
   services/openai-deep-research-service:
     dependencies:
       '@supabase/supabase-js':
-        specifier: ^2.38.4
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
       dotenv:
         specifier: ^16.3.1
         version: 16.6.1
@@ -1418,8 +1418,8 @@ importers:
   services/openai-responses-service:
     dependencies:
       '@supabase/supabase-js':
-        specifier: ^2.38.4
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
       dotenv:
         specifier: ^16.3.1
         version: 16.6.1
@@ -1455,8 +1455,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/commons
       '@supabase/supabase-js':
-        specifier: ^2.79.0
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
       dotenv:
         specifier: ^16.4.7
         version: 16.6.1
@@ -1547,8 +1547,8 @@ importers:
   services/tracking-service:
     dependencies:
       '@supabase/supabase-js':
-        specifier: ^2.39.0
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
       express:
         specifier: ^4.22.1
         version: 4.22.1
@@ -1658,8 +1658,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/commons
       '@supabase/supabase-js':
-        specifier: ^2.79.0
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
       dotenv:
         specifier: ^16.4.7
         version: 16.6.1
@@ -1704,8 +1704,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/google-speech
       '@supabase/supabase-js':
-        specifier: ^2.38.4
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
       dotenv:
         specifier: ^16.3.1
         version: 16.6.1
@@ -1784,8 +1784,8 @@ importers:
         specifier: ^0.8.0
         version: 0.8.0
       '@supabase/supabase-js':
-        specifier: ^2.39.0
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
       dotenv:
         specifier: ^16.3.1
         version: 16.6.1
@@ -1879,8 +1879,8 @@ importers:
   services/webrtc-media-bridge:
     dependencies:
       '@supabase/supabase-js':
-        specifier: ^2.39.0
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
       dotenv:
         specifier: ^16.3.1
         version: 16.6.1
@@ -1968,8 +1968,8 @@ importers:
   services/whatsapp-voice-bridge:
     dependencies:
       '@supabase/supabase-js':
-        specifier: ^2.39.0
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
       dotenv:
         specifier: ^16.3.1
         version: 16.6.1
@@ -2020,8 +2020,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/messaging
       '@supabase/supabase-js':
-        specifier: ^2.79.0
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
       express:
         specifier: ^4.22.1
         version: 4.22.1
@@ -2076,10 +2076,10 @@ importers:
         version: 2.2.0(react@18.3.1)
       '@supabase/ssr':
         specifier: ^0.8.0
-        version: 0.8.0(@supabase/supabase-js@2.86.0)
+        version: 0.8.0(@supabase/supabase-js@2.86.2)
       '@supabase/supabase-js':
-        specifier: ^2.39.0
-        version: 2.86.0
+        specifier: ^2.86.2
+        version: 2.86.2
       clsx:
         specifier: ^2.0.0
         version: 2.1.1
@@ -6227,20 +6227,20 @@ packages:
     peerDependencies:
       '@supabase/supabase-js': ^2.76.1
 
-  '@supabase/auth-js@2.86.0':
-    resolution: {integrity: sha512-3xPqMvBWC6Haqpr6hEWmSUqDq+6SA1BAEdbiaHdAZM9QjZ5uiQJ+6iD9pZOzOa6MVXZh4GmwjhC9ObIG0K1NcA==}
+  '@supabase/auth-js@2.86.2':
+    resolution: {integrity: sha512-7k8IAhgSnZuD9Zex2+ohHKY3aWGDd4ls0xlxMGl3/jPyHSSXrIYfmtJyUH0+DPd4B3psBqHC0Ev0/nZEHdW58w==}
     engines: {node: '>=20.0.0'}
 
-  '@supabase/functions-js@2.86.0':
-    resolution: {integrity: sha512-AlOoVfeaq9XGlBFIyXTmb+y+CZzxNO4wWbfgRM6iPpNU5WCXKawtQYSnhivi3UVxS7GA0rWovY4d6cIAxZAojA==}
+  '@supabase/functions-js@2.86.2':
+    resolution: {integrity: sha512-OLpy3NIlj7q3yGMFwUpPkDPJbRx4aU+u73SiXqiMnA5ARwzVcOReSzI2u4oOqioE+3ud0fRx7sRsfoklBwYOmg==}
     engines: {node: '>=20.0.0'}
 
-  '@supabase/postgrest-js@2.86.0':
-    resolution: {integrity: sha512-QVf+wIXILcZJ7IhWhWn+ozdf8B+oO0Ulizh2AAPxD/6nQL+x3r9lJ47a+fpc/jvAOGXMbkeW534Kw6jz7e8iIA==}
+  '@supabase/postgrest-js@2.86.2':
+    resolution: {integrity: sha512-KVgOF2QASvUfQnzMGAmxR7f3ZF/eZ8PFp2F5Q7SAPQlmB83FEaZ7C/QMzfVXXqkMbotfh96xcaBNSKnxowFObA==}
     engines: {node: '>=20.0.0'}
 
-  '@supabase/realtime-js@2.86.0':
-    resolution: {integrity: sha512-dyS8bFoP29R/sj5zLi0AP3JfgG8ar1nuImcz5jxSx7UIW7fbFsXhUCVrSY2Ofo0+Ev6wiATiSdBOzBfWaiFyPA==}
+  '@supabase/realtime-js@2.86.2':
+    resolution: {integrity: sha512-uLUYrOMeK1qXHISxdMFVfBs0sGV5PmqYewIHvLBnMYbb//LERojxfKlVSJBgZ+aAwxANmtQKcprjGZI7DJ6lNQ==}
     engines: {node: '>=20.0.0'}
 
   '@supabase/ssr@0.8.0':
@@ -6248,12 +6248,12 @@ packages:
     peerDependencies:
       '@supabase/supabase-js': ^2.76.1
 
-  '@supabase/storage-js@2.86.0':
-    resolution: {integrity: sha512-PM47jX/Mfobdtx7NNpoj9EvlrkapAVTQBZgGGslEXD6NS70EcGjhgRPBItwHdxZPM5GwqQ0cGMN06uhjeY2mHQ==}
+  '@supabase/storage-js@2.86.2':
+    resolution: {integrity: sha512-zyR4PkO7R4f4/xRBVJho3Dm7y4512BoCqGmD7LjNV2GVtWt8vEmambiuMB2Ty3l76mqw+ynQyHY8yFWSERrHXA==}
     engines: {node: '>=20.0.0'}
 
-  '@supabase/supabase-js@2.86.0':
-    resolution: {integrity: sha512-BaC9sv5+HGNy1ulZwY8/Ev7EjfYYmWD4fOMw9bDBqTawEj6JHAiOHeTwXLRzVaeSay4p17xYLN2NSCoGgXMQnw==}
+  '@supabase/supabase-js@2.86.2':
+    resolution: {integrity: sha512-KXoiqFf7zZhL/+lj7oBFFUvVDQ6gy03v9wQ5E++f7xiJUuqmI4DuBhrv8uFo6B2EGTQTA3vkXjbxmYIug/zfWw==}
     engines: {node: '>=20.0.0'}
 
   '@surma/rollup-plugin-off-main-thread@2.2.3':
@@ -9415,8 +9415,8 @@ packages:
   hyperid@3.3.0:
     resolution: {integrity: sha512-7qhCVT4MJIoEsNcbhglhdmBKb09QtcmJNiIQGq7js/Khf5FtQQ9bzcAuloeqBeee7XD7JqDeve9KNlQya5tSGQ==}
 
-  iceberg-js@0.8.0:
-    resolution: {integrity: sha512-kmgmea2nguZEvRqW79gDqNXyxA3OS5WIgMVffrHpqXV4F/J4UmNIw2vstixioLTNSkd5rFB8G0s3Lwzogm6OFw==}
+  iceberg-js@0.8.1:
+    resolution: {integrity: sha512-1dhVQZXhcHje7798IVM+xoo/1ZdVfzOMIc8/rgVSijRK38EDqOJoGula9N/8ZI5RD8QTxNQtK/Gozpr+qUqRRA==}
     engines: {node: '>=20.0.0'}
 
   iconv-corefoundation@1.1.7:
@@ -17884,24 +17884,24 @@ snapshots:
     dependencies:
       storybook: 8.6.14(prettier@3.7.3)
 
-  '@supabase/auth-helpers-nextjs@0.15.0(@supabase/supabase-js@2.86.0)':
+  '@supabase/auth-helpers-nextjs@0.15.0(@supabase/supabase-js@2.86.2)':
     dependencies:
-      '@supabase/supabase-js': 2.86.0
+      '@supabase/supabase-js': 2.86.2
       cookie: 1.1.1
 
-  '@supabase/auth-js@2.86.0':
+  '@supabase/auth-js@2.86.2':
     dependencies:
       tslib: 2.8.1
 
-  '@supabase/functions-js@2.86.0':
+  '@supabase/functions-js@2.86.2':
     dependencies:
       tslib: 2.8.1
 
-  '@supabase/postgrest-js@2.86.0':
+  '@supabase/postgrest-js@2.86.2':
     dependencies:
       tslib: 2.8.1
 
-  '@supabase/realtime-js@2.86.0':
+  '@supabase/realtime-js@2.86.2':
     dependencies:
       '@types/phoenix': 1.6.6
       '@types/ws': 8.18.1
@@ -17911,23 +17911,23 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@supabase/ssr@0.8.0(@supabase/supabase-js@2.86.0)':
+  '@supabase/ssr@0.8.0(@supabase/supabase-js@2.86.2)':
     dependencies:
-      '@supabase/supabase-js': 2.86.0
+      '@supabase/supabase-js': 2.86.2
       cookie: 1.1.1
 
-  '@supabase/storage-js@2.86.0':
+  '@supabase/storage-js@2.86.2':
     dependencies:
-      iceberg-js: 0.8.0
+      iceberg-js: 0.8.1
       tslib: 2.8.1
 
-  '@supabase/supabase-js@2.86.0':
+  '@supabase/supabase-js@2.86.2':
     dependencies:
-      '@supabase/auth-js': 2.86.0
-      '@supabase/functions-js': 2.86.0
-      '@supabase/postgrest-js': 2.86.0
-      '@supabase/realtime-js': 2.86.0
-      '@supabase/storage-js': 2.86.0
+      '@supabase/auth-js': 2.86.2
+      '@supabase/functions-js': 2.86.2
+      '@supabase/postgrest-js': 2.86.2
+      '@supabase/realtime-js': 2.86.2
+      '@supabase/storage-js': 2.86.2
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -22084,7 +22084,7 @@ snapshots:
       uuid: 8.3.2
       uuid-parse: 1.1.0
 
-  iceberg-js@0.8.0: {}
+  iceberg-js@0.8.1: {}
 
   iconv-corefoundation@1.1.7:
     dependencies:
