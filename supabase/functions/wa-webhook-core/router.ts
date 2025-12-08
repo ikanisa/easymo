@@ -514,13 +514,14 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
     const targetService = SERVICE_KEY_MAP[selection] ?? (isInteractive ? FALLBACK_SERVICE : null);
     const foundInMap = !!SERVICE_KEY_MAP[selection];
     
+    const allKeys = Object.keys(SERVICE_KEY_MAP);
     logInfo("ROUTING_DECISION", { 
       selection, 
       isInteractive, 
       targetService,
       foundInMap,
       // Only log keys if not found to help debug
-      availableKeys: foundInMap ? undefined : Object.keys(SERVICE_KEY_MAP).slice(0, 10).join(", ") + "..."
+      availableKeys: foundInMap ? undefined : allKeys.slice(0, 10).join(", ") + (allKeys.length > 10 ? "..." : "")
     }, { correlationId });
     
     if (targetService) {
