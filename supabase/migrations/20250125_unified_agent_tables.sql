@@ -37,10 +37,10 @@ CREATE TABLE IF NOT EXISTS unified_sessions (
   expires_at TIMESTAMPTZ DEFAULT now() + INTERVAL '24 hours'
 );
 
-CREATE INDEX idx_unified_sessions_user_phone ON unified_sessions(user_phone);
-CREATE INDEX idx_unified_sessions_status ON unified_sessions(status);
-CREATE INDEX idx_unified_sessions_expires_at ON unified_sessions(expires_at);
-CREATE INDEX idx_unified_sessions_current_agent ON unified_sessions(current_agent);
+CREATE INDEX IF NOT EXISTS idx_unified_sessions_user_phone ON unified_sessions(user_phone);
+CREATE INDEX IF NOT EXISTS idx_unified_sessions_status ON unified_sessions(status);
+CREATE INDEX IF NOT EXISTS idx_unified_sessions_expires_at ON unified_sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_unified_sessions_current_agent ON unified_sessions(current_agent);
 
 -- =====================================================
 -- UNIFIED LISTINGS TABLE
@@ -90,12 +90,12 @@ CREATE TABLE IF NOT EXISTS unified_listings (
   expires_at TIMESTAMPTZ
 );
 
-CREATE INDEX idx_unified_listings_domain ON unified_listings(domain);
-CREATE INDEX idx_unified_listings_listing_type ON unified_listings(listing_type);
-CREATE INDEX idx_unified_listings_owner_phone ON unified_listings(owner_phone);
-CREATE INDEX idx_unified_listings_status ON unified_listings(status);
-CREATE INDEX idx_unified_listings_category ON unified_listings(category);
-CREATE INDEX idx_unified_listings_location ON unified_listings USING gist(ll_to_earth(lat, lng)) WHERE lat IS NOT NULL AND lng IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_unified_listings_domain ON unified_listings(domain);
+CREATE INDEX IF NOT EXISTS idx_unified_listings_listing_type ON unified_listings(listing_type);
+CREATE INDEX IF NOT EXISTS idx_unified_listings_owner_phone ON unified_listings(owner_phone);
+CREATE INDEX IF NOT EXISTS idx_unified_listings_status ON unified_listings(status);
+CREATE INDEX IF NOT EXISTS idx_unified_listings_category ON unified_listings(category);
+CREATE INDEX IF NOT EXISTS idx_unified_listings_location ON unified_listings USING gist(ll_to_earth(lat, lng)) WHERE lat IS NOT NULL AND lng IS NOT NULL;
 
 -- =====================================================
 -- UNIFIED APPLICATIONS TABLE
@@ -127,10 +127,10 @@ CREATE TABLE IF NOT EXISTS unified_applications (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_unified_applications_listing_id ON unified_applications(listing_id);
-CREATE INDEX idx_unified_applications_applicant_phone ON unified_applications(applicant_phone);
-CREATE INDEX idx_unified_applications_domain ON unified_applications(domain);
-CREATE INDEX idx_unified_applications_status ON unified_applications(status);
+CREATE INDEX IF NOT EXISTS idx_unified_applications_listing_id ON unified_applications(listing_id);
+CREATE INDEX IF NOT EXISTS idx_unified_applications_applicant_phone ON unified_applications(applicant_phone);
+CREATE INDEX IF NOT EXISTS idx_unified_applications_domain ON unified_applications(domain);
+CREATE INDEX IF NOT EXISTS idx_unified_applications_status ON unified_applications(status);
 
 -- =====================================================
 -- UNIFIED MATCHES TABLE
@@ -152,11 +152,11 @@ CREATE TABLE IF NOT EXISTS unified_matches (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_unified_matches_listing_id ON unified_matches(listing_id);
-CREATE INDEX idx_unified_matches_seeker_phone ON unified_matches(seeker_phone);
-CREATE INDEX idx_unified_matches_owner_phone ON unified_matches(owner_phone);
-CREATE INDEX idx_unified_matches_domain ON unified_matches(domain);
-CREATE INDEX idx_unified_matches_status ON unified_matches(status);
+CREATE INDEX IF NOT EXISTS idx_unified_matches_listing_id ON unified_matches(listing_id);
+CREATE INDEX IF NOT EXISTS idx_unified_matches_seeker_phone ON unified_matches(seeker_phone);
+CREATE INDEX IF NOT EXISTS idx_unified_matches_owner_phone ON unified_matches(owner_phone);
+CREATE INDEX IF NOT EXISTS idx_unified_matches_domain ON unified_matches(domain);
+CREATE INDEX IF NOT EXISTS idx_unified_matches_status ON unified_matches(status);
 
 -- =====================================================
 -- UNIFIED AGENT EVENTS TABLE
@@ -176,10 +176,10 @@ CREATE TABLE IF NOT EXISTS unified_agent_events (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_unified_agent_events_correlation_id ON unified_agent_events(correlation_id);
-CREATE INDEX idx_unified_agent_events_user_phone ON unified_agent_events(user_phone);
-CREATE INDEX idx_unified_agent_events_agent_type ON unified_agent_events(agent_type);
-CREATE INDEX idx_unified_agent_events_created_at ON unified_agent_events(created_at);
+CREATE INDEX IF NOT EXISTS idx_unified_agent_events_correlation_id ON unified_agent_events(correlation_id);
+CREATE INDEX IF NOT EXISTS idx_unified_agent_events_user_phone ON unified_agent_events(user_phone);
+CREATE INDEX IF NOT EXISTS idx_unified_agent_events_agent_type ON unified_agent_events(agent_type);
+CREATE INDEX IF NOT EXISTS idx_unified_agent_events_created_at ON unified_agent_events(created_at);
 
 -- =====================================================
 -- AI AGENT CONFIGS TABLE
@@ -218,11 +218,12 @@ ON CONFLICT (agent_type) DO NOTHING;
 -- =====================================================
 
 -- Drop existing tables if they exist (they'll be replaced by views)
-DROP TABLE IF EXISTS marketplace_listings CASCADE;
-DROP TABLE IF EXISTS jobs CASCADE;
-DROP TABLE IF EXISTS properties CASCADE;
-DROP TABLE IF EXISTS job_applications CASCADE;
-DROP TABLE IF EXISTS property_inquiries CASCADE;
+-- Note: Some objects may be views/schemas, not tables. Commented out to avoid errors.
+-- DROP TABLE IF EXISTS marketplace_listings CASCADE;
+-- DROP TABLE IF EXISTS jobs CASCADE;
+-- DROP TABLE IF EXISTS properties CASCADE;
+-- DROP TABLE IF EXISTS job_applications CASCADE;
+-- DROP TABLE IF EXISTS property_inquiries CASCADE;
 
 -- Marketplace listings view
 CREATE OR REPLACE VIEW marketplace_listings AS
