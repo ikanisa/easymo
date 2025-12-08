@@ -15,5 +15,5 @@ export const INSURANCE_SCHEMA = {
     policy_type: { type: "string" },
   },
   required: ["policy_no", "insurer"],
-  additionalProperties: true,
+  additionalProperties: false,
 };
