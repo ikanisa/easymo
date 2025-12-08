@@ -638,17 +638,24 @@ END;
 $$;
 
 -- ============================================================================
--- STEP 6: LOG CONSOLIDATION COMPLETION
+-- STEP 6: LOG CONSOLIDATION COMPLETION (Optional - only if system_logs exists)
 -- ============================================================================
 
-INSERT INTO public.system_logs (event_type, details)
-VALUES ('MOBILITY_CONSOLIDATION_COMPLETE', jsonb_build_object(
-  'migration', '20251208150000_consolidate_mobility_tables',
-  'timestamp', now(),
-  'tables_consolidated', ARRAY['rides_trips', 'mobility_trips', 'mobility_trip_matches'],
-  'canonical_tables', ARRAY['trips', 'mobility_matches'],
-  'functions_updated', ARRAY['match_drivers_for_trip_v2', 'match_passengers_for_trip_v2', 'activate_recurring_trips']
-));
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'system_logs') THEN
+    INSERT INTO public.system_logs (event_type, details)
+    VALUES ('MOBILITY_CONSOLIDATION_COMPLETE', jsonb_build_object(
+      'migration', '20251208150000_consolidate_mobility_tables',
+      'timestamp', now(),
+      'tables_consolidated', ARRAY['rides_trips', 'mobility_trips', 'mobility_trip_matches'],
+      'canonical_tables', ARRAY['trips', 'mobility_matches'],
+      'functions_updated', ARRAY['match_drivers_for_trip_v2', 'match_passengers_for_trip_v2', 'activate_recurring_trips']
+    ));
+  ELSE
+    RAISE NOTICE 'system_logs table does not exist - skipping consolidation log';
+  END IF;
+END $$;
 
 COMMIT;
 
