@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@easymo/commons": "workspace:*",
-    "@supabase/supabase-js": "^2.79.0",
+    "@supabase/supabase-js": "^2.86.2",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "pino": "^9.5.0",
