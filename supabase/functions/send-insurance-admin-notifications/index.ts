@@ -2,7 +2,8 @@
 // SEND INSURANCE ADMIN NOTIFICATIONS
 // =====================================================
 // Processes queued insurance admin notifications
-// and sends them via WhatsApp using wa-webhook client
+// NOTE: This function is deprecated in favor of direct sending
+// from ins_admin_notify.ts. Keeping for backward compatibility.
 // =====================================================
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -27,188 +28,17 @@ serve(async (req) => {
   }
 
   try {
-    await logStructuredEvent("INFO", { 
-      event: "INSURANCE_ADMIN_NOTIFICATION_START", 
+    await logStructuredEvent("INSURANCE_ADMIN_NOTIFICATION_DEPRECATED", { 
+      event: "This function is deprecated. Notifications are now sent directly from ins_admin_notify.ts", 
       method: req.method 
-    });
-
-    const { limit = 10 } = await req.json().catch(() => ({}));
-
-    await logStructuredEvent("INFO", { 
-      event: "FETCHING_NOTIFICATIONS", 
-      limit 
-    });
-
-    // Get queued insurance admin notifications
-    const { data: notifications, error: fetchError } = await supabase
-      .from("notifications")
-      .select("id, to_wa_id, payload, retry_count")
-      .eq("notification_type", "insurance_admin_alert")
-      .eq("status", "queued")
-      .order("created_at")
-      .limit(limit);
-
-    if (fetchError) {
-      await logStructuredEvent("ERROR", { 
-        event: "FETCH_NOTIFICATIONS_ERROR", 
-        error: fetchError.message,
-        code: fetchError.code 
-      });
-      throw fetchError;
-    }
-
-    await logStructuredEvent("INFO", { 
-      event: "NOTIFICATIONS_FETCHED", 
-      count: notifications?.length ?? 0 
-    });
-
-    if (!notifications || notifications.length === 0) {
-      await logStructuredEvent("INFO", { 
-        event: "NO_PENDING_NOTIFICATIONS" 
-      });
-      return new Response(
-        JSON.stringify({
-          success: true,
-          sent: 0,
-          message: "No pending notifications",
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        }
-      );
-    }
-
-    let sent = 0;
-    let failed = 0;
-    const errors: string[] = [];
-
-    // Send each notification
-    for (const notif of notifications) {
-      const payload = notif.payload as Record<string, any> | null;
-      const adminNotificationId = payload?.admin_notification_id as string | undefined;
-      const message = payload?.text || payload?.message;
-      const currentRetries = typeof notif.retry_count === "number"
-        ? notif.retry_count
-        : 0;
-
-      await logStructuredEvent("INFO", { 
-        event: "PROCESSING_NOTIFICATION", 
-        notificationId: notif.id,
-        toWaId: notif.to_wa_id,
-        hasMessage: !!message,
-        retryCount: currentRetries 
-      });
-
-      try {
-        if (!message) {
-          await logStructuredEvent("ERROR", { 
-            event: "MISSING_MESSAGE", 
-            notificationId: notif.id,
-            payload 
-          });
-          throw new Error("No message text found in payload");
-        }
-
-        await logStructuredEvent("INFO", { 
-          event: "SENDING_WHATSAPP", 
-          toWaId: notif.to_wa_id 
-        });
-
-        // Send via wa-webhook client
-        await sendText(notif.to_wa_id, message);
-
-        await logStructuredEvent("INFO", { 
-          event: "WHATSAPP_SENT_SUCCESS", 
-          toWaId: notif.to_wa_id,
-          notificationId: notif.id 
-        });
-
-        // Mark as sent
-        await supabase
-          .from("notifications")
-          .update({
-            status: "sent",
-            sent_at: new Date().toISOString(),
-            retry_count: currentRetries,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", notif.id);
-
-        if (adminNotificationId) {
-          await supabase
-            .from("insurance_admin_notifications")
-            .update({
-              status: "sent",
-              sent_at: new Date().toISOString(),
-              retry_count: currentRetries,
-              error_message: null,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", adminNotificationId);
-        }
-
-        sent++;
-        await logStructuredEvent("INFO", { 
-          event: "NOTIFICATION_SENT", 
-          toWaId: notif.to_wa_id,
-          notificationId: notif.id 
-        });
-      } catch (error) {
-        failed++;
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        errors.push(`${notif.to_wa_id}: ${errorMsg}`);
-
-        await logStructuredEvent("ERROR", { 
-          event: "NOTIFICATION_SEND_FAILED", 
-          toWaId: notif.to_wa_id,
-          notificationId: notif.id,
-          error: errorMsg,
-          retryCount: currentRetries 
-        });
-
-        const nextRetry = currentRetries + 1;
-        const failureTime = new Date().toISOString();
-
-        await supabase
-          .from("notifications")
-          .update({
-            status: "failed",
-            error_message: errorMsg,
-            retry_count: nextRetry,
-            updated_at: failureTime,
-          })
-          .eq("id", notif.id);
-
-        if (adminNotificationId) {
-          await supabase
-            .from("insurance_admin_notifications")
-            .update({
-              status: "failed",
-              error_message: errorMsg,
-              retry_count: nextRetry,
-              updated_at: failureTime,
-            })
-            .eq("id", adminNotificationId);
-        }
-
-      }
-    }
-
-    await logStructuredEvent("INFO", { 
-      event: "BATCH_COMPLETE", 
-      sent, 
-      failed, 
-      total: notifications.length 
-    });
+    }, "warn");
 
     return new Response(
       JSON.stringify({
         success: true,
-        sent,
-        failed,
-        total: notifications.length,
-        errors: errors.length > 0 ? errors : undefined,
+        message: "This function is deprecated. Notifications are sent directly from ins_admin_notify.ts",
+        sent: 0,
+        failed: 0,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -216,11 +46,11 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    await logStructuredEvent("ERROR", { 
+    await logStructuredEvent("FUNCTION_ERROR", { 
       event: "FUNCTION_ERROR", 
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined 
-    });
+    }, "error");
     return new Response(
       JSON.stringify({
         success: false,
