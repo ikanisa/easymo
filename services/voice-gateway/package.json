@@ -12,8 +12,10 @@
   "dependencies": {
     "@easymo/call-capability": "workspace:*",
     "@easymo/google-speech": "workspace:*",
-    "@supabase/supabase-js": "^2.38.4",
+    "@supabase/supabase-js": "^2.86.2",
     "express": "^4.18.2",
+    "@supabase/supabase-js": "^2.38.4",
+    "express": "^4.22.1",
     "ws": "^8.14.0",
     "pino": "^8.16.0",
     "pino-pretty": "^10.2.0",

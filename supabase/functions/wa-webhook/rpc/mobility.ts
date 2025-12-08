@@ -3,6 +3,7 @@ export { MOBILITY_CONFIG } from "../../_shared/wa-webhook-shared/config/mobility
 export * from "../../_shared/wa-webhook-shared/rpc/mobility.ts";
 
 import type { SupabaseClient } from "../deps.ts";
+
 export async function updateTripDropoff(
   client: SupabaseClient,
   params: {
@@ -14,13 +15,11 @@ export async function updateTripDropoff(
   },
 ): Promise<void> {
   const { error } = await client
-    .from("rides_trips")
+    .from("trips")
     .update({
       dropoff_latitude: params.lat,
       dropoff_longitude: params.lng,
-      dropoff: `SRID=4326;POINT(${params.lng} ${params.lat})`,
       dropoff_text: params.dropoffText ?? null,
-      dropoff_radius_m: params.radiusMeters ?? null,
     })
     .eq("id", params.tripId);
   if (error) throw error;
@@ -29,37 +28,46 @@ export async function updateTripDropoff(
 export type MatchResult = {
   trip_id: string;
   creator_user_id: string;
-  whatsapp_e164: string;
+  whatsapp_number: string;
   ref_code: string;
-  distance_km: number;
-  drop_bonus_m: number | null;
+  distance_m: number;
   pickup_text: string | null;
   dropoff_text: string | null;
-  matched_at: string | null;
-  created_at?: string | null;
-  vehicle_type?: string | null;
-  is_exact_match?: boolean;
-  location_age_minutes?: number;
-  number_plate?: string | null;
+  created_at: string;
+  vehicle_type: string;
 };
 
+// Use new simplified RPC functions
 export async function matchDriversForTrip(
   client: SupabaseClient,
   tripId: string,
   limit = 9,
   preferDropoff = false,
-  radiusMeters?: number,
-  windowDays = 2,  // 48-hour window to match DB default
+  radiusMeters = 10000,
+  windowDays = 2,
 ) {
-  const { data, error } = await client.rpc("match_drivers_for_trip_v2", {
-    _trip_id: tripId,
-    _limit: limit,
-    _prefer_dropoff: preferDropoff,
-    _radius_m: radiusMeters ?? null,
-    _window_days: windowDays,
-  } as Record<string, unknown>);
+  const { data, error } = await client.rpc("find_nearby_drivers", {
+    p_passenger_trip_id: tripId,
+    p_limit: limit,
+    p_radius_m: radiusMeters,
+  });
   if (error) throw error;
-  return (data ?? []) as MatchResult[];
+  
+  // Map to old MatchResult format for backward compatibility
+  // Note: whatsapp_number from RPC is in E.164 format, mapping to whatsapp_e164
+  return (data ?? []).map((item: any) => ({
+    trip_id: item.trip_id,
+    creator_user_id: item.driver_user_id,
+    whatsapp_e164: item.whatsapp_number, // Already in E.164 format from profiles table
+    ref_code: item.ref_code,
+    distance_km: (item.distance_m || 0) / 1000,
+    drop_bonus_m: null,
+    pickup_text: item.pickup_text,
+    dropoff_text: item.dropoff_text,
+    matched_at: null,
+    created_at: item.created_at,
+    vehicle_type: item.vehicle_type,
+  })) as MatchResult[];
 }
 
 export async function matchPassengersForTrip(
@@ -67,87 +75,30 @@ export async function matchPassengersForTrip(
   tripId: string,
   limit = 9,
   preferDropoff = false,
-  radiusMeters?: number,
-  windowDays = 2,  // 48-hour window to match DB default
+  radiusMeters = 10000,
+  windowDays = 2,
 ) {
-  const { data, error } = await client.rpc("match_passengers_for_trip_v2", {
-    _trip_id: tripId,
-    _limit: limit,
-    _prefer_dropoff: preferDropoff,
-    _radius_m: radiusMeters ?? null,
-    _window_days: windowDays,
-  } as Record<string, unknown>);
-  if (error) throw error;
-  return (data ?? []) as MatchResult[];
-}
-
-// Additional types specific to this service
-export type RecommendationResult = {
-  driver_user_id?: string;
-  passenger_user_id?: string;
-  whatsapp_e164: string;
-  vehicle_type: string;
-  distance_km: number;
-  match_score: number;
-  last_online_at?: string;
-  last_search_at?: string;
-};
-
-export async function recommendDriversForUser(
-  client: SupabaseClient,
-  userId: string,
-  limit = 5,
-): Promise<RecommendationResult[]> {
-  const { data, error } = await client.rpc("recommend_drivers_for_user", {
-    _user_id: userId,
-    _limit: limit,
+  const { data, error } = await client.rpc("find_nearby_passengers", {
+    p_driver_trip_id: tripId,
+    p_limit: limit,
+    p_radius_m: radiusMeters,
   });
   if (error) throw error;
-  return (data ?? []) as RecommendationResult[];
+  
+  // Map to old MatchResult format for backward compatibility
+  // Note: whatsapp_number from RPC is in E.164 format, mapping to whatsapp_e164
+  return (data ?? []).map((item: any) => ({
+    trip_id: item.trip_id,
+    creator_user_id: item.passenger_user_id,
+    whatsapp_e164: item.whatsapp_number, // Already in E.164 format from profiles table
+    ref_code: item.ref_code,
+    distance_km: (item.distance_m || 0) / 1000,
+    drop_bonus_m: null,
+    pickup_text: item.pickup_text,
+    dropoff_text: item.dropoff_text,
+    matched_at: null,
+    created_at: item.created_at,
+    vehicle_type: item.vehicle_type,
+  })) as MatchResult[];
 }
 
-export async function recommendPassengersForUser(
-  client: SupabaseClient,
-  userId: string,
-  limit = 5,
-): Promise<RecommendationResult[]> {
-  const { data, error } = await client.rpc("recommend_passengers_for_user", {
-    _user_id: userId,
-    _limit: limit,
-  });
-  if (error) throw error;
-  return (data ?? []) as RecommendationResult[];
-}
-
-export type ScheduledTripResult = {
-  trip_id: string;
-  creator_user_id: string;
-  whatsapp_e164: string;
-  role: string;
-  vehicle_type: string;
-  pickup_text: string | null;
-  dropoff_text: string | null;
-  scheduled_at: string;
-  recurrence: string | null;
-  distance_km: number;
-  created_at: string;
-};
-
-export async function findScheduledTripsNearby(
-  client: SupabaseClient,
-  lat: number,
-  lng: number,
-  radiusKm = 10,
-  vehicleType?: string,
-  hoursAhead = 24,
-): Promise<ScheduledTripResult[]> {
-  const { data, error } = await client.rpc("find_scheduled_trips_nearby", {
-    _lat: lat,
-    _lng: lng,
-    _radius_km: radiusKm,
-    _vehicle_type: vehicleType ?? null,
-    _hours_ahead: hoursAhead,
-  });
-  if (error) throw error;
-  return (data ?? []) as ScheduledTripResult[];
-}
