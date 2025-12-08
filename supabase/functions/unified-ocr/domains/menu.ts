@@ -211,6 +211,7 @@ async function storeExtractionResult(
 
 /**
  * Create or update menu from extraction
+ * Uses existing bar_menu_items table (flat structure)
  */
 async function upsertMenuFromExtraction(
   client: SupabaseClient,
@@ -219,130 +220,79 @@ async function upsertMenuFromExtraction(
 ): Promise<string> {
   const barId = job.bar_id;
 
-  // Get next version number
-  const { data: latestVersion } = await client
-    .from("menus")
-    .select("version")
-    .eq("bar_id", barId)
-    .order("version", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  // Get bar name
+  const { data: bar } = await client
+    .from("bars")
+    .select("name")
+    .eq("id", barId)
+    .single();
 
-  const nextVersion = (latestVersion?.version ?? 0) + 1;
-  const currency = sanitizeCurrency(extraction.currency);
-
-  let menuId: string | null = null;
-
-  try {
-    // Create menu
-    const { data: menu, error: menuError } = await client
-      .from("menus")
-      .insert({
-        bar_id: barId,
-        status: "draft",
-        version: nextVersion,
-        source: "ocr",
-        source_file_ids: job.source_file_id ? [job.source_file_id] : [],
-      })
-      .select("id")
-      .single();
-
-    if (menuError || !menu) {
-      throw new Error(menuError?.message ?? "Failed to create menu");
-    }
-
-    menuId = menu.id;
-
-    // Insert categories and items
-    let categoryOrder = 0;
-    for (const category of extraction.categories ?? []) {
-      const { data: cat, error: catError } = await client
-        .from("categories")
-        .insert({
-          bar_id: barId,
-          menu_id: menuId,
-          parent_category_id: null,
-          name: category.name,
-          sort_order: categoryOrder,
-        })
-        .select("id")
-        .single();
-
-      if (catError || !cat) {
-        throw new Error(catError?.message ?? "Failed to create category");
-      }
-
-      const categoryId = cat.id;
-
-      // Insert items
-      const itemsPayload = (category.items ?? []).map((item, index) => ({
-        bar_id: barId,
-        menu_id: menuId,
-        category_id: categoryId,
-        name: item.name,
-        short_description: item.description ?? null,
-        price_minor: normalizePrice(item.price),
-        currency,
-        flags: Array.isArray(item.flags) ? item.flags : [],
-        is_available: true,
-        sort_order: index,
-      }));
-
-      if (itemsPayload.length) {
-        const { error: itemsError } = await client
-          .from("items")
-          .insert(itemsPayload);
-
-        if (itemsError) {
-          throw new Error(itemsError.message);
-        }
-      }
-
-      categoryOrder += 1;
-    }
-
-    return menuId;
-  } catch (error) {
-    // Cleanup on error
-    if (menuId) {
-      await cleanupMenuDraft(client, menuId);
-    }
-    throw error;
+  if (!bar) {
+    throw new Error("Bar not found");
   }
+
+  const barName = bar.name;
+  const currency = sanitizeCurrency(extraction.currency) || "RWF";
+
+  // Insert items directly into bar_menu_items (flat structure)
+  const itemsToInsert = [];
+  let displayOrder = 0;
+
+  for (const category of extraction.categories ?? []) {
+    for (const item of category.items ?? []) {
+      // Convert price to major units (numeric with 2 decimals)
+      const priceMinor = normalizePrice(item.price);
+      const priceMajor = priceMinor / 100;
+
+      itemsToInsert.push({
+        bar_id: barId,
+        bar_name: barName,
+        item_name: item.name,
+        category: category.name,
+        description: item.description ?? null,
+        price: priceMajor,
+        is_available: true,
+        display_order: displayOrder++,
+      });
+    }
+  }
+
+  if (itemsToInsert.length === 0) {
+    throw new Error("No items to insert");
+  }
+
+  // Insert all items
+  const { error: insertError } = await client
+    .from("bar_menu_items")
+    .upsert(itemsToInsert, {
+      onConflict: "bar_id,item_name,category",
+      ignoreDuplicates: false,
+    });
+
+  if (insertError) {
+    throw new Error(`Failed to insert menu items: ${insertError.message}`);
+  }
+
+  await logStructuredEvent("MENU_ITEMS_INSERTED", {
+    barId,
+    itemCount: itemsToInsert.length,
+    categories: extraction.categories?.length ?? 0,
+  });
+
+  return barId; // Return barId since we don't have menuId anymore
 }
 
 /**
- * Publish menu and archive old menus
+ * Publish menu - mark bar as active (no versioning needed with flat structure)
  */
 async function publishMenu(
   client: SupabaseClient,
   barId: string,
-  menuId: string,
+  menuId: string, // Keep for compatibility but not used
 ): Promise<void> {
   const now = new Date().toISOString();
 
-  // Archive old OCR menus
-  await client
-    .from("menus")
-    .update({ status: "archived" })
-    .eq("bar_id", barId)
-    .eq("source", "ocr")
-    .neq("id", menuId);
-
-  // Publish new menu
-  const { error } = await client
-    .from("menus")
-    .update({
-      status: "published",
-      published_at: now,
-    })
-    .eq("id", menuId);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  // Activate bar
+  // Just activate the bar - items are already in bar_menu_items
   await client
     .from("bars")
     .update({
@@ -422,20 +372,6 @@ async function sendMenuReadyNotification(
       error: error instanceof Error ? error.message : String(error),
     }, "error");
   }
-}
-
-/**
- * Cleanup menu draft on error
- */
-async function cleanupMenuDraft(
-  client: SupabaseClient,
-  menuId: string,
-): Promise<void> {
-  await Promise.allSettled([
-    client.from("items").delete().eq("menu_id", menuId),
-    client.from("categories").delete().eq("menu_id", menuId),
-  ]);
-  await client.from("menus").delete().eq("id", menuId);
 }
 
 /**

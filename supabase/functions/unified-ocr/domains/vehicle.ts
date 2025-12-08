@@ -100,20 +100,23 @@ export async function processVehicleRequest(
       }
     }
 
-    // Store insurance certificate
+    // Store insurance certificate in driver_insurance_certificates
     const { error: certError } = await client
-      .from("insurance_certificates")
+      .from("driver_insurance_certificates")
       .insert({
-        org_id,
-        vehicle_id: finalVehicleId,
-        policy_no: fields.policy_no || null,
-        insurer: fields.insurer || null,
-        effective_from: fields.effective_from || null,
-        expires_on: fields.expires_on || null,
-        ocr_raw: raw,
+        user_id: profile_id,
+        insurer_name: fields.insurer || "Unknown",
+        policy_number: fields.policy_no || "Unknown",
+        certificate_number: fields.policy_no || null,
+        policy_inception: fields.effective_from || new Date().toISOString(),
+        policy_expiry: fields.expires_on || new Date().toISOString(),
+        vehicle_plate: vehicle_plate,
+        certificate_media_url: file_url,
+        ocr_provider: "openai", // or track which provider was used
         ocr_confidence: confidence,
-        verified: isValid,
-        file_url,
+        raw_ocr_data: { raw, fields, confidence },
+        is_validated: isValid,
+        status: isValid ? "approved" : "pending_review",
       });
 
     if (certError) {
