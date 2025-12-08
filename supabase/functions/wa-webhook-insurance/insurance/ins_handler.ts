@@ -317,6 +317,9 @@ async function processInlineOcr(
           domain: "insurance",
           inline: { signedUrl: params.signedUrl, mime: params.mime },
         },
+        headers: {
+          "x-request-timeout": "120000", // 120 seconds for OCR processing
+        },
       },
     );
     if (error || !data) {

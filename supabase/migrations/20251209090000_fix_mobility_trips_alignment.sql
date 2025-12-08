@@ -6,53 +6,79 @@
 
 BEGIN;
 
--- ---------------------------------------------------------------------------
--- 1) Ensure dropoff coordinates exist on public.trips and are validated
--- ---------------------------------------------------------------------------
-ALTER TABLE public.trips
-  ADD COLUMN IF NOT EXISTS dropoff_lat double precision,
-  ADD COLUMN IF NOT EXISTS dropoff_lng double precision,
-  ADD COLUMN IF NOT EXISTS dropoff_geog geography(Point, 4326) GENERATED ALWAYS AS (
-    CASE
-      WHEN dropoff_lat IS NOT NULL AND dropoff_lng IS NOT NULL THEN
-        ST_SetSRID(ST_MakePoint(dropoff_lng, dropoff_lat), 4326)::geography
-      ELSE NULL
-    END
-  ) STORED,
-  ADD COLUMN IF NOT EXISTS dropoff_text text,
-  ADD COLUMN IF NOT EXISTS dropoff_radius_m integer;
+-- Enable PostGIS extension if not already enabled (required for geography type)
+CREATE EXTENSION IF NOT EXISTS postgis;
 
--- Refresh coordinate constraint to include dropoff bounds
+-- ===========================================================================
+-- PART 1: Trips Table Modifications (only if trips exists)
+-- ===========================================================================
 DO $$
 BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'trips') THEN
+    RAISE NOTICE 'trips table does not exist - skipping column/index/constraint modifications';
+    RAISE NOTICE 'This is normal for fresh database - trips will be created by schema pull';
+    RETURN;
+  END IF;
+
+  -- Add dropoff columns
+  EXECUTE 'ALTER TABLE public.trips
+    ADD COLUMN IF NOT EXISTS dropoff_lat double precision,
+    ADD COLUMN IF NOT EXISTS dropoff_lng double precision,
+    ADD COLUMN IF NOT EXISTS dropoff_geog geography(Point, 4326) GENERATED ALWAYS AS (
+      CASE
+        WHEN dropoff_lat IS NOT NULL AND dropoff_lng IS NOT NULL THEN
+          ST_SetSRID(ST_MakePoint(dropoff_lng, dropoff_lat), 4326)::geography
+        ELSE NULL
+      END
+    ) STORED,
+    ADD COLUMN IF NOT EXISTS dropoff_text text,
+    ADD COLUMN IF NOT EXISTS dropoff_radius_m integer';
+  
+  RAISE NOTICE 'Added dropoff columns to trips';
+
+  -- Refresh coordinate constraint
   IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'trips_valid_coordinates') THEN
     ALTER TABLE public.trips DROP CONSTRAINT trips_valid_coordinates;
   END IF;
-END$$;
 
-ALTER TABLE public.trips
-  ADD CONSTRAINT trips_valid_coordinates CHECK (
-    pickup_lat BETWEEN -90 AND 90
-    AND pickup_lng BETWEEN -180 AND 180
-    AND (dropoff_lat IS NULL OR dropoff_lat BETWEEN -90 AND 90)
-    AND (dropoff_lng IS NULL OR dropoff_lng BETWEEN -180 AND 180)
-  );
+  EXECUTE 'ALTER TABLE public.trips
+    ADD CONSTRAINT trips_valid_coordinates CHECK (
+      pickup_lat BETWEEN -90 AND 90
+      AND pickup_lng BETWEEN -180 AND 180
+      AND (dropoff_lat IS NULL OR dropoff_lat BETWEEN -90 AND 90)
+      AND (dropoff_lng IS NULL OR dropoff_lng BETWEEN -180 AND 180)
+    )';
 
--- Backfill dropoff columns from metadata for older rows
-UPDATE public.trips
-SET
-  dropoff_lat = COALESCE(dropoff_lat, NULLIF((metadata->>'dropoff_lat')::text, '')::double precision),
-  dropoff_lng = COALESCE(dropoff_lng, NULLIF((metadata->>'dropoff_lng')::text, '')::double precision),
-  dropoff_text = COALESCE(dropoff_text, NULLIF(metadata->>'dropoff_text', '')),
-  dropoff_radius_m = COALESCE(dropoff_radius_m, (metadata->>'dropoff_radius_m')::integer)
-WHERE (metadata ? 'dropoff_lat' OR metadata ? 'dropoff_lng' OR metadata ? 'dropoff_text' OR metadata ? 'dropoff_radius_m');
+  -- Backfill dropoff columns from metadata
+  EXECUTE 'UPDATE public.trips
+  SET
+    dropoff_lat = COALESCE(dropoff_lat, NULLIF((metadata->>''dropoff_lat'')::text, '''')::double precision),
+    dropoff_lng = COALESCE(dropoff_lng, NULLIF((metadata->>''dropoff_lng'')::text, '''')::double precision),
+    dropoff_text = COALESCE(dropoff_text, NULLIF(metadata->>''dropoff_text'', '''')),
+    dropoff_radius_m = COALESCE(dropoff_radius_m, (metadata->>''dropoff_radius_m'')::integer)
+  WHERE (metadata ? ''dropoff_lat'' OR metadata ? ''dropoff_lng'' OR metadata ? ''dropoff_text'' OR metadata ? ''dropoff_radius_m'')';
 
-CREATE INDEX IF NOT EXISTS idx_trips_dropoff_geog
-  ON public.trips USING GIST (dropoff_geog) WHERE dropoff_geog IS NOT NULL;
+  RAISE NOTICE 'Trips table modifications complete';
+END $$;
 
--- ---------------------------------------------------------------------------
--- 2) Recreate matching functions against public.trips (no ref_code column)
--- ---------------------------------------------------------------------------
+-- ===========================================================================
+-- PART 2: Create Indexes (only if trips exists)
+-- ===========================================================================
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'trips') THEN
+    CREATE INDEX IF NOT EXISTS idx_trips_dropoff_geog
+      ON public.trips USING GIST (dropoff_geog) WHERE dropoff_geog IS NOT NULL;
+      
+    RAISE NOTICE 'Created dropoff geog index on trips table';
+  ELSE
+    RAISE NOTICE 'trips table does not exist - skipping index creation';
+  END IF;
+END $$;
+
+-- ===========================================================================
+-- PART 3: Recreate matching functions (production only - requires trips)
+-- ===========================================================================
 DROP FUNCTION IF EXISTS public.match_drivers_for_trip_v2(uuid, integer, boolean, integer, integer);
 DROP FUNCTION IF EXISTS public.match_passengers_for_trip_v2(uuid, integer, boolean, integer, integer);
 

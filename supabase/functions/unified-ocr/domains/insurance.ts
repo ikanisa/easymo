@@ -60,6 +60,11 @@ export async function processInsuranceInline(
   payload: { signedUrl: string; mime?: string },
 ): Promise<Response> {
   try {
+    await logStructuredEvent("INS_OCR_INLINE_START", { 
+      signedUrlPreview: payload.signedUrl?.substring(0, 80) + "...",
+      mime: payload.mime 
+    }, "info");
+    
     const raw = await runInsuranceOCR(payload.signedUrl, payload.mime);
     const normalized = normalizeInsuranceExtraction(raw);
 
@@ -72,7 +77,11 @@ export async function processInsuranceInline(
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    await logStructuredEvent("INS_OCR_INLINE_ERROR", { error: message }, "error");
+    const stack = error instanceof Error ? error.stack : undefined;
+    await logStructuredEvent("INS_OCR_INLINE_ERROR", { 
+      error: message,
+      stack: stack?.substring(0, 500)
+    }, "error");
     return jsonResponse({ error: message }, 500);
   }
 }
@@ -260,6 +269,14 @@ async function ensureInsuranceLead(client: SupabaseClient, job: any): Promise<st
 
 async function urlToBase64(url: string): Promise<string> {
   const response = await fetch(url);
+  
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => "");
+    throw new Error(
+      `Failed to fetch image from signed URL: ${response.status} ${response.statusText}${errorText ? ` - ${errorText.substring(0, 200)}` : ""}`
+    );
+  }
+  
   const buffer = await response.arrayBuffer();
   const bytes = new Uint8Array(buffer);
   return bytesToBase64(bytes);
@@ -277,8 +294,8 @@ function bytesToBase64(bytes: Uint8Array): string {
 
 function buildInsurancePrompt() {
   return {
-    system: "You are an expert at extracting information from insurance certificates. Extract all policy details accurately.",
-    user: "Extract: policy_no, insurer, effective_from (YYYY-MM-DD), expires_on (YYYY-MM-DD), coverage_amount, beneficiary. Return as JSON.",
+    system: "You are an expert at extracting information from insurance certificates. Extract all policy details accurately. All fields are required.",
+    user: "Extract all fields from this insurance certificate: policy_no (string), insurer (string), effective_from (YYYY-MM-DD string), expires_on (YYYY-MM-DD string), coverage_amount (number or null if not found), beneficiary (string, use 'Unknown' if not found), policy_type (string, e.g., 'Motor', 'Health', 'Life'). Return complete JSON with all 7 fields.",
   };
 }
 

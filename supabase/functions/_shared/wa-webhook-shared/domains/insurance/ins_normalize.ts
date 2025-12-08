@@ -76,7 +76,8 @@ export function normalizeInsuranceExtraction(
   const source = ensureObject(raw);
 
   const extracted: InsuranceExtraction = {
-    insurer_name: toNullableString(source.insurer_name),
+    // Map 'insurer' from OCR schema to 'insurer_name' in extraction
+    insurer_name: toNullableString(source.insurer) ?? toNullableString(source.insurer_name),
     policy_number: toNullableString(source.policy_number),
     certificate_number: toNullableString(source.certificate_number),
     policy_inception: normalizeDate(source.policy_inception),

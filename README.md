@@ -22,6 +22,35 @@ const countries = ['RW', 'KE', 'UG']; // NO!
 
 ---
 
+## 🚫 CRITICAL RULE: NO KINYARWANDA UI TRANSLATION
+
+**NEVER TRANSLATE THE USER INTERFACE TO KINYARWANDA (rw/rw-RW). THIS IS A BLOCKING REQUIREMENT.**
+
+### Why?
+- UI must remain in English, French, Swahili, or other supported languages
+- Kinyarwanda is NOT a supported UI language for this platform
+- Any code that translates UI elements to Kinyarwanda will be **REJECTED**
+
+### Implementation Rules:
+```typescript
+// ❌ WRONG - NEVER USE KINYARWANDA IN UI
+const LANGUAGES = { EN: 'en', FR: 'fr', RW: 'rw', SW: 'sw' }; // NO!
+locale = 'rw'; // NO!
+translateTo('rw'); // NO!
+
+// ✅ CORRECT - Only use approved languages
+const APPROVED_UI_LANGUAGES = ['en', 'fr', 'sw', 'es', 'pt', 'de'];
+// Kinyarwanda ('rw') is BLOCKED from UI translation
+```
+
+### Enforcement:
+- All language detection logic must exclude 'rw' from UI languages
+- Translation functions must reject 'rw' as a target language
+- Constants/enums must NOT include 'rw' in supported UI languages
+- Any existing Kinyarwanda translations must be deprecated and removed
+
+---
+
 ## ⛔ PROHIBITED SERVICES (CRITICAL - DO NOT USE)
 
 **The following third-party services are STRICTLY PROHIBITED in EasyMO. Any code using these services will be REJECTED.**

@@ -17,8 +17,7 @@ export function buildUserSummary(extracted: InsuranceExtraction): string {
     `• Certificate #: ${safe(extracted.certificate_number)}`,
     `• Plate: ${safe(extracted.registration_plate)}`,
     `• VIN/Chassis: ${safe(extracted.vin_chassis)}`,
-    `• Inception: ${safe(extracted.policy_inception)} • Expiry: ` +
-      `$${safe(extracted.policy_expiry)}`,
+    `• Inception: ${safe(extracted.policy_inception)} • Expiry: ${safe(extracted.policy_expiry)}`,
     `• Make/Model/Year: ${safe(extracted.make)}/${safe(extracted.model)}/${safe(extracted.vehicle_year)}`,
     "Our team will contact you shortly.",
   ].join("\n");

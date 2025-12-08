@@ -1,13 +1,14 @@
 /**
  * Translator
  * Simple translation function with fallback support
+ * 
+ * CRITICAL: Kinyarwanda (rw) is BLOCKED from UI translation
  */
 
 import type { Language } from "../config/constants.ts";
-import { DEFAULT_LANGUAGE } from "../config/constants.ts";
+import { DEFAULT_LANGUAGE, BLOCKED_UI_LANGUAGES } from "../config/constants.ts";
 import { en } from "./locales/en.ts";
 import { fr } from "./locales/fr.ts";
-import { rw } from "./locales/rw.ts";
 
 // ============================================================================
 // TYPES
@@ -20,12 +21,15 @@ export type Translations = Record<string, string>;
 // ============================================================================
 // LOCALE MAP
 // ============================================================================
+// NOTE: 'rw' (Kinyarwanda) is intentionally EXCLUDED from UI translations
 
 const locales: Record<Language, Translations> = {
   en,
   fr,
-  rw,
   sw: en, // Fallback to English for Swahili (not yet implemented)
+  es: en, // Fallback to English for Spanish (not yet implemented)
+  pt: en, // Fallback to English for Portuguese (not yet implemented)
+  de: en, // Fallback to English for German (not yet implemented)
 };
 
 // ============================================================================
@@ -34,12 +38,20 @@ const locales: Record<Language, Translations> = {
 
 /**
  * Translate a key to the given language
+ * CRITICAL: Blocks Kinyarwanda (rw) translations
  */
 export function t(
   locale: Language,
   key: TranslationKey,
   params?: TranslationParams
 ): string {
+  // CRITICAL: Block Kinyarwanda - force to default language
+  const normalizedLocale = locale.toLowerCase();
+  if (BLOCKED_UI_LANGUAGES.some(blocked => normalizedLocale === blocked || normalizedLocale.startsWith(blocked + '-'))) {
+    console.warn(`[i18n] Blocked UI translation to Kinyarwanda (${locale}). Using ${DEFAULT_LANGUAGE} instead.`);
+    locale = DEFAULT_LANGUAGE;
+  }
+
   // Get translation from locale or fallback to default
   const translations = locales[locale] || locales[DEFAULT_LANGUAGE];
   let message = translations[key] || locales[DEFAULT_LANGUAGE][key] || key;

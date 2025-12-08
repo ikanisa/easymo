@@ -1,7 +1,14 @@
+/**
+ * CRITICAL: Kinyarwanda (rw) is BLOCKED from UI translations
+ * Do NOT add 'rw' to SupportedLanguage or SUPPORTED array
+ */
 export type SupportedLanguage = "en" | "fr" | "es" | "pt" | "de" | "sw";
 
 const SUPPORTED: SupportedLanguage[] = ["en", "fr", "es", "pt", "de", "sw"];
 export const DEFAULT_LANGUAGE: SupportedLanguage = "en";
+
+// Explicitly blocked languages (DO NOT USE in UI)
+const BLOCKED_UI_LANGUAGES = ["rw", "rw-RW", "rw_RW"] as const;
 
 function normalizeCandidate(value: string): string {
   return value
@@ -15,6 +22,13 @@ export function coerceToSupportedLanguage(
 ): SupportedLanguage | null {
   if (typeof candidate !== "string" || !candidate.trim()) return null;
   const normalized = normalizeCandidate(candidate);
+  
+  // CRITICAL: Block Kinyarwanda
+  if (BLOCKED_UI_LANGUAGES.some(blocked => normalized === blocked || normalized.startsWith(blocked.toLowerCase()))) {
+    console.warn(`[i18n] Blocked Kinyarwanda language detection: ${candidate}. Returning null to force default.`);
+    return null; // Force fallback to default language
+  }
+  
   for (const lang of SUPPORTED) {
     if (normalized === lang) return lang;
     if (normalized.startsWith(`${lang}-`)) return lang;

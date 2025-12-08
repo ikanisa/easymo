@@ -185,17 +185,24 @@ export type ClaimStatus = typeof CLAIM_STATUS[keyof typeof CLAIM_STATUS];
 // ============================================================================
 // SUPPORTED LANGUAGES
 // ============================================================================
+// CRITICAL: Kinyarwanda (rw) is BLOCKED from UI translation
+// Do NOT add 'rw' to this list - it is intentionally excluded
 
 export const LANGUAGES = {
   EN: "en",
   FR: "fr",
-  RW: "rw",
   SW: "sw",
+  ES: "es",
+  PT: "pt",
+  DE: "de",
 } as const;
 
 export type Language = typeof LANGUAGES[keyof typeof LANGUAGES];
 
 export const DEFAULT_LANGUAGE: Language = LANGUAGES.EN;
+
+// Explicitly blocked language (DO NOT USE in UI)
+export const BLOCKED_UI_LANGUAGES = ["rw", "rw-RW"] as const;
 
 // ============================================================================
 // LIMITS & THRESHOLDS
