@@ -543,10 +543,10 @@ export async function handleInsuranceHelp(ctx: RouterContext): Promise<boolean> 
   // Use correct column names: channel, destination (not contact_type, contact_value)
   const { data: contacts } = await ctx.supabase
     .from('insurance_admin_contacts')
-    .select('id, display_name, channel, destination, is_active')
+    .select('id, display_name, channel, destination, is_active, display_order')
     .eq('is_active', true)
     .eq('channel', 'whatsapp')  // Filter for WhatsApp contacts
-    .order('created_at');
+    .order('display_order', { ascending: true });
 
   if (!contacts || contacts.length === 0) {
     await sendButtonsMessage(
@@ -587,7 +587,7 @@ export async function handleInsuranceHelp(ctx: RouterContext): Promise<boolean> 
     ]
   );
 
-  await logStructuredEvent('HELP_SUPPORT_REQUESTED', { 
+  await logStructuredEvent('INSURANCE_HELP_REQUESTED', { 
     profile_id: ctx.profileId, 
     wa_id: ctx.from,
     contacts_count: contacts.length
