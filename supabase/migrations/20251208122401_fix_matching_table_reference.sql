@@ -6,8 +6,8 @@
 -- PROBLEM: Production error "column p.ref_code does not exist"
 -- ROOT CAUSE: Functions query from mobility_trips (V2) but edge functions
 --             insert into rides_trips (V1). Column names differ:
---             - rides_trips uses: pickup_latitude, pickup_longitude, pickup_geog
---             - mobility_trips uses: pickup_lat, pickup_lng, pickup_geog
+--             - rides_trips uses: pickup_latitude, pickup_longitude
+--             - mobility_trips uses: pickup_lat, pickup_lng
 -- 
 -- FIX: Update match_drivers_for_trip_v2 and match_passengers_for_trip_v2
 --      to query from rides_trips (V1 table) with correct column names
@@ -18,6 +18,7 @@
 -- - The matching functions were incorrectly updated to query mobility_trips
 -- - This causes "no matches found" because data is in different table
 -- - The ref_code is generated from trip.id, not from profiles table
+-- - rides_trips may not have pickup_geog column, so we compute it on the fly
 -- ============================================================================
 
 BEGIN;
@@ -74,7 +75,8 @@ BEGIN
     t.dropoff_latitude,
     t.dropoff_longitude,
     t.vehicle_type,
-    t.pickup_geog
+    -- Create geography on-the-fly from lat/lng coordinates
+    ST_SetSRID(ST_MakePoint(t.pickup_longitude, t.pickup_latitude), 4326)::geography
   INTO 
     v_pickup_lat,
     v_pickup_lng,
@@ -98,8 +100,12 @@ BEGIN
     -- CRITICAL FIX: Generate ref_code from trip.id, NOT from profiles
     COALESCE(t.ref_code, SUBSTRING(t.id::text, 1, 8)) AS ref_code,
     -- Use PostGIS ST_Distance for accurate distance calculation
+    -- Compute geography on-the-fly since pickup_geog may not exist on rides_trips
     ROUND(
-      (ST_Distance(t.pickup_geog, v_pickup_geog) / 1000.0)::numeric, 
+      (ST_Distance(
+        ST_SetSRID(ST_MakePoint(t.pickup_longitude, t.pickup_latitude), 4326)::geography,
+        v_pickup_geog
+      ) / 1000.0)::numeric, 
       2
     ) AS distance_km,
     -- Calculate dropoff bonus if both trips have dropoff locations
@@ -107,7 +113,7 @@ BEGIN
       WHEN _prefer_dropoff AND v_dropoff_lat IS NOT NULL AND t.dropoff_latitude IS NOT NULL THEN
         ROUND(
           ST_Distance(
-            t.dropoff_geog,
+            ST_SetSRID(ST_MakePoint(t.dropoff_longitude, t.dropoff_latitude), 4326)::geography,
             ST_SetSRID(ST_MakePoint(v_dropoff_lng, v_dropoff_lat), 4326)::geography
           )::numeric,
           0
@@ -147,15 +153,19 @@ BEGIN
     AND t.created_at > now() - (_window_days || ' days')::interval
     -- Exclude the requesting trip
     AND t.id != _trip_id
-    -- Spatial filter: Within search radius (uses PostGIS GIST index)
+    -- Spatial filter: Within search radius
+    -- Note: Computing geography on-the-fly, so no GIST index optimization
     AND ST_DWithin(
-      t.pickup_geog,
+      ST_SetSRID(ST_MakePoint(t.pickup_longitude, t.pickup_latitude), 4326)::geography,
       v_pickup_geog,
       _radius_m::double precision
     )
   ORDER BY 
     -- Primary: Distance (closest first)
-    ST_Distance(t.pickup_geog, v_pickup_geog) ASC,
+    ST_Distance(
+      ST_SetSRID(ST_MakePoint(t.pickup_longitude, t.pickup_latitude), 4326)::geography,
+      v_pickup_geog
+    ) ASC,
     -- Secondary: Most recently active
     COALESCE(t.last_location_at, t.created_at) DESC,
     -- Tertiary: Exact vehicle match preferred
@@ -213,7 +223,8 @@ BEGIN
     t.dropoff_latitude,
     t.dropoff_longitude,
     t.vehicle_type,
-    t.pickup_geog
+    -- Create geography on-the-fly from lat/lng coordinates
+    ST_SetSRID(ST_MakePoint(t.pickup_longitude, t.pickup_latitude), 4326)::geography
   INTO 
     v_pickup_lat,
     v_pickup_lng,
@@ -237,8 +248,12 @@ BEGIN
     -- CRITICAL FIX: Generate ref_code from trip.id, NOT from profiles
     COALESCE(t.ref_code, SUBSTRING(t.id::text, 1, 8)) AS ref_code,
     -- Use PostGIS ST_Distance for accurate distance calculation
+    -- Compute geography on-the-fly since pickup_geog may not exist on rides_trips
     ROUND(
-      (ST_Distance(t.pickup_geog, v_pickup_geog) / 1000.0)::numeric, 
+      (ST_Distance(
+        ST_SetSRID(ST_MakePoint(t.pickup_longitude, t.pickup_latitude), 4326)::geography,
+        v_pickup_geog
+      ) / 1000.0)::numeric, 
       2
     ) AS distance_km,
     -- Calculate dropoff bonus if both trips have dropoff locations
@@ -246,7 +261,7 @@ BEGIN
       WHEN _prefer_dropoff AND v_dropoff_lat IS NOT NULL AND t.dropoff_latitude IS NOT NULL THEN
         ROUND(
           ST_Distance(
-            t.dropoff_geog,
+            ST_SetSRID(ST_MakePoint(t.dropoff_longitude, t.dropoff_latitude), 4326)::geography,
             ST_SetSRID(ST_MakePoint(v_dropoff_lng, v_dropoff_lat), 4326)::geography
           )::numeric,
           0
@@ -281,15 +296,19 @@ BEGIN
     AND t.created_at > now() - (_window_days || ' days')::interval
     -- Exclude the requesting trip
     AND t.id != _trip_id
-    -- Spatial filter: Within search radius (uses PostGIS GIST index)
+    -- Spatial filter: Within search radius
+    -- Note: Computing geography on-the-fly, so no GIST index optimization
     AND ST_DWithin(
-      t.pickup_geog,
+      ST_SetSRID(ST_MakePoint(t.pickup_longitude, t.pickup_latitude), 4326)::geography,
       v_pickup_geog,
       _radius_m::double precision
     )
   ORDER BY 
     -- Primary: Distance (closest first)
-    ST_Distance(t.pickup_geog, v_pickup_geog) ASC,
+    ST_Distance(
+      ST_SetSRID(ST_MakePoint(t.pickup_longitude, t.pickup_latitude), 4326)::geography,
+      v_pickup_geog
+    ) ASC,
     -- Secondary: Most recently active
     COALESCE(t.last_location_at, t.created_at) DESC,
     -- Tertiary: Exact vehicle match preferred
@@ -340,7 +359,7 @@ COMMIT;
 -- ✓ Generate ref_code from trip.id using SUBSTRING(t.id::text, 1, 8)
 -- ✓ No reference to p.ref_code (profiles table doesn't have this column)
 -- ✓ Use display_name from profiles (not full_name)
--- ✓ Proper geography column usage (pickup_geog, dropoff_geog)
+-- ✓ Compute geography on-the-fly using ST_SetSRID + ST_MakePoint
 -- ✓ PostGIS ST_Distance for accurate distance calculations
 -- 
 -- EXPECTED OUTCOME:
