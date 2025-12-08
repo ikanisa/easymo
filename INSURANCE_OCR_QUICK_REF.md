@@ -1,113 +1,91 @@
-# Insurance OCR Fix - Quick Reference
+# Insurance OCR - Quick Reference
 
-## 🚀 Quick Deploy
-
-```bash
-# 1. Set environment
-export SUPABASE_ACCESS_TOKEN="your-token-here"
-export SUPABASE_PROJECT_REF="rweobwuwzswudbgjpdcc"  # Update if different
-
-# 2. Run automated fix
-./fix-insurance-ocr.sh
-
-# Script will:
-# - Check current secrets
-# - Prompt for API keys (OPENAI_API_KEY and/or GEMINI_API_KEY)
-# - Deploy fixed functions
-# - Show verification logs
-```
-
-## ✅ What Was Fixed
-
-1. **Duplicate imports** in `ocr-processor/index.ts` - Removed lines 4 and 6
-2. **Syntax error** on line 558 - Added `error:` parameter name
-3. **Documentation** - Updated OCR_PROCESSOR_KNOWN_ISSUE.md
-
-## ⚠️ Critical: API Keys Required
-
-OCR **will not work** without at least one of these:
-
-```bash
-# Option 1: OpenAI (recommended - more reliable)
-supabase secrets set OPENAI_API_KEY="sk-proj-..." --project-ref <ref>
-
-# Option 2: Gemini (alternative)
-supabase secrets set GEMINI_API_KEY="AIza..." --project-ref <ref>
-```
-
-## 🧪 Testing
-
-### Test 1: WhatsApp Upload
-```
-1. Send insurance certificate image to WhatsApp bot
-2. Check logs: supabase functions logs insurance-ocr --tail
-3. ✅ Success: See "INS_OCR_OK" event
-4. ❌ Failure: See "no_ocr_provider" → API keys not set
-```
-
-### Test 2: Admin Panel
-```
-1. Navigate to Insurance Workbench
-2. Click "Queue OCR" button
-3. ✅ Success: Extracted data appears
-```
-
-## 📊 Expected Logs
-
-### ✅ Success
-```json
-{"event": "INS_OCR_OPENAI_CALL", "model": "gpt-4o-mini"}
-{"event": "INS_OCR_OK", "leadId": "...", "ms": 2500}
-{"event": "INSURANCE_UPLOAD_OCR_OK"}
-```
-
-### ❌ Failure (Missing API Keys)
-```json
-{"event": "INS_INLINE_OCR_FAIL", "error": "no_ocr_provider", "status": 503}
-{"event": "INS_FALLBACK_TO_QUEUE"}
-```
-
-## 🔄 Circuit Breaker
-
-After 5 consecutive failures:
-- Circuit **opens** (blocks all requests)
-- Wait **60 seconds** for auto-reset
-- Or redeploy to clear state
-
-## 📝 Files Changed
-
-| File | Change |
-|------|--------|
-| `supabase/functions/ocr-processor/index.ts` | Fixed imports + syntax |
-| `OCR_PROCESSOR_KNOWN_ISSUE.md` | Updated status to FIXED |
-| `INSURANCE_OCR_FIX_SUMMARY.md` | Complete documentation |
-| `fix-insurance-ocr.sh` | Automated deployment script |
-
-## 🆘 Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| "no_ocr_provider" | Set OPENAI_API_KEY or GEMINI_API_KEY |
-| Circuit breaker open | Wait 60s or redeploy function |
-| OpenAI API error | Check credits, fallback to Gemini |
-| Queue not processing | Check cron job, manually trigger |
-
-## 📚 Documentation
-
-- **INSURANCE_OCR_FIX_SUMMARY.md** - Complete guide
-- **OCR_PROCESSOR_KNOWN_ISSUE.md** - Issue history
-- **Issue #455** - GitHub issue tracker
-
-## ⏭️ Next Steps
-
-1. ✅ Code fixes applied
-2. ⚠️ Set OCR provider API keys
-3. 🚀 Deploy functions: `./fix-insurance-ocr.sh`
-4. 🧪 Test via WhatsApp
-5. 📊 Monitor logs
+**Status:** ✅ FIXED AND DEPLOYED  
+**Date:** 2025-12-08  
+**Version:** unified-ocr v5
 
 ---
 
-**Status**: Ready for deployment  
-**Action Required**: Set API keys before deploying  
-**Deploy**: `./fix-insurance-ocr.sh`
+## 🚨 Problem (RESOLVED)
+
+```
+Error: "Edge Function returned a non-2xx status code"
+Cause: Invalid OpenAI model "gpt-5" (doesn't exist)
+```
+
+## ✅ Solution Applied
+
+```typescript
+// Fixed: supabase/functions/unified-ocr/core/openai.ts
+const OPENAI_MODEL = "gpt-4o"  // Was: "gpt-5" ❌
+```
+
+---
+
+## 📡 Current Architecture
+
+```
+WhatsApp User → wa-webhook-insurance → unified-ocr (gpt-4o) → Response
+                                              ↓
+                                         (fallback)
+                                              ↓
+                                         Gemini API
+```
+
+**Active Functions:** Only `unified-ocr` (v5)  
+**Deleted:** insurance-ocr, ocr-processor, vehicle-ocr
+
+---
+
+## 🧪 Testing
+
+### Via WhatsApp
+1. Send insurance certificate image to bot
+2. Click "Submit certificate"
+3. ✅ Should receive confirmation and summary
+
+### Via Script
+```bash
+./test-insurance-ocr.sh https://example.com/cert.jpg
+```
+
+---
+
+## 📊 Expected Logs
+
+### ✅ Success Flow
+```
+UNIFIED_OCR_INLINE_START
+INS_OCR_INLINE_SUCCESS
+INS_LEAD_UPDATE_OK
+INS_ADMIN_NOTIFY_OK
+```
+
+### ❌ Old Errors (RESOLVED)
+```
+INS_INLINE_INVOKE_FAIL          ← Fixed
+Edge Function returned non-2xx   ← Fixed
+```
+
+---
+
+## 🚀 Quick Commands
+
+```bash
+# Deploy
+supabase functions deploy unified-ocr --project-ref lhbowpbcpwoiparwnwgt
+
+# Test
+./test-insurance-ocr.sh <image-url>
+
+# Check status
+supabase functions list | grep ocr
+```
+
+---
+
+**See INSURANCE_OCR_FIX_COMPLETE.md for full details**
+
+**Last Updated:** 2025-12-08  
+**Status:** Production ✅  
+**Model:** gpt-4o (corrected from gpt-5)
