@@ -197,7 +197,7 @@ jobs:
     
     steps:
       - name: Download signed apps
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
       
       - name: Notarize Admin Panel
         env:
