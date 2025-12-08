@@ -121,7 +121,7 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
   logInfo("ROUTING_EXTRACTION", {
     messageType: routingMessage?.type,
     routingText,
-    phoneNumber: phoneNumber && phoneNumber.length >= 4 ? phoneNumber.slice(-4) : "****",
+    phoneNumber: phoneNumber ? (phoneNumber.length >= 4 ? phoneNumber.slice(-4) : "SHORT") : null,
   }, { correlationId: crypto.randomUUID() });
 
   if (routingText) {
@@ -512,12 +512,15 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
   } else if (selection) {
     const isInteractive = Boolean(interactiveId);
     const targetService = SERVICE_KEY_MAP[selection] ?? (isInteractive ? FALLBACK_SERVICE : null);
+    const foundInMap = !!SERVICE_KEY_MAP[selection];
+    
     logInfo("ROUTING_DECISION", { 
       selection, 
       isInteractive, 
       targetService,
-      foundInMap: !!SERVICE_KEY_MAP[selection],
-      serviceKeyMapKeys: Object.keys(SERVICE_KEY_MAP).join(", ")
+      foundInMap,
+      // Only log keys if not found to help debug
+      availableKeys: foundInMap ? undefined : Object.keys(SERVICE_KEY_MAP).slice(0, 10).join(", ") + "..."
     }, { correlationId });
     
     if (targetService) {
@@ -533,6 +536,11 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
       const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
       if (serviceRoleKey) {
         forwardHeaders.set("Authorization", `Bearer ${serviceRoleKey}`);
+      } else {
+        logWarn("MISSING_SERVICE_ROLE_KEY", { 
+          targetService,
+          message: "Service role key not found - authorization may fail"
+        }, { correlationId });
       }
 
       try {
