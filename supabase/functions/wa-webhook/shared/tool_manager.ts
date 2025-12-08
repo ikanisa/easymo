@@ -325,24 +325,28 @@ export class ToolManager {
   ): Promise<any> {
     const { from, to, date, passengers = 1 } = args;
 
-    // Build query
+    // Build query using canonical trips table
     let query = context.supabase
-      .from("rides_trips")
-      .select("id, route, departure_time, price, available_seats, vehicle_type")
-      .eq("status", "scheduled")
-      .gte("available_seats", passengers);
+      .from("trips")
+      .select("id, pickup_text, dropoff_text, scheduled_at, vehicle_type, status")
+      .eq("status", "open")
+      .eq("trip_kind", "scheduled")
+      .not("scheduled_at", "is", null);
 
-    // Filter by route (simplified - in production would use proper route matching)
-    if (from && to) {
-      query = query.ilike("route", `%${from}%`).ilike("route", `%${to}%`);
+    // Filter by pickup/dropoff text (simplified - in production would use proper location matching)
+    if (from) {
+      query = query.ilike("pickup_text", `%${from}%`);
+    }
+    if (to) {
+      query = query.ilike("dropoff_text", `%${to}%`);
     }
 
     // Filter by date if provided
     if (date) {
-      const startOfDay = `${date} 00:00:00`;
-      const endOfDay = `${date} 23:59:59`;
-      query = query.gte("departure_time", startOfDay).lte(
-        "departure_time",
+      const startOfDay = `${date}T00:00:00Z`;
+      const endOfDay = `${date}T23:59:59Z`;
+      query = query.gte("scheduled_at", startOfDay).lte(
+        "scheduled_at",
         endOfDay,
       );
     }

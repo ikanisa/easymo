@@ -77,20 +77,21 @@ export async function insertTrip(
     : null;
 
   const { data, error } = await client
-    .from("mobility_trips") // V2 table
+    .from("trips") // Canonical trips table
     .insert({
       creator_user_id: params.userId,
       role: params.role,
+      trip_kind: isScheduled ? "scheduled" : "request",
       vehicle_type: params.vehicleType,
-      pickup_lat: params.lat,
-      pickup_lng: params.lng,
+      pickup_latitude: params.lat,
+      pickup_longitude: params.lng,
       pickup_text: params.pickupText ?? null,
       pickup_radius_m: params.radiusMeters,
-      status: isScheduled ? "open" : "open", // Status is 'open' until matched
+      status: "open",
       expires_at: expires,
-      scheduled_for: scheduledAtStr,
+      scheduled_at: scheduledAtStr,
       recurrence: params.recurrence ?? null,
-      last_location_update: new Date().toISOString(),
+      last_location_at: new Date().toISOString(),
     })
     .select("id")
     .single();
@@ -110,12 +111,11 @@ export async function updateTripDropoff(
   },
 ): Promise<void> {
   const { error } = await client
-    .from("mobility_trips") // V2 table
+    .from("trips") // Canonical table
     .update({
-      dropoff_lat: params.lat,
-      dropoff_lng: params.lng,
+      dropoff_latitude: params.lat,
+      dropoff_longitude: params.lng,
       dropoff_text: params.dropoffText ?? null,
-      dropoff_radius_m: params.radiusMeters ?? null,
     })
     .eq("id", params.tripId);
   if (error) throw error;
@@ -145,18 +145,31 @@ export async function matchDriversForTrip(
   tripId: string,
   limit = 9,
   preferDropoff = false,
-  radiusMeters?: number,
-  windowDays = 2, // Match migration default: 48-hour window
+  radiusMeters = 10000,
+  windowDays = 2,
 ) {
-  const { data, error } = await client.rpc("match_drivers_for_trip_v2", {
-    _trip_id: tripId,
-    _limit: limit,
-    _prefer_dropoff: preferDropoff,
-    _radius_m: radiusMeters ?? null,
-    _window_days: windowDays,
-  } as Record<string, unknown>);
+  const { data, error } = await client.rpc("find_nearby_drivers", {
+    p_passenger_trip_id: tripId,
+    p_limit: limit,
+    p_radius_m: radiusMeters,
+  });
   if (error) throw error;
-  return (data ?? []) as MatchResult[];
+  
+  // Map to old MatchResult format for backward compatibility
+  // Note: whatsapp_number from RPC is in E.164 format, mapping to whatsapp_e164
+  return (data ?? []).map((item: any) => ({
+    trip_id: item.trip_id,
+    creator_user_id: item.driver_user_id,
+    whatsapp_e164: item.whatsapp_number, // Already in E.164 format from profiles table
+    ref_code: item.ref_code,
+    distance_km: (item.distance_m || 0) / 1000,
+    drop_bonus_m: null,
+    pickup_text: item.pickup_text,
+    dropoff_text: item.dropoff_text,
+    matched_at: null,
+    created_at: item.created_at,
+    vehicle_type: item.vehicle_type,
+  })) as MatchResult[];
 }
 
 export async function matchPassengersForTrip(
@@ -164,18 +177,31 @@ export async function matchPassengersForTrip(
   tripId: string,
   limit = 9,
   preferDropoff = false,
-  radiusMeters?: number,
-  windowDays = 2, // Match migration default: 48-hour window
+  radiusMeters = 10000,
+  windowDays = 2,
 ) {
-  const { data, error } = await client.rpc("match_passengers_for_trip_v2", {
-    _trip_id: tripId,
-    _limit: limit,
-    _prefer_dropoff: preferDropoff,
-    _radius_m: radiusMeters ?? null,
-    _window_days: windowDays,
-  } as Record<string, unknown>);
+  const { data, error } = await client.rpc("find_nearby_passengers", {
+    p_driver_trip_id: tripId,
+    p_limit: limit,
+    p_radius_m: radiusMeters,
+  });
   if (error) throw error;
-  return (data ?? []) as MatchResult[];
+  
+  // Map to old MatchResult format for backward compatibility
+  // Note: whatsapp_number from RPC is in E.164 format, mapping to whatsapp_e164
+  return (data ?? []).map((item: any) => ({
+    trip_id: item.trip_id,
+    creator_user_id: item.passenger_user_id,
+    whatsapp_e164: item.whatsapp_number, // Already in E.164 format from profiles table
+    ref_code: item.ref_code,
+    distance_km: (item.distance_m || 0) / 1000,
+    drop_bonus_m: null,
+    pickup_text: item.pickup_text,
+    dropoff_text: item.dropoff_text,
+    matched_at: null,
+    created_at: item.created_at,
+    vehicle_type: item.vehicle_type,
+  })) as MatchResult[];
 }
 
 export async function updateTripLocation(
@@ -195,17 +221,22 @@ export async function updateTripLocation(
     throw new Error("Invalid coordinates: lat must be [-90,90], lng must be [-180,180]");
   }
   const { error } = await client
-    .from("mobility_trips") // V2 table
+    .from("trips") // Canonical table
     .update({
-      pickup_lat: params.lat,
-      pickup_lng: params.lng,
+      pickup_latitude: params.lat,
+      pickup_longitude: params.lng,
       pickup_text: params.pickupText ?? null,
-      last_location_update: new Date().toISOString(),
+      last_location_at: new Date().toISOString(),
     })
     .eq("id", params.tripId);
   if (error) throw error;
 }
 
+// DEPRECATED: Trip matching is out of scope for simplified mobility
+// This function is kept for backward compatibility but does nothing
+// Once a user selects someone from nearby list, they chat directly - no match tracking
+// 
+// BREAKING CHANGE: Returns null instead of UUID as matching is disabled
 export async function createTripMatch(
   client: SupabaseClient,
   params: {
@@ -214,31 +245,14 @@ export async function createTripMatch(
     driverUserId: string;
     passengerUserId: string;
     vehicleType: string;
-    pickupLocation: string; // WKT or similar
+    pickupLocation: string;
     driverPhone: string;
     passengerPhone: string;
     estimatedFare?: number;
     distanceKm?: number;
   }
-): Promise<string> {
-  const { data, error } = await client
-    .from("mobility_trip_matches")
-    .insert({
-      driver_trip_id: params.driverTripId,
-      passenger_trip_id: params.passengerTripId,
-      driver_user_id: params.driverUserId,
-      passenger_user_id: params.passengerUserId,
-      vehicle_type: params.vehicleType,
-      pickup_location: params.pickupLocation, // Expecting geography string
-      status: "pending",
-      driver_phone: params.driverPhone,
-      passenger_phone: params.passengerPhone,
-      estimated_fare: params.estimatedFare,
-      distance_km: params.distanceKm,
-    })
-    .select("id")
-    .single();
-
-  if (error) throw error;
-  return data.id;
+): Promise<string | null> {
+  // No-op: matching feature removed per product requirements
+  // Return null to indicate no match was created
+  return null;
 }
