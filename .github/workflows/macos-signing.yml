@@ -132,14 +132,14 @@ jobs:
       
       # Upload signed apps as artifacts
       - name: Upload signed Admin Panel
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: admin-panel-signed
           path: dist/mac/AdminPanel.app
           retention-days: 30
       
       - name: Upload signed Client Portal
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: client-portal-signed
           path: dist/mac/ClientPortal.app
@@ -172,7 +172,7 @@ jobs:
             "dist/mac/ClientPortal.app" || true
       
       - name: Upload DMG files
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: dmg-installers
           path: "*.dmg"
