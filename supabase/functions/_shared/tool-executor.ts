@@ -1699,17 +1699,18 @@ export class ToolExecutor {
     const estimatedFare = rates.base + ToolExecutor.DEFAULT_DISTANCE_KM * rates.perKm;
 
     const { data, error } = await this.supabase
-      .from("rides_trips")
+      .from("trips")
       .insert({
-        passenger_id: context.userId,
-        pickup_lat: user.location_cache.lat,
-        pickup_lng: user.location_cache.lng,
-        pickup_address: pickupAddress || "Current location",
-        destination_address: destinationAddress,
+        creator_user_id: context.userId,
+        role: "passenger",
+        trip_kind: "request",
         vehicle_type: vehicleType,
-        estimated_fare: estimatedFare,
-        status: "pending",
-        created_at: new Date().toISOString(),
+        pickup_latitude: user.location_cache.lat,
+        pickup_longitude: user.location_cache.lng,
+        pickup_text: pickupAddress || "Current location",
+        dropoff_text: destinationAddress,
+        status: "open",
+        expires_at: new Date(Date.now() + 90 * 60 * 1000).toISOString(), // 90 minutes
       })
       .select("id")
       .single();
@@ -1772,8 +1773,8 @@ export class ToolExecutor {
     }
 
     const { data, error } = await this.supabase
-      .from("rides_trips")
-      .select("id, status, pickup_address, destination_address, estimated_fare, driver_id")
+      .from("trips")
+      .select("id, status, pickup_text, dropoff_text, vehicle_type, creator_user_id")
       .eq("id", rideId)
       .single();
 
@@ -1788,10 +1789,9 @@ export class ToolExecutor {
       success: true,
       ride_id: data.id,
       status: data.status,
-      pickup: data.pickup_address,
-      destination: data.destination_address,
-      fare: `${data.estimated_fare} RWF`,
-      has_driver: !!data.driver_id,
+      pickup: data.pickup_text,
+      destination: data.dropoff_text,
+      vehicle_type: data.vehicle_type,
     };
   }
 

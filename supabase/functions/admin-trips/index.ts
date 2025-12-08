@@ -9,6 +9,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
 import { requireAdmin } from "../_shared/auth.ts";
 import { badRequest, methodNotAllowed, ok, serverError } from "../_shared/http.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 
 const supabase = getServiceClient();
 
@@ -38,11 +39,11 @@ serve(async (req) => {
   try {
     if (action === "close" && req.method === "POST") {
       const body = await req.json().catch(() => ({}));
-      const id = Number((body as { id?: unknown }).id);
+      const id = (body as { id?: unknown }).id as string;
       if (!id) return badRequest("id_required");
 
       const { error } = await supabase
-        .from("rides_trips")
+        .from("trips")
         .update({ status: "expired" })
         .eq("id", id);
 
@@ -52,7 +53,7 @@ serve(async (req) => {
 
     // Default: list trips (GET or otherwise)
     const { data, error } = await supabase
-      .from("rides_trips")
+      .from("trips")
       .select("*")
       .order("created_at", { ascending: false });
 
