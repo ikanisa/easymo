@@ -74,6 +74,22 @@ export async function GET(
   const thisMonthTransactions = monthStats?.length ?? 0;
   const thisMonthRevenue = (monthStats ?? []).reduce((sum, txn) => sum + (Number(txn.amount) || 0), 0);
 
+  // Get parser breakdown
+  const { data: parserStats, error: parserError } = await admin
+    .from("vendor_sms_transactions")
+    .select("parsed_by")
+    .eq("vendor_id", id);
+
+  if (parserError) {
+    return NextResponse.json({ error: parserError.message }, { status: 500 });
+  }
+
+  const parserBreakdown = {
+    openai: (parserStats ?? []).filter(t => t.parsed_by === "openai").length,
+    gemini: (parserStats ?? []).filter(t => t.parsed_by === "gemini").length,
+    regex: (parserStats ?? []).filter(t => t.parsed_by === "regex").length,
+  };
+
   return NextResponse.json({
     data: {
       totalTransactions,
@@ -81,6 +97,7 @@ export async function GET(
       uniquePayers: uniquePayers ?? 0,
       thisMonthTransactions,
       thisMonthRevenue,
+      parserBreakdown,
     },
   });
 }
