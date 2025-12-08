@@ -478,8 +478,8 @@ export async function handleNearbyResultSelection(
   try {
     // Fetch the selected trip details
     const { data: selectedTrip, error: tripError } = await ctx.supabase
-      .from("mobility_trips")
-      .select("creator_user_id, role, vehicle_type, pickup_lat, pickup_lng")
+      .from("trips")
+      .select("creator_user_id, role, vehicle_type, pickup_latitude, pickup_longitude")
       .eq("id", id)
       .single();
       
@@ -997,7 +997,7 @@ async function runMatchingFallback(
           "Trips expired (>24h location age)",
           "Trips outside radius",
         ],
-        hint: "Check mobility_trips table for open trips with role=driver/passenger",
+        hint: "Check trips table for open trips with role=driver/passenger",
       }, "warn");
       
       // Use specific message based on what user was searching for
