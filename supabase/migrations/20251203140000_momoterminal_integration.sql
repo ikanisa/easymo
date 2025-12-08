@@ -127,20 +127,29 @@ ALTER TABLE merchant_webhook_configs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE webhook_delivery_log ENABLE ROW LEVEL SECURITY;
 
 -- Service role can do everything
+DROP POLICY IF EXISTS "service_role_all_webhook_nonces" ON webhook_nonces;
 CREATE POLICY "service_role_all_webhook_nonces" ON webhook_nonces FOR ALL TO service_role USING (true);
+DROP POLICY IF EXISTS "service_role_all_idempotency_keys" ON idempotency_keys;
 CREATE POLICY "service_role_all_idempotency_keys" ON idempotency_keys FOR ALL TO service_role USING (true);
+DROP POLICY IF EXISTS "service_role_all_security_audit_log" ON security_audit_log;
 CREATE POLICY "service_role_all_security_audit_log" ON security_audit_log FOR ALL TO service_role USING (true);
+DROP POLICY IF EXISTS "service_role_all_webhook_stats" ON webhook_stats;
 CREATE POLICY "service_role_all_webhook_stats" ON webhook_stats FOR ALL TO service_role USING (true);
+DROP POLICY IF EXISTS "service_role_all_momo_devices" ON momo_devices;
 CREATE POLICY "service_role_all_momo_devices" ON momo_devices FOR ALL TO service_role USING (true);
+DROP POLICY IF EXISTS "service_role_all_merchant_webhook_configs" ON merchant_webhook_configs;
 CREATE POLICY "service_role_all_merchant_webhook_configs" ON merchant_webhook_configs FOR ALL TO service_role USING (true);
+DROP POLICY IF EXISTS "service_role_all_webhook_delivery_log" ON webhook_delivery_log;
 CREATE POLICY "service_role_all_webhook_delivery_log" ON webhook_delivery_log FOR ALL TO service_role USING (true);
 
 -- Merchants can view their own devices
+DROP POLICY IF EXISTS "merchants_view_own_devices" ON momo_devices;
 CREATE POLICY "merchants_view_own_devices" ON momo_devices 
     FOR SELECT TO authenticated 
     USING (merchant_id = auth.uid());
 
 -- Merchants can manage their webhook configs
+DROP POLICY IF EXISTS "merchants_manage_own_webhooks" ON merchant_webhook_configs;
 CREATE POLICY "merchants_manage_own_webhooks" ON merchant_webhook_configs 
     FOR ALL TO authenticated 
     USING (merchant_id = auth.uid());

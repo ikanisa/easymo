@@ -166,7 +166,7 @@ COMMENT ON POLICY properties_public_read ON public.properties IS
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'user_location_cache') THEN
-    CREATE TABLE public.user_location_cache (
+    CREATE TABLE IF NOT EXISTS public.user_location_cache (
       user_id uuid PRIMARY KEY REFERENCES public.profiles(user_id) ON DELETE CASCADE,
       lat double precision NOT NULL,
       lng double precision NOT NULL,

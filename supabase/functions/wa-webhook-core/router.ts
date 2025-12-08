@@ -267,6 +267,11 @@ export async function forwardToEdgeService(
   forwardHeaders.set("X-Routed-Service", targetService);
   forwardHeaders.set("X-Original-Service", originalService); // Track original for debugging
   forwardHeaders.set("X-Correlation-ID", correlationId);
+  // Add Authorization header for service-to-service calls
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (serviceRoleKey) {
+    forwardHeaders.set("Authorization", `Bearer ${serviceRoleKey}`);
+  }
 
   try {
     // Use fetchWithRetry for automatic retry with exponential backoff
@@ -520,6 +525,11 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
       forwardHeaders.set("Content-Type", "application/json");
       forwardHeaders.set("X-Routed-From", "wa-webhook-core");
       forwardHeaders.set("X-Menu-Selection", selection);
+      // Add Authorization header for service-to-service calls
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (serviceRoleKey) {
+        forwardHeaders.set("Authorization", `Bearer ${serviceRoleKey}`);
+      }
 
       try {
         const response = await fetch(url, {

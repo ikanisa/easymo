@@ -357,29 +357,35 @@ ALTER TABLE public.message_delivery_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.conversation_threads ENABLE ROW LEVEL SECURITY;
 
 -- Sessions: Users can only see their own
+DROP POLICY IF EXISTS "Users can view own sessions" ON public.omnichannel_sessions;
 CREATE POLICY "Users can view own sessions"
   ON public.omnichannel_sessions FOR SELECT
   USING (auth.uid() = profile_id);
 
 -- Message logs: Users can only see their own
+DROP POLICY IF EXISTS "Users can view own messages" ON public.message_delivery_log;
 CREATE POLICY "Users can view own messages"
   ON public.message_delivery_log FOR SELECT
   USING (auth.uid() = profile_id);
 
 -- Threads: Users can only see their own
+DROP POLICY IF EXISTS "Users can view own threads" ON public.conversation_threads;
 CREATE POLICY "Users can view own threads"
   ON public.conversation_threads FOR SELECT
   USING (auth.uid() = profile_id);
 
 -- Service role can do everything
+DROP POLICY IF EXISTS "Service role full access to sessions" ON public.omnichannel_sessions;
 CREATE POLICY "Service role full access to sessions"
   ON public.omnichannel_sessions FOR ALL
   USING (auth.jwt() ->> 'role' = 'service_role');
 
+DROP POLICY IF EXISTS "Service role full access to messages" ON public.message_delivery_log;
 CREATE POLICY "Service role full access to messages"
   ON public.message_delivery_log FOR ALL
   USING (auth.jwt() ->> 'role' = 'service_role');
 
+DROP POLICY IF EXISTS "Service role full access to threads" ON public.conversation_threads;
 CREATE POLICY "Service role full access to threads"
   ON public.conversation_threads FOR ALL
   USING (auth.jwt() ->> 'role' = 'service_role');

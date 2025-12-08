@@ -118,20 +118,20 @@ DROP INDEX IF EXISTS idx_rides_trips_dropoff_geog;
 DROP INDEX IF EXISTS idx_mobility_trips_dropoff_geog;
 
 -- Create spatial indexes for rides_trips
-CREATE INDEX idx_rides_trips_pickup_geog 
+CREATE INDEX IF NOT EXISTS idx_rides_trips_pickup_geog 
   ON rides_trips USING GIST (pickup) 
   WHERE status = 'open';
 
-CREATE INDEX idx_rides_trips_dropoff_geog 
+CREATE INDEX IF NOT EXISTS idx_rides_trips_dropoff_geog 
   ON rides_trips USING GIST (dropoff) 
   WHERE status = 'open';
 
 -- Create spatial indexes for mobility_trips
-CREATE INDEX idx_mobility_trips_pickup_geog 
+CREATE INDEX IF NOT EXISTS idx_mobility_trips_pickup_geog 
   ON mobility_trips USING GIST (pickup_geog) 
   WHERE status = 'open';
 
-CREATE INDEX idx_mobility_trips_dropoff_geog 
+CREATE INDEX IF NOT EXISTS idx_mobility_trips_dropoff_geog 
   ON mobility_trips USING GIST (dropoff_geog) 
   WHERE status = 'open';
 

@@ -74,7 +74,9 @@ CREATE INDEX IF NOT EXISTS idx_business_directory_search_composite
 -- RLS
 ALTER TABLE public.business_directory ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Public read access" ON public.business_directory;
+DROP POLICY IF EXISTS "Public read access" ON public.business_directory;
 CREATE POLICY "Public read access" ON public.business_directory FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Service write access" ON public.business_directory;
 DROP POLICY IF EXISTS "Service write access" ON public.business_directory;
 CREATE POLICY "Service write access" ON public.business_directory FOR ALL TO service_role USING (true) WITH CHECK (true);
 
@@ -111,7 +113,9 @@ CREATE INDEX IF NOT EXISTS idx_marketplace_listings_search_composite
 -- RLS
 ALTER TABLE public.marketplace_listings ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Public read access" ON public.marketplace_listings;
+DROP POLICY IF EXISTS "Public read access" ON public.marketplace_listings;
 CREATE POLICY "Public read access" ON public.marketplace_listings FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Public write access" ON public.marketplace_listings;
 DROP POLICY IF EXISTS "Public write access" ON public.marketplace_listings;
 CREATE POLICY "Public write access" ON public.marketplace_listings FOR INSERT WITH CHECK (true);
 
@@ -134,6 +138,7 @@ CREATE TABLE IF NOT EXISTS public.marketplace_conversations (
 );
 ALTER TABLE public.marketplace_conversations ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Public all access" ON public.marketplace_conversations;
+DROP POLICY IF EXISTS "Public all access" ON public.marketplace_conversations;
 CREATE POLICY "Public all access" ON public.marketplace_conversations FOR ALL USING (true) WITH CHECK (true);
 
 CREATE TABLE IF NOT EXISTS public.marketplace_matches (
@@ -149,6 +154,7 @@ CREATE TABLE IF NOT EXISTS public.marketplace_matches (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.marketplace_matches ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public all access" ON public.marketplace_matches;
 DROP POLICY IF EXISTS "Public all access" ON public.marketplace_matches;
 CREATE POLICY "Public all access" ON public.marketplace_matches FOR ALL USING (true) WITH CHECK (true);
 

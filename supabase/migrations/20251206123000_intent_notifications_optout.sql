@@ -45,6 +45,7 @@ ALTER TABLE public.intent_notification_preferences ENABLE ROW LEVEL SECURITY;
 
 -- Service role has full access
 DROP POLICY IF EXISTS "Service role has full access to notification preferences" ON public.intent_notification_preferences;
+DROP POLICY IF EXISTS "Service role has full access to notification preferences" ON public.intent_notification_preferences;
 CREATE POLICY "Service role has full access to notification preferences"
   ON public.intent_notification_preferences
   FOR ALL
@@ -54,12 +55,14 @@ CREATE POLICY "Service role has full access to notification preferences"
 
 -- Users can view and update their own preferences
 DROP POLICY IF EXISTS "Users can view their own notification preferences" ON public.intent_notification_preferences;
+DROP POLICY IF EXISTS "Users can view their own notification preferences" ON public.intent_notification_preferences;
 CREATE POLICY "Users can view their own notification preferences"
   ON public.intent_notification_preferences
   FOR SELECT
   TO authenticated
   USING (profile_id = auth.uid());
 
+DROP POLICY IF EXISTS "Users can update their own notification preferences" ON public.intent_notification_preferences;
 DROP POLICY IF EXISTS "Users can update their own notification preferences" ON public.intent_notification_preferences;
 CREATE POLICY "Users can update their own notification preferences"
   ON public.intent_notification_preferences

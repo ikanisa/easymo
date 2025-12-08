@@ -9,7 +9,7 @@ DROP FUNCTION IF EXISTS public.match_drivers_for_trip_v2(uuid, integer, boolean,
 DROP FUNCTION IF EXISTS public.match_passengers_for_trip_v2(uuid, integer, boolean, integer, integer);
 
 -- Enhanced match_drivers_for_trip_v2 with flexible vehicle matching
-CREATE FUNCTION public.match_drivers_for_trip_v2(
+CREATE OR REPLACE FUNCTION public.match_drivers_for_trip_v2(
   _trip_id uuid,
   _limit integer DEFAULT 9,
   _prefer_dropoff boolean DEFAULT false,
@@ -132,7 +132,7 @@ END;
 $$;
 
 -- Enhanced match_passengers_for_trip_v2 with same improvements
-CREATE FUNCTION public.match_passengers_for_trip_v2(
+CREATE OR REPLACE FUNCTION public.match_passengers_for_trip_v2(
   _trip_id uuid,
   _limit integer DEFAULT 9,
   _prefer_dropoff boolean DEFAULT false,

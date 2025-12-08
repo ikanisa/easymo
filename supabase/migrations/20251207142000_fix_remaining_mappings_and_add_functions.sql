@@ -79,6 +79,7 @@ DROP POLICY IF EXISTS "Businesses are viewable by everyone" ON businesses;
 DROP POLICY IF EXISTS "Enable read access for all users" ON businesses;
 
 -- Create comprehensive read policy
+DROP POLICY IF EXISTS "Enable read access for all users" ON businesses;
 CREATE POLICY "Enable read access for all users" ON businesses
   FOR SELECT
   USING (true);

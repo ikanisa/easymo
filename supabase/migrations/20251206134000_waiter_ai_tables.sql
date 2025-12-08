@@ -34,6 +34,7 @@ ALTER TABLE public.waiter_conversations ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
 DROP POLICY IF EXISTS "waiter_conv_read_bar_owner" ON public.waiter_conversations;
+DROP POLICY IF EXISTS "waiter_conv_read_bar_owner" ON public.waiter_conversations;
 CREATE POLICY "waiter_conv_read_bar_owner" ON public.waiter_conversations
   FOR SELECT
   USING (
@@ -45,6 +46,7 @@ CREATE POLICY "waiter_conv_read_bar_owner" ON public.waiter_conversations
     )
   );
 
+DROP POLICY IF EXISTS "waiter_conv_insert_bar_owner" ON public.waiter_conversations;
 DROP POLICY IF EXISTS "waiter_conv_insert_bar_owner" ON public.waiter_conversations;
 CREATE POLICY "waiter_conv_insert_bar_owner" ON public.waiter_conversations
   FOR INSERT

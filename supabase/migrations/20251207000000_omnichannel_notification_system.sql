@@ -80,6 +80,7 @@ COMMENT ON COLUMN message_delivery_log.external_message_id IS 'Message ID from W
 -- 4) Add RLS policies for omnichannel_sessions
 ALTER TABLE omnichannel_sessions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own omnichannel sessions" ON omnichannel_sessions;
 CREATE POLICY "Users can view their own omnichannel sessions"
   ON omnichannel_sessions FOR SELECT
   USING (
@@ -90,6 +91,7 @@ CREATE POLICY "Users can view their own omnichannel sessions"
     )
   );
 
+DROP POLICY IF EXISTS "Service role has full access to omnichannel sessions" ON omnichannel_sessions;
 CREATE POLICY "Service role has full access to omnichannel sessions"
   ON omnichannel_sessions FOR ALL
   USING (auth.jwt() ->> 'role' = 'service_role')
@@ -98,6 +100,7 @@ CREATE POLICY "Service role has full access to omnichannel sessions"
 -- 5) Add RLS policies for message_delivery_log
 ALTER TABLE message_delivery_log ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own message logs" ON message_delivery_log;
 CREATE POLICY "Users can view their own message logs"
   ON message_delivery_log FOR SELECT
   USING (
@@ -108,6 +111,7 @@ CREATE POLICY "Users can view their own message logs"
     )
   );
 
+DROP POLICY IF EXISTS "Service role has full access to message logs" ON message_delivery_log;
 CREATE POLICY "Service role has full access to message logs"
   ON message_delivery_log FOR ALL
   USING (auth.jwt() ->> 'role' = 'service_role')

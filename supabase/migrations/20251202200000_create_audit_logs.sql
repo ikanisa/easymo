@@ -34,11 +34,13 @@ ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- Only service role can insert
 DROP POLICY IF EXISTS "Service role can insert audit logs" ON audit_logs;
+DROP POLICY IF EXISTS "Service role can insert audit logs" ON audit_logs;
 CREATE POLICY "Service role can insert audit logs"
   ON audit_logs FOR INSERT
   WITH CHECK (true);
 
 -- Only admins can view
+DROP POLICY IF EXISTS "Admins can view audit logs" ON audit_logs;
 DROP POLICY IF EXISTS "Admins can view audit logs" ON audit_logs;
 CREATE POLICY "Admins can view audit logs"
   ON audit_logs FOR SELECT

@@ -3,6 +3,9 @@
 
 BEGIN;
 
+-- Drop existing function to allow signature change
+DROP FUNCTION IF EXISTS public.match_drivers_for_trip_v2(uuid, integer, boolean, integer, integer);
+
 -- 1. Fix match_drivers_for_trip_v2 to include 'open' status
 CREATE OR REPLACE FUNCTION public.match_drivers_for_trip_v2(
   _trip_id uuid,
@@ -262,11 +265,13 @@ ALTER TABLE mobility_intents ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can view their own intents
 DROP POLICY IF EXISTS "Users can view own intents" ON mobility_intents;
+DROP POLICY IF EXISTS "Users can view own intents" ON mobility_intents;
 CREATE POLICY "Users can view own intents"
   ON mobility_intents FOR SELECT
   USING (auth.uid() = user_id);
 
 -- Policy: Users can insert their own intents
+DROP POLICY IF EXISTS "Users can insert own intents" ON mobility_intents;
 DROP POLICY IF EXISTS "Users can insert own intents" ON mobility_intents;
 CREATE POLICY "Users can insert own intents"
   ON mobility_intents FOR INSERT
@@ -274,11 +279,13 @@ CREATE POLICY "Users can insert own intents"
 
 -- Policy: Users can update their own intents
 DROP POLICY IF EXISTS "Users can update own intents" ON mobility_intents;
+DROP POLICY IF EXISTS "Users can update own intents" ON mobility_intents;
 CREATE POLICY "Users can update own intents"
   ON mobility_intents FOR UPDATE
   USING (auth.uid() = user_id);
 
 -- Policy: Users can delete their own intents
+DROP POLICY IF EXISTS "Users can delete own intents" ON mobility_intents;
 DROP POLICY IF EXISTS "Users can delete own intents" ON mobility_intents;
 CREATE POLICY "Users can delete own intents"
   ON mobility_intents FOR DELETE

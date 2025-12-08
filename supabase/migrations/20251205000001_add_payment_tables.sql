@@ -179,11 +179,13 @@ ALTER TABLE trip_status_audit ENABLE ROW LEVEL SECURITY;
 
 -- Payment requests: Users can view their own
 DROP POLICY IF EXISTS "Users view own payment requests" ON trip_payment_requests;
+DROP POLICY IF EXISTS "Users view own payment requests" ON trip_payment_requests;
 CREATE POLICY "Users view own payment requests" 
   ON trip_payment_requests
   FOR SELECT 
   USING (auth.uid() = payer_id);
 
+DROP POLICY IF EXISTS "Service role full access payment requests" ON trip_payment_requests;
 DROP POLICY IF EXISTS "Service role full access payment requests" ON trip_payment_requests;
 CREATE POLICY "Service role full access payment requests" 
   ON trip_payment_requests
@@ -192,6 +194,7 @@ CREATE POLICY "Service role full access payment requests"
   USING (true);
 
 -- Audit trail: Users can view audits for their trips
+DROP POLICY IF EXISTS "Users view own trip audits" ON trip_status_audit;
 DROP POLICY IF EXISTS "Users view own trip audits" ON trip_status_audit;
 CREATE POLICY "Users view own trip audits" 
   ON trip_status_audit
@@ -204,6 +207,7 @@ CREATE POLICY "Users view own trip audits"
     )
   );
 
+DROP POLICY IF EXISTS "Service role full access trip audits" ON trip_status_audit;
 DROP POLICY IF EXISTS "Service role full access trip audits" ON trip_status_audit;
 CREATE POLICY "Service role full access trip audits" 
   ON trip_status_audit

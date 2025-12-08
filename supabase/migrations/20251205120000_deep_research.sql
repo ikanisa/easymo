@@ -5,7 +5,7 @@
 
 -- Deep research job status enum
 DO $$ BEGIN
-  CREATE TYPE deep_research_status AS ENUM (
+  CREATE TYPE IF NOT EXISTS deep_research_status AS ENUM (
     'pending',
     'running',
     'succeeded',
@@ -203,31 +203,37 @@ alter table farmers_market_intel enable row level security;
 
 -- Users can view their own research jobs
 DROP POLICY IF EXISTS "Users can view own research jobs" ON deep_research_jobs;
+DROP POLICY IF EXISTS "Users can view own research jobs" ON deep_research_jobs;
 create policy "Users can view own research jobs"
   on deep_research_jobs for select
   using (auth.uid() = user_id);
 
 -- Service role has full access
 DROP POLICY IF EXISTS "Service role has full access to research jobs" ON deep_research_jobs;
+DROP POLICY IF EXISTS "Service role has full access to research jobs" ON deep_research_jobs;
 create policy "Service role has full access to research jobs"
   on deep_research_jobs for all
   using (auth.role() = 'service_role');
 
+DROP POLICY IF EXISTS "Service role has full access to research results" ON deep_research_results;
 DROP POLICY IF EXISTS "Service role has full access to research results" ON deep_research_results;
 create policy "Service role has full access to research results"
   on deep_research_results for all
   using (auth.role() = 'service_role');
 
 DROP POLICY IF EXISTS "Service role has full access to external listings" ON jobs_external_listings;
+DROP POLICY IF EXISTS "Service role has full access to external listings" ON jobs_external_listings;
 create policy "Service role has full access to external listings"
   on jobs_external_listings for all
   using (auth.role() = 'service_role');
 
 DROP POLICY IF EXISTS "Service role has full access to real estate external" ON real_estate_external_listings;
+DROP POLICY IF EXISTS "Service role has full access to real estate external" ON real_estate_external_listings;
 create policy "Service role has full access to real estate external"
   on real_estate_external_listings for all
   using (auth.role() = 'service_role');
 
+DROP POLICY IF EXISTS "Service role has full access to farmers intel" ON farmers_market_intel;
 DROP POLICY IF EXISTS "Service role has full access to farmers intel" ON farmers_market_intel;
 create policy "Service role has full access to farmers intel"
   on farmers_market_intel for all

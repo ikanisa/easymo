@@ -81,7 +81,7 @@ COMMENT ON VIEW location_kind_distribution IS
 
 -- Function to get current adoption metrics
 DROP FUNCTION IF EXISTS get_location_adoption_metrics();
-CREATE FUNCTION get_location_adoption_metrics()
+CREATE OR REPLACE FUNCTION get_location_adoption_metrics()
 RETURNS TABLE (
   metric text,
   value numeric

@@ -10,7 +10,7 @@ BEGIN
   END IF;
 END $$;
 
-CREATE VIEW mobility_trips_compat AS
+CREATE OR REPLACE VIEW mobility_trips_compat AS
 SELECT
   id,
   user_id AS creator_user_id,

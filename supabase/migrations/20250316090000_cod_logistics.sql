@@ -297,8 +297,14 @@ alter table public.produce_listings enable row level security;
 alter table public.produce_pickups enable row level security;
 alter table public.produce_inventory_events enable row level security;
 
+DROP POLICY IF EXISTS "svc_rw_produce_listings" ON public.produce_listings;
+DROP POLICY IF EXISTS "svc_rw_produce_listings" ON public.produce_listings;
 create policy "svc_rw_produce_listings" on public.produce_listings for all using (auth.role() = 'service_role') with check (true);
+DROP POLICY IF EXISTS "svc_rw_produce_pickups" ON public.produce_pickups;
+DROP POLICY IF EXISTS "svc_rw_produce_pickups" ON public.produce_pickups;
 create policy "svc_rw_produce_pickups" on public.produce_pickups for all using (auth.role() = 'service_role') with check (true);
+DROP POLICY IF EXISTS "svc_rw_produce_inventory_events" ON public.produce_inventory_events;
+DROP POLICY IF EXISTS "svc_rw_produce_inventory_events" ON public.produce_inventory_events;
 create policy "svc_rw_produce_inventory_events" on public.produce_inventory_events for all using (auth.role() = 'service_role') with check (true);
 
 grant all on table public.logistics_partners to postgres, anon, authenticated, service_role;

@@ -7,7 +7,7 @@ BEGIN;
 
 -- 1) Enum for call channel
 DO $$ BEGIN
-  CREATE TYPE call_channel AS ENUM (
+  CREATE TYPE IF NOT EXISTS call_channel AS ENUM (
     'phone',
     'whatsapp_call',
     'whatsapp_voice_note'
@@ -113,32 +113,38 @@ ALTER TABLE call_transcripts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE call_summaries ENABLE ROW LEVEL SECURITY;
 
 -- RLS policies for calls
+DROP POLICY IF EXISTS "Users can view their own calls" ON calls;
 CREATE POLICY "Users can view their own calls"
   ON calls FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Service role can manage all calls" ON calls;
 CREATE POLICY "Service role can manage all calls"
   ON calls FOR ALL
   USING (auth.jwt() ->> 'role' = 'service_role');
 
 -- RLS policies for call_transcripts
+DROP POLICY IF EXISTS "Users can view transcripts of their calls" ON call_transcripts;
 CREATE POLICY "Users can view transcripts of their calls"
   ON call_transcripts FOR SELECT
   USING (EXISTS (
     SELECT 1 FROM calls WHERE calls.id = call_transcripts.call_id AND calls.user_id = auth.uid()
   ));
 
+DROP POLICY IF EXISTS "Service role can manage all transcripts" ON call_transcripts;
 CREATE POLICY "Service role can manage all transcripts"
   ON call_transcripts FOR ALL
   USING (auth.jwt() ->> 'role' = 'service_role');
 
 -- RLS policies for call_summaries
+DROP POLICY IF EXISTS "Users can view summaries of their calls" ON call_summaries;
 CREATE POLICY "Users can view summaries of their calls"
   ON call_summaries FOR SELECT
   USING (EXISTS (
     SELECT 1 FROM calls WHERE calls.id = call_summaries.call_id AND calls.user_id = auth.uid()
   ));
 
+DROP POLICY IF EXISTS "Service role can manage all summaries" ON call_summaries;
 CREATE POLICY "Service role can manage all summaries"
   ON call_summaries FOR ALL
   USING (auth.jwt() ->> 'role' = 'service_role');

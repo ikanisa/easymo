@@ -42,6 +42,7 @@ END $$;
 ALTER TABLE ride_requests ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "ride_requests_passenger_rw" ON ride_requests;
+DROP POLICY IF EXISTS "ride_requests_passenger_rw" ON ride_requests;
 CREATE POLICY "ride_requests_passenger_rw"
   ON ride_requests
   FOR ALL
@@ -49,11 +50,13 @@ CREATE POLICY "ride_requests_passenger_rw"
   WITH CHECK (auth.uid() = passenger_id);
 
 DROP POLICY IF EXISTS "ride_requests_driver_read" ON ride_requests;
+DROP POLICY IF EXISTS "ride_requests_driver_read" ON ride_requests;
 CREATE POLICY "ride_requests_driver_read"
   ON ride_requests
   FOR SELECT
   USING (auth.uid() = driver_id);
 
+DROP POLICY IF EXISTS "ride_requests_driver_update" ON ride_requests;
 DROP POLICY IF EXISTS "ride_requests_driver_update" ON ride_requests;
 CREATE POLICY "ride_requests_driver_update"
   ON ride_requests
@@ -61,6 +64,7 @@ CREATE POLICY "ride_requests_driver_update"
   USING (auth.uid() = driver_id)
   WITH CHECK (auth.uid() = driver_id);
 
+DROP POLICY IF EXISTS "ride_requests_service_role_all" ON ride_requests;
 DROP POLICY IF EXISTS "ride_requests_service_role_all" ON ride_requests;
 CREATE POLICY "ride_requests_service_role_all"
   ON ride_requests
@@ -127,11 +131,13 @@ END $$;
 ALTER TABLE ride_notifications ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "ride_notifications_driver_read" ON ride_notifications;
+DROP POLICY IF EXISTS "ride_notifications_driver_read" ON ride_notifications;
 CREATE POLICY "ride_notifications_driver_read"
   ON ride_notifications
   FOR SELECT
   USING (auth.uid() = driver_id);
 
+DROP POLICY IF EXISTS "ride_notifications_service_role_all" ON ride_notifications;
 DROP POLICY IF EXISTS "ride_notifications_service_role_all" ON ride_notifications;
 CREATE POLICY "ride_notifications_service_role_all"
   ON ride_notifications
@@ -201,6 +207,7 @@ END $$;
 ALTER TABLE rides_driver_status ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "rides_driver_status_owner_rw" ON rides_driver_status;
+DROP POLICY IF EXISTS "rides_driver_status_owner_rw" ON rides_driver_status;
 CREATE POLICY "rides_driver_status_owner_rw"
   ON rides_driver_status
   FOR ALL
@@ -208,11 +215,13 @@ CREATE POLICY "rides_driver_status_owner_rw"
   WITH CHECK (auth.uid() = user_id);
 
 DROP POLICY IF EXISTS "rides_driver_status_public_read_online" ON rides_driver_status;
+DROP POLICY IF EXISTS "rides_driver_status_public_read_online" ON rides_driver_status;
 CREATE POLICY "rides_driver_status_public_read_online"
   ON rides_driver_status
   FOR SELECT
   USING (is_online = true);
 
+DROP POLICY IF EXISTS "rides_driver_status_service_role_all" ON rides_driver_status;
 DROP POLICY IF EXISTS "rides_driver_status_service_role_all" ON rides_driver_status;
 CREATE POLICY "rides_driver_status_service_role_all"
   ON rides_driver_status
@@ -245,7 +254,7 @@ COMMENT ON COLUMN rides_driver_status.current_geog IS 'Generated geography point
 
 -- Active drivers with recent location
 DROP VIEW IF EXISTS active_drivers_with_location;
-CREATE VIEW active_drivers_with_location AS
+CREATE OR REPLACE VIEW active_drivers_with_location AS
 SELECT 
   ds.user_id,
   ds.is_online,
@@ -268,7 +277,7 @@ COMMENT ON VIEW active_drivers_with_location IS 'Active drivers with location up
 
 -- Pending ride requests with trip details
 DROP VIEW IF EXISTS pending_ride_requests_with_trips;
-CREATE VIEW pending_ride_requests_with_trips AS
+CREATE OR REPLACE VIEW pending_ride_requests_with_trips AS
 SELECT 
   rr.id as request_id,
   rr.trip_id,

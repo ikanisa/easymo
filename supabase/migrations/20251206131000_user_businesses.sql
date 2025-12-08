@@ -26,19 +26,23 @@ CREATE INDEX IF NOT EXISTS idx_user_businesses_role ON public.user_businesses(ro
 ALTER TABLE public.user_businesses ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
+DROP POLICY IF EXISTS "user_businesses_read_own" ON public.user_businesses;
 CREATE POLICY "user_businesses_read_own" ON public.user_businesses
   FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "user_businesses_insert_own" ON public.user_businesses;
 CREATE POLICY "user_businesses_insert_own" ON public.user_businesses
   FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "user_businesses_update_own" ON public.user_businesses;
 CREATE POLICY "user_businesses_update_own" ON public.user_businesses
   FOR UPDATE
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "user_businesses_delete_own" ON public.user_businesses;
 CREATE POLICY "user_businesses_delete_own" ON public.user_businesses
   FOR DELETE
   USING (auth.uid() = user_id AND role = 'owner');

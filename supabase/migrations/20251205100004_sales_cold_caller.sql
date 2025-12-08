@@ -8,7 +8,7 @@ BEGIN;
 
 -- Call disposition enum
 DO $$ BEGIN
-  CREATE TYPE call_disposition AS ENUM (
+  CREATE TYPE IF NOT EXISTS call_disposition AS ENUM (
     'INTERESTED',
     'NOT_INTERESTED', 
     'CALL_BACK',
@@ -199,22 +199,27 @@ ALTER TABLE sales_call_interactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sales_claims ENABLE ROW LEVEL SECURITY;
 
 -- RLS policies
+DROP POLICY IF EXISTS "Service role can manage campaigns" ON sales_campaigns;
 CREATE POLICY "Service role can manage campaigns"
   ON sales_campaigns FOR ALL
   USING (auth.jwt() ->> 'role' = 'service_role');
 
+DROP POLICY IF EXISTS "Authenticated users can view active campaigns" ON sales_campaigns;
 CREATE POLICY "Authenticated users can view active campaigns"
   ON sales_campaigns FOR SELECT
   USING (auth.role() = 'authenticated' AND status = 'active');
 
+DROP POLICY IF EXISTS "Service role can manage leads" ON sales_leads;
 CREATE POLICY "Service role can manage leads"
   ON sales_leads FOR ALL
   USING (auth.jwt() ->> 'role' = 'service_role');
 
+DROP POLICY IF EXISTS "Service role can manage interactions" ON sales_call_interactions;
 CREATE POLICY "Service role can manage interactions"
   ON sales_call_interactions FOR ALL
   USING (auth.jwt() ->> 'role' = 'service_role');
 
+DROP POLICY IF EXISTS "Service role can manage claims" ON sales_claims;
 CREATE POLICY "Service role can manage claims"
   ON sales_claims FOR ALL
   USING (auth.jwt() ->> 'role' = 'service_role');

@@ -47,10 +47,12 @@ ALTER TABLE webhook_routing_config ENABLE ROW LEVEL SECURITY;
 ALTER TABLE webhook_routing_logs ENABLE ROW LEVEL SECURITY;
 
 -- Service role can manage routing configuration
+DROP POLICY IF EXISTS "Service role can manage routing config" ON webhook_routing_config;
 CREATE POLICY "Service role can manage routing config" ON webhook_routing_config
   FOR ALL USING (auth.role() = 'service_role');
 
 -- Service role can insert/view routing logs
+DROP POLICY IF EXISTS "Service role can manage routing logs" ON webhook_routing_logs;
 CREATE POLICY "Service role can manage routing logs" ON webhook_routing_logs
   FOR ALL USING (auth.role() = 'service_role');
 

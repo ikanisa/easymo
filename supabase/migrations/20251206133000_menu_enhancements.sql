@@ -69,6 +69,7 @@ ALTER TABLE public.menu_upload_requests ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
 DROP POLICY IF EXISTS "menu_upload_read_own_bar" ON public.menu_upload_requests;
+DROP POLICY IF EXISTS "menu_upload_read_own_bar" ON public.menu_upload_requests;
 CREATE POLICY "menu_upload_read_own_bar" ON public.menu_upload_requests
   FOR SELECT
   USING (
@@ -81,6 +82,7 @@ CREATE POLICY "menu_upload_read_own_bar" ON public.menu_upload_requests
     )
   );
 
+DROP POLICY IF EXISTS "menu_upload_insert_own_bar" ON public.menu_upload_requests;
 DROP POLICY IF EXISTS "menu_upload_insert_own_bar" ON public.menu_upload_requests;
 CREATE POLICY "menu_upload_insert_own_bar" ON public.menu_upload_requests
   FOR INSERT

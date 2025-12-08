@@ -41,9 +41,9 @@ CREATE TABLE IF NOT EXISTS public.service_verticals (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_service_verticals_slug ON public.service_verticals(slug);
-CREATE INDEX idx_service_verticals_active ON public.service_verticals(is_active);
-CREATE INDEX idx_service_verticals_priority ON public.service_verticals(priority DESC);
+CREATE INDEX IF NOT EXISTS idx_service_verticals_slug ON public.service_verticals(slug);
+CREATE INDEX IF NOT EXISTS idx_service_verticals_active ON public.service_verticals(is_active);
+CREATE INDEX IF NOT EXISTS idx_service_verticals_priority ON public.service_verticals(priority DESC);
 
 -- RLS policies
 ALTER TABLE public.service_verticals ENABLE ROW LEVEL SECURITY;
@@ -135,10 +135,10 @@ CREATE TABLE IF NOT EXISTS public.job_categories (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_job_categories_slug ON public.job_categories(slug);
-CREATE INDEX idx_job_categories_active ON public.job_categories(is_active);
-CREATE INDEX idx_job_categories_parent ON public.job_categories(parent_category_id);
-CREATE INDEX idx_job_categories_display_order ON public.job_categories(display_order);
+CREATE INDEX IF NOT EXISTS idx_job_categories_slug ON public.job_categories(slug);
+CREATE INDEX IF NOT EXISTS idx_job_categories_active ON public.job_categories(is_active);
+CREATE INDEX IF NOT EXISTS idx_job_categories_parent ON public.job_categories(parent_category_id);
+CREATE INDEX IF NOT EXISTS idx_job_categories_display_order ON public.job_categories(display_order);
 
 -- RLS policies
 ALTER TABLE public.job_categories ENABLE ROW LEVEL SECURITY;
@@ -216,10 +216,10 @@ CREATE TABLE IF NOT EXISTS public.property_types (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_property_types_slug ON public.property_types(slug);
-CREATE INDEX idx_property_types_active ON public.property_types(is_active);
-CREATE INDEX idx_property_types_residential ON public.property_types(is_residential);
-CREATE INDEX idx_property_types_commercial ON public.property_types(is_commercial);
+CREATE INDEX IF NOT EXISTS idx_property_types_slug ON public.property_types(slug);
+CREATE INDEX IF NOT EXISTS idx_property_types_active ON public.property_types(is_active);
+CREATE INDEX IF NOT EXISTS idx_property_types_residential ON public.property_types(is_residential);
+CREATE INDEX IF NOT EXISTS idx_property_types_commercial ON public.property_types(is_commercial);
 
 -- RLS policies
 ALTER TABLE public.property_types ENABLE ROW LEVEL SECURITY;
@@ -272,9 +272,9 @@ CREATE TABLE IF NOT EXISTS public.insurance_types (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_insurance_types_slug ON public.insurance_types(slug);
-CREATE INDEX idx_insurance_types_active ON public.insurance_types(is_active);
-CREATE INDEX idx_insurance_types_display_order ON public.insurance_types(display_order);
+CREATE INDEX IF NOT EXISTS idx_insurance_types_slug ON public.insurance_types(slug);
+CREATE INDEX IF NOT EXISTS idx_insurance_types_active ON public.insurance_types(is_active);
+CREATE INDEX IF NOT EXISTS idx_insurance_types_display_order ON public.insurance_types(display_order);
 
 -- RLS policies
 ALTER TABLE public.insurance_types ENABLE ROW LEVEL SECURITY;

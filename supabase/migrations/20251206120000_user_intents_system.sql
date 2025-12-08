@@ -145,6 +145,7 @@ ALTER TABLE public.intent_matches ENABLE ROW LEVEL SECURITY;
 
 -- Service role has full access
 DROP POLICY IF EXISTS "Service role has full access to user_intents" ON public.user_intents;
+DROP POLICY IF EXISTS "Service role has full access to user_intents" ON public.user_intents;
 CREATE POLICY "Service role has full access to user_intents"
   ON public.user_intents
   FOR ALL
@@ -152,6 +153,7 @@ CREATE POLICY "Service role has full access to user_intents"
   USING (true)
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Service role has full access to intent_processing_queue" ON public.intent_processing_queue;
 DROP POLICY IF EXISTS "Service role has full access to intent_processing_queue" ON public.intent_processing_queue;
 CREATE POLICY "Service role has full access to intent_processing_queue"
   ON public.intent_processing_queue
@@ -161,6 +163,7 @@ CREATE POLICY "Service role has full access to intent_processing_queue"
   WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Service role has full access to intent_matches" ON public.intent_matches;
+DROP POLICY IF EXISTS "Service role has full access to intent_matches" ON public.intent_matches;
 CREATE POLICY "Service role has full access to intent_matches"
   ON public.intent_matches
   FOR ALL
@@ -169,6 +172,7 @@ CREATE POLICY "Service role has full access to intent_matches"
   WITH CHECK (true);
 
 -- Users can view their own intents
+DROP POLICY IF EXISTS "Users can view their own intents" ON public.user_intents;
 DROP POLICY IF EXISTS "Users can view their own intents" ON public.user_intents;
 CREATE POLICY "Users can view their own intents"
   ON public.user_intents

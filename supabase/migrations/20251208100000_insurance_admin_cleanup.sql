@@ -12,12 +12,12 @@ BEGIN;
 -- ============================================================================
 
 DO $$ BEGIN
-  CREATE TYPE public.insurance_admin_channel AS ENUM ('whatsapp', 'email', 'sms');
+  CREATE TYPE IF NOT EXISTS public.insurance_admin_channel AS ENUM ('whatsapp', 'email', 'sms');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
 DO $$ BEGIN
-  CREATE TYPE public.insurance_admin_notify_status AS ENUM ('sent', 'failed', 'queued');
+  CREATE TYPE IF NOT EXISTS public.insurance_admin_notify_status AS ENUM ('sent', 'failed', 'queued');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
@@ -28,7 +28,7 @@ END $$;
 -- Drop old table and recreate with canonical schema
 DROP TABLE IF EXISTS public.insurance_admin_contacts CASCADE;
 
-CREATE TABLE public.insurance_admin_contacts (
+CREATE TABLE IF NOT EXISTS public.insurance_admin_contacts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   display_name text,
   channel public.insurance_admin_channel NOT NULL DEFAULT 'whatsapp',
@@ -53,11 +53,13 @@ CREATE INDEX insurance_admin_contacts_active_idx
 ALTER TABLE public.insurance_admin_contacts ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "insurance_admin_contacts_select_active" ON public.insurance_admin_contacts;
+DROP POLICY IF EXISTS "insurance_admin_contacts_select_active" ON public.insurance_admin_contacts;
 CREATE POLICY "insurance_admin_contacts_select_active"
   ON public.insurance_admin_contacts
   FOR SELECT
   USING (is_active = true OR auth.role() = 'service_role');
 
+DROP POLICY IF EXISTS "insurance_admin_contacts_manage_service" ON public.insurance_admin_contacts;
 DROP POLICY IF EXISTS "insurance_admin_contacts_manage_service" ON public.insurance_admin_contacts;
 CREATE POLICY "insurance_admin_contacts_manage_service"
   ON public.insurance_admin_contacts
@@ -123,7 +125,7 @@ ALTER TABLE IF EXISTS public.insurance_admin_notifications
   RENAME TO insurance_admin_notifications_old;
 
 -- Create new structure with contact_id FK
-CREATE TABLE public.insurance_admin_notifications (
+CREATE TABLE IF NOT EXISTS public.insurance_admin_notifications (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   contact_id uuid NOT NULL REFERENCES public.insurance_admin_contacts(id) ON DELETE CASCADE,
   
@@ -160,6 +162,7 @@ CREATE INDEX insurance_admin_notifications_status_idx
 -- RLS Policies
 ALTER TABLE public.insurance_admin_notifications ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "insurance_admin_notifications_service_all" ON public.insurance_admin_notifications;
 DROP POLICY IF EXISTS "insurance_admin_notifications_service_all" ON public.insurance_admin_notifications;
 CREATE POLICY "insurance_admin_notifications_service_all"
   ON public.insurance_admin_notifications
@@ -257,7 +260,7 @@ DROP TABLE IF EXISTS public.insurance_admin_notifications_old CASCADE;
 
 -- Active contacts ready to receive notifications
 DROP VIEW IF EXISTS active_insurance_admin_contacts;
-CREATE VIEW active_insurance_admin_contacts AS
+CREATE OR REPLACE VIEW active_insurance_admin_contacts AS
 SELECT 
   id,
   display_name,
@@ -272,7 +275,7 @@ COMMENT ON VIEW active_insurance_admin_contacts IS 'Active insurance admin conta
 
 -- Recent notification audit (per-contact)
 DROP VIEW IF EXISTS recent_insurance_admin_notifications;
-CREATE VIEW recent_insurance_admin_notifications AS
+CREATE OR REPLACE VIEW recent_insurance_admin_notifications AS
 SELECT 
   n.id,
   n.contact_id,

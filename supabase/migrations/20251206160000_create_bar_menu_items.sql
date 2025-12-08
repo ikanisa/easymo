@@ -36,12 +36,14 @@ ALTER TABLE public.bar_menu_items ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
 DROP POLICY IF EXISTS "Anyone can read available menu items" ON public.bar_menu_items;
+DROP POLICY IF EXISTS "Anyone can read available menu items" ON public.bar_menu_items;
 CREATE POLICY "Anyone can read available menu items"
   ON public.bar_menu_items
   FOR SELECT
   TO authenticated, anon
   USING (is_available = true);
 
+DROP POLICY IF EXISTS "Service role can manage all menu items" ON public.bar_menu_items;
 DROP POLICY IF EXISTS "Service role can manage all menu items" ON public.bar_menu_items;
 CREATE POLICY "Service role can manage all menu items"
   ON public.bar_menu_items

@@ -8,7 +8,7 @@ DROP FUNCTION IF EXISTS public.match_drivers_for_trip_v2 CASCADE;
 DROP FUNCTION IF EXISTS public.match_passengers_for_trip_v2 CASCADE;
 
 -- Update match_drivers_for_trip_v2 to return number_plate
-CREATE FUNCTION public.match_drivers_for_trip_v2(
+CREATE OR REPLACE FUNCTION public.match_drivers_for_trip_v2(
   _trip_id uuid,
   _limit integer DEFAULT 9,
   _prefer_dropoff boolean DEFAULT false,
@@ -113,7 +113,7 @@ END;
 $$;
 
 -- Update match_passengers_for_trip_v2 to return number_plate
-CREATE FUNCTION public.match_passengers_for_trip_v2(
+CREATE OR REPLACE FUNCTION public.match_passengers_for_trip_v2(
   _trip_id uuid,
   _limit integer DEFAULT 9,
   _prefer_dropoff boolean DEFAULT false,

@@ -55,10 +55,10 @@ CREATE TABLE IF NOT EXISTS public.preferred_suppliers (
 );
 
 -- Indexes
-CREATE INDEX idx_preferred_suppliers_location ON public.preferred_suppliers (lat, lng) WHERE lat IS NOT NULL AND lng IS NOT NULL;
-CREATE INDEX idx_preferred_suppliers_tier ON public.preferred_suppliers (partnership_tier, is_active);
-CREATE INDEX idx_preferred_suppliers_type ON public.preferred_suppliers (business_type, is_active);
-CREATE INDEX idx_preferred_suppliers_active ON public.preferred_suppliers (is_active, priority_score DESC);
+CREATE INDEX IF NOT EXISTS idx_preferred_suppliers_location ON public.preferred_suppliers (lat, lng) WHERE lat IS NOT NULL AND lng IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_preferred_suppliers_tier ON public.preferred_suppliers (partnership_tier, is_active);
+CREATE INDEX IF NOT EXISTS idx_preferred_suppliers_type ON public.preferred_suppliers (business_type, is_active);
+CREATE INDEX IF NOT EXISTS idx_preferred_suppliers_active ON public.preferred_suppliers (is_active, priority_score DESC);
 
 -- =====================================================================
 -- 2. SUPPLIER PRODUCTS TABLE
@@ -105,11 +105,11 @@ CREATE TABLE IF NOT EXISTS public.supplier_products (
 );
 
 -- Indexes
-CREATE INDEX idx_supplier_products_supplier ON public.supplier_products (supplier_id);
-CREATE INDEX idx_supplier_products_category ON public.supplier_products (product_category, in_stock);
-CREATE INDEX idx_supplier_products_name ON public.supplier_products USING gin(to_tsvector('english', product_name));
-CREATE INDEX idx_supplier_products_keywords ON public.supplier_products USING gin(search_keywords);
-CREATE INDEX idx_supplier_products_stock ON public.supplier_products (in_stock, stock_quantity);
+CREATE INDEX IF NOT EXISTS idx_supplier_products_supplier ON public.supplier_products (supplier_id);
+CREATE INDEX IF NOT EXISTS idx_supplier_products_category ON public.supplier_products (product_category, in_stock);
+CREATE INDEX IF NOT EXISTS idx_supplier_products_name ON public.supplier_products USING gin(to_tsvector('english', product_name));
+CREATE INDEX IF NOT EXISTS idx_supplier_products_keywords ON public.supplier_products USING gin(search_keywords);
+CREATE INDEX IF NOT EXISTS idx_supplier_products_stock ON public.supplier_products (in_stock, stock_quantity);
 
 -- =====================================================================
 -- 3. SUPPLIER BENEFITS TABLE
@@ -157,9 +157,9 @@ CREATE TABLE IF NOT EXISTS public.supplier_benefits (
 );
 
 -- Indexes
-CREATE INDEX idx_supplier_benefits_supplier ON public.supplier_benefits (supplier_id, is_active);
-CREATE INDEX idx_supplier_benefits_type ON public.supplier_benefits (benefit_type, is_active);
-CREATE INDEX idx_supplier_benefits_validity ON public.supplier_benefits (is_active, valid_from, valid_until);
+CREATE INDEX IF NOT EXISTS idx_supplier_benefits_supplier ON public.supplier_benefits (supplier_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_supplier_benefits_type ON public.supplier_benefits (benefit_type, is_active);
+CREATE INDEX IF NOT EXISTS idx_supplier_benefits_validity ON public.supplier_benefits (is_active, valid_from, valid_until);
 
 -- =====================================================================
 -- 4. SUPPLIER SERVICE AREAS TABLE
@@ -198,8 +198,8 @@ CREATE TABLE IF NOT EXISTS public.supplier_service_areas (
 );
 
 -- Indexes
-CREATE INDEX idx_supplier_service_areas_supplier ON public.supplier_service_areas (supplier_id, is_active);
-CREATE INDEX idx_supplier_service_areas_location ON public.supplier_service_areas (center_lat, center_lng) WHERE center_lat IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_supplier_service_areas_supplier ON public.supplier_service_areas (supplier_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_supplier_service_areas_location ON public.supplier_service_areas (center_lat, center_lng) WHERE center_lat IS NOT NULL;
 
 -- =====================================================================
 -- 5. SUPPLIER ORDERS TABLE
@@ -249,10 +249,10 @@ CREATE TABLE IF NOT EXISTS public.supplier_orders (
 );
 
 -- Indexes
-CREATE INDEX idx_supplier_orders_supplier ON public.supplier_orders (supplier_id, status);
-CREATE INDEX idx_supplier_orders_user ON public.supplier_orders (user_id, status);
-CREATE INDEX idx_supplier_orders_status ON public.supplier_orders (status, created_at DESC);
-CREATE INDEX idx_supplier_orders_number ON public.supplier_orders (order_number);
+CREATE INDEX IF NOT EXISTS idx_supplier_orders_supplier ON public.supplier_orders (supplier_id, status);
+CREATE INDEX IF NOT EXISTS idx_supplier_orders_user ON public.supplier_orders (user_id, status);
+CREATE INDEX IF NOT EXISTS idx_supplier_orders_status ON public.supplier_orders (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_supplier_orders_number ON public.supplier_orders (order_number);
 
 -- Generate unique order number
 CREATE OR REPLACE FUNCTION generate_supplier_order_number()
@@ -529,11 +529,13 @@ EXECUTE FUNCTION update_updated_at_column();
 -- Preferred suppliers: Public read, admin write
 ALTER TABLE public.preferred_suppliers ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Suppliers are viewable by everyone" ON public.preferred_suppliers;
 CREATE POLICY "Suppliers are viewable by everyone"
 ON public.preferred_suppliers FOR SELECT
 TO authenticated, anon
 USING (is_active = true);
 
+DROP POLICY IF EXISTS "Suppliers are manageable by service role" ON public.preferred_suppliers;
 CREATE POLICY "Suppliers are manageable by service role"
 ON public.preferred_suppliers FOR ALL
 TO service_role
@@ -542,11 +544,13 @@ USING (true);
 -- Supplier products: Public read
 ALTER TABLE public.supplier_products ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Products are viewable by everyone" ON public.supplier_products;
 CREATE POLICY "Products are viewable by everyone"
 ON public.supplier_products FOR SELECT
 TO authenticated, anon
 USING (in_stock = true);
 
+DROP POLICY IF EXISTS "Products are manageable by service role" ON public.supplier_products;
 CREATE POLICY "Products are manageable by service role"
 ON public.supplier_products FOR ALL
 TO service_role
@@ -555,11 +559,13 @@ USING (true);
 -- Supplier benefits: Public read
 ALTER TABLE public.supplier_benefits ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Benefits are viewable by everyone" ON public.supplier_benefits;
 CREATE POLICY "Benefits are viewable by everyone"
 ON public.supplier_benefits FOR SELECT
 TO authenticated, anon
 USING (is_active = true AND (valid_until IS NULL OR valid_until > now()));
 
+DROP POLICY IF EXISTS "Benefits are manageable by service role" ON public.supplier_benefits;
 CREATE POLICY "Benefits are manageable by service role"
 ON public.supplier_benefits FOR ALL
 TO service_role
@@ -568,11 +574,13 @@ USING (true);
 -- Service areas: Public read
 ALTER TABLE public.supplier_service_areas ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Service areas are viewable by everyone" ON public.supplier_service_areas;
 CREATE POLICY "Service areas are viewable by everyone"
 ON public.supplier_service_areas FOR SELECT
 TO authenticated, anon
 USING (is_active = true);
 
+DROP POLICY IF EXISTS "Service areas are manageable by service role" ON public.supplier_service_areas;
 CREATE POLICY "Service areas are manageable by service role"
 ON public.supplier_service_areas FOR ALL
 TO service_role
@@ -581,16 +589,19 @@ USING (true);
 -- Supplier orders: Users can view their own orders
 ALTER TABLE public.supplier_orders ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own orders" ON public.supplier_orders;
 CREATE POLICY "Users can view their own orders"
 ON public.supplier_orders FOR SELECT
 TO authenticated
 USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can create their own orders" ON public.supplier_orders;
 CREATE POLICY "Users can create their own orders"
 ON public.supplier_orders FOR INSERT
 TO authenticated
 WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Service role can manage all orders" ON public.supplier_orders;
 CREATE POLICY "Service role can manage all orders"
 ON public.supplier_orders FOR ALL
 TO service_role

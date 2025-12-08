@@ -23,10 +23,10 @@ CREATE TABLE IF NOT EXISTS public.vehicles (
 );
 
 -- Indexes
-CREATE INDEX idx_vehicles_plate ON public.vehicles(registration_plate);
-CREATE INDEX idx_vehicles_vin ON public.vehicles(vin_chassis) WHERE vin_chassis IS NOT NULL;
-CREATE INDEX idx_vehicles_status ON public.vehicles(status);
-CREATE INDEX idx_vehicles_type ON public.vehicles(vehicle_type);
+CREATE INDEX IF NOT EXISTS idx_vehicles_plate ON public.vehicles(registration_plate);
+CREATE INDEX IF NOT EXISTS idx_vehicles_vin ON public.vehicles(vin_chassis) WHERE vin_chassis IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_vehicles_status ON public.vehicles(status);
+CREATE INDEX IF NOT EXISTS idx_vehicles_type ON public.vehicles(vehicle_type);
 
 -- Comments
 COMMENT ON TABLE public.vehicles IS 'Master vehicle registry - tracks all vehicles in the system';
@@ -50,12 +50,12 @@ CREATE TABLE IF NOT EXISTS public.vehicle_ownerships (
 );
 
 -- Indexes
-CREATE INDEX idx_vehicle_ownerships_vehicle ON public.vehicle_ownerships(vehicle_id);
-CREATE INDEX idx_vehicle_ownerships_user ON public.vehicle_ownerships(user_id);
-CREATE INDEX idx_vehicle_ownerships_current ON public.vehicle_ownerships(is_current) WHERE is_current = TRUE;
+CREATE INDEX IF NOT EXISTS idx_vehicle_ownerships_vehicle ON public.vehicle_ownerships(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_vehicle_ownerships_user ON public.vehicle_ownerships(user_id);
+CREATE INDEX IF NOT EXISTS idx_vehicle_ownerships_current ON public.vehicle_ownerships(is_current) WHERE is_current = TRUE;
 
 -- Unique constraint: one current ownership per vehicle
-CREATE UNIQUE INDEX idx_vehicle_ownerships_vehicle_current 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_vehicle_ownerships_vehicle_current 
   ON public.vehicle_ownerships(vehicle_id) 
   WHERE is_current = TRUE;
 
@@ -83,10 +83,10 @@ CREATE TABLE IF NOT EXISTS public.insurance_manual_reviews (
 );
 
 -- Indexes
-CREATE INDEX idx_insurance_manual_reviews_user ON public.insurance_manual_reviews(user_id);
-CREATE INDEX idx_insurance_manual_reviews_status ON public.insurance_manual_reviews(status);
-CREATE INDEX idx_insurance_manual_reviews_assigned ON public.insurance_manual_reviews(assigned_to) WHERE assigned_to IS NOT NULL;
-CREATE INDEX idx_insurance_manual_reviews_created ON public.insurance_manual_reviews(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_insurance_manual_reviews_user ON public.insurance_manual_reviews(user_id);
+CREATE INDEX IF NOT EXISTS idx_insurance_manual_reviews_status ON public.insurance_manual_reviews(status);
+CREATE INDEX IF NOT EXISTS idx_insurance_manual_reviews_assigned ON public.insurance_manual_reviews(assigned_to) WHERE assigned_to IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_insurance_manual_reviews_created ON public.insurance_manual_reviews(created_at DESC);
 
 -- Comments
 COMMENT ON TABLE public.insurance_manual_reviews IS 'Queue for insurance certificates that failed OCR and need manual review';

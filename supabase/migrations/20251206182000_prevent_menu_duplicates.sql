@@ -22,7 +22,7 @@ CHECK (length(trim(item_name)) > 0);
 
 -- 3. Create unique index on normalized names (case-insensitive)
 DROP INDEX IF EXISTS idx_bar_menu_items_unique_normalized;
-CREATE UNIQUE INDEX idx_bar_menu_items_unique_normalized 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_bar_menu_items_unique_normalized 
 ON public.bar_menu_items (bar_id, normalize_menu_item_name(item_name), lower(category));
 
 -- 4. Add trigger to prevent similar names being inserted

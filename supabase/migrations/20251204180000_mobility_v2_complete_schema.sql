@@ -298,50 +298,50 @@ COMMENT ON COLUMN mobility_pricing_config.peak_hours IS 'JSON array of time rang
 -- ============================================================================
 
 -- Trips: Spatial + active status
-CREATE INDEX idx_mobility_trips_open 
+CREATE INDEX IF NOT EXISTS idx_mobility_trips_open 
   ON mobility_trips(status, expires_at, last_location_update)
   WHERE status = 'open';
 
-CREATE INDEX idx_mobility_trips_pickup_geog 
+CREATE INDEX IF NOT EXISTS idx_mobility_trips_pickup_geog 
   ON mobility_trips USING GIST(pickup_geog)
   WHERE status = 'open';
 
-CREATE INDEX idx_mobility_trips_role_vehicle 
+CREATE INDEX IF NOT EXISTS idx_mobility_trips_role_vehicle 
   ON mobility_trips(role, vehicle_type, status)
   WHERE status = 'open';
 
-CREATE INDEX idx_mobility_trips_scheduled 
+CREATE INDEX IF NOT EXISTS idx_mobility_trips_scheduled 
   ON mobility_trips(scheduled_for)
   WHERE scheduled_for IS NOT NULL AND status = 'open';
 
-CREATE INDEX idx_mobility_trips_user_recent
+CREATE INDEX IF NOT EXISTS idx_mobility_trips_user_recent
   ON mobility_trips(creator_user_id, created_at DESC);
 
 -- Matches: Lifecycle queries
-CREATE INDEX idx_mobility_matches_driver 
+CREATE INDEX IF NOT EXISTS idx_mobility_matches_driver 
   ON mobility_trip_matches(driver_user_id, status, created_at DESC);
 
-CREATE INDEX idx_mobility_matches_passenger 
+CREATE INDEX IF NOT EXISTS idx_mobility_matches_passenger 
   ON mobility_trip_matches(passenger_user_id, status, created_at DESC);
 
-CREATE INDEX idx_mobility_matches_active 
+CREATE INDEX IF NOT EXISTS idx_mobility_matches_active 
   ON mobility_trip_matches(status, created_at DESC)
   WHERE status IN ('pending', 'accepted', 'driver_arrived', 'in_progress');
 
-CREATE INDEX idx_mobility_matches_completed
+CREATE INDEX IF NOT EXISTS idx_mobility_matches_completed
   ON mobility_trip_matches(completed_at DESC)
   WHERE status = 'completed';
 
 -- Metrics: Ranking queries
-CREATE INDEX idx_mobility_driver_metrics_ranking
+CREATE INDEX IF NOT EXISTS idx_mobility_driver_metrics_ranking
   ON mobility_driver_metrics(computed_score DESC, last_online_at DESC)
   WHERE acceptance_rate >= 70.0 AND total_trips > 0;
 
-CREATE INDEX idx_mobility_driver_metrics_activity
+CREATE INDEX IF NOT EXISTS idx_mobility_driver_metrics_activity
   ON mobility_driver_metrics(last_online_at DESC);
 
 -- Pricing: Lookups
-CREATE INDEX idx_mobility_pricing_active
+CREATE INDEX IF NOT EXISTS idx_mobility_pricing_active
   ON mobility_pricing_config(vehicle_type, region)
   WHERE active = true;
 
@@ -498,11 +498,13 @@ ALTER TABLE mobility_passenger_metrics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE mobility_pricing_config ENABLE ROW LEVEL SECURITY;
 
 -- Trips: Users manage their own
+DROP POLICY IF EXISTS "Users manage own trips" ON mobility_trips;
 CREATE POLICY "Users manage own trips" 
   ON mobility_trips
   FOR ALL 
   USING (auth.uid() = creator_user_id);
 
+DROP POLICY IF EXISTS "Service role full access trips" ON mobility_trips;
 CREATE POLICY "Service role full access trips" 
   ON mobility_trips
   FOR ALL 
@@ -510,6 +512,7 @@ CREATE POLICY "Service role full access trips"
   USING (true);
 
 -- Matches: Users can view matches involving them
+DROP POLICY IF EXISTS "Users view own matches" ON mobility_trip_matches;
 CREATE POLICY "Users view own matches" 
   ON mobility_trip_matches
   FOR SELECT 
@@ -518,6 +521,7 @@ CREATE POLICY "Users view own matches"
     auth.uid() = passenger_user_id
   );
 
+DROP POLICY IF EXISTS "Service role full access matches" ON mobility_trip_matches;
 CREATE POLICY "Service role full access matches" 
   ON mobility_trip_matches
   FOR ALL 
@@ -525,11 +529,13 @@ CREATE POLICY "Service role full access matches"
   USING (true);
 
 -- Driver Metrics: Users can view own
+DROP POLICY IF EXISTS "Drivers view own metrics" ON mobility_driver_metrics;
 CREATE POLICY "Drivers view own metrics" 
   ON mobility_driver_metrics
   FOR SELECT 
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Service role full access driver metrics" ON mobility_driver_metrics;
 CREATE POLICY "Service role full access driver metrics" 
   ON mobility_driver_metrics
   FOR ALL 
@@ -537,11 +543,13 @@ CREATE POLICY "Service role full access driver metrics"
   USING (true);
 
 -- Passenger Metrics: Users can view own
+DROP POLICY IF EXISTS "Passengers view own metrics" ON mobility_passenger_metrics;
 CREATE POLICY "Passengers view own metrics" 
   ON mobility_passenger_metrics
   FOR SELECT 
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Service role full access passenger metrics" ON mobility_passenger_metrics;
 CREATE POLICY "Service role full access passenger metrics" 
   ON mobility_passenger_metrics
   FOR ALL 
@@ -549,11 +557,13 @@ CREATE POLICY "Service role full access passenger metrics"
   USING (true);
 
 -- Pricing: Public read, service role write
+DROP POLICY IF EXISTS "Anyone can view active pricing" ON mobility_pricing_config;
 CREATE POLICY "Anyone can view active pricing" 
   ON mobility_pricing_config
   FOR SELECT 
   USING (active = true);
 
+DROP POLICY IF EXISTS "Service role manage pricing" ON mobility_pricing_config;
 CREATE POLICY "Service role manage pricing" 
   ON mobility_pricing_config
   FOR ALL 

@@ -118,20 +118,24 @@ ALTER TABLE farmers_call_intakes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE farmers_matches ENABLE ROW LEVEL SECURITY;
 
 -- RLS policies
+DROP POLICY IF EXISTS "Service role can manage farmers intakes" ON farmers_call_intakes;
 CREATE POLICY "Service role can manage farmers intakes"
   ON farmers_call_intakes FOR ALL
   USING (auth.jwt() ->> 'role' = 'service_role');
 
+DROP POLICY IF EXISTS "Users can view their own farmer intakes" ON farmers_call_intakes;
 CREATE POLICY "Users can view their own farmer intakes"
   ON farmers_call_intakes FOR SELECT
   USING (EXISTS (
     SELECT 1 FROM calls WHERE calls.id = farmers_call_intakes.call_id AND calls.user_id = auth.uid()
   ));
 
+DROP POLICY IF EXISTS "Service role can manage farmers matches" ON farmers_matches;
 CREATE POLICY "Service role can manage farmers matches"
   ON farmers_matches FOR ALL
   USING (auth.jwt() ->> 'role' = 'service_role');
 
+DROP POLICY IF EXISTS "Users can view their own farmer matches" ON farmers_matches;
 CREATE POLICY "Users can view their own farmer matches"
   ON farmers_matches FOR SELECT
   USING (EXISTS (

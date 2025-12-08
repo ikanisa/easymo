@@ -114,6 +114,7 @@ ALTER TABLE public.mobility_matches ENABLE ROW LEVEL SECURITY;
 -- RLS Policies
 -- Service role policy using proper auth.role() check
 DROP POLICY IF EXISTS "Service role full access" ON public.mobility_matches;
+DROP POLICY IF EXISTS "Service role full access" ON public.mobility_matches;
 CREATE POLICY "Service role full access"
   ON public.mobility_matches
   FOR ALL
@@ -122,11 +123,13 @@ CREATE POLICY "Service role full access"
   WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Users can view own matches" ON public.mobility_matches;
+DROP POLICY IF EXISTS "Users can view own matches" ON public.mobility_matches;
 CREATE POLICY "Users can view own matches"
   ON public.mobility_matches
   FOR SELECT
   USING (auth.uid() = driver_id OR auth.uid() = passenger_id);
 
+DROP POLICY IF EXISTS "Users can update own matches" ON public.mobility_matches;
 DROP POLICY IF EXISTS "Users can update own matches" ON public.mobility_matches;
 CREATE POLICY "Users can update own matches"
   ON public.mobility_matches

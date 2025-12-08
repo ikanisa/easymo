@@ -187,6 +187,7 @@ ALTER TABLE public.migration_status ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.migration_rollbacks ENABLE ROW LEVEL SECURITY;
 
 -- Only service role can read/write metrics (monitoring queries)
+DROP POLICY IF EXISTS "Service role can manage webhook_metrics" ON public.webhook_metrics;
 CREATE POLICY "Service role can manage webhook_metrics"
 ON public.webhook_metrics
 FOR ALL
@@ -194,6 +195,7 @@ TO service_role
 USING (true)
 WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Service role can manage migration_status" ON public.migration_status;
 CREATE POLICY "Service role can manage migration_status"
 ON public.migration_status
 FOR ALL
@@ -201,6 +203,7 @@ TO service_role
 USING (true)
 WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Service role can manage migration_rollbacks" ON public.migration_rollbacks;
 CREATE POLICY "Service role can manage migration_rollbacks"
 ON public.migration_rollbacks
 FOR ALL

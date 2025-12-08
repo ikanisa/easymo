@@ -107,20 +107,24 @@ ALTER TABLE jobs_call_intakes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE jobs_matches ENABLE ROW LEVEL SECURITY;
 
 -- RLS policies
+DROP POLICY IF EXISTS "Service role can manage jobs intakes" ON jobs_call_intakes;
 CREATE POLICY "Service role can manage jobs intakes"
   ON jobs_call_intakes FOR ALL
   USING (auth.jwt() ->> 'role' = 'service_role');
 
+DROP POLICY IF EXISTS "Users can view their own job intakes" ON jobs_call_intakes;
 CREATE POLICY "Users can view their own job intakes"
   ON jobs_call_intakes FOR SELECT
   USING (EXISTS (
     SELECT 1 FROM calls WHERE calls.id = jobs_call_intakes.call_id AND calls.user_id = auth.uid()
   ));
 
+DROP POLICY IF EXISTS "Service role can manage jobs matches" ON jobs_matches;
 CREATE POLICY "Service role can manage jobs matches"
   ON jobs_matches FOR ALL
   USING (auth.jwt() ->> 'role' = 'service_role');
 
+DROP POLICY IF EXISTS "Users can view their own matches" ON jobs_matches;
 CREATE POLICY "Users can view their own matches"
   ON jobs_matches FOR SELECT
   USING (EXISTS (

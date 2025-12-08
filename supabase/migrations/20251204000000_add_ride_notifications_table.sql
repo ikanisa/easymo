@@ -46,6 +46,7 @@ ALTER TABLE public.ride_notifications ENABLE ROW LEVEL SECURITY;
 -- RLS Policies
 -- Service role policy using proper TO clause (Supabase recommended pattern)
 DROP POLICY IF EXISTS "Service role full access" ON public.ride_notifications;
+DROP POLICY IF EXISTS "Service role full access" ON public.ride_notifications;
 CREATE POLICY "Service role full access"
   ON public.ride_notifications
   FOR ALL
@@ -55,12 +56,14 @@ CREATE POLICY "Service role full access"
 
 -- Drivers can view their own notifications
 DROP POLICY IF EXISTS "Drivers can view own notifications" ON public.ride_notifications;
+DROP POLICY IF EXISTS "Drivers can view own notifications" ON public.ride_notifications;
 CREATE POLICY "Drivers can view own notifications"
   ON public.ride_notifications
   FOR SELECT
   USING (auth.uid() = driver_id);
 
 -- Drivers can update their own notifications (to mark as read/respond)
+DROP POLICY IF EXISTS "Drivers can update own notifications" ON public.ride_notifications;
 DROP POLICY IF EXISTS "Drivers can update own notifications" ON public.ride_notifications;
 CREATE POLICY "Drivers can update own notifications"
   ON public.ride_notifications
