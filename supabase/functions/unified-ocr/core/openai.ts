@@ -77,21 +77,31 @@ export async function runOpenAIVision(
   }
 
   const json = await response.json();
+  
+  // Log the full response for debugging
+  console.log("OpenAI full response:", JSON.stringify(json, null, 2));
+  
   const raw = extractContent(json);
 
   if (!raw) {
+    console.error("OpenAI response structure:", json);
     throw new Error("OpenAI response contained no content");
   }
+
+  console.log("Extracted raw content:", raw);
 
   // Parse JSON from response
   let parsed;
   try {
     const cleaned = stripJsonFence(raw);
+    console.log("Cleaned JSON:", cleaned);
     parsed = JSON.parse(cleaned);
   } catch (error) {
+    console.error("JSON parse error. Raw content was:", raw);
     throw new Error(`Failed to parse OpenAI JSON: ${error.message}`);
   }
 
+  console.log("Successfully parsed:", JSON.stringify(parsed, null, 2));
   return { raw, parsed };
 }
 
