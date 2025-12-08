@@ -156,17 +156,17 @@ BEGIN
 END $$;
 
 -- Service role can do everything
-DROP POLICY IF EXISTS "service_role_all_webhook_nonces" ON webhook_nonces;
+DROP POLICY IF EXISTS "service_role_all_webhook_nonces" ON public.webhook_nonces;
 CREATE POLICY "service_role_all_webhook_nonces" ON webhook_nonces FOR ALL TO service_role USING (true);
-DROP POLICY IF EXISTS "service_role_all_idempotency_keys" ON idempotency_keys;
+DROP POLICY IF EXISTS "service_role_all_idempotency_keys" ON public.idempotency_keys;
 CREATE POLICY "service_role_all_idempotency_keys" ON idempotency_keys FOR ALL TO service_role USING (true);
-DROP POLICY IF EXISTS "service_role_all_security_audit_log" ON security_audit_log;
+DROP POLICY IF EXISTS "service_role_all_security_audit_log" ON public.security_audit_log;
 CREATE POLICY "service_role_all_security_audit_log" ON security_audit_log FOR ALL TO service_role USING (true);
-DROP POLICY IF EXISTS "service_role_all_momo_devices" ON momo_devices;
+DROP POLICY IF EXISTS "service_role_all_momo_devices" ON public.momo_devices;
 CREATE POLICY "service_role_all_momo_devices" ON momo_devices FOR ALL TO service_role USING (true);
-DROP POLICY IF EXISTS "service_role_all_merchant_webhook_configs" ON merchant_webhook_configs;
+DROP POLICY IF EXISTS "service_role_all_merchant_webhook_configs" ON public.merchant_webhook_configs;
 CREATE POLICY "service_role_all_merchant_webhook_configs" ON merchant_webhook_configs FOR ALL TO service_role USING (true);
-DROP POLICY IF EXISTS "service_role_all_webhook_delivery_log" ON webhook_delivery_log;
+DROP POLICY IF EXISTS "service_role_all_webhook_delivery_log" ON public.webhook_delivery_log;
 CREATE POLICY "service_role_all_webhook_delivery_log" ON webhook_delivery_log FOR ALL TO service_role USING (true);
 
 DO $$
@@ -187,13 +187,13 @@ BEGIN
 END $$;
 
 -- Merchants can view their own devices
-DROP POLICY IF EXISTS "merchants_view_own_devices" ON momo_devices;
+DROP POLICY IF EXISTS "merchants_view_own_devices" ON public.momo_devices;
 CREATE POLICY "merchants_view_own_devices" ON momo_devices 
     FOR SELECT TO authenticated 
     USING (merchant_id = auth.uid());
 
 -- Merchants can manage their webhook configs
-DROP POLICY IF EXISTS "merchants_manage_own_webhooks" ON merchant_webhook_configs;
+DROP POLICY IF EXISTS "merchants_manage_own_webhooks" ON public.merchant_webhook_configs;
 CREATE POLICY "merchants_manage_own_webhooks" ON merchant_webhook_configs 
     FOR ALL TO authenticated 
     USING (merchant_id = auth.uid());

@@ -48,6 +48,7 @@ CREATE INDEX IF NOT EXISTS idx_service_verticals_priority ON public.service_vert
 -- RLS policies
 ALTER TABLE public.service_verticals ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS service_verticals_public_read ON public.service_verticals;
 CREATE POLICY service_verticals_public_read ON public.service_verticals
   FOR SELECT USING (is_active = true);
 
