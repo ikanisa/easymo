@@ -34,5 +34,5 @@ export const INSURANCE_SCHEMA = {
     "policy_inception",
     "policy_expiry",
   ],
-  additionalProperties: false,
+  // Removed additionalProperties: false to allow OpenAI flexibility
 };
