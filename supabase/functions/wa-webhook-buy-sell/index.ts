@@ -204,12 +204,12 @@ serve(async (req: Request): Promise<Response> => {
         return respond({ success: true, ignored: "no_message" });
       }
 
-      const text = message.body?.trim() ?? "";
+      const text = String(message.body ?? "").trim();
       const userPhone = message.from;
 
       logMarketplaceEvent("MESSAGE_RECEIVED", {
         from: userPhone,
-        input: text.slice(0, 100),
+        input: typeof text === 'string' ? text.slice(0, 100) : String(text).slice(0, 100),
         type: message.type,
         hasLocation: !!message.location,
         requestId,

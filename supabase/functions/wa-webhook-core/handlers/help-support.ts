@@ -9,11 +9,10 @@ import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 
 interface InsuranceAdminContact {
   id: string;
-  contact_type: string;
-  contact_value: string;
+  channel: string;
+  destination: string;
   display_name: string;
   is_active: boolean;
-  display_order: number;
 }
 
 export async function handleHelpRequest(
@@ -32,9 +31,9 @@ export async function handleHelpRequest(
     // Fetch active insurance admin contacts
     const { data: contacts, error } = await supabase
       .from("insurance_admin_contacts")
-      .select("id, contact_type, contact_value, display_name, is_active, display_order")
+      .select("id, channel, destination, display_name, is_active")
       .eq("is_active", true)
-      .order("display_order", { ascending: true });
+      .order("created_at", { ascending: true });
 
     if (error) {
       await logStructuredEvent("HELP_CONTACTS_FETCH_ERROR", {
@@ -61,20 +60,22 @@ export async function handleHelpRequest(
       return;
     }
 
-    // Build support message with admin contacts
-    let message = "📞 *Help & Support*\n\n";
-    message += "Need assistance? Contact our support team:\n\n";
+    // Build support message with admin contacts and clickable WhatsApp links
+    let message = "🆘 *Help & Support*\n\n";
+    message += "Contact our team for assistance:\n\n";
 
-    const whatsappContacts = contacts.filter(c => c.contact_type === "whatsapp");
-    const otherContacts = contacts.filter(c => c.contact_type !== "whatsapp");
+    const whatsappContacts = contacts.filter(c => c.channel === "whatsapp");
+    const otherContacts = contacts.filter(c => c.channel !== "whatsapp");
 
-    // Show WhatsApp contacts first
+    // Show WhatsApp contacts with clickable links
     if (whatsappContacts.length > 0) {
-      message += "💬 *WhatsApp Support:*\n";
       whatsappContacts.forEach((contact, index) => {
-        message += `${index + 1}. ${contact.display_name}\n`;
-        message += `   📱 ${contact.contact_value}\n`;
-        message += `   _Tap the number to chat with support_\n\n`;
+        // Create WhatsApp link (wa.me format)
+        const cleanNumber = contact.destination.replace(/[^0-9]/g, '');
+        const waLink = `https://wa.me/${cleanNumber}`;
+        
+        message += `• *${contact.display_name}*\n`;
+        message += `  ${waLink}\n\n`;
       });
     }
 
@@ -82,21 +83,27 @@ export async function handleHelpRequest(
     if (otherContacts.length > 0) {
       message += "\n📧 *Other Contacts:*\n";
       otherContacts.forEach((contact) => {
-        const icon = contact.contact_type === "email" ? "📧" : 
-                     contact.contact_type === "phone" ? "📞" : "📞";
-        message += `${icon} ${contact.display_name}: ${contact.contact_value}\n`;
+        const icon = contact.channel === "email" ? "📧" : 
+                     contact.channel === "phone" ? "📞" : 
+                     contact.channel === "sms" ? "💬" : "📞";
+        message += `${icon} ${contact.display_name}: ${contact.destination}\n`;
       });
     }
 
-    message += "\n\n💡 *How can we help?*\n";
-    message += "• General inquiries\n";
-    message += "• Insurance claims support\n";
-    message += "• Account assistance\n";
-    message += "• Technical issues\n";
-    message += "• Billing questions\n\n";
-    message += "_Our team is ready to assist you!_";
+    message += "\n_Tap any link above to start chatting on WhatsApp._\n\n";
+    message += "Or chat with our AI Sales Agent for immediate help.\n";
 
     await sendText(phoneNumber, message);
+
+    // Send buttons for AI agent option
+    const { sendButtons } = await import("../_shared/wa-webhook-shared/wa/client.ts");
+    await sendButtons(phoneNumber, {
+      body: "Choose an option:",
+      buttons: [
+        { id: "chat_sales_agent", title: "💬 Chat with AI" },
+        { id: "home", title: "🏠 Home" },
+      ],
+    });
 
     await logStructuredEvent("HELP_CONTACTS_SENT", {
       phoneNumber: phoneNumber.substring(phoneNumber.length - 4),

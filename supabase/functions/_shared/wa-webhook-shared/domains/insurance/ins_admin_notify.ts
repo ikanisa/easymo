@@ -3,9 +3,6 @@ import { sendText } from "../../wa/client.ts";
 import type { InsuranceExtraction } from "./ins_normalize.ts";
 import { logStructuredEvent } from "../../../observability.ts";
 
-// Constants
-const MIN_WHATSAPP_ID_LENGTH = 8;
-
 export interface AdminNotificationPayload {
   leadId: string;
   userWaId: string;
@@ -15,9 +12,9 @@ export interface AdminNotificationPayload {
 
 type AdminContact = {
   id: string;
-  destination: string;
   displayName: string;
-  channel: 'whatsapp' | 'email';
+  channel: string;
+  destination: string;
 };
 
 function formatAdminNotificationMessage(
@@ -57,16 +54,10 @@ function formatAdminNotificationMessage(
   return sections.join("\n");
 }
 
-function normalizeAdminWaId(value: string | null | undefined): string {
-  if (!value) return "";
-  const trimmed = value.trim();
-  if (!trimmed) return "";
-  const hasPlus = trimmed.startsWith("+");
-  const digits = trimmed.replace(/[^0-9]/g, "");
-  if (!digits) return "";
-  return hasPlus ? `+${digits}` : digits;
-}
-
+/**
+ * Notify ALL active insurance admin contacts concurrently
+ * Each contact gets a notification and a log entry regardless of other failures
+ */
 export async function notifyInsuranceAdmins(
   client: SupabaseClient,
   payload: AdminNotificationPayload,
@@ -78,7 +69,7 @@ export async function notifyInsuranceAdmins(
     userWaId: userWaId.slice(0, 8) + "***", // Mask PII
   }, "info");
 
-  // Query all active contacts from insurance_admin_contacts table
+  // Fetch ALL active contacts (broadcast to all)
   const contacts = await fetchActiveContacts(client);
 
   if (!contacts.length) {
@@ -86,25 +77,27 @@ export async function notifyInsuranceAdmins(
     logStructuredEvent("INSURANCE_ADMIN_NO_TARGETS", {
       leadId,
       userWaId: userWaId.slice(0, 8) + "***",
-      message: "No active admin contacts found. Please configure admin contacts in insurance_admin_contacts table.",
+      message: "No active admin contacts found. Please configure admin contacts.",
     }, "error");
     
-    return { sent: 0, failed: 0, errors: ["No active admins found"] };
+    return { sent: 0, failed: 0, errors: ["No active admin contacts found"] };
   }
 
   const message = formatAdminNotificationMessage(extracted, userWaId);
   
-  console.log("insurance.sending_to_all_admins", {
+  console.log("insurance.broadcasting_to_all_contacts", {
     leadId,
-    totalAdmins: contacts.length,
+    totalContacts: contacts.length,
+    channels: [...new Set(contacts.map(c => c.channel))],
   });
   
-  logStructuredEvent("INSURANCE_ADMIN_NOTIFY_SENDING", {
+  logStructuredEvent("INSURANCE_ADMIN_NOTIFY_BROADCASTING", {
     leadId,
-    totalAdmins: contacts.length,
+    totalContacts: contacts.length,
   }, "info");
 
-  // Send to ALL contacts concurrently (broadcast)
+  // Send to ALL contacts concurrently using Promise.allSettled
+  // This ensures one failure doesn't block others
   const results = await Promise.allSettled(
     contacts.map((contact) => sendToContact(client, {
       contact,
@@ -136,25 +129,24 @@ export async function notifyInsuranceAdmins(
     }
   });
 
-  console.log("insurance.admin_notifications_complete", {
+  console.log("insurance.broadcast_complete", {
     leadId,
     sent,
     failed,
-    totalAdmins: contacts.length,
+    totalContacts: contacts.length,
   });
   
   logStructuredEvent("INSURANCE_ADMIN_NOTIFY_COMPLETE", {
     leadId,
     sent,
     failed,
-    totalAdmins: contacts.length,
+    totalContacts: contacts.length,
     hasErrors: errors.length > 0,
   }, sent === 0 && failed > 0 ? "error" : "info");
 
   return { sent, failed, errors };
 }
 
-// Options for sendToContact function
 interface SendToContactOptions {
   contact: AdminContact;
   message: string;
@@ -163,80 +155,42 @@ interface SendToContactOptions {
   extracted: InsuranceExtraction;
 }
 
-// Helper function to send notification to a single contact
+/**
+ * Send notification to a single contact and log the result
+ * Always creates a log entry with status='sent' or status='failed'
+ */
 async function sendToContact(
   client: SupabaseClient,
   options: SendToContactOptions,
 ): Promise<{ success: boolean; error?: string }> {
   const { contact, message, leadId, userWaId, extracted } = options;
   
-  // Only support WhatsApp channel for now
+  // Only WhatsApp is supported for now
   if (contact.channel !== 'whatsapp') {
     const error = `Unsupported channel: ${contact.channel}`;
-    
-    // Log failed attempt for non-WhatsApp channels
-    try {
-      await client
-        .from("insurance_admin_notifications")
-        .insert({
-          contact_id: contact.id,
-          certificate_id: leadId,
-          status: "failed",
-          error,
-          payload: {
-            message,
-            extracted,
-            lead_id: leadId,
-            user_wa_id: userWaId,
-          },
-          sent_at: new Date().toISOString(),
-        });
-    } catch (insertError) {
-      console.error("Failed to log unsupported channel notification:", insertError);
-    }
-    
+    await logNotification(client, contact.id, leadId, 'failed', error, {
+      message,
+      userWaId,
+      extracted,
+    });
     return { success: false, error };
   }
 
-  const destination = normalizeAdminWaId(contact.destination);
-  if (!destination || destination.length < MIN_WHATSAPP_ID_LENGTH) {
-    const error = "Invalid WhatsApp ID";
-    
-    try {
-      await client
-        .from("insurance_admin_notifications")
-        .insert({
-          contact_id: contact.id,
-          certificate_id: leadId,
-          status: "failed",
-          error,
-          payload: {
-            message,
-            extracted,
-            lead_id: leadId,
-            user_wa_id: userWaId,
-          },
-          sent_at: new Date().toISOString(),
-        });
-    } catch (insertError) {
-      console.error("Failed to log invalid WhatsApp ID notification:", insertError);
-    }
-    
-    return { success: false, error };
-  }
-
-  const now = new Date().toISOString();
+  const destination = contact.destination;
   let delivered = false;
-  let lastError: string | null = null;
+  let errorMessage: string | null = null;
 
-  console.log("insurance.attempting_whatsapp_send", {
-    contact: destination,
+  console.log("insurance.attempting_send", {
+    contactId: contact.id,
+    destination,
+    channel: contact.channel,
     messageLength: message.length,
     leadId,
   });
   
   logStructuredEvent("INSURANCE_ADMIN_SEND_ATTEMPT", {
     leadId,
+    contactId: contact.id,
     destination: destination.slice(0, 8) + "***", // Mask PII
     messageLength: message.length,
   }, "info");
@@ -244,149 +198,126 @@ async function sendToContact(
   try {
     await sendText(destination, message);
     delivered = true;
-    console.log("insurance.whatsapp_send_success", {
-      contact: destination,
+    console.log("insurance.send_success", {
+      contactId: contact.id,
+      destination,
       leadId,
     });
     logStructuredEvent("INSURANCE_ADMIN_SEND_SUCCESS", {
       leadId,
+      contactId: contact.id,
       destination: destination.slice(0, 8) + "***", // Mask PII
     }, "info");
   } catch (error) {
     const errMsg = error instanceof Error ? error.message : String(error ?? "unknown");
-    lastError = errMsg;
-    console.error("insurance.admin_direct_send_fail", { 
-      contact: destination, 
+    errorMessage = errMsg;
+    console.error("insurance.send_failed", { 
+      contactId: contact.id,
+      destination,
       error: errMsg,
       errorStack: error instanceof Error ? error.stack : undefined,
     });
     logStructuredEvent("INSURANCE_ADMIN_SEND_FAILED", {
       leadId,
+      contactId: contact.id,
       destination: destination.slice(0, 8) + "***", // Mask PII
       error: errMsg,
-      attemptType: "direct_send",
     }, "error");
-    
-    // Try template fallback
-    try {
-      const templateName = Deno.env.get("WA_INSURANCE_ADMIN_TEMPLATE") ?? "insurance_admin_alert";
-      const lang = Deno.env.get("WA_TEMPLATE_LANG") ?? "en";
-      const compact = message.replace(/[*_]|[\r\n]+/g, " ").trim().slice(0, 1024);
-      const { sendTemplate } = await import("../../wa/client.ts");
-      await sendTemplate(destination, {
-        name: templateName,
-        language: lang,
-        bodyParameters: [{ type: "text", text: compact }],
-      });
-      delivered = true;
-      lastError = null;
-      logStructuredEvent("INSURANCE_ADMIN_SEND_SUCCESS", {
-        leadId,
-        destination: destination.slice(0, 8) + "***", // Mask PII
-        attemptType: "template_fallback",
-      }, "info");
-    } catch (tplError) {
-      const tplMsg = tplError instanceof Error ? tplError.message : String(tplError ?? "unknown");
-      lastError = `${errMsg} | tpl:${tplMsg}`;
-      console.error("insurance.admin_template_send_fail", { contact: destination, error: tplMsg });
-      logStructuredEvent("INSURANCE_ADMIN_SEND_FAILED", {
-        leadId,
-        destination: destination.slice(0, 8) + "***", // Mask PII
-        error: tplMsg,
-        attemptType: "template_fallback",
-      }, "error");
-    }
   }
 
-  // Insert notification log (one row per contact per send)
-  const { error: insertError } = await client
-    .from("insurance_admin_notifications")
-    .insert({
-      contact_id: contact.id,
-      certificate_id: leadId,
-      status: delivered ? "sent" : "failed",
-      error: delivered ? null : lastError,
-      payload: {
-        message,
-        extracted,
-        lead_id: leadId,
-        user_wa_id: userWaId,
-      },
-      sent_at: now,
-    });
-
-  if (insertError) {
-    console.error("insurance.admin_notif_record_fail", {
-      contact: destination,
-      error: insertError.message,
-    });
-    return { success: false, error: insertError.message };
-  }
-
-  console.log("insurance.admin_notif_recorded", {
-    contact: destination,
+  // ALWAYS log the notification attempt (sent or failed)
+  await logNotification(
+    client,
+    contact.id,
     leadId,
-    userWaId,
-    delivered,
-  });
+    delivered ? 'sent' : 'failed',
+    errorMessage,
+    {
+      message,
+      userWaId,
+      extracted,
+    }
+  );
 
-  return { success: delivered, error: delivered ? undefined : lastError ?? undefined };
+  return { success: delivered, error: errorMessage ?? undefined };
 }
 
-export async function sendDirectAdminNotification(
-  client: SupabaseClient,
-  adminWaId: string,
-  message: string,
-  metadata?: Record<string, unknown>,
-): Promise<{ success: boolean; error?: string }> {
-  // DEPRECATED: This function will be removed in v2.0.0 (Q1 2025)
-  // Use insurance_admin_contacts table instead to configure admin recipients
-  // All notifications are now sent directly via notifyInsuranceAdmins()
-  console.warn("sendDirectAdminNotification is deprecated and will be removed in v2.0.0. Use insurance_admin_contacts table instead.");
-  
-  try {
-    await sendText(adminWaId, message);
-    return { success: true };
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    return { success: false, error: msg };
-  }
-}
-
+/**
+ * Fetch all active insurance admin contacts
+ */
 async function fetchActiveContacts(client: SupabaseClient): Promise<AdminContact[]> {
   try {
     const { data, error } = await client
       .from("insurance_admin_contacts")
-      .select("id, destination, display_name, channel")
+      .select("id, display_name, channel, destination")
       .eq("is_active", true)
       .order("created_at");
 
     if (error) {
-      console.error("insurance.admin_contacts_fetch_fail", error);
+      console.error("insurance.fetch_contacts_error", error);
+      logStructuredEvent("INSURANCE_ADMIN_FETCH_CONTACTS_ERROR", {
+        error: error.message,
+      }, "error");
       return [];
     }
 
-    return (data ?? [])
-      .map((contact) => ({
-        id: contact.id,
-        destination: contact.destination ?? "",
-        displayName: contact.display_name ?? "Insurance Admin",
-        channel: contact.channel as 'whatsapp' | 'email',
-      }))
-      .filter((contact) => {
-        // For WhatsApp, validate phone number
-        if (contact.channel === 'whatsapp') {
-          const normalized = normalizeAdminWaId(contact.destination);
-          return normalized && normalized.length >= MIN_WHATSAPP_ID_LENGTH;
-        }
-        // For email, just check it's not empty
-        if (contact.channel === 'email') {
-          return contact.destination.trim().length > 0;
-        }
-        return false;
-      });
+    return (data ?? []).map((contact) => ({
+      id: contact.id,
+      displayName: contact.display_name ?? "Insurance Admin",
+      channel: contact.channel ?? "whatsapp",
+      destination: contact.destination,
+    }));
   } catch (err) {
-    console.error("insurance.admin_contacts_fetch_error", err);
+    console.error("insurance.fetch_contacts_exception", err);
+    logStructuredEvent("INSURANCE_ADMIN_FETCH_CONTACTS_EXCEPTION", {
+      error: err instanceof Error ? err.message : String(err),
+    }, "error");
     return [];
+  }
+}
+
+/**
+ * Log notification attempt to insurance_admin_notifications
+ * One row per contact per send attempt
+ */
+async function logNotification(
+  client: SupabaseClient,
+  contactId: string,
+  leadId: string,
+  status: 'sent' | 'failed' | 'queued',
+  error: string | null,
+  payload: Record<string, unknown>,
+): Promise<void> {
+  try {
+    const { error: insertError } = await client
+      .from("insurance_admin_notifications")
+      .insert({
+        contact_id: contactId,
+        lead_id: leadId,
+        status,
+        error,
+        payload,
+        sent_at: status === 'sent' ? new Date().toISOString() : null,
+        retry_count: 0,
+      });
+
+    if (insertError) {
+      console.error("insurance.log_notification_error", {
+        contactId,
+        leadId,
+        error: insertError.message,
+      });
+      logStructuredEvent("INSURANCE_ADMIN_LOG_NOTIFICATION_ERROR", {
+        contactId,
+        leadId,
+        error: insertError.message,
+      }, "error");
+    }
+  } catch (err) {
+    console.error("insurance.log_notification_exception", {
+      contactId,
+      leadId,
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 }

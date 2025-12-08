@@ -262,7 +262,7 @@ export function extractWhatsAppMessage(payload: unknown): {
         return {
           from: msg.from as string,
           body:
-            (msg.text as Record<string, unknown>)?.body as string ||
+            (typeof (msg.text as Record<string, unknown>)?.body === 'string' ? (msg.text as Record<string, unknown>)?.body : null) ||
             ((msg.interactive as any)?.button_reply?.title as string) ||
             ((msg.interactive as any)?.list_reply?.title as string) ||
             "",

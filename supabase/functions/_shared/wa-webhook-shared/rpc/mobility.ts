@@ -79,15 +79,13 @@ export async function insertTrip(
       user_id: params.userId,
       role: params.role,
       vehicle_type: params.vehicleType,
-      trip_kind: isScheduled ? "scheduled" : "request",
+      kind: isScheduled ? "scheduled" : "request_intent",
       pickup_lat: params.lat,
       pickup_lng: params.lng,
-      pickup_radius_m: params.radiusMeters,
       pickup_text: params.pickupText ?? null,
-      status: "active",
-      expires_at: expires,
       scheduled_for: scheduledAtStr,
-      recurrence_id: params.recurrenceId ?? null,
+      status: "open",
+      expires_at: expires,
       metadata: params.recurrence ? { recurrence: params.recurrence } : {},
     })
     .select("id")
