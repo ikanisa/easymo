@@ -7,6 +7,25 @@
 
 BEGIN;
 
+-- Skip this migration if rides_trips doesn't exist (V1 table)
+DO $$
+DECLARE
+  v1_trips_count integer;
+  v2_trips_count integer;
+  v1_matches_count integer;
+  v2_matches_count integer;
+  v1_table_exists boolean;
+BEGIN
+  -- Check if V1 table exists
+  SELECT EXISTS (
+    SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'rides_trips'
+  ) INTO v1_table_exists;
+
+  IF NOT v1_table_exists THEN
+    RAISE NOTICE 'Skipping V1 to V2 migration - rides_trips table does not exist';
+    RETURN;
+  END IF;
+
 -- ============================================================================
 -- 1. MIGRATE TRIPS DATA
 -- ============================================================================
@@ -138,13 +157,7 @@ WHERE NOT EXISTS (
 -- 3. VERIFICATION
 -- ============================================================================
 
-DO $$
-DECLARE
-  v1_trips_count integer;
-  v2_trips_count integer;
-  v1_matches_count integer;
-  v2_matches_count integer;
-BEGIN
+  -- Verification (now part of the main DO block)
   SELECT COUNT(*) INTO v1_trips_count FROM rides_trips;
   SELECT COUNT(*) INTO v2_trips_count FROM mobility_trips;
   SELECT COUNT(*) INTO v1_matches_count FROM mobility_matches;

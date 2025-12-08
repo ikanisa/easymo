@@ -8,7 +8,7 @@ BEGIN;
 
 -- Call disposition enum
 DO $$ BEGIN
-  CREATE TYPE IF NOT EXISTS call_disposition AS ENUM (
+  CREATE TYPE call_disposition AS ENUM (
     'INTERESTED',
     'NOT_INTERESTED', 
     'CALL_BACK',

@@ -5,7 +5,7 @@
 
 -- Deep research job status enum
 DO $$ BEGIN
-  CREATE TYPE IF NOT EXISTS deep_research_status AS ENUM (
+  CREATE TYPE deep_research_status AS ENUM (
     'pending',
     'running',
     'succeeded',

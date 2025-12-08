@@ -216,13 +216,14 @@ export async function handleLocationShared(
 
       // Send "Show More" button using the WhatsApp client
       const { sendButtons } = await import("../_shared/wa-webhook-shared/wa/client.ts");
-      await sendButtons(userPhone, {
-        body: `💡 Showing ${displayBusinesses.length} of ${businesses.length}+ businesses nearby`,
-        buttons: [
+      await sendButtons(
+        userPhone,
+        `💡 Showing ${displayBusinesses.length} of ${businesses.length}+ businesses nearby`,
+        [
           { id: "buy_sell_show_more", title: "📋 Show More" },
           { id: "buy_sell_new_search", title: "🔄 New Search" },
-        ],
-      });
+        ]
+      );
 
       await logStructuredEvent("BUY_SELL_RESULTS_SENT_WITH_MORE", {
         userId: profile.user_id,

@@ -7,6 +7,9 @@
 
 BEGIN;
 
+-- Drop existing function to allow signature change
+DROP FUNCTION IF EXISTS find_nearby_trips_v2(double precision, double precision, text, text, numeric, integer, integer);
+
 -- ============================================================================
 -- SPATIAL MATCHING FUNCTION
 -- ============================================================================

@@ -7,7 +7,7 @@ BEGIN;
 
 -- 1) Enum for call channel
 DO $$ BEGIN
-  CREATE TYPE IF NOT EXISTS call_channel AS ENUM (
+  CREATE TYPE call_channel AS ENUM (
     'phone',
     'whatsapp_call',
     'whatsapp_voice_note'
@@ -20,28 +20,37 @@ END $$;
 CREATE TABLE IF NOT EXISTS calls (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id),
-  agent_id TEXT NOT NULL,                         -- e.g. 'jobs_ai', 'farmers_ai', 'real_estate_ai', 'sales_ai'
-  channel call_channel NOT NULL DEFAULT 'phone',
-  direction TEXT NOT NULL CHECK (direction IN ('inbound','outbound')),
-  started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  agent_id TEXT,
+  channel TEXT,  -- Will be converted to call_channel enum below
+  direction TEXT CHECK (direction IN ('inbound','outbound')),
+  started_at TIMESTAMPTZ DEFAULT now(),
   ended_at TIMESTAMPTZ,
   duration_seconds INTEGER,
-  status TEXT NOT NULL DEFAULT 'initiated' CHECK (status IN ('initiated', 'in_progress', 'completed', 'abandoned', 'failed')),
-  provider_call_id TEXT,                          -- ID from telco / WhatsApp / Twilio
+  status TEXT DEFAULT 'initiated' CHECK (status IN ('initiated', 'in_progress', 'completed', 'abandoned', 'failed')),
+  provider_call_id TEXT,
   from_number TEXT,
   to_number TEXT,
-  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Add missing columns if table already exists
+-- Add missing columns and convert channel to enum if table already exists
 DO $$ BEGIN
   ALTER TABLE calls ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);
   ALTER TABLE calls ADD COLUMN IF NOT EXISTS agent_id TEXT;
-  ALTER TABLE calls ADD COLUMN IF NOT EXISTS channel call_channel DEFAULT 'phone';
   ALTER TABLE calls ADD COLUMN IF NOT EXISTS provider_call_id TEXT;
   ALTER TABLE calls ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb;
+  
+  -- Try to alter channel column to use enum type
+  BEGIN
+    ALTER TABLE calls ALTER COLUMN channel TYPE call_channel USING channel::call_channel;
+    ALTER TABLE calls ALTER COLUMN channel SET DEFAULT 'phone'::call_channel;
+    ALTER TABLE calls ALTER COLUMN channel SET NOT NULL;
+  EXCEPTION WHEN others THEN
+    -- If conversion fails, add as new column
+    ALTER TABLE calls ADD COLUMN IF NOT EXISTS channel call_channel DEFAULT 'phone';
+  END;
 EXCEPTION WHEN others THEN NULL;
 END $$;
 

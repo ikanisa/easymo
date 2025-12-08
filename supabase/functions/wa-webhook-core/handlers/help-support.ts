@@ -97,13 +97,14 @@ export async function handleHelpRequest(
 
     // Send buttons for AI agent option
     const { sendButtons } = await import("../../_shared/wa-webhook-shared/wa/client.ts");
-    await sendButtons(phoneNumber, {
-      body: "Choose an option:",
-      buttons: [
+    await sendButtons(
+      phoneNumber,
+      "Choose an option:",
+      [
         { id: "call_center", title: "💬 Chat with AI" },
         { id: "home", title: "🏠 Home" },
-      ],
-    });
+      ]
+    );
 
     await logStructuredEvent("HELP_CONTACTS_SENT", {
       phoneNumber: phoneNumber.substring(phoneNumber.length - 4),

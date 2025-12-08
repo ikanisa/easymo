@@ -85,13 +85,14 @@ export async function showBuySellCategories(
       } as CategoryMenuState,
     });
 
-    await sendButtons(userPhone, {
-      body: `💡 Showing ${shownCount} of ${categories.length} categories`,
-      buttons: [
+    await sendButtons(
+      userPhone,
+      `💡 Showing ${shownCount} of ${categories.length} categories`,
+      [
         { id: "buy_sell_show_more_categories", title: "📋 See More" },
         { id: "home", title: "🏠 Home" },
-      ],
-    });
+      ]
+    );
 
     await logStructuredEvent("BUY_SELL_CATEGORIES_SENT_WITH_MORE", {
       page,

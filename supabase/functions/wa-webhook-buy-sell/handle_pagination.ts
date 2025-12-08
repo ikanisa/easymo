@@ -113,13 +113,14 @@ export async function handleShowMore(userPhone: string): Promise<void> {
       });
 
       const shown = currentOffset + nextBusinesses.length;
-      await sendButtons(userPhone, {
-        body: `💡 Showing ${shown} of ${businesses.length}+ businesses`,
-        buttons: [
+      await sendButtons(
+        userPhone,
+        `💡 Showing ${shown} of ${businesses.length}+ businesses`,
+        [
           { id: "buy_sell_show_more", title: "📋 Show More" },
           { id: "buy_sell_new_search", title: "🔄 New Search" },
-        ],
-      });
+        ]
+      );
 
       await logStructuredEvent("BUY_SELL_MORE_RESULTS_SENT", {
         userId: profile.user_id,

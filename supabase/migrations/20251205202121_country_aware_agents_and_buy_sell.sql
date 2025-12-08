@@ -96,6 +96,7 @@ CREATE INDEX IF NOT EXISTS idx_buy_sell_categories_active
 -- 6. RLS policies
 ALTER TABLE public.buy_sell_categories ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS buy_sell_categories_public_read ON public.buy_sell_categories;
 CREATE POLICY buy_sell_categories_public_read ON public.buy_sell_categories
   FOR SELECT
   USING (is_active = true);
