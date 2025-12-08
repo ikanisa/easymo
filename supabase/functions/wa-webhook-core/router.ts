@@ -267,6 +267,12 @@ export async function forwardToEdgeService(
   forwardHeaders.set("X-Routed-Service", targetService);
   forwardHeaders.set("X-Original-Service", originalService); // Track original for debugging
   forwardHeaders.set("X-Correlation-ID", correlationId);
+  
+  // Include service role key for internal service-to-service auth
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (serviceRoleKey) {
+    forwardHeaders.set("Authorization", `Bearer ${serviceRoleKey}`);
+  }
 
   try {
     // Use fetchWithRetry for automatic retry with exponential backoff

@@ -400,19 +400,19 @@ async function notifyAdminsAboutClaim(
       `📝 *Description:*\n${description.slice(0, 500)}${description.length > 500 ? "..." : ""}\n\n` +
       `⚡ Action Required: Review claim in admin panel`;
 
-    // Get admin contacts
+    // Get admin contacts using correct column names: channel, destination
     const { data: admins } = await ctx.supabase
       .from("insurance_admin_contacts")
-      .select("contact_value")
+      .select("destination")
       .eq("is_active", true)
-      .eq("contact_type", "whatsapp");
+      .eq("channel", "whatsapp");
 
     if (admins && admins.length > 0) {
       for (const admin of admins) {
         try {
-          await sendText(admin.contact_value, adminMessage);
+          await sendText(admin.destination, adminMessage);
         } catch (error) {
-          console.error("Failed to notify admin:", admin.contact_value, error);
+          console.error("Failed to notify admin:", admin.destination, error);
         }
       }
     }
