@@ -23,7 +23,6 @@ CREATE INDEX IF NOT EXISTS idx_profiles_whatsapp_jid ON profiles(whatsapp_jid) W
 CREATE TABLE IF NOT EXISTS omnichannel_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  call_id UUID REFERENCES calls(id) ON DELETE SET NULL,
   primary_channel TEXT NOT NULL CHECK (primary_channel IN ('voice', 'whatsapp', 'sms')),
   active_channels TEXT[] DEFAULT ARRAY['voice', 'whatsapp', 'sms']::TEXT[],
   last_agent_id TEXT,
@@ -33,14 +32,50 @@ CREATE TABLE IF NOT EXISTS omnichannel_sessions (
   summary_sent_sms BOOLEAN DEFAULT false,
   started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  expires_at TIMESTAMPTZ DEFAULT (now() + interval '24 hours'),
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'closed', 'follow_up'))
 );
 
+-- Add missing columns if they don't exist
+ALTER TABLE omnichannel_sessions ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ DEFAULT (now() + interval '24 hours');
+
+-- Add call_id column if it doesn't exist (optional reference to calls table if it exists)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'calls') THEN
+    ALTER TABLE omnichannel_sessions ADD COLUMN IF NOT EXISTS call_id UUID REFERENCES calls(id) ON DELETE SET NULL;
+  ELSE
+    ALTER TABLE omnichannel_sessions ADD COLUMN IF NOT EXISTS call_id UUID;
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_omnichannel_sessions_profile ON omnichannel_sessions(profile_id);
 CREATE INDEX IF NOT EXISTS idx_omnichannel_sessions_status ON omnichannel_sessions(status);
-CREATE INDEX IF NOT EXISTS idx_omnichannel_sessions_call_id ON omnichannel_sessions(call_id) WHERE call_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_omnichannel_sessions_expires_at ON omnichannel_sessions(expires_at);
+
+-- Only create expires_at index if column exists
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+    AND table_name = 'omnichannel_sessions'
+    AND column_name = 'expires_at'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_omnichannel_sessions_expires_at ON omnichannel_sessions(expires_at);
+  END IF;
+END $$;
+
+-- Only create call_id index if column exists
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+    AND table_name = 'omnichannel_sessions'
+    AND column_name = 'call_id'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_omnichannel_sessions_call_id ON omnichannel_sessions(call_id) WHERE call_id IS NOT NULL;
+  END IF;
+END $$;
 
 COMMENT ON TABLE omnichannel_sessions IS 'Tracks user sessions across voice, WhatsApp, and SMS channels';
 COMMENT ON COLUMN omnichannel_sessions.primary_channel IS 'Channel that initiated the session';
