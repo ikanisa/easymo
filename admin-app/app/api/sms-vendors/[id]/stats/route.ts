@@ -74,7 +74,7 @@ export async function GET(
   const thisMonthTransactions = monthStats?.length ?? 0;
   const thisMonthRevenue = (monthStats ?? []).reduce((sum, txn) => sum + (Number(txn.amount) || 0), 0);
 
-  // Get parser breakdown
+  // Get parser breakdown (optimized with single pass)
   const { data: parserStats, error: parserError } = await admin
     .from("vendor_sms_transactions")
     .select("parsed_by")
@@ -84,11 +84,16 @@ export async function GET(
     return NextResponse.json({ error: parserError.message }, { status: 500 });
   }
 
-  const parserBreakdown = {
-    openai: (parserStats ?? []).filter(t => t.parsed_by === "openai").length,
-    gemini: (parserStats ?? []).filter(t => t.parsed_by === "gemini").length,
-    regex: (parserStats ?? []).filter(t => t.parsed_by === "regex").length,
-  };
+  const parserBreakdown = (parserStats ?? []).reduce(
+    (acc, t) => {
+      const parser = t.parsed_by;
+      if (parser === "openai" || parser === "gemini" || parser === "regex") {
+        acc[parser]++;
+      }
+      return acc;
+    },
+    { openai: 0, gemini: 0, regex: 0 }
+  );
 
   return NextResponse.json({
     data: {
