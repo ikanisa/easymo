@@ -175,21 +175,25 @@ async function sendToContact(
     const error = `Unsupported channel: ${contact.channel}`;
     
     // Log failed attempt for non-WhatsApp channels
-    await client
-      .from("insurance_admin_notifications")
-      .insert({
-        contact_id: contact.id,
-        certificate_id: leadId,
-        status: "failed",
-        error,
-        payload: {
-          message,
-          extracted,
-          lead_id: leadId,
-          user_wa_id: userWaId,
-        },
-        sent_at: new Date().toISOString(),
-      });
+    try {
+      await client
+        .from("insurance_admin_notifications")
+        .insert({
+          contact_id: contact.id,
+          certificate_id: leadId,
+          status: "failed",
+          error,
+          payload: {
+            message,
+            extracted,
+            lead_id: leadId,
+            user_wa_id: userWaId,
+          },
+          sent_at: new Date().toISOString(),
+        });
+    } catch (insertError) {
+      console.error("Failed to log unsupported channel notification:", insertError);
+    }
     
     return { success: false, error };
   }
@@ -198,21 +202,25 @@ async function sendToContact(
   if (!destination || destination.length < MIN_WHATSAPP_ID_LENGTH) {
     const error = "Invalid WhatsApp ID";
     
-    await client
-      .from("insurance_admin_notifications")
-      .insert({
-        contact_id: contact.id,
-        certificate_id: leadId,
-        status: "failed",
-        error,
-        payload: {
-          message,
-          extracted,
-          lead_id: leadId,
-          user_wa_id: userWaId,
-        },
-        sent_at: new Date().toISOString(),
-      });
+    try {
+      await client
+        .from("insurance_admin_notifications")
+        .insert({
+          contact_id: contact.id,
+          certificate_id: leadId,
+          status: "failed",
+          error,
+          payload: {
+            message,
+            extracted,
+            lead_id: leadId,
+            user_wa_id: userWaId,
+          },
+          sent_at: new Date().toISOString(),
+        });
+    } catch (insertError) {
+      console.error("Failed to log invalid WhatsApp ID notification:", insertError);
+    }
     
     return { success: false, error };
   }
@@ -331,9 +339,10 @@ export async function sendDirectAdminNotification(
   message: string,
   metadata?: Record<string, unknown>,
 ): Promise<{ success: boolean; error?: string }> {
-  // This function is kept for backward compatibility but should be phased out
-  // Direct admin notifications should go through insurance_admin_contacts
-  console.warn("sendDirectAdminNotification is deprecated. Use insurance_admin_contacts table instead.");
+  // DEPRECATED: This function will be removed in v2.0.0 (Q1 2025)
+  // Use insurance_admin_contacts table instead to configure admin recipients
+  // All notifications are now sent directly via notifyInsuranceAdmins()
+  console.warn("sendDirectAdminNotification is deprecated and will be removed in v2.0.0. Use insurance_admin_contacts table instead.");
   
   try {
     await sendText(adminWaId, message);

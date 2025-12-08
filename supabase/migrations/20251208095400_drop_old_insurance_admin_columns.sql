@@ -21,24 +21,18 @@ ALTER TABLE public.insurance_admin_contacts
 -- DROP old columns from insurance_admin_notifications
 -- =====================================================
 
--- Rename new_status to status (replacing old status column)
+-- First, ensure new_status is set correctly and make it NOT NULL
 ALTER TABLE public.insurance_admin_notifications
-  DROP COLUMN IF EXISTS status CASCADE,
-  ADD COLUMN IF NOT EXISTS status public.insurance_admin_notify_status;
+  ALTER COLUMN new_status SET NOT NULL,
+  ALTER COLUMN new_status SET DEFAULT 'sent'::public.insurance_admin_notify_status;
 
--- Copy new_status to status
-UPDATE public.insurance_admin_notifications
-SET status = new_status
-WHERE status IS NULL;
-
--- Make status NOT NULL
+-- Drop old status column (safe now that new_status is populated and NOT NULL)
 ALTER TABLE public.insurance_admin_notifications
-  ALTER COLUMN status SET NOT NULL,
-  ALTER COLUMN status SET DEFAULT 'sent'::public.insurance_admin_notify_status;
+  DROP COLUMN IF EXISTS status CASCADE;
 
--- Drop new_status column now that we've migrated to status
+-- Rename new_status to status
 ALTER TABLE public.insurance_admin_notifications
-  DROP COLUMN IF EXISTS new_status CASCADE;
+  RENAME COLUMN new_status TO status;
 
 -- Drop other old columns
 ALTER TABLE public.insurance_admin_notifications

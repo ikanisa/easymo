@@ -96,11 +96,14 @@ SET certificate_id = lead_id
 WHERE certificate_id IS NULL AND lead_id IS NOT NULL;
 
 -- Backfill new_status from old status
+-- Note: 'queued' notifications are defaulted to 'sent' for historical data consistency
+-- since the migration assumes these were processed. If historical accuracy is critical,
+-- consider mapping 'queued' to 'failed' instead.
 UPDATE public.insurance_admin_notifications
 SET new_status = CASE 
   WHEN status = 'sent' THEN 'sent'::public.insurance_admin_notify_status
   WHEN status = 'failed' THEN 'failed'::public.insurance_admin_notify_status
-  ELSE 'sent'::public.insurance_admin_notify_status -- default for 'queued'
+  ELSE 'sent'::public.insurance_admin_notify_status -- 'queued' -> 'sent' for historical data
 END
 WHERE new_status IS NULL;
 
