@@ -24,7 +24,17 @@ ALTER TABLE wallet_entries
 
 -- Add indexes for performance
 CREATE INDEX IF NOT EXISTS idx_wallet_entries_reference ON wallet_entries(reference_table, reference_id);
-CREATE INDEX IF NOT EXISTS idx_wallet_entries_created_at ON wallet_entries(created_at DESC);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'wallet_entries' AND column_name = 'created_at'
+  ) THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_wallet_entries_created_at ON wallet_entries(created_at DESC)';
+  ELSE
+    RAISE NOTICE 'wallet_entries.created_at missing; skipping idx_wallet_entries_created_at';
+  END IF;
+END$$;
 
 -- Add status and expiry to token_allocations
 ALTER TABLE token_allocations
@@ -310,6 +320,7 @@ DECLARE
   v_details JSONB := '[]'::JSONB;
   v_total_accounts INTEGER;
   v_total_balance INTEGER;
+  r RECORD;
 BEGIN
   -- Get totals
   SELECT COUNT(*), COALESCE(SUM(tokens), 0)

@@ -23,16 +23,25 @@ BEGIN
   END LOOP;
 END $$;
 
--- 1. Add last_location_at column to rides_trips table
-ALTER TABLE rides_trips ADD COLUMN IF NOT EXISTS last_location_at timestamptz DEFAULT now();
+-- 1. Add last_location_at column to rides_trips table (skip if table is absent)
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'rides_trips') THEN
+    ALTER TABLE rides_trips ADD COLUMN IF NOT EXISTS last_location_at timestamptz DEFAULT now();
+    
+    -- 2. Create index for efficient location freshness queries
+    CREATE INDEX IF NOT EXISTS idx_rides_trips_location_fresh 
+      ON rides_trips(last_location_at, status, expires_at) 
+      WHERE status = 'open';
+    
+    -- 3. Backfill existing trips: set last_location_at from created_at for existing records
+    UPDATE rides_trips
+    SET last_location_at = COALESCE(last_location_at, created_at)
+    WHERE last_location_at IS NULL;
+  END IF;
+END $$;
 
--- 2. Create index for efficient location freshness queries
--- Note: Cannot use expires_at > now() in WHERE clause (now() is not IMMUTABLE)
-CREATE INDEX IF NOT EXISTS idx_rides_trips_location_fresh 
-  ON rides_trips(last_location_at, status, expires_at) 
-  WHERE status = 'open';
-
--- 3. Update match_drivers_for_trip_v2 function with:
+-- Update match_drivers_for_trip_v2 function with:
 --    - 30-minute location freshness check
 --    - Correct sorting (distance ASC, recency DESC, vehicle as tiebreaker)
 --    - PostGIS ST_DWithin for performance
@@ -289,9 +298,13 @@ BEGIN
 END;
 $$;
 
--- 6. Backfill existing trips: set last_location_at from created_at for existing records
-UPDATE rides_trips 
-SET last_location_at = created_at 
-WHERE last_location_at IS NULL;
+-- 6. Backfill existing trips: set last_location_at from created_at for existing records (guarded)
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'rides_trips') THEN
+    UPDATE rides_trips 
+    SET last_location_at = COALESCE(last_location_at, created_at);
+  END IF;
+END$$;
 
 COMMIT;

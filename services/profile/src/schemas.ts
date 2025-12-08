@@ -15,7 +15,7 @@ const uuid = z.string().uuid("Invalid UUID format");
 
 // Create profile request schema
 export const CreateProfileSchema = z.object({
-  userId: uuid.optional(),
+  userId: uuid,
   whatsappE164: phoneE164,
   waId: z.string().min(1).max(20).optional(),
   name: z.string().min(1).max(255).optional(),

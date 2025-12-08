@@ -474,13 +474,16 @@ export async function handleNearbyResultSelection(
     await sendText(ctx.from, t(ctx.locale, "mobility.nearby.session_expired"));
     return true;
   }
+
+  // Extract the actual trip ID from the list row identifier
+  const tripId = id.startsWith("MTCH::") ? id.replace("MTCH::", "") : id;
   
   try {
     // Fetch the selected trip details
     const { data: selectedTrip, error: tripError } = await ctx.supabase
       .from("trips")
-      .select("creator_user_id, role, vehicle_type, pickup_latitude, pickup_longitude")
-      .eq("id", id)
+      .select("user_id, role, vehicle_type, pickup_lat, pickup_lng")
+      .eq("id", tripId)
       .single();
       
     if (tripError || !selectedTrip) {
@@ -492,25 +495,30 @@ export async function handleNearbyResultSelection(
     // Fetch user phone numbers for both users
     const { data: profiles } = await ctx.supabase
       .from("profiles")
-      .select("user_id, whatsapp_number")
-      .in("user_id", [ctx.profileId, selectedTrip.creator_user_id]);
+      .select("user_id, whatsapp_number, phone_number, wa_id")
+      .in("user_id", [ctx.profileId, selectedTrip.user_id]);
     
     const myProfile = profiles?.find(p => p.user_id === ctx.profileId);
-    const otherProfile = profiles?.find(p => p.user_id === selectedTrip.creator_user_id);
+    const otherProfile = profiles?.find(p => p.user_id === selectedTrip.user_id);
+
+    const resolveWhatsApp = (profile?: any) =>
+      profile?.whatsapp_number || profile?.phone_number || profile?.wa_id;
+    const myWa = resolveWhatsApp(myProfile);
+    const otherWa = resolveWhatsApp(otherProfile);
     
-    if (!myProfile?.whatsapp_number || !otherProfile?.whatsapp_number) {
+    if (!myWa || !otherWa) {
       await sendText(ctx.from, t(ctx.locale, "mobility.nearby.match_error"));
       return true;
     }
     
     // Determine roles - if searching for drivers, I'm the passenger
     const isPassenger = state.mode === "drivers";
-    const passengerTripId = isPassenger ? state.myTripId : id;
-    const driverTripId = isPassenger ? id : state.myTripId;
-    const passengerUserId = isPassenger ? ctx.profileId : selectedTrip.creator_user_id;
-    const driverUserId = isPassenger ? selectedTrip.creator_user_id : ctx.profileId;
-    const passengerPhone = isPassenger ? myProfile.whatsapp_number : otherProfile.whatsapp_number;
-    const driverPhone = isPassenger ? otherProfile.whatsapp_number : myProfile.whatsapp_number;
+    const passengerTripId = isPassenger ? state.myTripId : tripId;
+    const driverTripId = isPassenger ? tripId : state.myTripId;
+    const passengerUserId = isPassenger ? ctx.profileId : selectedTrip.user_id;
+    const driverUserId = isPassenger ? selectedTrip.user_id : ctx.profileId;
+    const passengerPhone = isPassenger ? myWa : otherWa;
+    const driverPhone = isPassenger ? otherWa : myWa;
     
     // Create the match using existing RPC function
     await createTripMatch(ctx.supabase, {
@@ -997,7 +1005,7 @@ async function runMatchingFallback(
           "Trips expired (>24h location age)",
           "Trips outside radius",
         ],
-        hint: "Check trips table for open trips with role=driver/passenger",
+        hint: "Check mobility_trips table for open trips with role=driver/passenger",
       }, "warn");
       
       // Use specific message based on what user was searching for

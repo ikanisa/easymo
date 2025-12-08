@@ -36,6 +36,7 @@ CREATE INDEX IF NOT EXISTS idx_admin_notifications_created_at ON admin_notificat
 ALTER TABLE admin_notifications ENABLE ROW LEVEL SECURITY;
 
 -- Admins can view all notifications
+DROP POLICY IF EXISTS admin_notifications_select_policy ON admin_notifications;
 CREATE POLICY admin_notifications_select_policy ON admin_notifications
   FOR SELECT
   USING (
@@ -47,6 +48,7 @@ CREATE POLICY admin_notifications_select_policy ON admin_notifications
   );
 
 -- Admins can update notifications (mark as read)
+DROP POLICY IF EXISTS admin_notifications_update_policy ON admin_notifications;
 CREATE POLICY admin_notifications_update_policy ON admin_notifications
   FOR UPDATE
   USING (
@@ -58,6 +60,7 @@ CREATE POLICY admin_notifications_update_policy ON admin_notifications
   );
 
 -- Service role can insert notifications
+DROP POLICY IF EXISTS admin_notifications_insert_policy ON admin_notifications;
 CREATE POLICY admin_notifications_insert_policy ON admin_notifications
   FOR INSERT
   WITH CHECK (true);
@@ -71,6 +74,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS admin_notifications_updated_at ON admin_notifications;
 CREATE TRIGGER admin_notifications_updated_at
   BEFORE UPDATE ON admin_notifications
   FOR EACH ROW

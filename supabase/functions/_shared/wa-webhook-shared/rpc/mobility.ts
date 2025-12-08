@@ -62,6 +62,14 @@ export async function insertTrip(
     recurrenceId?: string;
   },
 ): Promise<string> {
+  // Validate coordinates before persisting
+  if (!Number.isFinite(params.lat) || !Number.isFinite(params.lng)) {
+    throw new Error("Invalid coordinates: lat and lng must be finite numbers");
+  }
+  if (params.lat < -90 || params.lat > 90 || params.lng < -180 || params.lng > 180) {
+    throw new Error("Invalid coordinates: lat must be [-90,90], lng must be [-180,180]");
+  }
+
   // For scheduled trips, use longer expiry (7 days) or default from config
   const isScheduled = params.scheduledAt !== undefined;
   const expiryMs = isScheduled ? 7 * 24 * 60 * 60 * 1000 : getTripExpiryMs();
@@ -104,6 +112,12 @@ export async function updateTripDropoff(
     radiusMeters?: number;
   },
 ): Promise<void> {
+  if (!Number.isFinite(params.lat) || !Number.isFinite(params.lng)) {
+    throw new Error("Invalid dropoff coordinates: lat and lng must be finite numbers");
+  }
+  if (params.lat < -90 || params.lat > 90 || params.lng < -180 || params.lng > 180) {
+    throw new Error("Invalid dropoff coordinates: lat must be [-90,90], lng must be [-180,180]");
+  }
   const { error } = await client
     .from("trips")
     .update({
@@ -190,13 +204,12 @@ export async function updateTripLocation(
     throw new Error("Invalid coordinates: lat must be [-90,90], lng must be [-180,180]");
   }
   const { error } = await client
-    .from("rides_trips")
+    .from("trips")
     .update({
-      pickup_latitude: params.lat,
-      pickup_longitude: params.lng,
-      pickup: `SRID=4326;POINT(${params.lng} ${params.lat})`,
+      pickup_lat: params.lat,
+      pickup_lng: params.lng,
       pickup_text: params.pickupText ?? null,
-      last_location_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     })
     .eq("id", params.tripId);
   if (error) throw error;

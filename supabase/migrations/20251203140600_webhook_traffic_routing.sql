@@ -16,20 +16,39 @@ CREATE TABLE IF NOT EXISTS webhook_routing_config (
   notes TEXT
 );
 
+-- Align existing table in case earlier deployments created a partial shape
+ALTER TABLE webhook_routing_config
+  ADD COLUMN IF NOT EXISTS percentage DECIMAL(5,2),
+  ADD COLUMN IF NOT EXISTS enabled BOOLEAN,
+  ADD COLUMN IF NOT EXISTS domains TEXT[],
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS created_by TEXT,
+  ADD COLUMN IF NOT EXISTS notes TEXT;
+
+ALTER TABLE webhook_routing_config ALTER COLUMN percentage SET DEFAULT 0.00;
+ALTER TABLE webhook_routing_config ALTER COLUMN enabled SET DEFAULT false;
+ALTER TABLE webhook_routing_config ALTER COLUMN domains SET DEFAULT ARRAY['jobs', 'marketplace', 'property']::TEXT[];
+ALTER TABLE webhook_routing_config ALTER COLUMN created_at SET DEFAULT now();
+ALTER TABLE webhook_routing_config ALTER COLUMN updated_at SET DEFAULT now();
+
 -- Add comment
 COMMENT ON TABLE webhook_routing_config IS 'Controls gradual traffic routing to wa-webhook-unified';
 COMMENT ON COLUMN webhook_routing_config.percentage IS 'Percentage of traffic to route to unified webhook (0-100)';
 COMMENT ON COLUMN webhook_routing_config.domains IS 'Domains eligible for routing (jobs, marketplace, property)';
 
 -- Insert initial config (0% routing, disabled)
-INSERT INTO webhook_routing_config (percentage, domains, enabled, notes)
+INSERT INTO webhook_routing_config (domain, target_function, traffic_percentage, percentage, domains, enabled, notes)
 VALUES (
+  'default',
+  'legacy',
+  0,
   0.00, 
   ARRAY['jobs', 'marketplace', 'property']::TEXT[], 
   false,
   'Week 6 initial setup - routing disabled until infrastructure verified'
 )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT DO NOTHING;
 
 -- Function to safely update routing percentage
 CREATE OR REPLACE FUNCTION update_routing_percentage(
@@ -111,45 +130,96 @@ CREATE TABLE IF NOT EXISTS webhook_routing_logs (
 
 COMMENT ON TABLE webhook_routing_logs IS 'Logs all webhook routing decisions for monitoring and debugging';
 
--- Create indexes for performance
-CREATE INDEX IF NOT EXISTS idx_routing_logs_created_at 
-  ON webhook_routing_logs(created_at DESC);
-  
-CREATE INDEX IF NOT EXISTS idx_routing_logs_status 
-  ON webhook_routing_logs(status) 
-  WHERE status = 'error';
-  
-CREATE INDEX IF NOT EXISTS idx_routing_logs_domain 
-  ON webhook_routing_logs(domain, created_at DESC);
-  
-CREATE INDEX IF NOT EXISTS idx_routing_logs_routed_to 
-  ON webhook_routing_logs(routed_to, created_at DESC);
+DO $$
+DECLARE
+  has_created_at BOOLEAN;
+  has_routed_to BOOLEAN;
+  has_status BOOLEAN;
+  has_latency BOOLEAN;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'webhook_routing_logs' AND column_name = 'created_at'
+  ) INTO has_created_at;
 
--- Create composite index for common queries
-CREATE INDEX IF NOT EXISTS idx_routing_logs_domain_status_time 
-  ON webhook_routing_logs(domain, status, created_at DESC);
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'webhook_routing_logs' AND column_name = 'routed_to'
+  ) INTO has_routed_to;
 
--- Create monitoring view for real-time stats
-CREATE OR REPLACE VIEW webhook_routing_stats AS
-SELECT 
-  domain,
-  routed_to,
-  COUNT(*) as request_count,
-  ROUND(AVG(response_time_ms)::numeric, 2) as avg_response_ms,
-  ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY response_time_ms)::numeric, 2) as p50_ms,
-  ROUND(PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY response_time_ms)::numeric, 2) as p95_ms,
-  ROUND(PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY response_time_ms)::numeric, 2) as p99_ms,
-  SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END) as error_count,
-  ROUND(
-    (SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END)::DECIMAL / NULLIF(COUNT(*), 0)) * 100,
-    4
-  ) as error_rate_pct,
-  MIN(created_at) as first_request,
-  MAX(created_at) as last_request
-FROM webhook_routing_logs
-WHERE created_at > now() - interval '1 hour'
-GROUP BY domain, routed_to
-ORDER BY domain, routed_to;
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'webhook_routing_logs' AND column_name = 'status'
+  ) INTO has_status;
+
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'webhook_routing_logs' AND column_name = 'response_time_ms'
+  ) INTO has_latency;
+
+  IF has_created_at AND has_routed_to AND has_status THEN
+    -- New schema
+    CREATE INDEX IF NOT EXISTS idx_routing_logs_created_at 
+      ON webhook_routing_logs(created_at DESC);
+      
+    CREATE INDEX IF NOT EXISTS idx_routing_logs_status 
+      ON webhook_routing_logs(status) 
+      WHERE status = 'error';
+      
+    CREATE INDEX IF NOT EXISTS idx_routing_logs_domain 
+      ON webhook_routing_logs(domain, created_at DESC);
+      
+    CREATE INDEX IF NOT EXISTS idx_routing_logs_routed_to 
+      ON webhook_routing_logs(routed_to, created_at DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_routing_logs_domain_status_time 
+      ON webhook_routing_logs(domain, status, created_at DESC);
+
+    CREATE OR REPLACE VIEW webhook_routing_stats AS
+    SELECT 
+      domain,
+      routed_to,
+      COUNT(*) as request_count,
+      ROUND(AVG(response_time_ms)::numeric, 2) as avg_response_ms,
+      ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY response_time_ms)::numeric, 2) as p50_ms,
+      ROUND(PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY response_time_ms)::numeric, 2) as p95_ms,
+      ROUND(PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY response_time_ms)::numeric, 2) as p99_ms,
+      SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END) as error_count,
+      ROUND(
+        (SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END)::DECIMAL / NULLIF(COUNT(*), 0)) * 100,
+        4
+      ) as error_rate_pct,
+      MIN(created_at) as first_request,
+      MAX(created_at) as last_request
+    FROM webhook_routing_logs
+    WHERE created_at > now() - interval '1 hour'
+    GROUP BY domain, routed_to
+    ORDER BY domain, routed_to;
+  ELSE
+    -- Legacy schema: routed_at + latency_ms + success boolean + target_function
+    RAISE NOTICE 'Using legacy webhook_routing_logs schema for routing stats.';
+    CREATE OR REPLACE VIEW webhook_routing_stats AS
+    SELECT 
+      domain,
+      target_function AS routed_to,
+      COUNT(*) as request_count,
+      ROUND(AVG(latency_ms)::numeric, 2) as avg_response_ms,
+      ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY latency_ms)::numeric, 2) as p50_ms,
+      ROUND(PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency_ms)::numeric, 2) as p95_ms,
+      ROUND(PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY latency_ms)::numeric, 2) as p99_ms,
+      SUM(CASE WHEN success = false THEN 1 ELSE 0 END) as error_count,
+      ROUND(
+        (SUM(CASE WHEN success = false THEN 1 ELSE 0 END)::DECIMAL / NULLIF(COUNT(*), 0)) * 100,
+        4
+      ) as error_rate_pct,
+      MIN(routed_at) as first_request,
+      MAX(routed_at) as last_request
+    FROM webhook_routing_logs
+    WHERE routed_at > now() - interval '1 hour'
+    GROUP BY domain, target_function
+    ORDER BY domain, target_function;
+  END IF;
+END $$;
 
 COMMENT ON VIEW webhook_routing_stats IS 'Real-time webhook routing statistics (last 1 hour)';
 

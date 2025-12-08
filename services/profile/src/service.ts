@@ -166,22 +166,32 @@ export class ProfileService {
   async deleteProfile(userId: string): Promise<void> {
     logger.info({ msg: "profile.delete.start", userId });
 
-    const { error } = await this.supabase
+    // Prefer soft delete where schema supports it; fall back to hard delete
+    const { error: softDeleteError } = await this.supabase
       .from("profiles")
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq("user_id", userId);
 
-    if (error) {
-      logger.error({ msg: "profile.delete.error", userId, error: error.message });
-      throw new AppError(
-        ErrorCodes.DATABASE_ERROR,
-        "Failed to delete profile",
-        500,
-        { dbError: error.message }
-      );
+    if (softDeleteError) {
+      logger.warn({ msg: "profile.delete.soft_failed", userId, error: softDeleteError.message });
+      const { error: hardDeleteError } = await this.supabase
+        .from("profiles")
+        .delete()
+        .eq("user_id", userId);
+      if (hardDeleteError) {
+        logger.error({ msg: "profile.delete.error", userId, error: hardDeleteError.message });
+        throw new AppError(
+          ErrorCodes.DATABASE_ERROR,
+          "Failed to delete profile",
+          500,
+          { dbError: hardDeleteError.message }
+        );
+      }
+      logger.info({ msg: "profile.delete.success.hard", userId });
+      return;
     }
 
-    logger.info({ msg: "profile.delete.success", userId });
+    logger.info({ msg: "profile.delete.success.soft", userId });
   }
 
   /**

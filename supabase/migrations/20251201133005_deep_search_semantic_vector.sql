@@ -5,6 +5,32 @@
 -- Supports: marketplace, jobs, properties, produce, businesses
 -- =====================================================================
 
+-- Guarded execution to avoid failures on missing extensions/tables in prod
+DO $$
+BEGIN
+  -- Enable pgvector if available
+  PERFORM 1
+  FROM pg_extension
+  WHERE extname = 'vector';
+  IF NOT FOUND THEN
+    BEGIN
+      CREATE EXTENSION IF NOT EXISTS vector;
+    EXCEPTION WHEN undefined_file THEN
+      RAISE NOTICE 'pgvector extension not available on this instance, skipping semantic search migration';
+      RETURN;
+    END;
+  END IF;
+
+  -- Ensure target table exists before proceeding
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.tables 
+    WHERE table_schema = 'public' AND table_name = 'search_embeddings'
+  ) THEN
+    -- Table will be created below if missing
+    NULL;
+  END IF;
+END$$;
+
 BEGIN;
 
 -- =====================================================================
@@ -64,10 +90,22 @@ CREATE TABLE IF NOT EXISTS public.search_embeddings (
 -- =====================================================================
 
 -- Vector similarity search index (IVFFlat for fast approximate search)
-CREATE INDEX IF NOT EXISTS search_embeddings_embedding_idx
-  ON public.search_embeddings
-  USING ivfflat (embedding vector_cosine_ops)
-  WITH (lists = 100);
+-- Create the IVFFlat index only if the operator class exists (pgvector loaded)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_opclass WHERE opcname = 'vector_cosine_ops'
+  ) THEN
+    EXECUTE $ivf$
+      CREATE INDEX IF NOT EXISTS search_embeddings_embedding_idx
+        ON public.search_embeddings
+        USING ivfflat (embedding vector_cosine_ops)
+        WITH (lists = 100);
+    $ivf$;
+  ELSE
+    RAISE NOTICE 'vector operator class not found; skipping IVFFlat index';
+  END IF;
+END$$;
 
 -- Domain-based queries
 CREATE INDEX IF NOT EXISTS search_embeddings_domain_idx
@@ -278,6 +316,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS search_embeddings_update_trigger ON public.search_embeddings;
 CREATE TRIGGER search_embeddings_update_trigger
   BEFORE UPDATE ON public.search_embeddings
   FOR EACH ROW
@@ -290,12 +329,14 @@ CREATE TRIGGER search_embeddings_update_trigger
 ALTER TABLE public.search_embeddings ENABLE ROW LEVEL SECURITY;
 
 -- Everyone can read active search entries
+DROP POLICY IF EXISTS search_embeddings_read_policy ON public.search_embeddings;
 CREATE POLICY search_embeddings_read_policy
   ON public.search_embeddings
   FOR SELECT
   USING (is_active = true);
 
 -- Only service role can write
+DROP POLICY IF EXISTS search_embeddings_write_policy ON public.search_embeddings;
 CREATE POLICY search_embeddings_write_policy
   ON public.search_embeddings
   FOR ALL

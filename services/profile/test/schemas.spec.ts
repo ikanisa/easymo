@@ -26,7 +26,9 @@ describe("Validation Schemas", () => {
     });
 
     it("should validate minimal input", () => {
-      const input = {};
+      const input = {
+        userId: "123e4567-e89b-12d3-a456-426614174000",
+      };
 
       const result = CreateProfileSchema.safeParse(input);
       expect(result.success).toBe(true);
@@ -35,6 +37,7 @@ describe("Validation Schemas", () => {
 
     it("should reject invalid phone number format", () => {
       const input = {
+        userId: "123e4567-e89b-12d3-a456-426614174000",
         whatsappE164: "0781234567", // Missing + prefix
       };
 
@@ -44,6 +47,7 @@ describe("Validation Schemas", () => {
 
     it("should reject invalid email format", () => {
       const input = {
+        userId: "123e4567-e89b-12d3-a456-426614174000",
         email: "not-an-email",
       };
 

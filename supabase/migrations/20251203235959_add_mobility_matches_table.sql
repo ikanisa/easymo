@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS public.mobility_matches (
   passenger_id uuid NOT NULL REFERENCES public.profiles(user_id) ON DELETE CASCADE,
   
   -- Trip reference (links to rides_trips)
-  trip_id uuid REFERENCES public.rides_trips(id) ON DELETE CASCADE,
+  trip_id uuid REFERENCES public.trips(id) ON DELETE CASCADE,
   
   -- Trip details
   vehicle_type text,
@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS public.mobility_matches (
 
 -- Ensure trip_id column exists for indexing/linking to rides_trips
 ALTER TABLE public.mobility_matches
-  ADD COLUMN IF NOT EXISTS trip_id uuid REFERENCES public.rides_trips(id) ON DELETE CASCADE;
+  ADD COLUMN IF NOT EXISTS trip_id uuid REFERENCES public.trips(id) ON DELETE CASCADE;
 
 -- Add comments
 COMMENT ON TABLE public.mobility_matches IS 'Tracks matched trips between drivers and passengers with full lifecycle';

@@ -331,33 +331,41 @@ GRANT EXECUTE ON FUNCTION public.get_expiring_insurance TO service_role;
 -- Vehicles table
 ALTER TABLE public.vehicles ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS vehicles_select_all ON public.vehicles;
 CREATE POLICY vehicles_select_all ON public.vehicles
   FOR SELECT USING (TRUE);
 
+DROP POLICY IF EXISTS vehicles_insert_service ON public.vehicles;
 CREATE POLICY vehicles_insert_service ON public.vehicles
   FOR INSERT WITH CHECK (auth.role() = 'service_role');
 
+DROP POLICY IF EXISTS vehicles_update_service ON public.vehicles;
 CREATE POLICY vehicles_update_service ON public.vehicles
   FOR UPDATE USING (auth.role() = 'service_role');
 
 -- Vehicle ownerships table
 ALTER TABLE public.vehicle_ownerships ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS vehicle_ownerships_select_own ON public.vehicle_ownerships;
 CREATE POLICY vehicle_ownerships_select_own ON public.vehicle_ownerships
   FOR SELECT USING (auth.uid() = user_id OR auth.role() = 'service_role');
 
+DROP POLICY IF EXISTS vehicle_ownerships_insert_service ON public.vehicle_ownerships;
 CREATE POLICY vehicle_ownerships_insert_service ON public.vehicle_ownerships
   FOR INSERT WITH CHECK (auth.role() = 'service_role');
 
 -- Insurance manual reviews table
 ALTER TABLE public.insurance_manual_reviews ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS insurance_manual_reviews_select_own ON public.insurance_manual_reviews;
 CREATE POLICY insurance_manual_reviews_select_own ON public.insurance_manual_reviews
   FOR SELECT USING (auth.uid() = user_id OR auth.role() = 'service_role');
 
+DROP POLICY IF EXISTS insurance_manual_reviews_insert_service ON public.insurance_manual_reviews;
 CREATE POLICY insurance_manual_reviews_insert_service ON public.insurance_manual_reviews
   FOR INSERT WITH CHECK (auth.role() = 'service_role');
 
+DROP POLICY IF EXISTS insurance_manual_reviews_update_service ON public.insurance_manual_reviews;
 CREATE POLICY insurance_manual_reviews_update_service ON public.insurance_manual_reviews
   FOR UPDATE USING (auth.role() = 'service_role');
 

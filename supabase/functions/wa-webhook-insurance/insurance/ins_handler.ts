@@ -489,6 +489,16 @@ export async function processInsuranceDocument(
     console.info("INS_LEAD_UPSERT_OK", { leadId });
 
     const media = await fetchInsuranceMedia(mediaId, leadId);
+    const MAX_MEDIA_BYTES = parseInt(Deno.env.get("INSURANCE_MAX_MEDIA_BYTES") ?? "5242880", 10); // 5MB default
+    if (media.bytes.length > MAX_MEDIA_BYTES) {
+      await logStructuredEvent("INS_MEDIA_TOO_LARGE", {
+        leadId,
+        size: media.bytes.length,
+        max: MAX_MEDIA_BYTES,
+      });
+      await sendText(ctx.from, "The file is too large. Please upload a file smaller than 5MB.");
+      return "ocr_error";
+    }
     const { path, signedUrl } = await uploadInsuranceBytes(
       ctx.supabase,
       leadId,

@@ -5,9 +5,6 @@ import { logStructuredEvent, maskPII } from "../_shared/observability.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 // Phase 2: Enhanced security modules
 import { createSecurityMiddleware } from "../_shared/security/middleware.ts";
-import { verifyWebhookRequest } from "../_shared/security/signature.ts";
-import { createAuditLogger } from "../_shared/security/audit-logger.ts";
-import { createErrorHandler } from "../_shared/errors/error-handler.ts";
 import type { 
   RouterContext, 
   WhatsAppWebhookPayload, 
@@ -43,6 +40,11 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
 );
 
+const security = createSecurityMiddleware("wa-webhook-insurance", {
+  maxBodySize: 2 * 1024 * 1024, // 2MB limit for insurance uploads
+  rateLimit: { enabled: false, limit: 100, windowSeconds: 60 }, // handled earlier in the handler
+});
+
 serve(async (req: Request): Promise<Response> => {
   // Rate limiting (100 req/min for high-volume WhatsApp)
   const rateLimitCheck = await rateLimitMiddleware(req, {
@@ -55,8 +57,13 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   const url = new URL(req.url);
-  const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
-  const correlationId = req.headers.get("x-correlation-id") ?? crypto.randomUUID();
+
+  const securityCheck = await security.check(req);
+  if (!securityCheck.passed) {
+    return securityCheck.response!;
+  }
+  const requestId = securityCheck.context.requestId;
+  const correlationId = securityCheck.context.correlationId;
 
   const respond = (body: unknown, init: ResponseInit = {}): Response => {
     const headers = new Headers(init.headers);
@@ -189,8 +196,50 @@ serve(async (req: Request): Promise<Response> => {
       return respond({ success: true, message: "No message to process" });
     }
 
+    // Idempotency: skip duplicate webhook messages recently processed
+    const messageId = (message as any)?.id;
+    if (messageId) {
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const { data: processed } = await supabase
+        .from("processed_webhooks")
+        .select("id")
+        .eq("message_id", messageId)
+        .eq("webhook_type", "insurance")
+        .gte("created_at", fiveMinutesAgo)
+        .maybeSingle();
+
+      if (processed) {
+        logEvent("INSURANCE_DUPLICATE_MESSAGE", { messageId }, "debug");
+        return respond({ success: true, ignored: "duplicate" });
+      }
+
+      // Fire-and-forget insert; errors are non-fatal
+      supabase
+        .from("processed_webhooks")
+        .insert({
+          message_id: messageId,
+          phone_number: message.from ?? null,
+          webhook_type: "insurance",
+          created_at: new Date().toISOString(),
+        })
+        .then(
+          () => {},
+          (insertError: Error) => {
+            logEvent("INSURANCE_IDEMPOTENCY_INSERT_FAILED", { error: insertError.message }, "warn");
+          },
+        );
+    }
+
     // Build context
     const ctx: RouterContext = await buildContext(message, payload);
+
+    // Feature gate for motor insurance
+    const gate = await evaluateMotorInsuranceGate(ctx);
+    if (!gate.allowed) {
+      await recordMotorInsuranceHidden(ctx, gate, "menu");
+      await sendMotorInsuranceBlockedMessage(ctx);
+      return respond({ success: false, blocked: true, reason: "feature_gate" }, { status: 403 });
+    }
 
     // Get user state
     const state = ctx.profileId

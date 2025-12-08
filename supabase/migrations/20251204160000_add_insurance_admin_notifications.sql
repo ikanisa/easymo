@@ -38,7 +38,17 @@ CREATE TABLE IF NOT EXISTS public.insurance_admin_notifications (
 
 CREATE INDEX IF NOT EXISTS idx_insurance_admin_notifications_lead ON public.insurance_admin_notifications(lead_id);
 CREATE INDEX IF NOT EXISTS idx_insurance_admin_notifications_status ON public.insurance_admin_notifications(status);
-CREATE INDEX IF NOT EXISTS idx_insurance_admin_notifications_admin ON public.insurance_admin_notifications(admin_wa_id);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'insurance_admin_notifications' AND column_name = 'admin_wa_id'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_insurance_admin_notifications_admin ON public.insurance_admin_notifications(admin_wa_id);
+  ELSE
+    RAISE NOTICE 'Skipping idx_insurance_admin_notifications_admin because admin_wa_id is missing.';
+  END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS idx_insurance_admin_notifications_created ON public.insurance_admin_notifications(created_at DESC);
 
 -- Enable RLS

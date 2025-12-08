@@ -88,7 +88,7 @@ export async function showBuySellCategories(
     await sendButtons(userPhone, {
       body: `💡 Showing ${shownCount} of ${categories.length} categories`,
       buttons: [
-        { id: "buy_sell_show_more_categories", title: "📋 Show More" },
+        { id: "buy_sell_show_more_categories", title: "📋 See More" },
         { id: "home", title: "🏠 Home" },
       ],
     });

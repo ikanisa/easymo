@@ -51,7 +51,21 @@ CREATE TABLE IF NOT EXISTS webhook_stats (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_webhook_stats_period ON webhook_stats(period_start DESC);
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'public'
+          AND c.relname = 'webhook_stats'
+          AND c.relkind IN ('r', 'p') -- table or partitioned table
+    ) THEN
+        CREATE INDEX IF NOT EXISTS idx_webhook_stats_period ON webhook_stats(period_start DESC);
+    ELSE
+        RAISE NOTICE 'Skipping idx_webhook_stats_period because webhook_stats is not a table.';
+    END IF;
+END $$;
 
 -- 5. Add client_transaction_id to momo_transactions if not exists
 DO $$
@@ -121,10 +135,25 @@ CREATE INDEX IF NOT EXISTS idx_webhook_delivery_created ON webhook_delivery_log(
 ALTER TABLE webhook_nonces ENABLE ROW LEVEL SECURITY;
 ALTER TABLE idempotency_keys ENABLE ROW LEVEL SECURITY;
 ALTER TABLE security_audit_log ENABLE ROW LEVEL SECURITY;
-ALTER TABLE webhook_stats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE momo_devices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE merchant_webhook_configs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE webhook_delivery_log ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'public'
+          AND c.relname = 'webhook_stats'
+          AND c.relkind IN ('r', 'p')
+    ) THEN
+        ALTER TABLE webhook_stats ENABLE ROW LEVEL SECURITY;
+    ELSE
+        RAISE NOTICE 'Skipping RLS enablement for webhook_stats because it is not a table.';
+    END IF;
+END $$;
 
 -- Service role can do everything
 DROP POLICY IF EXISTS "service_role_all_webhook_nonces" ON webhook_nonces;
@@ -133,14 +162,29 @@ DROP POLICY IF EXISTS "service_role_all_idempotency_keys" ON idempotency_keys;
 CREATE POLICY "service_role_all_idempotency_keys" ON idempotency_keys FOR ALL TO service_role USING (true);
 DROP POLICY IF EXISTS "service_role_all_security_audit_log" ON security_audit_log;
 CREATE POLICY "service_role_all_security_audit_log" ON security_audit_log FOR ALL TO service_role USING (true);
-DROP POLICY IF EXISTS "service_role_all_webhook_stats" ON webhook_stats;
-CREATE POLICY "service_role_all_webhook_stats" ON webhook_stats FOR ALL TO service_role USING (true);
 DROP POLICY IF EXISTS "service_role_all_momo_devices" ON momo_devices;
 CREATE POLICY "service_role_all_momo_devices" ON momo_devices FOR ALL TO service_role USING (true);
 DROP POLICY IF EXISTS "service_role_all_merchant_webhook_configs" ON merchant_webhook_configs;
 CREATE POLICY "service_role_all_merchant_webhook_configs" ON merchant_webhook_configs FOR ALL TO service_role USING (true);
 DROP POLICY IF EXISTS "service_role_all_webhook_delivery_log" ON webhook_delivery_log;
 CREATE POLICY "service_role_all_webhook_delivery_log" ON webhook_delivery_log FOR ALL TO service_role USING (true);
+
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'public'
+          AND c.relname = 'webhook_stats'
+          AND c.relkind IN ('r', 'p')
+    ) THEN
+        DROP POLICY IF EXISTS "service_role_all_webhook_stats" ON webhook_stats;
+        CREATE POLICY "service_role_all_webhook_stats" ON webhook_stats FOR ALL TO service_role USING (true);
+    ELSE
+        RAISE NOTICE 'Skipping webhook_stats policies because relation is not a table.';
+    END IF;
+END $$;
 
 -- Merchants can view their own devices
 DROP POLICY IF EXISTS "merchants_view_own_devices" ON momo_devices;
@@ -180,20 +224,31 @@ DECLARE
 BEGIN
     hour_start := date_trunc('hour', NOW() - INTERVAL '1 hour');
     hour_end := date_trunc('hour', NOW());
-    
-    INSERT INTO webhook_stats (period_start, period_end, received, processed, failed, duplicates_blocked, replay_attacks_blocked, avg_latency_ms, error_breakdown)
-    SELECT 
-        hour_start,
-        hour_end,
-        COUNT(*) FILTER (WHERE true) as received,
-        COUNT(*) FILTER (WHERE status IN ('matched', 'manual_review')) as processed,
-        COUNT(*) FILTER (WHERE status = 'failed') as failed,
-        0 as duplicates_blocked,
-        0 as replay_attacks_blocked,
-        AVG(EXTRACT(EPOCH FROM (processed_at - received_at)) * 1000)::INTEGER as avg_latency_ms,
-        '{}'::JSONB as error_breakdown
-    FROM momo_transactions
-    WHERE received_at >= hour_start AND received_at < hour_end;
+
+    IF EXISTS (
+        SELECT 1
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'public'
+          AND c.relname = 'webhook_stats'
+          AND c.relkind IN ('r', 'p')
+    ) THEN
+        INSERT INTO webhook_stats (period_start, period_end, received, processed, failed, duplicates_blocked, replay_attacks_blocked, avg_latency_ms, error_breakdown)
+        SELECT 
+            hour_start,
+            hour_end,
+            COUNT(*) FILTER (WHERE true) as received,
+            COUNT(*) FILTER (WHERE status IN ('matched', 'manual_review')) as processed,
+            COUNT(*) FILTER (WHERE status = 'failed') as failed,
+            0 as duplicates_blocked,
+            0 as replay_attacks_blocked,
+            AVG(EXTRACT(EPOCH FROM (processed_at - received_at)) * 1000)::INTEGER as avg_latency_ms,
+            '{}'::JSONB as error_breakdown
+        FROM momo_transactions
+        WHERE received_at >= hour_start AND received_at < hour_end;
+    ELSE
+        RAISE NOTICE 'Skipping webhook_stats aggregation because webhook_stats is not a table.';
+    END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

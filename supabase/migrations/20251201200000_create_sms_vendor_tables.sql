@@ -134,18 +134,21 @@ ALTER TABLE public.vendor_sms_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vendor_payer_ledgers ENABLE ROW LEVEL SECURITY;
 
 -- Service role has full access
+DROP POLICY IF EXISTS sms_vendors_service_role_all ON public.sms_parsing_vendors;
 CREATE POLICY sms_vendors_service_role_all ON public.sms_parsing_vendors
   FOR ALL
   TO service_role
   USING (true)
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS vendor_txns_service_role_all ON public.vendor_sms_transactions;
 CREATE POLICY vendor_txns_service_role_all ON public.vendor_sms_transactions
   FOR ALL
   TO service_role
   USING (true)
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS vendor_ledgers_service_role_all ON public.vendor_payer_ledgers;
 CREATE POLICY vendor_ledgers_service_role_all ON public.vendor_payer_ledgers
   FOR ALL
   TO service_role
@@ -153,11 +156,13 @@ CREATE POLICY vendor_ledgers_service_role_all ON public.vendor_payer_ledgers
   WITH CHECK (true);
 
 -- Vendors can view their own data via whatsapp_e164 JWT claim
+DROP POLICY IF EXISTS sms_vendors_own_read ON public.sms_parsing_vendors;
 CREATE POLICY sms_vendors_own_read ON public.sms_parsing_vendors
   FOR SELECT
   TO authenticated
   USING (whatsapp_e164 = current_setting('request.jwt.claims', true)::json->>'whatsapp_e164');
 
+DROP POLICY IF EXISTS vendor_txns_own_read ON public.vendor_sms_transactions;
 CREATE POLICY vendor_txns_own_read ON public.vendor_sms_transactions
   FOR SELECT
   TO authenticated
@@ -168,6 +173,7 @@ CREATE POLICY vendor_txns_own_read ON public.vendor_sms_transactions
     )
   );
 
+DROP POLICY IF EXISTS vendor_ledgers_own_read ON public.vendor_payer_ledgers;
 CREATE POLICY vendor_ledgers_own_read ON public.vendor_payer_ledgers
   FOR SELECT
   TO authenticated

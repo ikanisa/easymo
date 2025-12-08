@@ -402,9 +402,16 @@ export async function handleInsuranceHelp(ctx: RouterContext): Promise<boolean> 
 
   const message = `🏥 *Motor Insurance Support*\n\n` +
     `Contact our insurance team for help:\n\n${contactLinks}\n\n` +
-    `_Tap any link above to start chatting on WhatsApp._`;
+    `_Tap any link above to start chatting on WhatsApp._\n\n` +
+    `Or chat with our AI assistant for immediate help.`;
 
-  await sendText(ctx.from, message);
+  await sendButtonsMessage(
+    ctx,
+    message,
+    [
+      { id: IDS.SALES_AGENT, title: "💬 Chat with AI" },
+    ],
+  );
   
   await logStructuredEvent("INSURANCE_HELP_REQUESTED", {
     profile_id: ctx.profileId,

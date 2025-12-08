@@ -15,7 +15,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import pino from 'pino';
 import pinoHttp from 'pino-http';
 import { z } from 'zod';
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { getCachedMatches, cacheMatches } from '@easymo/cache-layer/cache';
 
 // Configuration
@@ -29,10 +29,40 @@ const config = {
     matching: process.env.MATCHING_SERVICE_URL || 'http://localhost:4700',
     ranking: process.env.RANKING_SERVICE_URL || 'http://localhost:4500',
   },
+  tables: {
+    trips: process.env.MOBILITY_TRIPS_TABLE || 'trips',
+  },
   logLevel: (process.env.LOG_LEVEL || 'info') as pino.Level,
 };
 
 const logger = pino({ level: config.logLevel });
+const http: AxiosInstance = axios.create({
+  timeout: parseInt(process.env.HTTP_TIMEOUT_MS || '5000'),
+});
+
+async function postWithRetry<T>(
+  url: string,
+  payload: unknown,
+  retries = 1
+): Promise<T> {
+  let attempt = 0;
+  // basic bounded retry with small backoff to avoid long hangs on dependencies
+  while (true) {
+    try {
+      const response = await http.post<T>(url, payload);
+      return response.data;
+    } catch (err) {
+      attempt += 1;
+      const isLast = attempt > retries;
+      logger.warn(
+        { url, attempt, error: err instanceof Error ? err.message : String(err) },
+        'Downstream request failed'
+      );
+      if (isLast) throw err;
+      await new Promise((r) => setTimeout(r, 200 * attempt));
+    }
+  }
+}
 
 // Validation schemas
 const FindDriversSchema = z.object({
@@ -107,15 +137,19 @@ app.post('/workflows/find-drivers', async (req: Request, res: Response, next: Ne
     }
 
     // Step 1: Call matching service
-    const matchingResponse = await axios.post(`${config.services.matching}/matches`, {
-      tripId: passengerTripId,
-      role: 'passenger',
-      vehicleType,
-      radiusKm,
-      limit: limit || 20,
-    });
+    const matchingResponse = await postWithRetry<{ candidates: unknown[] }>(
+      `${config.services.matching}/matches`,
+      {
+        tripId: passengerTripId,
+        role: 'passenger',
+        vehicleType,
+        radiusKm,
+        limit: limit || 20,
+      },
+      2
+    );
 
-    const { candidates } = matchingResponse.data;
+    const { candidates } = matchingResponse;
 
     if (candidates.length === 0) {
       res.json({ success: true, drivers: [], count: 0, message: 'No drivers found nearby' });
@@ -123,13 +157,17 @@ app.post('/workflows/find-drivers', async (req: Request, res: Response, next: Ne
     }
 
     // Step 2: Call ranking service
-    const rankingResponse = await axios.post(`${config.services.ranking}/ranking/drivers`, {
-      candidates,
-      strategy: 'balanced',
-      limit: limit || 9,
-    });
+    const rankingResponse = await postWithRetry<{ drivers: unknown[] }>(
+      `${config.services.ranking}/ranking/drivers`,
+      {
+        candidates,
+        strategy: 'balanced',
+        limit: limit || 9,
+      },
+      1
+    );
 
-    const { drivers } = rankingResponse.data;
+    const { drivers } = rankingResponse;
 
     // Cache the result
     await cacheMatches(cacheKey, drivers);
@@ -150,6 +188,8 @@ app.post('/workflows/find-drivers', async (req: Request, res: Response, next: Ne
 });
 
 // POST /workflows/accept-match - Create a trip match
+// NOTE: This service does not auto-match. It only returns contact + trip details
+// so users can contact each other directly on WhatsApp.
 app.post('/workflows/accept-match', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validation = AcceptMatchSchema.safeParse(req.body);
@@ -163,14 +203,15 @@ app.post('/workflows/accept-match', async (req: Request, res: Response, next: Ne
 
     // Get trip details
     const { data: driverTrip } = await supabase
-      .from('mobility_trips')
+      .from(config.tables.trips)
       .select('*')
       .eq('id', driverTripId)
       .single();
 
     const { data: passengerTrip } = await supabase
-      .from('mobility_trips')
+      .from(config.tables.trips)
       .select('*')
+      .eq('id', passengerTripId)
       .single();
 
     if (!driverTrip || !passengerTrip) {
@@ -181,50 +222,44 @@ app.post('/workflows/accept-match', async (req: Request, res: Response, next: Ne
     // Get phone numbers
     const { data: driverProfile } = await supabase
       .from('profiles')
-      .select('phone_number')
+      .select('whatsapp_e164, wa_id')
       .eq('user_id', driverUserId)
       .single();
 
     const { data: passengerProfile } = await supabase
       .from('profiles')
-      .select('phone_number')
+      .select('whatsapp_e164, wa_id, display_name')
       .eq('user_id', passengerUserId)
       .single();
 
-    // Create match
-    const { data: match, error: matchError } = await supabase
-      .from('mobility_trip_matches')
-      .insert({
-        driver_trip_id: driverTripId,
-        passenger_trip_id: passengerTripId,
-        driver_user_id: driverUserId,
-        passenger_user_id: passengerUserId,
-        vehicle_type: driverTrip.vehicle_type,
-        pickup_location: `SRID=4326;POINT(${passengerTrip.pickup_lng} ${passengerTrip.pickup_lat})`,
-        dropoff_location: passengerTrip.dropoff_lat 
-          ? `SRID=4326;POINT(${passengerTrip.dropoff_lng} ${passengerTrip.dropoff_lat})`
-          : null,
-        pickup_address: passengerTrip.pickup_text,
-        dropoff_address: passengerTrip.dropoff_text,
-        driver_phone: driverProfile?.phone_number || '',
-        passenger_phone: passengerProfile?.phone_number || '',
-        status: 'pending',
-      })
-      .select()
-      .single();
+    const driverContact = {
+      userId: driverUserId,
+      whatsapp: driverProfile?.whatsapp_e164 || driverProfile?.wa_id || '',
+      waId: driverProfile?.wa_id || null,
+      displayName: (driverProfile as any)?.display_name || null,
+    };
+    const passengerContact = {
+      userId: passengerUserId,
+      whatsapp: passengerProfile?.whatsapp_e164 || passengerProfile?.wa_id || '',
+      waId: passengerProfile?.wa_id || null,
+      displayName: (passengerProfile as any)?.display_name || null,
+    };
 
-    if (matchError) throw matchError;
-
-    // Update trip statuses
-    await supabase.from('mobility_trips').update({ status: 'matched' }).eq('id', driverTripId);
-    await supabase.from('mobility_trips').update({ status: 'matched' }).eq('id', passengerTripId);
-
-    logger.info({ matchId: match.id }, 'Match created successfully');
+    logger.info(
+      { driverTripId, passengerTripId, driverUserId, passengerUserId },
+      'Returning contact info for manual selection'
+    );
 
     res.json({
       success: true,
-      match,
       workflow: 'accept-match',
+      driverTrip,
+      passengerTrip,
+      contacts: {
+        driver: driverContact,
+        passenger: passengerContact,
+      },
+      note: 'No automatic booking performed; user must contact manually.',
     });
   } catch (error) {
     logger.error({ error }, 'Accept-match workflow failed');

@@ -86,8 +86,8 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
   },
   {
     service: "wa-webhook-buy-sell",
-    keywords: ["marketplace", "shop", "buy", "sell", "store", "product", "business", "broker"],
-    menuKeys: ["marketplace", "shops_services", "buy_and_sell", "buy and sell", "business_broker_agent", "general_broker", "6"],
+    keywords: ["buy", "sell", "shop", "store", "product", "business", "broker"],
+    menuKeys: ["buy_and_sell", "buy and sell", "business_broker_agent", "general_broker", "shops_services", "6"],
     priority: 1,
   },
   {
@@ -110,7 +110,7 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
   },
   {
     service: "wa-agent-call-center",
-    keywords: ["agent", "chat", "ask", "call center", "universal"],
+    keywords: ["agent", "chat", "ask", "call center", "universal", "marketplace"],
     menuKeys: ["ai_agents", "call_center", "universal_agent"],
     priority: 3, // Fallback for general AI queries
   },
@@ -158,7 +158,7 @@ export const STATE_PATTERNS: Array<{ patterns: string[]; service: string }> = [
   { patterns: ["mobility", "trip_", "ride_"], service: "wa-webhook-mobility" },
   { patterns: ["property", "rental_"], service: "wa-webhook-property" },
   { patterns: ["wallet", "payment_", "transfer_"], service: "wa-webhook-profile" },
-  { patterns: ["marketplace", "shop_", "buy_", "sell_"], service: "wa-webhook-buy-sell" },
+  { patterns: ["shop_", "buy_", "sell_"], service: "wa-webhook-buy-sell" },
   { patterns: ["farmer_"], service: "wa-agent-farmer" },
   { patterns: ["support_"], service: "wa-agent-support" },
   { patterns: ["waiter_", "restaurant_"], service: "wa-agent-waiter" },

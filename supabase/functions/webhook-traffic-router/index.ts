@@ -51,14 +51,16 @@ function determineDomain(payload: any): string {
     const buttonId = payload.message.interactive.button_reply?.id || '';
     if (buttonId.includes('job')) return 'jobs';
     if (buttonId.includes('property') || buttonId.includes('rent')) return 'property';
-    if (buttonId.includes('shop') || buttonId.includes('buy')) return 'marketplace';
+    if (buttonId.includes('marketplace')) return 'ai_marketplace';
+    if (buttonId.includes('shop') || buttonId.includes('buy') || buttonId.includes('sell')) return 'buy_sell';
   }
   
   const keywords = {
     jobs: ['job', 'hiring', 'apply', 'career', 'work', 'employment'],
     property: ['property', 'rent', 'apartment', 'house', 'real estate'],
-    marketplace: ['buy', 'shop', 'product', 'order', 'cart', 'purchase']
-  };
+    ai_marketplace: ['marketplace'],
+    buy_sell: ['buy', 'sell', 'shop', 'store', 'product', 'business']
+  } as Record<string, string[]>;
   
   for (const [domain, words] of Object.entries(keywords)) {
     if (words.some(word => messageBody.includes(word))) {
@@ -140,7 +142,13 @@ serve(async (req: Request): Promise<Response> => {
       targetWebhook = 'wa-webhook-unified';
       routedTo = 'unified';
     } else {
-      targetWebhook = domain === 'unknown' ? 'wa-webhook' : `wa-webhook-${domain}`;
+      if (domain === 'buy_sell') {
+        targetWebhook = 'wa-webhook-buy-sell';
+      } else if (domain === 'ai_marketplace') {
+        targetWebhook = 'wa-agent-call-center';
+      } else {
+        targetWebhook = domain === 'unknown' ? 'wa-webhook' : `wa-webhook-${domain}`;
+      }
       routedTo = 'legacy';
     }
     

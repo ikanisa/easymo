@@ -102,6 +102,8 @@ CREATE TABLE IF NOT EXISTS public.insurance_admin_contacts (
 );
 
 CREATE INDEX IF NOT EXISTS idx_insurance_admin_contacts_active ON public.insurance_admin_contacts(is_active) WHERE is_active = TRUE;
+ALTER TABLE public.insurance_admin_contacts
+ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0;
 
 -- CREATE INSURANCE_RENEWALS TABLE
 CREATE TABLE IF NOT EXISTS public.insurance_renewals (
@@ -202,13 +204,26 @@ $$;
 GRANT EXECUTE ON FUNCTION public.get_expiring_policies TO service_role, authenticated;
 
 -- SEED ADMIN CONTACTS
--- Real admin numbers loaded from insurance_admin_contacts table
--- Add more admins via SQL or admin panel
-INSERT INTO public.insurance_admin_contacts (contact_type, contact_value, display_name, display_order, is_active) VALUES
-  ('whatsapp', '+250795588248', 'Insurance Support Team 1', 1, true),
-  ('whatsapp', '+250793094876', 'Insurance Support Team 2', 2, true),
-  ('whatsapp', '+250788767816', 'Insurance Support Team 3', 3, true),
-  ('email', 'insurance@easymo.rw', 'Insurance Email', 10, true)
-ON CONFLICT DO NOTHING;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'insurance_admin_contacts' AND column_name = 'channel'
+  ) THEN
+    INSERT INTO public.insurance_admin_contacts (channel, destination, display_name, display_order, is_active) VALUES
+      ('whatsapp', '+250795588248', 'Insurance Support Team 1', 1, true),
+      ('whatsapp', '+250793094876', 'Insurance Support Team 2', 2, true),
+      ('whatsapp', '+250788767816', 'Insurance Support Team 3', 3, true),
+      ('email', 'insurance@easymo.rw', 'Insurance Email', 10, true)
+    ON CONFLICT DO NOTHING;
+  ELSE
+    INSERT INTO public.insurance_admin_contacts (contact_type, contact_value, display_name, display_order, is_active) VALUES
+      ('whatsapp', '+250795588248', 'Insurance Support Team 1', 1, true),
+      ('whatsapp', '+250793094876', 'Insurance Support Team 2', 2, true),
+      ('whatsapp', '+250788767816', 'Insurance Support Team 3', 3, true),
+      ('email', 'insurance@easymo.rw', 'Insurance Email', 10, true)
+    ON CONFLICT DO NOTHING;
+  END IF;
+END $$;
 
 COMMIT;
