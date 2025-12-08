@@ -54,10 +54,11 @@ export async function matchDriversForTrip(
   if (error) throw error;
   
   // Map to old MatchResult format for backward compatibility
+  // Note: whatsapp_number from RPC is in E.164 format, mapping to whatsapp_e164
   return (data ?? []).map((item: any) => ({
     trip_id: item.trip_id,
     creator_user_id: item.driver_user_id,
-    whatsapp_e164: item.whatsapp_number,
+    whatsapp_e164: item.whatsapp_number, // Already in E.164 format from profiles table
     ref_code: item.ref_code,
     distance_km: (item.distance_m || 0) / 1000,
     drop_bonus_m: null,
@@ -85,10 +86,11 @@ export async function matchPassengersForTrip(
   if (error) throw error;
   
   // Map to old MatchResult format for backward compatibility
+  // Note: whatsapp_number from RPC is in E.164 format, mapping to whatsapp_e164
   return (data ?? []).map((item: any) => ({
     trip_id: item.trip_id,
     creator_user_id: item.passenger_user_id,
-    whatsapp_e164: item.whatsapp_number,
+    whatsapp_e164: item.whatsapp_number, // Already in E.164 format from profiles table
     ref_code: item.ref_code,
     distance_km: (item.distance_m || 0) / 1000,
     drop_bonus_m: null,

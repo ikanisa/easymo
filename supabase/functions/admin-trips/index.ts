@@ -39,8 +39,12 @@ serve(async (req) => {
   try {
     if (action === "close" && req.method === "POST") {
       const body = await req.json().catch(() => ({}));
-      const id = (body as { id?: unknown }).id as string;
-      if (!id) return badRequest("id_required");
+      const id = (body as { id?: unknown }).id;
+      
+      // Validate ID is a non-empty string
+      if (!id || typeof id !== "string") {
+        return badRequest("id_required");
+      }
 
       const { error } = await supabase
         .from("trips")
