@@ -2,8 +2,8 @@
 // Members API Client
 // ═══════════════════════════════════════════════════════════════════════════
 
-import type { Member, MemberStatus } from "@/types/payment";
 import type { PaginatedResponse } from "@/types/api";
+import type { Member, MemberStatus } from "@/types/payment";
 
 interface FetchMembersParams {
   sacco_id: string;

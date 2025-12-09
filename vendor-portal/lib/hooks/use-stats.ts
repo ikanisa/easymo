@@ -5,6 +5,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+
 import { fetchStats } from "@/lib/api/stats";
 
 export function useStats(sacco_id: string, days = 30) {

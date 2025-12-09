@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
+
+import { createClient } from "@/lib/supabase/server";
 import { updateGroupSchema } from "@/lib/validations/group";
 
 export const runtime = "edge";
@@ -59,12 +60,20 @@ export async function GET(
       .order("joined_at", { ascending: false })
       .limit(10);
 
-    const membersWithBalance = (members || []).map((m: any) => ({
+    interface MemberWithAccounts {
+      id: string;
+      member_code: string;
+      full_name: string;
+      status: string;
+      accounts?: Array<{ balance?: number }>;
+    }
+    
+    const membersWithBalance = (members || []).map((m: MemberWithAccounts) => ({
       id: m.id,
       member_code: m.member_code,
       full_name: m.full_name,
       status: m.status,
-      balance: (m.accounts || []).reduce((sum: number, acc: any) => sum + (acc.balance || 0), 0),
+      balance: (m.accounts || []).reduce((sum: number, acc: { balance?: number }) => sum + (acc.balance || 0), 0),
     }));
 
     return NextResponse.json({

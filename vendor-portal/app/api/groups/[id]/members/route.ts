@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
+
+import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "edge";
 
@@ -64,11 +65,21 @@ export async function GET(
       );
     }
 
+    interface Account {
+      status?: string;
+      balance?: number;
+    }
+    
+    interface MemberWithAccounts {
+      accounts?: Account[];
+      [key: string]: unknown;
+    }
+    
     // Calculate total balance for each member
-    const membersWithBalance = (data || []).map((member: any) => {
+    const membersWithBalance = (data || []).map((member: MemberWithAccounts) => {
       const totalBalance = (member.accounts || [])
-        .filter((acc: any) => acc.status === "ACTIVE")
-        .reduce((sum: number, acc: any) => sum + (acc.balance || 0), 0);
+        .filter((acc: Account) => acc.status === "ACTIVE")
+        .reduce((sum: number, acc: Account) => sum + (acc.balance || 0), 0);
       return {
         ...member,
         total_balance: totalBalance,

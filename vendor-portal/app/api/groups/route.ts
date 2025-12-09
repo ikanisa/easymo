@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
+
+import { createClient } from "@/lib/supabase/server";
 import { createGroupSchema, groupListQuerySchema } from "@/lib/validations/group";
 
 export const runtime = "edge";
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
 
     // Get member counts for each group
     const groupsWithStats = await Promise.all(
-      (groups || []).map(async (group: any) => {
+      (groups || []).map(async (group: Record<string, unknown>) => {
         const { count: memberCount } = await supabase
           .from("members")
           .select("*", { count: "exact", head: true })

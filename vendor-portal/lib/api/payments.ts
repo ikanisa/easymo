@@ -3,15 +3,15 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import type {
-  Payment,
-  UnmatchedSMS,
-  PaymentStatus,
-} from "@/types/payment";
-import type {
-  PaginatedResponse,
   ManualMatchRequest,
   ManualMatchResponse,
+  PaginatedResponse,
 } from "@/types/api";
+import type {
+  Payment,
+  PaymentStatus,
+  UnmatchedSMS,
+} from "@/types/payment";
 
 interface FetchPaymentsParams {
   sacco_id: string;

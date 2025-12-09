@@ -5,7 +5,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { fetchMembers, fetchMemberById, searchMembers } from "@/lib/api/members";
+
+import { fetchMemberById, fetchMembers, searchMembers } from "@/lib/api/members";
 import type { MemberStatus } from "@/types/payment";
 
 interface UseMembersParams {

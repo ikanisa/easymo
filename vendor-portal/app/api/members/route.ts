@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
+
+import { createClient } from "@/lib/supabase/server";
 import { createMemberSchema, memberListQuerySchema } from "@/lib/validations/member";
 
 export const runtime = "edge";
@@ -67,9 +68,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const membersWithBalance = (data || []).map((member: any) => {
-      const totalBalance = (member.accounts || []).reduce(
-        (sum: number, acc: any) => sum + (acc.balance || 0),
+    const membersWithBalance = (data || []).map((member: Record<string, unknown>) => {
+      const accounts = member.accounts as Array<{ balance?: number }> | undefined;
+      const totalBalance = (accounts || []).reduce(
+        (sum: number, acc: { balance?: number }) => sum + (acc.balance || 0),
         0
       );
       return { ...member, total_balance: totalBalance };
