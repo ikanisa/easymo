@@ -3,8 +3,11 @@
 
 BEGIN;
 
+-- Drop dependent objects first
+DROP TABLE IF EXISTS public.wa_events_bq_queue CASCADE;
+
 -- Drop and recreate wa_events table with correct schema
-DROP TABLE IF EXISTS public.wa_events;
+DROP TABLE IF EXISTS public.wa_events CASCADE;
 
 CREATE TABLE public.wa_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
