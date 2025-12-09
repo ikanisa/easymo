@@ -6,6 +6,11 @@
 BEGIN;
 
 -- =====================================================
+-- Ensure required extensions exist
+-- =====================================================
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- =====================================================
 -- Ensure app schema exists
 -- =====================================================
 CREATE SCHEMA IF NOT EXISTS app;

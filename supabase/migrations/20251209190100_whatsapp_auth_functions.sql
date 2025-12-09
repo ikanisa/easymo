@@ -19,20 +19,24 @@ COMMENT ON FUNCTION app.hash_otp_code IS 'Securely hash OTP codes using SHA-256'
 
 -- =====================================================
 -- Function: app.generate_otp_code
--- Generate a random 6-digit OTP code
+-- Generate a cryptographically secure random 6-digit OTP code
+-- Uses pgcrypto's gen_random_bytes for security
 -- =====================================================
 CREATE OR REPLACE FUNCTION app.generate_otp_code()
 RETURNS TEXT AS $$
 DECLARE
-  code TEXT;
+  code INTEGER;
+  raw_bytes BYTEA;
 BEGIN
-  -- Generate 6 random digits
-  code := lpad(floor(random() * 1000000)::text, 6, '0');
-  RETURN code;
+  -- Generate 4 bytes of cryptographically secure randomness
+  raw_bytes := gen_random_bytes(4);
+  -- Convert to integer and take modulo for 6 digits (000000-999999)
+  code := abs(('x' || encode(raw_bytes, 'hex'))::bit(32)::integer) % 1000000;
+  RETURN lpad(code::text, 6, '0');
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 
-COMMENT ON FUNCTION app.generate_otp_code IS 'Generate a random 6-digit OTP code';
+COMMENT ON FUNCTION app.generate_otp_code IS 'Generate a cryptographically secure random 6-digit OTP code using pgcrypto';
 
 -- =====================================================
 -- Function: app.create_whatsapp_otp
