@@ -95,11 +95,40 @@ export function getLocationSavedMessage(
   return messages[locale] || messages.en;
 }
 
-export function getShareLocationPrompt(locale = "en"): string {
+export function getShareLocationPrompt(locale = "en", hasRecentLocation = false): string {
+  if (hasRecentLocation) {
+    // Include "Use Last Location" option
+    const messages: Record<string, string> = {
+      en: `📍 **Share Your Location**\n\nYou can:\n• Tap "📍 Use Last Location" button below\n• OR tap 📎 and select *Location* to share a new location\n• OR send an address`,
+      fr: `📍 **Partagez Votre Position**\n\nVous pouvez:\n• Appuyez sur le bouton "📍 Utiliser la dernière position"\n• OU appuyez sur 📎 et sélectionnez *Position* pour partager une nouvelle position\n• OU envoyer une adresse`,
+      rw: `📍 **Sangira Aho Uri**\n\nUrashobora:\n• Kanda "📍 Koresha aho wahereje" hasi\n• CYANGWA kanda 📎 hanyuma uhitemo *Aho uri* kugira ngo usangire aho ushya\n• CYANGWA wohereza aderesi`,
+    };
+    return messages[locale] || messages.en;
+  }
+  
+  // No recent location - simple prompt
   const messages: Record<string, string> = {
     en: `📍 **Share Your Location**\n\nTap the 📎 button below and select *Location* to share where you are.\n\nOr send an address if you know it!`,
     fr: `📍 **Partagez Votre Position**\n\nAppuyez sur le bouton 📎 ci-dessous et sélectionnez *Position* pour partager où vous êtes.\n\nOu envoyez une adresse si vous la connaissez!`,
     rw: `📍 **Sangira Aho Uri**\n\nKanda buto ya 📎 hasi hanyuma uhitemo *Aho uri* kugira ngo usangire aho uri.\n\nCyangwa wohereza aderesi niba uyizi!`,
+  };
+  return messages[locale] || messages.en;
+}
+
+export function getUseLastLocationButton(locale = "en"): { id: string; title: string } {
+  const buttons: Record<string, { id: string; title: string }> = {
+    en: { id: "use_last_location", title: "📍 Use Last Location" },
+    fr: { id: "use_last_location", title: "📍 Utiliser la dernière" },
+    rw: { id: "use_last_location", title: "📍 Koresha aho wahereje" },
+  };
+  return buttons[locale] || buttons.en;
+}
+
+export function getLocationReusedMessage(ageMinutes: number, locale = "en"): string {
+  const messages: Record<string, string> = {
+    en: `✅ Using your location from ${ageMinutes} minute${ageMinutes === 1 ? '' : 's'} ago`,
+    fr: `✅ Utilisation de votre position d'il y a ${ageMinutes} minute${ageMinutes === 1 ? '' : 's'}`,
+    rw: `✅ Tukoresha aho wari ${ageMinutes === 1 ? 'umunota umwe' : `iminota ${ageMinutes}`} uhereye`,
   };
   return messages[locale] || messages.en;
 }

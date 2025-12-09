@@ -40,7 +40,7 @@ export async function handleDriverOfferRide(
     // Get trip details
     const { data: trip } = await ctx.supabase
       .from("trips")
-      .select("id, creator_user_id, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, vehicle_type, pickup_text, dropoff_text")
+      .select("id, creator_user_id, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, vehicle_type, pickup_text, dropoff_text")
       .eq("id", tripId)
       .single();
 
@@ -140,7 +140,7 @@ export async function handleDriverViewDetails(
     // Get trip details
     const { data: trip } = await ctx.supabase
       .from("trips")
-      .select("id, creator_user_id, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, vehicle_type, pickup_text, dropoff_text, created_at")
+      .select("id, creator_user_id, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, vehicle_type, pickup_text, dropoff_text, created_at")
       .eq("id", tripId)
       .single();
 
@@ -166,10 +166,10 @@ export async function handleDriverViewDetails(
           
           // Haversine distance
           const R = 6371; // Earth radius in km
-          const dLat = (trip.pickup_latitude - driverLat) * Math.PI / 180;
-          const dLng = (trip.pickup_longitude - driverLng) * Math.PI / 180;
+          const dLat = (trip.pickup_lat - driverLat) * Math.PI / 180;
+          const dLng = (trip.pickup_lng - driverLng) * Math.PI / 180;
           const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                    Math.cos(driverLat * Math.PI / 180) * Math.cos(trip.pickup_latitude * Math.PI / 180) *
+                    Math.cos(driverLat * Math.PI / 180) * Math.cos(trip.pickup_lat * Math.PI / 180) *
                     Math.sin(dLng/2) * Math.sin(dLng/2);
           const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
           const distance = R * c;
@@ -183,9 +183,9 @@ export async function handleDriverViewDetails(
       }
     }
 
-    const pickupInfo = trip.pickup_text || `📍 ${trip.pickup_latitude.toFixed(5)}, ${trip.pickup_longitude.toFixed(5)}`;
-    const dropoffInfo = trip.dropoff_latitude && trip.dropoff_longitude
-      ? `\n🎯 Dropoff: ${trip.dropoff_text || `${trip.dropoff_latitude.toFixed(5)}, ${trip.dropoff_longitude.toFixed(5)}`}`
+    const pickupInfo = trip.pickup_text || `📍 ${trip.pickup_lat.toFixed(5)}, ${trip.pickup_lng.toFixed(5)}`;
+    const dropoffInfo = trip.dropoff_lat && trip.dropoff_lng
+      ? `\n🎯 Dropoff: ${trip.dropoff_text || `${trip.dropoff_lat.toFixed(5)}, ${trip.dropoff_lng.toFixed(5)}`}`
       : "";
 
     const details = t(ctx.locale, "mobility.driver_response.trip_details", {
