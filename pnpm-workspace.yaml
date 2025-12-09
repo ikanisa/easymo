@@ -4,6 +4,7 @@ packages:
   - admin-app
   - ai
   - client-pwa
+  - vendor-portal
 
 # NOTE: The following apps exist but are not in the workspace:
 # - bar-manager-app: Uses workspace packages but requires lockfile update to add (run `pnpm install` without `--frozen-lockfile`)
