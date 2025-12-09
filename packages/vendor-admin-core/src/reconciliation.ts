@@ -2,11 +2,11 @@
  * Payment reconciliation operations for SACCO
  */
 
+import { FEATURE_FLAGS, isFeatureEnabled } from '@easymo/flags';
 import { 
   type Payment, 
   PaymentSchema,
 } from '@easymo/sacco-core';
-import { isFeatureEnabled, FEATURE_FLAGS } from '@easymo/flags';
 
 export { type Payment };
 

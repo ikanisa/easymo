@@ -2,16 +2,16 @@
  * Member management operations for SACCO admin
  */
 
+import { FEATURE_FLAGS, isFeatureEnabled } from '@easymo/flags';
 import { 
-  type Member, 
   type CreateMember, 
-  type UpdateMember,
-  MemberSchema,
   CreateMemberSchema,
+  type Member, 
+  MemberSchema,
+  type UpdateMember,
 } from '@easymo/sacco-core';
-import { isFeatureEnabled, FEATURE_FLAGS } from '@easymo/flags';
 
-export { type Member, type CreateMember, type UpdateMember };
+export { type CreateMember, type Member, type UpdateMember };
 
 /**
  * Member service interface

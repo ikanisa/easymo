@@ -29,7 +29,7 @@ export type Translations = Record<SupportedLocale, TranslationNamespace>;
  * Get the translation for a given key and locale
  * Placeholder - will be implemented during Ibimina merger
  */
-export function t(key: string, locale: SupportedLocale = DEFAULT_LOCALE): string {
+export function t(key: string, _locale: SupportedLocale = DEFAULT_LOCALE): string {
   // Placeholder implementation - returns key
   // Full implementation will come from Ibimina merger
   return key;

@@ -10,7 +10,7 @@
  * Will receive full implementation from Ibimina merger.
  */
 
-export * from './members.js';
 export * from './ikimina.js';
+export * from './members.js';
 export * from './reconciliation.js';
 export * from './types.js';

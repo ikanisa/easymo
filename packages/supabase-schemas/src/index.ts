@@ -9,26 +9,24 @@
 
 // Re-export SACCO schemas from sacco-core
 export {
-  MemberSchema,
-  type Member,
-  CreateMemberSchema,
-  type CreateMember,
-  UpdateMemberSchema,
-  type UpdateMember,
-  
-  IkiminaSchema,
-  type Ikimina,
-  CreateIkiminaSchema,
   type CreateIkimina,
-  UpdateIkiminaSchema,
-  type UpdateIkimina,
-  
-  PaymentSchema,
-  type Payment,
-  CreatePaymentSchema,
+  CreateIkiminaSchema,
+  type CreateMember,
+  CreateMemberSchema,
   type CreatePayment,
-  UpdatePaymentSchema,
+  CreatePaymentSchema,
+  type Ikimina,
+  IkiminaSchema,
+  type Member,
+  MemberSchema,
+  type Payment,
+  PaymentSchema,
+  type UpdateIkimina,
+  UpdateIkiminaSchema,
+  type UpdateMember,
+  UpdateMemberSchema,
   type UpdatePayment,
+  UpdatePaymentSchema,
 } from '@easymo/sacco-core';
 
 // Export database types

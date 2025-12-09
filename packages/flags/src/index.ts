@@ -88,7 +88,8 @@ const defaultFlags: Record<string, boolean> = {
  */
 export function isFeatureEnabled(flag: FeatureFlagKey): boolean {
   // Check environment variable first (FEATURE_<FLAG_NAME>=true)
-  const envKey = `FEATURE_${flag.toUpperCase()}`;
+  // Transform flag to valid env var name: uppercase and replace non-alphanumeric with underscore
+  const envKey = `FEATURE_${flag.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`;
   const envValue = typeof process !== 'undefined' 
     ? process.env?.[envKey] 
     : undefined;

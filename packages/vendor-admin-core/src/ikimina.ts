@@ -2,16 +2,16 @@
  * Ikimina (savings groups) management operations
  */
 
+import { FEATURE_FLAGS, isFeatureEnabled } from '@easymo/flags';
 import { 
-  type Ikimina, 
   type CreateIkimina, 
-  type UpdateIkimina,
-  IkiminaSchema,
   CreateIkiminaSchema,
+  type Ikimina, 
+  IkiminaSchema,
+  type UpdateIkimina,
 } from '@easymo/sacco-core';
-import { isFeatureEnabled, FEATURE_FLAGS } from '@easymo/flags';
 
-export { type Ikimina, type CreateIkimina, type UpdateIkimina };
+export { type CreateIkimina, type Ikimina, type UpdateIkimina };
 
 /**
  * Ikimina service interface
