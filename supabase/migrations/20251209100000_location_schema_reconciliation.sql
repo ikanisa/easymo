@@ -8,9 +8,44 @@
 BEGIN;
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- Step 1: Verify and enhance saved_locations (canonical favorites)
+-- Step 1: Create or verify saved_locations (canonical favorites)
 -- ═══════════════════════════════════════════════════════════════════════════
 
+-- Create table if not exists
+CREATE TABLE IF NOT EXISTS app.saved_locations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL DEFAULT 'other' CHECK (kind IN ('home', 'work', 'school', 'other')),
+    lat DOUBLE PRECISION NOT NULL CHECK (lat >= -90 AND lat <= 90),
+    lng DOUBLE PRECISION NOT NULL CHECK (lng >= -180 AND lng <= 180),
+    address TEXT,
+    label TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (user_id, kind)
+);
+
+-- Enable RLS
+ALTER TABLE app.saved_locations ENABLE ROW LEVEL SECURITY;
+
+-- Create policy if not exists
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'saved_locations' 
+        AND policyname = 'Users can manage own saved locations'
+    ) THEN
+        CREATE POLICY "Users can manage own saved locations"
+        ON app.saved_locations
+        FOR ALL
+        TO authenticated
+        USING (auth.uid() = user_id)
+        WITH CHECK (auth.uid() = user_id);
+    END IF;
+END $$;
+
+-- Add or verify geog column
 DO $$
 BEGIN
     -- Add geog column if missing (for proximity queries)
@@ -28,20 +63,6 @@ BEGIN
         ON app.saved_locations USING GIST(geog);
         
         RAISE NOTICE 'Added geog column to saved_locations';
-    END IF;
-    
-    -- Add kind column if missing
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_schema = 'app'
-        AND table_name = 'saved_locations'
-        AND column_name = 'kind'
-    ) THEN
-        ALTER TABLE app.saved_locations
-        ADD COLUMN kind TEXT NOT NULL DEFAULT 'other'
-        CHECK (kind IN ('home', 'work', 'school', 'other'));
-        
-        RAISE NOTICE 'Added kind column to saved_locations';
     END IF;
 END $$;
 
