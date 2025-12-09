@@ -9,6 +9,7 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 export { MarketplaceAgent } from "../agent.ts";
 export * from "../db/index.ts";
 export * from "../utils/index.ts";
+export * from "./vendor_inquiry_tools.ts";
 
 export interface MarketplaceMessage {
   text: string;
@@ -28,12 +29,15 @@ export interface MarketplaceResponse {
 export function getMarketplaceStatus(): {
   enabled: boolean;
   aiEnabled: boolean;
+  vendorOutreachEnabled: boolean;
   version: string;
 } {
   const aiEnabled = Deno.env.get("FEATURE_MARKETPLACE_AI") === "true";
+  const vendorOutreachEnabled = Deno.env.get("FEATURE_VENDOR_OUTREACH") === "true";
   return {
     enabled: true,
     aiEnabled,
-    version: "2.0.0",
+    vendorOutreachEnabled,
+    version: "3.0.0",
   };
 }

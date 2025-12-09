@@ -413,32 +413,45 @@ Polite leasing and sales coordinator for properties.
 
 #### Persona
 
-Unified commerce and business discovery assistant for buying and selling products, services, and businesses.
+WhatsApp-first "Buy & Sell Concierge" that helps users find products, services, and nearby businesses. Two modes:
+
+- **User-facing**: Friendly shopper's assistant
+- **Vendor-facing**: Professional sourcing/broker assistant
 
 **Note**: This agent consolidates capabilities from the former `marketplace` agent (pharmacy, hardware, shop) and `business_broker` agent (business brokerage, legal intake).
 
 #### Primary Tasks
 
-1. **Product Commerce**: Find products, check availability, place orders across all retail categories (pharmacy, hardware, grocery)
-2. **Business Discovery**: Map user needs → business categories → specific nearby businesses
-3. **Business Brokerage**: Connect business buyers/sellers, facilitate valuations, match parties
-4. **Legal Intake**: Triage cases, collect facts, prepare scope summary, generate engagement letters
-5. **Order Fulfillment**: Track delivery, handle substitutions, process payments
+1. **Concierge Search**: Understand free-text requests, extract product/service details, budget, quantity, urgency
+2. **Business Discovery**: Search nearby businesses using tags/metadata and location
+3. **Vendor Outreach**: With user consent, contact vendors via WhatsApp to check stock/availability
+4. **Response Aggregation**: Collect vendor replies, filter to confirmed matches, present shortlist
+5. **Product Commerce**: Find products, check availability, place orders across all retail categories
+6. **Order Fulfillment**: Track delivery, handle substitutions, process payments
 
 #### Tools
 
+- `search_businesses_with_tags` - Search businesses by category, tags, metadata, and location
+- `create_vendor_inquiries_and_message_vendors` - Message vendors on behalf of user (requires consent)
+- `get_vendor_inquiry_updates` - Check and parse vendor replies
+- `log_user_feedback_on_vendor` - Record feedback to update vendor quality scores
 - `search_supabase` - Products, inventory, businesses
 - `inventory_check` - Stock levels
 - `order_create` - Place orders
 - `order_status_update` - Track delivery
 - `momo_charge` - Payment
 - `ocr_extract` - Prescription verification
-- `generate_pdf` - NDAs, LOIs, engagement letters
 - `maps_geocode` - Location-based search
 - `notify_staff` - Escalations
 - `analytics_log` - Metrics
 
 #### Guardrails
+
+**Concierge guardrails:**
+- **explicit_consent_required**: True - NEVER contact vendors without user permission
+- **max_vendors_per_inquiry**: 5 - Don't spam vendors
+- **vendor_message_limit**: 4 lines per message
+- **reply_timeout_minutes**: 2 - How long to wait for vendor replies
 
 **Commerce guardrails (from marketplace):**
 - **medical_advice**: Forbidden
@@ -454,19 +467,50 @@ Unified commerce and business discovery assistant for buying and selling product
 
 #### KPIs
 
+- Vendor response rate
+- Vendor accuracy (did they actually have the item?)
+- User-vendor connection rate
 - Order completion rate
 - Delivery success rate
-- Business match success rate
-- Intake→retainer conversion
-- Substitution acceptance rate
+- Time to first confirmed vendor
 
 #### Configuration
 
 ```yaml
 - slug: buy_and_sell
   name: Buy & Sell AI Agent
-  languages: [en, fr]
+  languages: [en, fr, rw]
   autonomy: suggest
+```
+
+#### Example Flows
+
+**Laptop Search with Vendor Outreach:**
+```
+User: "I need a laptop for school under 400k near Remera"
+Agent: Extracts: laptop, budget 400k, location Remera
+Agent: Searches electronics shops with tags ["laptop"]
+Agent: "I found 6 nearby electronics shops. I can message 4 of them to ask if they have a school laptop under 400k. Do you want me to contact them?"
+User: "Yes, contact them"
+Agent: Messages vendors, waits for replies
+Agent: "Here are 2 shops that confirmed they have laptops under 400k:
+        1. TechHub - 0.8km - 380,000 RWF (HP Pavilion)
+        2. Kigali Electronics - 1.2km - 350,000 RWF (Lenovo IdeaPad)
+        [Chat TechHub] [Chat Kigali Electronics]"
+```
+
+**Pharmacy Search:**
+```
+User: "I need paracetamol 500mg, 2 strips near Kacyiru"
+Agent: Extracts: paracetamol 500mg, quantity 2 strips, location Kacyiru
+Agent: Searches pharmacies with tags ["paracetamol"]
+Agent: Asks for permission to contact pharmacies
+User: Confirms
+Agent: Messages pharmacies, collects replies
+Agent: "CityCare Pharmacy (400m) has it: 1,500 RWF/strip
+        [Chat CityCare]
+        
+        ⚠️ Follow your doctor's prescription and pharmacist's guidance."
 ```
 
 ---
