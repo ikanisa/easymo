@@ -200,6 +200,18 @@ const createLogger = (service: string, requestId: string): StructuredLogger => (
   },
 });
 
+/**
+ * Log a structured event (global helper)
+ * Use this for standalone logging outside of request context
+ */
+export const logStructuredEvent = (
+  event: string,
+  payload?: Record<string, unknown>,
+  level: "info" | "warn" | "error" = "info"
+) => {
+  writeLog(level, "global", "none", { event, payload: scrubPII(payload ?? {}) });
+};
+
 const flushTelemetry = async () => {
   if (!sentryDsn) {
     return;
