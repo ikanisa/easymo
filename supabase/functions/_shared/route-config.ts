@@ -109,6 +109,12 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
     priority: 2,
   },
   {
+    service: "agent-property-rental",
+    keywords: ["property", "rental", "rent", "house", "apartment", "lease", "accommodation"],
+    menuKeys: ["property_agent", "rental_agent", "property_rental", "real_estate"],
+    priority: 2,
+  },
+  {
     service: "wa-agent-call-center",
     keywords: ["agent", "chat", "ask", "call center", "universal", "marketplace"],
     menuKeys: ["ai_agents", "call_center", "universal_agent"],
@@ -126,9 +132,11 @@ export const ROUTED_SERVICES: readonly string[] = [
   "wa-webhook-property",
   "wa-webhook-profile",
   "wa-webhook-buy-sell",
+  "wa-webhook-waiter",
   "wa-agent-farmer",
   "wa-agent-support",
   "wa-agent-waiter",
+  "agent-property-rental",
   "wa-agent-call-center",
   "wa-webhook-core",
   "wa-webhook", // Legacy fallback
@@ -159,9 +167,11 @@ export const STATE_PATTERNS: Array<{ patterns: string[]; service: string }> = [
   { patterns: ["property", "rental_"], service: "wa-webhook-property" },
   { patterns: ["wallet", "payment_", "transfer_"], service: "wa-webhook-profile" },
   { patterns: ["shop_", "buy_", "sell_"], service: "wa-webhook-buy-sell" },
+  { patterns: ["waiter_workflow_"], service: "wa-webhook-waiter" },
   { patterns: ["farmer_"], service: "wa-agent-farmer" },
   { patterns: ["support_"], service: "wa-agent-support" },
   { patterns: ["waiter_", "restaurant_"], service: "wa-agent-waiter" },
+  { patterns: ["property_agent_", "rental_agent_"], service: "agent-property-rental" },
   { patterns: ["agent_", "call_center_"], service: "wa-agent-call-center" },
 ];
 

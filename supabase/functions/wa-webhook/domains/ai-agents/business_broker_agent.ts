@@ -49,49 +49,62 @@ export class BusinessBrokerAgent {
   }
 
   private buildInstructions(): string {
-    return `You are the easyMO Business Broker AI Agent. You help users find businesses, services, and products in Rwanda.
+    return `You are the easyMO Business Broker AI Agent. You help users find businesses, services, and products in Rwanda using natural language.
 
 YOUR ROLE:
-- Understand what the user is looking for
-- Search the business directory using location and category
-- Provide relevant recommendations
-- Help users connect with businesses
+- Understand what the user needs (medicine, food, haircut, phone repair, etc.)
+- Use smart tag-based search to find relevant businesses
+- Extract keywords from user requests (e.g., "I need medicine" → ["pharmacy", "medicine"])
+- Provide relevant recommendations with contact info
+- Help users connect with businesses via WhatsApp
 - Help users LIST their own products or services
 - Automatically enroll users in the business directory when they list products/services
 
+SEARCH INTELLIGENCE:
+- The businesses database has 6,650 businesses with 1,000+ searchable tags
+- Tags include: services, products, synonyms in English/French/Kinyarwanda
+- Examples: "pharmacy", "medicine", "meds", "paracetamol", "antibiotics"
+- Always extract multiple relevant keywords from user requests
+- If user says "I need medicine" → search with ["pharmacy", "medicine", "drugs"]
+- If user says "fix my phone" → search with ["phone repair", "electronics repair", "screen repair"]
+- If user says "haircut" → search with ["salon", "barber", "haircut", "hair"]
+
 RESPONSE FORMAT (CRITICAL):
-- ALWAYS use emoji-numbered lists (1️⃣, 2️⃣, 3️⃣) when showing businesses or vendors
+- ALWAYS use emoji-numbered lists (1️⃣, 2️⃣, 3️⃣) when showing businesses
 - Keep messages concise and conversational
-- Use emojis: 🏪, 🛠️, 📞, 📍, ⭐, 💼
-- Format business listings as: "1️⃣ Business Name - Category\\n   Location, Contact, Services"
+- Use emojis: 🏪, 🛠️, 📞, 📍, ⭐, 💼, 💊, 🍔, ✂️
+- Format business listings as: "1️⃣ Business Name - Category\\n   📍 Location\\n   📞 Contact\\n   Tags: matched keywords"
+- Show matched tags to help user understand why this business was found
 - End with clear contact/action options
 
 CAPABILITIES:
-- Search businesses by category, location, name
+- Smart tag-based search (natural language understanding)
+- Search by location, category, keywords
+- Find businesses near coordinates
 - Get detailed business information
-- Find businesses near a specific location
-- Provide contact information
-- **List products for sale** (auto-enrolls user in directory)
-- **List services offered** (auto-enrolls user in directory)
-- Add complete business listings
+- Provide WhatsApp contact for direct messaging
+- **List products for sale** (auto-enrolls user)
+- **List services offered** (auto-enrolls user)
 
 AUTOMATIC BUSINESS ENROLLMENT:
-- When a user lists a product → Create product listing + enroll as business
-- When a user lists a service → Create service listing + enroll as business
+- When a user lists a product → Create listing + enroll as business
+- When a user lists a service → Create listing + enroll as business
 - User appears in search results immediately
 - Source marked as 'user_generated'
 
 GUIDELINES:
+- Extract 2-5 relevant keywords from each user request
 - Ask clarifying questions if the request is vague
 - Prioritize businesses with complete information
 - Provide 3-5 relevant results when possible
-- Include key details: name, location, phone, category
+- Include key details: name, location, WhatsApp, category
+- Show which tags matched to build user trust
 - Be helpful and conversational
-- Encourage users to list their own products/services
-- Explain that listing automatically adds them to the business directory
+- Encourage users to message businesses directly via WhatsApp
+- Explain that listing automatically adds them to the directory
 
 TOOLS AVAILABLE:
-- search_businesses: Find businesses by criteria
+- search_businesses: Smart tag-based search with keywords array
 - get_business_details: Get full information about a business
 - search_nearby: Find businesses near coordinates
 - geocode_location: Convert address to coordinates
@@ -99,38 +112,46 @@ TOOLS AVAILABLE:
 - list_service: List a service offering (auto-enrolls user)
 - add_business: Add a complete business listing
 
-Always provide helpful, accurate information based on the business directory.`;
+Always provide helpful, accurate information based on the business directory with 6,650 tagged businesses.`;
   }
 
   private defineTools(): Tool[] {
     return [
       {
         name: 'search_businesses',
-        description: 'Search for businesses by name, category, or location',
+        description: 'Search for businesses using natural language. Supports keywords like "pharmacy", "medicine", "food", "haircut", "phone repair", etc.',
         parameters: {
           type: 'object',
           properties: {
-            query: { type: 'string', description: 'Search query (name, category, or keyword)' },
+            keywords: { 
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Search keywords or tags (e.g., ["pharmacy", "medicine"], ["restaurant", "pizza"], ["phone repair"])' 
+            },
             location: { type: 'string', description: 'City or area (e.g., "Kigali", "Musanze")' },
-            category: { type: 'string', description: 'Business category (e.g., "pharmacy", "restaurant")' },
+            category: { type: 'string', description: 'Business category (e.g., "Pharmacies", "Bars & Restaurants", "Electronics")' },
             limit: { type: 'number', description: 'Maximum results (default 5)' }
           }
         },
         execute: async (params) => {
           let query = this.supabase
             .from('businesses')
-            .select('id, name, category, city, address, phone, rating');
+            .select('id, name, buy_sell_category, city, address, owner_whatsapp, phone, rating, tags');
 
-          if (params.query) {
-            query = query.or(`name.ilike.%${params.query}%,category.ilike.%${params.query}%`);
+          // Smart tag-based search - matches ANY of the keywords in tags
+          if (params.keywords && params.keywords.length > 0) {
+            // Use overlaps operator for array search
+            query = query.overlaps('tags', params.keywords);
           }
 
+          // Filter by location
           if (params.location) {
             query = query.ilike('city', `%${params.location}%`);
           }
 
+          // Filter by category
           if (params.category) {
-            query = query.ilike('category', `%${params.category}%`);
+            query = query.eq('buy_sell_category', params.category);
           }
 
           query = query.limit(params.limit || 5);
@@ -142,7 +163,37 @@ Always provide helpful, accurate information based on the business directory.`;
           }
 
           if (!data || data.length === 0) {
-            return { message: 'No businesses found matching your criteria.' };
+            // Fallback: search by name if no tag matches
+            if (params.keywords && params.keywords.length > 0) {
+              const nameQuery = this.supabase
+                .from('businesses')
+                .select('id, name, buy_sell_category, city, address, owner_whatsapp, phone, rating, tags')
+                .or(params.keywords.map(k => `name.ilike.%${k}%`).join(','))
+                .limit(params.limit || 5);
+              
+              if (params.location) {
+                nameQuery.ilike('city', `%${params.location}%`);
+              }
+              
+              const fallback = await nameQuery;
+              if (fallback.data && fallback.data.length > 0) {
+                return {
+                  count: fallback.data.length,
+                  businesses: fallback.data.map(b => ({
+                    id: b.id,
+                    name: b.name,
+                    category: b.buy_sell_category,
+                    location: `${b.city}${b.address ? ', ' + b.address : ''}`,
+                    phone: b.owner_whatsapp || b.phone,
+                    rating: b.rating,
+                    matched_tags: b.tags.filter((t: string) => 
+                      params.keywords.some((k: string) => t.toLowerCase().includes(k.toLowerCase()))
+                    )
+                  }))
+                };
+              }
+            }
+            return { message: 'No businesses found matching your criteria. Try different keywords or location.' };
           }
 
           return {
@@ -150,10 +201,13 @@ Always provide helpful, accurate information based on the business directory.`;
             businesses: data.map(b => ({
               id: b.id,
               name: b.name,
-              category: b.category,
+              category: b.buy_sell_category,
               location: `${b.city}${b.address ? ', ' + b.address : ''}`,
-              phone: b.phone,
-              rating: b.rating
+              phone: b.owner_whatsapp || b.phone,
+              rating: b.rating,
+              matched_tags: b.tags.filter((t: string) => 
+                params.keywords.some((k: string) => t.toLowerCase().includes(k.toLowerCase()))
+              )
             }))
           };
         }
