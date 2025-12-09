@@ -200,7 +200,7 @@ export async function resolveUserLocation(
     const home = await getFavoriteLocation(supabase, userId, "home");
     if (home) {
       return {
-        location: { lat: home.lat, lng: home.lng, address: favorite.address },
+        location: { lat: home.lat, lng: home.lng, address: home.address },
         source: "favorite",
         favoriteKind: "home",
       };
