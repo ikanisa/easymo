@@ -1,5 +1,4 @@
 /**
-<<<<<<< HEAD
  * Generate a unique payment reference
  * Format: YYYYMMDD-HHMMSS-RANDOM
  */
@@ -37,7 +36,9 @@ export function generateMemberCode(saccoPrefix?: string): string {
 export function generateIkiminaCode(): string {
   const random = Math.random().toString(36).substring(2, 8).toUpperCase();
   return `IK-${random}`;
-=======
+}
+
+/**
  * Generate a unique reference code
  * @param prefix - Prefix for the reference (e.g., "PAY", "TXN")
  * @param length - Length of random part (default: 8)
@@ -66,5 +67,4 @@ export function isValidReference(reference: string, prefix?: string): boolean {
     : /^[A-Z]{2,4}-[A-Z0-9]{6,}$/;
   
   return pattern.test(reference);
->>>>>>> feature/location-caching-and-mobility-deep-review
 }

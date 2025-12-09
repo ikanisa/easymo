@@ -1,5 +1,4 @@
 /**
-<<<<<<< HEAD
  * Rwanda administrative divisions
  * Source: National Institute of Statistics of Rwanda (NISR)
  */
@@ -10,22 +9,11 @@ export const RWANDA_PROVINCES = [
   'Northern Province',
   'Southern Province',
   'Western Province',
-=======
- * Rwanda provinces
- */
-export const RWANDA_PROVINCES = [
-  "Kigali City",
-  "Eastern Province",
-  "Northern Province",
-  "Southern Province",
-  "Western Province",
->>>>>>> feature/location-caching-and-mobility-deep-review
 ] as const;
 
 export type RwandaProvince = typeof RWANDA_PROVINCES[number];
 
 /**
-<<<<<<< HEAD
  * Major districts in Rwanda (30 districts)
  */
 export const RWANDA_DISTRICTS = [
@@ -68,47 +56,11 @@ export const RWANDA_DISTRICTS = [
   'Rubavu',
   'Rusizi',
   'Rutsiro',
-=======
- * Rwanda districts (selected major ones)
- */
-export const RWANDA_DISTRICTS = [
-  "Gasabo",
-  "Kicukiro",
-  "Nyarugenge",
-  "Bugesera",
-  "Gatsibo",
-  "Kayonza",
-  "Kirehe",
-  "Ngoma",
-  "Nyagatare",
-  "Rwamagana",
-  "Burera",
-  "Gicumbi",
-  "Musanze",
-  "Rulindo",
-  "Gakenke",
-  "Gisagara",
-  "Huye",
-  "Kamonyi",
-  "Muhanga",
-  "Nyamagabe",
-  "Nyanza",
-  "Nyaruguru",
-  "Ruhango",
-  "Karongi",
-  "Ngororero",
-  "Nyabihu",
-  "Nyamasheke",
-  "Rubavu",
-  "Rusizi",
-  "Rutsiro",
->>>>>>> feature/location-caching-and-mobility-deep-review
 ] as const;
 
 export type RwandaDistrict = typeof RWANDA_DISTRICTS[number];
 
 /**
-<<<<<<< HEAD
  * District to Province mapping
  */
 export const DISTRICT_TO_PROVINCE: Record<RwandaDistrict, RwandaProvince> = {
@@ -173,7 +125,8 @@ export function isValidDistrict(district: string): district is RwandaDistrict {
 export function isValidProvince(province: string): province is RwandaProvince {
   return RWANDA_PROVINCES.includes(province as RwandaProvince);
 }
-=======
+
+/**
  * Mobile money providers in Rwanda
  */
 export const MOBILE_MONEY_PROVIDERS = {
@@ -182,4 +135,3 @@ export const MOBILE_MONEY_PROVIDERS = {
 } as const;
 
 export type MobileMoneyProvider = keyof typeof MOBILE_MONEY_PROVIDERS;
->>>>>>> feature/location-caching-and-mobility-deep-review

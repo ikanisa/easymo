@@ -2,7 +2,6 @@
   "name": "@easymo/sacco-core",
   "version": "0.1.0",
   "private": true,
-<<<<<<< HEAD
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -19,30 +18,16 @@
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -w -p tsconfig.json",
     "lint": "eslint . --ext .ts",
-    "type-check": "tsc -p tsconfig.json --noEmit"
+    "type-check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest"
   },
   "dependencies": {
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "eslint": "^9.32.0",
-    "typescript": "5.5.4"
-=======
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "type-check": "tsc --noEmit",
-    "test": "vitest"
-  },
-  "dependencies": {
-    "zod": "^3.24.1"
-  },
-  "devDependencies": {
     "@types/node": "^22.10.2",
-    "typescript": "^5.7.2",
+    "eslint": "^9.32.0",
+    "typescript": "5.5.4",
     "vitest": "^2.1.8"
->>>>>>> feature/location-caching-and-mobility-deep-review
   }
 }
