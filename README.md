@@ -1,4 +1,14 @@
 
+# 🚨 CRITICAL: Read Guardrails First
+
+**Before making ANY changes to this repository, you MUST read and follow:**
+
+👉 **[CRITICAL_GUARDRAILS.md](./CRITICAL_GUARDRAILS.md)** 👈
+
+These rules prevent schema drift, duplication, and fragmented features. **All work violating these guardrails will be REJECTED.**
+
+---
+
 ## Supported Countries
 
 ### ❌ NOT Supported (DO NOT USE)
