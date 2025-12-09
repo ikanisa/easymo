@@ -1,1 +1,1 @@
-export { Skeleton } from "@ibimina/ui";
+export { Skeleton } from "@easymo/ibimina-ui";

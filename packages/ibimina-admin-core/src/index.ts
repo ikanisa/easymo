@@ -1,4 +1,4 @@
-// Main entry point for @ibimina/admin-core
+// Main entry point for @easymo/ibimina-admin-core
 export * from './adapters';
 export * from './hooks';
 export * from './services';

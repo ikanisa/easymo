@@ -6,7 +6,7 @@ import {
   getUssdOperatorById,
   ussdConfig,
   type UssdOperatorConfig,
-} from "@ibimina/config";
+} from "@easymo/ibimina-config";
 import type { Database, Json } from "@/lib/supabase/types";
 
 const TemplateRowSchema = z.object({

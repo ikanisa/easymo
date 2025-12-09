@@ -3,7 +3,7 @@ import { z } from "zod";
 import * as Sentry from "@sentry/nextjs";
 // TODO: Fix @ibimina/ai-agent build issues
 // import { runAgentTurn } from "@ibimina/ai-agent";
-import { captureServerEvent } from "@ibimina/lib";
+import { captureServerEvent } from "@easymo/ibimina-lib";
 
 const schema = z.object({
   sessionId: z.string().min(1),

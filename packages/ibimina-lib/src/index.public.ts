@@ -1,4 +1,4 @@
-// Public API surface for @ibimina/lib
+// Public API surface for @easymo/ibimina-lib
 export * from "./security";
 export * from "./ussd/builder";
 export * from "./observability/env";

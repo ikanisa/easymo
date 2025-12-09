@@ -1,2 +1,2 @@
-export { PageHeader } from "@ibimina/ui";
-export type { PageHeaderProps } from "@ibimina/ui";
+export { PageHeader } from "@easymo/ibimina-ui";
+export type { PageHeaderProps } from "@easymo/ibimina-ui";

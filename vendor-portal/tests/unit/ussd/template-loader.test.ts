@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { clearUssdTemplateCache, loadUssdTemplate } from "@/lib/ussd/templates";
-import { ussdConfig } from "@ibimina/config";
+import { ussdConfig } from "@easymo/ibimina-config";
 
 function createSupabaseStub(response: unknown, error: unknown = null) {
   const eqMock = vi.fn().mockReturnThis();

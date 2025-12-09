@@ -5,7 +5,7 @@ import { getMessages, getSurfaceCopy, resolveMessages, type SurfaceCopy } from "
 
 const LOCALES = ["en-RW", "rw-RW", "fr-RW"] as const;
 
-describe("@ibimina/locales coverage", () => {
+describe("@easymo/ibimina-locales coverage", () => {
   it("exposes message trees for English, Kinyarwanda, and French", () => {
     for (const locale of LOCALES) {
       const messages = resolveMessages(locale);

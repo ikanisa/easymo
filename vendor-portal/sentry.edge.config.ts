@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 
-// Use simple inline helpers to avoid PostHog/crypto dependency from @ibimina/lib
+// Use simple inline helpers to avoid PostHog/crypto dependency from @easymo/ibimina-lib
 const resolveEnvironment = () => process.env.APP_ENV || process.env.NODE_ENV || "production";
 const resolveDsn = () => process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN || "";
 const resolveRelease = () =>

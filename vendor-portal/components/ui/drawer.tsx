@@ -1,2 +1,2 @@
-export { Drawer } from "@ibimina/ui";
-export type { DrawerProps } from "@ibimina/ui";
+export { Drawer } from "@easymo/ibimina-ui";
+export type { DrawerProps } from "@easymo/ibimina-ui";

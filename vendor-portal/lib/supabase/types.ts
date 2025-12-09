@@ -1,1 +1,1 @@
-export type { Database, Json } from "@ibimina/supabase-schemas";
+export type { Database, Json } from "@easymo/ibimina-supabase-schemas";

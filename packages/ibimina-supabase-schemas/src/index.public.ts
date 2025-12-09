@@ -1,4 +1,4 @@
-// Public API surface for @ibimina/supabase-schemas
+// Public API surface for @easymo/ibimina-supabase-schemas
 import type { Database } from "./database.types";
 
 export type { Database, Json } from "./database.types";

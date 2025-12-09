@@ -1,2 +1,2 @@
-export { Modal } from "@ibimina/ui";
-export type { ModalProps } from "@ibimina/ui";
+export { Modal } from "@easymo/ibimina-ui";
+export type { ModalProps } from "@easymo/ibimina-ui";

@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 import type { HTMLAttributes } from "react";
 
-import { Card as UiCard, CardContent, CardFooter, CardHeader } from "@ibimina/ui";
+import { Card as UiCard, CardContent, CardFooter, CardHeader } from "@easymo/ibimina-ui";
 
 import { cn } from "@/lib/utils";
 

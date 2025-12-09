@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { featureFlagDefinitions } from "@ibimina/config";
+import { featureFlagDefinitions } from "@easymo/ibimina-config";
 
 import type {
   FlagAdminSnapshot,

@@ -1,1 +1,1 @@
-export { GradientHeader } from "@ibimina/ui";
+export { GradientHeader } from "@easymo/ibimina-ui";

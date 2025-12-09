@@ -1,2 +1,2 @@
-export { Stepper } from "@ibimina/ui";
-export type { StepperProps, StepperStep } from "@ibimina/ui";
+export { Stepper } from "@easymo/ibimina-ui";
+export type { StepperProps, StepperStep } from "@easymo/ibimina-ui";

@@ -28,7 +28,7 @@ export type {
 
 // Inputs
 export { Button } from "./button";
-export type { ButtonProps } from "@ibimina/ui";
+export type { ButtonProps } from "@easymo/ibimina-ui";
 export { Input } from "./input";
 export type { InputProps } from "./input";
 

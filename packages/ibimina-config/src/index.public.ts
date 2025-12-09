@@ -1,4 +1,4 @@
-// Public API surface for @ibimina/config
+// Public API surface for @easymo/ibimina-config
 export { env, clientEnv, requiredServerEnv, atLeastOneServerEnv, loadServerEnv } from "./env";
 export type { ServerEnv, ClientEnv, RequiredServerEnvGroups, RawEnv } from "./env";
 export {

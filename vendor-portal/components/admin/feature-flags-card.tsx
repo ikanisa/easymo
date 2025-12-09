@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import type { FlagAdminSnapshot } from "@ibimina/flags";
+import type { FlagAdminSnapshot } from "@easymo/ibimina-flags";
 
 import { useToast } from "@/providers/toast-provider";
 import { useTranslation } from "@/providers/i18n-provider";
 
-import { type FlagChange } from "@ibimina/flags";
+import { type FlagChange } from "@easymo/ibimina-flags";
 
 interface BaselineState {
   global: Record<string, FlagAdminSnapshot["flags"][number]["global"]>;

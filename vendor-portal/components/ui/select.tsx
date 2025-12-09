@@ -1,1 +1,1 @@
-export { Select } from "@ibimina/ui";
+export { Select } from "@easymo/ibimina-ui";

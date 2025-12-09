@@ -1,1 +1,1 @@
-export { StickyActionBar } from "@ibimina/ui";
+export { StickyActionBar } from "@easymo/ibimina-ui";

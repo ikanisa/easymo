@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { logError } from "@/lib/observability/logger";
 import { z } from "zod";
 
-import { createFeatureFlagAdmin } from "@ibimina/flags";
+import { createFeatureFlagAdmin } from "@easymo/ibimina-flags";
 
 import { AdminPermissionError, requireAdminContext } from "@/lib/admin/guard";
 

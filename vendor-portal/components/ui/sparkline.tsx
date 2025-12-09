@@ -1,1 +1,1 @@
-export { Sparkline } from "@ibimina/ui";
+export { Sparkline } from "@easymo/ibimina-ui";

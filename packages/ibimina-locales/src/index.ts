@@ -1,5 +1,5 @@
 /**
- * @ibimina/locales - Multi-country localization
+ * @easymo/ibimina-locales - Multi-country localization
  *
  * Content packs and translations for different countries and languages
  */

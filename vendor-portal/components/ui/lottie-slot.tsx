@@ -1,1 +1,1 @@
-export { LottieSlot } from "@ibimina/ui";
+export { LottieSlot } from "@easymo/ibimina-ui";

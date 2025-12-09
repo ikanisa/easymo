@@ -1,4 +1,4 @@
-import { Skeleton } from "@ibimina/ui";
+import { Skeleton } from "@easymo/ibimina-ui";
 import { cn } from "@/lib/utils";
 
 interface TableSkeletonProps {

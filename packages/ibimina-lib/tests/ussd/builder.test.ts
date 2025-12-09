@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ussdConfig } from "@ibimina/config";
+import { ussdConfig } from "@easymo/ibimina-config";
 
 import { buildUssdPayload } from "../../src/ussd/builder";
 

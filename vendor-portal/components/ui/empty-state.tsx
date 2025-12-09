@@ -1,1 +1,1 @@
-export { EmptyState } from "@ibimina/ui";
+export { EmptyState } from "@easymo/ibimina-ui";

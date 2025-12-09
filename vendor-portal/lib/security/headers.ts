@@ -27,7 +27,7 @@ export function createSecureHeaders(): Array<{ key: string; value: string }> {
 
 // Stub exports for compatibility - implement if needed
 export function createContentSecurityPolicy() {
-  throw new Error("Not implemented - inline from @ibimina/lib if needed");
+  throw new Error("Not implemented - inline from @easymo/ibimina-lib if needed");
 }
 
 const DEFAULT_NONCE_BYTES = 32;

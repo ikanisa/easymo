@@ -4,7 +4,7 @@ import {
   ussdConfig,
   type UssdLocaleDefinition,
   type UssdOperatorConfig,
-} from "@ibimina/config";
+} from "@easymo/ibimina-config";
 
 export type UssdPlatform = "android" | "ios" | "web";
 

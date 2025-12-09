@@ -1,4 +1,4 @@
-import { getMessageDictionary, type LocaleCode } from "@ibimina/locales";
+import { getMessageDictionary, type LocaleCode } from "@easymo/ibimina-locales";
 
 import { SUPPORTED_LOCALES, type SupportedLocale } from "./locales";
 

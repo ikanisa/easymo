@@ -1,5 +1,5 @@
 /**
- * @ibimina/lib - Shared utilities library
+ * @easymo/ibimina-lib - Shared utilities library
  */
 
 export * from "./security";

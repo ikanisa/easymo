@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import { getMessageDictionary, resolveContentPack, resolveMessages } from "../index.js";
 
-describe("@ibimina/locales fallbacks", () => {
+describe("@easymo/ibimina-locales fallbacks", () => {
   it("merges locale messages with the fallback locale", () => {
     const merged = resolveMessages("fr-SN");
 

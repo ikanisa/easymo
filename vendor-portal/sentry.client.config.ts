@@ -3,7 +3,7 @@ import { logInfo } from "@/lib/observability/logger";
 
 // Skip Sentry initialization in development
 if (process.env.NODE_ENV !== "development") {
-  // Use simple inline helpers to avoid PostHog/crypto dependency from @ibimina/lib
+  // Use simple inline helpers to avoid PostHog/crypto dependency from @easymo/ibimina-lib
   const resolveEnvironment = () => process.env.APP_ENV || process.env.NODE_ENV || "production";
   const resolveDsn = () => process.env.NEXT_PUBLIC_SENTRY_DSN || "";
   const resolveRelease = () =>

@@ -23,7 +23,7 @@ const baseConfig: UserConfig = {
   },
   resolve: {
     alias: {
-      "@ibimina/config": path.resolve(__dirname, "./src/index.ts"),
+      "@easymo/ibimina-config": path.resolve(__dirname, "./src/index.ts"),
     },
   },
 };

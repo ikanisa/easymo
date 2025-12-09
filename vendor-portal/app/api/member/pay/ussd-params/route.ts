@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logError } from "@/lib/observability/logger";
-import { buildUssdPayload } from "@ibimina/lib";
+import { buildUssdPayload } from "@easymo/ibimina-lib";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { loadUssdTemplate } from "@/lib/ussd/templates";
 import type { Database } from "@/lib/supabase/types";

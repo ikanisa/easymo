@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { createSecurityMiddlewareContext } from "@ibimina/lib";
+import { createSecurityMiddlewareContext } from "@easymo/ibimina-lib";
 
 export function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;

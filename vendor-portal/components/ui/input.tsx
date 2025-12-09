@@ -1,2 +1,2 @@
-export { Input } from "@ibimina/ui";
-export type { InputProps } from "@ibimina/ui";
+export { Input } from "@easymo/ibimina-ui";
+export type { InputProps } from "@easymo/ibimina-ui";

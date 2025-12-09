@@ -1,2 +1,2 @@
-export { SegmentedControl } from "@ibimina/ui";
-export type { SegmentedOption } from "@ibimina/ui";
+export { SegmentedControl } from "@easymo/ibimina-ui";
+export type { SegmentedOption } from "@easymo/ibimina-ui";

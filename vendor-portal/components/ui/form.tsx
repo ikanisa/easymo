@@ -1,8 +1,8 @@
-export { FormLayout, FormField, FormSummaryBanner } from "@ibimina/ui";
+export { FormLayout, FormField, FormSummaryBanner } from "@easymo/ibimina-ui";
 export type {
   FormLayoutProps,
   FormFieldProps,
   FormSummaryBannerProps,
   FormSummaryStatus,
   FormLayoutVariant,
-} from "@ibimina/ui";
+} from "@easymo/ibimina-ui";

@@ -1,2 +1,2 @@
-export { ErrorState } from "@ibimina/ui";
-export type { ErrorStateProps } from "@ibimina/ui";
+export { ErrorState } from "@easymo/ibimina-ui";
+export type { ErrorStateProps } from "@easymo/ibimina-ui";

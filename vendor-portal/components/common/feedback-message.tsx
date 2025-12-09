@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Button, EmptyState, ErrorState, SuccessState } from "@ibimina/ui";
+import { Button, EmptyState, ErrorState, SuccessState } from "@easymo/ibimina-ui";
 
 import { Trans } from "@/components/common/trans";
 

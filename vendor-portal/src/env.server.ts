@@ -4,5 +4,5 @@ export {
   requiredServerEnv,
   atLeastOneServerEnv,
   loadServerEnv,
-} from "@ibimina/config";
-export type { ServerEnv, ClientEnv, RequiredServerEnvGroups, RawEnv } from "@ibimina/config";
+} from "@easymo/ibimina-config";
+export type { ServerEnv, ClientEnv, RequiredServerEnvGroups, RawEnv } from "@easymo/ibimina-config";
