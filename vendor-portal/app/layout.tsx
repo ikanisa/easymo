@@ -1,21 +1,3 @@
-<<<<<<< HEAD
-import type { Metadata } from 'next';
-import './globals.css';
-
-export const metadata: Metadata = {
-  title: 'Vendor Portal - EasyMO',
-  description: 'SACCO and MFI management portal',
-};
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <html lang="en">
-      <body className="font-sans">{children}</body>
-=======
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AppProviders } from "@/providers/app-providers";
@@ -119,7 +101,6 @@ export default async function RootLayout({
           {children}
         </AppProviders>
       </body>
->>>>>>> feature/location-caching-and-mobility-deep-review
     </html>
   );
 }

@@ -1,30 +1,3 @@
-<<<<<<< HEAD
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  reactStrictMode: true,
-  compress: true,
-  poweredByHeader: false,
-  
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**.supabase.co',
-      },
-    ],
-  },
-};
-
-export default nextConfig;
-=======
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -43,10 +16,18 @@ try {
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  compress: true,
+  poweredByHeader: false,
   // Ensure output tracing resolves from the monorepo root
   outputFileTracingRoot: path.join(__dirname, "../../.."),
   images: {
     unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+      },
+    ],
   },
   // TypeScript configuration - conditionally ignore based on CI environment
   // When CI="true" is set in Netlify, type checking will be enforced
@@ -97,4 +78,3 @@ const nextConfig = {
 };
 
 export default withPWA(nextConfig);
->>>>>>> feature/location-caching-and-mobility-deep-review
