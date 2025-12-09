@@ -128,16 +128,17 @@ export class RidesAgent {
   private async findPassenger(userId: string, conversationId: string, payload: any) {
     const { currentLat, currentLng, routeLat, routeLng, radiusKm = 5 } = payload;
 
-    // Update driver status to online
-    await this.supabase
-      .from("rides_driver_status")
-      .upsert({
-        user_id: userId,
-        is_online: true,
-        current_lat: currentLat,
-        current_lng: currentLng,
-        last_seen_at: new Date().toISOString()
+    // Update driver status to online using RPC
+    try {
+      await this.supabase.rpc("update_driver_status", {
+        _user_id: userId,
+        _online: true,
+        _lat: currentLat,
+        _lng: currentLng,
       });
+    } catch (error) {
+      console.warn("update_driver_status failed:", error);
+    }
 
     // Find nearby pending trips
     const { data: trips, error: tripsError } = await this.supabase.rpc(

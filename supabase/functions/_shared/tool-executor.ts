@@ -1608,8 +1608,8 @@ export class ToolExecutor {
         console.warn("RPC find_nearby_drivers failed:", error);
         // Fallback to simple query
         const { data: fallbackData } = await this.supabase
-          .from("rides_driver_status")
-          .select("id, driver_name, vehicle_type, rating, is_online")
+          .from("driver_status")
+          .select("id, vehicle_type, is_online")
           .eq("is_online", true)
           .limit(5);
 

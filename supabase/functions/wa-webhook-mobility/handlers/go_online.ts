@@ -121,16 +121,16 @@ export async function handleGoOnlineLocation(
 
       // Also try to update driver_status table if it exists
       try {
-        await ctx.supabase.rpc("rides_update_driver_location", {
-          p_user_id: ctx.profileId,
-          p_lat: coords.lat,
-          p_lng: coords.lng,
-          p_is_online: true,
-          p_metadata: { vehicle_type: vehicleType },
+        await ctx.supabase.rpc("update_driver_status", {
+          _user_id: ctx.profileId,
+          _lat: coords.lat,
+          _lng: coords.lng,
+          _online: true,
+          _vehicle_type: vehicleType,
         });
       } catch (error) {
         // Ignore if function doesn't exist yet
-        console.warn("rides_update_driver_location not available");
+        console.warn("update_driver_status not available");
       }
     }
 
@@ -190,13 +190,13 @@ export async function handleGoOffline(ctx: RouterContext): Promise<boolean> {
   try {
     // Mark driver as offline in driver_status
     try {
-      await ctx.supabase
-        .from("rides_driver_status")
-        .update({ is_online: false })
-        .eq("user_id", ctx.profileId);
+      await ctx.supabase.rpc("update_driver_status", {
+        _user_id: ctx.profileId,
+        _online: false,
+      });
     } catch (error) {
-      // Table might not exist, ignore
-      console.warn("rides_driver_status update failed (table may not exist)");
+      // Function might not exist, ignore
+      console.warn("update_driver_status failed (function may not exist)");
     }
 
     await logStructuredEvent("DRIVER_WENT_OFFLINE", {

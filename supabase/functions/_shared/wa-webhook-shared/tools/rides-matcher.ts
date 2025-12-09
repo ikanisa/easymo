@@ -47,12 +47,12 @@ export async function findNearbyDrivers(
 
     // Query online drivers
     let query = supabase
-      .from("rides_driver_status")
+      .from("driver_status")
       .select(`
         *,
         profiles!inner(id, full_name, phone)
       `)
-      .eq("status", "online")
+      .eq("is_online", true)
       .not("current_lat", "is", null)
       .not("current_lng", "is", null);
 

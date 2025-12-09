@@ -1130,7 +1130,7 @@ export class AgentOrchestrator {
 
     if (intent.type === "find_driver") {
       // Create ride request
-      // Query rides_driver_status for online drivers nearby
+      // Query driver_status for online drivers nearby
       const { findNearbyDrivers, createDriverMatchEvents, formatDriversForWhatsApp } = await import(
         "../wa-webhook-shared/tools/rides-matcher.ts"
       );

@@ -110,10 +110,16 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Trigger the insurance-ocr worker to process the queue (document_ids re-queued above when provided).
+  // Trigger the unified-ocr worker to process the queue (document_ids re-queued above when provided).
   try {
     const payload = parsed.length > 0 ? { document_ids: parsed } : {};
-    const { data, error } = await supabase.functions.invoke('insurance-ocr', { body: payload });
+    const { data, error } = await supabase.functions.invoke('unified-ocr', { 
+      body: payload,
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     if (error) return NextResponse.json({ error, reqId }, { status: 500 });
     return NextResponse.json({ ok: true, result: data, reqId, idempotencyKey }, { status: 200 });
   } catch (e: any) {
