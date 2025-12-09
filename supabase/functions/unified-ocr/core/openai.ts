@@ -50,16 +50,15 @@ export async function runOpenAIVision(
     temperature: request.temperature ?? 0.1,
   };
 
-  // Add JSON schema for structured output if provided
+  // Use json_object mode instead of json_schema for better compatibility
   if (request.schema) {
     requestBody.response_format = {
-      type: "json_schema",
-      json_schema: {
-        name: "ocr_extraction_result",
-        strict: true,
-        schema: request.schema,
-      },
+      type: "json_object"
     };
+    
+    // Add schema description to the user prompt
+    requestBody.messages[1].content[0].text = 
+      `${request.userPrompt}\n\nReturn a valid JSON object matching this structure:\n${JSON.stringify(request.schema, null, 2)}`;
   }
 
   const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
