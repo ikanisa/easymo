@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * BottomNav - Mobile-friendly 5-tab navigation for Vendor Portal
- * Home, Transactions, Payers, Reports, Settings
+ * BottomNav - Mobile-friendly navigation for Vendor Portal
+ * Home, Members, Groups, Transactions, Reports, Settings
  */
 
 import { 
@@ -10,10 +10,12 @@ import {
   FileText, 
   Home, 
   Settings, 
+  UserPlus,
   Users 
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 
 interface NavItem {
   href: string;
@@ -23,8 +25,9 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: '/vendor-portal', label: 'Home', icon: Home },
+  { href: '/vendor-portal/members', label: 'Members', icon: UserPlus },
+  { href: '/vendor-portal/groups', label: 'Groups', icon: Users },
   { href: '/vendor-portal/transactions', label: 'Transactions', icon: FileText },
-  { href: '/vendor-portal/payers', label: 'Payers', icon: Users },
   { href: '/vendor-portal/reports', label: 'Reports', icon: BarChart3 },
   { href: '/vendor-portal/settings', label: 'Settings', icon: Settings },
 ];
