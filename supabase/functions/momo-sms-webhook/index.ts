@@ -31,6 +31,7 @@ import { matchRidePayment } from "./matchers/rides.ts";
 import { matchMarketplacePayment } from "./matchers/marketplace.ts";
 import { matchJobPayment } from "./matchers/jobs.ts";
 import { matchInsurancePayment } from "./matchers/insurance.ts";
+import { matchSaccoPayment } from "./matchers/sacco.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -268,6 +269,9 @@ serve(withWebhookErrorBoundary(
           break;
         case "insurance":
           matchResult = await matchInsurancePayment(supabase, transaction, correlationId);
+          break;
+        case "sacco":
+          matchResult = await matchSaccoPayment(supabase, transaction, correlationId);
           break;
         default:
           await logStructuredEvent("MOMO_WEBHOOK_UNKNOWN_SERVICE", {
