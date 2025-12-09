@@ -19,6 +19,7 @@ import { maybeHandleDriverText } from "../observe/driver_parser.ts";
 import { maybeHandleFarmerBroker } from "../domains/ai-agents/farmer.ts";
 import { recordInbound } from "../observe/conv_audit.ts";
 import { getTextBody } from "../utils/messages.ts";
+import { runBusinessBrokerAgent } from "../domains/ai-agents/business_broker_agent.ts";
 
 
 import {
@@ -115,6 +116,11 @@ export async function handleText(
       );
       return await runBusinessBrokerAgent(ctx, body);
     }
+  }
+
+  // Handle Business Broker AI Agent Chat (Buy & Sell)
+  if (state.key === "business_broker_chat") {
+    return await runBusinessBrokerAgent(ctx, body);
   }
 
   // Handle Support AI Agent
