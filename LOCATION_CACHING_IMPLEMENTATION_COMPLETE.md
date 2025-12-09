@@ -4,6 +4,26 @@
 **Branch**: `feature/location-caching-and-mobility-deep-review`  
 **Status**: ✅ PHASE 1 & 2 COMPLETE
 
+## 🚨 CRITICAL PRODUCTION FINDING
+
+**Discovery During Deployment**: The `recent_locations` table **DOES NOT EXIST** in production!
+
+**Impact**:
+- TypeScript types showed table existed (stale schema dump)
+- All edge function code referencing `recent_locations` was **FAILING**
+- Location caching has NEVER worked in production
+- Error was silent - no location cache, no errors logged
+
+**Root Cause**:
+- Table definition only in archived migrations (never applied to production)
+- `database.types.ts` generated from local/stale schema
+- No actual table in production database
+
+**Fix Applied**:
+- Migration `20251209180000` now CREATES `recent_locations` table
+- Added `saved_locations` table for persistent favorites
+- All indexes, RLS policies, and RPC functions included
+
 ---
 
 ## Executive Summary

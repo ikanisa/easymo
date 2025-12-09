@@ -37,7 +37,7 @@
 
 | Service | Cloud Run Name | Type | IAP | Memory | CPU | Port |
 |---------|---------------|------|-----|--------|-----|------|
-| Admin PWA | easymo-admin | Next.js | ✅ | 1Gi | 1 | 3000 |
+| Admin PWA | easymo-admin-app | Next.js | ✅ | 1Gi | 1 | 8080 |
 | Voice Bridge | easymo-voice-bridge | Node.js | ❌ | 512Mi | 1 | 8080 |
 | Voice Gateway | easymo-voice-gateway | Node.js | ❌ | 512Mi | 1 | 8080 |
 | Vendor Service | easymo-vendor-service | Express | ❌ | 256Mi | 1 | 8080 |

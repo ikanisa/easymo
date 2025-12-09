@@ -1,0 +1,104 @@
+# Ignore files for Google Cloud Build
+# Reduces build context size and speeds up builds
+
+# Dependencies (will be installed in Dockerfile)
+node_modules/
+**/node_modules/
+
+# Git
+.git/
+.github/
+.gitignore
+.gitattributes
+
+# Documentation (except README.md)
+*.md
+!README.md
+docs/
+DEPLOY_*.md
+CLOUD_RUN_*.md
+GCP_*.md
+PHASE_*.md
+WEEK_*.md
+SESSION_*.md
+IMPLEMENTATION_*.md
+AI_*.md
+MOBILITY_*.md
+MY_BUSINESS_*.md
+
+# Build outputs (will be rebuilt)
+dist/
+build/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+
+# Archives and backups
+.archive/
+*.backup
+*.bak
+*.broken
+*.old
+
+# Local environment files
+.env.local
+.env*.local
+*.env.local
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+**/__tests__/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+tests/
+*.vitest-report.json
+
+# Unrelated apps (admin-only deployment)
+admin-app-v2/
+bar-manager-app/
+bar-manager-final/
+bar-manager-production/
+client-pwa/pnpm-lock.yaml
+real-estate-pwa/
+waiter-pwa/
+station-app/
+backend/
+
+# Scripts not needed in build
+scripts/*.sh
+!scripts/check-env.js
+
+# Tauri/Desktop artifacts
+admin-app/src-tauri/
+admin-app/electron/
+*.desktop.mjs
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Data files
+*.csv
+*.json.gz
+data/
+*.sql
+!supabase/migrations/*.sql
