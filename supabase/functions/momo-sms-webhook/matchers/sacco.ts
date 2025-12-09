@@ -70,7 +70,8 @@ export async function matchSaccoPayment(
 
   // 2. Store SMS in app.sms_inbox
   const { data: smsInbox, error: smsError } = await supabase
-    .from("app.sms_inbox")
+    .schema('app')
+    .from("sms_inbox")
     .insert({
       sacco_id: saccoId,
       raw_message: transaction.raw_message,
@@ -134,7 +135,8 @@ export async function matchSaccoPayment(
   // 5. Update SMS inbox with match result
   if (memberId) {
     await supabase
-      .from("app.sms_inbox")
+      .schema('app')
+      .from("sms_inbox")
       .update({
         matched_member_id: memberId,
         match_confidence: matchConfidence,
@@ -195,7 +197,8 @@ export async function matchSaccoPayment(
   } else {
     // No match found - mark as unmatched for manual review
     await supabase
-      .from("app.sms_inbox")
+      .schema('app')
+      .from("sms_inbox")
       .update({
         status: "unmatched",
         processed_at: new Date().toISOString(),

@@ -54,7 +54,8 @@ export async function GET(request: NextRequest) {
   
   // Query unmatched SMS
   let query = admin
-    .from("app.sms_inbox")
+    .schema('app')
+    .from("sms_inbox")
     .select("*", { count: "exact" })
     .eq("sacco_id", saccoId)
     .in("status", ["pending", "unmatched"])
@@ -108,7 +109,8 @@ export async function POST(request: NextRequest) {
 
   // Verify SMS belongs to SACCO
   const { data: sms, error: smsError } = await admin
-    .from("app.sms_inbox")
+    .schema('app')
+    .from("sms_inbox")
     .select("*")
     .eq("id", smsInboxId)
     .eq("sacco_id", saccoId)
@@ -120,7 +122,8 @@ export async function POST(request: NextRequest) {
 
   // Verify member belongs to SACCO
   const { data: member, error: memberError } = await admin
-    .from("app.members")
+    .schema('app')
+    .from("members")
     .select("*")
     .eq("id", memberId)
     .eq("sacco_id", saccoId)
@@ -132,7 +135,8 @@ export async function POST(request: NextRequest) {
 
   // Update SMS with manual match
   const { error: updateError } = await admin
-    .from("app.sms_inbox")
+    .schema('app')
+    .from("sms_inbox")
     .update({
       matched_member_id: memberId,
       match_confidence: 1.0,

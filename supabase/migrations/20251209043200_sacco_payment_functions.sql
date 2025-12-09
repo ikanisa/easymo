@@ -39,11 +39,6 @@ BEGIN
     AND m.phone_hash = v_phone_hash
     AND m.status = 'active'
   LIMIT 1;
-  
-  -- If no hash match found, return empty
-  IF NOT FOUND THEN
-    RETURN;
-  END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

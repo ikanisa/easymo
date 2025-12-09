@@ -51,7 +51,8 @@ export async function GET(request: NextRequest) {
   
   // Query payments with member details joined
   let query = admin
-    .from("app.payments")
+    .schema('app')
+    .from("payments")
     .select(`
       *,
       members:member_id (

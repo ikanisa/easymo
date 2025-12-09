@@ -14,7 +14,8 @@ type TabType = 'matched' | 'unmatched';
 export default function PaymentsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('matched');
   
-  // Mock SACCO ID - in production, this would come from auth context
+  // TODO: Get SACCO ID from auth context - currently using placeholder
+  // In production, this should come from: useAuth().user.sacco_id or similar
   const saccoId = '00000000-0000-0000-0000-000000000000';
 
   return (
