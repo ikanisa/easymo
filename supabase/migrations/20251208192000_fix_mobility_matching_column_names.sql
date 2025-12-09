@@ -314,8 +314,8 @@ $$;
 -- ============================================================================
 -- GRANT PERMISSIONS
 -- ============================================================================
-GRANT EXECUTE ON FUNCTION public.match_drivers_for_trip_v2 TO service_role, authenticated, anon;
-GRANT EXECUTE ON FUNCTION public.match_passengers_for_trip_v2 TO service_role, authenticated, anon;
+GRANT EXECUTE ON FUNCTION public.match_drivers_for_trip_v2(uuid, integer, boolean, integer, integer) TO service_role, authenticated, anon;
+GRANT EXECUTE ON FUNCTION public.match_passengers_for_trip_v2(uuid, integer, boolean, integer, integer) TO service_role, authenticated, anon;
 
 -- ============================================================================
 -- VERIFICATION
