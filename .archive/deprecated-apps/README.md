@@ -7,7 +7,7 @@ This directory contains application versions that have been superseded by produc
 ### Admin Applications
 - **admin-app/** - ✅ PRODUCTION - Admin dashboard (Next.js 15, npm-based)
   - Package: `@easymo/admin-app`
-  - Last updated: Dec 1, 2025
+  - Last updated: Dec 9, 2025
   - In workspace: YES
   - Status: Active development
 
@@ -17,57 +17,38 @@ This directory contains application versions that have been superseded by produc
   - Standalone app (not in workspace)
   - Status: Production deployment
 
-## Deprecated Apps (Candidates for Archive)
+### Vendor Portal
+- **vendor-portal/** - 🚧 IN DEVELOPMENT - SACCO/MFI vendor management
+  - Package: `@easymo/vendor-portal`
+  - Last updated: Dec 9, 2025
+  - In workspace: YES
+  - Status: Pending Ibimina merger
 
-### Admin App V2
-- **admin-app-v2/** - ⚠️ DEPRECATED as of Nov 27, 2025
-  - Package: `@easymo/admin-v2`
-  - Commented out in pnpm-workspace.yaml
-  - See: admin-app-v2/DEPRECATED.md
-  - **Action**: Archive recommended
+## Archived Apps
 
-### Bar Manager Variants
-- **bar-manager-app/** - ⚠️ DUPLICATE
+### Bar Manager App (Archived Dec 9, 2025)
+- **bar-manager-app/** - 🔴 ARCHIVED
   - Package: `@easymo/bar-manager`
-  - Not in workspace (requires lockfile update)
-  - Status: Development/testing version
-  - **Action**: Archive recommended (keep bar-manager-production)
-
-- **bar-manager-final/** - ⚠️ DUPLICATE
-  - Package: `@easymo/admin-app` (NAME CONFLICT!)
-  - Not in workspace
-  - Status: Staging version
-  - **Action**: Archive recommended (keep bar-manager-production)
-
-## Archive Procedure
-
-```bash
-# When ready to archive:
-mv admin-app-v2 .archive/deprecated-apps/
-mv bar-manager-app .archive/deprecated-apps/
-mv bar-manager-final .archive/deprecated-apps/
-
-# Update pnpm-workspace.yaml to remove comments about archived apps
-```
+  - Was: Not in workspace
+  - Reason: Duplicate of bar-manager-production
+  - See: ./bar-manager-app/
 
 ## Production App Matrix
 
 | App | Directory | Package Name | In Workspace | Status |
 |-----|-----------|--------------|--------------|--------|
 | Admin Dashboard | admin-app | @easymo/admin-app | ✅ Yes | 🟢 Production |
-| Admin V2 | admin-app-v2 | @easymo/admin-v2 | ❌ Deprecated | 🔴 Archive |
-| Bar Manager Dev | bar-manager-app | @easymo/bar-manager | ❌ No | 🟡 Development |
-| Bar Manager Staging | bar-manager-final | @easymo/admin-app | ❌ No | 🟡 Staging |
 | Bar Manager Prod | bar-manager-production | bar-manager-production | ❌ Standalone | 🟢 Production |
+| Vendor Portal | vendor-portal | @easymo/vendor-portal | ✅ Yes | 🟡 Development |
+| Bar Manager App | .archive/deprecated-apps/bar-manager-app | @easymo/bar-manager | ❌ Archived | 🔴 Archived |
 
 ## Notes
 
-- **admin-app** and **bar-manager-production** are the ONLY production versions
-- bar-manager-final has a package name conflict (uses @easymo/admin-app)
-- bar-manager-app is not integrated into the workspace
-- All variants appear to be iterations toward bar-manager-production
+- **admin-app** and **bar-manager-production** are the production versions
+- **vendor-portal** is pending merger with Ibimina repository for full SACCO functionality
+- bar-manager-app was archived on Dec 9, 2025 as part of platform consolidation
 
 ---
 
-**Last Updated**: December 1, 2025  
+**Last Updated**: December 9, 2025  
 **Purpose**: Clarify production vs deprecated app versions

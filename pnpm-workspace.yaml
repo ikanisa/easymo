@@ -1,14 +1,27 @@
 packages:
-  - services/*
+  # Core shared packages
   - packages/*
+  
+  # Microservices
+  - services/*
+  
+  # Admin panel (single unified admin)
   - admin-app
+  
+  # AI services
   - ai
+  
+  # Client-facing PWAs
   - client-pwa
-  - vendor-portal
+  - vendor-portal          # SACCO/MFI vendor management (pending Ibimina merger)
+  # - vendor-desktop       # NEW - Desktop version (pending Ibimina merger)
+  # - bar-manager-production  # Standalone - not in workspace
+  # - realestate-pwa       # Planned
 
-# NOTE: The following apps exist but are not in the workspace:
-# - bar-manager-app: Uses workspace packages but requires lockfile update to add (run `pnpm install` without `--frozen-lockfile`)
+# NOTE: The following directories exist but are not in the workspace:
+# - bar-manager-production: Standalone production app (not managed by pnpm workspace)
 # - backend: Python/infrastructure directory, not a Node.js package
+# - .archive/deprecated-apps/bar-manager-app: Archived Dec 9, 2025
 
 onlyBuiltDependencies:
   - '@nestjs/core'
