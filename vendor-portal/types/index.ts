@@ -1,11 +1,11 @@
 // Re-export types from @easymo/sacco-core
 export type {
-  Sacco,
-  Member,
-  Payment,
-  Ikimina,
-  CreateSacco,
+  CreateIkimina,
   CreateMember,
   CreatePayment,
-  CreateIkimina,
+  CreateSacco,
+  Ikimina,
+  Member,
+  Payment,
+  Sacco,
 } from '@easymo/sacco-core';
