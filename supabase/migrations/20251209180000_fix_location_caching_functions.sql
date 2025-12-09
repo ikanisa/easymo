@@ -298,7 +298,6 @@ BEGIN
 END $$;
 
 CREATE INDEX IF NOT EXISTS idx_saved_locations_label ON public.saved_locations(user_id, label);
-CREATE INDEX IF NOT EXISTS idx_saved_locations_kind ON public.saved_locations(user_id, kind);
 
 -- Add unique constraint on (user_id, kind) when safe (avoids duplicate favorites per type)
 DO $$
@@ -320,6 +319,12 @@ BEGIN
 
     IF v_has_duplicates THEN
       RAISE NOTICE 'Skipped adding saved_locations_user_kind_unique due to existing duplicates';
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_class WHERE relname = 'idx_saved_locations_kind'
+          AND relkind = 'i'
+      ) THEN
+        CREATE INDEX idx_saved_locations_kind ON public.saved_locations(user_id, kind);
+      END IF;
     ELSIF NOT EXISTS (
       SELECT 1 FROM pg_constraint 
       WHERE conname = 'saved_locations_user_kind_unique'
@@ -407,6 +412,8 @@ DECLARE
   v_location_id uuid;
   v_has_notes boolean;
   v_has_geog boolean;
+  v_has_kind boolean;
+  v_kind text;
 BEGIN
   -- Validate coordinates
   IF _lat < -90 OR _lat > 90 OR _lng < -180 OR _lng > 180 THEN
@@ -424,25 +431,59 @@ BEGIN
     WHERE table_schema = 'public' AND table_name = 'saved_locations' AND column_name = 'geog'
   ) INTO v_has_geog;
 
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'saved_locations' AND column_name = 'kind'
+  ) INTO v_has_kind;
+
+  v_kind := CASE
+    WHEN lower(COALESCE(_label, '')) IN ('home', 'work', 'school', 'other') THEN lower(_label)
+    ELSE 'other'
+  END;
+
   -- Upsert saved location with dynamic columns
   IF v_has_notes AND v_has_geog THEN
-    INSERT INTO public.saved_locations (user_id, label, lat, lng, geog, address, notes)
-    VALUES (_user_id, _label, _lat, _lng, ST_SetSRID(ST_MakePoint(_lng, _lat), 4326)::geography, _address, _notes)
-    ON CONFLICT (user_id, label)
-    DO UPDATE SET lat = EXCLUDED.lat, lng = EXCLUDED.lng, geog = EXCLUDED.geog, address = EXCLUDED.address, notes = EXCLUDED.notes, updated_at = now()
-    RETURNING id INTO v_location_id;
+    IF v_has_kind THEN
+      INSERT INTO public.saved_locations (user_id, kind, label, lat, lng, geog, address, notes)
+      VALUES (_user_id, v_kind, _label, _lat, _lng, ST_SetSRID(ST_MakePoint(_lng, _lat), 4326)::geography, _address, _notes)
+      ON CONFLICT (user_id, kind)
+      DO UPDATE SET label = EXCLUDED.label, lat = EXCLUDED.lat, lng = EXCLUDED.lng, geog = EXCLUDED.geog, address = EXCLUDED.address, notes = EXCLUDED.notes, updated_at = now()
+      RETURNING id INTO v_location_id;
+    ELSE
+      INSERT INTO public.saved_locations (user_id, label, lat, lng, geog, address, notes)
+      VALUES (_user_id, _label, _lat, _lng, ST_SetSRID(ST_MakePoint(_lng, _lat), 4326)::geography, _address, _notes)
+      ON CONFLICT (user_id, label)
+      DO UPDATE SET lat = EXCLUDED.lat, lng = EXCLUDED.lng, geog = EXCLUDED.geog, address = EXCLUDED.address, notes = EXCLUDED.notes, updated_at = now()
+      RETURNING id INTO v_location_id;
+    END IF;
   ELSIF v_has_geog THEN
-    INSERT INTO public.saved_locations (user_id, label, lat, lng, geog, address)
-    VALUES (_user_id, _label, _lat, _lng, ST_SetSRID(ST_MakePoint(_lng, _lat), 4326)::geography, _address)
-    ON CONFLICT (user_id, label)
-    DO UPDATE SET lat = EXCLUDED.lat, lng = EXCLUDED.lng, geog = EXCLUDED.geog, address = EXCLUDED.address, updated_at = now()
-    RETURNING id INTO v_location_id;
+    IF v_has_kind THEN
+      INSERT INTO public.saved_locations (user_id, kind, label, lat, lng, geog, address)
+      VALUES (_user_id, v_kind, _label, _lat, _lng, ST_SetSRID(ST_MakePoint(_lng, _lat), 4326)::geography, _address)
+      ON CONFLICT (user_id, kind)
+      DO UPDATE SET label = EXCLUDED.label, lat = EXCLUDED.lat, lng = EXCLUDED.lng, geog = EXCLUDED.geog, address = EXCLUDED.address, updated_at = now()
+      RETURNING id INTO v_location_id;
+    ELSE
+      INSERT INTO public.saved_locations (user_id, label, lat, lng, geog, address)
+      VALUES (_user_id, _label, _lat, _lng, ST_SetSRID(ST_MakePoint(_lng, _lat), 4326)::geography, _address)
+      ON CONFLICT (user_id, label)
+      DO UPDATE SET lat = EXCLUDED.lat, lng = EXCLUDED.lng, geog = EXCLUDED.geog, address = EXCLUDED.address, updated_at = now()
+      RETURNING id INTO v_location_id;
+    END IF;
   ELSE
-    INSERT INTO public.saved_locations (user_id, label, lat, lng, address)
-    VALUES (_user_id, _label, _lat, _lng, _address)
-    ON CONFLICT (user_id, label)
-    DO UPDATE SET lat = EXCLUDED.lat, lng = EXCLUDED.lng, address = EXCLUDED.address, updated_at = now()
-    RETURNING id INTO v_location_id;
+    IF v_has_kind THEN
+      INSERT INTO public.saved_locations (user_id, kind, label, lat, lng, address)
+      VALUES (_user_id, v_kind, _label, _lat, _lng, _address)
+      ON CONFLICT (user_id, kind)
+      DO UPDATE SET label = EXCLUDED.label, lat = EXCLUDED.lat, lng = EXCLUDED.lng, address = EXCLUDED.address, updated_at = now()
+      RETURNING id INTO v_location_id;
+    ELSE
+      INSERT INTO public.saved_locations (user_id, label, lat, lng, address)
+      VALUES (_user_id, _label, _lat, _lng, _address)
+      ON CONFLICT (user_id, label)
+      DO UPDATE SET lat = EXCLUDED.lat, lng = EXCLUDED.lng, address = EXCLUDED.address, updated_at = now()
+      RETURNING id INTO v_location_id;
+    END IF;
   END IF;
 
   RETURN v_location_id;
