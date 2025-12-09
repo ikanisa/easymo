@@ -530,8 +530,7 @@ before granting write access or sharing tokens.
 - We removed legacy hosting assumptions. Configure
   `NEXT_PUBLIC_APP_URL` (or rely on `localhost`) and update Supabase CORS origins
   manually.
-- Added `.env.local` guidance plus [docs/local-hosting.md](docs/local-hosting.md)
-  for pnpm-based builds (`pnpm install`, `pnpm build`, `pnpm start`) and reverse
+- Added `.env.local` guidance for pnpm-based builds (`pnpm install`, `pnpm build`, `pnpm start`) and reverse
   proxy placeholders to support self-hosting.
 - Added first-class Netlify support via `netlify.toml` and the official Next.js
   plugin so the admin app deploys on a Node runtime without extra config.
