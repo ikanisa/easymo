@@ -15,6 +15,11 @@ import { logStructuredEvent } from "../_shared/observability.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import { hasOpenAIKey } from "./core/openai.ts";
 import { hasGeminiKey } from "./core/gemini.ts";
+import {
+  validateDomain,
+  validateInsuranceInline,
+  validateVehicleRequest,
+} from "./validation.ts";
 
 // Domain handlers
 import { processInsuranceQueue, processInsuranceInline } from "./domains/insurance.ts";
@@ -85,26 +90,32 @@ export async function handler(req: Request): Promise<Response> {
       // Determine domain from body or query param
       const activeDomain = body.domain || domain;
 
-      if (!activeDomain) {
-        return jsonResponse({ error: "missing_domain_parameter" }, 400);
+      // Validate domain
+      const domainValidation = validateDomain(activeDomain);
+      if (typeof domainValidation === "object" && "error" in domainValidation) {
+        return jsonResponse(domainValidation, 400);
       }
 
       await logStructuredEvent("UNIFIED_OCR_INLINE_START", {
-        domain: activeDomain,
+        domain: domainValidation,
       }, "info");
 
-      switch (activeDomain) {
-        case "insurance":
-          if (!body.inline?.signedUrl) {
-            return jsonResponse({ error: "missing_signed_url" }, 400);
+      switch (domainValidation) {
+        case "insurance": {
+          const validation = validateInsuranceInline(body);
+          if ("error" in validation) {
+            return jsonResponse(validation, 400);
           }
-          return await processInsuranceInline(client, body.inline);
+          return await processInsuranceInline(client, validation.inline);
+        }
 
-        case "vehicle":
-          if (!body.profile_id || !body.org_id || !body.vehicle_plate || !body.file_url) {
-            return jsonResponse({ error: "missing_required_fields" }, 400);
+        case "vehicle": {
+          const validation = validateVehicleRequest(body);
+          if ("error" in validation) {
+            return jsonResponse(validation, 400);
           }
-          return await processVehicleRequest(client, body);
+          return await processVehicleRequest(client, validation);
+        }
 
         default:
           return jsonResponse({ error: "unsupported_domain_for_inline" }, 400);
@@ -113,18 +124,25 @@ export async function handler(req: Request): Promise<Response> {
 
     // GET requests: queue processing
     if (req.method === "GET") {
-      if (!domain) {
-        return jsonResponse({ error: "missing_domain_parameter" }, 400);
+      // Validate domain
+      const domainValidation = validateDomain(domain);
+      if (typeof domainValidation === "object" && "error" in domainValidation) {
+        return jsonResponse(domainValidation, 400);
       }
 
       const limit = parseInt(url.searchParams.get("limit") || "5", 10);
+      
+      // Validate limit parameter
+      if (isNaN(limit) || limit < 1 || limit > 100) {
+        return jsonResponse({ error: "invalid_limit: must be between 1 and 100" }, 400);
+      }
 
       await logStructuredEvent("UNIFIED_OCR_QUEUE_START", {
-        domain,
+        domain: domainValidation,
         limit,
       }, "info");
 
-      switch (domain) {
+      switch (domainValidation) {
         case "insurance":
           return await processInsuranceQueue(client, limit);
 
