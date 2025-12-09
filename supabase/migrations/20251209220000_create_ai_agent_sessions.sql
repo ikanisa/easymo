@@ -201,6 +201,10 @@ $$ LANGUAGE plpgsql;
 -- Enable RLS
 ALTER TABLE public.ai_agent_sessions ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can read own sessions" ON public.ai_agent_sessions;
+DROP POLICY IF EXISTS "Service role full access" ON public.ai_agent_sessions;
+
 -- Policy: Users can read their own sessions
 CREATE POLICY "Users can read own sessions"
 ON public.ai_agent_sessions

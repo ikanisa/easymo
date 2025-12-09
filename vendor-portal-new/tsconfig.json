@@ -1,0 +1,41 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./*"],
+      "@ibimina/admin-core": ["../../../packages/admin-core/src/index.ts"],
+      "@ibimina/admin-core/adapters": ["../../../packages/admin-core/src/adapters/index.ts"],
+      "@ibimina/admin-core/hooks": ["../../../packages/admin-core/src/hooks/index.ts"],
+      "@ibimina/admin-core/services": ["../../../packages/admin-core/src/services/index.ts"],
+      "@ibimina/admin-core/types": ["../../../packages/admin-core/src/types/index.ts"],
+      "@ibimina/admin-core/utils": ["../../../packages/admin-core/src/utils/index.ts"],
+      "@ibimina/config": ["../../../packages/config/src/index.ts"],
+      "@ibimina/lib": ["../../../packages/lib/src/index.ts"],
+      "@ibimina/flags": ["../../../packages/flags/src/index.ts"],
+      "@ibimina/locales": ["../../../packages/locales/src/index.ts"],
+      "@ibimina/ui": ["../../../packages/ui/src/index.ts"]
+    },
+    "baseUrl": ".",
+    "jsx": "preserve",
+    "noImplicitAny": false
+  },
+  "include": [
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "components/**/*.ts",
+    "components/**/*.tsx",
+    "lib/**/*.ts",
+    "lib/**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "middleware.ts",
+    "instrumentation.ts",
+    "*.config.ts",
+    "next-env.d.ts",
+    "providers/**/*.ts",
+    "providers/**/*.tsx",
+    "workers/**/*.ts",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": ["node_modules", ".next", "../../../supabase"]
+}

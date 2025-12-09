@@ -1,0 +1,15 @@
+[
+  {
+    "path": "/dashboard",
+    "resourceSizes": [
+      { "resourceType": "document", "budget": 180 },
+      { "resourceType": "script", "budget": 350 },
+      { "resourceType": "total", "budget": 2500 }
+    ],
+    "resourceCounts": [{ "resourceType": "third-party", "budget": 5 }],
+    "timings": [
+      { "metric": "interactive", "budget": 5000 },
+      { "metric": "first-contentful-paint", "budget": 2500 }
+    ]
+  }
+]

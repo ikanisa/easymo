@@ -1,0 +1,16 @@
+# Android Studio
+.gradle
+.idea
+*.iml
+local.properties
+
+# Build outputs
+build/
+captures/
+
+# Backup files
+*.bak
+*.prejava
+
+# Generated configs
+capacitor-android-patch.gradle

@@ -1,0 +1,19 @@
+ext {
+    minSdkVersion = 26
+    compileSdkVersion = 35  // Required for Capacitor 7.4.4
+    targetSdkVersion = 34   // Keep at 34 for compatibility
+    androidxActivityVersion = '1.9.2'
+    androidxAppCompatVersion = '1.7.0'
+    androidxCoordinatorLayoutVersion = '1.2.0'
+    androidxCoreVersion = '1.15.0'
+    androidxFragmentVersion = '1.8.4'
+    coreSplashScreenVersion = '1.0.1'
+    androidxWebkitVersion = '1.12.1'
+    androidxExifInterfaceVersion = '1.3.7'
+    googleMaterialVersion = '1.12.0'
+    kotlinVersion = '1.9.24'
+    junitVersion = '4.13.2'
+    androidxJunitVersion = '1.1.5'
+    androidxEspressoCoreVersion = '3.5.1'
+    cordovaAndroidVersion = '10.1.1'
+}
