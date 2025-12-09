@@ -152,9 +152,9 @@ export function printData<T extends Record<string, unknown>>(
 ): void {
   const html = formatForPDF(data, title, columns);
   
-  const printWindow = window.open('', '', 'height=600,width=800');
+  const printWindow = window.open('', '_blank', 'height=600,width=800,noopener,noreferrer');
   if (!printWindow) {
-    console.error('Failed to open print window');
+    console.error('Failed to open print window. Please check your popup blocker settings.');
     return;
   }
   
@@ -165,5 +165,9 @@ export function printData<T extends Record<string, unknown>>(
   // Wait for content to load before printing
   printWindow.onload = () => {
     printWindow.print();
+    // Close after print dialog is dismissed
+    printWindow.onafterprint = () => {
+      printWindow.close();
+    };
   };
 }

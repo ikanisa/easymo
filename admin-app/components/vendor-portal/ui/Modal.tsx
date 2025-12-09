@@ -32,13 +32,14 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
 
   // Prevent body scroll when modal is open
   useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    
     if (isOpen) {
       document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
     }
+    
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = originalOverflow;
     };
   }, [isOpen]);
 

@@ -36,7 +36,11 @@ export function MatchingModal({ isOpen, onClose, payment, members, onMatch }: Ma
 
   // Auto-suggest members by phone match
   const suggestedMembers = payment.phone
-    ? members.filter((m) => m.phone.replace(/\D/g, '').includes(payment.phone!.replace(/\D/g, '')))
+    ? members.filter((m) => {
+        const paymentPhone = payment.phone?.replace(/\D/g, '') || '';
+        const memberPhone = m.phone.replace(/\D/g, '');
+        return paymentPhone && memberPhone.includes(paymentPhone);
+      })
     : [];
 
   const handleMatch = async () => {

@@ -14,6 +14,11 @@ export function validatePhone(phone: string): { valid: boolean; error?: string }
     if (cleaned.length !== 12) {
       return { valid: false, error: 'Rwanda phone number must be 12 digits including country code' };
     }
+    // Validate Rwanda mobile prefixes (78, 79, 72, 73)
+    const prefix = cleaned.substring(3, 5);
+    if (!['78', '79', '72', '73'].includes(prefix)) {
+      return { valid: false, error: 'Invalid Rwanda mobile number prefix' };
+    }
     return { valid: true };
   }
   

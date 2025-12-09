@@ -76,10 +76,10 @@ CREATE POLICY "Staff can view own SACCO staff" ON app.staff_users
 CREATE POLICY "Admins can manage staff" ON app.staff_users
   FOR ALL USING (
     EXISTS (
-      SELECT 1 FROM app.staff_users 
-      WHERE user_id = auth.uid() 
-      AND sacco_id = app.staff_users.sacco_id 
-      AND role = 'admin'
+      SELECT 1 FROM app.staff_users AS su
+      WHERE su.user_id = auth.uid() 
+      AND su.sacco_id = staff_users.sacco_id 
+      AND su.role = 'admin'
     )
   );
 
