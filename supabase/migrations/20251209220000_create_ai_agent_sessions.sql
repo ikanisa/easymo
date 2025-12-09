@@ -89,6 +89,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_update_ai_agent_sessions_timestamp ON public.ai_agent_sessions;
 CREATE TRIGGER trigger_update_ai_agent_sessions_timestamp
 BEFORE UPDATE ON public.ai_agent_sessions
 FOR EACH ROW
