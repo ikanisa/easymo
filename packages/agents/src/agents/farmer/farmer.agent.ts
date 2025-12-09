@@ -6,7 +6,7 @@ import {
   matchVariety,
   normalize,
   type VarietyRule,
-} from '../../../../../config/farmer-agent/markets/index';
+} from '../../config/farmer-markets';
 import type { AgentContext, AgentInput, AgentResult, Tool } from '../../types/agent.types';
 import { BaseAgent } from '../base/agent.base';
 

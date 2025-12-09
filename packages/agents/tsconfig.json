@@ -1,12 +1,20 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "lib": ["ES2022"],
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "outDir": "./dist",
-    "rootDir": "../..",
+    "rootDir": "./src",
     "declaration": true,
-    "declarationMap": true,
-    "composite": true
+    "declarationMap": true
   },
-  "include": ["src/**/*.ts", "../../config/farmer-agent/**/*.ts", "../../config/farmer-agent/**/*.json"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }

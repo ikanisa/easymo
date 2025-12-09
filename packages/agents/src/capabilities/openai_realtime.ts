@@ -1,5 +1,5 @@
 import { childLogger } from '@easymo/commons';
-import { WebSocket } from "ws";
+import WebSocket from "ws";
 
 const log = childLogger({ service: 'agents' });
 
@@ -39,12 +39,12 @@ export class OpenAIRealtimeClient {
         resolve(true);
       });
 
-      this.ws.on("message", (data) => {
+      this.ws.on("message", (data: WebSocket.RawData) => {
         this.handleMessage(JSON.parse(data.toString()));
       });
 
-      this.ws.on("error", (error) => {
-        log.error("Realtime API Error:", error);
+      this.ws.on("error", (error: Error) => {
+        log.error({ error: error.message }, 'Realtime API Error');
         reject(error);
       });
 
@@ -69,7 +69,7 @@ export class OpenAIRealtimeClient {
     this.ws.send(JSON.stringify(event));
   }
 
-  private handleMessage(event: any) {
+  private handleMessage(event: Record<string, unknown>) {
     switch (event.type) {
       case "response.audio.delta":
         // Handle incoming audio stream (e.g., send to SIP trunk)

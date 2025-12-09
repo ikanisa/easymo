@@ -101,7 +101,7 @@ Format as JSON with: { script: string, scenes: [{duration: string, visual: strin
           } catch (error) {
             // Log the error for debugging but provide graceful fallback
             const errorMessage = error instanceof Error ? error.message : String(error);
-            log.warn(`LLM script generation failed: ${errorMessage}. Using template fallback.`);
+            log.warn({ error: errorMessage }, 'LLM script generation failed. Using template fallback.');
             
             // Fallback to template-based script
             return {
@@ -163,7 +163,7 @@ Format as JSON with: { script: string, scenes: [{duration: string, visual: strin
             .single();
           
           if (error) {
-            log.error('Create campaign error:', error);
+            log.error({ error }, 'Create campaign error');
             // Fallback response
             return { 
               success: false,
@@ -233,7 +233,7 @@ Format as JSON with: { script: string, scenes: [{duration: string, visual: strin
           });
           
           if (error) {
-            log.error('Get stats error:', error);
+            log.error({ error }, 'Get stats error');
             // Fallback to direct query
             const { data: campaign } = await this.supabase
               .from('ad_campaigns')
