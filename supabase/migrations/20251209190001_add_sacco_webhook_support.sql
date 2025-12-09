@@ -34,13 +34,39 @@ BEGIN
 END $$;
 
 -- Create index for SACCO webhook lookups
-CREATE INDEX IF NOT EXISTS idx_momo_endpoints_sacco_id
-ON public.momo_webhook_endpoints(sacco_id)
-WHERE sacco_id IS NOT NULL AND active = true;
+-- Note: Only create WHERE clause if active column exists
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'momo_webhook_endpoints'
+        AND column_name = 'active'
+    ) THEN
+        CREATE INDEX IF NOT EXISTS idx_momo_endpoints_sacco_id
+        ON public.momo_webhook_endpoints(sacco_id)
+        WHERE sacco_id IS NOT NULL AND active = true;
+    ELSE
+        CREATE INDEX IF NOT EXISTS idx_momo_endpoints_sacco_id
+        ON public.momo_webhook_endpoints(sacco_id)
+        WHERE sacco_id IS NOT NULL;
+    END IF;
+END $$;
 
 -- Create index for service type lookups
-CREATE INDEX IF NOT EXISTS idx_momo_endpoints_service_type
-ON public.momo_webhook_endpoints(service_type, active)
-WHERE active = true;
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'momo_webhook_endpoints'
+        AND column_name = 'active'
+    ) THEN
+        CREATE INDEX IF NOT EXISTS idx_momo_endpoints_service_type
+        ON public.momo_webhook_endpoints(service_type, active)
+        WHERE active = true;
+    ELSE
+        CREATE INDEX IF NOT EXISTS idx_momo_endpoints_service_type
+        ON public.momo_webhook_endpoints(service_type);
+    END IF;
+END $$;
 
 COMMIT;
