@@ -212,6 +212,23 @@ export const logStructuredEvent = (
   writeLog(level, "global", "none", { event, payload: scrubPII(payload ?? {}) });
 };
 
+/**
+ * Record a metric (global helper)
+ * Use this for tracking metrics outside of request context
+ */
+export const recordMetric = (
+  metric: string,
+  value: number,
+  tags?: Record<string, string | number>
+) => {
+  writeLog("info", "metrics", "none", { 
+    metric, 
+    value, 
+    tags: scrubPII(tags ?? {}),
+    timestamp: new Date().toISOString()
+  });
+};
+
 const flushTelemetry = async () => {
   if (!sentryDsn) {
     return;
