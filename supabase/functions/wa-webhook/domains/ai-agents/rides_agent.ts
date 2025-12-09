@@ -177,19 +177,23 @@ Always be helpful, safety-focused, and efficient.`;
           const estimatedFare = baseFare + (distance * perKmRate);
 
           const { data, error } = await this.supabase
-            .from('ride_requests')
+            .from('trips')
             .insert({
               user_id: params.user_id,
+              kind: 'request_intent',
+              role: 'passenger',
               pickup_lat: params.pickup_lat,
               pickup_lng: params.pickup_lng,
-              pickup_address: params.pickup_address,
-              destination_lat: params.destination_lat,
-              destination_lng: params.destination_lng,
-              destination_address: params.destination_address,
+              pickup_text: params.pickup_address,
+              dropoff_lat: params.destination_lat,
+              dropoff_lng: params.destination_lng,
+              dropoff_text: params.destination_address,
               vehicle_type: params.vehicle_type,
-              passengers: params.passengers || 1,
-              estimated_fare: Math.round(estimatedFare),
-              status: 'pending',
+              metadata: {
+                passengers: params.passengers || 1,
+                estimated_fare: Math.round(estimatedFare)
+              },
+              status: 'open',
               created_at: new Date().toISOString()
             })
             .select()
@@ -259,20 +263,21 @@ Always be helpful, safety-focused, and efficient.`;
         },
         execute: async (params) => {
           const { data, error } = await this.supabase
-            .from('ride_requests')
-            .select('*, drivers(name, phone, vehicle_type, vehicle_plate)')
+            .from('trips')
+            .select('*, profiles!trips_user_id_fkey(full_name, phone_number, whatsapp_number)')
             .eq('id', params.ride_id)
             .single();
 
           if (error || !data) {
-            return { error: 'Ride not found' };
+            return { error: 'Trip not found' };
           }
 
+          const profile = (data as any).profiles || {};
           return {
-            ride_id: data.id,
+            trip_id: data.id,
             status: data.status,
-            driver: (data as any).drivers ? {
-              name: (data as any).drivers.name,
+            driver: profile ? {
+              name: profile.full_name,
               phone: (data as any).drivers.phone,
               vehicle: `${(data as any).drivers.vehicle_type} - ${(data as any).drivers.vehicle_plate}`
             } : null,
@@ -296,14 +301,36 @@ Always be helpful, safety-focused, and efficient.`;
           required: ['driver_id', 'latitude', 'longitude']
         },
         execute: async (params) => {
-          const { data, error } = await this.supabase.rpc('find_nearby_ride_requests', {
-            lat: params.latitude,
-            lng: params.longitude,
-            radius_km: params.radius_km || 5
+          // Use match_passengers_for_trip_v2 RPC instead of deprecated find_nearby_ride_requests
+          // First create a temporary driver trip to enable matching
+          const { data: tempTrip, error: tripError } = await this.supabase
+            .from('trips')
+            .insert({
+              user_id: params.driver_id,
+              kind: 'request_intent',
+              role: 'driver',
+              pickup_lat: params.latitude,
+              pickup_lng: params.longitude,
+              vehicle_type: 'moto', // Default, could be parameterized
+              status: 'open'
+            })
+            .select('id')
+            .single();
+            
+          if (tripError || !tempTrip) {
+            return { message: 'Failed to search for passengers. Please try again.' };
+          }
+          
+          const { data, error } = await this.supabase.rpc('match_passengers_for_trip_v2', {
+            _trip_id: tempTrip.id,
+            _limit: 9,
+            _prefer_dropoff: false,
+            _radius_m: (params.radius_km || 5) * 1000,
+            _window_days: 2
           });
 
           if (error || !data || data.length === 0) {
-            return { message: 'No ride requests nearby at the moment.' };
+            return { message: 'No passenger requests nearby at the moment.' };
           }
 
           return {

@@ -1084,9 +1084,9 @@ async function runMatchingFallback(
             }
             
             // Log notification (don't await to avoid blocking)
-            ctx.supabase.from("ride_notifications").insert({
+            ctx.supabase.from("trip_notifications").insert({
               trip_id: tempTripId,
-              driver_id: match.creator_user_id,
+              recipient_id: match.creator_user_id,
               status: "sent"
             });
             

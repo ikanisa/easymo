@@ -1209,13 +1209,13 @@ export async function deliverMatches(
           }
         }
         try {
-          await ctx.supabase.from('ride_notifications').insert({ trip_id: state.tripId, driver_id: d.creator_user_id, status: 'sent' });
+          await ctx.supabase.from('trip_notifications').insert({ trip_id: state.tripId, recipient_id: d.creator_user_id, status: 'sent' });
         } catch (error: unknown) {
           console.error(JSON.stringify({
-            event: "RIDE_NOTIFICATION_INSERT_FAILED",
+            event: "TRIP_NOTIFICATION_INSERT_FAILED",
             error: error instanceof Error ? error.message : String(error),
             tripId: state.tripId,
-            driverId: d.creator_user_id
+            recipientId: d.creator_user_id
           }));
         }
       }
