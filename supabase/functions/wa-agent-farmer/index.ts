@@ -10,7 +10,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { FarmerAgent } from './core/farmer-agent.ts';
 import { verifyWebhookSignature } from '../_shared/webhook-utils.ts';
 import { logStructuredEvent } from '../_shared/observability.ts';
-import { sendWhatsAppMessage } from '../_shared/wa-webhook-shared/wa/client.ts';
+import { sendText } from '../_shared/wa-webhook-shared/wa/client.ts';
 import { rateLimitMiddleware } from '../_shared/rate-limit/index.ts';
 import { MessageDeduplicator } from '../_shared/message-deduplicator.ts';
 
@@ -120,7 +120,7 @@ serve(async (req: Request): Promise<Response> => {
     });
 
     // Send response
-    await sendWhatsAppMessage(phone, response.message);
+    await sendText(phone, response.message);
 
     return respond({ success: true, agentType: response.agentType });
 

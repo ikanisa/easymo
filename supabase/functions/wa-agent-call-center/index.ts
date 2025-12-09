@@ -13,7 +13,7 @@ import { CallCenterAgent } from './call-center-agent.ts';
 import { CallCenterAGI } from './call-center-agi.ts';
 import { verifyWebhookSignature } from '../_shared/webhook-utils.ts';
 import { logStructuredEvent } from '../_shared/observability.ts';
-import { sendWhatsAppMessage } from '../_shared/wa-webhook-shared/wa/client.ts';
+import { sendText } from '../_shared/wa-webhook-shared/wa/client.ts';
 import { rateLimitMiddleware } from '../_shared/rate-limit/index.ts';
 import { MessageDeduplicator } from '../_shared/message-deduplicator.ts';
 import {
@@ -274,7 +274,7 @@ serve(async (req: Request): Promise<Response> => {
         }, 'error');
         
         // Fall back to text response
-        await sendWhatsAppMessage(phone, 
+        await sendText(phone, 
           "I'm sorry, I had trouble processing your voice message. Please try sending a text message instead."
         );
         return respond({ success: true, message: 'voice_processing_failed' });
@@ -359,10 +359,10 @@ serve(async (req: Request): Promise<Response> => {
         }, 'error');
         
         // Fall back to text
-        await sendWhatsAppMessage(phone, response.message);
+        await sendText(phone, response.message);
       }
     } else {
-      await sendWhatsAppMessage(phone, response.message);
+      await sendText(phone, response.message);
     }
 
     await logStructuredEvent('CALL_CENTER_RESPONSE_SENT', {
