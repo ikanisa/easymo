@@ -1,15 +1,17 @@
 'use client';
 
 /**
- * BottomNav - Mobile-friendly 5-tab navigation for Vendor Portal
- * Home, Transactions, Payers, Reports, Settings
+ * BottomNav - Mobile-friendly navigation for Vendor Portal
+ * Home, Members, Groups, Transactions, Reconciliation, Reports, Settings (7 items with overflow scroll)
  */
 
 import { 
   BarChart3, 
+  CheckSquare,
   FileText, 
   Home, 
   Settings, 
+  UserPlus,
   Users 
 } from 'lucide-react';
 import Link from 'next/link';
@@ -23,8 +25,10 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: '/vendor-portal', label: 'Home', icon: Home },
+  { href: '/vendor-portal/members', label: 'Members', icon: UserPlus },
+  { href: '/vendor-portal/groups', label: 'Groups', icon: Users },
   { href: '/vendor-portal/transactions', label: 'Transactions', icon: FileText },
-  { href: '/vendor-portal/payers', label: 'Payers', icon: Users },
+  { href: '/vendor-portal/reconciliation', label: 'Reconcile', icon: CheckSquare },
   { href: '/vendor-portal/reports', label: 'Reports', icon: BarChart3 },
   { href: '/vendor-portal/settings', label: 'Settings', icon: Settings },
 ];
