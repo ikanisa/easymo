@@ -1,22 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
+import { createMemberSchema, memberListQuerySchema } from "@/lib/validations/member";
 
 export const runtime = "edge";
-
-const querySchema = z.object({
-  sacco_id: z.string().uuid(),
-  search: z.string().optional(),
-  ikimina_id: z.string().uuid().optional(),
-  status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED", "all"]).optional().default("ACTIVE"),
-  limit: z.coerce.number().min(1).max(100).optional().default(50),
-  offset: z.coerce.number().min(0).optional().default(0),
-});
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = Object.fromEntries(request.nextUrl.searchParams);
-    const params = querySchema.parse(searchParams);
+    const params = memberListQuerySchema.parse(searchParams);
 
     const supabase = await createClient();
 
@@ -62,7 +54,7 @@ export async function GET(request: NextRequest) {
     }
 
     query = query
-      .order("full_name", { ascending: true })
+      .order(params.sort_by, { ascending: params.sort_order === "asc" })
       .range(params.offset, params.offset + params.limit - 1);
 
     const { data, error, count } = await query;
@@ -101,6 +93,111 @@ export async function GET(request: NextRequest) {
     }
 
     console.error("Members API error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/members
+ * Create a new member
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const input = createMemberSchema.parse(body);
+
+    const supabase = await createClient();
+
+    // Call the create_member function
+    const { data, error } = await supabase.rpc("create_member", {
+      p_sacco_id: input.sacco_id,
+      p_ikimina_id: input.ikimina_id,
+      p_full_name: input.full_name,
+      p_phone: input.phone,
+      p_national_id: input.national_id || null,
+      p_email: input.email || null,
+      p_gender: input.gender || null,
+      p_date_of_birth: input.date_of_birth || null,
+      p_address: input.address || null,
+      p_metadata: input.metadata || {},
+    });
+
+    if (error) {
+      console.error("Create member error:", error);
+
+      // Handle specific errors
+      if (error.message.includes("already exists")) {
+        return NextResponse.json(
+          { error: error.message },
+          { status: 409 }
+        );
+      }
+
+      return NextResponse.json(
+        { error: "Failed to create member", details: error.message },
+        { status: 500 }
+      );
+    }
+
+    if (!data || data.length === 0) {
+      return NextResponse.json(
+        { error: "Member creation returned no result" },
+        { status: 500 }
+      );
+    }
+
+    const result = data[0];
+
+    // Fetch the created member with relations
+    const { data: member, error: fetchError } = await supabase
+      .from("members")
+      .select(
+        `
+        *,
+        ikimina:ikimina!members_ikimina_id_fkey (
+          id,
+          name,
+          code
+        ),
+        accounts:accounts!accounts_member_id_fkey (
+          id,
+          account_type,
+          balance,
+          currency
+        )
+      `
+      )
+      .eq("id", result.member_id)
+      .single();
+
+    if (fetchError) {
+      console.error("Fetch created member error:", fetchError);
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        data: member || {
+          member_id: result.member_id,
+          member_code: result.member_code,
+          account_id: result.account_id,
+        },
+        message: `Member ${result.member_code} created successfully`,
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Validation error", details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    console.error("Create member API error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
