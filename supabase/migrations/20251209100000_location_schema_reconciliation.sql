@@ -92,9 +92,9 @@ ON app.recent_locations(user_id, captured_at DESC);
 CREATE INDEX IF NOT EXISTS idx_recent_locations_geog 
 ON app.recent_locations USING GIST(geog);
 
+-- Index for TTL cleanup (removed WHERE clause - NOW() is not immutable)
 CREATE INDEX IF NOT EXISTS idx_recent_locations_expires 
-ON app.recent_locations(expires_at) 
-WHERE expires_at > NOW();
+ON app.recent_locations(expires_at);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Step 3: RLS Policies
