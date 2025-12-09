@@ -130,7 +130,7 @@ BEGIN
   SELECT
     t.id AS trip_id,
     t.user_id AS creator_user_id,
-    COALESCE(p.phone_number, p.whatsapp_number, p.wa_id) AS whatsapp_e164,
+    COALESCE(p.phone_number, p.whatsapp_e164, p.wa_id) AS whatsapp_e164,
     SUBSTRING(t.id::text, 1, 8) AS ref_code,
     ROUND((ST_Distance(t.pickup_geog, v_pickup_geog) / 1000.0)::numeric, 2) AS distance_km,
     CASE
@@ -146,7 +146,7 @@ BEGIN
     (t.vehicle_type = v_vehicle_type) AS is_exact_match,
     GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - COALESCE(t.updated_at, t.created_at))) / 60))::integer AS location_age_minutes,
     COALESCE((p.metadata->>'number_plate')::text, (p.metadata->'driver'->>'number_plate')::text) AS number_plate,
-    COALESCE(p.display_name, p.phone_number, p.whatsapp_number, p.wa_id) AS driver_name,
+    COALESCE(p.display_name, p.phone_number, p.whatsapp_e164, p.wa_id) AS driver_name,
     'driver'::text AS role
   FROM public.trips t
   INNER JOIN public.profiles p ON p.user_id = t.user_id
@@ -214,7 +214,7 @@ BEGIN
   SELECT
     t.id AS trip_id,
     t.user_id AS creator_user_id,
-    COALESCE(p.phone_number, p.whatsapp_number, p.wa_id) AS whatsapp_e164,
+    COALESCE(p.phone_number, p.whatsapp_e164, p.wa_id) AS whatsapp_e164,
     SUBSTRING(t.id::text, 1, 8) AS ref_code,
     ROUND((ST_Distance(t.pickup_geog, v_pickup_geog) / 1000.0)::numeric, 2) AS distance_km,
     CASE
@@ -230,7 +230,7 @@ BEGIN
     (t.vehicle_type = v_vehicle_type) AS is_exact_match,
     GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - COALESCE(t.updated_at, t.created_at))) / 60))::integer AS location_age_minutes,
     NULL::text AS number_plate,
-    COALESCE(p.display_name, p.phone_number, p.whatsapp_number, p.wa_id) AS driver_name,
+    COALESCE(p.display_name, p.phone_number, p.whatsapp_e164, p.wa_id) AS driver_name,
     'passenger'::text AS role
   FROM public.trips t
   INNER JOIN public.profiles p ON p.user_id = t.user_id

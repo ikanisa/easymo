@@ -1,50 +1,17 @@
--- ============================================================================
--- CRITICAL HOTFIX: Fix Non-Existent Column References in Matching Functions
--- ============================================================================
--- Migration: 20251209170000_fix_whatsapp_number_column.sql
--- Date: 2025-12-09
--- 
--- BUG IDENTIFIED:
--- Migration 20251209090000 introduced references to non-existent columns:
--- 1. p.whatsapp_number (DOES NOT EXIST in profiles table)
--- 2. p.whatsapp_e164 (This is OUTPUT column name, not input column)
---
--- PROFILES TABLE ACTUAL COLUMNS:
--- - phone_number ✅
--- - wa_id ✅
--- - display_name ✅
--- - whatsapp_number ❌ DOES NOT EXIST
--- - whatsapp_e164 ❌ DOES NOT EXIST (output alias only)
---
--- ERROR IN PRODUCTION:
--- "column p.whatsapp_number does not exist"
--- Function: match_drivers_for_trip_v2
--- Impact: Nearby driver/passenger matching BROKEN
---
--- FIX:
--- Replace all references:
--- - WRONG: COALESCE(p.phone_number, p.whatsapp_number, p.wa_id)
--- - CORRECT: COALESCE(p.phone_number, p.wa_id)
--- - WRONG: COALESCE(p.display_name, p.phone_number, p.whatsapp_e164, p.wa_id)
--- - CORRECT: COALESCE(p.display_name, p.phone_number, p.wa_id)
--- ============================================================================
-
+-- Fix whatsapp_number column reference in matching functions
+-- The profiles table has whatsapp_e164, not whatsapp_number
 BEGIN;
 
--- Drop existing functions
-DROP FUNCTION IF EXISTS public.match_drivers_for_trip_v2(uuid, integer, boolean, integer, integer);
-DROP FUNCTION IF EXISTS public.match_passengers_for_trip_v2(uuid, integer, boolean, integer, integer);
-
--- ============================================================================
--- MATCH DRIVERS FOR TRIP V2 (FIXED)
--- ============================================================================
-CREATE OR REPLACE FUNCTION public.match_drivers_for_trip_v2(
+-- Recreate match_drivers_for_trip_v2 with correct column reference
+CREATE OR REPLACE FUNCTION match_drivers_for_trip_v2(
   _trip_id uuid,
-  _limit integer DEFAULT 9,
+  _vehicle_type text DEFAULT NULL,
+  _radius double precision DEFAULT 10000,
+  _window_days integer DEFAULT 2,
   _prefer_dropoff boolean DEFAULT false,
-  _radius_m integer DEFAULT 10000,
-  _window_days integer DEFAULT 2
-) RETURNS TABLE (
+  _limit integer DEFAULT 9
+)
+RETURNS TABLE (
   trip_id uuid,
   creator_user_id uuid,
   whatsapp_e164 text,
@@ -66,27 +33,32 @@ LANGUAGE plpgsql
 STABLE
 AS $$
 DECLARE
+  v_pickup_lat double precision;
+  v_pickup_lng double precision;
   v_pickup_geog geography;
+  v_dropoff_lat double precision;
+  v_dropoff_lng double precision;
   v_dropoff_geog geography;
   v_vehicle_type text;
   v_radius double precision;
 BEGIN
-  SELECT t.pickup_geog, t.dropoff_geog, t.vehicle_type
-  INTO v_pickup_geog, v_dropoff_geog, v_vehicle_type
-  FROM public.trips t
+  -- Get trip details
+  SELECT t.pickup_lat, t.pickup_lng, t.pickup_geog, t.dropoff_lat, t.dropoff_lng, t.dropoff_geog, t.vehicle_type
+  INTO v_pickup_lat, v_pickup_lng, v_pickup_geog, v_dropoff_lat, v_dropoff_lng, v_dropoff_geog, v_vehicle_type
+  FROM trips t
   WHERE t.id = _trip_id;
 
   IF v_pickup_geog IS NULL THEN
-    RETURN;
+    RAISE EXCEPTION 'Trip % has no valid pickup location', _trip_id;
   END IF;
 
-  v_radius := COALESCE(NULLIF(_radius_m, 0), 10000)::double precision;
+  v_radius := COALESCE(_radius, 10000);
 
   RETURN QUERY
   SELECT
     t.id AS trip_id,
     t.user_id AS creator_user_id,
-    COALESCE(p.phone_number, p.wa_id) AS whatsapp_e164,  -- FIXED: removed p.whatsapp_number
+    COALESCE(p.phone_number, p.whatsapp_e164, p.wa_id) AS whatsapp_e164,
     SUBSTRING(t.id::text, 1, 8) AS ref_code,
     ROUND((ST_Distance(t.pickup_geog, v_pickup_geog) / 1000.0)::numeric, 2) AS distance_km,
     CASE
@@ -102,7 +74,7 @@ BEGIN
     (t.vehicle_type = v_vehicle_type) AS is_exact_match,
     GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - COALESCE(t.updated_at, t.created_at))) / 60))::integer AS location_age_minutes,
     COALESCE((p.metadata->>'number_plate')::text, (p.metadata->'driver'->>'number_plate')::text) AS number_plate,
-    COALESCE(p.display_name, p.phone_number, p.wa_id) AS driver_name,  -- FIXED: removed p.whatsapp_e164
+    COALESCE(p.display_name, p.phone_number, p.whatsapp_e164, p.wa_id) AS driver_name,
     'driver'::text AS role
   FROM public.trips t
   INNER JOIN public.profiles p ON p.user_id = t.user_id
@@ -122,16 +94,16 @@ BEGIN
 END;
 $$;
 
--- ============================================================================
--- MATCH PASSENGERS FOR TRIP V2 (FIXED)
--- ============================================================================
-CREATE OR REPLACE FUNCTION public.match_passengers_for_trip_v2(
+-- Recreate match_passengers_for_trip_v2 with correct column reference
+CREATE OR REPLACE FUNCTION match_passengers_for_trip_v2(
   _trip_id uuid,
-  _limit integer DEFAULT 9,
+  _vehicle_type text DEFAULT NULL,
+  _radius double precision DEFAULT 10000,
+  _window_days integer DEFAULT 2,
   _prefer_dropoff boolean DEFAULT false,
-  _radius_m integer DEFAULT 10000,
-  _window_days integer DEFAULT 2
-) RETURNS TABLE (
+  _limit integer DEFAULT 9
+)
+RETURNS TABLE (
   trip_id uuid,
   creator_user_id uuid,
   whatsapp_e164 text,
@@ -153,27 +125,32 @@ LANGUAGE plpgsql
 STABLE
 AS $$
 DECLARE
+  v_pickup_lat double precision;
+  v_pickup_lng double precision;
   v_pickup_geog geography;
+  v_dropoff_lat double precision;
+  v_dropoff_lng double precision;
   v_dropoff_geog geography;
   v_vehicle_type text;
   v_radius double precision;
 BEGIN
-  SELECT t.pickup_geog, t.dropoff_geog, t.vehicle_type
-  INTO v_pickup_geog, v_dropoff_geog, v_vehicle_type
-  FROM public.trips t
+  -- Get trip details
+  SELECT t.pickup_lat, t.pickup_lng, t.pickup_geog, t.dropoff_lat, t.dropoff_lng, t.dropoff_geog, t.vehicle_type
+  INTO v_pickup_lat, v_pickup_lng, v_pickup_geog, v_dropoff_lat, v_dropoff_lng, v_dropoff_geog, v_vehicle_type
+  FROM trips t
   WHERE t.id = _trip_id;
 
   IF v_pickup_geog IS NULL THEN
-    RETURN;
+    RAISE EXCEPTION 'Trip % has no valid pickup location', _trip_id;
   END IF;
 
-  v_radius := COALESCE(NULLIF(_radius_m, 0), 10000)::double precision;
+  v_radius := COALESCE(_radius, 10000);
 
   RETURN QUERY
   SELECT
     t.id AS trip_id,
     t.user_id AS creator_user_id,
-    COALESCE(p.phone_number, p.wa_id) AS whatsapp_e164,  -- FIXED: removed p.whatsapp_number
+    COALESCE(p.phone_number, p.whatsapp_e164, p.wa_id) AS whatsapp_e164,
     SUBSTRING(t.id::text, 1, 8) AS ref_code,
     ROUND((ST_Distance(t.pickup_geog, v_pickup_geog) / 1000.0)::numeric, 2) AS distance_km,
     CASE
@@ -189,7 +166,7 @@ BEGIN
     (t.vehicle_type = v_vehicle_type) AS is_exact_match,
     GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - COALESCE(t.updated_at, t.created_at))) / 60))::integer AS location_age_minutes,
     NULL::text AS number_plate,
-    COALESCE(p.display_name, p.phone_number, p.wa_id) AS driver_name,  -- FIXED: removed p.whatsapp_e164
+    COALESCE(p.display_name, p.phone_number, p.whatsapp_e164, p.wa_id) AS driver_name,
     'passenger'::text AS role
   FROM public.trips t
   INNER JOIN public.profiles p ON p.user_id = t.user_id
@@ -210,13 +187,3 @@ END;
 $$;
 
 COMMIT;
-
--- ============================================================================
--- VERIFICATION NOTES
--- ============================================================================
--- After applying this migration:
--- 1. Test nearby driver search: Should return results instead of error
--- 2. Test nearby passenger search: Should return results
--- 3. Check logs: Error "column p.whatsapp_number does not exist" should disappear
--- 4. Verify phone numbers display correctly in match results
--- ============================================================================
