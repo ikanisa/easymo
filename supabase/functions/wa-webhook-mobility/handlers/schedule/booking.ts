@@ -972,9 +972,11 @@ async function sharePickupButtons(
   const hasRecent = ctx.profileId ? await hasAnyRecentLocation(ctx.supabase, ctx.profileId) : false;
   
   if (hasRecent) {
+    const { getUseLastLocationButton } = await import("../../../_shared/wa-webhook-shared/locations/messages.ts");
+    const button = getUseLastLocationButton(ctx.locale);
     buttons.push({
       id: IDS.USE_LAST_LOCATION,
-      title: "🕐 Last Location",
+      title: button.title,
     });
   }
   

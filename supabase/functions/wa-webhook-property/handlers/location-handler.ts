@@ -31,37 +31,32 @@ export async function resolvePropertyLocation(
     };
   }
 
-  // 1. Check location cache (30-min TTL)
+  // 1. Check location cache (30-min TTL) - using recent_locations table
   try {
-    const { data: cacheData } = await ctx.supabase
-      .from('user_location_cache')
-      .select('lat, lng, cached_at')
-      .eq('user_id', ctx.profileId)
-      .single();
+    const { data: cacheData } = await ctx.supabase.rpc('get_recent_location', {
+      _user_id: ctx.profileId,
+      _source: 'property',
+      _max_age_minutes: 30
+    });
 
-    if (cacheData?.lat && cacheData?.lng) {
-      const cachedAt = new Date(cacheData.cached_at);
-      const now = new Date();
-      const ageMinutes = (now.getTime() - cachedAt.getTime()) / (1000 * 60);
+    if (cacheData && cacheData.length > 0 && cacheData[0].is_valid) {
+      const row = cacheData[0];
+      logStructuredEvent("PROPERTY_LOCATION_CACHE_HIT", {
+        user: ctx.profileId,
+        age_minutes: row.age_minutes,
+        lat: row.lat,
+        lng: row.lng
+      });
 
-      if (ageMinutes < 30) {
-        logStructuredEvent("PROPERTY_LOCATION_CACHE_HIT", {
-          user: ctx.profileId,
-          age_minutes: ageMinutes,
-          lat: cacheData.lat,
-          lng: cacheData.lng
-        });
-
-        return {
-          location: {
-            lat: cacheData.lat,
-            lng: cacheData.lng,
-            source: 'cache',
-            label: 'recent location'
-          },
-          needsPrompt: false
-        };
-      }
+      return {
+        location: {
+          lat: row.lat,
+          lng: row.lng,
+          source: 'cache',
+          label: 'recent location'
+        },
+        needsPrompt: false
+      };
     }
   } catch (error) {
     logStructuredEvent("PROPERTY_CACHE_CHECK_ERROR", {

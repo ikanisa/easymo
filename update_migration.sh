@@ -1,0 +1,94 @@
+#!/bin/bash
+
+# Replace all category_name references with buy_sell_category
+sed -i '' \
+  -e "s/WHERE category_name ILIKE '%salon%'/WHERE buy_sell_category = 'salons_barbers'/g" \
+  -e "s/   OR category_name ILIKE '%barber%'//g" \
+  -e "s/   OR category_name ILIKE '%coiffeur%'//g" \
+  -e "s/   OR category_name ILIKE '%beauty%'//g" \
+  -e "s/   OR category_name ILIKE '%hair%';//g" \
+  -e "s/WHERE category_name ILIKE '%electronics%'/WHERE buy_sell_category = 'electronics'/g" \
+  -e "s/   OR category_name ILIKE '%computer%'//g" \
+  -e "s/   OR category_name ILIKE '%phone shop%'//g" \
+  -e "s/   OR category_name ILIKE '%tech%'//g" \
+  -e "s/   OR category_name ILIKE '%gadget%';//g" \
+  -e "s/WHERE category_name ILIKE '%hardware%'/WHERE buy_sell_category = 'hardware_tools'/g" \
+  -e "s/   OR category_name ILIKE '%quincaillerie%'//g" \
+  -e "s/   OR category_name ILIKE '%construction%'//g" \
+  -e "s/   OR category_name ILIKE '%building%'//g" \
+  -e "s/   OR category_name ILIKE '%tools%';//g" \
+  -e "s/WHERE category_name ILIKE '%grocery%'/WHERE buy_sell_category = 'groceries_supermarkets'/g" \
+  -e "s/   OR category_name ILIKE '%groceries%'//g" \
+  -e "s/   OR category_name ILIKE '%supermarket%'//g" \
+  -e "s/   OR category_name ILIKE '%market%'//g" \
+  -e "s/   OR category_name ILIKE '%shop%'//g" \
+  -e "s/   OR category_name ILIKE '%store%'//g" \
+  -e "s/   AND category_name NOT ILIKE '%hardware%'//g" \
+  -e "s/   AND category_name NOT ILIKE '%electronics%';//g" \
+  -e "s/WHERE category_name ILIKE '%boutique%'/WHERE buy_sell_category = 'fashion_clothing'/g" \
+  -e "s/   OR category_name ILIKE '%fashion%'//g" \
+  -e "s/   OR category_name ILIKE '%clothing%'//g" \
+  -e "s/   OR category_name ILIKE '%clothes%'//g" \
+  -e "s/   OR category_name ILIKE '%tailor%';//g" \
+  -e "s/WHERE category_name ILIKE '%garage%'/WHERE buy_sell_category = 'auto_services_parts'/g" \
+  -e "s/   OR category_name ILIKE '%auto%'//g" \
+  -e "s/   OR category_name ILIKE '%car%'//g" \
+  -e "s/   OR category_name ILIKE '%mechanic%'//g" \
+  -e "s/   OR category_name ILIKE '%vehicle%';//g" \
+  -e "s/WHERE category_name ILIKE '%notary%'/WHERE buy_sell_category = 'notaries_legal'/g" \
+  -e "s/   OR category_name ILIKE '%notaire%'//g" \
+  -e "s/   OR category_name ILIKE '%legal%'//g" \
+  -e "s/   OR category_name ILIKE '%lawyer%'//g" \
+  -e "s/   OR category_name ILIKE '%attorney%';//g" \
+  -e "s/WHERE category_name ILIKE '%accountant%'/WHERE buy_sell_category = 'accountants_consultants'/g" \
+  -e "s/   OR category_name ILIKE '%accounting%'//g" \
+  -e "s/   OR category_name ILIKE '%consultant%'//g" \
+  -e "s/   OR category_name ILIKE '%consulting%'//g" \
+  -e "s/   OR category_name ILIKE '%audit%';//g" \
+  -e "s/WHERE category_name ILIKE '%bank%'/WHERE buy_sell_category = 'banks_finance'/g" \
+  -e "s/   OR category_name ILIKE '%finance%'//g" \
+  -e "s/   OR category_name ILIKE '%sacco%'//g" \
+  -e "s/   OR category_name ILIKE '%microfinance%'//g" \
+  -e "s/   OR category_name ILIKE '%mfi%';//g" \
+  -e "s/WHERE category_name ILIKE '%bar%'/WHERE buy_sell_category = 'bars_restaurants'/g" \
+  -e "s/   OR category_name ILIKE '%restaurant%'//g" \
+  -e "s/   OR category_name ILIKE '%cafe%'//g" \
+  -e "s/   OR category_name ILIKE '%pub%'//g" \
+  -e "s/   OR category_name ILIKE '%lounge%';//g" \
+  -e "s/WHERE category_name ILIKE '%hospital%'/WHERE buy_sell_category = 'hospitals_clinics'/g" \
+  -e "s/   OR category_name ILIKE '%clinic%'//g" \
+  -e "s/   OR category_name ILIKE '%health center%'//g" \
+  -e "s/   OR category_name ILIKE '%medical%'//g" \
+  -e "s/   OR category_name ILIKE '%doctor%';//g" \
+  -e "s/WHERE category_name ILIKE '%hotel%'/WHERE buy_sell_category = 'hotels_lodging'/g" \
+  -e "s/   OR category_name ILIKE '%lodge%'//g" \
+  -e "s/   OR category_name ILIKE '%guest house%'//g" \
+  -e "s/   OR category_name ILIKE '%guesthouse%'//g" \
+  -e "s/   OR category_name ILIKE '%hostel%';//g" \
+  -e "s/WHERE category_name ILIKE '%real estate%'/WHERE buy_sell_category = 'real_estate_construction'/g" \
+  -e "s/   OR category_name ILIKE '%property%'//g" \
+  -e "s/   OR category_name ILIKE '%construction%'//g" \
+  -e "s/   OR category_name ILIKE '%contractor%'//g" \
+  -e "s/   OR category_name ILIKE '%architect%';//g" \
+  -e "s/WHERE category_name ILIKE '%school%'/WHERE buy_sell_category = 'schools_education'/g" \
+  -e "s/   OR category_name ILIKE '%education%'//g" \
+  -e "s/   OR category_name ILIKE '%university%'//g" \
+  -e "s/   OR category_name ILIKE '%college%'//g" \
+  -e "s/   OR category_name ILIKE '%training%';//g" \
+  -e "s/WHERE category_name ILIKE '%transport%'/WHERE buy_sell_category = 'transport_logistics'/g" \
+  -e "s/   OR category_name ILIKE '%taxi%'//g" \
+  -e "s/   OR category_name ILIKE '%logistics%'//g" \
+  -e "s/   OR category_name ILIKE '%delivery%'//g" \
+  -e "s/   OR category_name ILIKE '%courier%';//g" \
+  -e "s/WHERE (/WHERE buy_sell_category = 'other_services' AND (/g" \
+  -e "s/  category_name ILIKE '%service%'/  buy_sell_category IS NULL/g" \
+  -e "s/  OR category_name ILIKE '%cleaning%'//g" \
+  -e "s/  OR category_name ILIKE '%repair%'//g" \
+  -e "s/  OR category_name ILIKE '%printing%'//g" \
+  -e "s/  OR category_name ILIKE '%event%'//g" \
+  -e "s/  OR category_name ILIKE '%photography%'//g" \
+  -e "s/CREATE INDEX IF NOT EXISTS idx_business_category_name_lower/CREATE INDEX IF NOT EXISTS idx_business_buy_sell_category_lower/g" \
+  -e "s/ON public.business(LOWER(category_name))/ON public.business(LOWER(buy_sell_category))/g" \
+  supabase/migrations/20251209230100_populate_business_tags_from_categories.sql
+
+echo "Migration updated successfully"

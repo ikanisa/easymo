@@ -1,0 +1,34 @@
+{
+  "name": "@easymo/go-live",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "pre-flight": "tsx scripts/pre-flight.ts",
+    "parallel-run": "tsx scripts/parallel-run.ts",
+    "cutover": "tsx scripts/cutover.ts",
+    "verify-live": "tsx scripts/verify-live.ts",
+    "rollback": "tsx scripts/rollback.ts",
+    "decommission": "tsx scripts/decommission.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@easymo/migration-shared": "workspace:*",
+    "@supabase/supabase-js": "^2.86.2",
+    "@slack/web-api": "^7.0.0",
+    "chalk": "^5.3.0",
+    "cli-progress": "^3.12.0",
+    "commander": "^12.0.0",
+    "dotenv": "^16.4.5",
+    "node-fetch": "^3.3.2",
+    "ora": "^8.0.1",
+    "prom-client": "^15.1.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/cli-progress": "^3.11.5",
+    "@types/node": "^22.10.7",
+    "tsx": "^4.19.2",
+    "typescript": "^5.5.4"
+  }
+}

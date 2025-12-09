@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Ibimina Staff</string>
+    <string name="title_activity_main">Ibimina Staff</string>
+    <string name="package_name">rw.ibimina.staff</string>
+    <string name="custom_url_scheme">rw.ibimina.staff</string>
+</resources>

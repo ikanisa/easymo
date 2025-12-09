@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { z } from 'zod';
 
 export const ParsedSMSSchema = z.object({
@@ -30,4 +31,22 @@ export interface SMSParser {
    * Check if this parser can handle the given message
    */
   canParse(message: string, sender?: string): boolean;
+=======
+export interface ParsedSMS {
+  provider: "MTN" | "AIRTEL" | "UNKNOWN";
+  transactionType: "DEPOSIT" | "WITHDRAWAL" | "TRANSFER" | "UNKNOWN";
+  amount: number;
+  currency: string;
+  reference: string;
+  sender?: string;
+  recipient?: string;
+  balance?: number;
+  timestamp?: Date;
+  raw: string;
+}
+
+export interface SMSParser {
+  canParse(message: string): boolean;
+  parse(message: string): ParsedSMS | null;
+>>>>>>> feature/location-caching-and-mobility-deep-review
 }

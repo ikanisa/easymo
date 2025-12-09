@@ -1,0 +1,31 @@
+export async function register() {
+  // Skip in browser
+  if (typeof window !== "undefined") {
+    return;
+  }
+
+  // Skip in edge runtime (middleware) - check runtime property
+  if (
+    typeof EdgeRuntime !== "undefined" ||
+    // @ts-expect-error - process.env.NEXT_RUNTIME is set by Next.js
+    process.env.NEXT_RUNTIME === "edge"
+  ) {
+    return;
+  }
+
+  // Skip in development
+  if (process.env.NODE_ENV === "development") {
+    console.log("Instrumentation skipped in development");
+    return;
+  }
+
+  // Production only - load Sentry
+  if (process.env.NODE_ENV === "production") {
+    try {
+      await import("./sentry.server.config");
+      console.log("Instrumentation initialized");
+    } catch (error) {
+      console.error("Failed to initialize instrumentation:", error);
+    }
+  }
+}

@@ -836,9 +836,11 @@ async function promptShareLocation(
   const hasRecent = ctx.profileId ? await hasAnyRecentLocation(ctx.supabase, ctx.profileId) : false;
   
   if (hasRecent) {
+    const { getUseLastLocationButton } = await import("../../_shared/wa-webhook-shared/locations/messages.ts");
+    const button = getUseLastLocationButton(ctx.locale);
     buttons.push({
       id: IDS.USE_LAST_LOCATION,
-      title: "🕐 Last Location",
+      title: button.title,
     });
   }
   
@@ -854,12 +856,9 @@ async function promptShareLocation(
     title: t(ctx.locale, "location.saved.button"),
   });
   
-  const instructions = t(ctx.locale, "location.share.instructions");
-  const baseBody = t(ctx.locale, "mobility.nearby.share_location", { instructions });
-  // Add hint about "Last Location" button if user has recent location
-  const body = hasRecent 
-    ? `${baseBody}\n\nℹ️ Tap "Last Location" to reuse your recent location.`
-    : baseBody;
+  // Use standardized location sharing message
+  const { getShareLocationPrompt } = await import("../../_shared/wa-webhook-shared/locations/messages.ts");
+  const body = getShareLocationPrompt(ctx.locale, hasRecent);
     
   try {
     await sendButtonsMessage(

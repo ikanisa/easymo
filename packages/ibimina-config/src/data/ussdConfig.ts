@@ -1,0 +1,106 @@
+export const ussdConfigData = Object.freeze({
+  version: "2025-01-15",
+  ttlSeconds: 86400,
+  operators: [
+    {
+      id: "mtn-rw",
+      name: "MTN MoMo",
+      network: "MTN",
+      country: "RW",
+      currency: "RWF",
+      supportsAutoDial: true,
+      default: true,
+      shortcode: "*182#",
+      templates: {
+        shortcut: "*182*8*1*{MERCHANT}*{AMOUNT}#",
+        menu: "*182*8*1*{MERCHANT}#",
+        base: "*182#",
+      },
+      placeholders: {
+        merchant: "{MERCHANT}",
+        amount: "{AMOUNT}",
+        reference: "{REFERENCE}",
+      },
+      locales: {
+        "en-RW": {
+          copy: "Dial {code} to pay {amount} with reference {reference}.",
+          cta: "Tap to dial",
+          instructions: [
+            "Ensure you have sufficient balance before dialing.",
+            "Dial {code} and follow the prompts to confirm the payment.",
+            "Enter the reference {reference} when prompted.",
+          ],
+        },
+        "rw-RW": {
+          copy: "Hamagara {code} wishyure {amount} ukoresheje indangamubare {reference}.",
+          cta: "Kanda uhageze",
+          instructions: [
+            "Reba ko ufite amafaranga ahagije kuri konti yawe ya MoMo.",
+            "Hamagara {code} hanyuma ukurikize amabwiriza kuri telefoni.",
+            "Shyiramo indangamubare {reference} igihe bayigusabye.",
+          ],
+        },
+        "fr-RW": {
+          copy: "Composez {code} pour payer {amount} avec la référence {reference}.",
+          cta: "Appuyer pour appeler",
+          instructions: [
+            "Vérifiez votre solde avant de composer le code.",
+            "Composez {code} et suivez les instructions pour confirmer le paiement.",
+            "Saisissez la référence {reference} lorsque demandé.",
+          ],
+        },
+      },
+    },
+    {
+      id: "airtel-rw",
+      name: "Airtel Money",
+      network: "Airtel",
+      country: "RW",
+      currency: "RWF",
+      supportsAutoDial: true,
+      default: false,
+      shortcode: "*500#",
+      templates: {
+        shortcut: "*500*1*3*{MERCHANT}*{AMOUNT}#",
+        menu: "*500*1*3*{MERCHANT}#",
+        base: "*500#",
+      },
+      placeholders: {
+        merchant: "{MERCHANT}",
+        amount: "{AMOUNT}",
+        reference: "{REFERENCE}",
+      },
+      locales: {
+        "en-RW": {
+          copy: "Dial {code} to pay {amount} with reference {reference}.",
+          cta: "Tap to dial",
+          instructions: [
+            "Make sure your Airtel Money wallet has enough balance.",
+            "Dial {code} and approve the transaction.",
+            "Provide reference {reference} if requested.",
+          ],
+        },
+        "rw-RW": {
+          copy: "Hamagara {code} wishyure {amount} ukoresheje indangamubare {reference}.",
+          cta: "Kanda uhageze",
+          instructions: [
+            "Menya neza ko ufite amafaranga kuri Airtel Money.",
+            "Hamagara {code} hanyuma wemere ubwishyu.",
+            "Uzabwire indangamubare {reference} niba basabye.",
+          ],
+        },
+        "fr-RW": {
+          copy: "Composez {code} pour payer {amount} avec la référence {reference}.",
+          cta: "Appuyer pour appeler",
+          instructions: [
+            "Assurez-vous d'avoir assez de solde Airtel Money.",
+            "Composez {code} puis validez le paiement.",
+            "Donnez la référence {reference} si nécessaire.",
+          ],
+        },
+      },
+    },
+  ],
+} as const);
+
+export type RawUssdConfig = typeof ussdConfigData;

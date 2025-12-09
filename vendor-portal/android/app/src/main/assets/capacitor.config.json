@@ -1,0 +1,12 @@
+{
+  "appId": "rw.ibimina.staff",
+  "appName": "Ibimina Admin",
+  "webDir": "public",
+  "server": {
+    "url": "http://192.168.1.80:3101",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

@@ -1,0 +1,24 @@
+⚠️ DEPRECATION NOTICE
+
+This document has been consolidated into the comprehensive Android guide:
+docs/ANDROID.md
+
+Please refer to the consolidated documentation for:
+- Up-to-date build instructions
+- Complete feature documentation
+- Comprehensive troubleshooting
+- Deployment procedures
+
+The consolidated guide combines information from:
+- ANDROID_BUILD_FIXED.md
+- ANDROID_BUILD_FIXES.md
+- ANDROID_BUILD_GUIDE.md
+- ANDROID_DEPLOYMENT_GUIDE.md
+- ANDROID_IMPLEMENTATION_SUMMARY.md
+- ANDROID_SMS_IMPLEMENTATION.md
+- ANDROID_USER_GUIDE.md
+- BUILD_APK_INSTRUCTIONS.md
+- BUILD_FOR_PLAY_STORE.md
+- DEVICE_AUTH_ANDROID_IMPLEMENTATION.md
+
+This file is kept for historical reference but may be outdated.

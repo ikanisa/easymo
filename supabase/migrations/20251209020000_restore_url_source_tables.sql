@@ -211,24 +211,40 @@ ALTER TABLE public.real_estate_sources ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.farmers_sources ENABLE ROW LEVEL SECURITY;
 
 -- Service role full access
-CREATE POLICY job_sources_service_all ON public.job_sources
-  FOR ALL TO service_role USING (true) WITH CHECK (true);
-
-CREATE POLICY real_estate_sources_service_all ON public.real_estate_sources
-  FOR ALL TO service_role USING (true) WITH CHECK (true);
-
-CREATE POLICY farmers_sources_service_all ON public.farmers_sources
-  FOR ALL TO service_role USING (true) WITH CHECK (true);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'job_sources' AND policyname = 'job_sources_service_all') THEN
+    CREATE POLICY job_sources_service_all ON public.job_sources
+      FOR ALL TO service_role USING (true) WITH CHECK (true);
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'real_estate_sources' AND policyname = 'real_estate_sources_service_all') THEN
+    CREATE POLICY real_estate_sources_service_all ON public.real_estate_sources
+      FOR ALL TO service_role USING (true) WITH CHECK (true);
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'farmers_sources' AND policyname = 'farmers_sources_service_all') THEN
+    CREATE POLICY farmers_sources_service_all ON public.farmers_sources
+      FOR ALL TO service_role USING (true) WITH CHECK (true);
+  END IF;
+END $$;
 
 -- Public read access to active sources
-CREATE POLICY job_sources_public_read ON public.job_sources
-  FOR SELECT TO anon, authenticated USING (is_active = true);
-
-CREATE POLICY real_estate_sources_public_read ON public.real_estate_sources
-  FOR SELECT TO anon, authenticated USING (is_active = true);
-
-CREATE POLICY farmers_sources_public_read ON public.farmers_sources
-  FOR SELECT TO anon, authenticated USING (is_active = true);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'job_sources' AND policyname = 'job_sources_public_read') THEN
+    CREATE POLICY job_sources_public_read ON public.job_sources
+      FOR SELECT TO anon, authenticated USING (is_active = true);
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'real_estate_sources' AND policyname = 'real_estate_sources_public_read') THEN
+    CREATE POLICY real_estate_sources_public_read ON public.real_estate_sources
+      FOR SELECT TO anon, authenticated USING (is_active = true);
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'farmers_sources' AND policyname = 'farmers_sources_public_read') THEN
+    CREATE POLICY farmers_sources_public_read ON public.farmers_sources
+      FOR SELECT TO anon, authenticated USING (is_active = true);
+  END IF;
+END $$;
 
 -- Grant permissions
 GRANT SELECT ON public.job_sources TO anon, authenticated;

@@ -314,19 +314,29 @@ serve(async (req: Request): Promise<Response> => {
         } else if (id === IDS.USE_CACHED_LOCATION && state?.key === "mobility_nearby_location") {
           handled = await handleUseCachedLocation(ctx, state.data as any);
         } else if (id === IDS.USE_LAST_LOCATION && state?.key === "mobility_nearby_location") {
-          // Get the last known location (even if > 30 min old)
+          // Handle "Use Last Location" - reuse recent location
           if (!ctx.profileId) {
             handled = false;
           } else {
-            const { getLastLocation } = await import("./locations/cache.ts");
-            const lastLoc = await getLastLocation(ctx.supabase, ctx.profileId);
+            const { handleUseLastLocation } = await import("../../_shared/wa-webhook-shared/locations/request-location.ts");
+            const { getLocationReusedMessage } = await import("../../_shared/wa-webhook-shared/locations/messages.ts");
+            
+            const lastLoc = await handleUseLastLocation(
+              { supabase: ctx.supabase, userId: ctx.profileId, from: ctx.from, locale: ctx.locale },
+              'mobility'
+            );
             
             if (lastLoc?.lat && lastLoc?.lng) {
-              // Use this location and continue the flow
+              // Show confirmation message
+              await sendText(ctx.from, getLocationReusedMessage(lastLoc.ageMinutes, ctx.locale));
+              
+              // Continue with matching flow
               handled = await handleNearbyLocation(ctx, state.data as any, { lat: lastLoc.lat, lng: lastLoc.lng });
             } else {
               // No previous location found
-              await sendText(ctx.from, "No previous location found. Please share your location.");
+              await sendText(ctx.from, t(ctx.locale, "location.no_recent_found", {
+                defaultValue: "No previous location found. Please share your location."
+              }));
               handled = true;
             }
           }
@@ -378,13 +388,24 @@ serve(async (req: Request): Promise<Response> => {
           if (!ctx.profileId) {
             handled = false;
           } else {
-            const { getLastLocation } = await import("./locations/cache.ts");
-            const lastLoc = await getLastLocation(ctx.supabase, ctx.profileId);
+            const { handleUseLastLocation } = await import("../../_shared/wa-webhook-shared/locations/request-location.ts");
+            const { getLocationReusedMessage } = await import("../../_shared/wa-webhook-shared/locations/messages.ts");
+            
+            const lastLoc = await handleUseLastLocation(
+              { supabase: ctx.supabase, userId: ctx.profileId, from: ctx.from, locale: ctx.locale },
+              'mobility'
+            );
             
             if (lastLoc?.lat && lastLoc?.lng) {
+              // Show confirmation message
+              await sendText(ctx.from, getLocationReusedMessage(lastLoc.ageMinutes, ctx.locale));
+              
+              // Continue with schedule flow
               handled = await handleScheduleLocation(ctx, state.data as any, { lat: lastLoc.lat, lng: lastLoc.lng });
             } else {
-              await sendText(ctx.from, "No previous location found. Please share your location.");
+              await sendText(ctx.from, t(ctx.locale, "location.no_recent_found", {
+                defaultValue: "No previous location found. Please share your location."
+              }));
               handled = true;
             }
           }

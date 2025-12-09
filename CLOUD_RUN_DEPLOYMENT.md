@@ -80,7 +80,7 @@ gcloud secrets add-iam-policy-binding admin-session-secret \
 ```bash
 gcloud run deploy easymo-admin-app \
   --source . \
-  --region us-central1 \
+  --region europe-west1 \
   --platform managed \
   --port 8080 \
   --memory 1Gi \
@@ -88,7 +88,7 @@ gcloud run deploy easymo-admin-app \
   --min-instances 0 \
   --max-instances 10 \
   --timeout 300 \
-  --allow-unauthenticated \
+  --no-allow-unauthenticated \
   --set-env-vars NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co \
   --set-env-vars NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key \
   --update-secrets SUPABASE_SERVICE_ROLE_KEY=supabase-service-role:latest \
@@ -116,12 +116,13 @@ To restrict access to internal users only:
 5. Add authorized users/groups (e.g., `user@yourcompany.com` or `group@yourcompany.com`)
 6. Assign role: **IAP-secured Web App User**
 
-After IAP is enabled, update the deployment to require authentication:
+After IAP is enabled, verify authentication is required:
 
 ```bash
-gcloud run services update easymo-admin-app \
-  --region us-central1 \
-  --no-allow-unauthenticated
+# Service should already have --no-allow-unauthenticated
+gcloud run services describe easymo-admin-app \
+  --region europe-west1 \
+  --format="value(status.url)"
 ```
 
 ## Environment Variables Reference
@@ -177,10 +178,10 @@ After deployment, configure Supabase to allow traffic from Cloud Run:
 ```bash
 # Stream logs
 gcloud run services logs tail easymo-admin-app \
-  --region us-central1
+  --region europe-west1
 
 # View logs in Cloud Console
-# https://console.cloud.google.com/run/detail/us-central1/easymo-admin-app/logs
+# https://console.cloud.google.com/run/detail/europe-west1/easymo-admin-app/logs
 ```
 
 ### Metrics
@@ -195,6 +196,8 @@ Available in Cloud Console:
 ### Health Checks
 
 Cloud Run automatically performs health checks on port 8080. Next.js handles this internally.
+
+**Note**: For admin-specific deployment guide with automated script, see [docs/gcp/admin-cloudrun-deploy.md](docs/gcp/admin-cloudrun-deploy.md).
 
 ## Troubleshooting
 
@@ -216,7 +219,7 @@ RUN pnpm --filter @va/shared build && \
 
 **Solution**: Check logs for environment variable issues:
 ```bash
-gcloud run services logs read easymo-admin-app --region us-central1 --limit 50
+gcloud run services logs read easymo-admin-app --region europe-west1 --limit 50
 ```
 
 Common causes:
@@ -331,27 +334,28 @@ jobs:
             --update-secrets ADMIN_SESSION_SECRET=admin-session-secret:latest
 ```
 
-## Rollback
+# Rollback
 
 If deployment fails, rollback to previous revision:
 
 ```bash
 # List revisions
-gcloud run revisions list --service easymo-admin-app --region us-central1
+gcloud run revisions list --service easymo-admin-app --region europe-west1
 
 # Route traffic to previous revision
 gcloud run services update-traffic easymo-admin-app \
-  --region us-central1 \
+  --region europe-west1 \
   --to-revisions REVISION_NAME=100
 ```
 
 ## Support
 
 For issues:
-1. Check Cloud Run logs: `gcloud run services logs tail easymo-admin-app --region us-central1`
-2. Verify environment variables: `gcloud run services describe easymo-admin-app --region us-central1`
+1. Check Cloud Run logs: `gcloud run services logs tail easymo-admin-app --region europe-west1`
+2. Verify environment variables: `gcloud run services describe easymo-admin-app --region europe-west1`
 3. Test locally with Docker first
 4. Review [docs/GROUND_RULES.md](./docs/GROUND_RULES.md) for security compliance
+5. See [docs/gcp/admin-cloudrun-deploy.md](docs/gcp/admin-cloudrun-deploy.md) for admin-specific deployment
 
 ## Additional Resources
 

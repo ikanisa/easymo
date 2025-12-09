@@ -1,0 +1,155 @@
+apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
+apply plugin: 'kotlin-kapt'
+
+def envVersionCode = System.getenv("ANDROID_VERSION_CODE")
+def envVersionName = System.getenv("ANDROID_VERSION_NAME")
+def resolvedVersionCode = envVersionCode ?: project.findProperty("VERSION_CODE")
+def versionCodeValue = resolvedVersionCode ? resolvedVersionCode.toInteger() : 102
+
+def versions = new Properties()
+if (rootProject.file("version.properties").canRead()) {
+    versions.load(new FileInputStream(rootProject.file("version.properties")))
+}
+def versionNameValue = envVersionName ?: versions['VERSION_NAME']
+
+def capacitorServerUrl = System.getenv("CAPACITOR_SERVER_URL") ?: project.findProperty("CAPACITOR_SERVER_URL")
+
+def releaseSigningConfigured = false
+
+android {
+    namespace "rw.ibimina.staff"
+    compileSdk rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "rw.ibimina.staff"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode versionCodeValue
+        versionName versionNameValue
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+        if (capacitorServerUrl) {
+            buildConfigField "String", "CAPACITOR_SERVER_URL", "\"${capacitorServerUrl}\""
+        }
+    }
+    signingConfigs {
+        release {
+            def keystorePath = System.getenv("ANDROID_KEYSTORE_PATH") ?: project.findProperty("ANDROID_KEYSTORE_PATH")
+            def keystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: project.findProperty("ANDROID_KEYSTORE_PASSWORD")
+            def keyAliasValue = System.getenv("ANDROID_KEY_ALIAS") ?: project.findProperty("ANDROID_KEY_ALIAS")
+            def keyPasswordValue = System.getenv("ANDROID_KEY_PASSWORD") ?: project.findProperty("ANDROID_KEY_PASSWORD")
+
+            if (keystorePath && keystorePassword && keyAliasValue && keyPasswordValue) {
+                def releaseKeystore = file(keystorePath)
+                if (releaseKeystore.exists()) {
+                    storeFile releaseKeystore
+                    storePassword keystorePassword
+                    keyAlias keyAliasValue
+                    keyPassword keyPasswordValue
+                    v3SigningEnabled true
+                    v4SigningEnabled true
+                    releaseSigningConfigured = true
+                } else {
+                    project.logger.lifecycle("[Ibimina] Release keystore not found at ${releaseKeystore.absolutePath}; skipping signing.")
+                }
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (releaseSigningConfigured) {
+                signingConfig signingConfigs.release
+            } else {
+                println "[Ibimina] Release signing config not supplied; release output will be unsigned."
+            }
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+    packaging {
+        resources {
+            excludes += [
+                    'META-INF/LICENSE',
+                    'META-INF/LICENSE.txt',
+                    'META-INF/NOTICE',
+                    'META-INF/NOTICE.txt',
+                    'META-INF/*.kotlin_module'
+            ]
+        }
+    }
+    buildFeatures {
+        buildConfig true
+    }
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
+}
+
+// afterEvaluate {
+//     android.applicationVariants.all { variant ->
+//         variant.outputs.each { output ->
+//             def fileName = output.outputFileName
+//             if (!fileName) {
+//                 return
+//             }
+//             def dotIndex = fileName.lastIndexOf('.')
+//             def extension = dotIndex >= 0 ? fileName.substring(dotIndex) : ''
+//             output.outputFileName = "ibimina-staff-${variant.versionName}-${variant.baseName}${extension}"
+//         }
+//     }
+// }
+
+// Repositories now managed by settings.gradle
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+
+    // Capacitor core libraries - managed directly, no BOM in Capacitor 7
+    implementation project(':capacitor-android')
+    implementation project(':capacitor-cordova-android-plugins')
+
+    // AndroidX dependencies with explicit versions for compatibility
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+
+    // Kotlin
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+
+    // Biometric Authentication for Device-Bound Auth
+    implementation "androidx.biometric:biometric:1.1.0"
+
+    // WorkManager for SMS background sync
+    implementation "androidx.work:work-runtime-ktx:2.8.1"
+
+    // Kotlin coroutines for SmsReceiver
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3"
+
+    // Room for TapMoMo nonce cache
+    implementation "androidx.room:room-runtime:2.6.1"
+    implementation "androidx.room:room-ktx:2.6.1"
+    kapt "androidx.room:room-compiler:2.6.1"
+
+    testImplementation "junit:junit:$junitVersion"
+    testImplementation "io.mockk:mockk:1.13.8"
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+}
+
+apply from: 'capacitor.build.gradle'
+apply plugin: 'com.google.gms.google-services'
