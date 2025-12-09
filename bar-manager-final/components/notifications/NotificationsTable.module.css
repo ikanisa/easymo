@@ -1,9 +1,0 @@
-.actions {
-  display: flex;
-  gap: 8px;
-}
-
-.feedback {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-}

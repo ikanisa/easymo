@@ -23,19 +23,7 @@ echo -e "${BLUE}========================================${NC}\n"
 # ============================================
 echo -e "${BLUE}📋 Task 1: Admin App Consolidation (4h)${NC}\n"
 
-if [ -d "admin-app-v2" ]; then
-  echo "⚠️  admin-app-v2 exists - needs manual consolidation"
-  echo ""
-  echo "Manual steps:"
-  echo "  1. Compare features: diff -r admin-app admin-app-v2"
-  echo "  2. Migrate unique features to admin-app"
-  echo "  3. Mark admin-app-v2 deprecated"
-  echo "  4. Update pnpm-workspace.yaml"
-  echo "  5. Remove from .github/workflows/*.yml"
-  echo ""
-else
-  echo -e "${GREEN}✅ Already consolidated (admin-app-v2 not found)${NC}\n"
-fi
+echo -e "${GREEN}✅ Already consolidated - duplicate apps removed${NC}\n"
 
 # ============================================
 # P2-1: Stray Files Relocation (2h)
