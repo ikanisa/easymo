@@ -13,7 +13,6 @@
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent, recordMetric } from "../../_shared/observability.ts";
-import { sendText, sendButtons } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import {
   searchBusinesses,
   createVendorInquiriesAndMessageVendors,
@@ -43,37 +42,110 @@ export interface ConciergeContext {
   userId?: string;
   userLat?: number;
   userLng?: number;
-  state: ConciergeState;
   supabase: SupabaseClient;
   correlationId?: string;
 }
 
-// =====================================================
-// STATE MANAGEMENT
-// =====================================================
+// State key for chat_state table
+const CONCIERGE_STATE_KEY = "buy_sell_concierge";
 
-const conciergeStates = new Map<string, ConciergeState>();
+// =====================================================
+// STATE MANAGEMENT (Database-backed)
+// =====================================================
 
 /**
- * Get or initialize concierge state for a user
+ * Get concierge state from database
  */
-export function getConciergeState(userPhone: string): ConciergeState {
-  return conciergeStates.get(userPhone) || { step: "idle" };
+export async function getConciergeState(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<ConciergeState> {
+  try {
+    const { data } = await supabase
+      .from("chat_state")
+      .select("state")
+      .eq("user_id", userId)
+      .order("last_updated", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (data?.state && typeof data.state === "object") {
+      const state = data.state as Record<string, unknown>;
+      if (state.key === CONCIERGE_STATE_KEY && state.data) {
+        return state.data as ConciergeState;
+      }
+    }
+  } catch (error) {
+    logStructuredEvent("CONCIERGE_STATE_GET_ERROR", {
+      error: error instanceof Error ? error.message : String(error),
+      userId,
+    }, "warn");
+  }
+
+  return { step: "idle" };
 }
 
 /**
- * Update concierge state for a user
+ * Save concierge state to database
  */
-export function setConciergeState(userPhone: string, state: Partial<ConciergeState>): void {
-  const current = getConciergeState(userPhone);
-  conciergeStates.set(userPhone, { ...current, ...state });
+export async function setConciergeState(
+  supabase: SupabaseClient,
+  userId: string,
+  state: Partial<ConciergeState>,
+): Promise<void> {
+  try {
+    const current = await getConciergeState(supabase, userId);
+    const newState = { ...current, ...state };
+
+    const chatState = {
+      key: CONCIERGE_STATE_KEY,
+      data: newState,
+    };
+
+    // Upsert the state
+    const { error } = await supabase
+      .from("chat_state")
+      .upsert(
+        { user_id: userId, state: chatState, last_updated: new Date().toISOString() },
+        { onConflict: "user_id" },
+      );
+
+    if (error) {
+      // Fallback: try update then insert
+      const { error: updateError } = await supabase
+        .from("chat_state")
+        .update({ state: chatState, last_updated: new Date().toISOString() })
+        .eq("user_id", userId);
+
+      if (updateError) {
+        await supabase
+          .from("chat_state")
+          .insert({ user_id: userId, state: chatState, last_updated: new Date().toISOString() });
+      }
+    }
+  } catch (error) {
+    logStructuredEvent("CONCIERGE_STATE_SET_ERROR", {
+      error: error instanceof Error ? error.message : String(error),
+      userId,
+    }, "error");
+  }
 }
 
 /**
- * Clear concierge state for a user
+ * Clear concierge state from database
  */
-export function clearConciergeState(userPhone: string): void {
-  conciergeStates.delete(userPhone);
+export async function clearConciergeState(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<void> {
+  try {
+    await setConciergeState(supabase, userId, { step: "idle" });
+  } catch (error) {
+    logStructuredEvent("CONCIERGE_STATE_CLEAR_ERROR", {
+      error: error instanceof Error ? error.message : String(error),
+      userId,
+    }, "warn");
+  }
 }
 
 // =====================================================
@@ -95,6 +167,7 @@ export async function startConciergeSearch(
   },
 ): Promise<{ success: boolean; businesses: BusinessSearchResult[] }> {
   const startTime = Date.now();
+  const userId = ctx.userId || ctx.userPhone;
 
   try {
     logStructuredEvent("CONCIERGE_SEARCH_START", {
@@ -105,7 +178,7 @@ export async function startConciergeSearch(
     });
 
     // Update state
-    setConciergeState(ctx.userPhone, {
+    await setConciergeState(ctx.supabase, userId, {
       step: "searching",
       requestSummary,
       requestType,
@@ -133,14 +206,14 @@ export async function startConciergeSearch(
         correlationId: ctx.correlationId,
       }, "warn");
 
-      clearConciergeState(ctx.userPhone);
+      await clearConciergeState(ctx.supabase, userId);
       return { success: false, businesses: [] };
     }
 
     const businesses = searchResult.data;
 
     // Update state with results
-    setConciergeState(ctx.userPhone, {
+    await setConciergeState(ctx.supabase, userId, {
       step: "awaiting_consent",
       searchResults: businesses,
       selectedBusinessIds: businesses.slice(0, 4).map((b) => b.id), // Select top 4 by default
@@ -168,7 +241,7 @@ export async function startConciergeSearch(
       correlationId: ctx.correlationId,
     }, "error");
 
-    clearConciergeState(ctx.userPhone);
+    await clearConciergeState(ctx.supabase, userId);
     return { success: false, businesses: [] };
   }
 }
@@ -225,20 +298,21 @@ export async function handleVendorOutreachConsent(
   consent: "yes" | "no" | "show_list",
   sendWhatsAppMessage: (phone: string, message: string) => Promise<{ messageId?: string; error?: string }>,
 ): Promise<{ success: boolean; inquiryId?: string; error?: string }> {
-  const state = getConciergeState(ctx.userPhone);
+  const userId = ctx.userId || ctx.userPhone;
+  const state = await getConciergeState(ctx.supabase, userId);
 
   if (state.step !== "awaiting_consent" || !state.selectedBusinessIds || !state.requestSummary) {
     return { success: false, error: "No pending consent request" };
   }
 
   if (consent === "no") {
-    clearConciergeState(ctx.userPhone);
+    await clearConciergeState(ctx.supabase, userId);
     return { success: true };
   }
 
   if (consent === "show_list") {
     // Just show the business list without contacting
-    setConciergeState(ctx.userPhone, { step: "showing_results" });
+    await setConciergeState(ctx.supabase, userId, { step: "showing_results" });
     return { success: true };
   }
 
@@ -250,7 +324,7 @@ export async function handleVendorOutreachConsent(
       correlationId: ctx.correlationId,
     });
 
-    setConciergeState(ctx.userPhone, { step: "contacting_vendors" });
+    await setConciergeState(ctx.supabase, userId, { step: "contacting_vendors" });
 
     const result = await createVendorInquiriesAndMessageVendors(
       ctx.supabase,
@@ -274,12 +348,12 @@ export async function handleVendorOutreachConsent(
         correlationId: ctx.correlationId,
       }, "error");
 
-      clearConciergeState(ctx.userPhone);
+      await clearConciergeState(ctx.supabase, userId);
       return { success: false, error: result.error?.msg || "Failed to contact vendors" };
     }
 
     // Update state with inquiry ID
-    setConciergeState(ctx.userPhone, {
+    await setConciergeState(ctx.supabase, userId, {
       step: "awaiting_replies",
       inquiryId: result.data.inquiryId,
       expiresAt: result.data.expiresAt,
@@ -304,7 +378,7 @@ export async function handleVendorOutreachConsent(
       correlationId: ctx.correlationId,
     }, "error");
 
-    clearConciergeState(ctx.userPhone);
+    await clearConciergeState(ctx.supabase, userId);
     return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
   }
 }
@@ -315,7 +389,8 @@ export async function handleVendorOutreachConsent(
 export async function checkVendorRepliesAndFormat(
   ctx: ConciergeContext,
 ): Promise<{ success: boolean; message: string; hasConfirmed: boolean }> {
-  const state = getConciergeState(ctx.userPhone);
+  const userId = ctx.userId || ctx.userPhone;
+  const state = await getConciergeState(ctx.supabase, userId);
 
   if (!state.inquiryId) {
     return { success: false, message: "No active inquiry", hasConfirmed: false };
@@ -339,7 +414,7 @@ export async function checkVendorRepliesAndFormat(
 
     // Update state if complete or expired
     if (status === "complete" || status === "expired") {
-      setConciergeState(ctx.userPhone, { step: "showing_results" });
+      await setConciergeState(ctx.supabase, userId, { step: "showing_results" });
     }
 
     logStructuredEvent("CONCIERGE_REPLIES_CHECKED", {
