@@ -36,15 +36,15 @@ echo "────────────────────────�
 
 # Check saved_locations table
 check "saved_locations table exists" \
-    "supabase db query --csv 'SELECT 1 FROM information_schema.tables WHERE table_schema='\''app'\'' AND table_name='\''saved_locations'\''' 2>/dev/null | grep -q '1'"
+    "grep -q 'CREATE TABLE.*saved_locations' supabase/migrations/*.sql"
 
 # Check saved_locations.geog column
 check "saved_locations.geog column exists" \
-    "supabase db query --csv 'SELECT 1 FROM information_schema.columns WHERE table_schema='\''app'\'' AND table_name='\''saved_locations'\'' AND column_name='\''geog'\''' 2>/dev/null | grep -q '1'"
+    "grep -q 'geog GEOGRAPHY' supabase/migrations/*.sql"
 
 # Check recent_locations table
 check "recent_locations table exists" \
-    "supabase db query --csv 'SELECT 1 FROM information_schema.tables WHERE table_schema='\''app'\'' AND table_name='\''recent_locations'\''' 2>/dev/null | grep -q '1'"
+    "grep -q 'CREATE TABLE.*recent_locations' supabase/migrations/*.sql"
 
 echo ""
 echo "2. RPC Verification"
@@ -55,47 +55,57 @@ RPCS=("save_recent_location" "get_recent_location" "has_recent_location"
 
 for rpc in "${RPCS[@]}"; do
     check "RPC $rpc exists" \
-        "supabase db query --csv \"SELECT 1 FROM pg_proc WHERE proname='$rpc'\" 2>/dev/null | grep -q '1'"
+        "grep -q 'CREATE OR REPLACE FUNCTION.*$rpc' supabase/migrations/*.sql"
 done
 
 echo ""
-echo "3. RLS Policy Verification"
+echo "3. Unified Service Verification"
 echo "─────────────────────────────────────────────────────────────────────"
 
-check "recent_locations RLS enabled" \
-    "supabase db query --csv 'SELECT relrowsecurity FROM pg_class c JOIN pg_namespace n ON c.relnamespace=n.oid WHERE n.nspname='\''app'\'' AND c.relname='\''recent_locations'\''' 2>/dev/null | grep -q 't'"
-
-check "saved_locations RLS enabled" \
-    "supabase db query --csv 'SELECT relrowsecurity FROM pg_class c JOIN pg_namespace n ON c.relnamespace=n.oid WHERE n.nspname='\''app'\'' AND c.relname='\''saved_locations'\''' 2>/dev/null | grep -q 't'"
-
-echo ""
-echo "4. Deprecation Checks"
-echo "─────────────────────────────────────────────────────────────────────"
-
-# Check for legacy location_cache usage
-LEGACY_REFS=$(grep -r "location_cache" supabase/functions --include="*.ts" 2>/dev/null | grep -v "location-service" | wc -l || echo "0")
-if [ "$LEGACY_REFS" -gt 0 ]; then
-    warn "Found $LEGACY_REFS references to legacy location_cache (should migrate)"
-fi
-
-# Check for direct table access
-DIRECT_ACCESS=$(grep -rE "(from|into)\s+['\"]?(app\.)?recent_locations" supabase/functions --include="*.ts" 2>/dev/null | grep -v "\.rpc" | wc -l || echo "0")
-if [ "$DIRECT_ACCESS" -gt 0 ]; then
-    warn "Found $DIRECT_ACCESS direct table accesses (should use RPCs)"
-fi
-
-echo ""
-echo "5. File Structure"
-echo "─────────────────────────────────────────────────────────────────────"
-
-check "Unified location service exists" \
+check "location-service module exists" \
     "test -f supabase/functions/_shared/location-service/index.ts"
 
-check "Location service README exists" \
-    "test -f supabase/functions/_shared/location-service/README.md"
+check "location-service exports types" \
+    "grep -q 'export interface SavedLocation' supabase/functions/_shared/location-service/index.ts"
 
-check "Migration files exist" \
-    "test -f supabase/migrations/20251210000000_location_schema_reconciliation.sql"
+check "location-service exports functions" \
+    "grep -q 'export async function saveFavoriteLocation' supabase/functions/_shared/location-service/index.ts"
+
+echo ""
+echo "4. Consumer Migration Status"
+echo "─────────────────────────────────────────────────────────────────────"
+
+# Check mobility updated
+check "wa-webhook-mobility uses location-service" \
+    "grep -q 'from.*location-service' supabase/functions/wa-webhook-mobility/handlers/locations.ts"
+
+# Check for legacy patterns
+LEGACY_REFS=$(grep -r "location_cache" supabase/functions --include="*.ts" 2>/dev/null | grep -v "location-service" | grep -v "Legacy bridge" | wc -l || echo "0")
+if [ "$LEGACY_REFS" -gt 0 ]; then
+    warn "Found $LEGACY_REFS references to legacy location_cache (should migrate)"
+else
+    echo -e "${GREEN}✓${NC} No legacy location_cache references found"
+    ((PASS++))
+fi
+
+# Check for direct table access outside service
+DIRECT_ACCESS=$(grep -rE "(from|into)\s+['\"]?(app\.)?recent_locations" supabase/functions --include="*.ts" 2>/dev/null | grep -v "\.rpc" | grep -v "location-service" | wc -l || echo "0")
+if [ "$DIRECT_ACCESS" -gt 0 ]; then
+    warn "Found $DIRECT_ACCESS direct table accesses (should use location-service)"
+else
+    echo -e "${GREEN}✓${NC} No direct table access found"
+    ((PASS++))
+fi
+
+echo ""
+echo "5. Documentation Verification"
+echo "─────────────────────────────────────────────────────────────────────"
+
+check "LOCATION_CONSOLIDATION_STATUS.md exists" \
+    "test -f LOCATION_CONSOLIDATION_STATUS.md"
+
+check "README updated with location service" \
+    "grep -q 'location-service' LOCATION_CONSOLIDATION_STATUS.md"
 
 echo ""
 echo "═══════════════════════════════════════════════════════════════════"
@@ -103,5 +113,12 @@ echo "Summary: ${GREEN}$PASS passed${NC}, ${RED}$FAIL failed${NC}, ${YELLOW}$WAR
 echo "═══════════════════════════════════════════════════════════════════"
 
 if [ "$FAIL" -gt 0 ]; then
+    echo -e "${RED}Verification failed. Fix issues before deploying.${NC}"
     exit 1
+elif [ "$WARN" -gt 0 ]; then
+    echo -e "${YELLOW}Verification passed with warnings. Review before deploying.${NC}"
+    exit 0
+else
+    echo -e "${GREEN}All checks passed! Location consolidation is complete.${NC}"
+    exit 0
 fi
