@@ -72,21 +72,30 @@ END $$;
 -- Step 3: Add migration metadata column (for tracking)
 DO $$
 BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
+    -- Only add column if whatsapp_users table exists
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
         WHERE table_schema = 'app'
         AND table_name = 'whatsapp_users'
-        AND column_name = 'location_cache_migrated_at'
     ) THEN
-        ALTER TABLE app.whatsapp_users
-        ADD COLUMN location_cache_migrated_at TIMESTAMPTZ;
-        
-        -- Mark migrated records
-        UPDATE app.whatsapp_users
-        SET location_cache_migrated_at = NOW()
-        WHERE location_cache IS NOT NULL;
-        
-        RAISE NOTICE 'Added location_cache_migrated_at tracking column';
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = 'app'
+            AND table_name = 'whatsapp_users'
+            AND column_name = 'location_cache_migrated_at'
+        ) THEN
+            ALTER TABLE app.whatsapp_users
+            ADD COLUMN location_cache_migrated_at TIMESTAMPTZ;
+            
+            -- Mark migrated records
+            UPDATE app.whatsapp_users
+            SET location_cache_migrated_at = NOW()
+            WHERE location_cache IS NOT NULL;
+            
+            RAISE NOTICE 'Added location_cache_migrated_at tracking column';
+        END IF;
+    ELSE
+        RAISE NOTICE 'Table app.whatsapp_users does not exist, skipping metadata column creation';
     END IF;
 END $$;
 
