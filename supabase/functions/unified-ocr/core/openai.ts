@@ -88,7 +88,8 @@ export async function runOpenAIVision(
   try {
     const cleaned = stripJsonFence(raw);
     parsed = JSON.parse(cleaned);
-  } catch (error) {
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error(String(err));
     throw new Error(`Failed to parse OpenAI JSON: ${error.message}`);
   }
 

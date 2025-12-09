@@ -27,7 +27,7 @@ interface OCRFields {
 
 interface VehicleOCRResponse {
   success: boolean;
-  vehicle_id: string;
+  vehicle_id?: string;
   status: "active" | "pending";
   reason?: string;
   ocr_confidence?: number;
