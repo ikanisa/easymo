@@ -120,7 +120,7 @@ RESPONSE FORMATTING:
         execute: async (params, context) => {
           const { query, lat = null, lng = null, radius_km = 10, limit = 5 } = params;
           
-          log.info('Executing AI business search', { query, lat, lng });
+          log.info({ query, lat, lng }, 'Executing AI business search');
           
           // Use the new AI-powered search function from Phase 1 migrations
           const { data, error } = await this.supabase.rpc('search_businesses_ai', {
@@ -132,12 +132,12 @@ RESPONSE FORMATTING:
           });
 
           if (error) {
-            log.error("AI business search failed:", error);
+            log.error({ error }, 'AI business search failed');
             // Fallback to basic search
             return await this.fallbackBusinessSearch(query, lat, lng, radius_km, limit);
           }
 
-          log.info('AI search returned results', { count: data?.length || 0 });
+          log.info({ count: data?.length || 0 }, 'AI search returned results');
           return { 
             businesses: data,
             source: 'ai_search'
@@ -171,7 +171,7 @@ RESPONSE FORMATTING:
           });
 
           if (error) {
-            log.error("Nearby business search failed:", error);
+            log.error({ error }, 'Nearby business search failed');
             return await this.fallbackBusinessSearch(category, lat, lng, radius_km, limit);
           }
 
@@ -218,7 +218,7 @@ RESPONSE FORMATTING:
             
             return { error: "Location not found" };
           } catch (error) {
-            log.error("Geocode error:", error);
+            log.error({ error: String(error) }, 'Geocode error');
             return { error: "Geocoding failed" };
           }
         }
@@ -442,7 +442,7 @@ RESPONSE FORMATTING:
       const { data, error } = await queryBuilder.limit(limit);
       
       if (error) {
-        log.error('Fallback search also failed:', error);
+        log.error({ error }, 'Fallback search also failed');
         return { businesses: [], error: 'Search temporarily unavailable' };
       }
       
@@ -451,7 +451,7 @@ RESPONSE FORMATTING:
         source: 'fallback_search'
       };
     } catch (error) {
-      log.error('Fallback search error:', error);
+      log.error({ error: String(error) }, 'Fallback search error');
       return { businesses: [], error: 'Search failed' };
     }
   }

@@ -464,14 +464,14 @@ function calculateStats(data: Array<{
   const successCount = data.filter(d => d.success).length;
   const successRate = successCount / sampleSize;
 
-  const satisfactionScores = data.filter(d => d.user_satisfaction_score != null).map(d => d.user_satisfaction_score);
+  const satisfactionScores = data.filter(d => d.user_satisfaction_score != null).map(d => d.user_satisfaction_score as number);
   const avgSatisfactionScore = satisfactionScores.length > 0
-    ? satisfactionScores.reduce((a, b) => a + b, 0) / satisfactionScores.length
+    ? satisfactionScores.reduce((a: number, b: number) => a + b, 0) / satisfactionScores.length
     : 0;
 
-  const responseTimes = data.filter(d => d.response_time_ms != null).map(d => d.response_time_ms);
+  const responseTimes = data.filter(d => d.response_time_ms != null).map(d => d.response_time_ms as number);
   const avgResponseTimeMs = responseTimes.length > 0
-    ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
+    ? responseTimes.reduce((a: number, b: number) => a + b, 0) / responseTimes.length
     : 0;
 
   const totalToolsExecuted = data.reduce((sum, d) => sum + (d.tools_executed || 0), 0);

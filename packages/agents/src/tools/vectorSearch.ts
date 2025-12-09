@@ -82,7 +82,7 @@ export async function executeVectorSearch(
 
     return { results: data || [] };
   } catch (error) {
-    log.error('Vector search error:', error);
+    log.error({ error: String(error) }, 'Vector search error');
     // Fallback or rethrow
     throw error;
   }

@@ -175,7 +175,7 @@ function createSupabaseClient(params: ScriptPlannerParams): SupabaseClient | nul
   try {
     return createClient(url, key, { auth: { persistSession: false } });
   } catch (error) {
-    log.warn('script-planner.supabase_init_failed', error);
+    log.warn({ error: String(error) }, 'script-planner.supabase_init_failed');
     return null;
   }
 }
@@ -202,7 +202,7 @@ async function fetchPerformanceRows({
 
   const { data, error } = await query;
   if (error) {
-    log.error('script-planner.fetch_failed', error);
+    log.error({ error }, 'script-planner.fetch_failed');
     return [];
   }
 

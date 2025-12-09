@@ -37,6 +37,8 @@ export interface AgentContext {
   userId: string;
   conversationId?: string;
   traceId?: string;
+  sessionId?: string;
+  source?: 'whatsapp' | 'web' | 'voice' | 'sms' | string;
   metadata?: Record<string, any>;
 }
 

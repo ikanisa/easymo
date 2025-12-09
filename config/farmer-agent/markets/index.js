@@ -1,17 +1,7 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.listMarketConfigs = listMarketConfigs;
-exports.getMarketConfig = getMarketConfig;
-exports.matchCommodity = matchCommodity;
-exports.matchVariety = matchVariety;
-exports.normalize = normalize;
-const sn_dakar_json_1 = __importDefault(require("./sn-dakar.json"));
-const gh_accra_json_1 = __importDefault(require("./gh-accra.json"));
-const ci_abidjan_json_1 = __importDefault(require("./ci-abidjan.json"));
-const rawConfigs = [sn_dakar_json_1.default, gh_accra_json_1.default, ci_abidjan_json_1.default];
+import snConfig from './sn-dakar.json' assert { type: 'json' };
+import ghConfig from './gh-accra.json' assert { type: 'json' };
+import ciConfig from './ci-abidjan.json' assert { type: 'json' };
+const rawConfigs = [snConfig, ghConfig, ciConfig];
 const configMap = new Map();
 const aliasMap = new Map();
 for (const config of rawConfigs) {
@@ -22,17 +12,17 @@ for (const config of rawConfigs) {
         }
     }
 }
-function listMarketConfigs() {
+export function listMarketConfigs() {
     return Array.from(configMap.values());
 }
-function getMarketConfig(code) {
+export function getMarketConfig(code) {
     if (!code)
         return undefined;
     const normalized = code.toLowerCase();
     const resolvedCode = aliasMap.get(normalized) ?? normalized;
     return configMap.get(resolvedCode);
 }
-function matchCommodity(config, value) {
+export function matchCommodity(config, value) {
     const normalized = normalize(value);
     return config.commodities.find((commodity) => {
         if (normalize(commodity.commodity) === normalized)
@@ -40,7 +30,7 @@ function matchCommodity(config, value) {
         return commodity.synonyms?.some((syn) => normalize(syn) === normalized);
     });
 }
-function matchVariety(commodity, value) {
+export function matchVariety(commodity, value) {
     if (!value)
         return commodity.varieties[0];
     const normalized = normalize(value);
@@ -52,6 +42,6 @@ function matchVariety(commodity, value) {
         return variety.synonyms?.some((syn) => normalize(syn) === normalized);
     });
 }
-function normalize(value) {
+export function normalize(value) {
     return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
