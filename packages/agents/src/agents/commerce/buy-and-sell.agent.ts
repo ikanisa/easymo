@@ -32,10 +32,11 @@ MARKETPLACE CAPABILITIES:
 - Handle OTC pharmacy products; for RX items, request photo and escalate to pharmacist
 - No medical advice, dosing, or contraindication information
 
-BUSINESS DISCOVERY:
-- Map user needs → business categories → specific nearby businesses
-- Use maps_geocode for location-based search
-- Return ranked list with reasons (open now, distance, rating)
+BUSINESS DISCOVERY (ENHANCED WITH AI SEARCH):
+- Use search_businesses_ai for natural language queries (e.g., "I need a computer", "print documents", "fix my phone")
+- The AI search understands intent and finds relevant businesses based on tags, services, products, and keywords
+- Returns ranked results with relevance scores, distance, and "open now" status
+- Always prefer search_businesses_ai over search_businesses for better results
 - Only recommend businesses from the database; respect opening hours
 
 BUSINESS BROKERAGE:
@@ -59,11 +60,22 @@ GUARDRAILS:
 
 FLOW:
 1) Identify intent: product search, business discovery, business sale/purchase, or legal intake
-2) For products: search_supabase/inventory_check; present options; build basket
-3) For business discovery: maps_geocode + search_businesses; present ranked options
+2) For products: search_products/inventory_check; present options; build basket
+3) For business discovery: 
+   - If user provides natural language need: use search_businesses_ai with their query
+   - If user has location: include lat/lng for location-aware results
+   - Format results with emoji numbers (1️⃣-5️⃣) for easy selection
+   - Show distance, rating, and open/closed status
 4) For business transactions: collect details; match parties; generate documents
 5) For all orders: momo_charge; confirm after settlement; track via order_status_update
-6) Notify fulfillment (notify_staff); escalate sensitive topics immediately`;
+6) Notify fulfillment (notify_staff); escalate sensitive topics immediately
+
+RESPONSE FORMATTING:
+- Use emoji numbers (1️⃣-5️⃣) for listing options
+- Show distance if available (e.g., "0.5km away")
+- Show rating if available (e.g., "⭐ 4.8")
+- Indicate if business is open now (🟢 Open / 🔴 Closed)
+- Keep messages concise and actionable`;
 
   tools: Tool[];
   private supabase: SupabaseClient;
@@ -90,10 +102,51 @@ FLOW:
 
   private defineTools(): Tool[] {
     return [
-      // Business discovery tools (from BusinessBrokerAgent)
+      // Business discovery tools - ENHANCED with AI search
+      {
+        name: 'search_businesses_ai',
+        description: 'Natural language search for businesses. Finds businesses based on user query like "I need a computer" or "pharmacy nearby". Uses AI-powered relevance ranking.',
+        parameters: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: 'Natural language query (e.g., "computer shop", "print documents", "fix phone")' },
+            lat: { type: 'number', description: 'User latitude (optional, for location-aware results)' },
+            lng: { type: 'number', description: 'User longitude (optional, for location-aware results)' },
+            radius_km: { type: 'number', description: 'Search radius in km (default 10)' },
+            limit: { type: 'number', description: 'Max results (default 5)' }
+          },
+          required: ['query']
+        },
+        execute: async (params, context) => {
+          const { query, lat = null, lng = null, radius_km = 10, limit = 5 } = params;
+          
+          log.info('Executing AI business search', { query, lat, lng });
+          
+          // Use the new AI-powered search function from Phase 1 migrations
+          const { data, error } = await this.supabase.rpc('search_businesses_ai', {
+            p_query: query,
+            p_lat: lat,
+            p_lng: lng,
+            p_radius_km: radius_km,
+            p_limit: limit
+          });
+
+          if (error) {
+            log.error("AI business search failed:", error);
+            // Fallback to basic search
+            return await this.fallbackBusinessSearch(query, lat, lng, radius_km, limit);
+          }
+
+          log.info('AI search returned results', { count: data?.length || 0 });
+          return { 
+            businesses: data,
+            source: 'ai_search'
+          };
+        }
+      },
       {
         name: 'search_businesses',
-        description: 'Find businesses by location and category. Returns sorted list with distance.',
+        description: 'Find businesses by category and location. Use search_businesses_ai for natural language queries.',
         parameters: {
           type: 'object',
           properties: {
@@ -108,25 +161,18 @@ FLOW:
         execute: async (params, context) => {
           const { category, lat, lng, radius_km = 5, limit = 5 } = params;
           
-          // Use PostGIS ST_DWithin for efficient location search
-          const { data, error } = await this.supabase.rpc('search_businesses_nearby', {
-            p_category: category,
+          // Use the new nearby businesses function
+          const { data, error } = await this.supabase.rpc('find_nearby_businesses', {
             p_lat: lat,
             p_lng: lng,
-            p_radius_meters: radius_km * 1000,
+            p_radius_km: radius_km,
+            p_category: category,
             p_limit: limit
           });
 
           if (error) {
-            log.error("RPC search_businesses_nearby failed:", error);
-            const { data: fallbackData, error: fallbackError } = await this.supabase
-              .from('business_directory')
-              .select('*')
-              .ilike('category', `%${category}%`)
-              .limit(limit);
-              
-            if (fallbackError) throw new Error(`Search failed: ${fallbackError.message}`);
-            return { businesses: fallbackData };
+            log.error("Nearby business search failed:", error);
+            return await this.fallbackBusinessSearch(category, lat, lng, radius_km, limit);
           }
 
           return { businesses: data };
@@ -370,6 +416,44 @@ FLOW:
         }
       }
     ];
+  }
+
+  /**
+   * Fallback business search when AI search fails
+   */
+  private async fallbackBusinessSearch(
+    query: string, 
+    lat: number | null, 
+    lng: number | null, 
+    radius_km: number, 
+    limit: number
+  ) {
+    log.warn('Using fallback business search');
+    
+    try {
+      let queryBuilder = this.supabase
+        .from('business')
+        .select('*')
+        .eq('is_active', true);
+      
+      // Text search on name and category
+      queryBuilder = queryBuilder.or(`name.ilike.%${query}%,category_name.ilike.%${query}%,tag.ilike.%${query}%`);
+      
+      const { data, error } = await queryBuilder.limit(limit);
+      
+      if (error) {
+        log.error('Fallback search also failed:', error);
+        return { businesses: [], error: 'Search temporarily unavailable' };
+      }
+      
+      return {
+        businesses: data,
+        source: 'fallback_search'
+      };
+    } catch (error) {
+      log.error('Fallback search error:', error);
+      return { businesses: [], error: 'Search failed' };
+    }
   }
 
   async execute(input: AgentInput): Promise<AgentResult> {

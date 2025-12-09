@@ -145,10 +145,35 @@ export async function handleBusinessDeeplinkCode(
     lines.push("");
     lines.push(t(ctx.locale, "business.deeplink.prompt.bar"));
 
-    buttons.push(
-      { id: IDS.BAR_VIEW_MENU, title: t(ctx.locale, "bars.buttons.view_menu") },
-      { id: IDS.BAR_CHAT_WAITER, title: t(ctx.locale, "bars.buttons.chat_waiter") },
-    );
+    if (bar?.id ?? business.bar_id) {
+      const barIdToUse = bar?.id ?? business.bar_id;
+      // Initialize Waiter AI session with bar context
+      if (ctx.profileId) {
+        try {
+          // Create AI agent session with bar context
+          await ctx.supabase.from('ai_agent_sessions').upsert({
+            phone: ctx.from,
+            agent_type: 'waiter_agent',
+            context: {
+              barId: barIdToUse,
+              restaurantId: barIdToUse,
+              barName: displayName,
+              entryMethod: 'qr_scan',
+              tableNumber: null, // Can be enhanced later
+            },
+            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          }, {
+            onConflict: 'phone',
+          });
+        } catch (error) {
+          console.error('Error creating Waiter AI session:', error);
+        }
+      }
+
+      buttons.push(
+        { id: IDS.BAR_VIEW_MENU, title: t(ctx.locale, "bars.buttons.view_menu") },
+        { id: IDS.BAR_CHAT_WAITER, title: t(ctx.locale, "bars.buttons.chat_waiter") },
+      );
 
     if (ctx.profileId) {
       await setState(ctx.supabase, ctx.profileId, {
