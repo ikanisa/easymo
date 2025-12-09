@@ -102,12 +102,149 @@ export async function refreshBusinessDeeplink(
   return await showBusinessDeeplinkShare(ctx, businessId);
 }
 
+/**
+ * Handle direct bar access via URL (easymo://waiter?bar_id=xxx&table=5)
+ */
+async function handleDirectBarAccess(
+  ctx: RouterContext,
+  barId: string,
+  tableNumber: string | null,
+): Promise<boolean> {
+  const { data: bar } = await ctx.supabase
+    .from("bars")
+    .select("id, name, location_text, country, slug, whatsapp_number")
+    .eq("id", barId)
+    .maybeSingle();
+
+  if (!bar) {
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "business.deeplink.invalid"),
+      [{ id: IDS.BACK_HOME, title: t(ctx.locale, "common.home_button") }],
+    );
+    return true;
+  }
+
+  // Initialize Waiter AI session
+  if (ctx.profileId) {
+    try {
+      await ctx.supabase.from('ai_agent_sessions').upsert({
+        phone: ctx.from,
+        agent_type: 'waiter_agent',
+        context: {
+          barId: bar.id,
+          restaurantId: bar.id,
+          barName: bar.name,
+          entryMethod: 'qr_scan',
+          tableNumber: tableNumber,
+        },
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      }, {
+        onConflict: 'phone',
+      });
+    } catch (error) {
+      console.error('Error creating Waiter AI session:', error);
+    }
+  }
+
+  // Build response
+  const lines: string[] = [];
+  lines.push(`*${bar.name}*`);
+  if (bar.location_text) {
+    lines.push(t(ctx.locale, "business.deeplink.location", { location: bar.location_text }));
+  }
+  if (bar.whatsapp_number) {
+    lines.push(t(ctx.locale, "business.deeplink.contact", { phone: bar.whatsapp_number }));
+  }
+  if (tableNumber) {
+    lines.push(`📍 ${t(ctx.locale, "bars.table", { number: tableNumber })}`);
+  }
+  lines.push("");
+  lines.push(t(ctx.locale, "business.deeplink.prompt.bar"));
+
+  const buttons = [
+    { id: IDS.BAR_VIEW_MENU, title: t(ctx.locale, "bars.buttons.view_menu") },
+    { id: IDS.BAR_CHAT_WAITER, title: t(ctx.locale, "bars.buttons.chat_waiter") },
+    { id: IDS.BACK_HOME, title: t(ctx.locale, "common.home_button") },
+  ];
+
+  // Store state
+  if (ctx.profileId) {
+    await setState(ctx.supabase, ctx.profileId, {
+      key: "bar_detail",
+      data: {
+        barId: bar.id,
+        barName: bar.name,
+        barCountry: bar.country,
+        barSlug: bar.slug,
+        tableNumber,
+      },
+    });
+    try {
+      await recordRecentActivity(ctx, "bar_detail", bar.id, {
+        barId: bar.id,
+        barName: bar.name,
+        barCountry: bar.country,
+        barSlug: bar.slug,
+        tableNumber,
+      });
+    } catch (_) {
+      // ignore
+    }
+  }
+
+  await sendButtonsMessage(ctx, lines.join("\n"), buttons);
+  return true;
+}
+
+/**
+ * Parse deeplink URL to extract code and parameters
+ * Supports: BIZ:ABC123 or easymo://waiter?bar_id=xxx&table=5
+ */
+function parseDeeplinkUrl(rawInput: string): {
+  code: string | null;
+  barId: string | null;
+  tableNumber: string | null;
+} {
+  const input = rawInput.trim();
+  
+  // Check if it's a URL format (easymo://waiter?...)
+  if (input.startsWith('easymo://')) {
+    try {
+      const url = new URL(input);
+      const params = url.searchParams;
+      return {
+        code: null,
+        barId: params.get('bar_id'),
+        tableNumber: params.get('table') || params.get('table_number'),
+      };
+    } catch {
+      return { code: null, barId: null, tableNumber: null };
+    }
+  }
+  
+  // Otherwise treat as code
+  return {
+    code: input.toUpperCase(),
+    barId: null,
+    tableNumber: null,
+  };
+}
+
 export async function handleBusinessDeeplinkCode(
   ctx: RouterContext,
   rawCode: string,
 ): Promise<boolean> {
-  const code = rawCode.trim().toUpperCase();
-  if (!code) return false;
+  const parsed = parseDeeplinkUrl(rawCode);
+  
+  // Handle direct bar_id from URL
+  if (parsed.barId) {
+    return await handleDirectBarAccess(ctx, parsed.barId, parsed.tableNumber);
+  }
+  
+  if (!parsed.code) return false;
+  const code = parsed.code;
+  
   const { data: business } = await ctx.supabase
     .from("business")
     .select(
@@ -150,6 +287,9 @@ export async function handleBusinessDeeplinkCode(
       // Initialize Waiter AI session with bar context
       if (ctx.profileId) {
         try {
+          // Get table number from parsed deeplink if available
+          const tableNumber = (ctx as any).deeplinkTableNumber || null;
+          
           // Create AI agent session with bar context
           await ctx.supabase.from('ai_agent_sessions').upsert({
             phone: ctx.from,
@@ -159,7 +299,7 @@ export async function handleBusinessDeeplinkCode(
               restaurantId: barIdToUse,
               barName: displayName,
               entryMethod: 'qr_scan',
-              tableNumber: null, // Can be enhanced later
+              tableNumber: tableNumber,
             },
             expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
           }, {
