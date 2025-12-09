@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 const navigation = [
-  { name: 'Dashboard', href: '/members', icon: Home },
+  { name: 'Dashboard', href: '/members', icon: Home },  // TODO: Create dedicated dashboard route
   { name: 'Members', href: '/members', icon: Users },
   { name: 'Payments', href: '/payments', icon: CreditCard },
   { name: 'Groups', href: '/groups', icon: UsersRound },

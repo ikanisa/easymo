@@ -1,3 +1,5 @@
+// NOTE: This module uses Node.js crypto and should only be used server-side
+// For client-side usage, use Web Crypto API or a cross-platform library
 import { createHash } from 'crypto';
 
 /**

@@ -26,10 +26,12 @@ export function parseSMS(message: string, sender?: string): ParsedSMS | null {
 
 /**
  * Extract phone number from SMS message
+ * Looks for Rwanda phone numbers in +250XXXXXXXXX or 07XXXXXXXX format
  */
 export function extractPhoneNumber(message: string): string | null {
-  const phoneMatch = message.match(/(\+?\d{10,13})/);
-  return phoneMatch ? phoneMatch[1] : null;
+  // Match Rwanda phone numbers: +250 followed by 9 digits, or 07 followed by 8 digits
+  const phoneMatch = message.match(/(?:\+250\d{9}|07\d{8})/);
+  return phoneMatch ? phoneMatch[0] : null;
 }
 
 /**
