@@ -1,0 +1,31 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  },
+  "vendor": {
+    "title": "Vendor Portal",
+    "members": "Members",
+    "groups": "Groups",
+    "payments": "Payments",
+    "settings": "Settings"
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "dashboard": "Dashboard",
+    "users": "Users",
+    "reports": "Reports"
+  },
+  "errors": {
+    "required": "This field is required",
+    "invalid_email": "Invalid email address",
+    "server_error": "Server error. Please try again."
+  }
+}
