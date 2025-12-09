@@ -91,6 +91,12 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
     priority: 1,
   },
   {
+    service: "agent-buy-sell",
+    keywords: ["buy_sell_agent", "marketplace agent", "shopping agent", "ai shopping"],
+    menuKeys: ["buy_sell_agent", "marketplace_agent", "shop_ai"],
+    priority: 2,
+  },
+  {
     service: "wa-agent-farmer",
     keywords: ["farmer", "agriculture", "crop", "harvest", "seed", "fertilizer"],
     menuKeys: ["farmer_agent", "farmers", "farmers_market"],
@@ -136,6 +142,7 @@ export const ROUTED_SERVICES: readonly string[] = [
   "wa-agent-farmer",
   "wa-agent-support",
   "wa-agent-waiter",
+  "agent-buy-sell",
   "agent-property-rental",
   "wa-agent-call-center",
   "wa-webhook-core",
@@ -171,6 +178,7 @@ export const STATE_PATTERNS: Array<{ patterns: string[]; service: string }> = [
   { patterns: ["farmer_"], service: "wa-agent-farmer" },
   { patterns: ["support_"], service: "wa-agent-support" },
   { patterns: ["waiter_", "restaurant_"], service: "wa-agent-waiter" },
+  { patterns: ["buy_sell_agent_"], service: "agent-buy-sell" },
   { patterns: ["property_agent_", "rental_agent_"], service: "agent-property-rental" },
   { patterns: ["agent_", "call_center_"], service: "wa-agent-call-center" },
 ];

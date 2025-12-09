@@ -26,6 +26,7 @@ import {
   handleShowMoreCategories,
   showBuySellCategories,
 } from "./show_categories.ts";
+import { showAIWelcome } from "./show_ai_welcome.ts";
 import { getCountryCode } from "../_shared/phone-utils.ts";
 
 // =====================================================
@@ -201,9 +202,9 @@ serve(async (req: Request): Promise<Response> => {
           return respond({ success: true, message: "category_selection_sent" });
         }
 
-        if (selectedId === "chat_with_ai") {
-          const aiResponse = await forwardToAIAgent(payload, correlationId);
-          return aiResponse ?? respond({ success: true, message: "ai_forward_failed" }, { status: 502 });
+        if (selectedId === "chat_with_ai" || selectedId === "buy_sell_chat_ai") {
+          const aiHandled = await forwardToBuySellAgent(userPhone, text || "Start Buy & Sell chat", correlationId);
+          return respond({ success: aiHandled, message: aiHandled ? "ai_routed" : "ai_forward_failed" }, aiHandled ? undefined : { status: 502 });
         }
       }
 
@@ -237,7 +238,7 @@ serve(async (req: Request): Promise<Response> => {
         return respond({ success: true, message: "location_processed" });
       }
 
-      // Home/menu commands -> show categories ONLY (no welcome text)
+      // Home/menu commands -> show AI welcome (natural language chat)
       const lower = text.toLowerCase();
       if (
         !text ||
@@ -247,19 +248,29 @@ serve(async (req: Request): Promise<Response> => {
         lower === "sell"
       ) {
         const userCountry = mapCountry(getCountryCode(userPhone));
-        await showBuySellCategories(userPhone, userCountry);
+        await showAIWelcome(userPhone, userCountry);
         
         const duration = Date.now() - startTime;
         recordMetric("buy_sell.message.processed", 1, {
           duration_ms: duration,
         });
         
-        return respond({ success: true, message: "categories_shown" });
+        return respond({ success: true, message: "ai_welcome_shown" });
       }
 
-      // Fallback: unknown message - show categories without extra text
+      // Fallback: unknown message - try AI agent first
+      if (isBuySellAIEnabled()) {
+        const handled = await forwardToBuySellAgent(userPhone, text, correlationId);
+        if (handled) {
+          const duration = Date.now() - startTime;
+          recordMetric("buy_sell.message.processed", 1, { duration_ms: duration, ai_routed: true });
+          return respond({ success: true, message: "ai_routed" });
+        }
+      }
+
+      // If AI unavailable, show AI welcome
       const userCountry = mapCountry(getCountryCode(userPhone));
-      await showBuySellCategories(userPhone, userCountry);
+      await showAIWelcome(userPhone, userCountry);
 
       const duration = Date.now() - startTime;
       recordMetric("buy_sell.message.processed", 1, {
@@ -286,27 +297,61 @@ serve(async (req: Request): Promise<Response> => {
   }
 });
 
-async function forwardToAIAgent(payload: unknown, correlationId: string): Promise<Response | null> {
+function isBuySellAIEnabled(): boolean {
+  return (Deno.env.get("BUY_SELL_AI_ENABLED") ?? "true").toLowerCase() !== "false";
+}
+
+async function forwardToBuySellAgent(
+  userPhone: string,
+  text: string,
+  correlationId: string,
+): Promise<boolean> {
   try {
     const baseUrl = Deno.env.get("SUPABASE_URL");
-    if (!baseUrl) return null;
-    const res = await fetch(`${baseUrl}/functions/v1/wa-agent-call-center`, {
+    if (!baseUrl) return false;
+
+    const apiKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SERVICE_ROLE_KEY");
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "X-Correlation-ID": correlationId,
+      "X-WA-Internal-Forward": "true",
+    };
+    if (apiKey) {
+      headers.Authorization = `Bearer ${apiKey}`;
+      headers.apikey = apiKey;
+    }
+
+    const res = await fetch(`${baseUrl}/functions/v1/agent-buy-sell`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Correlation-ID": correlationId,
-        "X-WA-Internal-Forward": "true",
-      },
-      body: JSON.stringify(payload),
+      headers,
+      body: JSON.stringify({
+        userPhone,
+        message: text,
+      }),
     });
-    return res;
+
+    if (!res.ok) {
+      await logStructuredEvent(
+        "BUY_SELL_AGENT_FORWARD_FAILED",
+        { status: res.status, correlationId },
+        "warn",
+      );
+      return false;
+    }
+
+    const data = await res.json();
+    if (data?.message) {
+      await sendText(userPhone, data.message);
+      return true;
+    }
+    return false;
   } catch (err) {
     await logStructuredEvent(
       "BUY_SELL_AI_FORWARD_ERROR",
       { error: err instanceof Error ? err.message : String(err), correlationId },
       "error",
     );
-    return null;
+    return false;
   }
 }
 

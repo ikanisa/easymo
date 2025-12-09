@@ -285,7 +285,7 @@ Deno.test({
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
     );
     
-    const agent = new MarketplaceAgent(supabase, Deno.env.get("GEMINI_API_KEY") || "");
+    const agent = new MarketplaceAgent(supabase, "test");
     const context: MarketplaceContext = {
       phone: "+250788999999",
       flowType: null,
@@ -313,7 +313,7 @@ Deno.test({
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
     );
     
-    const agent = new MarketplaceAgent(supabase, Deno.env.get("GEMINI_API_KEY") || "");
+    const agent = new MarketplaceAgent(supabase, "test");
     const context: MarketplaceContext = {
       phone: "+250788999999",
       flowType: null,
@@ -342,7 +342,7 @@ Deno.test({
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
     );
     
-    const agent = new MarketplaceAgent(supabase, Deno.env.get("GEMINI_API_KEY") || "");
+    const agent = new MarketplaceAgent(supabase, "test");
     const context: MarketplaceContext = {
       phone: "+250788999999",
       flowType: null,

@@ -2,7 +2,8 @@
  * Marketplace AI Agent
  *
  * Natural language AI agent for connecting buyers and sellers in Rwanda.
- * Uses Gemini for intent recognition, entity extraction, and conversational flow.
+ * Uses OpenAI Responses API (Agents SDK) with Gemini fallback for intent recognition,
+ * entity extraction, and conversational flow.
  *
  * Features:
  * - Intent classification (selling, buying, inquiry)
@@ -14,16 +15,15 @@
  * @see docs/GROUND_RULES.md for observability requirements
  */
 
-import { GoogleGenerativeAI } from "npm:@google/generative-ai@^0.21.0";
 import { logStructuredEvent, recordMetric } from "../_shared/observability.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { DualAIProvider } from "../wa-agent-waiter/core/providers/dual-ai-provider.ts";
+import { AgentConfigLoader } from "../_shared/agent-config-loader.ts";
 
 // =====================================================
 // CONFIGURATION
 // =====================================================
 
-// AI Model Configuration
-const GEMINI_MODEL = Deno.env.get("MARKETPLACE_AI_MODEL") || "gemini-1.5-flash";
 const AI_TEMPERATURE = parseFloat(Deno.env.get("MARKETPLACE_AI_TEMPERATURE") || "0.7");
 const AI_MAX_TOKENS = parseInt(Deno.env.get("MARKETPLACE_AI_MAX_TOKENS") || "1024", 10);
 
@@ -221,6 +221,40 @@ OUTPUT FORMAT (JSON):
   "flow_complete": false,
   "is_medical": false
 }`;
+
+function buildPromptFromConfig(config: Awaited<ReturnType<AgentConfigLoader["loadAgentConfig"]>>): string {
+  const parts: string[] = [];
+
+  if (config.persona) {
+    parts.push(`Role: ${config.persona.role_name}`);
+    parts.push(`Tone: ${config.persona.tone_style}`);
+    if (config.persona.languages?.length) {
+      parts.push(`Languages: ${config.persona.languages.join(", ")}`);
+    }
+    parts.push("");
+  }
+
+  if (config.systemInstructions?.instructions) {
+    parts.push(config.systemInstructions.instructions);
+  }
+
+  if (config.systemInstructions?.guardrails) {
+    parts.push("");
+    parts.push("GUARDRAILS:");
+    parts.push(config.systemInstructions.guardrails);
+  }
+
+  if (config.tools.length > 0) {
+    parts.push("");
+    parts.push("AVAILABLE TOOLS:");
+    for (const tool of config.tools) {
+      parts.push(`- ${tool.name}: ${tool.description}`);
+    }
+  }
+
+  if (parts.length === 0) return SYSTEM_PROMPT;
+  return parts.join("\n");
+}
 
 // =====================================================
 // INTERACTIVE WORKFLOW HELPERS
@@ -420,22 +454,32 @@ export function parseResultSelection(input: string): number | null {
 // =====================================================
 
 export class MarketplaceAgent {
-  private genAI?: GoogleGenerativeAI; // Optional - may not be configured
+  private aiProvider: DualAIProvider | null;
   private supabase: SupabaseClient;
   private correlationId?: string;
+  private configLoader: AgentConfigLoader;
 
   constructor(
     supabase: SupabaseClient,
-    apiKey?: string,
     correlationId?: string,
   ) {
-    const key = apiKey || Deno.env.get("GEMINI_API_KEY");
-    if (key) {
-      this.genAI = new GoogleGenerativeAI(key);
-    }
-    // If no API key, genAI will be undefined and we'll use fallback responses
     this.supabase = supabase;
     this.correlationId = correlationId;
+    this.configLoader = new AgentConfigLoader(supabase);
+
+    try {
+      this.aiProvider = new DualAIProvider();
+    } catch (error) {
+      this.aiProvider = null;
+      logStructuredEvent(
+        "MARKETPLACE_AGENT_PROVIDER_MISSING",
+        {
+          error: error instanceof Error ? error.message : String(error),
+          correlationId,
+        },
+        "warn",
+      );
+    }
   }
 
   /**
@@ -457,7 +501,7 @@ export class MarketplaceAgent {
       });
 
       // Fallback if no AI configured - show category list immediately
-      if (!this.genAI) {
+      if (!this.aiProvider) {
         const { showBuySellCategories } = await import("./show_categories.ts");
         
         try {
@@ -491,16 +535,8 @@ export class MarketplaceAgent {
         }
       }
 
-      // Build conversation for AI
-      const messages = context.conversationHistory.map((m) => ({
-        role: m.role === "user" ? ("user" as const) : ("model" as const),
-        parts: [{ text: m.content }],
-      }));
+      const systemPrompt = await this.getSystemPrompt();
 
-      // Add current message
-      messages.push({ role: "user" as const, parts: [{ text: userMessage }] });
-
-      // Build context prompt
       let contextPrompt = "";
       if (
         context.collectedData &&
@@ -515,24 +551,26 @@ export class MarketplaceAgent {
         contextPrompt += `\nCURRENT STEP: ${context.flowStep}`;
       }
 
-      const model = this.genAI.getGenerativeModel({
-        model: GEMINI_MODEL,
-        systemInstruction: SYSTEM_PROMPT + contextPrompt,
-      });
+      const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
+        { role: "system", content: systemPrompt + contextPrompt },
+      ];
 
-      // Start chat with history
-      const chat = model.startChat({
-        history: messages.slice(0, -1), // All but last message
-        generationConfig: {
-          temperature: AI_TEMPERATURE,
-          maxOutputTokens: AI_MAX_TOKENS,
-          responseMimeType: "application/json",
-        },
-      });
+      if (context.conversationHistory?.length) {
+        for (const entry of context.conversationHistory.slice(-8)) {
+          messages.push({
+            role: entry.role === "assistant" ? "assistant" : "user",
+            content: entry.content,
+          });
+        }
+      }
 
-      // Send current message
-      const result = await chat.sendMessage(userMessage);
-      const responseText = result.response.text();
+      messages.push({ role: "user", content: userMessage });
+
+      const responseText = await this.aiProvider.chat(messages, {
+        temperature: AI_TEMPERATURE,
+        maxTokens: AI_MAX_TOKENS,
+        metadata: { agent: "buy_and_sell" },
+      });
 
       // Parse AI response
       let aiResponse: AIResponse;
@@ -627,6 +665,23 @@ export class MarketplaceAgent {
           "I'm sorry, something went wrong. Please try again or type 'menu' to see your options.",
         action: "continue",
       };
+    }
+  }
+
+  /**
+   * Handle specific actions based on AI response
+   */
+  private async getSystemPrompt(): Promise<string> {
+    try {
+      const config = await this.configLoader.loadAgentConfig("buy_and_sell");
+      return buildPromptFromConfig(config);
+    } catch (error) {
+      await logStructuredEvent(
+        "MARKETPLACE_AGENT_PROMPT_FALLBACK",
+        { error: error instanceof Error ? error.message : String(error), correlationId: this.correlationId },
+        "warn",
+      );
+      return SYSTEM_PROMPT;
     }
   }
 
