@@ -93,6 +93,19 @@ export const groupListQuerySchema = z.object({
 // Export Inferred Types
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Query schema for listing groups
+export const groupListQuerySchema = z.object({
+  sacco_id: z.string().uuid(),
+  search: z.string().optional(),
+  type: z.enum(["ASCA", "ROSCA", "VSLA", "SACCO", "all"]).optional().default("all"),
+  status: z.enum(["ACTIVE", "INACTIVE", "DISSOLVED", "all"]).optional().default("ACTIVE"),
+  limit: z.coerce.number().min(1).max(100).optional().default(50),
+  offset: z.coerce.number().min(0).optional().default(0),
+  sort_by: z.enum(["name", "created_at", "member_count"]).optional().default("name"),
+  sort_order: z.enum(["asc", "desc"]).optional().default("asc"),
+});
+
 export type CreateGroupInput = z.infer<typeof createGroupSchema>;
 export type UpdateGroupInput = z.infer<typeof updateGroupSchema>;
+export type GroupListQuery = z.infer<typeof groupListQuerySchema>;
 export type GroupListQuery = z.infer<typeof groupListQuerySchema>;
