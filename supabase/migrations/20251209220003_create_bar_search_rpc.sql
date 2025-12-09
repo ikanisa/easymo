@@ -14,7 +14,10 @@ BEGIN;
 -- 1. CREATE NEARBY BARS SEARCH FUNCTION
 -- =====================================================================
 
-CREATE OR REPLACE FUNCTION public.search_bars_nearby(
+-- Drop existing function first (schema may have changed)
+DROP FUNCTION IF EXISTS public.search_bars_nearby(FLOAT, FLOAT, FLOAT, INT);
+
+CREATE FUNCTION public.search_bars_nearby(
   p_lat FLOAT,
   p_lng FLOAT,
   p_radius_km FLOAT DEFAULT 10.0,
@@ -88,7 +91,9 @@ $$ LANGUAGE plpgsql STABLE;
 -- 2. CREATE ALTERNATIVE VERSION WITH POSTGIS (if geography column exists)
 -- =====================================================================
 
-CREATE OR REPLACE FUNCTION public.search_bars_nearby_postgis(
+DROP FUNCTION IF EXISTS public.search_bars_nearby_postgis(FLOAT, FLOAT, FLOAT, INT);
+
+CREATE FUNCTION public.search_bars_nearby_postgis(
   p_lat FLOAT,
   p_lng FLOAT,
   p_radius_km FLOAT DEFAULT 10.0,

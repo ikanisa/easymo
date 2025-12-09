@@ -1,27 +1,38 @@
-import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { createClient } from "@supabase/supabase-js";
+import { createServerClient as createSupabaseSSRClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/types";
+import { requireSupabaseConfig } from "@/lib/supabase/config";
+import { createSupabaseServiceRoleClient } from "@/lib/supabaseServer";
 
-export async function createClient() {
+export const supabaseSrv = (): SupabaseClient<Database> =>
+  createSupabaseServiceRoleClient("supabaseSrv");
+
+export const supabaseAnon = (): SupabaseClient<Database> => {
+  const { url, anonKey } = requireSupabaseConfig("supabaseAnon");
+
+  return createClient<Database>(url, anonKey, {
+    auth: { persistSession: false },
+  });
+};
+
+export async function createSupabaseServerClient() {
+  const { url, anonKey } = requireSupabaseConfig("createSupabaseServerClient");
+
   const cookieStore = await cookies();
 
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // Called from Server Component - ignore
-          }
-        },
+  return createSupabaseSSRClient<Database>(url, anonKey, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
       },
-    }
-  );
+      setAll() {
+        // Server Components cannot mutate response cookies; use middleware or server actions for writes.
+      },
+    },
+  });
 }
+
+// --- Compatibility alias for older imports ---
+export { createSupabaseServerClient as createServerClient };

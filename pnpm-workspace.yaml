@@ -3,6 +3,7 @@ packages:
   - packages/*
   - admin-app
   # - admin-app-v2  # DEPRECATED: Removed 2025-11-27 (see admin-app-v2/DEPRECATED.md)
+  - vendor-portal
   - ai
   - waiter-pwa
   - real-estate-pwa
