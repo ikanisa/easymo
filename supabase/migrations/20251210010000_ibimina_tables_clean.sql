@@ -1,14 +1,22 @@
--- Ibimina SACCO Platform Schema Integration
--- Merged from ibimina repository on 2025-12-09
--- This migration adds all vendor-portal (ibimina) tables and functions
+-- Ibimina SACCO Platform - Clean Integration
+-- Date: 2025-12-09
+-- Only creates tables that don't conflict with existing easymo schema
 -- 
--- CRITICAL: This combines 119 migrations from ibimina into a single baseline
--- All migrations are wrapped in BEGIN/COMMIT as per GROUND_RULES.md
+-- Excluded tables (already exist in easymo):
+--   - audit_logs
+--   - countries  
+--   - merchants
+--   - notifications
+--   - transactions
+--
+-- This migration is safe to apply and adds ~70 new ibimina-specific tables
 
 BEGIN;
 
 
--- From: 00000000000000_bootstrap.sql
+-- ===================================================================
+-- Source: 00000000000000_bootstrap.sql
+-- ===================================================================
 
 -- Supabase bootstrap schema for ICUPA Phase 0
 -- Enables required extensions and creates foundational tables used across the diner shell.
@@ -70,8 +78,9 @@ create index if not exists idx_locations_tenant on public.locations(tenant_id);
 create index if not exists idx_items_location on public.items(location_id);
 create index if not exists idx_orders_location on public.orders(location_id);
 
-
--- From: 20250103_qr_auth_tables.sql
+-- ===================================================================
+-- Source: 20250103_qr_auth_tables.sql
+-- ===================================================================
 
 -- Database migration for QR authentication tables
 
@@ -96,10 +105,10 @@ CREATE TABLE IF NOT EXISTS auth_qr_sessions (
 );
 
 -- Create indexes for faster lookups
-CREATE INDEX IF NOT EXISTS idx_auth_qr_sessions_session_id ON auth_qr_sessions(session_id);
-CREATE INDEX IF NOT EXISTS idx_auth_qr_sessions_status ON auth_qr_sessions(status);
-CREATE INDEX IF NOT EXISTS idx_auth_qr_sessions_staff_id ON auth_qr_sessions(staff_id);
-CREATE INDEX IF NOT EXISTS idx_auth_qr_sessions_expires_at ON auth_qr_sessions(expires_at);
+CREATE INDEX idx_auth_qr_sessions_session_id ON auth_qr_sessions(session_id);
+CREATE INDEX idx_auth_qr_sessions_status ON auth_qr_sessions(status);
+CREATE INDEX idx_auth_qr_sessions_staff_id ON auth_qr_sessions(staff_id);
+CREATE INDEX idx_auth_qr_sessions_expires_at ON auth_qr_sessions(expires_at);
 
 -- Create staff_devices table for registered devices
 CREATE TABLE IF NOT EXISTS staff_devices (
@@ -120,9 +129,9 @@ CREATE TABLE IF NOT EXISTS staff_devices (
 );
 
 -- Create indexes for devices
-CREATE INDEX IF NOT EXISTS idx_staff_devices_device_id ON staff_devices(device_id);
-CREATE INDEX IF NOT EXISTS idx_staff_devices_staff_id ON staff_devices(staff_id);
-CREATE INDEX IF NOT EXISTS idx_staff_devices_status ON staff_devices(status);
+CREATE INDEX idx_staff_devices_device_id ON staff_devices(device_id);
+CREATE INDEX idx_staff_devices_staff_id ON staff_devices(staff_id);
+CREATE INDEX idx_staff_devices_status ON staff_devices(status);
 
 -- Create auth_logs table for audit trail
 CREATE TABLE IF NOT EXISTS auth_logs (
@@ -141,9 +150,9 @@ CREATE TABLE IF NOT EXISTS auth_logs (
 );
 
 -- Create index for auth logs
-CREATE INDEX IF NOT EXISTS idx_auth_logs_staff_id ON auth_logs(staff_id);
-CREATE INDEX IF NOT EXISTS idx_auth_logs_event_type ON auth_logs(event_type);
-CREATE INDEX IF NOT EXISTS idx_auth_logs_created_at ON auth_logs(created_at DESC);
+CREATE INDEX idx_auth_logs_staff_id ON auth_logs(staff_id);
+CREATE INDEX idx_auth_logs_event_type ON auth_logs(event_type);
+CREATE INDEX idx_auth_logs_created_at ON auth_logs(created_at DESC);
 
 -- Enable RLS on all tables
 ALTER TABLE auth_qr_sessions ENABLE ROW LEVEL SECURITY;
@@ -241,8 +250,9 @@ GRANT ALL ON auth_qr_sessions TO anon, authenticated, service_role;
 GRANT ALL ON staff_devices TO authenticated, service_role;
 GRANT ALL ON auth_logs TO authenticated, service_role;
 
-
--- From: 20250104_push_tokens.sql
+-- ===================================================================
+-- Source: 20250104_push_tokens.sql
+-- ===================================================================
 
 -- Push notification tokens table
 create table if not exists push_tokens (
@@ -304,8 +314,9 @@ grant usage on schema public to authenticated;
 grant all on push_tokens to authenticated;
 grant all on push_tokens to service_role;
 
-
--- From: 20250201090000_config_ussd_templates.sql
+-- ===================================================================
+-- Source: 20250201090000_config_ussd_templates.sql
+-- ===================================================================
 
 create schema if not exists config;
 
@@ -460,8 +471,9 @@ on conflict (operator_id) do update
       is_active = true,
       updated_at = now();
 
-
--- From: 20250203120000_metrics_anomaly_samples.sql
+-- ===================================================================
+-- Source: 20250203120000_metrics_anomaly_samples.sql
+-- ===================================================================
 
 -- Helper function for role checking using org_memberships
 CREATE OR REPLACE FUNCTION public.has_admin_role(p_user_id uuid)
@@ -515,13 +527,14 @@ GRANT ALL ON public.system_metric_samples TO service_role;
 
 COMMENT ON TABLE public.system_metric_samples IS 'System-wide metric samples for anomaly detection and monitoring';
 
-
--- From: 20251007111647_0ad74d87-9b06-4a13-b252-8ecd3533e366.sql
+-- ===================================================================
+-- Source: 20251007111647_0ad74d87-9b06-4a13-b252-8ecd3533e366.sql
+-- ===================================================================
 
 -- Create app_role enum
 CREATE TYPE public.app_role AS ENUM ('SYSTEM_ADMIN', 'SACCO_MANAGER', 'SACCO_STAFF');
 -- Create users table (extends auth.users)
-CREATE TABLE IF NOT EXISTS public.users (
+CREATE TABLE public.users (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT NOT NULL UNIQUE,
   role app_role NOT NULL DEFAULT 'SACCO_STAFF',
@@ -530,7 +543,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 -- Create SACCOs table
-CREATE TABLE IF NOT EXISTS public.saccos (
+CREATE TABLE public.saccos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   district TEXT NOT NULL,
@@ -541,7 +554,7 @@ CREATE TABLE IF NOT EXISTS public.saccos (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 -- Create Ibimina table
-CREATE TABLE IF NOT EXISTS public.ibimina (
+CREATE TABLE public.ibimina (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   sacco_id UUID NOT NULL REFERENCES public.saccos(id) ON DELETE CASCADE,
   code TEXT NOT NULL UNIQUE,
@@ -553,7 +566,7 @@ CREATE TABLE IF NOT EXISTS public.ibimina (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 -- Create Ikimina Members table
-CREATE TABLE IF NOT EXISTS public.ikimina_members (
+CREATE TABLE public.ikimina_members (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   ikimina_id UUID NOT NULL REFERENCES public.ibimina(id) ON DELETE CASCADE,
   member_code TEXT,
@@ -566,7 +579,7 @@ CREATE TABLE IF NOT EXISTS public.ikimina_members (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 -- Create SMS Inbox table
-CREATE TABLE IF NOT EXISTS public.sms_inbox (
+CREATE TABLE public.sms_inbox (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   sacco_id UUID REFERENCES public.saccos(id),
   raw_text TEXT NOT NULL,
@@ -581,7 +594,7 @@ CREATE TABLE IF NOT EXISTS public.sms_inbox (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 -- Create Payments table
-CREATE TABLE IF NOT EXISTS public.payments (
+CREATE TABLE public.payments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   channel TEXT NOT NULL DEFAULT 'SMS',
   sacco_id UUID NOT NULL REFERENCES public.saccos(id),
@@ -600,7 +613,7 @@ CREATE TABLE IF NOT EXISTS public.payments (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 -- Create Accounts table
-CREATE TABLE IF NOT EXISTS public.accounts (
+CREATE TABLE public.accounts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   owner_type TEXT NOT NULL,
   owner_id UUID NOT NULL,
@@ -611,7 +624,7 @@ CREATE TABLE IF NOT EXISTS public.accounts (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 -- Create Ledger Entries table
-CREATE TABLE IF NOT EXISTS public.ledger_entries (
+CREATE TABLE public.ledger_entries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   debit_id UUID NOT NULL REFERENCES public.accounts(id),
   credit_id UUID NOT NULL REFERENCES public.accounts(id),
@@ -623,7 +636,6 @@ CREATE TABLE IF NOT EXISTS public.ledger_entries (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 -- Create Audit Log table
-CREATE TABLE IF NOT EXISTS public.audit_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   actor_id UUID NOT NULL,
   action TEXT NOT NULL,
@@ -784,17 +796,17 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user();
 -- Create indexes for performance
-CREATE INDEX IF NOT EXISTS idx_ibimina_sacco_id ON public.ibimina(sacco_id);
-CREATE INDEX IF NOT EXISTS idx_ikimina_members_ikimina_id ON public.ikimina_members(ikimina_id);
-CREATE INDEX IF NOT EXISTS idx_ikimina_members_msisdn ON public.ikimina_members(msisdn);
-CREATE INDEX IF NOT EXISTS idx_sms_inbox_status ON public.sms_inbox(status);
-CREATE INDEX IF NOT EXISTS idx_sms_inbox_received_at ON public.sms_inbox(received_at DESC);
-CREATE INDEX IF NOT EXISTS idx_payments_sacco_id ON public.payments(sacco_id);
-CREATE INDEX IF NOT EXISTS idx_payments_status ON public.payments(status);
-CREATE INDEX IF NOT EXISTS idx_payments_txn_id ON public.payments(txn_id);
-CREATE INDEX IF NOT EXISTS idx_payments_reference ON public.payments(reference);
-CREATE INDEX IF NOT EXISTS idx_ledger_entries_external_id ON public.ledger_entries(external_id);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON public.audit_logs(entity, entity_id);
+CREATE INDEX idx_ibimina_sacco_id ON public.ibimina(sacco_id);
+CREATE INDEX idx_ikimina_members_ikimina_id ON public.ikimina_members(ikimina_id);
+CREATE INDEX idx_ikimina_members_msisdn ON public.ikimina_members(msisdn);
+CREATE INDEX idx_sms_inbox_status ON public.sms_inbox(status);
+CREATE INDEX idx_sms_inbox_received_at ON public.sms_inbox(received_at DESC);
+CREATE INDEX idx_payments_sacco_id ON public.payments(sacco_id);
+CREATE INDEX idx_payments_status ON public.payments(status);
+CREATE INDEX idx_payments_txn_id ON public.payments(txn_id);
+CREATE INDEX idx_payments_reference ON public.payments(reference);
+CREATE INDEX idx_ledger_entries_external_id ON public.ledger_entries(external_id);
+CREATE INDEX idx_audit_logs_entity ON public.audit_logs(entity, entity_id);
 -- Field level encryption columns for sensitive data
 ALTER TABLE public.ikimina_members
   ADD COLUMN IF NOT EXISTS msisdn_encrypted TEXT,
@@ -898,10 +910,10 @@ CREATE POLICY "System can manage notification queue"
   USING (public.has_role(auth.uid(), 'SYSTEM_ADMIN'))
   WITH CHECK (public.has_role(auth.uid(), 'SYSTEM_ADMIN'));
 -- Indexes to support encrypted lookup patterns
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ikimina_members_msisdn_hash ON public.ikimina_members(msisdn_hash);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ikimina_members_national_id_hash ON public.ikimina_members(national_id_hash);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_payments_msisdn_hash ON public.payments(msisdn_hash);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_sms_inbox_msisdn_hash ON public.sms_inbox(msisdn_hash);
+CREATE INDEX IF NOT EXISTS idx_ikimina_members_msisdn_hash ON public.ikimina_members(msisdn_hash);
+CREATE INDEX IF NOT EXISTS idx_ikimina_members_national_id_hash ON public.ikimina_members(national_id_hash);
+CREATE INDEX IF NOT EXISTS idx_payments_msisdn_hash ON public.payments(msisdn_hash);
+CREATE INDEX IF NOT EXISTS idx_sms_inbox_msisdn_hash ON public.sms_inbox(msisdn_hash);
 -- Seed masked values for existing rows
 UPDATE public.ikimina_members
 SET msisdn_masked = CASE
@@ -930,8 +942,9 @@ CREATE POLICY "Admins can manage metrics"
   USING (public.has_role(auth.uid(), 'SYSTEM_ADMIN'))
   WITH CHECK (public.has_role(auth.uid(), 'SYSTEM_ADMIN'));
 
-
--- From: 20251007162733_2795ee87-5113-4ac4-bf60-4c94e6a9b4d3.sql
+-- ===================================================================
+-- Source: 20251007162733_2795ee87-5113-4ac4-bf60-4c94e6a9b4d3.sql
+-- ===================================================================
 
 -- Drop duplicate encryption columns if they exist
 ALTER TABLE public.ikimina_members
@@ -970,10 +983,10 @@ DROP INDEX IF EXISTS idx_ikimina_members_msisdn_hash;
 DROP INDEX IF EXISTS idx_ikimina_members_national_id_hash;
 DROP INDEX IF EXISTS idx_payments_msisdn_hash;
 DROP INDEX IF EXISTS idx_sms_inbox_msisdn_hash;
-CREATE INDEX IF NOT EXISTS idx_ikimina_members_msisdn_hash ON public.ikimina_members(msisdn_hash);
-CREATE INDEX IF NOT EXISTS idx_ikimina_members_national_id_hash ON public.ikimina_members(national_id_hash);
-CREATE INDEX IF NOT EXISTS idx_payments_msisdn_hash ON public.payments(msisdn_hash);
-CREATE INDEX IF NOT EXISTS idx_sms_inbox_msisdn_hash ON public.sms_inbox(msisdn_hash);
+CREATE INDEX idx_ikimina_members_msisdn_hash ON public.ikimina_members(msisdn_hash);
+CREATE INDEX idx_ikimina_members_national_id_hash ON public.ikimina_members(national_id_hash);
+CREATE INDEX idx_payments_msisdn_hash ON public.payments(msisdn_hash);
+CREATE INDEX idx_sms_inbox_msisdn_hash ON public.sms_inbox(msisdn_hash);
 -- Seed masked values for existing rows
 UPDATE public.ikimina_members
 SET msisdn_masked = CASE
@@ -994,8 +1007,9 @@ SET msisdn_masked = CASE
 END
 WHERE msisdn_masked IS NULL;
 
-
--- From: 20251007172207_62b714d9-104f-4afd-87b8-410fe6520410.sql
+-- ===================================================================
+-- Source: 20251007172207_62b714d9-104f-4afd-87b8-410fe6520410.sql
+-- ===================================================================
 
 -- Update the handle_new_user trigger to auto-promote specific email to admin
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -1019,16 +1033,18 @@ BEGIN
 END;
 $function$;
 
-
--- From: 20251007175801_445427d3-4918-4a49-8ce2-19dd594e775e.sql
+-- ===================================================================
+-- Source: 20251007175801_445427d3-4918-4a49-8ce2-19dd594e775e.sql
+-- ===================================================================
 
 -- Intentionally empty migration file
 -- This migration was created as a placeholder or the changes were rolled back.
 -- Keeping this file maintains the migration sequence integrity.
 ;
 
-
--- From: 20251007194126_69e2de70-aa8e-4254-ad9f-b1824d86d3b3.sql
+-- ===================================================================
+-- Source: 20251007194126_69e2de70-aa8e-4254-ad9f-b1824d86d3b3.sql
+-- ===================================================================
 
 -- Rollback the previous bad migration that tried to insert into auth.users
 -- This was causing schema errors because email_change column was missing
@@ -1052,8 +1068,9 @@ $$;
 -- The correct approach is to use the bootstrap-admin edge function
 -- which uses the Supabase Admin API to properly create users;
 
-
--- From: 20251007231413_5c172e5f-7458-4672-a879-43101e3cb903.sql
+-- ===================================================================
+-- Source: 20251007231413_5c172e5f-7458-4672-a879-43101e3cb903.sql
+-- ===================================================================
 
 -- Add missing columns to saccos table
 ALTER TABLE public.saccos 
@@ -1411,24 +1428,27 @@ INSERT INTO public.saccos (name, sector_code, district, province, email, categor
 ('COOPERATIVE D''EPARGNE ET DE CREDIT DE RUGERA', 'RUGERA', 'NYABIHU', 'WESTERN PROVINCE', 'coecrusacco@gmail.com', 'Deposit-Taking Microfinance Cooperative (UMURENGE SACCO)', 'ACTIVE')
 ON CONFLICT DO NOTHING;
 
-
--- From: 20251008120000_enrich_saccos_with_umurenge_master.sql
-
--- Intentionally empty migration file
--- This migration was created as a placeholder or the changes were rolled back.
--- Keeping this file maintains the migration sequence integrity.
-;
-
-
--- From: 20251008163451_4bd7b6a1-70fd-4fe9-824b-9466b41979af.sql
+-- ===================================================================
+-- Source: 20251008120000_enrich_saccos_with_umurenge_master.sql
+-- ===================================================================
 
 -- Intentionally empty migration file
 -- This migration was created as a placeholder or the changes were rolled back.
 -- Keeping this file maintains the migration sequence integrity.
 ;
 
+-- ===================================================================
+-- Source: 20251008163451_4bd7b6a1-70fd-4fe9-824b-9466b41979af.sql
+-- ===================================================================
 
--- From: 20251009121500_admin_branding_sms.sql
+-- Intentionally empty migration file
+-- This migration was created as a placeholder or the changes were rolled back.
+-- Keeping this file maintains the migration sequence integrity.
+;
+
+-- ===================================================================
+-- Source: 20251009121500_admin_branding_sms.sql
+-- ===================================================================
 
 -- SACCO branding columns and SMS templates table
 ALTER TABLE public.saccos
@@ -1446,7 +1466,7 @@ CREATE TABLE IF NOT EXISTS public.sms_templates (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE (sacco_id, name)
 );
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS sms_templates_sacco_id_idx ON public.sms_templates(sacco_id);
+CREATE INDEX IF NOT EXISTS sms_templates_sacco_id_idx ON public.sms_templates(sacco_id);
 -- ensure updated_at stays fresh
 CREATE OR REPLACE FUNCTION public.set_updated_at()
 RETURNS TRIGGER AS $$
@@ -1461,8 +1481,9 @@ CREATE TRIGGER sms_templates_set_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION public.set_updated_at();
 
-
--- From: 20251009140500_admin_enhancements.sql
+-- ===================================================================
+-- Source: 20251009140500_admin_enhancements.sql
+-- ===================================================================
 
 -- Phase 6 admin enhancements: branding copy + template metadata
 do $$
@@ -1493,8 +1514,9 @@ alter table public.sms_templates drop constraint if exists sms_templates_sacco_i
 alter table public.sms_templates add constraint sms_templates_sacco_id_name_version_key unique (sacco_id, name, version);
 create index if not exists sms_templates_version_idx on public.sms_templates(sacco_id, name, version);
 
-
--- From: 20251009170000_restrict_ledger_entries_visibility.sql
+-- ===================================================================
+-- Source: 20251009170000_restrict_ledger_entries_visibility.sql
+-- ===================================================================
 
 -- Drop overly permissive policy
 DROP POLICY IF EXISTS "Users can view ledger entries" ON public.ledger_entries;
@@ -1551,8 +1573,9 @@ CREATE POLICY "Users can view ledger entries for accessible accounts"
     OR public.can_user_access_account(ledger_entries.credit_id, auth.uid())
   );
 
-
--- From: 20251009170500_secure_ikimina_members.sql
+-- ===================================================================
+-- Source: 20251009170500_secure_ikimina_members.sql
+-- ===================================================================
 
 -- Restrict direct access to unmasked ikimina member data
 DROP POLICY IF EXISTS "Users can view members in their SACCO's ibimina" ON public.ikimina_members;
@@ -1582,8 +1605,9 @@ WHERE
 GRANT SELECT ON public.ikimina_members_public TO authenticated;
 GRANT SELECT ON public.ikimina_members_public TO service_role;
 
-
--- From: 20251009175000_prepare_saccos_search_columns.sql
+-- ===================================================================
+-- Source: 20251009175000_prepare_saccos_search_columns.sql
+-- ===================================================================
 
 -- Ensure SACCO search metadata columns exist before normalization cleanup
 ALTER TABLE public.saccos
@@ -1591,10 +1615,11 @@ ALTER TABLE public.saccos
   ADD COLUMN IF NOT EXISTS search_slug TEXT,
   ADD COLUMN IF NOT EXISTS search_document TSVECTOR;
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS saccos_search_document_idx ON public.saccos USING GIN(search_document);
+CREATE INDEX IF NOT EXISTS saccos_search_document_idx ON public.saccos USING GIN(search_document);
 
-
--- From: 20251009175910_feature_flags_configuration.sql
+-- ===================================================================
+-- Source: 20251009175910_feature_flags_configuration.sql
+-- ===================================================================
 
 -- Create configuration key-value store for feature flags and operational settings
 CREATE TABLE IF NOT EXISTS public.configuration (
@@ -1638,8 +1663,9 @@ CREATE TRIGGER configuration_set_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION public.update_configuration_timestamp();
 
-
--- From: 20251009180500_add_mfa_and_trusted_devices.sql
+-- ===================================================================
+-- Source: 20251009180500_add_mfa_and_trusted_devices.sql
+-- ===================================================================
 
 -- Add MFA support columns to users table
 ALTER TABLE public.users
@@ -1684,8 +1710,9 @@ CREATE POLICY "System admins can insert trusted devices"
   FOR INSERT
   WITH CHECK (auth.uid() = user_id OR public.has_role(auth.uid(), 'SYSTEM_ADMIN'));
 
-
--- From: 20251009193000_add_sacco_viewer_role.sql
+-- ===================================================================
+-- Source: 20251009193000_add_sacco_viewer_role.sql
+-- ===================================================================
 
 DO $$
 BEGIN
@@ -1700,8 +1727,9 @@ BEGIN
   END IF;
 END $$;
 
-
--- From: 20251009203000_cleanup_saccos_schema.sql
+-- ===================================================================
+-- Source: 20251009203000_cleanup_saccos_schema.sql
+-- ===================================================================
 
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
@@ -1847,8 +1875,9 @@ AS $$
   LIMIT (SELECT limit_size FROM expanded LIMIT 1)
 $$;
 
-
--- From: 20251010220000_seed_admin_user.sql
+-- ===================================================================
+-- Source: 20251010220000_seed_admin_user.sql
+-- ===================================================================
 
 -- Ensure the primary system admin account exists with the expected credentials
 DO $$
@@ -1921,14 +1950,16 @@ BEGIN
   END IF;
 END $$;
 
-
--- From: 20251010223000_enable_trigram_extension.sql
+-- ===================================================================
+-- Source: 20251010223000_enable_trigram_extension.sql
+-- ===================================================================
 
 -- Ensure the pg_trgm extension is available for text similarity features
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
-
--- From: 20251011140000_reintroduce_brand_color_and_backfill.sql
+-- ===================================================================
+-- Source: 20251011140000_reintroduce_brand_color_and_backfill.sql
+-- ===================================================================
 
 -- Re-introduce optional brand_color for SACCO branding in the admin UI
 -- This column was previously dropped in cleanup; restore it for branding controls.
@@ -1942,8 +1973,9 @@ update public.saccos
  where brand_color is null;
 
 
-
--- From: 20251011153000_dashboard_materialization.sql
+-- ===================================================================
+-- Source: 20251011153000_dashboard_materialization.sql
+-- ===================================================================
 
 -- 0) Schemas and safe extension setup
 create schema if not exists analytics;
@@ -2249,8 +2281,9 @@ begin
 end;
 $$;
 
-
--- From: 20251011154000_fix_consume_rate_limit.sql
+-- ===================================================================
+-- Source: 20251011154000_fix_consume_rate_limit.sql
+-- ===================================================================
 
 DROP FUNCTION IF EXISTS public.consume_rate_limit(
   TEXT,
@@ -2297,8 +2330,9 @@ BEGIN
 END;
 $function$;
 
-
--- From: 20251012120000_sacco_plus_schema.sql
+-- ===================================================================
+-- Source: 20251012120000_sacco_plus_schema.sql
+-- ===================================================================
 
 -- SACCO+ greenfield schema, security, and job orchestration
 -- Creates SACCO-scoped application schema, operational helpers, RLS policies,
@@ -3050,8 +3084,9 @@ comment on table app.devices_trusted is 'Trusted device fingerprints for MFA byp
 comment on table ops.rate_limits is 'Per-route rate limiter buckets (ip/user/service).';
 comment on table ops.idempotency is 'Idempotent request ledger for Edge functions.';
 
-
--- From: 20251012183000_add_passkeys_mfa.sql
+-- ===================================================================
+-- Source: 20251012183000_add_passkeys_mfa.sql
+-- ===================================================================
 
 -- Passkey (WebAuthn) storage and MFA recovery codes
 
@@ -3114,8 +3149,9 @@ create policy mfa_recovery_codes_self_manage
   using (auth.uid() = user_id or public.has_role(auth.uid(), 'SYSTEM_ADMIN'))
   with check (auth.uid() = user_id or public.has_role(auth.uid(), 'SYSTEM_ADMIN'));
 
-
--- From: 20251013100000_add_mfa_email_codes.sql
+-- ===================================================================
+-- Source: 20251013100000_add_mfa_email_codes.sql
+-- ===================================================================
 
 -- Email-based MFA support
 create table if not exists app.mfa_email_codes (
@@ -3138,8 +3174,9 @@ create index if not exists idx_mfa_email_codes_created
 
 comment on table app.mfa_email_codes is 'One-time email verification codes for MFA channel.';
 
-
--- From: 20251015000000_client_app.sql
+-- ===================================================================
+-- Source: 20251015000000_client_app.sql
+-- ===================================================================
 
 -- Deprecated legacy client app bootstrap.
 -- The real runtime now lives in app.* with public views recreated later.
@@ -3152,8 +3189,9 @@ begin
 end;
 $$;
 
-
--- From: 20251015190000_member_app_tables.sql
+-- ===================================================================
+-- Source: 20251015190000_member_app_tables.sql
+-- ===================================================================
 
 -- Member app tables and policies
 CREATE TYPE public.member_id_type AS ENUM ('NID', 'DL', 'PASSPORT');
@@ -3161,7 +3199,7 @@ CREATE TYPE public.join_request_status AS ENUM ('pending', 'approved', 'rejected
 CREATE TYPE public.group_invite_status AS ENUM ('sent', 'accepted', 'expired');
 CREATE TYPE public.notification_type AS ENUM ('new_member', 'payment_confirmed', 'invite_accepted');
 
-CREATE TABLE IF NOT EXISTS public.members_app_profiles (
+CREATE TABLE public.members_app_profiles (
   user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   whatsapp_msisdn TEXT NOT NULL,
   momo_msisdn TEXT NOT NULL,
@@ -3175,14 +3213,14 @@ CREATE TABLE IF NOT EXISTS public.members_app_profiles (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS public.user_saccos (
+CREATE TABLE public.user_saccos (
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   sacco_id UUID NOT NULL REFERENCES public.saccos(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   PRIMARY KEY (user_id, sacco_id)
 );
 
-CREATE TABLE IF NOT EXISTS public.join_requests (
+CREATE TABLE public.join_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   sacco_id UUID NOT NULL REFERENCES public.saccos(id) ON DELETE CASCADE,
@@ -3194,7 +3232,7 @@ CREATE TABLE IF NOT EXISTS public.join_requests (
   decided_by UUID REFERENCES auth.users(id)
 );
 
-CREATE TABLE IF NOT EXISTS public.group_invites (
+CREATE TABLE public.group_invites (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   group_id UUID NOT NULL REFERENCES public.ibimina(id) ON DELETE CASCADE,
   invitee_user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -3205,7 +3243,6 @@ CREATE TABLE IF NOT EXISTS public.group_invites (
   accepted_at TIMESTAMPTZ
 );
 
-CREATE TABLE IF NOT EXISTS public.notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   type public.notification_type NOT NULL,
@@ -3214,13 +3251,13 @@ CREATE TABLE IF NOT EXISTS public.notifications (
   read_at TIMESTAMPTZ
 );
 
-CREATE INDEX IF NOT EXISTS ON public.members_app_profiles (user_id);
-CREATE INDEX IF NOT EXISTS ON public.user_saccos (user_id);
-CREATE INDEX IF NOT EXISTS ON public.user_saccos (sacco_id);
-CREATE INDEX IF NOT EXISTS ON public.join_requests (user_id);
-CREATE INDEX IF NOT EXISTS ON public.join_requests (group_id);
-CREATE INDEX IF NOT EXISTS ON public.group_invites (token);
-CREATE INDEX IF NOT EXISTS ON public.notifications (user_id, created_at DESC);
+CREATE INDEX ON public.members_app_profiles (user_id);
+CREATE INDEX ON public.user_saccos (user_id);
+CREATE INDEX ON public.user_saccos (sacco_id);
+CREATE INDEX ON public.join_requests (user_id);
+CREATE INDEX ON public.join_requests (group_id);
+CREATE INDEX ON public.group_invites (token);
+CREATE INDEX ON public.notifications (user_id, created_at DESC);
 
 ALTER TABLE public.members_app_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_saccos ENABLE ROW LEVEL SECURITY;
@@ -3306,8 +3343,9 @@ CREATE POLICY "Members view ibimina via membership" ON public.ibimina
 CREATE POLICY "Service role can insert notifications" ON public.notifications
   FOR INSERT WITH CHECK (auth.jwt() ->> 'role' = 'service_role');
 
-
--- From: 20251016090000_add_report_subscriptions.sql
+-- ===================================================================
+-- Source: 20251016090000_add_report_subscriptions.sql
+-- ===================================================================
 
 set search_path = app, public, auth;
 
@@ -3372,8 +3410,9 @@ comment on column app.report_subscriptions.filters is 'JSON filter payload (sacc
 comment on column app.report_subscriptions.delivery_hour is 'Hour of day (UTC) to queue the export.';
 comment on column app.report_subscriptions.delivery_day is 'For WEEKLY (0-6 Sunday-Saturday) or MONTHLY (1-28) schedules.';
 
-
--- From: 20251018010458_remote_schema.sql
+-- ===================================================================
+-- Source: 20251018010458_remote_schema.sql
+-- ===================================================================
 
 set check_function_bodies = off;
 
@@ -4605,19 +4644,19 @@ create table "public"."members" (
 
 alter table "public"."members" enable row level security;
 
-CREATE INDEX IF NOT EXISTS idx_group_invites_token ON public.group_invites USING btree (token);
+CREATE INDEX idx_group_invites_token ON public.group_invites USING btree (token);
 
-CREATE INDEX IF NOT EXISTS idx_ikimina_sacco ON public.ikimina USING btree (sacco_id);
+CREATE INDEX idx_ikimina_sacco ON public.ikimina USING btree (sacco_id);
 
-CREATE INDEX IF NOT EXISTS idx_join_requests_user ON public.join_requests USING btree (user_id);
+CREATE INDEX idx_join_requests_user ON public.join_requests USING btree (user_id);
 
-CREATE INDEX IF NOT EXISTS idx_members_msisdn ON public.members USING btree (msisdn);
+CREATE INDEX idx_members_msisdn ON public.members USING btree (msisdn);
 
-CREATE INDEX IF NOT EXISTS idx_members_nid ON public.members USING btree (national_id);
+CREATE INDEX idx_members_nid ON public.members USING btree (national_id);
 
-CREATE INDEX IF NOT EXISTS idx_members_user_id ON public.members USING btree (user_id);
+CREATE INDEX idx_members_user_id ON public.members USING btree (user_id);
 
-CREATE INDEX IF NOT EXISTS idx_notifications_user ON public.notifications USING btree (user_id);
+CREATE INDEX idx_notifications_user ON public.notifications USING btree (user_id);
 
 CREATE UNIQUE INDEX ikimina_pkey ON public.ikimina USING btree (id);
 
@@ -5132,8 +5171,9 @@ using ((user_id = auth.uid()));
 
 CREATE TRIGGER trg_members_app_profiles_touch BEFORE UPDATE ON public.members_app_profiles FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
 
-
--- From: 20251020120000_align_app_schema.sql
+-- ===================================================================
+-- Source: 20251020120000_align_app_schema.sql
+-- ===================================================================
 
 -- Align app schema with legacy public tables and seed existing data
 
@@ -5559,8 +5599,9 @@ end;
 $$;
 commit;
 
-
--- From: 20251020130000_public_views_app.sql
+-- ===================================================================
+-- Source: 20251020130000_public_views_app.sql
+-- ===================================================================
 
 -- Replace duplicated public tables with updatable views backed by app schema
 
@@ -5752,8 +5793,9 @@ alter table if exists public.sms_templates
   on delete cascade;
 commit;
 
-
--- From: 20251020134500_fix_search_slug.sql
+-- ===================================================================
+-- Source: 20251020134500_fix_search_slug.sql
+-- ===================================================================
 
 -- Normalize SACCO slugs using helper schema and triggers.
 
@@ -5803,8 +5845,9 @@ execute function app_helpers.sync_sacco_slug();
 
 commit;
 
-
--- From: 20251020153000_seed_fixups.sql
+-- ===================================================================
+-- Source: 20251020153000_seed_fixups.sql
+-- ===================================================================
 
 -- Align seeded app schema data with legacy sources without overwriting existing customisations
 
@@ -5910,8 +5953,9 @@ where le.sacco_id is null
 
 commit;
 
-
--- From: 20251020160000_fix_auth_confirmation_token.sql
+-- ===================================================================
+-- Source: 20251020160000_fix_auth_confirmation_token.sql
+-- ===================================================================
 
 -- Ensure Supabase Auth token columns never store NULL values
 
@@ -5933,8 +5977,9 @@ where email_change_token_new is null;
 
 commit;
 
-
--- From: 20251020160500_fix_auth_recovery_token.sql
+-- ===================================================================
+-- Source: 20251020160500_fix_auth_recovery_token.sql
+-- ===================================================================
 
 -- Ensure recovery tokens are never NULL for Supabase Auth compatibility
 
@@ -5946,8 +5991,9 @@ where recovery_token is null;
 
 commit;
 
-
--- From: 20251020161000_debug_auth_users.sql
+-- ===================================================================
+-- Source: 20251020161000_debug_auth_users.sql
+-- ===================================================================
 
 -- Temporary view to inspect auth.users token columns
 
@@ -5967,8 +6013,9 @@ grant select on public.debug_auth_users to anon, authenticated, service_role;
 
 commit;
 
-
--- From: 20251020161500_debug_auth_users_rpc.sql
+-- ===================================================================
+-- Source: 20251020161500_debug_auth_users_rpc.sql
+-- ===================================================================
 
 -- Helper RPC to inspect auth.users token values (temporary for debugging)
 
@@ -6005,8 +6052,9 @@ grant execute on function public.debug_auth_users_tokens() to anon, authenticate
 
 commit;
 
-
--- From: 20251020162000_debug_auth_users_columns.sql
+-- ===================================================================
+-- Source: 20251020162000_debug_auth_users_columns.sql
+-- ===================================================================
 
 -- Helper RPC to inspect auth.users column definitions
 
@@ -6038,8 +6086,9 @@ grant execute on function public.debug_auth_users_columns() to anon, authenticat
 
 commit;
 
-
--- From: 20251020163000_debug_null_tokens.sql
+-- ===================================================================
+-- Source: 20251020163000_debug_null_tokens.sql
+-- ===================================================================
 
 begin;
 
@@ -6061,8 +6110,9 @@ grant execute on function public.debug_null_tokens() to anon, authenticated, ser
 
 commit;
 
-
--- From: 20251020163500_fix_auth_remaining_tokens.sql
+-- ===================================================================
+-- Source: 20251020163500_fix_auth_remaining_tokens.sql
+-- ===================================================================
 
 begin;
 
@@ -6072,8 +6122,9 @@ set phone_change_token = coalesce(phone_change_token, ''),
 
 commit;
 
-
--- From: 20251020164000_fix_auth_tokens.sql
+-- ===================================================================
+-- Source: 20251020164000_fix_auth_tokens.sql
+-- ===================================================================
 
 begin;
 
@@ -6087,8 +6138,9 @@ set confirmation_token = coalesce(confirmation_token, ''),
 
 commit;
 
-
--- From: 20251020164500_debug_null_text_columns.sql
+-- ===================================================================
+-- Source: 20251020164500_debug_null_text_columns.sql
+-- ===================================================================
 
 begin;
 
@@ -6121,8 +6173,9 @@ grant execute on function public.debug_null_text_columns() to anon, authenticate
 
 commit;
 
-
--- From: 20251020165000_fix_auth_phone_email.sql
+-- ===================================================================
+-- Source: 20251020165000_fix_auth_phone_email.sql
+-- ===================================================================
 
 begin;
 
@@ -6135,8 +6188,9 @@ where phone is null;
 
 commit;
 
-
--- From: 20251020165500_secure_debug_rpcs.sql
+-- ===================================================================
+-- Source: 20251020165500_secure_debug_rpcs.sql
+-- ===================================================================
 
 begin;
 
@@ -6153,8 +6207,9 @@ grant execute on function public.debug_null_text_columns() to service_role;
 
 commit;
 
-
--- From: 20251021150502_remote_schema.sql
+-- ===================================================================
+-- Source: 20251021150502_remote_schema.sql
+-- ===================================================================
 
 set check_function_bodies = off;
 
@@ -6276,9 +6331,9 @@ alter table "app"."saccos" drop column "search_slug";
 
 alter table "app"."saccos" add column "search_slug" text generated always as (TRIM(BOTH '-'::text FROM lower(regexp_replace(COALESCE(name, ''::text), '[^a-z0-9]+'::text, '-'::text, 'g'::text)))) stored;
 
-CREATE INDEX IF NOT EXISTS idx_mfa_codes_code ON app.mfa_codes USING btree (code);
+CREATE INDEX idx_mfa_codes_code ON app.mfa_codes USING btree (code);
 
-CREATE INDEX IF NOT EXISTS idx_mfa_codes_user_id ON app.mfa_codes USING btree (user_id);
+CREATE INDEX idx_mfa_codes_user_id ON app.mfa_codes USING btree (user_id);
 
 CREATE UNIQUE INDEX mfa_codes_pkey ON app.mfa_codes USING btree (id);
 
@@ -7284,8 +7339,9 @@ using (((bucket_id = 'reports'::text) AND (auth.role() = 'authenticated'::text))
   to authenticated
 using (((bucket_id = 'reports'::text) AND (auth.role() = 'authenticated'::text)));
 
-
--- From: 20251022120000_set_analytics_cache_webhook.sql
+-- ===================================================================
+-- Source: 20251022120000_set_analytics_cache_webhook.sql
+-- ===================================================================
 
 -- Ensure analytics cache webhook configuration matches deployed admin app
 insert into public.configuration as config (key, description, value)
@@ -7310,8 +7366,9 @@ set
   description = excluded.description,
   value = excluded.value;
 
-
--- From: 20251023120000_momo_codes_and_institutions.sql
+-- ===================================================================
+-- Source: 20251023120000_momo_codes_and_institutions.sql
+-- ===================================================================
 
 -- District MoMo codes and financial institution registry
 
@@ -7449,8 +7506,9 @@ create policy momo_codes_manage
   using (app.is_admin())
   with check (app.is_admin());
 
-
--- From: 20251023123000_seed_momo_codes.sql
+-- ===================================================================
+-- Source: 20251023123000_seed_momo_codes.sql
+-- ===================================================================
 
 -- Generate deterministic MoMo codes for each district (MTN) and backfill account names.
 with ranked as (
@@ -7476,8 +7534,9 @@ updated as (
 )
 select count(*) as mtn_momo_codes_updated from updated;
 
-
--- From: 20251023230000_grant_app_schema_access.sql
+-- ===================================================================
+-- Source: 20251023230000_grant_app_schema_access.sql
+-- ===================================================================
 
 -- Ensure PostgREST roles can introspect and query the app schema
 begin;
@@ -7496,14 +7555,16 @@ alter default privileges in schema app
 
 commit;
 
-
--- From: 20251023231000_reload_postgrest_schema.sql
+-- ===================================================================
+-- Source: 20251023231000_reload_postgrest_schema.sql
+-- ===================================================================
 
 -- Trigger PostgREST to reload schema cache after privilege updates
 select pg_notify('pgrst', 'reload schema');
 
-
--- From: 20251023233000_app_alias_analytics_views.sql
+-- ===================================================================
+-- Source: 20251023233000_app_alias_analytics_views.sql
+-- ===================================================================
 
 begin;
 
@@ -7531,8 +7592,9 @@ $$;
 
 commit;
 
-
--- From: 20251024003000_restore_public_views_and_analytics.sql
+-- ===================================================================
+-- Source: 20251024003000_restore_public_views_and_analytics.sql
+-- ===================================================================
 
 begin;
 
@@ -7948,8 +8010,9 @@ grant execute on function public.analytics_refresh_dashboard_materialized_views(
 
 commit;
 
-
--- From: 20251024083940_cleanup_legacy_public_tables.sql
+-- ===================================================================
+-- Source: 20251024083940_cleanup_legacy_public_tables.sql
+-- ===================================================================
 
 begin;
 
@@ -7973,8 +8036,9 @@ end; $$;
 commit;
 
 
-
--- From: 20251025113000_public_users_insert_trigger.sql
+-- ===================================================================
+-- Source: 20251025113000_public_users_insert_trigger.sql
+-- ===================================================================
 
 begin;
 
@@ -8004,8 +8068,9 @@ for each row execute function public.handle_public_user_insert();
 
 commit;
 
-
--- From: 20251026231500_add_users_suspended.sql
+-- ===================================================================
+-- Source: 20251026231500_add_users_suspended.sql
+-- ===================================================================
 
 -- Add suspended flag to staff users (soft suspension)
 -- Note: public.users is a view; the actual column is in app.user_profiles
@@ -8038,8 +8103,9 @@ end;
 $$;
 
 
-
--- From: 20251026232500_add_orgs_and_memberships.sql
+-- ===================================================================
+-- Source: 20251026232500_add_orgs_and_memberships.sql
+-- ===================================================================
 
 -- Organizations and memberships (Phase 2 scaffolding)
 -- Enum for organization types
@@ -8098,8 +8164,9 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 
-
--- From: 20251027003000_add_sacco_district_org_link.sql
+-- ===================================================================
+-- Source: 20251027003000_add_sacco_district_org_link.sql
+-- ===================================================================
 
 -- Add formal district organization link to saccos
 alter table app.saccos
@@ -8119,8 +8186,9 @@ where o.type = 'DISTRICT'
 -- alter table app.saccos alter column district_org_id set not null;
 
 
-
--- From: 20251027004500_rls_org_memberships.sql
+-- ===================================================================
+-- Source: 20251027004500_rls_org_memberships.sql
+-- ===================================================================
 
 -- Helper to determine if current user can access a given SACCO
 create or replace function app.can_access_sacco(target_sacco uuid)
@@ -8273,8 +8341,9 @@ create policy import_modify
   using (app.can_access_sacco(sacco_id));
 
 
-
--- From: 20251027200000_web_push_subscriptions.sql
+-- ===================================================================
+-- Source: 20251027200000_web_push_subscriptions.sql
+-- ===================================================================
 
 -- Web Push Subscriptions
 -- Stores user push subscription endpoints for web push notifications with topic-based subscriptions
@@ -8295,10 +8364,10 @@ CREATE TABLE IF NOT EXISTS public.user_push_subscriptions (
 );
 
 -- Index for fast lookups by user
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_user_push_subscriptions_user_id ON public.user_push_subscriptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_push_subscriptions_user_id ON public.user_push_subscriptions(user_id);
 
 -- Index for topic-based queries (GIN index for JSONB array containment)
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_user_push_subscriptions_topics ON public.user_push_subscriptions USING GIN(topics);
+CREATE INDEX IF NOT EXISTS idx_user_push_subscriptions_topics ON public.user_push_subscriptions USING GIN(topics);
 
 -- Enable RLS
 ALTER TABLE public.user_push_subscriptions ENABLE ROW LEVEL SECURITY;
@@ -8325,8 +8394,9 @@ CREATE POLICY user_push_subscriptions_admin_policy
 COMMENT ON TABLE public.user_push_subscriptions IS 'Web Push subscription endpoints with topic-based filtering for user notifications';
 COMMENT ON COLUMN public.user_push_subscriptions.topics IS 'JSON array of topic strings for filtering notifications (e.g., ["all", "sacco:uuid", "ikimina:uuid"])';
 
-
--- From: 20251027200001_staff_management.sql
+-- ===================================================================
+-- Source: 20251027200001_staff_management.sql
+-- ===================================================================
 
 -- Staff management: Add fields for password reset, account status, and staff metadata
 -- Supports E1: Staff Directory + Add/Invite Staff
@@ -8347,8 +8417,9 @@ BEGIN
   RAISE NOTICE 'Staff management fields are handled by staff_members and user_profiles tables';
 END $$;
 
-
--- From: 20251027200100_analytics_event_logging.sql
+-- ===================================================================
+-- Source: 20251027200100_analytics_event_logging.sql
+-- ===================================================================
 
 -- Analytics Event Logging
 -- Extends the existing system_metrics table with structured event logging for business metrics
@@ -8375,11 +8446,11 @@ CREATE TABLE IF NOT EXISTS public.analytics_events (
 );
 
 -- Indexes for efficient querying
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_analytics_events_event_type ON public.analytics_events(event_type);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_analytics_events_sacco_id ON public.analytics_events(sacco_id) WHERE sacco_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_analytics_events_ikimina_id ON public.analytics_events(ikimina_id) WHERE ikimina_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_analytics_events_occurred_at ON public.analytics_events(occurred_at DESC);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_analytics_events_related ON public.analytics_events(related_event_id) WHERE related_event_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_analytics_events_event_type ON public.analytics_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_analytics_events_sacco_id ON public.analytics_events(sacco_id) WHERE sacco_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_analytics_events_ikimina_id ON public.analytics_events(ikimina_id) WHERE ikimina_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_analytics_events_occurred_at ON public.analytics_events(occurred_at DESC);
+CREATE INDEX IF NOT EXISTS idx_analytics_events_related ON public.analytics_events(related_event_id) WHERE related_event_id IS NOT NULL;
 
 -- Enable RLS
 ALTER TABLE public.analytics_events ENABLE ROW LEVEL SECURITY;
@@ -8524,8 +8595,9 @@ COMMENT ON COLUMN public.analytics_events.duration_seconds IS 'Time elapsed from
 COMMENT ON FUNCTION public.log_analytics_event IS 'Logs an analytics event with optional entity references and metadata';
 COMMENT ON FUNCTION public.log_analytics_completion IS 'Logs a completion event with calculated duration from an initial event';
 
-
--- From: 20251030000000_pre_organizations_helper.sql
+-- ===================================================================
+-- Source: 20251030000000_pre_organizations_helper.sql
+-- ===================================================================
 
 -- Helper migration to create placeholder for migrations that reference organizations
 -- This allows migrations dated before 20251110 (when organizations is created) to work
@@ -8535,7 +8607,7 @@ COMMENT ON FUNCTION public.log_analytics_completion IS 'Logs a completion event 
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'organizations') THEN
-    CREATE TABLE IF NOT EXISTS public.organizations (
+    CREATE TABLE public.organizations (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       name TEXT NOT NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -8547,7 +8619,7 @@ BEGIN
   
   -- Also create org_memberships placeholder
   IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'org_memberships') THEN
-    CREATE TABLE IF NOT EXISTS public.org_memberships (
+    CREATE TABLE public.org_memberships (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       org_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
       user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -8557,16 +8629,17 @@ BEGIN
       UNIQUE(org_id, user_id)
     );
     
-    CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_org_memberships_user ON public.org_memberships(user_id);
-    CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_org_memberships_org ON public.org_memberships(org_id);
+    CREATE INDEX IF NOT EXISTS idx_org_memberships_user ON public.org_memberships(user_id);
+    CREATE INDEX IF NOT EXISTS idx_org_memberships_org ON public.org_memberships(org_id);
     
     COMMENT ON TABLE public.org_memberships IS 'Temporary placeholder - will be replaced by multitenancy migration';
   END IF;
 END $$;
 
 
-
--- From: 20251031000000_enhanced_feature_flags.sql
+-- ===================================================================
+-- Source: 20251031000000_enhanced_feature_flags.sql
+-- ===================================================================
 
 -- Migration: Enhanced feature flags for African fintech supa app
 -- Description: Add feature toggle matrix with org-level and partner-level configurations
@@ -8671,9 +8744,9 @@ CREATE TABLE IF NOT EXISTS public.org_feature_overrides (
 );
 
 -- Add indexes
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_org_feature_overrides_org_id ON public.org_feature_overrides(org_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_org_feature_overrides_domain ON public.org_feature_overrides(feature_domain);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_org_feature_overrides_enabled ON public.org_feature_overrides(enabled) WHERE enabled = true;
+CREATE INDEX IF NOT EXISTS idx_org_feature_overrides_org_id ON public.org_feature_overrides(org_id);
+CREATE INDEX IF NOT EXISTS idx_org_feature_overrides_domain ON public.org_feature_overrides(feature_domain);
+CREATE INDEX IF NOT EXISTS idx_org_feature_overrides_enabled ON public.org_feature_overrides(enabled) WHERE enabled = true;
 
 -- Enable RLS
 ALTER TABLE public.org_feature_overrides ENABLE ROW LEVEL SECURITY;
@@ -8727,8 +8800,9 @@ COMMENT ON COLUMN public.org_feature_overrides.tier IS 'Regulatory tier: P0=no l
 COMMENT ON COLUMN public.org_feature_overrides.partner_agreement_ref IS 'Reference to partnership agreement document or ID';
 COMMENT ON COLUMN public.org_feature_overrides.risk_signoff_by IS 'User who approved the risk assessment';
 
-
--- From: 20251031010000_ai_agent_infrastructure.sql
+-- ===================================================================
+-- Source: 20251031010000_ai_agent_infrastructure.sql
+-- ===================================================================
 
 -- Migration: AI Agent Infrastructure (Autonomous Multi-tenant Customer Support)
 -- Description: Knowledge bases, tickets, and conversation management for AI agent
@@ -8785,11 +8859,11 @@ END $$;
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'org_kb' AND column_name = 'embedding') THEN
-    CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_org_kb_embedding ON public.org_kb USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+    CREATE INDEX IF NOT EXISTS idx_org_kb_embedding ON public.org_kb USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
   END IF;
 END $$;
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_org_kb_org_id ON public.org_kb(org_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_org_kb_tags ON public.org_kb USING GIN(tags);
+CREATE INDEX IF NOT EXISTS idx_org_kb_org_id ON public.org_kb(org_id);
+CREATE INDEX IF NOT EXISTS idx_org_kb_tags ON public.org_kb USING GIN(tags);
 
 -- Global knowledge base (system-wide policies, USSD best practices, etc.)
 CREATE TABLE IF NOT EXISTS public.global_kb (
@@ -8804,8 +8878,8 @@ CREATE TABLE IF NOT EXISTS public.global_kb (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_global_kb_embedding ON public.global_kb USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_global_kb_tags ON public.global_kb USING GIN(tags);
+CREATE INDEX IF NOT EXISTS idx_global_kb_embedding ON public.global_kb USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+CREATE INDEX IF NOT EXISTS idx_global_kb_tags ON public.global_kb USING GIN(tags);
 
 -- FAQ table (common Q&A)
 CREATE TABLE IF NOT EXISTS public.faq (
@@ -8821,9 +8895,9 @@ CREATE TABLE IF NOT EXISTS public.faq (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_faq_embedding ON public.faq USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_faq_org_id ON public.faq(org_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_faq_tags ON public.faq USING GIN(tags);
+CREATE INDEX IF NOT EXISTS idx_faq_embedding ON public.faq USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+CREATE INDEX IF NOT EXISTS idx_faq_org_id ON public.faq(org_id);
+CREATE INDEX IF NOT EXISTS idx_faq_tags ON public.faq USING GIN(tags);
 
 -- Tickets table (multi-channel support tickets)
 CREATE TABLE IF NOT EXISTS public.tickets (
@@ -8842,11 +8916,11 @@ CREATE TABLE IF NOT EXISTS public.tickets (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_tickets_org_id ON public.tickets(org_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_tickets_user_id ON public.tickets(user_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_tickets_status ON public.tickets(status);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_tickets_channel ON public.tickets(channel);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_tickets_assigned_to ON public.tickets(assigned_to);
+CREATE INDEX IF NOT EXISTS idx_tickets_org_id ON public.tickets(org_id);
+CREATE INDEX IF NOT EXISTS idx_tickets_user_id ON public.tickets(user_id);
+CREATE INDEX IF NOT EXISTS idx_tickets_status ON public.tickets(status);
+CREATE INDEX IF NOT EXISTS idx_tickets_channel ON public.tickets(channel);
+CREATE INDEX IF NOT EXISTS idx_tickets_assigned_to ON public.tickets(assigned_to);
 
 -- Ticket messages (conversation history)
 CREATE TABLE IF NOT EXISTS public.ticket_messages (
@@ -8859,9 +8933,9 @@ CREATE TABLE IF NOT EXISTS public.ticket_messages (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ticket_messages_ticket_id ON public.ticket_messages(ticket_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ticket_messages_sender ON public.ticket_messages(sender);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ticket_messages_created_at ON public.ticket_messages(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ticket_messages_ticket_id ON public.ticket_messages(ticket_id);
+CREATE INDEX IF NOT EXISTS idx_ticket_messages_sender ON public.ticket_messages(sender);
+CREATE INDEX IF NOT EXISTS idx_ticket_messages_created_at ON public.ticket_messages(created_at DESC);
 
 -- Enable RLS on all tables
 ALTER TABLE public.org_kb ENABLE ROW LEVEL SECURITY;
@@ -9035,8 +9109,9 @@ COMMENT ON COLUMN public.org_kb.embedding IS 'Vector embedding for RAG similarit
 COMMENT ON COLUMN public.tickets.meta IS 'Ticket metadata: reference_token, group_id, whatsapp_number, etc.';
 COMMENT ON COLUMN public.ticket_messages.metadata IS 'Agent metadata: tool calls, confidence scores, citations, etc.';
 
-
--- From: 20251031030000_wallet_tokens.sql
+-- ===================================================================
+-- Source: 20251031030000_wallet_tokens.sql
+-- ===================================================================
 
 -- Migration: Wallet and Token Infrastructure (Non-Custodial, Evidence Only)
 -- Description: Voucher tokens off-chain, transaction evidence, NO funds handling
@@ -9084,12 +9159,12 @@ CREATE TABLE IF NOT EXISTS public.wallet_tokens (
   UNIQUE(token_code) -- Prevent duplicate tokens
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_wallet_tokens_org_id ON public.wallet_tokens(org_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_wallet_tokens_user_id ON public.wallet_tokens(user_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_wallet_tokens_status ON public.wallet_tokens(status);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_wallet_tokens_token_type ON public.wallet_tokens(token_type);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_wallet_tokens_expires_at ON public.wallet_tokens(expires_at) WHERE status = 'ACTIVE';
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_wallet_tokens_token_code ON public.wallet_tokens(token_code);
+CREATE INDEX IF NOT EXISTS idx_wallet_tokens_org_id ON public.wallet_tokens(org_id);
+CREATE INDEX IF NOT EXISTS idx_wallet_tokens_user_id ON public.wallet_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_wallet_tokens_status ON public.wallet_tokens(status);
+CREATE INDEX IF NOT EXISTS idx_wallet_tokens_token_type ON public.wallet_tokens(token_type);
+CREATE INDEX IF NOT EXISTS idx_wallet_tokens_expires_at ON public.wallet_tokens(expires_at) WHERE status = 'ACTIVE';
+CREATE INDEX IF NOT EXISTS idx_wallet_tokens_token_code ON public.wallet_tokens(token_code);
 
 -- Wallet transaction evidence table (proof of external transactions, not ledger)
 CREATE TABLE IF NOT EXISTS public.wallet_transaction_evidence (
@@ -9125,11 +9200,11 @@ CREATE TABLE IF NOT EXISTS public.wallet_transaction_evidence (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_wallet_transaction_evidence_org_id ON public.wallet_transaction_evidence(org_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_wallet_transaction_evidence_user_id ON public.wallet_transaction_evidence(user_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_wallet_transaction_evidence_external_ref ON public.wallet_transaction_evidence(external_reference);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_wallet_transaction_evidence_transaction_type ON public.wallet_transaction_evidence(transaction_type);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_wallet_transaction_evidence_verified ON public.wallet_transaction_evidence(verified);
+CREATE INDEX IF NOT EXISTS idx_wallet_transaction_evidence_org_id ON public.wallet_transaction_evidence(org_id);
+CREATE INDEX IF NOT EXISTS idx_wallet_transaction_evidence_user_id ON public.wallet_transaction_evidence(user_id);
+CREATE INDEX IF NOT EXISTS idx_wallet_transaction_evidence_external_ref ON public.wallet_transaction_evidence(external_reference);
+CREATE INDEX IF NOT EXISTS idx_wallet_transaction_evidence_transaction_type ON public.wallet_transaction_evidence(transaction_type);
+CREATE INDEX IF NOT EXISTS idx_wallet_transaction_evidence_verified ON public.wallet_transaction_evidence(verified);
 
 -- Stablecoin transfer metadata table (P2 tier only, metadata tracking)
 CREATE TABLE IF NOT EXISTS public.stablecoin_transfers (
@@ -9178,11 +9253,11 @@ CREATE TABLE IF NOT EXISTS public.stablecoin_transfers (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_stablecoin_transfers_org_id ON public.stablecoin_transfers(org_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_stablecoin_transfers_user_id ON public.stablecoin_transfers(user_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_stablecoin_transfers_transaction_hash ON public.stablecoin_transfers(transaction_hash);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_stablecoin_transfers_status ON public.stablecoin_transfers(status);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_stablecoin_transfers_direction ON public.stablecoin_transfers(direction);
+CREATE INDEX IF NOT EXISTS idx_stablecoin_transfers_org_id ON public.stablecoin_transfers(org_id);
+CREATE INDEX IF NOT EXISTS idx_stablecoin_transfers_user_id ON public.stablecoin_transfers(user_id);
+CREATE INDEX IF NOT EXISTS idx_stablecoin_transfers_transaction_hash ON public.stablecoin_transfers(transaction_hash);
+CREATE INDEX IF NOT EXISTS idx_stablecoin_transfers_status ON public.stablecoin_transfers(status);
+CREATE INDEX IF NOT EXISTS idx_stablecoin_transfers_direction ON public.stablecoin_transfers(direction);
 
 -- Enable RLS
 ALTER TABLE public.wallet_tokens ENABLE ROW LEVEL SECURITY;
@@ -9340,8 +9415,9 @@ COMMENT ON COLUMN public.wallet_tokens.nfc_enabled IS 'Whether token can be rede
 COMMENT ON COLUMN public.wallet_transaction_evidence.evidence_type IS 'Source of transaction proof: SMS, EMAIL, API_CALLBACK, MANUAL_UPLOAD, ALLOCATION';
 COMMENT ON COLUMN public.stablecoin_transfers.transaction_hash IS 'Blockchain transaction hash (metadata only, we do not hold private keys)';
 
-
--- From: 20251031040000_nfc_references.sql
+-- ===================================================================
+-- Source: 20251031040000_nfc_references.sql
+-- ===================================================================
 
 -- Migration: NFC Reference Management
 -- Description: NDEF tag data for group reference tokens, tap-to-copy, offline support
@@ -9384,11 +9460,11 @@ CREATE TABLE IF NOT EXISTS public.nfc_tags (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_nfc_tags_org_id ON public.nfc_tags(org_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_nfc_tags_group_id ON public.nfc_tags(group_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_nfc_tags_group_member_id ON public.nfc_tags(group_member_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_nfc_tags_tag_uid ON public.nfc_tags(tag_uid);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_nfc_tags_status ON public.nfc_tags(status);
+CREATE INDEX IF NOT EXISTS idx_nfc_tags_org_id ON public.nfc_tags(org_id);
+CREATE INDEX IF NOT EXISTS idx_nfc_tags_group_id ON public.nfc_tags(group_id);
+CREATE INDEX IF NOT EXISTS idx_nfc_tags_group_member_id ON public.nfc_tags(group_member_id);
+CREATE INDEX IF NOT EXISTS idx_nfc_tags_tag_uid ON public.nfc_tags(tag_uid);
+CREATE INDEX IF NOT EXISTS idx_nfc_tags_status ON public.nfc_tags(status);
 
 -- NFC tap events (for analytics and security monitoring)
 CREATE TABLE IF NOT EXISTS public.nfc_tap_events (
@@ -9416,11 +9492,11 @@ CREATE TABLE IF NOT EXISTS public.nfc_tap_events (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_nfc_tap_events_tag_id ON public.nfc_tap_events(tag_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_nfc_tap_events_user_id ON public.nfc_tap_events(user_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_nfc_tap_events_event_type ON public.nfc_tap_events(event_type);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_nfc_tap_events_event_timestamp ON public.nfc_tap_events(event_timestamp DESC);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_nfc_tap_events_tag_uid ON public.nfc_tap_events(tag_uid);
+CREATE INDEX IF NOT EXISTS idx_nfc_tap_events_tag_id ON public.nfc_tap_events(tag_id);
+CREATE INDEX IF NOT EXISTS idx_nfc_tap_events_user_id ON public.nfc_tap_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_nfc_tap_events_event_type ON public.nfc_tap_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_nfc_tap_events_event_timestamp ON public.nfc_tap_events(event_timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_nfc_tap_events_tag_uid ON public.nfc_tap_events(tag_uid);
 
 -- Enable RLS
 ALTER TABLE public.nfc_tags ENABLE ROW LEVEL SECURITY;
@@ -9511,8 +9587,9 @@ COMMENT ON COLUMN public.nfc_tags.tag_type IS 'Tag type: NDEF (physical tag), HC
 COMMENT ON COLUMN public.nfc_tags.locked IS 'Whether tag is write-protected (prevents tampering)';
 COMMENT ON COLUMN public.nfc_tap_events.event_type IS 'Tap event type: READ (view reference), WRITE (program tag), REDEEM (voucher), VERIFY (check authenticity)';
 
-
--- From: 20251031080000_device_auth_system.sql
+-- ===================================================================
+-- Source: 20251031080000_device_auth_system.sql
+-- ===================================================================
 
 -- Device-bound authentication system for staff mobile app
 -- Implements WebAuthn/FIDO-style challenge-response authentication
@@ -9542,9 +9619,9 @@ CREATE TABLE IF NOT EXISTS public.device_auth_keys (
   CONSTRAINT unique_user_device UNIQUE (user_id, device_id)
 );
 
-CREATE INDEX IF NOT EXISTS device_auth_keys_user_id_idx ON public.device_auth_keys(user_id);
-CREATE INDEX IF NOT EXISTS device_auth_keys_device_id_idx ON public.device_auth_keys(device_id);
-CREATE INDEX IF NOT EXISTS device_auth_keys_active_idx ON public.device_auth_keys(user_id, revoked_at) WHERE revoked_at IS NULL;
+CREATE INDEX device_auth_keys_user_id_idx ON public.device_auth_keys(user_id);
+CREATE INDEX device_auth_keys_device_id_idx ON public.device_auth_keys(device_id);
+CREATE INDEX device_auth_keys_active_idx ON public.device_auth_keys(user_id, revoked_at) WHERE revoked_at IS NULL;
 
 -- Challenge store: temporary storage for login challenges
 CREATE TABLE IF NOT EXISTS public.device_auth_challenges (
@@ -9570,9 +9647,9 @@ CREATE TABLE IF NOT EXISTS public.device_auth_challenges (
   )
 );
 
-CREATE INDEX IF NOT EXISTS device_auth_challenges_session_id_idx ON public.device_auth_challenges(session_id);
-CREATE INDEX IF NOT EXISTS device_auth_challenges_nonce_idx ON public.device_auth_challenges(nonce);
-CREATE INDEX IF NOT EXISTS device_auth_challenges_expires_at_idx ON public.device_auth_challenges(expires_at);
+CREATE INDEX device_auth_challenges_session_id_idx ON public.device_auth_challenges(session_id);
+CREATE INDEX device_auth_challenges_nonce_idx ON public.device_auth_challenges(nonce);
+CREATE INDEX device_auth_challenges_expires_at_idx ON public.device_auth_challenges(expires_at);
 
 -- Audit log for device authentication events
 CREATE TABLE IF NOT EXISTS public.device_auth_audit (
@@ -9599,9 +9676,9 @@ CREATE TABLE IF NOT EXISTS public.device_auth_audit (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS device_auth_audit_user_id_idx ON public.device_auth_audit(user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS device_auth_audit_device_key_id_idx ON public.device_auth_audit(device_key_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS device_auth_audit_event_type_idx ON public.device_auth_audit(event_type, created_at DESC);
+CREATE INDEX device_auth_audit_user_id_idx ON public.device_auth_audit(user_id, created_at DESC);
+CREATE INDEX device_auth_audit_device_key_id_idx ON public.device_auth_audit(device_key_id, created_at DESC);
+CREATE INDEX device_auth_audit_event_type_idx ON public.device_auth_audit(event_type, created_at DESC);
 
 -- Enable RLS
 ALTER TABLE public.device_auth_keys ENABLE ROW LEVEL SECURITY;
@@ -9677,8 +9754,9 @@ $$;
 -- Note: This assumes pg_cron extension is enabled
 -- SELECT cron.schedule('cleanup-device-challenges', '*/5 * * * *', 'SELECT public.cleanup_expired_device_challenges()');
 
-
--- From: 20251031102310_fix_increment_metric_meta_ambiguity.sql
+-- ===================================================================
+-- Source: 20251031102310_fix_increment_metric_meta_ambiguity.sql
+-- ===================================================================
 
 -- Fix: remove ambiguity in public.increment_metric by using EXCLUDED values in the upsert
 -- Safer and clearer than referencing the function parameter inside DO UPDATE
@@ -9704,8 +9782,9 @@ BEGIN
 END;
 $function$;
 
-
--- From: 20251031193000_live_hotfixes.sql
+-- ===================================================================
+-- Source: 20251031193000_live_hotfixes.sql
+-- ===================================================================
 
 -- === ENUMS =====================================================
 DO $$
@@ -9840,8 +9919,9 @@ AS $$
   );
 $$;
 
-
--- From: 20251101090000_notification_queue_channels.sql
+-- ===================================================================
+-- Source: 20251101090000_notification_queue_channels.sql
+-- ===================================================================
 
 -- Notification queue channel support and delivery telemetry
 DO $$
@@ -9865,8 +9945,9 @@ ALTER TABLE public.notification_queue
 UPDATE public.notification_queue
 SET channel = COALESCE(channel, 'WHATSAPP'::public.notification_channel);
 
-
--- From: 20251101090500_notification_channel_in_app.sql
+-- ===================================================================
+-- Source: 20251101090500_notification_channel_in_app.sql
+-- ===================================================================
 
 -- Extend notification_channel enum with IN_APP and require explicit values on notification_queue
 DO $$
@@ -9892,8 +9973,9 @@ $$;
 ALTER TABLE public.notification_queue
   ALTER COLUMN channel DROP DEFAULT;
 
-
--- From: 20251101120000_update_notification_channel_enum.sql
+-- ===================================================================
+-- Source: 20251101120000_update_notification_channel_enum.sql
+-- ===================================================================
 
 -- Update notification_channel enum and enforce explicit channel selection
 ALTER TYPE public.notification_channel
@@ -9908,11 +9990,11 @@ WHERE channel = 'WHATSAPP'::public.notification_channel;
 ALTER TABLE public.notification_queue
   ALTER COLUMN channel DROP DEFAULT;
 
-
--- From: 20251103161327_tapmomo_schema.sql
+-- ===================================================================
+-- Source: 20251103161327_tapmomo_schema.sql
+-- ===================================================================
 
 -- TapMoMo Merchant Management
-CREATE TABLE IF NOT EXISTS public.tapmomo_merchants (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     display_name TEXT NOT NULL,
@@ -9924,12 +10006,11 @@ CREATE TABLE IF NOT EXISTS public.tapmomo_merchants (
     active BOOLEAN NOT NULL DEFAULT true
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_tapmomo_merchants_user_id ON public.tapmomo_merchants(user_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_tapmomo_merchants_merchant_code ON public.tapmomo_merchants(merchant_code);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_tapmomo_merchants_network ON public.tapmomo_merchants(network);
+CREATE INDEX IF NOT EXISTS idx_tapmomo_merchants_user_id ON public.tapmomo_merchants(user_id);
+CREATE INDEX IF NOT EXISTS idx_tapmomo_merchants_merchant_code ON public.tapmomo_merchants(merchant_code);
+CREATE INDEX IF NOT EXISTS idx_tapmomo_merchants_network ON public.tapmomo_merchants(network);
 
 -- TapMoMo Transactions
-CREATE TABLE IF NOT EXISTS public.tapmomo_transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     merchant_id UUID NOT NULL REFERENCES public.tapmomo_merchants(id) ON DELETE CASCADE,
     nonce UUID NOT NULL UNIQUE,
@@ -9945,10 +10026,10 @@ CREATE TABLE IF NOT EXISTS public.tapmomo_transactions (
     error_message TEXT
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_tapmomo_tx_merchant_id ON public.tapmomo_transactions(merchant_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_tapmomo_tx_nonce ON public.tapmomo_transactions(nonce);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_tapmomo_tx_created_at ON public.tapmomo_transactions(created_at DESC);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_tapmomo_tx_status ON public.tapmomo_transactions(status);
+CREATE INDEX IF NOT EXISTS idx_tapmomo_tx_merchant_id ON public.tapmomo_transactions(merchant_id);
+CREATE INDEX IF NOT EXISTS idx_tapmomo_tx_nonce ON public.tapmomo_transactions(nonce);
+CREATE INDEX IF NOT EXISTS idx_tapmomo_tx_created_at ON public.tapmomo_transactions(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_tapmomo_tx_status ON public.tapmomo_transactions(status);
 
 -- RLS Policies for tapmomo_merchants
 ALTER TABLE public.tapmomo_merchants ENABLE ROW LEVEL SECURITY;
@@ -10033,8 +10114,9 @@ CREATE TRIGGER update_tapmomo_transactions_updated_at
 COMMENT ON TABLE public.tapmomo_merchants IS 'TapMoMo merchants registered for NFC/USSD payments';
 COMMENT ON TABLE public.tapmomo_transactions IS 'TapMoMo payment transactions';
 
-
--- From: 20251103175923_fix_user_profiles_extension.sql
+-- ===================================================================
+-- Source: 20251103175923_fix_user_profiles_extension.sql
+-- ===================================================================
 
 -- Fix user profiles: Create extension table instead of modifying auth.users view
 -- This migration creates a separate user_profiles table for extended user data
@@ -10061,9 +10143,9 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
 );
 
 -- 3. Create indexes for common queries
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_user_profiles_account_status ON public.user_profiles(account_status);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_user_profiles_pw_reset ON public.user_profiles(pw_reset_required) WHERE pw_reset_required = true;
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_user_profiles_last_login ON public.user_profiles(last_login_at);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_account_status ON public.user_profiles(account_status);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_pw_reset ON public.user_profiles(pw_reset_required) WHERE pw_reset_required = true;
+CREATE INDEX IF NOT EXISTS idx_user_profiles_last_login ON public.user_profiles(last_login_at);
 
 -- 4. Add helpful comments
 COMMENT ON TABLE public.user_profiles IS 'Extended user profile data complementing auth.users';
@@ -10224,8 +10306,9 @@ GRANT SELECT ON public.user_profiles TO authenticated;
 GRANT SELECT ON public.users_complete TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_user_account_active TO authenticated;
 
-
--- From: 20251103205632_group_contribution_functions.sql
+-- ===================================================================
+-- Source: 20251103205632_group_contribution_functions.sql
+-- ===================================================================
 
 -- Function to increment member balance
 CREATE OR REPLACE FUNCTION increment_member_balance(
@@ -10307,12 +10390,13 @@ CREATE POLICY "Users can manage their own push tokens"
   USING (auth.uid() = user_id);
 
 -- Indexes
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_loan_applications_user_id ON loan_applications(user_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_loan_applications_status ON loan_applications(status);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_user_push_tokens_user_id ON user_push_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_loan_applications_user_id ON loan_applications(user_id);
+CREATE INDEX IF NOT EXISTS idx_loan_applications_status ON loan_applications(status);
+CREATE INDEX IF NOT EXISTS idx_user_push_tokens_user_id ON user_push_tokens(user_id);
 
-
--- From: 20251103214736_push_tokens.sql
+-- ===================================================================
+-- Source: 20251103214736_push_tokens.sql
+-- ===================================================================
 
 -- Push tokens for Expo Push Notifications (Supabase-only, no Firebase)
 CREATE TABLE IF NOT EXISTS push_tokens (
@@ -10327,7 +10411,7 @@ CREATE TABLE IF NOT EXISTS push_tokens (
 );
 
 -- Index for fast user lookups
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_push_tokens_user_id ON push_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_push_tokens_user_id ON push_tokens(user_id);
 
 -- RLS Policies
 ALTER TABLE push_tokens ENABLE ROW LEVEL SECURITY;
@@ -10355,8 +10439,9 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 COMMENT ON TABLE push_tokens IS 'Expo push notification tokens for client mobile app (Supabase-only, no Firebase)';
 
-
--- From: 20251104100000_momo_polling_and_gsm_heartbeat.sql
+-- ===================================================================
+-- Source: 20251104100000_momo_polling_and_gsm_heartbeat.sql
+-- ===================================================================
 
 -- Automation scaffolding for MoMo statement polling and GSM heartbeats
 set search_path = app, public;
@@ -10484,8 +10569,9 @@ alter table app.sms_gateway_heartbeats force row level security;
 
 -- Service role bypasses RLS, no additional policies required for automation prototypes.
 
-
--- From: 20251105100000_trigram_search.sql
+-- ===================================================================
+-- Source: 20251105100000_trigram_search.sql
+-- ===================================================================
 
 -- Migration: Trigram Search RPC for SACCOs
 -- Description: Creates optimized RPC function for fast SACCO search using trigram similarity
@@ -10493,8 +10579,8 @@ alter table app.sms_gateway_heartbeats force row level security;
 
 -- Create trigram indexes on saccos table for fast similarity search
 -- These indexes enable efficient trigram-based search on name and sector_code columns
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_saccos_name_trgm ON public.saccos USING gin (name gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_saccos_sector_code_trgm ON public.saccos USING gin (sector_code gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_saccos_name_trgm ON public.saccos USING gin (name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_saccos_sector_code_trgm ON public.saccos USING gin (sector_code gin_trgm_ops);
 
 -- Create or replace the search_saccos_trgm function
 -- This function leverages trigram indexing for fast fuzzy search on SACCO names and sector codes
@@ -10544,8 +10630,9 @@ $$;
 COMMENT ON FUNCTION public.search_saccos_trgm(text) IS 
 'Fast trigram-based search for SACCOs by name or sector code. Returns top 20 matches ordered by similarity score.';
 
-
--- From: 20251105100100_aggregates_rpc.sql
+-- ===================================================================
+-- Source: 20251105100100_aggregates_rpc.sql
+-- ===================================================================
 
 -- Migration: Aggregates RPC for Group Deposits
 -- Description: Creates optimized RPC function for aggregating deposits by group (ikimina)
@@ -10553,11 +10640,11 @@ COMMENT ON FUNCTION public.search_saccos_trgm(text) IS
 
 -- Create index on payments.ikimina_id for efficient group deposit aggregation
 -- This index significantly improves performance when summing deposits by group
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_payments_ikimina_id ON public.payments(ikimina_id);
+CREATE INDEX IF NOT EXISTS idx_payments_ikimina_id ON public.payments(ikimina_id);
 
 -- Create composite index on ikimina_id and status for even faster aggregation
 -- This covers the WHERE clause in sum_group_deposits function
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_payments_ikimina_status ON public.payments(ikimina_id, status);
+CREATE INDEX IF NOT EXISTS idx_payments_ikimina_status ON public.payments(ikimina_id, status);
 
 -- Create or replace the sum_group_deposits function
 -- This function efficiently aggregates all completed payments (deposits) for a specific group
@@ -10585,8 +10672,9 @@ $$;
 COMMENT ON FUNCTION public.sum_group_deposits(uuid) IS 
 'Aggregates all completed deposits for a specific group (ikimina). Returns JSON with total amount, currency, and count of deposits.';
 
-
--- From: 20251110100000_multitenancy.sql
+-- ===================================================================
+-- Source: 20251110100000_multitenancy.sql
+-- ===================================================================
 
 -- Multi-tenancy: Organizations & Memberships with Row-Level Security (RLS)
 -- Creates organization hierarchy (District -> SACCO/MFI) with proper tenant isolation
@@ -10626,9 +10714,9 @@ CREATE TRIGGER organizations_touch_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION public.set_updated_at();
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_organizations_parent ON public.organizations(parent_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_organizations_type ON public.organizations(type);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_organizations_district_code ON public.organizations(district_code);
+CREATE INDEX IF NOT EXISTS idx_organizations_parent ON public.organizations(parent_id);
+CREATE INDEX IF NOT EXISTS idx_organizations_type ON public.organizations(type);
+CREATE INDEX IF NOT EXISTS idx_organizations_district_code ON public.organizations(district_code);
 
 -- 3. Extend role enum to support new organizational roles ---------------------
 -- First check if the enum exists and needs updating
@@ -10664,8 +10752,8 @@ CREATE TABLE IF NOT EXISTS public.org_memberships (
   PRIMARY KEY (user_id, org_id)
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_org_memberships_org ON public.org_memberships(org_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_org_memberships_user ON public.org_memberships(user_id);
+CREATE INDEX IF NOT EXISTS idx_org_memberships_org ON public.org_memberships(org_id);
+CREATE INDEX IF NOT EXISTS idx_org_memberships_user ON public.org_memberships(user_id);
 
 -- 5. Add org_id columns to tenant tables --------------------------------------
 
@@ -10677,7 +10765,7 @@ BEGIN
     WHERE table_schema = 'app' AND table_name = 'saccos' AND column_name = 'org_id'
   ) THEN
     ALTER TABLE app.saccos ADD COLUMN org_id UUID REFERENCES public.organizations(id) ON DELETE SET NULL;
-    CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_saccos_org ON app.saccos(org_id);
+    CREATE INDEX IF NOT EXISTS idx_saccos_org ON app.saccos(org_id);
   END IF;
 END $$;
 
@@ -10689,7 +10777,7 @@ BEGIN
     WHERE table_schema = 'app' AND table_name = 'ikimina' AND column_name = 'org_id'
   ) THEN
     ALTER TABLE app.ikimina ADD COLUMN org_id UUID REFERENCES public.organizations(id) ON DELETE SET NULL;
-    CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ikimina_org ON app.ikimina(org_id);
+    CREATE INDEX IF NOT EXISTS idx_ikimina_org ON app.ikimina(org_id);
   END IF;
 END $$;
 
@@ -10701,7 +10789,7 @@ BEGIN
     WHERE table_schema = 'app' AND table_name = 'members' AND column_name = 'org_id'
   ) THEN
     ALTER TABLE app.members ADD COLUMN org_id UUID REFERENCES public.organizations(id) ON DELETE SET NULL;
-    CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_members_org ON app.members(org_id);
+    CREATE INDEX IF NOT EXISTS idx_members_org ON app.members(org_id);
   END IF;
 END $$;
 
@@ -10713,7 +10801,7 @@ BEGIN
     WHERE table_schema = 'app' AND table_name = 'payments' AND column_name = 'org_id'
   ) THEN
     ALTER TABLE app.payments ADD COLUMN org_id UUID REFERENCES public.organizations(id) ON DELETE SET NULL;
-    CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_payments_org ON app.payments(org_id);
+    CREATE INDEX IF NOT EXISTS idx_payments_org ON app.payments(org_id);
   END IF;
 END $$;
 
@@ -10728,7 +10816,7 @@ BEGIN
     WHERE table_schema = 'public' AND table_name = 'join_requests' AND column_name = 'org_id'
   ) THEN
     ALTER TABLE public.join_requests ADD COLUMN org_id UUID REFERENCES public.organizations(id) ON DELETE SET NULL;
-    CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_join_requests_org ON public.join_requests(org_id);
+    CREATE INDEX IF NOT EXISTS idx_join_requests_org ON public.join_requests(org_id);
   END IF;
 END $$;
 
@@ -10743,7 +10831,7 @@ BEGIN
     WHERE table_schema = 'public' AND table_name = 'notifications' AND column_name = 'org_id'
   ) THEN
     ALTER TABLE public.notifications ADD COLUMN org_id UUID REFERENCES public.organizations(id) ON DELETE SET NULL;
-    CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_notifications_org ON public.notifications(org_id);
+    CREATE INDEX IF NOT EXISTS idx_notifications_org ON public.notifications(org_id);
   END IF;
 END $$;
 
@@ -11035,8 +11123,9 @@ COMMENT ON FUNCTION public.user_org_ids() IS 'Returns all organization IDs the c
 COMMENT ON FUNCTION public.user_accessible_org_ids() IS 'Returns all organization IDs accessible by user including hierarchy';
 COMMENT ON FUNCTION public.user_can_access_org(UUID) IS 'Checks if user can access a specific organization';
 
-
--- From: 20251115100000_optimize_indexes_and_queries.sql
+-- ===================================================================
+-- Source: 20251115100000_optimize_indexes_and_queries.sql
+-- ===================================================================
 
 -- Migration: Optimize Indexes and Queries for Performance
 -- Description: Adds missing indexes on ledger_entries and other frequently queried tables
@@ -11046,42 +11135,42 @@ COMMENT ON FUNCTION public.user_can_access_org(UUID) IS 'Checks if user can acce
 -- Add indexes on ledger_entries for debit_id and credit_id
 -- These indexes significantly improve the account_balance function performance
 -- by enabling efficient lookups on both debit and credit sides
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ledger_entries_debit_id 
+CREATE INDEX IF NOT EXISTS idx_ledger_entries_debit_id 
   ON app.ledger_entries(debit_id);
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ledger_entries_credit_id 
+CREATE INDEX IF NOT EXISTS idx_ledger_entries_credit_id 
   ON app.ledger_entries(credit_id);
 
 -- Add composite index for common query patterns
 -- This covers queries that filter by account and need to aggregate amounts
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ledger_entries_debit_amount 
+CREATE INDEX IF NOT EXISTS idx_ledger_entries_debit_amount 
   ON app.ledger_entries(debit_id, amount);
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ledger_entries_credit_amount 
+CREATE INDEX IF NOT EXISTS idx_ledger_entries_credit_amount 
   ON app.ledger_entries(credit_id, amount);
 
 -- Add index on user_profiles.user_id if not exists
 -- This optimizes lookups in current_sacco, current_role, and other user profile queries
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_user_profiles_user_id 
+CREATE INDEX IF NOT EXISTS idx_user_profiles_user_id 
   ON app.user_profiles(user_id);
 
 -- Add composite index for sacco-scoped queries
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ledger_entries_sacco_created 
+CREATE INDEX IF NOT EXISTS idx_ledger_entries_sacco_created 
   ON app.ledger_entries(sacco_id, created_at DESC) 
   WHERE sacco_id IS NOT NULL;
 
 -- Add index on accounts.sacco_id for efficient sacco-scoped account queries
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_accounts_sacco_id 
+CREATE INDEX IF NOT EXISTS idx_accounts_sacco_id 
   ON app.accounts(sacco_id) 
   WHERE sacco_id IS NOT NULL;
 
 -- Add index on members.sacco_id for efficient member lookups
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_members_sacco_id 
+CREATE INDEX IF NOT EXISTS idx_members_sacco_id 
   ON app.members(sacco_id) 
   WHERE sacco_id IS NOT NULL;
 
 -- Add index on payments.sacco_id for efficient payment lookups
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_payments_sacco_id 
+CREATE INDEX IF NOT EXISTS idx_payments_sacco_id 
   ON app.payments(sacco_id) 
   WHERE sacco_id IS NOT NULL;
 
@@ -11102,8 +11191,9 @@ ANALYZE app.accounts;
 ANALYZE app.members;
 ANALYZE app.payments;
 
-
--- From: 20251115100100_optimize_account_balance_function.sql
+-- ===================================================================
+-- Source: 20251115100100_optimize_account_balance_function.sql
+-- ===================================================================
 
 -- Migration: Optimize account_balance Function
 -- Description: Refactors the account_balance function to use more efficient query patterns
@@ -11160,8 +11250,9 @@ $function$;
 COMMENT ON FUNCTION public.account_balance(uuid) IS 
   'Wrapper function that delegates to app.account_balance for backward compatibility.';
 
-
--- From: 20251115100200_simplify_triggers.sql
+-- ===================================================================
+-- Source: 20251115100200_simplify_triggers.sql
+-- ===================================================================
 
 -- Migration: Simplify and Optimize Triggers
 -- Description: Refactors triggers to simplify logic and improve maintainability
@@ -11243,8 +11334,9 @@ $$;
 COMMENT ON FUNCTION app.handle_new_auth_user() IS 
   'Simplified trigger function to create user profile on auth.users insert. Includes error handling to prevent auth failures.';
 
-
--- From: 20251126125320_android_sms_gateway.sql
+-- ===================================================================
+-- Source: 20251126125320_android_sms_gateway.sql
+-- ===================================================================
 
 -- Android SMS Bridge Gateway Integration
 -- This migration creates tables for managing Android SMS bridge devices,
@@ -11264,10 +11356,10 @@ CREATE TABLE IF NOT EXISTS app.gateway_devices (
 );
 
 -- Index for active device queries
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_gateway_devices_last_heartbeat 
+CREATE INDEX IF NOT EXISTS idx_gateway_devices_last_heartbeat 
   ON app.gateway_devices(last_heartbeat_at) WHERE is_active = true;
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_gateway_devices_sacco 
+CREATE INDEX IF NOT EXISTS idx_gateway_devices_sacco 
   ON app.gateway_devices(sacco_id);
 
 -- Trigger to update updated_at timestamp
@@ -11291,7 +11383,7 @@ CREATE TABLE IF NOT EXISTS app.gateway_heartbeats (
 );
 
 -- Index for performance on device heartbeat queries
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_gateway_heartbeats_device_created 
+CREATE INDEX IF NOT EXISTS idx_gateway_heartbeats_device_created 
   ON app.gateway_heartbeats(device_id, created_at DESC);
 
 -- Table: raw_sms_logs (audit trail of all received SMS)
@@ -11312,16 +11404,16 @@ CREATE TABLE IF NOT EXISTS app.raw_sms_logs (
 );
 
 -- Indexes for performance
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_raw_sms_logs_status 
+CREATE INDEX IF NOT EXISTS idx_raw_sms_logs_status 
   ON app.raw_sms_logs(status) WHERE status = 'PENDING';
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_raw_sms_logs_device 
+CREATE INDEX IF NOT EXISTS idx_raw_sms_logs_device 
   ON app.raw_sms_logs(device_id, created_at DESC);
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_raw_sms_logs_payment 
+CREATE INDEX IF NOT EXISTS idx_raw_sms_logs_payment 
   ON app.raw_sms_logs(payment_id);
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_raw_sms_logs_received_at 
+CREATE INDEX IF NOT EXISTS idx_raw_sms_logs_received_at 
   ON app.raw_sms_logs(received_at DESC);
 
 -- RLS Policies
@@ -11415,8 +11507,9 @@ COMMENT ON COLUMN app.gateway_devices.sim_carrier IS 'Mobile carrier of the SIM 
 COMMENT ON COLUMN app.raw_sms_logs.parse_source IS 'AI/parsing method used: REGEX, GEMINI, OPENAI, or MANUAL';
 COMMENT ON COLUMN app.raw_sms_logs.status IS 'Processing status: PENDING, PARSED, FAILED, or DUPLICATE';
 
-
--- From: 20251126152600_momo_sms_inbox.sql
+-- ===================================================================
+-- Source: 20251126152600_momo_sms_inbox.sql
+-- ===================================================================
 
 -- MoMo SMS Webhook Infrastructure
 -- Creates tables, indexes, RLS policies, and auto-matching logic for
@@ -11479,11 +11572,11 @@ COMMENT ON COLUMN app.momo_sms_inbox.matched_payment_id IS 'Reference to matched
 COMMENT ON COLUMN app.momo_sms_inbox.match_confidence IS 'Confidence score for auto-matching (0-1)';
 
 -- Indexes for performance
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_momo_sms_inbox_phone ON app.momo_sms_inbox(phone_number);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_momo_sms_inbox_processed ON app.momo_sms_inbox(processed);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_momo_sms_inbox_received ON app.momo_sms_inbox(received_at DESC);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_momo_sms_inbox_transaction ON app.momo_sms_inbox(parsed_transaction_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_momo_sms_inbox_payment ON app.momo_sms_inbox(matched_payment_id);
+CREATE INDEX IF NOT EXISTS idx_momo_sms_inbox_phone ON app.momo_sms_inbox(phone_number);
+CREATE INDEX IF NOT EXISTS idx_momo_sms_inbox_processed ON app.momo_sms_inbox(processed);
+CREATE INDEX IF NOT EXISTS idx_momo_sms_inbox_received ON app.momo_sms_inbox(received_at DESC);
+CREATE INDEX IF NOT EXISTS idx_momo_sms_inbox_transaction ON app.momo_sms_inbox(parsed_transaction_id);
+CREATE INDEX IF NOT EXISTS idx_momo_sms_inbox_payment ON app.momo_sms_inbox(matched_payment_id);
 
 -- RLS policies
 ALTER TABLE app.momo_sms_inbox ENABLE ROW LEVEL SECURITY;
@@ -11594,8 +11687,9 @@ CREATE TRIGGER trigger_match_momo_payment
   FOR EACH ROW
   EXECUTE FUNCTION app.match_momo_to_payment();
 
-
--- From: 20251127160000_add_staff_management_fields.sql
+-- ===================================================================
+-- Source: 20251127160000_add_staff_management_fields.sql
+-- ===================================================================
 
 -- Adds status, pw_reset_required, last_login_at, suspended_at, suspended_by
 
@@ -11623,10 +11717,10 @@ ALTER TABLE app.user_profiles
   ADD COLUMN IF NOT EXISTS notes TEXT;
 
 -- Create index for status filtering
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_user_profiles_status ON app.user_profiles(status);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_status ON app.user_profiles(status);
 
 -- Create index for pw_reset_required filtering
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_user_profiles_pw_reset_required ON app.user_profiles(pw_reset_required) WHERE pw_reset_required = true;
+CREATE INDEX IF NOT EXISTS idx_user_profiles_pw_reset_required ON app.user_profiles(pw_reset_required) WHERE pw_reset_required = true;
 
 -- Expose the new fields through the public.users security-barrier view
 CREATE OR REPLACE VIEW public.users
@@ -11658,8 +11752,9 @@ JOIN auth.users auth_users ON auth_users.id = p.user_id;
 
 ALTER VIEW public.users SET (security_barrier = true);
 
-
--- From: 20251127200000_notification_templates_and_prefs.sql
+-- ===================================================================
+-- Source: 20251127200000_notification_templates_and_prefs.sql
+-- ===================================================================
 
 -- Notification templates and user preferences for event-driven notifications
 -- Supports bilingual templates (en/rw) and per-user channel toggles
@@ -11680,8 +11775,8 @@ CREATE TABLE IF NOT EXISTS public.notification_templates (
   UNIQUE (event, channel, locale, sacco_id)
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS notification_templates_event_idx ON public.notification_templates(event, is_active);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS notification_templates_sacco_id_idx ON public.notification_templates(sacco_id);
+CREATE INDEX IF NOT EXISTS notification_templates_event_idx ON public.notification_templates(event, is_active);
+CREATE INDEX IF NOT EXISTS notification_templates_sacco_id_idx ON public.notification_templates(sacco_id);
 
 -- User notification preferences - per-user, per-channel toggles
 CREATE TABLE IF NOT EXISTS public.user_notification_preferences (
@@ -12114,8 +12209,9 @@ INSERT INTO public.notification_templates (event, channel, locale, subject, body
    '["amount", "reference", "group_name"]'::jsonb)
 ON CONFLICT (event, channel, locale, sacco_id) DO NOTHING;
 
-
--- From: 20251128000000_add_client_app_tables.sql
+-- ===================================================================
+-- Source: 20251128000000_add_client_app_tables.sql
+-- ===================================================================
 
 -- Migration: Add push_subscriptions and members_app_profiles tables
 -- Description: Support for web push notifications and client app OCR/onboarding
@@ -12135,8 +12231,8 @@ CREATE TABLE IF NOT EXISTS public.push_subscriptions (
 );
 
 -- Add index for efficient lookups
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_push_subscriptions_user_id ON public.push_subscriptions(user_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_push_subscriptions_topics ON public.push_subscriptions USING GIN(topics);
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user_id ON public.push_subscriptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_topics ON public.push_subscriptions USING GIN(topics);
 
 -- Enable RLS
 ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
@@ -12190,8 +12286,8 @@ CREATE TABLE IF NOT EXISTS public.members_app_profiles (
 );
 
 -- Add indexes
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_members_app_profiles_user_id ON public.members_app_profiles(user_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_members_app_profiles_id_number ON public.members_app_profiles(id_number) WHERE id_number IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_members_app_profiles_user_id ON public.members_app_profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_members_app_profiles_id_number ON public.members_app_profiles(id_number) WHERE id_number IS NOT NULL;
 
 -- Enable RLS
 ALTER TABLE public.members_app_profiles ENABLE ROW LEVEL SECURITY;
@@ -12277,8 +12373,9 @@ COMMENT ON TABLE public.members_app_profiles IS 'Client app member profiles with
 COMMENT ON COLUMN public.members_app_profiles.ocr_json IS 'Raw OCR extraction results from ID document processing';
 COMMENT ON COLUMN public.members_app_profiles.ocr_confidence IS 'OCR confidence score between 0 and 1';
 
-
--- From: 20251128120000_add_performance_indexes.sql
+-- ===================================================================
+-- Source: 20251128120000_add_performance_indexes.sql
+-- ===================================================================
 
 -- Performance Index Optimization Migration
 -- Based on audit findings for high-traffic query patterns
@@ -12288,7 +12385,7 @@ COMMENT ON COLUMN public.members_app_profiles.ocr_confidence IS 'OCR confidence 
 -- ============================================
 
 -- Index for filtering payments by SACCO and creation date (common dashboard query)
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_payments_sacco_created_at
+CREATE INDEX IF NOT EXISTS idx_payments_sacco_created_at
 ON public.payments (sacco_id, created_at DESC);
 
 -- ============================================
@@ -12296,7 +12393,7 @@ ON public.payments (sacco_id, created_at DESC);
 -- ============================================
 
 -- Index for filtering SMS by parse source (AI vs REGEX analytics)
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_sms_inbox_parse_source
+CREATE INDEX IF NOT EXISTS idx_sms_inbox_parse_source
 ON public.sms_inbox (parse_source);
 
 -- ============================================
@@ -12304,11 +12401,12 @@ ON public.sms_inbox (parse_source);
 -- ============================================
 
 -- Ensure foreign keys are indexed for join performance
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_users_sacco_id ON public.users(sacco_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_members_sacco_id ON public.members(sacco_id);
+CREATE INDEX IF NOT EXISTS idx_users_sacco_id ON public.users(sacco_id);
+CREATE INDEX IF NOT EXISTS idx_members_sacco_id ON public.members(sacco_id);
 
-
--- From: 20251128130000_standardize_schema.sql
+-- ===================================================================
+-- Source: 20251128130000_standardize_schema.sql
+-- ===================================================================
 
 -- Schema Standardization Migration
 --
@@ -12354,8 +12452,9 @@ CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_members_sacco_id ON public.members(
 -- For now, this migration file serves as documentation only.
 -- Actual schema changes should be planned and executed carefully.
 
-
--- From: 20251130075500_remove_mfa_system.sql
+-- ===================================================================
+-- Source: 20251130075500_remove_mfa_system.sql
+-- ===================================================================
 
 -- Migration: Remove MFA System
 -- This migration removes all MFA-related tables, columns, and functions
@@ -12383,8 +12482,9 @@ ALTER TABLE public.users
 -- Drop MFA-related functions if they exist
 DROP FUNCTION IF EXISTS public.touch_mfa_recovery_codes() CASCADE;
 
-
--- From: 20251201000000_add_whatsapp_otp_auth.sql
+-- ===================================================================
+-- Source: 20251201000000_add_whatsapp_otp_auth.sql
+-- ===================================================================
 
 -- Migration: Add WhatsApp OTP authentication for client app members
 -- Description: Tables and functions for WhatsApp-based OTP authentication
@@ -12407,8 +12507,8 @@ CREATE TABLE IF NOT EXISTS app.whatsapp_otp_codes (
 );
 
 -- Add index for efficient lookups
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_whatsapp_otp_phone ON app.whatsapp_otp_codes(phone_number);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_whatsapp_otp_expires ON app.whatsapp_otp_codes(expires_at);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_otp_phone ON app.whatsapp_otp_codes(phone_number);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_otp_expires ON app.whatsapp_otp_codes(expires_at);
 
 -- Enable RLS
 ALTER TABLE app.whatsapp_otp_codes ENABLE ROW LEVEL SECURITY;
@@ -12501,8 +12601,8 @@ CREATE TABLE IF NOT EXISTS public.member_permissions (
 );
 
 -- Add indexes
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_member_permissions_user ON public.member_permissions(user_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_member_permissions_permission ON public.member_permissions(permission);
+CREATE INDEX IF NOT EXISTS idx_member_permissions_user ON public.member_permissions(user_id);
+CREATE INDEX IF NOT EXISTS idx_member_permissions_permission ON public.member_permissions(permission);
 
 -- Enable RLS
 ALTER TABLE public.member_permissions ENABLE ROW LEVEL SECURITY;
@@ -12618,8 +12718,9 @@ COMMENT ON COLUMN public.members_app_profiles.whatsapp_verified IS 'Whether What
 COMMENT ON COLUMN public.members_app_profiles.biometric_enabled IS 'Whether biometric authentication is enabled for this user';
 COMMENT ON FUNCTION public.has_permission IS 'Check if a user has a specific permission';
 
-
--- From: 20251201100000_multicountry_intermediation.sql
+-- ===================================================================
+-- Source: 20251201100000_multicountry_intermediation.sql
+-- ===================================================================
 
 -- =============================================================================
 -- MULTI-COUNTRY INTERMEDIATION PRIMITIVES
@@ -13075,8 +13176,9 @@ for select using (
 -- Backfill note: run a one-time script to set country_id on existing organizations (e.g., to Rwanda),
 -- then on groups, group_members, uploads, allocations using the triggers or direct updates.
 
-
--- From: 20251215093000_add_whatsapp_otp_event_logging.sql
+-- ===================================================================
+-- Source: 20251215093000_add_whatsapp_otp_event_logging.sql
+-- ===================================================================
 
 -- Add append-only event log and counters for WhatsApp OTP flows
 DO $$
@@ -13110,10 +13212,10 @@ CREATE TABLE IF NOT EXISTS app.whatsapp_otp_events (
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('UTC', now())
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_whatsapp_otp_events_phone_created
+CREATE INDEX IF NOT EXISTS idx_whatsapp_otp_events_phone_created
   ON app.whatsapp_otp_events (phone_number, created_at DESC);
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_whatsapp_otp_events_event_created
+CREATE INDEX IF NOT EXISTS idx_whatsapp_otp_events_event_created
   ON app.whatsapp_otp_events (event_type, created_at DESC);
 
 ALTER TABLE app.whatsapp_otp_events ENABLE ROW LEVEL SECURITY;
@@ -13250,8 +13352,9 @@ GRANT EXECUTE ON FUNCTION app.record_whatsapp_otp_event(
 COMMENT ON TABLE app.whatsapp_otp_events IS 'Append-only log of WhatsApp OTP send/verify events for fraud analytics.';
 COMMENT ON TABLE app.whatsapp_otp_stats IS 'Aggregated counters tracking WhatsApp OTP verification outcomes per phone number.';
 
-
--- From: 20251231100000_multinational_expansion.sql
+-- ===================================================================
+-- Source: 20251231100000_multinational_expansion.sql
+-- ===================================================================
 
 -- Multi-Country Expansion Infrastructure
 -- Adds country-aware tenancy, telco providers, country configs, and reference token v2
@@ -13262,7 +13365,6 @@ COMMENT ON TABLE app.whatsapp_otp_stats IS 'Aggregated counters tracking WhatsAp
 -- =============================================================================
 
 -- Countries table: activate markets here
-CREATE TABLE IF NOT EXISTS public.countries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   iso2 CHAR(2) NOT NULL UNIQUE,           -- e.g., 'RW', 'SN', 'CI', 'GH', 'ZM'
   iso3 CHAR(3) NOT NULL UNIQUE,           -- 'RWA', 'SEN', 'CIV', 'GHA', 'ZMW'
@@ -13275,9 +13377,9 @@ CREATE TABLE IF NOT EXISTS public.countries (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('UTC', now())
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_countries_active ON public.countries(is_active);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_countries_iso2 ON public.countries(iso2);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_countries_iso3 ON public.countries(iso3);
+CREATE INDEX IF NOT EXISTS idx_countries_active ON public.countries(is_active);
+CREATE INDEX IF NOT EXISTS idx_countries_iso2 ON public.countries(iso2);
+CREATE INDEX IF NOT EXISTS idx_countries_iso3 ON public.countries(iso3);
 
 -- Add updated_at trigger
 DROP TRIGGER IF EXISTS countries_touch_updated_at ON public.countries;
@@ -13311,8 +13413,8 @@ CREATE TABLE IF NOT EXISTS public.telco_providers (
   UNIQUE(country_id, name)
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_telco_country ON public.telco_providers(country_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_telco_active ON public.telco_providers(is_active);
+CREATE INDEX IF NOT EXISTS idx_telco_country ON public.telco_providers(country_id);
+CREATE INDEX IF NOT EXISTS idx_telco_active ON public.telco_providers(is_active);
 
 DROP TRIGGER IF EXISTS telco_providers_touch_updated_at ON public.telco_providers;
 CREATE TRIGGER telco_providers_touch_updated_at
@@ -13393,7 +13495,7 @@ BEGIN
     WHERE table_schema = 'public' AND table_name = 'organizations' AND column_name = 'country_id'
   ) THEN
     ALTER TABLE public.organizations ADD COLUMN country_id UUID REFERENCES public.countries(id);
-    CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_organizations_country ON public.organizations(country_id);
+    CREATE INDEX IF NOT EXISTS idx_organizations_country ON public.organizations(country_id);
   END IF;
 END $$;
 
@@ -13431,7 +13533,7 @@ BEGIN
     WHERE table_schema = 'app' AND table_name = 'saccos' AND column_name = 'country_id'
   ) THEN
     ALTER TABLE app.saccos ADD COLUMN country_id UUID REFERENCES public.countries(id);
-    CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_saccos_country ON app.saccos(country_id);
+    CREATE INDEX IF NOT EXISTS idx_saccos_country ON app.saccos(country_id);
   END IF;
 END $$;
 
@@ -13448,7 +13550,7 @@ BEGIN
     WHERE table_schema = 'app' AND table_name = 'ikimina' AND column_name = 'country_id'
   ) THEN
     ALTER TABLE app.ikimina ADD COLUMN country_id UUID REFERENCES public.countries(id);
-    CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ikimina_country ON app.ikimina(country_id);
+    CREATE INDEX IF NOT EXISTS idx_ikimina_country ON app.ikimina(country_id);
   END IF;
 END $$;
 
@@ -13465,7 +13567,7 @@ BEGIN
     WHERE table_schema = 'app' AND table_name = 'members' AND column_name = 'country_id'
   ) THEN
     ALTER TABLE app.members ADD COLUMN country_id UUID REFERENCES public.countries(id);
-    CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_members_country ON app.members(country_id);
+    CREATE INDEX IF NOT EXISTS idx_members_country ON app.members(country_id);
   END IF;
 END $$;
 
@@ -13482,7 +13584,7 @@ BEGIN
     WHERE table_schema = 'app' AND table_name = 'payments' AND column_name = 'country_id'
   ) THEN
     ALTER TABLE app.payments ADD COLUMN country_id UUID REFERENCES public.countries(id);
-    CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_payments_country ON app.payments(country_id);
+    CREATE INDEX IF NOT EXISTS idx_payments_country ON app.payments(country_id);
   END IF;
 END $$;
 
@@ -13499,7 +13601,7 @@ BEGIN
     WHERE table_schema = 'app' AND table_name = 'import_files' AND column_name = 'country_id'
   ) THEN
     ALTER TABLE app.import_files ADD COLUMN country_id UUID REFERENCES public.countries(id);
-    CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_import_files_country ON app.import_files(country_id);
+    CREATE INDEX IF NOT EXISTS idx_import_files_country ON app.import_files(country_id);
   END IF;
 END $$;
 
@@ -13516,7 +13618,7 @@ BEGIN
     WHERE table_schema = 'app' AND table_name = 'sms_inbox' AND column_name = 'country_id'
   ) THEN
     ALTER TABLE app.sms_inbox ADD COLUMN country_id UUID REFERENCES public.countries(id);
-    CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_sms_inbox_country ON app.sms_inbox(country_id);
+    CREATE INDEX IF NOT EXISTS idx_sms_inbox_country ON app.sms_inbox(country_id);
   END IF;
 END $$;
 
@@ -13536,7 +13638,7 @@ BEGIN
     WHERE table_schema = 'app' AND table_name = 'recon_exceptions' AND column_name = 'country_id'
   ) THEN
     ALTER TABLE app.recon_exceptions ADD COLUMN country_id UUID REFERENCES public.countries(id);
-    CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_recon_exceptions_country ON app.recon_exceptions(country_id);
+    CREATE INDEX IF NOT EXISTS idx_recon_exceptions_country ON app.recon_exceptions(country_id);
   END IF;
 END $$;
 
@@ -13734,7 +13836,7 @@ BEGIN
       WHERE table_schema = 'public' AND table_name = 'feature_flags' AND column_name = 'country_id'
     ) THEN
       ALTER TABLE public.feature_flags ADD COLUMN country_id UUID REFERENCES public.countries(id) ON DELETE CASCADE;
-      CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_feature_flags_country ON public.feature_flags(country_id);
+      CREATE INDEX IF NOT EXISTS idx_feature_flags_country ON public.feature_flags(country_id);
     END IF;
     
     -- Add org_id column
@@ -13743,7 +13845,7 @@ BEGIN
       WHERE table_schema = 'public' AND table_name = 'feature_flags' AND column_name = 'org_id'
     ) THEN
       ALTER TABLE public.feature_flags ADD COLUMN org_id UUID REFERENCES public.organizations(id) ON DELETE CASCADE;
-      CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_feature_flags_org ON public.feature_flags(org_id);
+      CREATE INDEX IF NOT EXISTS idx_feature_flags_org ON public.feature_flags(org_id);
     END IF;
   END IF;
 END $$;
@@ -13906,8 +14008,9 @@ GRANT ALL ON public.partner_config TO service_role;
 -- END OF MIGRATION
 -- =============================================================================
 
-
--- From: 20251231100100_seed_countries.sql
+-- ===================================================================
+-- Source: 20251231100100_seed_countries.sql
+-- ===================================================================
 
 -- Seed Countries Data
 -- Initial country setup with Rwanda as default market
@@ -14208,8 +14311,9 @@ COMMENT ON TABLE public.country_config IS 'Country-specific configurations - Rwa
 -- END OF SEED MIGRATION
 -- =============================================================================
 
-
--- From: 20251231110000_ai_embeddings_vector_store.sql
+-- ===================================================================
+-- Source: 20251231110000_ai_embeddings_vector_store.sql
+-- ===================================================================
 
 -- Migration: AI Embeddings Vector Store
 -- Description: Establishes canonical document & chunk storage for AI agent RAG flows
@@ -14491,8 +14595,9 @@ comment on table public.ai_ingestion_jobs is 'Job log for AI document ingestion 
 comment on table public.ai_reindex_events is 'Audit trail for AI embedding reindex operations';
 comment on function public.match_ai_document_chunks(vector, int, double precision, uuid) is 'Similarity search helper for AI agent knowledge retrieval';
 
-
--- From: 20251231120000_ai_agent_sessions_usage.sql
+-- ===================================================================
+-- Source: 20251231120000_ai_agent_sessions_usage.sql
+-- ===================================================================
 
 -- AI Agent operational tables: session storage, usage logging, opt-out registry
 
@@ -14591,8 +14696,9 @@ create policy "Staff manage org opt outs"
     )
   );
 
-
--- From: 20251231120000_feature_flag_overrides.sql
+-- ===================================================================
+-- Source: 20251231120000_feature_flag_overrides.sql
+-- ===================================================================
 
 -- Feature flag override matrix with country and partner scope
 
@@ -14602,7 +14708,7 @@ BEGIN
     SELECT 1 FROM information_schema.tables
     WHERE table_schema = 'public' AND table_name = 'feature_flags'
   ) THEN
-    CREATE TABLE IF NOT EXISTS public.feature_flags (
+    CREATE TABLE public.feature_flags (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       key TEXT NOT NULL,
       is_enabled BOOLEAN NOT NULL DEFAULT false,
@@ -14678,9 +14784,9 @@ ALTER TABLE public.feature_flags DROP CONSTRAINT IF EXISTS feature_flags_unique_
 ALTER TABLE public.feature_flags
   ADD CONSTRAINT feature_flags_unique_scope UNIQUE (key, scope_fingerprint);
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_feature_flags_key ON public.feature_flags(key);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_feature_flags_country ON public.feature_flags(country_id) WHERE country_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_feature_flags_org ON public.feature_flags(org_id) WHERE org_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_feature_flags_key ON public.feature_flags(key);
+CREATE INDEX IF NOT EXISTS idx_feature_flags_country ON public.feature_flags(country_id) WHERE country_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_feature_flags_org ON public.feature_flags(org_id) WHERE org_id IS NOT NULL;
 
 DROP TRIGGER IF EXISTS feature_flags_touch_updated_at ON public.feature_flags;
 CREATE TRIGGER feature_flags_touch_updated_at
@@ -14744,8 +14850,9 @@ SET is_enabled = EXCLUDED.is_enabled,
     updated_at = timezone('UTC', now()),
     updated_by = NULL;
 
-
--- From: 20260101090000_update_kb_embeddings_and_language.sql
+-- ===================================================================
+-- Source: 20260101090000_update_kb_embeddings_and_language.sql
+-- ===================================================================
 
 -- Migration: Align knowledge base schemas with text-embedding-3-large
 -- Description: Increase embedding dimensions, add language metadata, and expose kb.search helper
@@ -14804,10 +14911,10 @@ BEGIN
   END IF;
 END $$;
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_org_kb_language ON public.org_kb(language_code);
+CREATE INDEX IF NOT EXISTS idx_org_kb_language ON public.org_kb(language_code);
 
 -- Recreate vector index with the new dimension
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_org_kb_embedding
+CREATE INDEX IF NOT EXISTS idx_org_kb_embedding
   ON public.org_kb USING ivfflat (embedding vector_cosine_ops) WITH (lists = 200);
 
 COMMENT ON COLUMN public.org_kb.language_code IS 'BCP-47 language tag for localized content (e.g., en, rw, fr).';
@@ -14859,9 +14966,9 @@ BEGIN
   END IF;
 END $$;
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_global_kb_language ON public.global_kb(language_code);
+CREATE INDEX IF NOT EXISTS idx_global_kb_language ON public.global_kb(language_code);
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_global_kb_embedding
+CREATE INDEX IF NOT EXISTS idx_global_kb_embedding
   ON public.global_kb USING ivfflat (embedding vector_cosine_ops) WITH (lists = 200);
 
 COMMENT ON COLUMN public.global_kb.language_code IS 'BCP-47 language tag for localized content (e.g., en, rw, fr).';
@@ -14937,14 +15044,14 @@ GRANT EXECUTE ON FUNCTION kb.search(vector(3072), uuid, text, integer, double pr
 
 COMMIT;
 
-
--- From: 20260102090000_tapmomo_merchants_transactions.sql
+-- ===================================================================
+-- Source: 20260102090000_tapmomo_merchants_transactions.sql
+-- ===================================================================
 
 -- Migration: TapMoMo merchants and transactions tables
 -- Description: Stores merchant profiles and transaction reconciliation records for TapMoMo feature
 -- Date: 2026-01-02
 
-CREATE TABLE IF NOT EXISTS public.merchants (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   display_name TEXT NOT NULL,
@@ -14956,7 +15063,6 @@ CREATE TABLE IF NOT EXISTS public.merchants (
   UNIQUE (user_id, network, merchant_code)
 );
 
-CREATE TABLE IF NOT EXISTS public.transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   merchant_id UUID NOT NULL REFERENCES public.merchants(id) ON DELETE CASCADE,
   nonce UUID NOT NULL UNIQUE,
@@ -14969,12 +15075,12 @@ CREATE TABLE IF NOT EXISTS public.transactions (
   notes TEXT
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_merchants_user_id ON public.merchants(user_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_merchants_merchant_code ON public.merchants(merchant_code);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_transactions_merchant_id ON public.transactions(merchant_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_transactions_status ON public.transactions(status);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_transactions_created_at ON public.transactions(created_at DESC);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_transactions_nonce ON public.transactions(nonce);
+CREATE INDEX IF NOT EXISTS idx_merchants_user_id ON public.merchants(user_id);
+CREATE INDEX IF NOT EXISTS idx_merchants_merchant_code ON public.merchants(merchant_code);
+CREATE INDEX IF NOT EXISTS idx_transactions_merchant_id ON public.transactions(merchant_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_status ON public.transactions(status);
+CREATE INDEX IF NOT EXISTS idx_transactions_created_at ON public.transactions(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_transactions_nonce ON public.transactions(nonce);
 
 ALTER TABLE public.merchants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
@@ -15052,8 +15158,9 @@ GRANT SELECT ON public.transactions TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.transactions TO service_role;
 GRANT SELECT ON public.merchants TO service_role;
 
-
--- From: 20260105090000_whatsapp_delivery_events.sql
+-- ===================================================================
+-- Source: 20260105090000_whatsapp_delivery_events.sql
+-- ===================================================================
 
 -- Capture WhatsApp webhook delivery statuses for operational insight.
 
@@ -15087,8 +15194,9 @@ comment on column ops.whatsapp_delivery_events.recipient is 'Recipient phone num
 comment on column ops.whatsapp_delivery_events.conversation_origin is 'Conversation origin type (e.g., business_initiated, user_initiated).';
 comment on column ops.whatsapp_delivery_events.failure_reason is 'Concatenated error titles/messages returned by Meta for failed deliveries.';
 
-
--- From: 20260106120000_add_deep_link_resolver.sql
+-- ===================================================================
+-- Source: 20260106120000_add_deep_link_resolver.sql
+-- ===================================================================
 
 create or replace function public.resolve_deep_link(route text, identifier text)
 returns jsonb
@@ -15161,8 +15269,9 @@ grant execute on function public.resolve_deep_link(text, text) to anon;
 grant execute on function public.resolve_deep_link(text, text) to authenticated;
 grant execute on function public.resolve_deep_link(text, text) to service_role;
 
-
--- From: 20260106121500_create_allocation_export_requests.sql
+-- ===================================================================
+-- Source: 20260106121500_create_allocation_export_requests.sql
+-- ===================================================================
 
 create schema if not exists app;
 
@@ -15209,8 +15318,9 @@ create policy allocation_export_update_service
   for update
   using (auth.role() = 'service_role');
 
-
--- From: 20260110090000_ai_agent_sessions_usage.sql
+-- ===================================================================
+-- Source: 20260110090000_ai_agent_sessions_usage.sql
+-- ===================================================================
 
 -- AI Agent operational tables: session storage, usage logging, opt-out registry
 
@@ -15309,8 +15419,9 @@ create policy "Staff manage org opt outs"
     )
   );
 
-
--- From: 20260112090000_country_trigger_enhancements.sql
+-- ===================================================================
+-- Source: 20260112090000_country_trigger_enhancements.sql
+-- ===================================================================
 
 -- Ensure country_id propagation stays in sync when records are updated
 create or replace function public.set_group_country()
@@ -15527,8 +15638,9 @@ for insert with check (
   )
 );
 
-
--- From: 20260215090000_agent_functions.sql
+-- ===================================================================
+-- Source: 20260215090000_agent_functions.sql
+-- ===================================================================
 
 -- Agent RPC functions for OpenAI Responses integration
 -- Provides scoped access to knowledge base, allocations, reference tokens, and ticket creation.
@@ -15761,9 +15873,9 @@ CREATE TABLE IF NOT EXISTS public.member_reference_tokens (
   created_by UUID REFERENCES auth.users(id)
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_member_reference_tokens_user ON public.member_reference_tokens(user_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_member_reference_tokens_org ON public.member_reference_tokens(org_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_member_reference_tokens_expires ON public.member_reference_tokens(expires_at);
+CREATE INDEX IF NOT EXISTS idx_member_reference_tokens_user ON public.member_reference_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_member_reference_tokens_org ON public.member_reference_tokens(org_id);
+CREATE INDEX IF NOT EXISTS idx_member_reference_tokens_expires ON public.member_reference_tokens(expires_at);
 
 ALTER TABLE public.member_reference_tokens ENABLE ROW LEVEL SECURITY;
 
@@ -16082,14 +16194,14 @@ GRANT EXECUTE ON FUNCTION public.agent_allocations_read_mine(UUID, TEXT, UUID, B
 GRANT EXECUTE ON FUNCTION public.agent_reference_generate(UUID, UUID, TEXT, TEXT, UUID, INTEGER, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.agent_tickets_create(UUID, UUID, TEXT, TEXT, TEXT, TEXT, TEXT) TO authenticated;
 
-
--- From: 20260301000000_tapmomo_system.sql
+-- ===================================================================
+-- Source: 20260301000000_tapmomo_system.sql
+-- ===================================================================
 
 -- TapMoMo NFC Payment System
 -- Schema for merchants, transactions, and reconciliation
 
 -- Merchants table (stores merchant configurations and HMAC keys)
-CREATE TABLE IF NOT EXISTS app.tapmomo_merchants (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     sacco_id UUID NOT NULL REFERENCES app.saccos(id) ON DELETE CASCADE,
     user_id UUID NOT NULL, -- staff member who registered this merchant
@@ -16106,7 +16218,6 @@ CREATE TABLE IF NOT EXISTS app.tapmomo_merchants (
 );
 
 -- Transactions table (tracks all TapMoMo payment attempts)
-CREATE TABLE IF NOT EXISTS app.tapmomo_transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     merchant_id UUID NOT NULL REFERENCES app.tapmomo_merchants(id) ON DELETE CASCADE,
     sacco_id UUID NOT NULL REFERENCES app.saccos(id) ON DELETE CASCADE,
@@ -16131,16 +16242,16 @@ CREATE TABLE IF NOT EXISTS app.tapmomo_transactions (
 );
 
 -- Indexes for performance
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS tapmomo_merchants_sacco_idx ON app.tapmomo_merchants(sacco_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS tapmomo_merchants_code_idx ON app.tapmomo_merchants(merchant_code);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS tapmomo_merchants_network_idx ON app.tapmomo_merchants(network) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS tapmomo_merchants_sacco_idx ON app.tapmomo_merchants(sacco_id);
+CREATE INDEX IF NOT EXISTS tapmomo_merchants_code_idx ON app.tapmomo_merchants(merchant_code);
+CREATE INDEX IF NOT EXISTS tapmomo_merchants_network_idx ON app.tapmomo_merchants(network) WHERE is_active = true;
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS tapmomo_transactions_merchant_idx ON app.tapmomo_transactions(merchant_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS tapmomo_transactions_sacco_idx ON app.tapmomo_transactions(sacco_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS tapmomo_transactions_status_idx ON app.tapmomo_transactions(status);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS tapmomo_transactions_created_idx ON app.tapmomo_transactions(created_at DESC);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS tapmomo_transactions_nonce_idx ON app.tapmomo_transactions(nonce);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS tapmomo_transactions_payment_idx ON app.tapmomo_transactions(payment_id) WHERE payment_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS tapmomo_transactions_merchant_idx ON app.tapmomo_transactions(merchant_id);
+CREATE INDEX IF NOT EXISTS tapmomo_transactions_sacco_idx ON app.tapmomo_transactions(sacco_id);
+CREATE INDEX IF NOT EXISTS tapmomo_transactions_status_idx ON app.tapmomo_transactions(status);
+CREATE INDEX IF NOT EXISTS tapmomo_transactions_created_idx ON app.tapmomo_transactions(created_at DESC);
+CREATE INDEX IF NOT EXISTS tapmomo_transactions_nonce_idx ON app.tapmomo_transactions(nonce);
+CREATE INDEX IF NOT EXISTS tapmomo_transactions_payment_idx ON app.tapmomo_transactions(payment_id) WHERE payment_id IS NOT NULL;
 
 -- Function to auto-expire old transactions
 CREATE OR REPLACE FUNCTION app.expire_tapmomo_transactions()
@@ -16368,14 +16479,14 @@ COMMENT ON TABLE app.tapmomo_transactions IS 'TapMoMo payment transactions initi
 COMMENT ON FUNCTION app.expire_tapmomo_transactions() IS 'Automatically expire TapMoMo transactions past their TTL';
 COMMENT ON FUNCTION app.create_tapmomo_transaction(UUID, UUID, INTEGER, TEXT, TEXT, TEXT, TIMESTAMPTZ, INTEGER) IS 'Create a new TapMoMo transaction with validation';
 
-
--- From: 20260303000000_apply_tapmomo_conditional.sql
+-- ===================================================================
+-- Source: 20260303000000_apply_tapmomo_conditional.sql
+-- ===================================================================
 
 -- Conditional TapMoMo System Application
 -- Only applies if tables don't exist
 
 -- Merchants table (stores merchant configurations and HMAC keys)
-CREATE TABLE IF NOT EXISTS app.tapmomo_merchants (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     sacco_id UUID NOT NULL REFERENCES app.saccos(id) ON DELETE CASCADE,
     user_id UUID NOT NULL, -- staff member who registered this merchant
@@ -16392,7 +16503,6 @@ CREATE TABLE IF NOT EXISTS app.tapmomo_merchants (
 );
 
 -- Transactions table (tracks all TapMoMo payment attempts)
-CREATE TABLE IF NOT EXISTS app.tapmomo_transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     merchant_id UUID NOT NULL REFERENCES app.tapmomo_merchants(id) ON DELETE CASCADE,
     sacco_id UUID NOT NULL REFERENCES app.saccos(id) ON DELETE CASCADE,
@@ -16417,16 +16527,16 @@ CREATE TABLE IF NOT EXISTS app.tapmomo_transactions (
 );
 
 -- Indexes for performance
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS tapmomo_merchants_sacco_idx ON app.tapmomo_merchants(sacco_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS tapmomo_merchants_code_idx ON app.tapmomo_merchants(merchant_code);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS tapmomo_merchants_network_idx ON app.tapmomo_merchants(network) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS tapmomo_merchants_sacco_idx ON app.tapmomo_merchants(sacco_id);
+CREATE INDEX IF NOT EXISTS tapmomo_merchants_code_idx ON app.tapmomo_merchants(merchant_code);
+CREATE INDEX IF NOT EXISTS tapmomo_merchants_network_idx ON app.tapmomo_merchants(network) WHERE is_active = true;
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS tapmomo_transactions_merchant_idx ON app.tapmomo_transactions(merchant_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS tapmomo_transactions_sacco_idx ON app.tapmomo_transactions(sacco_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS tapmomo_transactions_status_idx ON app.tapmomo_transactions(status);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS tapmomo_transactions_created_idx ON app.tapmomo_transactions(created_at DESC);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS tapmomo_transactions_nonce_idx ON app.tapmomo_transactions(nonce);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS tapmomo_transactions_payment_idx ON app.tapmomo_transactions(payment_id) WHERE payment_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS tapmomo_transactions_merchant_idx ON app.tapmomo_transactions(merchant_id);
+CREATE INDEX IF NOT EXISTS tapmomo_transactions_sacco_idx ON app.tapmomo_transactions(sacco_id);
+CREATE INDEX IF NOT EXISTS tapmomo_transactions_status_idx ON app.tapmomo_transactions(status);
+CREATE INDEX IF NOT EXISTS tapmomo_transactions_created_idx ON app.tapmomo_transactions(created_at DESC);
+CREATE INDEX IF NOT EXISTS tapmomo_transactions_nonce_idx ON app.tapmomo_transactions(nonce);
+CREATE INDEX IF NOT EXISTS tapmomo_transactions_payment_idx ON app.tapmomo_transactions(payment_id) WHERE payment_id IS NOT NULL;
 
 -- Function to auto-expire old transactions
 CREATE OR REPLACE FUNCTION app.expire_tapmomo_transactions()
@@ -16673,8 +16783,9 @@ COMMENT ON TABLE app.tapmomo_transactions IS 'TapMoMo payment transactions initi
 COMMENT ON FUNCTION app.expire_tapmomo_transactions() IS 'Automatically expire TapMoMo transactions past their TTL';
 COMMENT ON FUNCTION app.create_tapmomo_transaction(UUID, UUID, INTEGER, TEXT, TEXT, TEXT, TIMESTAMPTZ, INTEGER) IS 'Create a new TapMoMo transaction with validation';
 
-
--- From: 20260305000000_whatsapp_otp_auth.sql
+-- ===================================================================
+-- Source: 20260305000000_whatsapp_otp_auth.sql
+-- ===================================================================
 
 -- WhatsApp OTP Authentication System
 -- Enables passwordless authentication via WhatsApp OTP for client mobile app
@@ -17008,8 +17119,9 @@ begin
   raise notice 'View: auth_otp_stats';
 end $$;
 
-
--- From: 20260401000000_add_missing_rls_policies.sql
+-- ===================================================================
+-- Source: 20260401000000_add_missing_rls_policies.sql
+-- ===================================================================
 
 -- Add missing RLS policies for tables that were missing them
 -- Issue: Tables without RLS enabled or policies
@@ -17115,8 +17227,9 @@ COMMENT ON TABLE public.rate_limit_counters IS 'System rate limiting counters. S
 COMMENT ON TABLE public.sms_templates IS 'SMS message templates scoped to SACCOs. RLS enforced.';
 COMMENT ON TABLE public.user_notification_preferences IS 'User notification channel preferences. Users can only access their own.';
 
-
--- From: 20260401000000_fix_users_table_for_staff.sql
+-- ===================================================================
+-- Source: 20260401000000_fix_users_table_for_staff.sql
+-- ===================================================================
 
 -- Fix users table staff management columns
 -- This migration handles the case where public.users might be a view
@@ -17180,8 +17293,9 @@ BEGIN
   END IF;
 END $$;
 
-
--- From: 20260401000100_fix_increment_metric_function_name.sql
+-- ===================================================================
+-- Source: 20260401000100_fix_increment_metric_function_name.sql
+-- ===================================================================
 
 -- Fix function name mismatch in analytics event logging
 -- Issue: log_analytics_event calls increment_system_metric but function is named increment_metric
@@ -17203,8 +17317,9 @@ $$;
 
 COMMENT ON FUNCTION public.increment_system_metric IS 'Alias for increment_metric for backwards compatibility';
 
-
--- From: 20260401000200_wallet_and_checkin_system.sql
+-- ===================================================================
+-- Source: 20260401000200_wallet_and_checkin_system.sql
+-- ===================================================================
 
 -- Wallet & Token System + Visitor Check-in
 -- Double-entry ledger with non-negative balance constraints
@@ -17264,13 +17379,13 @@ FROM app.wallet_entries
 GROUP BY account_id, currency;
 
 -- Indexes for performance
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS wallet_accounts_owner_idx ON app.wallet_accounts(owner_user);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS wallet_accounts_merchant_idx ON app.wallet_accounts(merchant_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS wallet_journal_ref_idx ON app.wallet_journal(ref);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS wallet_journal_ts_idx ON app.wallet_journal(ts DESC);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS wallet_entries_journal_idx ON app.wallet_entries(journal_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS wallet_entries_account_idx ON app.wallet_entries(account_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS wallet_entries_created_idx ON app.wallet_entries(created_at DESC);
+CREATE INDEX IF NOT EXISTS wallet_accounts_owner_idx ON app.wallet_accounts(owner_user);
+CREATE INDEX IF NOT EXISTS wallet_accounts_merchant_idx ON app.wallet_accounts(merchant_id);
+CREATE INDEX IF NOT EXISTS wallet_journal_ref_idx ON app.wallet_journal(ref);
+CREATE INDEX IF NOT EXISTS wallet_journal_ts_idx ON app.wallet_journal(ts DESC);
+CREATE INDEX IF NOT EXISTS wallet_entries_journal_idx ON app.wallet_entries(journal_id);
+CREATE INDEX IF NOT EXISTS wallet_entries_account_idx ON app.wallet_entries(account_id);
+CREATE INDEX IF NOT EXISTS wallet_entries_created_idx ON app.wallet_entries(created_at DESC);
 
 -- ============================================================
 -- WALLET CONSTRAINTS & VALIDATION
@@ -17357,11 +17472,11 @@ CREATE TABLE IF NOT EXISTS app.visitor_checkins (
 );
 
 -- Indexes
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS visitor_offices_sacco_idx ON app.visitor_offices(sacco_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS visitor_offices_token_idx ON app.visitor_offices(nfc_token) WHERE nfc_token IS NOT NULL;
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS visitor_checkins_office_idx ON app.visitor_checkins(office_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS visitor_checkins_user_idx ON app.visitor_checkins(user_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS visitor_checkins_date_idx ON app.visitor_checkins(checked_in_at DESC);
+CREATE INDEX IF NOT EXISTS visitor_offices_sacco_idx ON app.visitor_offices(sacco_id);
+CREATE INDEX IF NOT EXISTS visitor_offices_token_idx ON app.visitor_offices(nfc_token) WHERE nfc_token IS NOT NULL;
+CREATE INDEX IF NOT EXISTS visitor_checkins_office_idx ON app.visitor_checkins(office_id);
+CREATE INDEX IF NOT EXISTS visitor_checkins_user_idx ON app.visitor_checkins(user_id);
+CREATE INDEX IF NOT EXISTS visitor_checkins_date_idx ON app.visitor_checkins(checked_in_at DESC);
 
 -- ============================================================
 -- WALLET OPERATIONS (Server-Authoritative)
@@ -17676,6 +17791,5 @@ COMMENT ON FUNCTION app.wallet_buy_tokens(UUID, NUMERIC, TEXT, UUID, TEXT, TEXT)
 COMMENT ON FUNCTION app.wallet_mint_tokens(UUID, NUMERIC, TEXT, TEXT, TEXT) IS 'Mint promotional tokens (admin only)';
 COMMENT ON FUNCTION app.wallet_burn_tokens(UUID, NUMERIC, TEXT, TEXT, TEXT, TEXT) IS 'Burn tokens and withdraw to MoMo';
 COMMENT ON FUNCTION app.wallet_spend_tokens(UUID, UUID, NUMERIC, TEXT, TEXT, TEXT) IS 'Spend tokens at merchant';
-
 
 COMMIT;
