@@ -54,27 +54,27 @@ CREATE TABLE IF NOT EXISTS public.ai_agent_sessions (
 -- =====================================================================
 
 -- Fast lookup by phone number (primary query pattern)
-CREATE INDEX idx_ai_agent_sessions_phone 
+CREATE INDEX IF NOT EXISTS idx_ai_agent_sessions_phone 
 ON public.ai_agent_sessions(phone) 
 WHERE is_active = true;
 
 -- Fast cleanup of expired sessions
-CREATE INDEX idx_ai_agent_sessions_expires 
+CREATE INDEX IF NOT EXISTS idx_ai_agent_sessions_expires 
 ON public.ai_agent_sessions(expires_at) 
 WHERE is_active = true;
 
 -- Filter by agent type
-CREATE INDEX idx_ai_agent_sessions_agent_type 
+CREATE INDEX IF NOT EXISTS idx_ai_agent_sessions_agent_type 
 ON public.ai_agent_sessions(agent_type) 
 WHERE agent_type IS NOT NULL AND is_active = true;
 
 -- Find active sessions for a user
-CREATE INDEX idx_ai_agent_sessions_phone_active 
+CREATE INDEX IF NOT EXISTS idx_ai_agent_sessions_phone_active 
 ON public.ai_agent_sessions(phone, expires_at DESC) 
 WHERE is_active = true;
 
 -- JSONB context queries (e.g., find sessions by restaurantId)
-CREATE INDEX idx_ai_agent_sessions_context 
+CREATE INDEX IF NOT EXISTS idx_ai_agent_sessions_context 
 ON public.ai_agent_sessions USING GIN(context);
 
 -- =====================================================================
