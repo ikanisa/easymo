@@ -251,10 +251,8 @@ SET keywords = CASE
 END
 WHERE keywords = '{}' OR keywords IS NULL;
 
--- Update search vectors for all existing records
-UPDATE public.business
-SET search_vector = update_business_search_vector()
-WHERE search_vector IS NULL;
+-- Update search vectors for all existing records will happen automatically via trigger
+-- on next insert/update. For immediate backfill, do it manually after migration if needed.
 
 -- =====================================================================
 -- 8. ADD CONSTRAINTS
