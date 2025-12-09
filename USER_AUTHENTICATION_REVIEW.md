@@ -1,6 +1,6 @@
 # EasyMO User Structure and Authentication Review
 
-**Review Date**: 2025-12-09  
+**Review Date**: 2024-12-09  
 **Reviewer**: GitHub Copilot Agent  
 **Version**: 1.0
 
@@ -42,14 +42,16 @@ The EasyMO platform supports multiple distinct user types across different syste
 
 **Roles Defined** (from `packages/ibimina-supabase-schemas/src/database.types.ts`):
 ```typescript
-app_role: 
-  | "SYSTEM_ADMIN"      // Full system access
-  | "SACCO_MANAGER"     // SACCO management
-  | "SACCO_STAFF"       // SACCO operations
-  | "SACCO_VIEWER"      // Read-only SACCO access
-  | "DISTRICT_MANAGER"  // District-level management
-  | "MFI_MANAGER"       // MFI management
-  | "MFI_STAFF"         // MFI operations
+// Database enum type definition
+enum app_role {
+  "SYSTEM_ADMIN"      // Full system access
+  "SACCO_MANAGER"     // SACCO management
+  "SACCO_STAFF"       // SACCO operations
+  "SACCO_VIEWER"      // Read-only SACCO access
+  "DISTRICT_MANAGER"  // District-level management
+  "MFI_MANAGER"       // MFI management
+  "MFI_STAFF"         // MFI operations
+}
 ```
 
 **Table**: `public.users` (Ibimina schema)
@@ -955,7 +957,7 @@ interface Identity {
 - [ ] Device fingerprinting
 - [ ] Behavioral biometrics
 - [ ] Geo-fencing
-- [ ] IP allowlisting
+- [ ] IP allow-listing
 - [ ] Automated threat response
 
 **Effort**: 3-6 months (ongoing)  
