@@ -229,6 +229,27 @@ export const recordMetric = (
   });
 };
 
+/**
+ * Log an error (global helper)
+ * Use this for standalone error logging outside of request context
+ */
+export const logError = (
+  event: string,
+  error: Error | unknown,
+  payload?: Record<string, unknown>
+) => {
+  const normalizedError = error instanceof Error ? error : new Error(String(error));
+  writeLog("error", "global", "none", { 
+    event, 
+    error: {
+      name: normalizedError.name,
+      message: scrubPII(normalizedError.message),
+      stack: normalizedError.stack,
+    },
+    payload: scrubPII(payload ?? {}) 
+  });
+};
+
 const flushTelemetry = async () => {
   if (!sentryDsn) {
     return;
