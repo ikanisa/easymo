@@ -59,6 +59,10 @@ Before ANY work, verify:
 - ✅ No duplicate/archived migrations in active paths
 - ✅ Schema aligned between local and remote
 - ✅ Working on correct branch
+- ✅ Migration archives quarantined (never edit/run anything under
+  `supabase/migrations/archive`, `_archived_duplicates`, `_disabled`,
+  `backup_*`, `phased`; glob only `supabase/migrations/*.sql` and ignore
+  `*.skip`)
 
 **If ANY risk detected → STOP and fix first**
 

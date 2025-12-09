@@ -704,6 +704,11 @@ gcloud run services update YOUR_SERVICE \
    After running new migrations or exporting the schema, run
    `pnpm schema:verify` to ensure `latest_schema.sql` (with its checksum marker)
    matches the contents of `supabase/migrations/**/*.sql`.
+   - **Migration archives are quarantined**: 388 historical files live under
+     `supabase/migrations/archive`, `_archived_duplicates`, `_disabled`,
+     `backup_*`, and `phased`. Never edit or execute these; glob only
+     `supabase/migrations/*.sql` (excluding `*.skip`) when adding/verifying
+     migrations, and pick a new timestamp beyond the latest active file.
 5. Bootstrap the Phase 4/5 workspace: `pnpm --filter @easymo/db prisma:migrate:dev`
    against the Agent-Core Postgres URL, then `pnpm --filter @easymo/db seed` to
    generate tenants, agent configs, leads, intents, wallet accounts, and sample

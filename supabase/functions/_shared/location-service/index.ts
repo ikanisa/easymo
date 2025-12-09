@@ -3,8 +3,6 @@
  * 
  * Canonical interface for all location operations across EasyMO.
  * Consolidates: saved_locations (favorites) + recent_locations (cache)
- * 
- * @module location-service
  */
 
 import { SupabaseClient } from "@supabase/supabase-js";
@@ -32,9 +30,9 @@ export interface RecentLocation extends Location {
   id: string;
   user_id: string;
   source: string;
-  context?: Record<string, unknown>;
+  context?: string;
   expires_at: string;
-  captured_at: string;
+  created_at: string;
 }
 
 export type LocationKind = SavedLocation["kind"];
@@ -51,12 +49,12 @@ export async function saveFavoriteLocation(
   label?: string
 ): Promise<SavedLocation | null> {
   const { data, error } = await supabase.rpc("save_favorite_location", {
-    _user_id: userId,
-    _kind: kind,
-    _lat: location.lat,
-    _lng: location.lng,
-    _address: location.address || null,
-    _label: label || null,
+    p_user_id: userId,
+    p_lat: location.lat,
+    p_lng: location.lng,
+    p_address: location.address || null,
+    p_kind: kind,
+    p_label: label || null,
   });
 
   if (error) {
@@ -73,8 +71,8 @@ export async function getFavoriteLocation(
   kind: LocationKind
 ): Promise<SavedLocation | null> {
   const { data, error } = await supabase.rpc("get_saved_location", {
-    _user_id: userId,
-    _kind: kind,
+    p_user_id: userId,
+    p_kind: kind,
   });
 
   if (error) {
@@ -90,7 +88,7 @@ export async function listFavoriteLocations(
   userId: string
 ): Promise<SavedLocation[]> {
   const { data, error } = await supabase.rpc("list_saved_locations", {
-    _user_id: userId,
+    p_user_id: userId,
   });
 
   if (error) {
@@ -110,16 +108,17 @@ export async function cacheLocation(
   userId: string,
   location: Location,
   source: string = "whatsapp",
-  context?: Record<string, unknown>,
-  ttlMinutes: number = 30
+  context?: string,
+  ttlHours: number = 24
 ): Promise<RecentLocation | null> {
   const { data, error } = await supabase.rpc("save_recent_location", {
-    _user_id: userId,
-    _lat: location.lat,
-    _lng: location.lng,
-    _source: source,
-    _context: context || {},
-    _ttl_minutes: ttlMinutes,
+    p_user_id: userId,
+    p_lat: location.lat,
+    p_lng: location.lng,
+    p_address: location.address || null,
+    p_source: source,
+    p_context: context || null,
+    p_ttl_hours: ttlHours,
   });
 
   if (error) {
@@ -127,19 +126,15 @@ export async function cacheLocation(
     return null;
   }
 
-  return data || null;
+  return data?.[0] || null;
 }
 
 export async function getCachedLocation(
   supabase: SupabaseClient,
-  userId: string,
-  source?: string,
-  maxAgeMinutes?: number
+  userId: string
 ): Promise<RecentLocation | null> {
   const { data, error } = await supabase.rpc("get_recent_location", {
-    _user_id: userId,
-    _source: source || null,
-    _max_age_minutes: maxAgeMinutes || null,
+    p_user_id: userId,
   });
 
   if (error) {
@@ -147,17 +142,15 @@ export async function getCachedLocation(
     return null;
   }
 
-  return data || null;
+  return data?.[0] || null;
 }
 
 export async function hasCachedLocation(
   supabase: SupabaseClient,
-  userId: string,
-  maxAgeMinutes?: number
+  userId: string
 ): Promise<boolean> {
   const { data, error } = await supabase.rpc("has_recent_location", {
-    _user_id: userId,
-    _max_age_minutes: maxAgeMinutes || null,
+    p_user_id: userId,
   });
 
   if (error) {
@@ -217,4 +210,27 @@ export async function resolveUserLocation(
   }
 
   return null;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Deprecation Bridge (for migration period)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * @deprecated Use cacheLocation() instead
+ * Bridge for code still using whatsapp_users.location_cache
+ */
+export async function updateLegacyLocationCache(
+  supabase: SupabaseClient,
+  userId: string,
+  location: Location
+): Promise<void> {
+  // Write to new system
+  await cacheLocation(supabase, userId, location, "legacy_bridge");
+  
+  // Log deprecation warning
+  console.warn(
+    "[LocationService] updateLegacyLocationCache is deprecated. " +
+    "Migrate to cacheLocation()"
+  );
 }
