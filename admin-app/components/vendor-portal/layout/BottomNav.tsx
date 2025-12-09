@@ -2,11 +2,12 @@
 
 /**
  * BottomNav - Mobile-friendly navigation for Vendor Portal
- * Home, Members, Groups, Transactions, Reports, Settings
+ * Home, Members, Groups, Transactions, Reconciliation, Reports, Settings (7 items with overflow scroll)
  */
 
 import { 
   BarChart3, 
+  CheckSquare,
   FileText, 
   Home, 
   Settings, 
@@ -15,7 +16,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
 
 interface NavItem {
   href: string;
@@ -28,6 +28,7 @@ const navItems: NavItem[] = [
   { href: '/vendor-portal/members', label: 'Members', icon: UserPlus },
   { href: '/vendor-portal/groups', label: 'Groups', icon: Users },
   { href: '/vendor-portal/transactions', label: 'Transactions', icon: FileText },
+  { href: '/vendor-portal/reconciliation', label: 'Reconcile', icon: CheckSquare },
   { href: '/vendor-portal/reports', label: 'Reports', icon: BarChart3 },
   { href: '/vendor-portal/settings', label: 'Settings', icon: Settings },
 ];
