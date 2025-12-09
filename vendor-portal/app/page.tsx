@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import Link from 'next/link';
 
 export default function HomePage() {
@@ -47,10 +46,5 @@ export default function HomePage() {
       </div>
     </div>
   );
-=======
-import { redirect } from "next/navigation";
 
-export default function HomePage() {
-  redirect("/dashboard");
->>>>>>> feature/location-caching-and-mobility-deep-review
 }

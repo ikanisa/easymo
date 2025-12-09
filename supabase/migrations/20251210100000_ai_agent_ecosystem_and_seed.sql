@@ -176,7 +176,7 @@ CREATE INDEX IF NOT EXISTS idx_agent_interactions_created_at ON public.ai_agent_
 -- Insert core agents (only if they don't exist)
 INSERT INTO public.ai_agents (slug, name, description, default_persona_code, default_system_instruction_code, default_language, default_channel, is_active)
 VALUES
-  ('marketplace', 'Buy & Sell AI Agent', 'WhatsApp-first marketplace concierge for buying, selling, and discovering local businesses. Uses Gemini AI with structured output.', 'marketplace_default', 'marketplace_v1', 'multi', 'whatsapp', true),
+  ('marketplace', 'Buy & Sell AI Agent', 'WhatsApp-first marketplace concierge for buying, selling, and discovering local businesses. Supports structured JSON output.', 'marketplace_default', 'marketplace_v1', 'multi', 'whatsapp', true),
   ('waiter', 'Waiter AI Agent', 'Virtual restaurant/bar waiter handling menu queries, orders, table reservations via WhatsApp. Supports bar discovery flow.', 'waiter_default', 'waiter_v1', 'multi', 'whatsapp', true),
   ('farmer', 'Farmer AI Agent', 'Agricultural marketplace agent connecting farmers with consumers. Provides crop advice, market prices, and produce listings.', 'farmer_default', 'farmer_v1', 'multi', 'whatsapp', true),
   ('real_estate', 'Real Estate AI Agent', 'Property search, rental, and viewing agent via WhatsApp. Supports structured property search with filters.', 'real_estate_default', 'real_estate_v1', 'multi', 'whatsapp', true),

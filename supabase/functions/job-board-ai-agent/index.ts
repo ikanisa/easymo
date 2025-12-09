@@ -17,6 +17,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import OpenAI from "https://esm.sh/openai@4.24.1";
+
 import { logStructuredEvent } from "../_shared/observability.ts";
 
 const supabase = createClient(
@@ -519,14 +520,23 @@ async function executeGetMyApplications(args: Record<string, unknown>, userPhone
     return { success: false, error: error.message };
   }
 
+  interface JobData {
+    title?: string;
+    location?: string;
+    pay_min?: number;
+    pay_max?: number;
+    currency?: string;
+    pay_type?: string;
+  }
+
   const formatted = applications?.map(app => {
-    const job = app.job_listings as Record<string, unknown>;
+    const job = (app.job_listings || {}) as JobData;
     return {
       application_id: app.id,
-      job_title: job?.title || "Unknown",
-      job_location: job?.location || "Unknown",
-      pay: job?.pay_min && job?.pay_max
-        ? `${(job.pay_min as number).toLocaleString()}-${(job.pay_max as number).toLocaleString()} RWF`
+      job_title: job.title || "Unknown",
+      job_location: job.location || "Unknown",
+      pay: job.pay_min && job.pay_max
+        ? `${job.pay_min.toLocaleString()}-${job.pay_max.toLocaleString()} RWF`
         : "Negotiable",
       status: app.status,
       applied_date: new Date(app.created_at).toLocaleDateString()
@@ -660,7 +670,7 @@ serve(async (req: Request): Promise<Response> => {
 
   try {
     const body: JobAgentRequest = await req.json();
-    const { phone_number, message, language, conversation_history } = body;
+    const { phone_number, message, conversation_history } = body;
 
     await logStructuredEvent("JOB_AGENT_REQUEST", {
       phone: phone_number?.slice(-4) || "unknown",
@@ -743,14 +753,14 @@ ${systemPrompt}`;
       messages,
       tools: JOB_TOOLS,
       tool_choice: "auto",
-      max_tokens: 1000,
+      max_tokens: 600, // Optimized for WhatsApp conciseness
       temperature: 0.7,
     });
 
     const assistantMessage = response.choices[0]?.message;
     const toolCalls = assistantMessage?.tool_calls;
     const toolsUsed: string[] = [];
-    let toolResults: Record<string, unknown> = {};
+    const toolResults: Record<string, unknown> = {};
 
     // Execute tool calls
     if (toolCalls && toolCalls.length > 0) {

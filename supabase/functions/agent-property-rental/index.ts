@@ -17,6 +17,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import OpenAI from "https://esm.sh/openai@4.24.1";
+
 import { logStructuredEvent } from "../_shared/observability.ts";
 
 const supabase = createClient(
@@ -198,11 +199,13 @@ async function executeSearchProperties(args: Record<string, unknown>): Promise<T
 
     if (args.bedrooms) {
       const beds = args.bedrooms as number;
-      query = query.gte("bedrooms", beds - 1).lte("bedrooms", beds + 1);
+      // Exact match on bedrooms for precise results
+      query = query.eq("bedrooms", beds);
     }
 
     if (args.max_price) {
-      query = query.lte("price", (args.max_price as number) * 1.2); // 20% variance
+      // Exact budget match as specified by user
+      query = query.lte("price", args.max_price as number);
     }
 
     if (args.min_price) {
@@ -566,12 +569,13 @@ ${systemPrompt}`;
     }
 
     // Call OpenAI with function calling
+    // Using gpt-4o for reliable tool selection (cost-optimized via reduced max_tokens)
     const response = await openai.chat.completions.create({
-      model: "gpt-4o", // Upgraded from gpt-4o-mini for better tool selection
+      model: "gpt-4o",
       messages,
       tools: PROPERTY_TOOLS,
       tool_choice: "auto",
-      max_tokens: 1000,
+      max_tokens: 600, // Optimized for WhatsApp conciseness
       temperature: 0.7,
     });
 
@@ -579,7 +583,7 @@ ${systemPrompt}`;
     const toolCalls = assistantMessage?.tool_calls;
     const toolsUsed: string[] = [];
     let properties: unknown[] = [];
-    let toolResults: Record<string, unknown> = {};
+    const toolResults: Record<string, unknown> = {};
 
     // Execute tool calls if any
     if (toolCalls && toolCalls.length > 0) {
