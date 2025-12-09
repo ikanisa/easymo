@@ -12,6 +12,7 @@ import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import {
   startPropertyRentals,
   handlePropertyMenuSelection,
+  handleRoleSelection,
   handleFindPropertyType,
   handleFindPropertyBedrooms,
   handleFindPropertyDuration,
@@ -278,6 +279,11 @@ async function handlePropertyButton(
   buttonId: string,
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
+  // RE-Fix 1: Handle role selection buttons
+  if (buttonId.startsWith("re_role_")) {
+    return await handleRoleSelection(ctx, buttonId);
+  }
+
   // Handle property button selections
   if (buttonId === IDS.PROPERTY_RENTALS || buttonId === "property" || buttonId === "property_rentals") {
     await startPropertyRentals(ctx);

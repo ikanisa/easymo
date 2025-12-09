@@ -4,6 +4,8 @@
  * User flow:
  * Option A - Add Property: Collect criteria → Save to DB (NO AI)
  * Option B - Find Property: Collect search criteria → AI Agent
+ * 
+ * RE-Fix 1: Now includes role handshake to identify buyer/tenant vs landlord vs agent
  */
 
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
@@ -34,6 +36,15 @@ import { buildSaveRows } from "../../_shared/wa-webhook-shared/domains/locations
 import { recordRecentActivity } from "../../_shared/wa-webhook-shared/domains/locations/recent.ts";
 import { getRecentLocation } from "../../_shared/wa-webhook-shared/domains/locations/recent.ts";
 import { cachePropertyLocation, resolvePropertyLocation } from "../handlers/location-handler.ts";
+import { logStructuredEvent, recordMetric } from "../../_shared/observability.ts";
+import {
+  getRealEstateState,
+  initializeRoleSelection,
+  setUserRole,
+  requiresRoleHandshake,
+  formatRoleSelectionMessage,
+  parseRoleFromButtonId,
+} from "../../_shared/agents/real-estate/index.ts";
 
 export type PropertyFindState = {
   rentalType: string;
@@ -129,9 +140,36 @@ function priceUnitOptions(locale: RouterContext["locale"], rentalType: string) {
 export async function startPropertyRentals(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
   
+  // RE-Fix 1: Check if role handshake is needed
+  const reState = await getRealEstateState(ctx.supabase, ctx.profileId);
+  
+  if (requiresRoleHandshake(reState)) {
+    // Initialize role selection and show role handshake
+    await initializeRoleSelection(ctx.supabase, ctx.profileId, "whatsapp");
+    
+    await logStructuredEvent("REAL_ESTATE_ROLE_HANDSHAKE_STARTED", {
+      userId: ctx.profileId,
+      locale: ctx.locale,
+    });
+    
+    recordMetric("real_estate.role_handshake", 1, { entry: "property_rentals" });
+    
+    const roleMsg = formatRoleSelectionMessage();
+    
+    await sendButtonsMessage(
+      ctx,
+      roleMsg.body,
+      buildButtons(...roleMsg.buttons),
+      { emoji: "🏠" }
+    );
+    
+    return true;
+  }
+  
+  // Role already known, proceed with normal menu
   await setState(ctx.supabase, ctx.profileId, {
     key: "property_menu",
-    data: {},
+    data: { role: reState?.data.role },
   });
   
   await sendListMessage(
@@ -168,6 +206,61 @@ export async function startPropertyRentals(ctx: RouterContext): Promise<boolean>
   );
   
   return true;
+}
+
+/**
+ * Handle role selection from role handshake
+ * RE-Fix 1: Route based on selected role
+ */
+export async function handleRoleSelection(
+  ctx: RouterContext,
+  buttonId: string
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  
+  const role = parseRoleFromButtonId(buttonId);
+  
+  if (!role) {
+    return false;
+  }
+  
+  await logStructuredEvent("REAL_ESTATE_ROLE_SELECTED", {
+    userId: ctx.profileId,
+    role,
+    buttonId,
+  });
+  
+  // Set the role and transition to appropriate state
+  await setUserRole(ctx.supabase, ctx.profileId, role);
+  
+  // Route to appropriate flow based on role
+  if (role === "buyer_tenant") {
+    // Go to Find Property flow
+    return await handlePropertyMenuSelection(ctx, IDS.PROPERTY_FIND);
+  } else if (role === "landlord_owner") {
+    // Go to Add Property flow
+    return await handlePropertyMenuSelection(ctx, IDS.PROPERTY_ADD);
+  } else if (role === "agency_staff") {
+    // For agency staff, show agency management options or redirect to portal
+    await sendButtonsMessage(
+      ctx,
+      "👔 *Welcome, Real Estate Agent!*\n\n" +
+      "For full agency management features, please use our web portal.\n\n" +
+      "Here you can:\n" +
+      "• Add new listings for your clients\n" +
+      "• Chat with our AI assistant\n\n" +
+      "What would you like to do?",
+      buildButtons(
+        { id: IDS.PROPERTY_ADD, title: "➕ Add Listing" },
+        { id: IDS.PROPERTY_CHAT_AI, title: "🤖 Chat with AI" },
+        { id: IDS.BACK_HOME, title: "↩️ Main Menu" }
+      ),
+      { emoji: "🏢" }
+    );
+    return true;
+  }
+  
+  return false;
 }
 
 export async function handlePropertyMenuSelection(

@@ -1,10 +1,29 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendTextMessage, sendButtonsMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
+import { sendTextMessage, sendButtonsMessage, sendListMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
+import { logStructuredEvent, recordMetric, maskPII } from "../_shared/observability.ts";
 import { formatPaymentInstructions, generateMoMoUSSDCode } from "./payment.ts";
 import { notifyBarNewOrder } from "./notify_bar.ts";
 import { DualAIProvider } from "./providers/dual-ai-provider.ts";
 import Fuse from "https://esm.sh/fuse.js@7.0.0";
+
+// State machine and discovery imports
+import {
+  WAITER_STATE_KEYS,
+  getWaiterState,
+  initializeWaiterSession,
+  initializeWaiterSessionFromQR,
+  setWaiterVenue,
+  setWaiterTableNumber,
+  setWaiterLocation,
+  transitionWaiterState,
+  requiresVenueDiscovery,
+  isReadyForOrdering,
+  getBarsNearLocation,
+  searchBarsByName,
+  formatBarsForWhatsApp,
+  type WaiterState,
+  type WaiterSessionContext,
+} from "../_shared/agents/waiter/index.ts";
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 import { callAI } from "./ai-provider.ts";
@@ -51,23 +70,428 @@ interface ConversationSession {
 }
 
 export async function handleWaiterMessage(ctx: WaiterContext): Promise<boolean> {
+  // Get user profile ID for state management
+  const { data: profile } = await ctx.supabase
+    .from("profiles")
+    .select("user_id")
+    .eq("whatsapp_e164", ctx.from)
+    .maybeSingle();
+
+  const userId = profile?.user_id || ctx.from;
+
+  // Log message receipt for all states (W5: Fix logging)
+  await logStructuredEvent("WAITER_MESSAGE_RECEIVED", {
+    requestId: ctx.requestId,
+    phone: maskPII(ctx.from),
+    messageType: ctx.messageType,
+    hasProfile: Boolean(profile),
+  });
+
+  // Check for QR code pattern in message (QR flow takes priority)
+  const messageText = ctx.message.text?.body || "";
+  const qrMatch = messageText.match(/TABLE-([A-Z0-9]+)-BAR-([a-f0-9-]+)/i);
+  
+  if (qrMatch) {
+    return await handleQRCodeEntry(ctx, userId, qrMatch[1], qrMatch[2]);
+  }
+
+  // Handle location message for venue discovery
+  if (ctx.messageType === "location" && ctx.message.location) {
+    return await handleLocationMessage(ctx, userId);
+  }
+
+  // Get current waiter state
+  const waiterState = await getWaiterState(ctx.supabase, userId);
+
+  // W2/W-Fix 2: If no venue context, run venue discovery flow
+  if (requiresVenueDiscovery(waiterState)) {
+    return await handleVenueDiscoveryFlow(ctx, userId, waiterState);
+  }
+
+  // If we have venue context, proceed with existing session logic
   const session = await getOrCreateSession(ctx);
   
   if (!session) {
-    await sendTextMessage(ctx.from, 
-      "👋 Welcome! Please scan the QR code at your table to start ordering."
+    // This shouldn't happen if state says we have a venue, but handle gracefully
+    await logStructuredEvent("WAITER_SESSION_STATE_MISMATCH", {
+      userId: maskPII(userId),
+      waiterStateKey: waiterState?.key,
+      venueId: waiterState?.data?.venueId,
+    }, "warn");
+    
+    // Reset state and start discovery
+    return await handleVenueDiscoveryFlow(ctx, userId, null);
+  }
+
+  // Handle interactive messages (buttons/lists)
+  if (ctx.messageType === "interactive") {
+    return await handleInteractiveMessage(ctx, session);
+  }
+
+  // Process with AI for ordering
+  return await processWithAI(ctx, session, messageText);
+}
+
+/**
+ * Handle QR code entry - direct path to full context
+ * W-Fix 3: Unify QR and home entry
+ */
+async function handleQRCodeEntry(
+  ctx: WaiterContext,
+  userId: string,
+  tableNumber: string,
+  barId: string
+): Promise<boolean> {
+  await logStructuredEvent("WAITER_QR_ENTRY", {
+    userId: maskPII(userId),
+    barId,
+    tableNumber,
+  });
+
+  recordMetric("waiter.entry", 1, { mode: "qr" });
+
+  // Initialize session from QR (sets state to VENUE_AND_TABLE_SELECTED)
+  const state = await initializeWaiterSessionFromQR(ctx.supabase, userId, barId, tableNumber);
+
+  if (!state) {
+    await sendTextMessage(ctx.from,
+      "❌ Sorry, this bar is not available right now.\n\n" +
+      "Please try scanning the QR code again or ask bar staff for help."
     );
     return true;
   }
 
-  const messageText = ctx.message.text?.body || "";
-  const messageType = ctx.messageType;
+  // Create conversation session and send welcome
+  const session = await getOrCreateSession(ctx);
+  
+  if (session) {
+    const welcomeMessage = `👋 Welcome to ${state.data.venueName}!\n\n` +
+      `📍 You're at Table ${tableNumber}.\n\n` +
+      `I'm your AI waiter. I can help you:\n` +
+      `• Browse our menu\n` +
+      `• Place orders\n` +
+      `• Get payment instructions\n\n` +
+      `Just tell me what you'd like! 😊`;
 
-  if (messageType === "interactive") {
-    return await handleInteractiveMessage(ctx, session);
+    await sendTextMessage(ctx.from, welcomeMessage);
   }
 
-  return await processWithAI(ctx, session, messageText);
+  return true;
+}
+
+/**
+ * Handle location message for bar discovery
+ */
+async function handleLocationMessage(
+  ctx: WaiterContext,
+  userId: string
+): Promise<boolean> {
+  const lat = ctx.message.location.latitude;
+  const lng = ctx.message.location.longitude;
+
+  await logStructuredEvent("WAITER_LOCATION_RECEIVED", {
+    userId: maskPII(userId),
+    lat,
+    lng,
+  });
+
+  // Save location to state
+  await setWaiterLocation(ctx.supabase, userId, lat, lng);
+
+  // Search for nearby bars
+  const discoveryResult = await getBarsNearLocation(ctx.supabase, lat, lng, 10, 5);
+
+  if (discoveryResult.bars.length === 0) {
+    await transitionWaiterState(ctx.supabase, userId, WAITER_STATE_KEYS.NO_VENUE_SELECTED);
+    
+    await sendButtonsMessage(
+      { from: ctx.from } as any,
+      "📍 I couldn't find any partner bars nearby.\n\n" +
+      "You can:\n" +
+      "• Move closer to a partner bar\n" +
+      "• Search by bar name\n" +
+      "• Scan a QR code at the bar\n\n" +
+      "What would you like to do?",
+      [
+        { id: "waiter_search_name", title: "🔍 Search by Name" },
+        { id: "waiter_back_home", title: "↩️ Main Menu" },
+      ]
+    );
+    return true;
+  }
+
+  // Transition to discovery mode
+  await transitionWaiterState(ctx.supabase, userId, WAITER_STATE_KEYS.DISCOVERY_MODE);
+
+  // Format bars for display
+  const barsText = formatBarsForWhatsApp(discoveryResult.bars);
+
+  // Create list selection for bars
+  const barRows = discoveryResult.bars.map((bar, idx) => ({
+    id: `waiter_select_bar_${bar.id}`,
+    title: bar.name.slice(0, 24),
+    description: bar.locationText || bar.city || `${bar.distanceKm?.toFixed(1)}km away`,
+  }));
+
+  await sendListMessage(
+    { from: ctx.from, locale: ctx.locale } as any,
+    {
+      title: "Nearby Bars",
+      body: `📍 Found ${discoveryResult.bars.length} partner bar(s) near you:\n\n${barsText}\n\nSelect one to start ordering:`,
+      sectionTitle: "Select a Bar",
+      buttonText: "Choose Bar",
+      rows: [
+        ...barRows,
+        { id: "waiter_search_name", title: "🔍 Search by Name" },
+        { id: "waiter_back_home", title: "↩️ Main Menu" },
+      ],
+    },
+    { emoji: "🍽️" }
+  );
+
+  return true;
+}
+
+/**
+ * Handle venue discovery flow for home entry
+ * W-Fix 2: Implement Venue Discovery Flow
+ */
+async function handleVenueDiscoveryFlow(
+  ctx: WaiterContext,
+  userId: string,
+  currentState: WaiterState | null
+): Promise<boolean> {
+  const messageText = ctx.message.text?.body?.trim().toLowerCase() || "";
+
+  // Log discovery flow entry
+  await logStructuredEvent("WAITER_DISCOVERY_FLOW", {
+    userId: maskPII(userId),
+    currentState: currentState?.key || "none",
+    messageText: messageText.slice(0, 50),
+  });
+
+  recordMetric("waiter.entry", 1, { mode: "home_discovery" });
+
+  // Handle bar selection from list
+  if (ctx.messageType === "interactive") {
+    const interactive = ctx.message.interactive;
+    const listId = interactive?.list_reply?.id;
+    const buttonId = interactive?.button_reply?.id;
+    const actionId = listId || buttonId;
+
+    if (actionId?.startsWith("waiter_select_bar_")) {
+      const barId = actionId.replace("waiter_select_bar_", "");
+      return await handleBarSelection(ctx, userId, barId);
+    }
+
+    if (actionId === "waiter_search_name") {
+      await transitionWaiterState(ctx.supabase, userId, WAITER_STATE_KEYS.SEARCHING_BAR_NAME);
+      await sendTextMessage(ctx.from,
+        "🔍 *Search for a bar*\n\n" +
+        "Type the name of the bar or restaurant you're at:"
+      );
+      return true;
+    }
+
+    if (actionId === "waiter_share_location") {
+      await transitionWaiterState(ctx.supabase, userId, WAITER_STATE_KEYS.AWAITING_LOCATION);
+      await sendTextMessage(ctx.from,
+        "📍 *Share your location*\n\n" +
+        "Please share your location so I can find bars near you.\n\n" +
+        "Tap the 📎 attachment icon → Location → Share Live Location"
+      );
+      return true;
+    }
+
+    if (actionId === "waiter_back_home") {
+      // Clear waiter state and exit
+      await transitionWaiterState(ctx.supabase, userId, WAITER_STATE_KEYS.NO_VENUE_SELECTED, {}, true);
+      await sendTextMessage(ctx.from, "Okay! Come back anytime you're ready to order. 👋");
+      return true;
+    }
+  }
+
+  // Handle text input for bar name search
+  if (currentState?.key === WAITER_STATE_KEYS.SEARCHING_BAR_NAME && messageText.length >= 2) {
+    return await handleBarNameSearch(ctx, userId, messageText);
+  }
+
+  // Handle table number input
+  if (currentState?.key === WAITER_STATE_KEYS.VENUE_SELECTED_NO_TABLE && messageText.length > 0) {
+    const tableNumber = messageText.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (tableNumber.length > 0) {
+      return await handleTableNumberInput(ctx, userId, tableNumber);
+    }
+  }
+
+  // Default: Show welcome and discovery options (W-Fix 2)
+  if (!currentState || currentState.key === WAITER_STATE_KEYS.NO_VENUE_SELECTED) {
+    await initializeWaiterSession(ctx.supabase, userId, "home");
+    
+    await sendButtonsMessage(
+      { from: ctx.from } as any,
+      "🍽️ *Welcome to AI Waiter!*\n\n" +
+      "I can help you order food and drinks at any easyMO partner bar.\n\n" +
+      "To serve you, I need to know which bar you're at:\n\n" +
+      "📍 Share your location to find nearby bars\n" +
+      "🔍 Or search by bar name\n\n" +
+      "_Tip: Scanning the QR code at your table is the fastest way to start!_",
+      [
+        { id: "waiter_share_location", title: "📍 Share Location" },
+        { id: "waiter_search_name", title: "🔍 Search by Name" },
+        { id: "waiter_back_home", title: "↩️ Main Menu" },
+      ]
+    );
+    return true;
+  }
+
+  // If awaiting location, remind user
+  if (currentState.key === WAITER_STATE_KEYS.AWAITING_LOCATION) {
+    await sendTextMessage(ctx.from,
+      "📍 Please share your location to find nearby bars.\n\n" +
+      "Tap the 📎 attachment icon → Location → Share Live Location\n\n" +
+      "Or type a bar name to search."
+    );
+    return true;
+  }
+
+  return true;
+}
+
+/**
+ * Handle bar name search
+ */
+async function handleBarNameSearch(
+  ctx: WaiterContext,
+  userId: string,
+  query: string
+): Promise<boolean> {
+  await logStructuredEvent("WAITER_BAR_NAME_SEARCH", {
+    userId: maskPII(userId),
+    query: query.slice(0, 50),
+  });
+
+  const result = await searchBarsByName(ctx.supabase, query, 5);
+
+  if (result.bars.length === 0) {
+    await sendButtonsMessage(
+      { from: ctx.from } as any,
+      `🔍 No bars found matching "${query}"\n\n` +
+      "Try:\n" +
+      "• A different spelling\n" +
+      "• Sharing your location\n" +
+      "• Scanning the QR code at the bar",
+      [
+        { id: "waiter_share_location", title: "📍 Share Location" },
+        { id: "waiter_search_name", title: "🔍 Search Again" },
+        { id: "waiter_back_home", title: "↩️ Main Menu" },
+      ]
+    );
+    return true;
+  }
+
+  // Transition to discovery mode
+  await transitionWaiterState(ctx.supabase, userId, WAITER_STATE_KEYS.DISCOVERY_MODE);
+
+  const barRows = result.bars.map((bar) => ({
+    id: `waiter_select_bar_${bar.id}`,
+    title: bar.name.slice(0, 24),
+    description: bar.locationText || bar.city || "",
+  }));
+
+  await sendListMessage(
+    { from: ctx.from, locale: ctx.locale } as any,
+    {
+      title: "Search Results",
+      body: `🔍 Found ${result.bars.length} bar(s) matching "${query}":\n\nSelect one to start ordering:`,
+      sectionTitle: "Select a Bar",
+      buttonText: "Choose Bar",
+      rows: [
+        ...barRows,
+        { id: "waiter_search_name", title: "🔍 Search Again" },
+        { id: "waiter_back_home", title: "↩️ Main Menu" },
+      ],
+    },
+    { emoji: "🍽️" }
+  );
+
+  return true;
+}
+
+/**
+ * Handle bar selection from discovery results
+ */
+async function handleBarSelection(
+  ctx: WaiterContext,
+  userId: string,
+  barId: string
+): Promise<boolean> {
+  await logStructuredEvent("WAITER_BAR_SELECTED", {
+    userId: maskPII(userId),
+    barId,
+  });
+
+  // Set venue in state (transitions to VENUE_SELECTED_NO_TABLE)
+  const state = await setWaiterVenue(ctx.supabase, userId, barId);
+
+  if (!state) {
+    await sendTextMessage(ctx.from,
+      "❌ Sorry, this bar is not available right now. Please try another one."
+    );
+    return true;
+  }
+
+  // Ask for table number
+  await sendButtonsMessage(
+    { from: ctx.from } as any,
+    `🍽️ Great! You're at *${state.data.venueName}*\n\n` +
+    "Which table are you at?\n\n" +
+    "_Type your table number (e.g., A5, 12, VIP1) or tap if you're at the bar:_",
+    [
+      { id: "waiter_table_bar", title: "🍺 At the Bar" },
+      { id: "waiter_table_skip", title: "⏩ Skip for Now" },
+    ]
+  );
+
+  return true;
+}
+
+/**
+ * Handle table number input
+ */
+async function handleTableNumberInput(
+  ctx: WaiterContext,
+  userId: string,
+  tableNumber: string
+): Promise<boolean> {
+  const state = await setWaiterTableNumber(ctx.supabase, userId, tableNumber);
+
+  if (!state) {
+    await sendTextMessage(ctx.from,
+      "❌ Something went wrong. Please try again or scan the QR code at your table."
+    );
+    return true;
+  }
+
+  await logStructuredEvent("WAITER_TABLE_SET_SUCCESS", {
+    userId: maskPII(userId),
+    venueId: state.data.venueId,
+    tableNumber,
+  });
+
+  // Create conversation session and send welcome
+  const session = await getOrCreateSession(ctx);
+
+  const welcomeMessage = `👋 Perfect! You're at *${state.data.venueName}*, Table ${tableNumber}.\n\n` +
+    `I'm your AI waiter. I can help you:\n` +
+    `• Browse our menu\n` +
+    `• Place orders\n` +
+    `• Get payment instructions\n\n` +
+    `What would you like to order? 😊`;
+
+  await sendTextMessage(ctx.from, welcomeMessage);
+
+  return true;
 }
 
 async function getOrCreateSession(ctx: WaiterContext): Promise<ConversationSession | null> {
@@ -505,6 +929,33 @@ async function handleInteractiveMessage(
   const actionId = buttonId || listId;
 
   if (!actionId) return false;
+
+  // Handle table selection buttons from discovery flow
+  if (actionId === "waiter_table_bar") {
+    // User is at the bar counter
+    const { data: profile } = await ctx.supabase
+      .from("profiles")
+      .select("user_id")
+      .eq("whatsapp_e164", ctx.from)
+      .maybeSingle();
+    
+    const userId = profile?.user_id || ctx.from;
+    await setWaiterTableNumber(ctx.supabase, userId, "BAR");
+    
+    await sendTextMessage(ctx.from,
+      "👍 Got it! You're at the bar counter.\n\n" +
+      "What would you like to order? 🍽️"
+    );
+    return true;
+  }
+
+  if (actionId === "waiter_table_skip") {
+    await sendTextMessage(ctx.from,
+      "👍 No problem! You can tell me your table number anytime.\n\n" +
+      "What would you like to order? 🍽️"
+    );
+    return true;
+  }
 
   switch (actionId) {
     case "waiter_checkout":
