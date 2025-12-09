@@ -28,9 +28,9 @@ echo "   - All packages aligned to single version"
 echo ""
 
 echo "3. Admin App Consolidation"
-echo "   - admin-app-v2 marked as DEPRECATED ✅"
-echo "   - Removed from pnpm-workspace.yaml"
-echo "   - Migration path documented"
+echo "   - Duplicate apps removed (admin-app-v2, bar-manager-final, bar-manager-production) ✅"
+echo "   - PWA apps consolidated (waiter-pwa, real-estate-pwa removed) ✅"
+echo "   - Updated workspace configuration"
 echo ""
 
 echo "4. Build System Improvements"

@@ -21,7 +21,6 @@ echo -e "Target TypeScript version: ${GREEN}${TARGET_VERSION}${NC}\n"
 PACKAGES=$(find . -name "package.json" \
   -not -path "*/node_modules/*" \
   -not -path "*/.archive/*" \
-  -not -path "*/admin-app-v2/*" \
   -not -path "*/dist/*")
 
 for pkg in $PACKAGES; do

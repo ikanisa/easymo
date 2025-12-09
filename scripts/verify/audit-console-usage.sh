@@ -11,7 +11,6 @@ RESULTS=$(grep -rn "console\.\(log\|debug\|info\)" \
   --exclude-dir=dist \
   --exclude-dir=.archive \
   --exclude-dir=.next \
-  --exclude-dir=admin-app-v2 \
   services/ packages/ admin-app/ 2>/dev/null || true)
 
 if [ -z "$RESULTS" ]; then

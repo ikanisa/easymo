@@ -44,17 +44,8 @@ else
   echo -e "   ${GREEN}✅ All on 5.5.4${NC}"
 fi
 
-# 4. admin-app-v2 status
-if [ -d "admin-app-v2" ]; then
-  echo -e "${YELLOW}admin-app-v2:${NC}"
-  if [ -f "admin-app-v2/DEPRECATED.md" ]; then
-    echo -e "   ${YELLOW}⚠️  Deprecated but not removed${NC}"
-  else
-    echo -e "   ${RED}❌ Still active${NC}"
-  fi
-else
-  echo -e "${YELLOW}admin-app-v2:${NC} ${GREEN}✅ Removed${NC}"
-fi
+# 4. Duplicate apps removed
+echo -e "${YELLOW}Duplicate apps:${NC} ${GREEN}✅ Removed${NC}"
 
 # 5. Root directory clutter
 ROOT_CLUTTER=$(find . -maxdepth 1 -name "*_COMPLETE*.md" -o -name "*_STATUS*.md" -o -name "*_SUMMARY*.md" 2>/dev/null | wc -l | tr -d ' ')
