@@ -132,9 +132,15 @@ export async function searchBarsByName(
   limit = 5
 ): Promise<BarDiscoveryResult> {
   const startTime = Date.now();
-  const normalizedQuery = query.trim().toLowerCase();
+  
+  // Sanitize input: remove special characters that could affect search
+  const sanitizedQuery = query
+    .trim()
+    .toLowerCase()
+    .replace(/[%_\\]/g, "") // Remove SQL wildcards and escape char
+    .replace(/[^\w\s'-]/g, ""); // Keep only word chars, spaces, apostrophes, hyphens
 
-  if (!normalizedQuery || normalizedQuery.length < 2) {
+  if (!sanitizedQuery || sanitizedQuery.length < 2) {
     return {
       bars: [],
       searchType: "name",
@@ -144,7 +150,7 @@ export async function searchBarsByName(
   }
 
   try {
-    // Search bars by name using ilike pattern
+    // Search bars by name using ilike pattern (parameterized query via Supabase)
     const { data, error } = await supabase
       .from("bars")
       .select(`
@@ -163,13 +169,13 @@ export async function searchBarsByName(
         late_night
       `)
       .eq("is_active", true)
-      .ilike("name", `%${normalizedQuery}%`)
+      .ilike("name", `%${sanitizedQuery}%`)
       .order("name")
       .limit(limit);
 
     if (error) {
       await logStructuredEvent("WAITER_BARS_NAME_SEARCH_ERROR", {
-        query: normalizedQuery,
+        query: sanitizedQuery,
         error: error.message,
       }, "error");
 
@@ -181,28 +187,36 @@ export async function searchBarsByName(
       };
     }
 
-    const bars: BarInfo[] = (data || []).map((bar: Record<string, unknown>) => ({
-      id: bar.id as string,
-      name: bar.name as string,
-      slug: bar.slug as string,
-      locationText: bar.location_text as string | undefined,
-      city: bar.city_area as string | undefined,
-      country: bar.country as string | undefined,
-      currency: bar.currency as string | undefined,
-      hasMenu: true, // Assume active bars have menus
-      isActive: bar.is_active !== false,
-      features: {
-        live_music: bar.live_music as boolean | undefined,
-        wifi: bar.wifi as boolean | undefined,
-        parking: bar.parking as boolean | undefined,
-        outdoor: bar.outdoor as boolean | undefined,
-        late_night: bar.late_night as boolean | undefined,
-      },
-    }));
+    // Check if each bar has a menu (don't assume)
+    const barsWithMenuCheck = await Promise.all(
+      (data || []).map(async (bar: Record<string, unknown>) => {
+        const hasMenu = await barHasMenu(supabase, bar.id as string);
+        return {
+          id: bar.id as string,
+          name: bar.name as string,
+          slug: bar.slug as string,
+          locationText: bar.location_text as string | undefined,
+          city: bar.city_area as string | undefined,
+          country: bar.country as string | undefined,
+          currency: bar.currency as string | undefined,
+          hasMenu,
+          isActive: bar.is_active !== false,
+          features: {
+            live_music: bar.live_music as boolean | undefined,
+            wifi: bar.wifi as boolean | undefined,
+            parking: bar.parking as boolean | undefined,
+            outdoor: bar.outdoor as boolean | undefined,
+            late_night: bar.late_night as boolean | undefined,
+          },
+        };
+      })
+    );
+
+    const bars: BarInfo[] = barsWithMenuCheck;
 
     const duration = Date.now() - startTime;
     await logStructuredEvent("WAITER_BARS_NAME_SEARCH", {
-      query: normalizedQuery,
+      query: sanitizedQuery,
       resultCount: bars.length,
       durationMs: duration,
     });
@@ -220,7 +234,7 @@ export async function searchBarsByName(
     };
   } catch (error) {
     await logStructuredEvent("WAITER_BARS_NAME_SEARCH_EXCEPTION", {
-      query: normalizedQuery,
+      query: sanitizedQuery,
       error: error instanceof Error ? error.message : String(error),
     }, "error");
 
