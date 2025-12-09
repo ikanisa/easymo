@@ -681,7 +681,222 @@ All tools **MUST** return:
 
 ---
 
-### H. Sora-2 Video
+### H. Buy & Sell Concierge
+
+#### search_businesses_with_tags(query, tags, category, location, radius, limit)
+
+**Purpose**: Search businesses using category, tags, metadata, and user location for semantic matching
+
+**Parameters**:
+
+```typescript
+{
+  query_text?: string;       // Natural language query
+  tags?: string[];           // Tags to match (e.g., ["laptop", "hp", "used"])
+  category?: string;         // Business category
+  user_lat?: number;         // User latitude
+  user_lng?: number;         // User longitude
+  radius_km?: number;        // Search radius (default: 10)
+  limit?: number;            // Max results (default: 10)
+  trace_id: string;
+  org_id: string;
+  user_id: string;
+}
+```
+
+**Returns**:
+
+```typescript
+{
+  ok: true;
+  data: Array<{
+    id: string;
+    name: string;
+    category: string;
+    address?: string;
+    phone?: string;
+    owner_whatsapp?: string;
+    tags?: string[];
+    metadata?: Record<string, any>;
+    distance_km?: number;
+    relevance_score?: number;
+    response_rate?: number;           // Vendor quality metric
+    response_time_avg_sec?: number;   // Avg response time
+  }>;
+}
+```
+
+**Ranking**: Results ranked by relevance (tag overlap + category match) and vendor quality (response rate)
+
+---
+
+#### create_vendor_inquiries_and_message_vendors(user_id, business_ids, request, consent)
+
+**Purpose**: Create inquiry record and message vendors on user's behalf. REQUIRES explicit user consent.
+
+**Parameters**:
+
+```typescript
+{
+  user_id?: string;
+  user_phone: string;
+  business_ids: string[];
+  request_type: 'product' | 'service' | 'medicine';
+  request_summary: string;
+  structured_payload: {
+    item?: string;
+    quantity?: number;
+    budget?: number;
+    timeframe?: string;      // 'now' | 'today' | 'any'
+    pickup_area?: string;
+    brand?: string;
+    constraints?: string[];
+  };
+  user_lat?: number;
+  user_lng?: number;
+  language?: string;         // 'en' | 'rw' | 'fr'
+  trace_id: string;
+  org_id: string;
+}
+```
+
+**Returns**:
+
+```typescript
+{
+  ok: true;
+  data: {
+    inquiry_id: string;
+    vendor_ids: string[];
+    messages_sent: number;
+    expires_at: string;      // ISO 8601, usually 2 minutes
+  }
+}
+```
+
+**Side Effects**: 
+- Creates `market_vendor_inquiries` record
+- Sends WhatsApp messages to each vendor
+- Creates `market_vendor_inquiry_messages` records
+
+**Guardrails**:
+- MAX 5 vendors per inquiry
+- User consent is REQUIRED before calling
+- Messages are short and professional
+
+---
+
+#### get_vendor_inquiry_updates(inquiry_id)
+
+**Purpose**: Check vendor replies and parse responses (YES/NO with price/quantity)
+
+**Parameters**:
+
+```typescript
+{
+  inquiry_id: string;
+  trace_id: string;
+  org_id: string;
+}
+```
+
+**Returns**:
+
+```typescript
+{
+  ok: true;
+  data: {
+    inquiry_id: string;
+    status: 'pending' | 'partial' | 'complete' | 'expired';
+    vendor_count: number;
+    replied_count: number;
+    confirmed_count: number;
+    replies: Array<{
+      business_id: string;
+      business_name: string;
+      business_phone: string;
+      status: 'yes' | 'no' | 'other' | 'pending';
+      price?: number;
+      quantity?: number;
+      notes?: string;
+      distance_km?: number;
+      response_time_sec?: number;
+    }>;
+  }
+}
+```
+
+**Parsing**: Understands responses like:
+- "YES 1500 2" → yes, price=1500, quantity=2
+- "YEE 1500" → yes, price=1500 (Kinyarwanda)
+- "NO" or "OYA" → no
+
+---
+
+#### process_vendor_reply(vendor_phone, message_body, whatsapp_message_id)
+
+**Purpose**: Process an inbound WhatsApp message from a vendor (called by webhook)
+
+**Parameters**:
+
+```typescript
+{
+  vendor_phone: string;
+  message_body: string;
+  whatsapp_message_id?: string;
+  trace_id: string;
+}
+```
+
+**Returns**:
+
+```typescript
+{
+  ok: true;
+  data: {
+    inquiry_id: string;
+    parsed: boolean;    // Whether response was understood
+  }
+}
+```
+
+**Side Effects**: Updates vendor metrics (response time, rate)
+
+---
+
+#### log_user_feedback_on_vendor(business_id, feedback_type, rating)
+
+**Purpose**: Log user feedback after visiting a vendor to update quality scores
+
+**Parameters**:
+
+```typescript
+{
+  inquiry_id?: string;
+  message_id?: string;
+  business_id: string;
+  user_phone: string;
+  feedback_type: 'accurate' | 'inaccurate' | 'cancelled' | 'complaint';
+  rating?: number;           // 1-5
+  comment?: string;
+  trace_id: string;
+  org_id: string;
+}
+```
+
+**Returns**:
+
+```typescript
+{
+  ok: true;
+}
+```
+
+**Side Effects**: Updates business metrics (`confirmation_accuracy`, `response_rate`)
+
+---
+
+### I. Sora-2 Video
 
 #### sora_generate_video({prompt, params})
 
@@ -746,26 +961,31 @@ All tools **MUST** return:
 
 ## Tool Implementation Status
 
-| Tool                | Implementation | Edge Function         | Status   |
-| ------------------- | -------------- | --------------------- | -------- |
-| notify_staff        | ✅             | admin-messages        | Complete |
-| search_supabase     | ✅             | Multiple              | Complete |
-| inventory_check     | ⚠️             | Via search_supabase   | Partial  |
-| order_create        | ⚠️             | Multiple              | Partial  |
-| order_status_update | ⚠️             | Multiple              | Partial  |
-| reservation_book    | ❌             | TBD                   | Planned  |
-| maps_geosearch      | ✅             | agent-negotiation     | Complete |
-| trip_price_estimate | ⚠️             | agent-negotiation     | Partial  |
-| ocr_extract         | ✅             | ocr-processor         | Complete |
-| price_insurance     | ❌             | TBD                   | Planned  |
-| generate_pdf        | ❌             | TBD                   | Planned  |
-| momo_charge         | ✅             | momo-allocator        | Complete |
-| property_search     | ✅             | agent-property-rental | Complete |
-| schedule_viewing    | ⚠️             | agent-property-rental | Partial  |
-| case_intake         | ❌             | TBD                   | Planned  |
-| broadcast_schedule  | ❌             | TBD                   | Planned  |
-| analytics_log       | ✅             | observability         | Complete |
-| sora_generate_video | ❌             | TBD                   | Planned  |
+| Tool                                  | Implementation | Edge Function          | Status   |
+| ------------------------------------- | -------------- | ---------------------- | -------- |
+| notify_staff                          | ✅             | admin-messages         | Complete |
+| search_supabase                       | ✅             | Multiple               | Complete |
+| inventory_check                       | ⚠️             | Via search_supabase    | Partial  |
+| order_create                          | ⚠️             | Multiple               | Partial  |
+| order_status_update                   | ⚠️             | Multiple               | Partial  |
+| reservation_book                      | ❌             | TBD                    | Planned  |
+| maps_geosearch                        | ✅             | agent-negotiation      | Complete |
+| trip_price_estimate                   | ⚠️             | agent-negotiation      | Partial  |
+| ocr_extract                           | ✅             | ocr-processor          | Complete |
+| price_insurance                       | ❌             | TBD                    | Planned  |
+| generate_pdf                          | ❌             | TBD                    | Planned  |
+| momo_charge                           | ✅             | momo-allocator         | Complete |
+| property_search                       | ✅             | agent-property-rental  | Complete |
+| schedule_viewing                      | ⚠️             | agent-property-rental  | Partial  |
+| case_intake                           | ❌             | TBD                    | Planned  |
+| broadcast_schedule                    | ❌             | TBD                    | Planned  |
+| analytics_log                         | ✅             | observability          | Complete |
+| sora_generate_video                   | ❌             | TBD                    | Planned  |
+| search_businesses_with_tags           | ✅             | wa-webhook-buy-sell    | Complete |
+| create_vendor_inquiries_and_message   | ✅             | wa-webhook-buy-sell    | Complete |
+| get_vendor_inquiry_updates            | ✅             | wa-webhook-buy-sell    | Complete |
+| process_vendor_reply                  | ✅             | wa-webhook-buy-sell    | Complete |
+| log_user_feedback_on_vendor           | ✅             | wa-webhook-buy-sell    | Complete |
 
 **Legend**:
 
@@ -777,12 +997,13 @@ All tools **MUST** return:
 
 ## Tool Access by Agent
 
-| Agent                 | Tools Allowed                                                                                                              |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Concierge Router      | search_supabase, notify_staff, analytics_log                                                                               |
-| Waiter AI             | search_supabase, order_create, order_status_update, momo_charge, notify_staff, analytics_log                               |
-| Mobility Orchestrator | maps_geosearch, search_supabase, momo_charge, notify_staff, analytics_log                                                  |
-| Pharmacy              | search_supabase, inventory_check, order_create, order_status_update, momo_charge, ocr_extract, notify_staff, analytics_log |
+| Agent                 | Tools Allowed                                                                                                                                                              |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Concierge Router      | search_supabase, notify_staff, analytics_log                                                                                                                               |
+| Waiter AI             | search_supabase, order_create, order_status_update, momo_charge, notify_staff, analytics_log                                                                               |
+| Mobility Orchestrator | maps_geosearch, search_supabase, momo_charge, notify_staff, analytics_log                                                                                                  |
+| Buy & Sell            | search_businesses_with_tags, create_vendor_inquiries_and_message, get_vendor_inquiry_updates, log_user_feedback_on_vendor, inventory_check, order_create, momo_charge, ocr_extract, notify_staff, analytics_log |
+| Pharmacy              | search_supabase, inventory_check, order_create, order_status_update, momo_charge, ocr_extract, notify_staff, analytics_log                                                 |
 | Hardware              | search_supabase, inventory_check, order_create, order_status_update, momo_charge, notify_staff, analytics_log              |
 | Shop                  | search_supabase, inventory_check, order_create, order_status_update, momo_charge, notify_staff, analytics_log              |
 | Insurance             | ocr_extract, price_insurance, generate_pdf, momo_charge, notify_staff, analytics_log                                       |

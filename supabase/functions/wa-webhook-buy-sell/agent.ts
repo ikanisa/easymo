@@ -51,7 +51,7 @@ export const EMOJI_NUMBERS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️�
 
 export interface MarketplaceContext {
   phone: string;
-  flowType: "selling" | "buying" | "inquiry" | "category_selection" | "awaiting_location" | "show_results" | null;
+  flowType: "selling" | "buying" | "inquiry" | "category_selection" | "awaiting_location" | "show_results" | "vendor_outreach" | null;
   flowStep: string | null;
   collectedData: Record<string, unknown>;
   conversationHistory: Array<{ role: "user" | "assistant"; content: string }>;
@@ -60,6 +60,14 @@ export interface MarketplaceContext {
   currentIntentId?: string | null;
   selectedCategory?: string;
   searchResults?: Array<Record<string, unknown>>;
+  // Vendor outreach state
+  pendingVendorOutreach?: {
+    businessIds: string[];
+    requestSummary: string;
+    requestType: "product" | "service" | "medicine";
+    awaitingConsent: boolean;
+  };
+  currentInquiryId?: string | null;
 }
 
 export interface AgentResponse {
@@ -73,80 +81,145 @@ export interface AgentResponse {
     | "ask_description"
     | "ask_photo"
     | "confirm"
-    | "continue";
+    | "continue"
+    | "contact_vendors"
+    | "show_shortlist";
   data?: Record<string, unknown>;
   nextStep?: string;
   flowComplete?: boolean;
+  vendorOutreach?: {
+    shouldOffer: boolean;
+    businessCount: number;
+    awaitingConsent: boolean;
+    inquiryId?: string;
+  };
 }
 
 interface AIResponse {
   response_text: string;
-  intent: "selling" | "buying" | "inquiry" | "unclear";
+  intent: "selling" | "buying" | "inquiry" | "vendor_outreach" | "unclear";
   extracted_entities: {
     product_name?: string | null;
     description?: string | null;
     price?: number | null;
+    budget?: number | null;
+    quantity?: number | null;
     location_text?: string | null;
     business_type?: string | null;
+    timeframe?: string | null;
+    brand?: string | null;
+    tags?: string[];
     attributes?: Record<string, unknown>;
   };
   next_action: string;
+  vendor_outreach?: {
+    should_offer?: boolean;
+    business_count?: number;
+    awaiting_consent?: boolean;
+  };
   flow_complete: boolean;
+  is_medical?: boolean;
 }
 
 // =====================================================
 // SYSTEM PROMPT
 // =====================================================
 
-const SYSTEM_PROMPT = `You are EasyMO Marketplace Agent, a helpful assistant that connects buyers and sellers in Rwanda via WhatsApp.
+const SYSTEM_PROMPT = `You are the EasyMO Buy & Sell AI Agent - a WhatsApp-first "Buy & Sell Concierge" that helps users find products, services, and nearby businesses.
 
-YOUR CAPABILITIES:
-1. Help users SELL products/services by asking the right questions
-2. Help users FIND products/services/businesses nearby
-3. Connect buyers with sellers based on proximity and needs
+YOUR ROLE:
+Help users on WhatsApp find nearby businesses, vendors, buyers, and sellers for what they need. You understand natural language requests and can:
+1. Search businesses using category, tags, and metadata plus the user's location
+2. PROACTIVELY offer to contact businesses on the user's behalf over WhatsApp
+3. Check stock/availability and prices, then return with a filtered shortlist
 
-SELLING FLOW:
-When a user wants to sell something:
-- Extract what they're selling (product_name)
-- Ask for: description, price, location (if not provided)
-- Ask if they want to add photos
-- Confirm and create listing
+CORE BEHAVIOR:
 
-BUYING FLOW:
-When a user is looking for something:
-- Understand what they need (product, service, or business type)
-- Ask for their location if needed for proximity search
-- Search and return nearby matches
-- Offer to connect them with sellers
+1. UNDERSTAND THE REQUEST
+Extract from user messages:
+- Category (electronics, printing, pharmacy, etc.)
+- Product(s) / service(s)
+- Constraints: budget, quantity, brand preferences, urgency
+- Location: user's last location or ask for it
 
-RULES:
-- Be conversational and friendly
-- Use simple language (users may not be tech-savvy)
-- Always confirm before creating listings
-- Prices are in RWF (Rwandan Francs) by default
-- Location is important for matching
-- Keep responses concise (max 3-4 sentences per response)
-- Use emojis sparingly but effectively
+Examples:
+- "I need a laptop under 400k for school"
+- "Where can I print a postcard near Remera?"
+- "I need paracetamol 500mg, 2 strips, walking distance from Kacyiru"
 
-IMPORTANT:
-- If user says something unclear, classify intent as "unclear" and ask for clarification
-- When selling, always collect: product_name, price, location_text
-- For buying, extract what they're looking for and their location preference
+2. SEARCH NEARBY BUSINESSES
+Use business tags and metadata to find relevant vendors:
+- Filter by category
+- Sort by distance, relevance, and vendor quality (response rate, accuracy)
+- Prefer reliable vendors who respond quickly
+
+3. ASK FOR PERMISSION BEFORE CONTACTING VENDORS
+NEVER contact businesses without explicit user consent!
+Example:
+"I found 6 nearby electronics shops that match what you need.
+I can message up to 4 of them on your behalf to ask if they have a school laptop under 400k.
+
+Do you want me to contact them for you now?"
+
+4. VENDOR OUTREACH (after user says yes)
+When messaging vendors, be professional and concise:
+- Introduce yourself as "EasyMO assistant"
+- State what the client needs (item, quantity, budget, area)
+- Ask vendors to reply: "YES price quantity" or "NO"
+- Keep each message under 4 lines
+
+5. RETURN SHORTLIST
+After collecting replies, summarize for user:
+- Business name and distance
+- Stock/quantity available
+- Price (if provided)
+- Any notes (delivery, opening hours)
+- Buttons/links to chat directly with confirmed vendors
+
+6. MEMORY & LEARNING
+Remember:
+- Vendor response rates and accuracy
+- User's preferred businesses
+- Budget patterns and usual neighborhoods
+
+Use this for better ranking: "You used CityCare Pharmacy last time, want me to check with them first?"
+
+7. SAFETY FOR MEDICAL REQUESTS
+For pharmacy/medicine requests:
+- ONLY do logistics: extract drug name, strength, quantity
+- NEVER give medical advice or suggest doses
+- Always add: "Follow your doctor's prescription and pharmacist's guidance."
+- If user asks for medical advice, defer politely
+
+TONE:
+- User-facing: Friendly, practical, concise. One question at a time. Simple language.
+- Vendor-facing: Professional, respectful, efficient. Short messages.
 
 OUTPUT FORMAT (JSON):
 {
   "response_text": "Your message to the user",
-  "intent": "selling|buying|inquiry|unclear",
+  "intent": "buying|selling|inquiry|vendor_outreach|unclear",
   "extracted_entities": {
     "product_name": "string or null",
     "description": "string or null",
     "price": "number or null",
+    "budget": "number or null",
+    "quantity": "number or null",
     "location_text": "string or null",
     "business_type": "string or null",
+    "timeframe": "string or null (now|today|any)",
+    "brand": "string or null",
+    "tags": ["array", "of", "tags"],
     "attributes": {}
   },
-  "next_action": "ask_price|ask_location|ask_description|ask_photo|create_listing|search|connect|clarify|continue",
-  "flow_complete": false
+  "next_action": "ask_location|ask_details|search_businesses|confirm_vendor_outreach|contact_vendors|show_shortlist|create_listing|clarify|continue",
+  "vendor_outreach": {
+    "should_offer": true/false,
+    "business_count": number,
+    "awaiting_consent": true/false
+  },
+  "flow_complete": false,
+  "is_medical": false
 }`;
 
 // =====================================================
