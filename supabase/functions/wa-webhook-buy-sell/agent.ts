@@ -1,24 +1,24 @@
 /**
- * Marketplace AI Agent
- *
- * ⚠️ DEPRECATION NOTICE:
- * This file is being phased out as part of Buy & Sell agent consolidation.
- * New code should import from: supabase/functions/_shared/agents/buy-and-sell.ts
+ * Buy & Sell Agent - Deno Implementation
  * 
- * @see docs/features/BUY_SELL_CONSOLIDATION_ANALYSIS.md
- * @deprecated Use BuyAndSellAgent from _shared/agents/buy-and-sell.ts instead
- *
- * Natural language AI agent for connecting buyers and sellers in Rwanda.
- * Uses OpenAI Responses API (Agents SDK) with Gemini fallback for intent recognition,
- * entity extraction, and conversational flow.
- *
- * Features:
+ * This is the Deno-specific implementation optimized for Supabase Edge Functions.
+ * It provides enhanced features for WhatsApp webhook handling including:
+ * - Category selection workflows
+ * - Vendor outreach system
+ * - Pagination support
+ * - Proactive business matching
  * - Intent classification (selling, buying, inquiry)
  * - Entity extraction (product, price, location, attributes)
  * - Conversation state management
  * - Proximity-based matching
- * - Interactive category-based workflow with 9 business types
- *
+ * 
+ * For Node.js environments, use: packages/agents/src/agents/commerce/buy-and-sell.agent.ts
+ * For API endpoints, use: supabase/functions/_shared/agents/buy-and-sell.ts (delegates here)
+ * 
+ * Natural language AI agent for connecting buyers and sellers in Rwanda.
+ * Uses Gemini (via DualAIProvider) for intent recognition, entity extraction, and conversational flow.
+ * 
+ * @see docs/features/BUY_SELL_CONSOLIDATION_ANALYSIS.md
  * @see docs/GROUND_RULES.md for observability requirements
  */
 
