@@ -1,0 +1,43 @@
+-- Schema Standardization Migration
+--
+-- ⚠️ WARNING: This is a BREAKING CHANGE migration
+-- DO NOT apply this migration without careful planning and coordination
+--
+-- This migration moves application tables from the 'public' schema to the 'app' schema
+-- for consistency with the existing architecture.
+--
+-- BEFORE APPLYING:
+-- 1. Review all code that references these tables
+-- 2. Update all queries to use the 'app' schema prefix
+-- 3. Test thoroughly in a staging environment
+-- 4. Plan for downtime or use a blue-green deployment strategy
+-- 5. Have a rollback plan ready
+--
+-- TABLES TO MIGRATE (if they exist in public schema):
+-- - notifications (if not already in app schema)
+-- - Any other application-specific tables currently in public
+--
+-- RECOMMENDED APPROACH:
+-- Instead of moving tables, consider:
+-- 1. Creating views in the app schema that point to public tables
+-- 2. Gradually migrating code to use app schema
+-- 3. Eventually moving tables when all code is updated
+--
+-- Example view-based approach:
+-- CREATE OR REPLACE VIEW app.notifications AS SELECT * FROM public.notifications;
+--
+-- This allows gradual migration without breaking changes.
+
+-- Uncomment and modify as needed:
+-- BEGIN;
+--
+-- -- Move notifications table (example)
+-- -- ALTER TABLE public.notifications SET SCHEMA app;
+--
+-- -- Update RLS policies
+-- -- ALTER POLICY "policy_name" ON app.notifications RENAME TO "policy_name";
+--
+-- COMMIT;
+
+-- For now, this migration file serves as documentation only.
+-- Actual schema changes should be planned and executed carefully.

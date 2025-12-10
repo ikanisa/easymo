@@ -1,11 +1,11 @@
 version: '3.8'
 
 services:
-  whatsapp-media-server:
+  voice-media-bridge:
     build:
-      context: ./services/whatsapp-media-server
+      context: ./services/voice-media-bridge
       dockerfile: Dockerfile
-    container_name: easymo-whatsapp-media-server
+    container_name: easymo-voice-media-bridge
     ports:
       - "8080:8080"
       - "10000-10100:10000-10100/udp"  # RTP ports for WebRTC

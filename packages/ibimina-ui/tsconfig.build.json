@@ -1,0 +1,38 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "rootDir": "src",
+    "moduleResolution": "node",
+    "incremental": false,
+    "paths": {
+      "@ibimina/ai-agent": ["packages/ai-agent/dist/esm/index.d.ts"],
+      "@ibimina/api": ["packages/api/dist/esm/index.d.ts"],
+      "@ibimina/config": ["packages/config/dist/esm/index.d.ts"],
+      "@ibimina/core": ["packages/core/dist/esm/index.d.ts"],
+      "@ibimina/data-access": ["packages/data-access/dist/esm/index.d.ts"],
+      "@ibimina/lib": ["packages/lib/dist/esm/index.d.ts"],
+      "@ibimina/locales": ["packages/locales/dist/esm/index.d.ts"],
+      "@ibimina/providers": ["packages/providers/dist/esm/index.d.ts"],
+      "@ibimina/tapmomo-proto": ["packages/tapmomo-proto/dist/esm/index.d.ts"],
+      "@ibimina/testing": ["packages/testing/dist/esm/index.d.ts"],
+      "@ibimina/ui": ["packages/ui/dist/esm/index.d.ts"],
+      "@ibimina/ai-agent/*": ["packages/ai-agent/dist/esm/*.d.ts"],
+      "@ibimina/api/*": ["packages/api/dist/esm/*.d.ts"],
+      "@ibimina/config/*": ["packages/config/dist/esm/*.d.ts"],
+      "@ibimina/core/*": ["packages/core/dist/esm/*.d.ts"],
+      "@ibimina/data-access/*": ["packages/data-access/dist/esm/*.d.ts"],
+      "@ibimina/lib/*": ["packages/lib/dist/esm/*.d.ts"],
+      "@ibimina/locales/*": ["packages/locales/dist/esm/*.d.ts"],
+      "@ibimina/providers/*": ["packages/providers/dist/esm/*.d.ts"],
+      "@ibimina/tapmomo-proto/*": ["packages/tapmomo-proto/dist/esm/*.d.ts"],
+      "@ibimina/testing/*": ["packages/testing/dist/esm/*.d.ts"],
+      "@ibimina/ui/*": ["packages/ui/dist/esm/*.d.ts"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["dist", "node_modules", "tests"]
+}

@@ -19,6 +19,3 @@ export * from "./service-auth";
 export * from "./service-discovery";
 export * from "./types";
 export * from "./webhook-verification";
-
-// Type definitions (from @easymo/types)
-export * from './types';

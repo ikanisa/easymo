@@ -8,7 +8,7 @@
     "dev": "pnpm run build:deps && pnpm --filter @easymo/admin-app run dev",
     "dev:full": "pnpm run build:deps && pnpm --parallel --filter './admin-app' --filter './services/*' run dev",
     "prebuild": "node ./scripts/assert-no-service-role-in-client.mjs && node ./scripts/assert-inventory-app-deferred.mjs && node ./scripts/assert-no-mocks-in-admin.mjs && pnpm run build:deps",
-    "build:deps": "pnpm --filter @easymo/commons build && pnpm --filter @easymo/ui build && pnpm --filter @easymo/video-agent-schema build && pnpm --filter @easymo/sacco-core build && pnpm --filter @easymo/sms-parser build && pnpm --filter @easymo/i18n build && pnpm --filter @easymo/flags build && pnpm --filter @easymo/supabase-schemas build && pnpm --filter @easymo/vendor-admin-core build",
+    "build:deps": "pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && pnpm --filter @easymo/ui build && pnpm --filter @easymo/video-agent-schema build && pnpm --filter @easymo/sacco-core build && pnpm --filter @easymo/sms-parser build && pnpm --filter @easymo/locales build && pnpm --filter @easymo/flags build && pnpm --filter @easymo/supabase-schemas build && pnpm --filter @easymo/vendor-admin-core build",
     "build": "pnpm --filter @easymo/admin-app run build",
     "build:all": "pnpm run build:deps && pnpm run build",
     "dev:vendor-portal": "pnpm --filter @easymo/vendor-portal dev",
@@ -59,6 +59,7 @@
     "@tauri-apps/plugin-shell": "^2.0.0",
     "@tauri-apps/plugin-store": "^2.0.0",
     "@tauri-apps/plugin-updater": "^2.0.0",
+    "@va/shared": "workspace:*",
     "axios": "^1.13.2",
     "dotenv": "^17.2.3"
   },

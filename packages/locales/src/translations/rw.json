@@ -1,0 +1,31 @@
+{
+  "common": {
+    "save": "Bika",
+    "cancel": "Hagarika",
+    "delete": "Siba",
+    "edit": "Hindura",
+    "add": "Ongeraho",
+    "search": "Shakisha",
+    "loading": "Birimo gupakira...",
+    "error": "Ikosa",
+    "success": "Byagenze neza"
+  },
+  "vendor": {
+    "title": "Ikibuga cy'umucuruzi",
+    "members": "Abanyamuryango",
+    "groups": "Amatsinda",
+    "payments": "Kwishyura",
+    "settings": "Igenamiterere"
+  },
+  "admin": {
+    "title": "Icyicaro cy'ubutegetsi",
+    "dashboard": "Imbonerahamwe",
+    "users": "Abakoresha",
+    "reports": "Raporo"
+  },
+  "errors": {
+    "required": "Iki cyambuye ni ngombwa",
+    "invalid_email": "Imeli itemewe",
+    "server_error": "Ikosa rya seriveri. Ongera ugerageze."
+  }
+}
