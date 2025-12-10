@@ -13,6 +13,7 @@ import { logStructuredEvent, recordMetric } from "../_shared/observability.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
+import { claimEvent } from "../_shared/wa-webhook-shared/state/idempotency.ts";
 import { extractWhatsAppMessage } from "./utils/index.ts";
 import {
   handleCategorySelection,
@@ -185,6 +186,20 @@ serve(async (req: Request): Promise<Response> => {
 
       const text = message.body?.trim() ?? "";
       const userPhone = message.from;
+
+      // CRITICAL: Deduplicate messages using message_id to prevent spam
+      const messageId = payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.id;
+      if (messageId) {
+        const claimed = await claimEvent(messageId);
+        if (!claimed) {
+          await logStructuredEvent("BUY_SELL_DUPLICATE_BLOCKED", {
+            message_id: messageId,
+            from: `***${userPhone.slice(-4)}`,
+            correlationId,
+          });
+          return respond({ success: true, message: "duplicate_blocked" });
+        }
+      }
 
       logStructuredEvent("BUY_SELL_MESSAGE_RECEIVED", {
         from: userPhone,
