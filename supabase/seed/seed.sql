@@ -139,7 +139,7 @@ SET
   metadata = public.produce_catalog.metadata || EXCLUDED.metadata,
   updated_at = now();
 
--- WhatsApp Home Menu: Business Broker Agent (Buy & Sell)
+-- WhatsApp Home Menu: Buy and Sell (Category Selection Workflow)
 -- NOTE: NO Kinyarwanda translations per README.md - English/French/Swahili only
 INSERT INTO public.whatsapp_home_menu_items (
   key,
@@ -150,19 +150,50 @@ INSERT INTO public.whatsapp_home_menu_items (
   icon,
   country_specific_names
 ) VALUES (
-  'business_broker_agent',
+  'buy_sell_categories',
   '🛒 Buy and Sell',
   true,
   ARRAY['RW', 'BI', 'TZ', 'CD', 'ZM', 'TG', 'MT'],
   4,
   '🛒',
   jsonb_build_object(
-    'MT', jsonb_build_object('name', '🛒 Buy & Sell', 'description', 'Find businesses & services near you'),
-    'BI', jsonb_build_object('name', '🛒 Acheter & Vendre', 'description', 'Trouvez entreprises et services'),
-    'TZ', jsonb_build_object('name', '🛒 Nunua & Uza', 'description', 'Pata biashara karibu nawe'),
-    'CD', jsonb_build_object('name', '🛒 Acheter & Vendre', 'description', 'Trouvez entreprises près de vous'),
-    'ZM', jsonb_build_object('name', '🛒 Buy & Sell', 'description', 'Find businesses near you'),
-    'TG', jsonb_build_object('name', '🛒 Acheter & Vendre', 'description', 'Trouvez entreprises')
+    'MT', jsonb_build_object('name', '🛒 Buy & Sell', 'description', 'Browse categories'),
+    'BI', jsonb_build_object('name', '🛒 Acheter & Vendre', 'description', 'Parcourir les catégories'),
+    'TZ', jsonb_build_object('name', '🛒 Nunua & Uza', 'description', 'Tazama makundi'),
+    'CD', jsonb_build_object('name', '🛒 Acheter & Vendre', 'description', 'Parcourir les catégories'),
+    'ZM', jsonb_build_object('name', '🛒 Buy & Sell', 'description', 'Browse categories'),
+    'TG', jsonb_build_object('name', '🛒 Acheter & Vendre', 'description', 'Parcourir les catégories')
+  )
+) ON CONFLICT (key) DO UPDATE SET
+  name = EXCLUDED.name,
+  is_active = EXCLUDED.is_active,
+  active_countries = EXCLUDED.active_countries,
+  display_order = EXCLUDED.display_order,
+  country_specific_names = EXCLUDED.country_specific_names;
+
+-- WhatsApp Home Menu: Chat with Agent (AI Natural Language)
+INSERT INTO public.whatsapp_home_menu_items (
+  key,
+  name,
+  is_active,
+  active_countries,
+  display_order,
+  icon,
+  country_specific_names
+) VALUES (
+  'business_broker_agent',
+  '🤖 Chat with Agent',
+  true,
+  ARRAY['RW', 'BI', 'TZ', 'CD', 'ZM', 'TG', 'MT'],
+  5,
+  '🤖',
+  jsonb_build_object(
+    'MT', jsonb_build_object('name', '🤖 Chat with Agent', 'description', 'AI-powered search'),
+    'BI', jsonb_build_object('name', '🤖 Discuter avec Agent', 'description', 'Recherche IA'),
+    'TZ', jsonb_build_object('name', '🤖 Ongea na Agent', 'description', 'Tafuta kwa AI'),
+    'CD', jsonb_build_object('name', '🤖 Discuter avec Agent', 'description', 'Recherche IA'),
+    'ZM', jsonb_build_object('name', '🤖 Chat with Agent', 'description', 'AI search'),
+    'TG', jsonb_build_object('name', '🤖 Discuter avec Agent', 'description', 'Recherche IA')
   )
 ) ON CONFLICT (key) DO UPDATE SET
   name = EXCLUDED.name,
