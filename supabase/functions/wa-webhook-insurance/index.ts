@@ -16,7 +16,7 @@ import type { SupportedLanguage } from "../_shared/wa-webhook-shared/i18n/langua
 import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
-
+import { WEBHOOK_CONFIG } from "../_shared/config/webhooks.ts";
 
 // Insurance domain imports
 import { startInsurance, handleInsuranceMedia, handleInsuranceListSelection } from "./insurance/index.ts";
@@ -40,16 +40,18 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
 );
 
+const insuranceConfig = WEBHOOK_CONFIG.insurance;
+
 const security = createSecurityMiddleware("wa-webhook-insurance", {
-  maxBodySize: 2 * 1024 * 1024, // 2MB limit for insurance uploads
-  rateLimit: { enabled: false, limit: 100, windowSeconds: 60 }, // handled earlier in the handler
+  maxBodySize: insuranceConfig.maxBodySize,
+  rateLimit: { enabled: false, limit: insuranceConfig.rateLimit, windowSeconds: insuranceConfig.rateWindow },
 });
 
 serve(async (req: Request): Promise<Response> => {
-  // Rate limiting (100 req/min for high-volume WhatsApp)
+  // Rate limiting - configured via WEBHOOK_CONFIG
   const rateLimitCheck = await rateLimitMiddleware(req, {
-    limit: 100,
-    windowSeconds: 60,
+    limit: insuranceConfig.rateLimit,
+    windowSeconds: insuranceConfig.rateWindow,
   });
 
   if (!rateLimitCheck.allowed) {

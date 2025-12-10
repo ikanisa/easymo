@@ -7,14 +7,17 @@ import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
 import type { RouterContext, WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.ts";
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
+import { WEBHOOK_CONFIG } from "../_shared/config/webhooks.ts";
 // Note: Rate limiting removed - handled by wa-webhook-core (100 req/min per phone number)
 // Static imports for frequently used handlers to reduce dynamic import overhead
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { ensureProfile } from "../_shared/wa-webhook-shared/utils/profile.ts";
 
+const profileConfig = WEBHOOK_CONFIG.profile;
+
 const SERVICE_NAME = "wa-webhook-profile";
 const SERVICE_VERSION = "2.2.1";
-const MAX_BODY_SIZE = 2 * 1024 * 1024; // 2MB limit for profile photos
+const MAX_BODY_SIZE = profileConfig.maxBodySize;
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",

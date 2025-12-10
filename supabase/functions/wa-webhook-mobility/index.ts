@@ -306,15 +306,15 @@ serve(async (req: Request): Promise<Response> => {
           await logStructuredEvent("LOG", { data: JSON.stringify({ event: "MOBILITY_WORKFLOW_RESULT", workflow: "handleSeeDrivers", handled }) });
         } else if (id === IDS.SEE_PASSENGERS) {
           handled = await handleSeePassengers(ctx);
-        } else if (isVehicleOption(id) && state?.key === "mobility_nearby_select") {
+        } else if (isVehicleOption(id) && state?.key === STATE_KEYS.MOBILITY.NEARBY_SELECT) {
           handled = await handleVehicleSelection(ctx, state.data as any, id);
-        } else if (id.startsWith("MTCH::") && state?.key === "mobility_nearby_results") {
+        } else if (id.startsWith("MTCH::") && state?.key === STATE_KEYS.MOBILITY.NEARBY_RESULTS) {
           handled = await handleNearbyResultSelection(ctx, state.data as any, id);
         } else if (id === IDS.MOBILITY_CHANGE_VEHICLE) {
           handled = await handleChangeVehicleRequest(ctx, state?.data as any);
-        } else if (id === IDS.USE_CACHED_LOCATION && state?.key === "mobility_nearby_location") {
+        } else if (id === IDS.USE_CACHED_LOCATION && state?.key === STATE_KEYS.MOBILITY.NEARBY_LOCATION) {
           handled = await handleUseCachedLocation(ctx, state.data as any);
-        } else if (id === IDS.USE_LAST_LOCATION && state?.key === "mobility_nearby_location") {
+        } else if (id === IDS.USE_LAST_LOCATION && state?.key === STATE_KEYS.MOBILITY.NEARBY_LOCATION) {
           // Handle "Use Last Location" - reuse recent location
           if (!ctx.profileId) {
             handled = false;
@@ -341,15 +341,15 @@ serve(async (req: Request): Promise<Response> => {
               handled = true;
             }
           }
-        } else if (id === IDS.USE_CACHED_LOCATION && state?.key === "go_online_prompt") {
+        } else if (id === IDS.USE_CACHED_LOCATION && state?.key === STATE_KEYS.MOBILITY.GO_ONLINE) {
           handled = await handleGoOnlineUseCached(ctx);
-        } else if (id === IDS.LOCATION_SAVED_LIST && state?.key === "mobility_nearby_location") {
+        } else if (id === IDS.LOCATION_SAVED_LIST && state?.key === STATE_KEYS.MOBILITY.NEARBY_LOCATION) {
           handled = await startNearbySavedLocationPicker(ctx, state.data as any);
-        } else if (id.startsWith("FAV::") && state?.key === "location_saved_picker" && state.data?.source === "nearby") {
+        } else if (id.startsWith("FAV::") && state?.key === STATE_KEYS.MOBILITY.LOCATION_SAVED_PICKER && state.data?.source === "nearby") {
           handled = await handleNearbySavedLocationSelection(ctx, state.data as any, id);
-        } else if ((id.startsWith("RECENT_SEARCH::") || id === "SHARE_NEW_LOCATION") && state?.key === "mobility_nearby_select") {
+        } else if ((id.startsWith("RECENT_SEARCH::") || id === "SHARE_NEW_LOCATION") && state?.key === STATE_KEYS.MOBILITY.NEARBY_SELECT) {
           handled = await handleRecentSearchSelection(ctx, id);
-        } else if (id === "USE_CURRENT_LOCATION" && state?.key === "location_saved_picker") {
+        } else if (id === "USE_CURRENT_LOCATION" && state?.key === STATE_KEYS.MOBILITY.LOCATION_SAVED_PICKER) {
           handled = await handleNearbySavedLocationSelection(ctx, state.data as any, id);
         }
         
@@ -368,23 +368,23 @@ serve(async (req: Request): Promise<Response> => {
         // Schedule Flows
         else if (id === IDS.SCHEDULE_TRIP) {
           handled = await startScheduleTrip(ctx, state as any);
-        } else if ((id === IDS.ROLE_DRIVER || id === IDS.ROLE_PASSENGER) && state?.key === "schedule_role") {
+        } else if ((id === IDS.ROLE_DRIVER || id === IDS.ROLE_PASSENGER) && state?.key === STATE_KEYS.MOBILITY.SCHEDULE_ROLE) {
           handled = await handleScheduleRole(ctx, id);
-        } else if (isVehicleOption(id) && (state?.key === "schedule_location" || state?.key === "schedule_vehicle")) {
+        } else if (isVehicleOption(id) && (state?.key === STATE_KEYS.MOBILITY.SCHEDULE_LOCATION || state?.key === STATE_KEYS.MOBILITY.SCHEDULE_VEHICLE)) {
           handled = await handleScheduleVehicle(ctx, state.data as any, id);
         } else if (id === IDS.MOBILITY_CHANGE_VEHICLE && state?.key?.startsWith("schedule_")) {
           handled = await handleScheduleChangeVehicle(ctx, state.data as any);
-        } else if (id === IDS.SCHEDULE_SKIP_DROPOFF && state?.key === "schedule_dropoff") {
+        } else if (id === IDS.SCHEDULE_SKIP_DROPOFF && state?.key === STATE_KEYS.MOBILITY.SCHEDULE_DROPOFF) {
           handled = await handleScheduleSkipDropoff(ctx, state.data as any);
-        } else if (id.startsWith("time::") && state?.key === "schedule_time_select") {
+        } else if (id.startsWith("time::") && state?.key === STATE_KEYS.MOBILITY.SCHEDULE_TIME) {
           handled = await handleScheduleTimeSelection(ctx, state.data as any, id);
-        } else if (id.startsWith("recur::") && state?.key === "schedule_recur") {
+        } else if (id.startsWith("recur::") && state?.key === STATE_KEYS.MOBILITY.SCHEDULE_RECURRENCE) {
           handled = await handleScheduleRecurrenceSelection(ctx, state.data as any, id);
-        } else if (id === IDS.SCHEDULE_REFRESH_RESULTS && state?.key === "mobility_nearby_results") { // Reusing results key? Check schedule.ts
+        } else if (id === IDS.SCHEDULE_REFRESH_RESULTS && state?.key === STATE_KEYS.MOBILITY.NEARBY_RESULTS) { // Reusing results key? Check schedule.ts
            // Schedule refresh might need its own key or reuse nearby results structure
            // Checking schedule.ts: handleScheduleRefresh uses state.tripId
            handled = await handleScheduleRefresh(ctx, state?.data as any);
-        } else if (id === IDS.USE_LAST_LOCATION && state?.key === "schedule_location") {
+        } else if (id === IDS.USE_LAST_LOCATION && state?.key === STATE_KEYS.MOBILITY.SCHEDULE_LOCATION) {
           // Handle "Use Last Location" for schedule pickup
           if (!ctx.profileId) {
             handled = false;
@@ -410,11 +410,11 @@ serve(async (req: Request): Promise<Response> => {
               handled = true;
             }
           }
-        } else if (id === IDS.LOCATION_SAVED_LIST && state?.key === "schedule_location") {
+        } else if (id === IDS.LOCATION_SAVED_LIST && state?.key === STATE_KEYS.MOBILITY.SCHEDULE_LOCATION) {
            handled = await startScheduleSavedLocationPicker(ctx, state.data as any, "pickup");
-        } else if (id === IDS.LOCATION_SAVED_LIST && state?.key === "schedule_dropoff") {
+        } else if (id === IDS.LOCATION_SAVED_LIST && state?.key === STATE_KEYS.MOBILITY.SCHEDULE_DROPOFF) {
            handled = await startScheduleSavedLocationPicker(ctx, state.data as any, "dropoff");
-        } else if (id.startsWith("FAV::") && state?.key === "location_saved_picker" && state.data?.source === "schedule") {
+        } else if (id.startsWith("FAV::") && state?.key === STATE_KEYS.MOBILITY.LOCATION_SAVED_PICKER && state.data?.source === "schedule") {
            handled = await handleScheduleSavedLocationSelection(ctx, state.data as any, id);
          }        else if (id === IDS.TRIP_START || id === IDS.TRIP_ARRIVED || id === IDS.TRIP_PICKED_UP || 
                  id === IDS.TRIP_COMPLETE || id.startsWith(IDS.TRIP_CANCEL_PREFIX) || id.startsWith(IDS.RATE_PREFIX)) {
@@ -519,19 +519,19 @@ serve(async (req: Request): Promise<Response> => {
         });
 
         // Real-time tracking location updates
-        if (state?.key === "trip_in_progress" && state?.data?.tripId && state?.data?.role === "driver") {
+        if (state?.key === STATE_KEYS.MOBILITY.TRIP_IN_PROGRESS && state?.data?.tripId && state?.data?.role === "driver") {
           const tripId = String(state.data.tripId);
           const coordinates = { latitude: coords.lat, longitude: coords.lng };
           handled = await updateDriverLocation(ctx, tripId, coordinates);
         }
         // Existing location handlers
-        else if (state?.key === "mobility_nearby_location") {
+        else if (state?.key === STATE_KEYS.MOBILITY.NEARBY_LOCATION) {
           handled = await handleNearbyLocation(ctx, state.data as any, coords);
-        } else if (state?.key === "go_online_prompt") {
+        } else if (state?.key === STATE_KEYS.MOBILITY.GO_ONLINE) {
           handled = await handleGoOnlineLocation(ctx, coords);
-        } else if (state?.key === "schedule_location") {
+        } else if (state?.key === STATE_KEYS.MOBILITY.SCHEDULE_LOCATION) {
           handled = await handleScheduleLocation(ctx, state.data as any, coords);
-        } else if (state?.key === "schedule_dropoff") {
+        } else if (state?.key === STATE_KEYS.MOBILITY.SCHEDULE_DROPOFF) {
           handled = await handleScheduleDropoff(ctx, state.data as any, coords);
         }
       }
