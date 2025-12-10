@@ -576,7 +576,7 @@ export class MarketplaceAgent {
       const responseText = await this.aiProvider.chat(messages, {
         temperature: AI_TEMPERATURE,
         maxTokens: AI_MAX_TOKENS,
-        metadata: { agent: "buy_and_sell" },
+        metadata: { agent: "buy_sell" },
       });
 
       // Parse AI response
@@ -680,7 +680,7 @@ export class MarketplaceAgent {
    */
   private async getSystemPrompt(): Promise<string> {
     try {
-      const config = await this.configLoader.loadAgentConfig("buy_and_sell");
+      const config = await this.configLoader.loadAgentConfig("buy_sell");
       return buildPromptFromConfig(config);
     } catch (error) {
       await logStructuredEvent(

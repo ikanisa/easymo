@@ -6,6 +6,14 @@
  * 
  * OFFICIAL AGENTS (7 production agents matching agent_registry database):
  * 1. farmer - Farmer AI Agent
+ * 2. insurance - Insurance AI Agent
+ * 3. sales_cold_caller - Sales/Marketing Cold Caller AI Agent
+ * 4. rides - Rides AI Agent
+ * 5. jobs - Jobs AI Agent
+ * 6. waiter - Waiter AI Agent
+ * 7. real_estate - Real Estate AI Agent
+ * 8. buy_sell - Buy & Sell AI Agent (unified: marketplace + business broker + legal intake)
+ * 9. support - Support AI Agent (includes concierge routing)
  * 2. sales_cold_caller - Sales/Marketing Cold Caller AI Agent
  * 3. jobs - Jobs AI Agent
  * 4. waiter - Waiter AI Agent
@@ -14,8 +22,9 @@
  * 7. support - Support AI Agent (includes concierge routing)
  * 
  * DEPRECATED:
- * - marketplace - Merged into buy_and_sell
- * - business_broker - Merged into buy_and_sell
+ * - buy_and_sell - Standardized to buy_sell
+ * - marketplace - Merged into buy_sell
+ * - business_broker - Merged into buy_sell
  */
 
 import type { AgentConfig } from "./agent_orchestrator.ts";
@@ -353,6 +362,7 @@ Available tools:
 
   // 6. Buy & Sell Agent - Unified Commerce & Business (replaces marketplace + business_broker)
   {
+    id: "buy-sell-agent-01",
     id: "buy-and-sell-agent-01",
     type: "buy_sell",
     name: "Buy & Sell AI Agent",

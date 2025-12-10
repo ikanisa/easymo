@@ -34,6 +34,16 @@ const log = childLogger({ service: 'agents', agent: 'buy-and-sell' });
  * @see docs/features/BUY_SELL_CONSOLIDATION_ANALYSIS.md
  */
 export class BuyAndSellAgent extends BaseAgent {
+  name = 'buy_sell_agent';
+  instructions = `You are EasyMO's unified Buy & Sell assistant, helping users with marketplace transactions and business opportunities.
+
+MARKETPLACE CAPABILITIES:
+- Help users buy and sell products across all retail categories (pharmacy, hardware, grocery)
+- Find shops and stores nearby
+- Create and manage product listings
+- Search for specific items
+- Handle OTC pharmacy products; for RX items, request photo and escalate to pharmacist
+- No medical advice, dosing, or contraindication information
   static readonly SLUG = BUY_SELL_AGENT_SLUG;
   
   name = 'buy_and_sell_agent';
@@ -405,7 +415,7 @@ class BuyAndSellAgentLegacy extends BaseAgent {
               owner_user_id: context?.userId,
               domain: listing_type === 'business' ? 'business' : 'marketplace',
               status: 'active',
-              source_agent: 'buy_and_sell',
+              source_agent: 'buy_sell',
               created_at: new Date().toISOString()
             })
             .select()
@@ -447,7 +457,7 @@ class BuyAndSellAgentLegacy extends BaseAgent {
               delivery_address,
               user_id: context?.userId,
               status: 'pending',
-              source_agent: 'buy_and_sell',
+              source_agent: 'buy_sell',
               created_at: new Date().toISOString()
             })
             .select()

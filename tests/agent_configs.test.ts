@@ -14,8 +14,10 @@ import path from 'path';
  * 5. jobs - Jobs AI Agent
  * 6. waiter - Waiter AI Agent
  * 7. real_estate - Real Estate AI Agent
- * 8. buy_and_sell - Buy & Sell AI Agent (unified commerce + business brokerage)
+ * 8. buy_sell - Buy & Sell AI Agent (unified commerce + business brokerage)
  * 9. support - Support AI Agent (includes concierge routing)
+ * 
+ * NOTE: buy_sell is the standardized slug (previously buy_and_sell)
  */
 describe('Agent Configurations', () => {
   const configPath = path.join(process.cwd(), 'config', 'agent_configs.yaml');
@@ -44,7 +46,7 @@ describe('Agent Configurations', () => {
       'jobs',
       'waiter',
       'real_estate',
-      'buy_and_sell',
+      'buy_sell',
       'support'
     ];
     const actualSlugs = configs.map(c => c.slug);
@@ -187,7 +189,7 @@ describe('Agent Configurations', () => {
     });
 
     it('should configure Buy & Sell Agent correctly (merged marketplace + business_broker)', () => {
-      const buyAndSell = configs.find(c => c.slug === 'buy_and_sell');
+      const buyAndSell = configs.find(c => c.slug === 'buy_sell');
       expect(buyAndSell).toBeDefined();
       expect(buyAndSell.name).toBe('Buy & Sell AI Agent');
       expect(buyAndSell.autonomy).toBe('suggest');
@@ -334,7 +336,7 @@ describe('Agent Configurations', () => {
 
     it('should mark high-risk agents as suggest or handoff', () => {
       const insurance = configs.find(c => c.slug === 'insurance');
-      const buyAndSell = configs.find(c => c.slug === 'buy_and_sell');
+      const buyAndSell = configs.find(c => c.slug === 'buy_sell');
       const salesColdCaller = configs.find(c => c.slug === 'sales_cold_caller');
 
       expect(['suggest', 'handoff']).toContain(insurance?.autonomy);
@@ -371,7 +373,7 @@ describe('Agent Configurations', () => {
     });
 
     it('should enforce medical and legal compliance for buy_and_sell agent', () => {
-      const buyAndSell = configs.find(c => c.slug === 'buy_and_sell');
+      const buyAndSell = configs.find(c => c.slug === 'buy_sell');
       // Medical compliance (from marketplace)
       expect(buyAndSell?.guardrails.medical_advice).toBe('forbidden');
       expect(buyAndSell?.guardrails.pharmacist_review_required).toBe(true);
