@@ -79,7 +79,7 @@ import { LocationService } from "../_shared/location/index.ts";
 // Pet adoption service that doesn't exist yet!
 // NO changes to LocationService needed!
 const result = await LocationService.resolve(ctx.supabase, ctx.profileId, {
-  source: 'pet_adoption_service_2025',  // Any string works!
+  source: 'pet_adoption',  // Any string works!
   cacheTTLMinutes: 60,
   searchRadiusMeters: 20000,
   customPrompt: '🐕 Share your location to find pets nearby!',

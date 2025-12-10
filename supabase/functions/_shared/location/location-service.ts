@@ -362,6 +362,13 @@ export class LocationService {
   /**
    * Find nearby items (generic nearby search)
    * 
+   * **NOTE**: This is a basic implementation that doesn't perform geospatial filtering.
+   * For production use with spatial queries, use dedicated RPC functions like:
+   * - `search_nearby_jobs(lat, lng, radius_km)`
+   * - `find_nearby_properties(lat, lng, radius_meters)`
+   * 
+   * This method is primarily for simple table queries with manual filtering.
+   * 
    * @param supabase Supabase client
    * @param coords Search center coordinates
    * @param options Search options
@@ -369,13 +376,21 @@ export class LocationService {
    * 
    * @example
    * ```typescript
+   * // For actual spatial queries, use dedicated RPC:
+   * const { data: jobs } = await supabase.rpc('search_nearby_jobs', {
+   *   _lat: -1.9536,
+   *   _lng: 30.0606,
+   *   _radius_km: 15,
+   * });
+   * 
+   * // This method is for simple queries:
    * const result = await LocationService.findNearby<JobListing>(
    *   supabase,
    *   { lat: -1.9536, lng: 30.0606 },
    *   {
    *     tableName: 'jobs',
-   *     radiusMeters: 15000,
    *     limit: 10,
+   *     filters: { status: 'active' },
    *   }
    * );
    * ```
@@ -398,7 +413,8 @@ export class LocationService {
     } = options;
 
     try {
-      // Build query with distance calculation
+      // Build simple query without spatial filtering
+      // For geospatial queries, use dedicated RPC functions with PostGIS
       let query = supabase
         .from(tableName)
         .select('*')

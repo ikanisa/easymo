@@ -109,7 +109,7 @@ export async function handleLocationMessage(
     } else {
       logStructuredEvent("JOBS_LOCATION_CACHE_FAILED", {
         correlationId,
-        error: "LocationService.save returned null",
+        error: "Failed to save location to cache. LocationService.save returned null. Check database RPC 'save_recent_location' and RLS policies.",
       }, "warn");
     }
   } catch (err) {

@@ -114,7 +114,8 @@ export async function cachePropertyLocation(
     return true;
   } else {
     logStructuredEvent("PROPERTY_CACHE_SAVE_ERROR", {
-      error: "LocationService.save returned null",
+      error: "Failed to save location to cache. LocationService.save returned null. This may indicate a database RPC issue or RLS policy rejection.",
+      user: ctx.profileId,
     }, "warn");
     return false;
   }
