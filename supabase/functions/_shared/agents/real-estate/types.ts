@@ -63,7 +63,13 @@ export const REAL_ESTATE_STATE_KEYS = {
   LOCATION_SAVED_PICKER: "location_saved_picker",
   /** Property inquiry state */
   INQUIRY: "property_inquiry",
-  /** Legacy AI chat state (maps to AI_CHAT) */
+  /**
+   * Legacy AI chat state - kept for backwards compatibility with existing user sessions.
+   * @deprecated Use AI_CHAT for new implementations. This key will be removed when all
+   * active sessions using this key have expired (typically within 24 hours of deployment).
+   * Migration: After deployment, new sessions use AI_CHAT. Existing sessions with
+   * PROPERTY_AI_CHAT continue to work until they expire naturally.
+   */
   PROPERTY_AI_CHAT: "property_ai_chat",
 } as const;
 
@@ -120,6 +126,12 @@ export interface RealEstateState {
 
 /**
  * Allowed state transitions for Real Estate agent
+ * 
+ * Flow decision logic:
+ * - ROLE_SELECTION → FIND_TYPE: When user selects "Looking for Property" (buyer_tenant role)
+ * - ROLE_SELECTION → ADD_TYPE: When user selects "Listing Property" (landlord_owner role)
+ * - ROLE_SELECTION → AI_CHAT: When user selects "Talk to AI Agent"
+ * - ROLE_SELECTION → AGENCY_MANAGEMENT: When user identifies as agency staff
  */
 export const REAL_ESTATE_STATE_TRANSITIONS: Record<RealEstateStateKey, RealEstateStateKey[]> = {
   [REAL_ESTATE_STATE_KEYS.ROLE_SELECTION]: [
@@ -127,8 +139,8 @@ export const REAL_ESTATE_STATE_TRANSITIONS: Record<RealEstateStateKey, RealEstat
     REAL_ESTATE_STATE_KEYS.PROPERTY_LISTING,
     REAL_ESTATE_STATE_KEYS.AGENCY_MANAGEMENT,
     REAL_ESTATE_STATE_KEYS.AI_CHAT,
-    REAL_ESTATE_STATE_KEYS.FIND_TYPE,
-    REAL_ESTATE_STATE_KEYS.ADD_TYPE,
+    REAL_ESTATE_STATE_KEYS.FIND_TYPE,  // User chose buyer_tenant role
+    REAL_ESTATE_STATE_KEYS.ADD_TYPE,   // User chose landlord_owner role
   ],
   [REAL_ESTATE_STATE_KEYS.PROPERTY_SEARCH]: [
     REAL_ESTATE_STATE_KEYS.VIEWING_PROPERTY,
