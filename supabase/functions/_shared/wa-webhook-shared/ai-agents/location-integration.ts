@@ -3,11 +3,25 @@
  * 
  * Standardized location resolution before agent execution
  * All AI agents MUST use this before processing user requests
+ * 
+ * @deprecated This module is being migrated to use the unified LocationService
+ * @see supabase/functions/_shared/location/location-service.ts for new implementation
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { resolveUserLocation, saveLocationToCache, type UserLocation } from "../utils/location-resolver.ts";
+import { LocationService, type LocationResult as UnifiedLocationResult } from "../../location/index.ts";
 import { sendText } from "../wa/client.ts";
+
+// Legacy type for backward compatibility
+export interface UserLocation {
+  lat: number;
+  lng: number;
+  source: 'cache' | 'saved' | 'shared';
+  label?: string;
+  address?: string;
+  cached_at?: string;
+  distance_from_cached?: number;
+}
 
 export interface AgentContext {
   userId: string;
@@ -73,11 +87,12 @@ export async function prepareAgentLocation(
   
   // STEP 1: If user just shared location, save to cache and use it
   if (ctx.sharedLocation) {
-    await saveLocationToCache(
+    await LocationService.save(
       ctx.supabase,
       ctx.userId,
-      ctx.sharedLocation.lat,
-      ctx.sharedLocation.lng,
+      { lat: ctx.sharedLocation.lat, lng: ctx.sharedLocation.lng },
+      config.agentType,
+      { intent: config.intent, source: 'user_shared' },
     );
     
     return {
@@ -93,23 +108,31 @@ export async function prepareAgentLocation(
     };
   }
   
-  // STEP 2: Resolve location (cache → saved → prompt)
-  const resolution = await resolveUserLocation(
+  // STEP 2: Resolve location using unified LocationService (cache → saved → prompt)
+  const resolution = await LocationService.resolve(
     ctx.supabase,
     ctx.userId,
     {
-      agentType: config.agentType,
-      intent: config.intent,
+      source: config.agentType,
+      preferredSavedLabel: determinePreferredLabel(config.agentType, config.intent),
+      cacheTTLMinutes: 30,
+      context: { intent: config.intent },
     },
+    'en', // TODO: Get from ctx if available
   );
   
   // If location found, return it
   if (resolution.location) {
     return {
-      location: resolution.location,
+      location: {
+        lat: resolution.location.lat,
+        lng: resolution.location.lng,
+        source: resolution.source as 'cache' | 'saved' | 'shared',
+        label: resolution.label,
+      },
       metadata: {
-        source: resolution.location.source,
-        label: resolution.location.label,
+        source: resolution.source || 'unknown',
+        label: resolution.label,
         needsSave: false,
       },
     };
@@ -117,22 +140,33 @@ export async function prepareAgentLocation(
   
   // STEP 3: No location available - prompt user
   if (resolution.needsPrompt && config.requireLocation !== false) {
-    await sendText(ctx.userPhone, resolution.promptMessage || "📍 Please share your location to continue.");
-    
-    // Save locations available for reference
-    if (resolution.availableSaved && resolution.availableSaved.length > 0) {
-      const savedList = resolution.availableSaved
-        .map((s, i) => `${i + 1}. ${s.label}: ${s.address || 'No address'}`)
-        .join('\n');
-      
-      await sendText(
-        ctx.userPhone,
-        `You can also save locations for quick access:\n${savedList}\n\nGo to Profile → Saved Locations to manage.`,
-      );
-    }
+    const promptMessage = resolution.prompt?.message || "📍 Please share your location to continue.";
+    await sendText(ctx.userPhone, promptMessage);
   }
   
   return null;
+}
+
+/**
+ * Determine preferred saved location label based on agent type/intent
+ * This replaces the hardcoded LOCATION_PREFERENCES map
+ */
+function determinePreferredLabel(agentType: string, intent?: string): string | undefined {
+  const type = agentType.toLowerCase();
+  const intentLower = intent?.toLowerCase() || '';
+  
+  // Jobs, farmers, real estate prefer home
+  if (type.includes('job') || type.includes('farmer') || type.includes('real_estate')) {
+    return 'home';
+  }
+  
+  // For intents
+  if (intentLower.includes('job') || intentLower.includes('farm') || intentLower.includes('property')) {
+    return 'home';
+  }
+  
+  // Others use cache first (no preferred label)
+  return undefined;
 }
 
 /**

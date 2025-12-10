@@ -6,6 +6,8 @@
  * - Saved locations (home/work)
  * - GPS-based job search
  * 
+ * Now powered by unified LocationService!
+ * 
  * @module location-handler
  */
 
@@ -14,6 +16,7 @@ import { logStructuredEvent } from "../../_shared/observability.ts";
 import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import type { WhatsAppMessage } from "../../_shared/wa-webhook-shared/types.ts";
 import { t } from "../utils/i18n.ts";
+import { LocationService } from "../../_shared/location/index.ts";
 
 export interface LocationData {
   lat: number;
@@ -87,24 +90,27 @@ export async function handleLocationMessage(
     hasAddress: !!location.address,
   });
 
-  // Save to cache (30-minute TTL)
+  // Save to cache (30-minute TTL) using unified LocationService
   try {
-    const { error: cacheError } = await supabase.rpc("update_user_location_cache", {
-      _user_id: userId,
-      _lat: location.lat,
-      _lng: location.lng,
-    });
+    const result = await LocationService.save(
+      supabase,
+      userId,
+      { lat: location.lat, lng: location.lng },
+      'jobs',
+      { action: 'job_search' },
+      30,  // 30-minute TTL
+    );
 
-    if (cacheError) {
-      logStructuredEvent("JOBS_LOCATION_CACHE_FAILED", {
-        correlationId,
-        error: cacheError.message,
-      }, "warn");
-    } else {
+    if (result) {
       logStructuredEvent("JOBS_LOCATION_CACHED", {
         correlationId,
         ttl_minutes: 30,
       });
+    } else {
+      logStructuredEvent("JOBS_LOCATION_CACHE_FAILED", {
+        correlationId,
+        error: "Failed to save location to cache. LocationService.save returned null. Check database RPC 'save_recent_location' and RLS policies.",
+      }, "warn");
     }
   } catch (err) {
     logStructuredEvent("JOBS_LOCATION_CACHE_ERROR", {
@@ -225,72 +231,35 @@ export async function searchAndSendNearbyJobs(
 /**
  * Get user location from cache or saved locations
  * Returns null if no location available
+ * 
+ * Now powered by unified LocationService!
  */
 export async function getUserLocation(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<{ lat: number; lng: number; source: string } | null> {
   
-  // Try cache first (30-min TTL)
-  try {
-    const { data: cached, error: cacheError } = await supabase.rpc("get_cached_location", {
-      _user_id: userId,
-      _cache_minutes: 30,
-    });
+  // Use unified LocationService
+  const result = await LocationService.resolve(
+    supabase,
+    userId,
+    {
+      source: 'jobs',
+      cacheTTLMinutes: 30,
+      preferredSavedLabel: 'home',  // Jobs typically use home location
+    },
+    'en',
+  );
 
-    if (!cacheError && cached && cached.length > 0 && cached[0].is_valid) {
-      return {
-        lat: cached[0].lat,
-        lng: cached[0].lng,
-        source: 'cache',
-      };
-    }
-  } catch (err) {
-    console.warn('getUserLocation.cache_failed', err);
+  if (!result.location) {
+    return null;
   }
 
-  // Try saved home location
-  try {
-    const { data: saved, error: savedError } = await supabase
-      .from('saved_locations')
-      .select('lat, lng, label')
-      .eq('user_id', userId)
-      .eq('label', 'home')
-      .maybeSingle();
-
-    if (!savedError && saved) {
-      return {
-        lat: Number(saved.lat),
-        lng: Number(saved.lng),
-        source: 'saved_home',
-      };
-    }
-  } catch (err) {
-    console.warn('getUserLocation.saved_failed', err);
-  }
-
-  // Try any saved location
-  try {
-    const { data: anySaved, error: anyError } = await supabase
-      .from('saved_locations')
-      .select('lat, lng, label')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (!anyError && anySaved) {
-      return {
-        lat: Number(anySaved.lat),
-        lng: Number(anySaved.lng),
-        source: 'saved_any',
-      };
-    }
-  } catch (err) {
-    console.warn('getUserLocation.any_saved_failed', err);
-  }
-
-  return null;
+  return {
+    lat: result.location.lat,
+    lng: result.location.lng,
+    source: result.source || 'unknown',
+  };
 }
 
 /**
