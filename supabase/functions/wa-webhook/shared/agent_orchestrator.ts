@@ -23,14 +23,19 @@ import { AGENT_CONFIGURATIONS } from "./agent_configs.ts";
  * 
  * Agent slug mapping (from removed agents):
  * - concierge-router → support
+ * - mobility-orchestrator → rides
+ * - pharmacy-agent → buy_sell
+ * - hardware-agent → buy_sell
+ * - shop-agent → buy_sell
  * - pharmacy-agent → buy_and_sell
  * - hardware-agent → buy_and_sell
  * - shop-agent → buy_and_sell
  * - property-agent → real_estate
- * - legal-intake → buy_and_sell
+ * - legal-intake → buy_sell
  * - marketing-sales → sales_cold_caller
- * - marketplace → buy_and_sell (merged)
- * - business_broker → buy_and_sell (merged)
+ * - marketplace → buy_sell (merged)
+ * - business_broker → buy_sell (merged)
+ * - buy_and_sell → buy_sell (standardized)
  * - sora-video → REMOVED
  * - locops → INTERNAL (not agent)
  * - analytics-risk → INTERNAL (not agent)
@@ -47,11 +52,12 @@ export type AgentType =
   | "jobs"             // Jobs AI Agent
   | "waiter"           // Waiter AI Agent
   | "real_estate"      // Real Estate AI Agent
-  | "buy_and_sell"     // Buy & Sell AI Agent (unified commerce + business brokerage)
+  | "buy_sell"         // Buy & Sell AI Agent (unified commerce + business brokerage)
   | "support"          // Support AI Agent (includes concierge routing)
   // Deprecated types - kept for backward compatibility
-  | "marketplace"      // DEPRECATED: Use buy_and_sell instead
-  | "business_broker"; // DEPRECATED: Use buy_and_sell instead
+  | "buy_and_sell"     // DEPRECATED: Use buy_sell instead (standardized slug)
+  | "marketplace"      // DEPRECATED: Use buy_sell instead
+  | "business_broker"; // DEPRECATED: Use buy_sell instead
 
 export interface AgentConfig {
   id: string;
@@ -172,6 +178,8 @@ export class AgentOrchestrator {
 
 Note: For transportation/rides requests, route to "support" (handled via WhatsApp workflows).
 Note: For insurance requests, route to "support" (handled via WhatsApp workflows).
+- buy_sell: Shopping, products, pharmacy, hardware, groceries, business sales, acquisitions, legal services
+- support: Help, account issues, technical problems, general questions
 
 Respond with just the agent type (e.g., "support").`,
         tool_calls: undefined,

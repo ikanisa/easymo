@@ -5,10 +5,13 @@
  * Part of Unified AI Agent Architecture
  * Created: 2025-11-27
  * Updated: 2025-12-01 - Added Rides and Insurance agents
+ * Updated: 2025-12-05 - Merged marketplace and business_broker into buy_sell
+ * Updated: 2025-12-10 - Standardized slug to buy_sell (from buy_and_sell)
  * Updated: 2025-12-05 - Merged marketplace and business_broker into buy_and_sell
  * Updated: 2025-12-10 - Removed Rides and Insurance agents (replaced with WhatsApp workflows)
  * 
  * OFFICIAL AGENTS (7 production agents matching ai_agents database table):
+ * OFFICIAL AGENTS (7 production agents):
  * 1. waiter - Restaurant/Bar ordering, table booking
  * 2. farmer - Agricultural support, market prices
  * 3. jobs - Job search, employment, gigs
@@ -20,8 +23,17 @@
  * DELETED (replaced with WhatsApp button-based workflows):
  * - rides - Now handled via wa-webhook-mobility workflows
  * - insurance - Now handled via wa-webhook-insurance workflows
+ * 5. buy_sell - Buy & Sell (merged: marketplace + business_broker)
+ * 6. rides - Transport, ride-sharing, delivery
+ * 7. insurance - Motor insurance, policies, claims
+ * 8. support - General help, customer service
+ * 9. sales_cold_caller - Sales/Marketing outreach
+ * 5. buy_and_sell - Buy & Sell (merged: marketplace + business_broker)
+ * 6. support - General help, customer service
+ * 7. sales_cold_caller - Sales/Marketing outreach
  * 
- * DEPRECATED (merged into buy_and_sell):
+ * DEPRECATED (merged into buy_sell):
+ * - buy_and_sell (standardized to buy_sell)
  * - marketplace
  * - business_broker
  */
@@ -98,6 +110,48 @@ export class AgentRegistry {
     this.intentMapping.set('real_estate', 'real_estate_agent');
     
     // Buy & Sell Agent (merged: marketplace + business_broker)
+    this.intentMapping.set('buy', 'buy_sell_agent');
+    this.intentMapping.set('sell', 'buy_sell_agent');
+    this.intentMapping.set('product', 'buy_sell_agent');
+    this.intentMapping.set('shop', 'buy_sell_agent');
+    this.intentMapping.set('store', 'buy_sell_agent');
+    this.intentMapping.set('purchase', 'buy_sell_agent');
+    this.intentMapping.set('selling', 'buy_sell_agent');
+    this.intentMapping.set('buying', 'buy_sell_agent');
+    this.intentMapping.set('market', 'buy_sell_agent');
+    this.intentMapping.set('item', 'buy_sell_agent');
+    this.intentMapping.set('goods', 'buy_sell_agent');
+    this.intentMapping.set('trade', 'buy_sell_agent');
+    this.intentMapping.set('merchant', 'buy_sell_agent');
+    this.intentMapping.set('business', 'buy_sell_agent');
+    this.intentMapping.set('service', 'buy_sell_agent');
+    this.intentMapping.set('company', 'buy_sell_agent');
+    this.intentMapping.set('enterprise', 'buy_sell_agent');
+    this.intentMapping.set('startup', 'buy_sell_agent');
+    this.intentMapping.set('venture', 'buy_sell_agent');
+    this.intentMapping.set('broker', 'buy_sell_agent');
+    this.intentMapping.set('investment', 'buy_sell_agent');
+    this.intentMapping.set('partner', 'buy_sell_agent');
+    this.intentMapping.set('opportunity', 'buy_sell_agent');
+    this.intentMapping.set('marketplace', 'buy_sell_agent');
+    this.intentMapping.set('shopping', 'buy_sell_agent');
+    
+    // Rides Agent
+    this.intentMapping.set('rides', 'rides_agent');
+    this.intentMapping.set('ride', 'rides_agent');
+    this.intentMapping.set('driver', 'rides_agent');
+    this.intentMapping.set('passenger', 'rides_agent');
+    this.intentMapping.set('transport', 'rides_agent');
+    this.intentMapping.set('taxi', 'rides_agent');
+    this.intentMapping.set('moto', 'rides_agent');
+    
+    // Insurance Agent
+    this.intentMapping.set('insurance', 'insurance_agent');
+    this.intentMapping.set('insure', 'insurance_agent');
+    this.intentMapping.set('policy', 'insurance_agent');
+    this.intentMapping.set('certificate', 'insurance_agent');
+    this.intentMapping.set('carte_jaune', 'insurance_agent');
+    this.intentMapping.set('claim', 'insurance_agent');
     this.intentMapping.set('buy', 'buy_and_sell_agent');
     this.intentMapping.set('sell', 'buy_and_sell_agent');
     this.intentMapping.set('product', 'buy_and_sell_agent');
@@ -155,8 +209,8 @@ export class AgentRegistry {
    */
   getAgent(type: string): BaseAgent {
     // Handle legacy agent types
-    if (type === 'business_broker_agent' || type === 'marketplace_agent') {
-      type = 'buy_and_sell_agent';
+    if (type === 'business_broker_agent' || type === 'marketplace_agent' || type === 'buy_and_sell_agent') {
+      type = 'buy_sell_agent';
     }
     // Handle deleted agents - route to support
     if (type === 'rides_agent' || type === 'insurance_agent') {

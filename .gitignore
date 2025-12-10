@@ -91,3 +91,8 @@ InhouseDevSigning.*
 data/*.json
 data/pharmacies*.json
 .env.local
+# Archive directories (prevent future accumulation)
+supabase/migrations/.archive/
+supabase/migrations/archive/
+supabase/migrations/_archived_duplicates/
+docs/archive/

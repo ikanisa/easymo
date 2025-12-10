@@ -3,9 +3,9 @@
  * Run with: npx tsx scripts/test-ai-agents.ts
  */
 
-import { quickAgent,quickChat } from '../lib/ai';
+import { quickChat } from '../lib/ai';
 import { AI_CONFIG, getProviderStatus,isConfigured } from '../lib/ai/config';
-import { marketplaceAgent, mobilityAgent, supportAgent } from '../lib/ai/domain';
+import { marketplaceAgent, supportAgent } from '../lib/ai/domain';
 
 const COLORS = {
   reset: '\x1b[0m',
@@ -77,34 +77,8 @@ async function testQuickChat() {
   }
 }
 
-async function testMobilityAgent() {
-  section('3. Mobility Agent Test');
-  
-  if (!isConfigured('openai') && !isConfigured('gemini')) {
-    log('⚠️  Skipping - No API keys configured', COLORS.yellow);
-    return;
-  }
-  
-  try {
-    log('Testing mobility agent structure...', COLORS.yellow);
-    console.log('Agent methods:');
-    console.log('  - findNearbyDrivers() ✅');
-    console.log('  - calculateTripQuote() ✅');
-    console.log('  - bookRide() ✅');
-    console.log('  - getTripStatus() ✅');
-    console.log('  - bookRideNaturalLanguage() ✅');
-    log('✅ Mobility agent structure verified', COLORS.green);
-    
-    log('\nTesting natural language query...', COLORS.yellow);
-    const result = await mobilityAgent.execute('What vehicle types are available?');
-    log(`✅ Response: ${result.response.substring(0, 100)}...`, COLORS.green);
-  } catch (error) {
-    log(`❌ Error: ${(error as Error).message}`, COLORS.red);
-  }
-}
-
 async function testMarketplaceAgent() {
-  section('4. Marketplace Agent Test');
+  section('3. Marketplace Agent Test');
   
   log('Testing marketplace agent structure...', COLORS.yellow);
   console.log('Agent methods:');
@@ -118,7 +92,7 @@ async function testMarketplaceAgent() {
 }
 
 async function testSupportAgent() {
-  section('5. Support Agent Test');
+  section('4. Support Agent Test');
   
   log('Testing support agent structure...', COLORS.yellow);
   console.log('Agent methods:');
@@ -132,7 +106,7 @@ async function testSupportAgent() {
 }
 
 async function testTools() {
-  section('6. Tools & Integrations Test');
+  section('5. Tools & Integrations Test');
   
   log('Checking tool registry...', COLORS.yellow);
   const { toolRegistry } = await import('../lib/ai/tools/registry');
@@ -147,7 +121,7 @@ async function testTools() {
 }
 
 async function testFileStructure() {
-  section('7. File Structure Verification');
+  section('6. File Structure Verification');
   
   const requiredFiles = [
     'lib/ai/config.ts',
@@ -161,7 +135,6 @@ async function testFileStructure() {
     'lib/ai/google/gemini-live.ts',
     'lib/ai/google/imagen.ts',
     'lib/ai/google/search-grounding.ts',
-    'lib/ai/domain/mobility-agent.ts',
     'lib/ai/domain/marketplace-agent.ts',
     'lib/ai/domain/support-agent.ts',
     'lib/ai/tools/registry.ts',
@@ -199,7 +172,6 @@ async function runAllTests() {
     await testConfiguration();
     await testFileStructure();
     await testTools();
-    await testMobilityAgent();
     await testMarketplaceAgent();
     await testSupportAgent();
     await testQuickChat();

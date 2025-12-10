@@ -4,24 +4,37 @@ import axios from 'axios';
 
 import type { AgentInput, AgentResult, Tool } from '../../types/agent.types';
 import { BaseAgent } from '../base/agent.base';
+import { BUY_SELL_SYSTEM_PROMPT } from './buy-and-sell/prompts/system-prompt';
+import { 
+  BUY_SELL_AGENT_SLUG, 
+  BUY_SELL_DEFAULT_MODEL 
+} from './buy-and-sell/config';
+import { searchBusinessesAI, searchBusinesses } from './buy-and-sell/tools/search-businesses';
+import { searchProducts, inventoryCheck } from './buy-and-sell/tools/search-products';
+import { mapsGeocode } from './buy-and-sell/tools/maps-geocode';
+import { businessDetails } from './buy-and-sell/tools/business-details';
 
-const log = childLogger({ service: 'agents' });
+const log = childLogger({ service: 'agents', agent: 'buy-and-sell' });
 
 /**
  * Buy & Sell Agent
  * 
- * Unified commerce and business discovery agent that consolidates:
- * - Marketplace Agent (pharmacy, hardware, grocery commerce)
- * - Business Broker Agent (business sales, acquisitions, legal intake)
+ * SINGLE SOURCE OF TRUTH for Buy & Sell AI agent.
+ * Consolidated implementation that replaces:
+ * - packages/agents/src/agents/commerce/buy-and-sell.agent.ts (this file - refactored)
+ * - admin-app/lib/ai/domain/marketplace-agent.ts (now re-exports from here)
+ * - supabase/functions/wa-webhook-buy-sell/agent.ts (uses Deno wrapper)
  * 
  * Capabilities:
  * - Product commerce: Find products, check availability, place orders
  * - Business discovery: Map user needs → business categories → specific nearby businesses
  * - Business brokerage: Connect business buyers/sellers, facilitate valuations
  * - Legal intake: Triage cases, collect facts, prepare engagement letters
+ * 
+ * @see docs/features/BUY_SELL_CONSOLIDATION_ANALYSIS.md
  */
 export class BuyAndSellAgent extends BaseAgent {
-  name = 'buy_and_sell_agent';
+  name = 'buy_sell_agent';
   instructions = `You are EasyMO's unified Buy & Sell assistant, helping users with marketplace transactions and business opportunities.
 
 MARKETPLACE CAPABILITIES:
@@ -31,76 +44,140 @@ MARKETPLACE CAPABILITIES:
 - Search for specific items
 - Handle OTC pharmacy products; for RX items, request photo and escalate to pharmacist
 - No medical advice, dosing, or contraindication information
+  static readonly SLUG = BUY_SELL_AGENT_SLUG;
+  
+  name = 'buy_and_sell_agent';
+  instructions = BUY_SELL_SYSTEM_PROMPT;
+  tools: Tool[];
+  
+  private supabase: SupabaseClient;
 
-BUSINESS DISCOVERY (ENHANCED WITH AI SEARCH):
-- Use search_businesses_ai for natural language queries (e.g., "I need a computer", "print documents", "fix my phone")
-- The AI search understands intent and finds relevant businesses based on tags, services, products, and keywords
-- Returns ranked results with relevance scores, distance, and "open now" status
-- Always prefer search_businesses_ai over search_businesses for better results
-- Only recommend businesses from the database; respect opening hours
+  constructor(supabaseClient?: SupabaseClient) {
+    super();
+    
+    // Use provided client or create new one
+    if (supabaseClient) {
+      this.supabase = supabaseClient;
+    } else {
+      const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY;
+      
+      if (!supabaseUrl || !supabaseKey) {
+        log.warn("Supabase credentials missing for BuyAndSellAgent");
+      }
+      
+      this.supabase = createClient(supabaseUrl || '', supabaseKey || '', {
+        auth: { persistSession: false }
+      });
+    }
+    
+    // Initialize tools with modular structure
+    this.tools = this.defineTools();
+    
+    // Set default model
+    this.model = BUY_SELL_DEFAULT_MODEL;
+  }
 
-BUSINESS BROKERAGE:
-- For sellers: Collect business details, financials (sanitized), asking price, terms
-- For buyers: Understand acquisition criteria, budget, industry preferences
-- Match parties; facilitate introductions; schedule meetings
-- Generate NDAs and LOIs via generate_pdf when parties proceed
+  /**
+   * Define all tools using modular tool functions
+   */
+  private defineTools(): Tool[] {
+    return [
+      // Business Discovery
+      searchBusinessesAI(this.supabase),
+      searchBusinesses(this.supabase),
+      businessDetails(this.supabase),
+      
+      // Location
+      mapsGeocode(),
+      
+      // Marketplace
+      searchProducts(this.supabase),
+      inventoryCheck(this.supabase),
+    ];
+  }
 
-LEGAL INTAKE (handoff required):
-- Triage case category (business, contract, IP, employment, etc.)
-- Collect facts: who/what/when/where and desired outcome
-- Prepare scope summary; generate engagement letter PDF
-- Take retainer via momo_charge; open case file
-- All substantive matters require human associate review
+  /**
+   * Execute the agent with input
+   */
+  async execute(input: AgentInput): Promise<AgentResult> {
+    // Call parent class implementation
+    return await (BaseAgent.prototype as any).execute.call(this, input);
+  }
+  
+  /**
+   * Format a single option for display (required by BaseAgent)
+   */
+  protected formatSingleOption(option: any): string {
+    if (option.name) {
+      // Business format
+      return `${option.name} (${option.category || 'Business'}) - ${option.address || 'Address N/A'}\nPhone: ${option.phone || 'N/A'}\nRating: ${option.rating || 'N/A'}⭐`;
+    } else if (option.title) {
+      // Product/listing format
+      return `${option.title} - ${option.price || 'Price TBD'}\n${option.description || ''}`;
+    }
+    return JSON.stringify(option);
+  }
 
-GUARDRAILS:
-- No medical advice beyond finding a pharmacy
-- No legal, tax, or financial advice—only logistics and intake
-- Protect user privacy and confidentiality
-- Sensitive topics require handoff to staff
+  /**
+   * Calculate score for ranking (required by BaseAgent)
+   */
+  protected calculateScore(option: any, criteria: any): number {
+    return option.rating || option.views || option.relevance_score || 0;
+  }
+}
 
-FLOW:
-1) Identify intent: product search, business discovery, business sale/purchase, or legal intake
-2) For products: search_products/inventory_check; present options; build basket
-3) For business discovery: 
-   - If user provides natural language need: use search_businesses_ai with their query
-   - If user has location: include lat/lng for location-aware results
-   - Format results with emoji numbers (1️⃣-5️⃣) for easy selection
-   - Show distance, rating, and open/closed status
-4) For business transactions: collect details; match parties; generate documents
-5) For all orders: momo_charge; confirm after settlement; track via order_status_update
-6) Notify fulfillment (notify_staff); escalate sensitive topics immediately
+/**
+ * Backward compatibility alias
+ * @deprecated Use BuyAndSellAgent instead
+ */
+export class MarketplaceAgent extends BuyAndSellAgent {
+  constructor(supabaseClient?: SupabaseClient) {
+    super(supabaseClient);
+    log.warn('MarketplaceAgent is deprecated. Use BuyAndSellAgent instead.');
+  }
+}
 
-RESPONSE FORMATTING:
-- Use emoji numbers (1️⃣-5️⃣) for listing options
-- Show distance if available (e.g., "0.5km away")
-- Show rating if available (e.g., "⭐ 4.8")
-- Indicate if business is open now (🟢 Open / 🔴 Closed)
-- Keep messages concise and actionable`;
+/**
+ * Export a convenience function to run the Buy & Sell Agent
+ */
+export async function runBuyAndSellAgent(input: AgentInput): Promise<AgentResult> {
+  const agent = new BuyAndSellAgent();
+  return agent.execute(input);
+}
 
+// Keep the rest of the legacy implementation below for now
+// TODO: Remove after confirming new modular structure works
+class BuyAndSellAgentLegacy extends BaseAgent {
+  name = 'buy_and_sell_agent_legacy';
+  instructions = BUY_SELL_SYSTEM_PROMPT; // Add missing instructions
   tools: Tool[];
   private supabase: SupabaseClient;
 
   constructor() {
     super();
-    this.tools = this.defineTools();
-    
-    // Initialize Supabase client
     const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY;
-    
-    if (!supabaseUrl || !supabaseKey) {
-      log.warn("Supabase credentials missing for BuyAndSellAgent");
+    this.supabase = createClient(supabaseUrl || '', supabaseKey || '', { auth: { persistSession: false } });
+    this.tools = this.defineToolsLegacy();
+    this.model = BUY_SELL_DEFAULT_MODEL;
+  }
+  
+  // Required abstract method implementations
+  protected formatSingleOption(option: any): string {
+    if (option.name) {
+      return `${option.name} (${option.category}) - ${option.address}\nPhone: ${option.phone || 'N/A'}\nRating: ${option.rating || 'N/A'}⭐`;
+    } else if (option.title) {
+      return `${option.title} - ${option.price || 'Price TBD'}\n${option.description || ''}`;
     }
-    
-    this.supabase = createClient(supabaseUrl || '', supabaseKey || '', {
-      auth: { persistSession: false }
-    });
-    
-    // Set model to Gemini
-    this.model = 'gemini-1.5-flash';
+    return JSON.stringify(option);
   }
 
-  private defineTools(): Tool[] {
+  protected calculateScore(option: any, criteria: any): number {
+    return option.rating || option.views || 0;
+  }
+
+  private defineToolsLegacy(): Tool[] {
     return [
       // Business discovery tools - ENHANCED with AI search
       {
@@ -338,7 +415,7 @@ RESPONSE FORMATTING:
               owner_user_id: context?.userId,
               domain: listing_type === 'business' ? 'business' : 'marketplace',
               status: 'active',
-              source_agent: 'buy_and_sell',
+              source_agent: 'buy_sell',
               created_at: new Date().toISOString()
             })
             .select()
@@ -380,7 +457,7 @@ RESPONSE FORMATTING:
               delivery_address,
               user_id: context?.userId,
               status: 'pending',
-              source_agent: 'buy_and_sell',
+              source_agent: 'buy_sell',
               created_at: new Date().toISOString()
             })
             .select()
@@ -521,27 +598,5 @@ RESPONSE FORMATTING:
       duration: Date.now() - startTime
     };
   }
-
-  protected formatSingleOption(option: any): string {
-    if (option.name) {
-      // Business format
-      return `${option.name} (${option.category}) - ${option.address}\nPhone: ${option.phone || 'N/A'}\nRating: ${option.rating || 'N/A'}⭐`;
-    } else if (option.title) {
-      // Product/listing format
-      return `${option.title} - ${option.price || 'Price TBD'}\n${option.description || ''}`;
-    }
-    return JSON.stringify(option);
-  }
-
-  protected calculateScore(option: any, criteria: any): number {
-    return option.rating || option.views || 0;
-  }
 }
 
-/**
- * Export a convenience function to run the Buy & Sell Agent
- */
-export async function runBuyAndSellAgent(input: AgentInput): Promise<AgentResult> {
-  const agent = new BuyAndSellAgent();
-  return agent.execute(input);
-}

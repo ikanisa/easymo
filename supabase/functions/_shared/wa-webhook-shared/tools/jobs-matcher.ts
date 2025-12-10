@@ -29,6 +29,45 @@ export interface JobMatch {
   match_score: number;
 }
 
+/**
+ * Generate embeddings using OpenAI
+ */
+async function generateEmbedding(text: string): Promise<number[]> {
+  const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
+  
+  if (!openaiApiKey) {
+    console.warn("OPENAI_API_KEY not set, falling back to traditional search");
+    throw new Error("OpenAI API key not configured");
+  }
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/embeddings", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${openaiApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "text-embedding-3-small",
+        input: text,
+        encoding_format: "float",
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error("OpenAI embedding error:", error);
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.data[0].embedding;
+  } catch (error) {
+    console.error("Failed to generate embedding:", error);
+    throw error;
+  }
+}
+
 export async function searchJobs(
   supabase: SupabaseClient,
   params: JobSearchParams,
@@ -57,25 +96,82 @@ async function semanticSearchJobs(
   userId: string
 ): Promise<{ matches: JobMatch[]; total: number }> {
   try {
-    // Note: Embedding generation should be done by the caller
-    // This assumes the query embedding is already available
-    // For now, we'll use a hybrid approach with traditional search
-    
-    // Build search query string
+    // Build search query string from all parameters
     const searchTerms = [
       params.query,
       params.location && `in ${params.location}`,
       params.category,
     ].filter(Boolean).join(' ');
 
-    console.log('Semantic search query:', searchTerms);
+    console.log('Generating embedding for:', searchTerms);
 
-    // For now, fall back to enhanced traditional search
-    // TODO: Add OpenAI embedding generation when available in edge function
-    return await traditionalSearchJobs(supabase, params, userId);
+    // Generate embedding for the search query
+    const embedding = await generateEmbedding(searchTerms);
+
+    // Call match_job_listings RPC with the embedding
+    const { data, error } = await supabase.rpc('match_job_listings', {
+      query_embedding: embedding,
+      match_threshold: 0.6, // Lower threshold for more results
+      match_count: params.limit || 10,
+      filter: {},
+    });
+
+    if (error) {
+      console.error("RPC match_job_listings error:", error);
+      throw error;
+    }
+
+    if (!data || data.length === 0) {
+      console.log("No semantic matches found, trying traditional search");
+      return await traditionalSearchJobs(supabase, params, userId);
+    }
+
+    // Apply additional filters
+    let filteredJobs = data;
+
+    if (params.min_salary) {
+      filteredJobs = filteredJobs.filter((job: any) => 
+        job.salary_min && job.salary_min >= params.min_salary!
+      );
+    }
+
+    if (params.max_salary) {
+      filteredJobs = filteredJobs.filter((job: any) => 
+        job.salary_max && job.salary_max <= params.max_salary!
+      );
+    }
+
+    if (params.employment_type) {
+      filteredJobs = filteredJobs.filter((job: any) => 
+        job.job_type === params.employment_type
+      );
+    }
+
+    // Map to JobMatch format
+    const matches: JobMatch[] = filteredJobs.map((job: any) => ({
+      id: job.id,
+      title: job.title,
+      company: job.company || job.posted_by || "Company",
+      location: job.location || "Not specified",
+      salary_range: job.salary_min && job.salary_max
+        ? `${job.salary_min} - ${job.salary_max} ${job.currency || "RWF"}`
+        : undefined,
+      employment_type: job.job_type || "Full-time",
+      description: job.description?.substring(0, 200) || "",
+      posted_at: job.created_at,
+      match_score: job.similarity || 0,
+    }));
+
+    console.log(`Semantic search found ${matches.length} matches`);
+
+    return {
+      matches,
+      total: matches.length,
+    };
   } catch (error) {
     console.error("Semantic search error:", error);
     // Fallback to traditional search
+    console.log("Falling back to traditional search");
     return await traditionalSearchJobs(supabase, params, userId);
   }
 }

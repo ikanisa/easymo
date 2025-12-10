@@ -1,7 +1,0 @@
--- SKIPPED: superseded by 20251123130000_create_countries_table.sql
--- This earlier variant is retained for history but excluded from resets.
--- It originally created the countries table and seeded initial rows.
--- The canonical migration with RLS and policies lives at 13:00.
-
--- (Intentionally left blank)
-

@@ -120,7 +120,8 @@ function generateActionButtons(agentType: AgentType): ActionButton[] {
     waiter: [{ id: "search_again", title: "🔍 Search Again" }],
     rides: [{ id: "schedule_trip", title: "📅 Schedule Trip" }],
     jobs: [{ id: "post_job", title: "📝 Post Job" }],
-    business_broker: [{ id: "search_nearby", title: "📍 Search Nearby" }],
+    buy_sell: [{ id: "search_nearby", title: "📍 Search Nearby" }],
+    business_broker: [{ id: "search_nearby", title: "📍 Search Nearby" }], // Deprecated alias
     real_estate: [{ id: "filter_properties", title: "🔍 Filter" }],
     farmer: [{ id: "list_produce", title: "🌾 List Produce" }],
     insurance: [{ id: "get_quote", title: "💰 Get Quote" }],

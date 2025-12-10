@@ -1,7 +1,7 @@
 /**
  * OpenAI Agent Definitions for EasyMO
  * 
- * Defines all 11 official agents with their configurations
+ * Defines active agent configurations (AI-only, excludes rides/insurance workflows)
  */
 
 import type OpenAI from "openai";
@@ -164,26 +164,6 @@ export const EASYMO_TOOLS: Record<string, OpenAI.Beta.FunctionTool> = {
     },
   },
 
-  get_insurance_quote: {
-    type: "function",
-    function: {
-      name: "get_insurance_quote",
-      description: "Get an insurance quote",
-      parameters: {
-        type: "object",
-        properties: {
-          type: { type: "string", enum: ["motor", "health", "travel", "property"] },
-          coverage_amount: { type: "number" },
-          duration_days: { type: "number" },
-          details: {
-            type: "object",
-            additionalProperties: true,
-          },
-        },
-        required: ["type"],
-      },
-    },
-  },
 };
 
 // ============================================================================
@@ -233,50 +213,6 @@ GUARDRAILS:
   },
 
   // --------------------------------------------------------------------------
-  // INSURANCE AGENT
-  // --------------------------------------------------------------------------
-  insurance: {
-    name: "Insurance AI Agent",
-    description: "Insurance intake, quotes, and policy management",
-    instructions: `You are the Insurance AI Agent for EasyMO, helping users with insurance products. 
-
-ROLE: Insurance intake specialist (NO legal/financial advice)
-LANGUAGES: English, French, Kinyarwanda
-TONE: Professional, trustworthy, clear
-
-CAPABILITIES:
-1. Collect required information via OCR from documents
-2. Generate insurance quotes (motor, health, travel)
-3. Process premium payments via MoMo
-4. Generate policy certificates
-5. Handle claims intake (escalate to human)
-
-FLOW:
-1. Identify insurance type needed
-2. Request required documents (ID, vehicle registration, etc.)
-3. Extract information using OCR
-4. Validate with user
-5. Generate quote with clear breakdown
-6. Process payment if accepted
-7. Deliver policy certificate
-
-GUARDRAILS:
-- NEVER provide insurance advice or recommendations
-- Always escalate claims to human staff
-- Require OCR confidence > 0.8 or request retake
-- Premium > 500,000 RWF requires staff approval
-- Include all required legal disclaimers`,
-    model: "gpt-4o",
-    temperature: 0.5,
-    tools: [
-      EASYMO_TOOLS.get_insurance_quote,
-      EASYMO_TOOLS.process_payment,
-      EASYMO_TOOLS.send_notification,
-      { type: "file_search" },
-    ],
-  },
-
-  // --------------------------------------------------------------------------
   // SALES COLD CALLER AGENT
   // --------------------------------------------------------------------------
   sales_cold_caller: {
@@ -315,50 +251,6 @@ GUARDRAILS:
       EASYMO_TOOLS.search_database,
       EASYMO_TOOLS.send_notification,
       EASYMO_TOOLS.schedule_appointment,
-    ],
-  },
-
-  // --------------------------------------------------------------------------
-  // RIDES AGENT
-  // --------------------------------------------------------------------------
-  rides: {
-    name: "Rides AI Agent",
-    description: "Mobility and transportation booking",
-    instructions: `You are the Rides AI Agent for EasyMO, helping passengers find drivers and drivers find passengers.
-
-ROLE: Mobility orchestrator
-LANGUAGES: English, French, Kinyarwanda, Swahili
-TONE: Quick, efficient, safety-focused
-
-CAPABILITIES:
-1. Match passengers with nearby drivers
-2. Schedule trips in advance
-3. Estimate fares and ETAs
-4. Handle driver coordination
-5. Process ride payments
-
-FLOW:
-1. Collect: pickup, destination, time, passengers
-2. Find available drivers nearby
-3. Present 1-3 options with ETA/price
-4. Confirm booking on selection
-5. Send notifications to both parties
-6. Track ride status
-
-GUARDRAILS:
-- Only share coarse location (not exact)
-- Never reveal phone numbers directly
-- Use masked identifiers
-- Require deposit for scheduled trips
-- Safety reminders for late-night rides`,
-    model: "gpt-4o-mini",
-    temperature: 0.5,
-    tools: [
-      EASYMO_TOOLS.search_database,
-      EASYMO_TOOLS.geocode_location,
-      EASYMO_TOOLS.find_nearby_places,
-      EASYMO_TOOLS.process_payment,
-      EASYMO_TOOLS.send_notification,
     ],
   },
 

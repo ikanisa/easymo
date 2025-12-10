@@ -8,21 +8,19 @@
 
 ## Overview
 
-This document provides detailed blueprints for the **9 official AI agents** in the EasyMO WhatsApp-first platform, matching the production `agent_registry` database.
+This document provides detailed blueprints for the **7 official AI agents** in the EasyMO WhatsApp-first platform. Rides and Insurance AI agents have been removed in favor of WhatsApp workflows.
 
 ### Official Agents
 
 | # | Slug | Name | Autonomy |
 |---|------|------|----------|
 | 1 | `farmer` | Farmer AI Agent | suggest |
-| 2 | `insurance` | Insurance AI Agent | suggest |
-| 3 | `sales_cold_caller` | Sales/Marketing Cold Caller AI Agent | handoff |
-| 4 | `rides` | Rides AI Agent | suggest |
-| 5 | `jobs` | Jobs AI Agent | suggest |
-| 6 | `waiter` | Waiter AI Agent | suggest |
-| 7 | `real_estate` | Real Estate AI Agent | suggest |
-| 8 | `buy_and_sell` | Buy & Sell AI Agent | suggest |
-| 9 | `support` | Support AI Agent | auto |
+| 2 | `sales_cold_caller` | Sales/Marketing Cold Caller AI Agent | handoff |
+| 3 | `jobs` | Jobs AI Agent | suggest |
+| 4 | `waiter` | Waiter AI Agent | suggest |
+| 5 | `real_estate` | Real Estate AI Agent | suggest |
+| 6 | `buy_and_sell` | Buy & Sell AI Agent | suggest |
+| 7 | `support` | Support AI Agent | auto |
 
 Each blueprint includes:
 
@@ -138,55 +136,7 @@ Practical, farmer-friendly marketplace assistant. Speaks plainly about crops, pr
 
 ---
 
-### 2. Insurance AI Agent
-
-#### Persona
-
-Calm, precise insurance clerk. Guides photo capture, validates fields, explains coverage.
-
-#### Primary Tasks
-
-1. **Doc Capture**: Request clear photos (front/back)
-2. **OCR Extraction**: Extract fields, confirm accuracy
-3. **Pricing**: Compute premium with breakdown
-4. **Approval**: Staff review if > threshold or low OCR confidence
-5. **Certificate**: Generate and deliver policy PDF
-
-#### Tools
-
-- `ocr_extract` - Document processing
-- `price_insurance` - Premium calculation
-- `generate_pdf` - Certificate generation
-- `momo_charge` - Payment
-- `notify_staff` - Approval escalations
-- `analytics_log` - Metrics
-
-#### Guardrails
-
-- **OCR confidence < 0.8** → request clearer images or handoff
-- **Premium > 500,000** (configurable) → approval queue
-- **Country pack** drives disclaimers and legal text
-- **Redact images** post-extraction per policy
-
-#### KPIs
-
-- Time-to-Quote
-- Quote→policy conversion
-- Cancellation rate
-- OCR error rate
-
-#### Configuration
-
-```yaml
-- slug: insurance
-  name: Insurance AI Agent
-  languages: [en, fr, rw]
-  autonomy: suggest
-```
-
----
-
-### 3. Sales/Marketing Cold Caller AI Agent
+### 2. Sales/Marketing Cold Caller AI Agent
 
 #### Persona
 
@@ -230,52 +180,7 @@ Results-oriented SDR and campaign planner. Lives inside template approvals and a
 
 ---
 
-### 4. Rides AI Agent
-
-#### Persona
-
-Straightforward dispatcher for nearby drivers/passengers and scheduled trips.
-
-#### Primary Tasks
-
-1. **Collect Details**: Pickup, dropoff, time, pax count
-2. **Show Estimates**: 2–3 price windows with ETAs
-3. **Confirm Booking**: Place request and monitor
-4. **Live Updates**: Share driver arrival status
-
-#### Tools
-
-- `maps_geosearch` - Find drivers/passengers
-- `search_supabase` - Route data, pricing
-- `momo_charge` - Optional deposit
-- `notify_staff` - Escalations
-- `analytics_log` - Metrics
-
-#### Guardrails
-
-- **Coarse location only** - Never broadcast exact coordinates
-- **Cancel policy** disclosure before booking
-- **Share vehicle and driver initials only**
-
-#### KPIs
-
-- ETA accuracy
-- Match rate
-- Cancellation rate
-- Response time
-
-#### Configuration
-
-```yaml
-- slug: rides
-  name: Rides AI Agent
-  languages: [en, fr, rw, sw]
-  autonomy: suggest
-```
-
----
-
-### 5. Jobs AI Agent
+### 3. Jobs AI Agent
 
 #### Persona
 
@@ -318,7 +223,7 @@ Professional job board assistant. Connects seekers with opportunities.
 
 ---
 
-### 6. Waiter AI Agent
+### 4. Waiter AI Agent
 
 #### Persona
 
@@ -365,7 +270,7 @@ On-premise waiter for QR-table ordering. Friendly, concise, number-driven select
 
 ---
 
-### 7. Real Estate AI Agent
+### 5. Real Estate AI Agent
 
 #### Persona
 
@@ -409,7 +314,7 @@ Polite leasing and sales coordinator for properties.
 
 ---
 
-### 8. Buy & Sell AI Agent
+### 6. Buy & Sell AI Agent
 
 #### Persona
 
@@ -515,7 +420,7 @@ Agent: "CityCare Pharmacy (400m) has it: 1,500 RWF/strip
 
 ---
 
-### 9. Support AI Agent
+### 7. Support AI Agent
 
 #### Persona
 
@@ -569,13 +474,13 @@ When migrating from the old agent system, use this mapping:
 |----------|----------|-------|
 | `concierge-router` | `support` | Merged into Support |
 | `waiter-ai` | `waiter` | Renamed |
-| `mobility-orchestrator` | `rides` | Renamed |
+| `mobility-orchestrator` | N/A | Replaced by WhatsApp mobility workflows |
 | `pharmacy-agent` | `buy_and_sell` | Merged into Buy & Sell |
 | `hardware-agent` | `buy_and_sell` | Merged into Buy & Sell |
 | `shop-agent` | `buy_and_sell` | Merged into Buy & Sell |
 | `marketplace` | `buy_and_sell` | Merged into Buy & Sell |
 | `business_broker` | `buy_and_sell` | Merged into Buy & Sell |
-| `insurance-agent` | `insurance` | Renamed |
+| `insurance-agent` | N/A | Replaced by WhatsApp insurance workflows |
 | `property-agent` | `real_estate` | Renamed |
 | `legal-intake` | `buy_and_sell` | Merged into Buy & Sell |
 | `payments-agent` | N/A | Internal utility (not agent) |
@@ -592,9 +497,7 @@ When migrating from the old agent system, use this mapping:
 | Agent | Key Metrics |
 |-------|-------------|
 | Farmer | Listing completion, match success, transaction rate |
-| Insurance | Time-to-quote, quote→policy conversion, OCR error rate |
 | Sales Cold Caller | Lead qualification, CTR, opt-out rate |
-| Rides | ETA accuracy, match rate, cancellations |
 | Jobs | Job fill rate, application rate, time to hire |
 | Waiter | Order cycle time, payment success %, CSAT |
 | Real Estate | Viewing rate, deposit conversion, time-to-lease |

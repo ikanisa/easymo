@@ -88,7 +88,7 @@ Option 2 (Manual via Dashboard - Immediate):
   2. Copy contents of: supabase/migrations/20251122073000_ai_agent_ecosystem_schema.sql
   3. Execute (creates all tables + indexes)
   4. Copy contents of: supabase/migrations/20251122073100_seed_ai_agents_complete.sql
-  5. Execute (seeds 8 agents)
+  5. Execute (seeds 7 AI agents; mobility/insurance workflows)
   6. Verify: SELECT slug, name FROM ai_agents ORDER BY slug;
 
 ┌──────────────────────────────────────────────────────────────────────────────┐

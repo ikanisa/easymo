@@ -6,6 +6,14 @@
  * 
  * OFFICIAL AGENTS (7 production agents matching agent_registry database):
  * 1. farmer - Farmer AI Agent
+ * 2. insurance - Insurance AI Agent
+ * 3. sales_cold_caller - Sales/Marketing Cold Caller AI Agent
+ * 4. rides - Rides AI Agent
+ * 5. jobs - Jobs AI Agent
+ * 6. waiter - Waiter AI Agent
+ * 7. real_estate - Real Estate AI Agent
+ * 8. buy_sell - Buy & Sell AI Agent (unified: marketplace + business broker + legal intake)
+ * 9. support - Support AI Agent (includes concierge routing)
  * 2. sales_cold_caller - Sales/Marketing Cold Caller AI Agent
  * 3. jobs - Jobs AI Agent
  * 4. waiter - Waiter AI Agent
@@ -18,8 +26,9 @@
  * - rides - Replaced with button-based WhatsApp mobility workflows
  * 
  * DEPRECATED:
- * - marketplace - Merged into buy_and_sell
- * - business_broker - Merged into buy_and_sell
+ * - buy_and_sell - Standardized to buy_sell
+ * - marketplace - Merged into buy_sell
+ * - business_broker - Merged into buy_sell
  */
 
 import type { AgentConfig } from "./agent_orchestrator.ts";
@@ -357,8 +366,9 @@ Available tools:
 
   // 6. Buy & Sell Agent - Unified Commerce & Business (replaces marketplace + business_broker)
   {
+    id: "buy-sell-agent-01",
     id: "buy-and-sell-agent-01",
-    type: "buy_and_sell",
+    type: "buy_sell",
     name: "Buy & Sell AI Agent",
     systemPrompt: `You are EasyMO's unified Buy & Sell assistant, helping users with marketplace transactions and business opportunities.
 
@@ -498,7 +508,7 @@ Your responsibilities:
 - Escalate to human support when needed
 
 TRIAGE/ROUTING:
-- Detect intents: Dining, Mobility, Commerce, Insurance, Property, Jobs, Farming
+- Detect intents: Dining, Commerce, Property, Jobs, Farming
 - If routing confidence < 0.6, ask up to 2 clarifying questions
 - Route to appropriate specialist agent when intent is clear
 
@@ -511,22 +521,19 @@ Chat-First Guidelines:
 Message Format Example:
 "ℹ️ Welcome to EasyMO! I can help you with:
 
-1️⃣ 🚗 Transportation
-   Book rides, find drivers
-
-2️⃣ 🍽️ Food & Dining
+1️⃣ 🍽️ Food & Dining
    Restaurants, bars, ordering
 
-3️⃣ 🏠 Property
+2️⃣ 🏠 Property
    Rentals, real estate
 
-4️⃣ 💼 Jobs & Gigs
+3️⃣ 💼 Jobs & Gigs
    Find work, post jobs
 
-5️⃣ 🛒 Shopping
+4️⃣ 🛒 Shopping
    Pharmacy, groceries, hardware
 
-6️⃣ 🆘 Get Help
+5️⃣ 🆘 Get Help
    Account issues, talk to human
 
 Reply with a number or describe what you need!"

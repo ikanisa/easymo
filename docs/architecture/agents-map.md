@@ -4,7 +4,7 @@
 **Status:** ✅ Production Ready - DEPLOYED
 
 **Generated:** 2025-11-22  
-**Status:** Complete - All 8 agents migrated to unified framework
+**Status:** Complete - 7 AI agents active (rides/insurance handled via WhatsApp workflows)
 
 ## Executive Summary
 
@@ -12,7 +12,7 @@ EasyMO has been successfully refactored from a collection of feature-specific fl
 
 ### Top-Level Product Structure
 
-**WhatsApp Home Menu (9 Items):**
+**WhatsApp Home Menu (Workflows + AI):**
 
 1. **Waiter Agent** - Restaurant/bar menus, orders, tips
 2. **Farmer Agent** - Produce listings, buyer matching
@@ -20,11 +20,11 @@ EasyMO has been successfully refactored from a collection of feature-specific fl
 4. **Real Estate Agent** - Property rental/listing
 5. **Jobs Agent** - Job search, gig posting
 6. **Sales SDR Agent** - Internal sales & outreach
-7. **Rides Agent** - Driver/passenger matching, trip scheduling
-8. **Insurance Agent** - Document submission, policy management
-9. **Profile** - MoMo QR, Wallet/Tokens, "My Stuff", Saved Locations
+7. **Support Agent** - Routing and help desk
+8. **Mobility Workflow** - Button-based ride booking (no AI agent)
+9. **Insurance Workflow** - Button-based quotes/claims (no AI agent)
 
-**8 AI Agents + 1 Profile Workflow = Complete Product**
+**7 AI Agents + 2 Workflow Entries = Complete Product**
 
 ---
 
@@ -74,7 +74,7 @@ ai_agent_knowledge_bases (data sources)
 **Every agent follows this flow:**
 
 1. **Natural Language Input** → Creates `ai_agent_intents` row
-2. **Apply Intent Function** → Updates domain tables (menus, jobs, properties, rides, etc.)
+2. **Apply Intent Function** → Updates domain tables (menus, jobs, properties, commerce, etc.)
 3. **Agent Response** → Short message + emoji-numbered options (1️⃣ 2️⃣ 3️⃣)
 
 **Domain updates happen via:**
@@ -296,71 +296,15 @@ Staff: "Add new lead: John Doe, +250788123456, restaurant owner"
 
 ---
 
-### Agent 7: Rides 🚗
+### Mobility Workflow (formerly Agent 7)
 
-**Category:** Service  
-**Purpose:** Driver/passenger matching, trip scheduling, ride history
-
-**Files:**
-- Migration: `supabase/migrations/20251122084500_apply_intent_rides.sql`
-- Function: `apply_intent_rides(intent_id, user_id, agent_id, intent_type, extracted_params)`
-
-**Domain Tables:**
-- `trips` - Ride bookings
-- `driver_profiles` - Driver metadata
-- `vehicles` - Vehicle registry
-- `trip_routes` - Common routes
-
-**Intent Types:**
-- `request_ride` - Book a trip
-- `offer_ride` - Post driver availability
-- `schedule_trip` - Future booking
-- `view_trips` - Ride history
-
-**Example Flow:**
-```
-User: "Need a ride from Home to Work tomorrow at 8am"
-→ Intent: schedule_trip { origin: "saved_location_home", destination: "saved_location_work", datetime: "2025-11-23T08:00" }
-→ Query: driver_profiles available on route + time
-→ Response: "Trip scheduled!
-            1️⃣ Confirm driver (John - Moto)
-            2️⃣ Change time
-            3️⃣ Cancel"
-```
+Mobility is now handled by WhatsApp button flows (menu, booking, schedule, go-online). The rides AI agent and related migrations (`apply_intent_rides`) have been removed.
 
 ---
 
-### Agent 8: Insurance 🛡️
+### Insurance Workflow (formerly Agent 8)
 
-**Category:** Service  
-**Purpose:** Document submission, policy management, claim tracking
-
-**Files:**
-- Migration: `supabase/migrations/20251122113000_apply_intent_insurance.sql`
-- Function: `apply_intent_insurance(intent_id, user_id, agent_id, intent_type, extracted_params)`
-
-**Domain Tables:**
-- `insurance_policies` - Active policies
-- `insurance_documents` - Uploaded docs (ID, license, etc.)
-- `insurance_claims` - Claim submissions
-- `policy_renewals` - Renewal reminders
-
-**Intent Types:**
-- `submit_docs` - Upload required documents
-- `check_policy` - View policy status
-- `file_claim` - Report incident
-- `renew_policy` - Extend coverage
-
-**Example Flow:**
-```
-User: "Upload my driver's license for bike insurance"
-→ Intent: submit_docs { doc_type: "drivers_license", vehicle_type: "motorcycle" }
-→ Trigger: OCR processing + document storage
-→ Response: "License uploaded!
-            1️⃣ Add vehicle photo
-            2️⃣ Review policy quote
-            3️⃣ Submit for approval"
-```
+Insurance intake (quotes, claims, policies) now runs as WhatsApp workflows. The insurance AI agent and associated migrations (`apply_intent_insurance`) have been removed.
 
 ---
 
@@ -393,12 +337,12 @@ User: "Upload my driver's license for bike insurance"
 Shows entities created by agents:
 
 - **My Businesses** (Business Broker agent)
-- **My Vehicles** (Rides/Insurance agents)
+- **My Vehicles** (Mobility workflows)
 - **My Properties** (Real Estate agent)
 - **My Job Posts** (Jobs agent)
 - **My Listings** (Farmer agent)
-- **My Policies** (Insurance agent)
-- **My Trips** (Rides agent)
+- **My Policies** (Insurance workflows)
+- **My Trips** (Mobility workflows)
 
 **Rule:** Profile displays them, but changes happen by launching the respective agent conversation.
 
@@ -412,8 +356,8 @@ Shows entities created by agents:
 
 **Example:**
 ```
-Rides agent: "1️⃣ Home → Work
-              2️⃣ Send new location"
+Mobility workflow: "1️⃣ Home → Work
+                   2️⃣ Send new location"
 ```
 User never re-shares map pins unnecessarily.
 
@@ -443,13 +387,13 @@ supabase/migrations/
 ├── 20251122073100_seed_ai_agents_complete.sql        # Agent definitions
 ├── 20251122073534_align_home_menu_with_ai_agents.sql # Menu integration
 ├── 20251122082500_apply_intent_waiter.sql            # Waiter logic
-├── 20251122084500_apply_intent_rides.sql             # Rides logic
 ├── 20251122085000_apply_intent_jobs.sql              # Jobs logic
 ├── 20251122090000_apply_intent_business_broker.sql   # Business logic
 ├── 20251122110000_apply_intent_farmer.sql            # Farmer logic
 ├── 20251122111000_apply_intent_real_estate.sql       # Real Estate logic
 ├── 20251122112000_apply_intent_sales_sdr.sql         # Sales SDR logic
-└── 20251122113000_apply_intent_insurance.sql         # Insurance logic
+├── 20251210_delete_rides_ai_agent.sql                # Remove rides agent
+└── 20251210_delete_insurance_ai_agent.sql            # Remove insurance agent
 ```
 
 ### Legacy Code Status
@@ -457,7 +401,7 @@ supabase/migrations/
 #### ✅ Migrated (Now using unified framework)
 - `wa-webhook-jobs` → Jobs agent
 - `wa-webhook-marketplace` → Business Broker agent
-- `wa-webhook-mobility` → Rides agent
+- `wa-webhook-mobility` → Mobility workflows (no AI agent)
 - `wa-webhook-property` → Real Estate agent
 - `waiter-ai-agent` → Waiter agent
 
@@ -598,8 +542,7 @@ Located in: `tests/agents/`
 - ✅ Business Broker: Find services, save favorites
 - ✅ Real Estate: Search properties, list property, inquire
 - ✅ Jobs: Search jobs, post job, apply
-- ✅ Rides: Request ride, schedule trip
-- ✅ Insurance: Submit docs, check policy
+- ✅ Support: Route requests, escalate
 
 ### End-to-End Flow Tests
 ```bash
@@ -608,7 +551,6 @@ pnpm test:agents
 
 # Test specific agent
 pnpm test:agent:waiter
-pnpm test:agent:rides
 ```
 
 ### Staging Validation
@@ -723,7 +665,7 @@ await logStructuredEvent("USER_CREATED", {
    - Set `featureToggles.agentMode: true` for test users
 
 3. **Smoke test all agents** (1 hour)
-   - Send test messages for each of 8 agents
+   - Send test messages for each of 7 agents
    - Verify intent parsing + DB updates + responses
 
 ### Short-term (Week 2-3)
@@ -769,7 +711,7 @@ await logStructuredEvent("USER_CREATED", {
 
 **After Refactor:**
 - 1 unified webhook handler
-- 8 agents using identical pattern
+- 7 agents using identical pattern (mobility/insurance moved to workflows)
 - ~90% code reduction in agent logic
 - Standard, testable, maintainable
 

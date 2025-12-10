@@ -88,7 +88,7 @@ describe('BuyAndSellAgent', () => {
 
   describe('initialization', () => {
     it('should have correct name', () => {
-      expect(agent.name).toBe('buy_and_sell_agent');
+      expect(agent.name).toBe('buy_sell_agent');
     });
 
     it('should have comprehensive instructions', () => {
@@ -110,7 +110,7 @@ describe('BuyAndSellAgent', () => {
 
     it('should have business discovery capabilities in instructions', () => {
       expect(agent.instructions).toContain('BUSINESS DISCOVERY');
-      expect(agent.instructions).toContain('maps_geocode');
+      expect(agent.instructions).toContain('search_businesses_ai');
     });
 
     it('should have business brokerage capabilities in instructions', () => {

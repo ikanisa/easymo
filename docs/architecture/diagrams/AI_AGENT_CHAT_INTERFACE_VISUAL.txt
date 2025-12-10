@@ -10,7 +10,7 @@ User → WhatsApp → [Router] ──┬──→ Traditional Flows (numbered me
                               │     ❌ Many steps
                               │     ❌ Plain text
                               │
-                              └──→ AI Agents (8 agents)
+                              └──→ AI Agents (7 agents; mobility/insurance via workflows)
                                     ❌ Inconsistent responses
                                     ❌ No emojis or formatting
                                     ❌ No action buttons
@@ -362,7 +362,7 @@ Business Impact:
 │  AI AGENT CHAT INTERFACE - IMPLEMENTATION COMPLETE ✅           │
 ├────────────────────────────────────────────────────────────────┤
 │                                                                │
-│  ✅ All 8 agents enhanced with natural language chat          │
+│  ✅ All 7 agents enhanced with natural language chat          │
 │  ✅ Emoji-numbered lists (1️⃣, 2️⃣, 3️⃣)                        │
 │  ✅ Action buttons for quick responses                        │
 │  ✅ Concise, emoji-rich messages                              │

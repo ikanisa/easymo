@@ -7,6 +7,14 @@
 #
 # OFFICIAL AGENTS (7 production agents matching agent_registry database):
 #   1. farmer - Farmer AI Agent
+#   2. insurance - Insurance AI Agent
+#   3. sales_cold_caller - Sales/Marketing Cold Caller AI Agent
+#   4. rides - Rides AI Agent
+#   5. jobs - Jobs AI Agent
+#   6. waiter - Waiter AI Agent
+#   7. real_estate - Real Estate AI Agent
+#   8. buy_sell - Buy & Sell AI Agent (unified commerce + business brokerage)
+#   9. support - Support AI Agent (includes concierge routing capabilities)
 #   2. sales_cold_caller - Sales/Marketing Cold Caller AI Agent
 #   3. jobs - Jobs AI Agent
 #   4. waiter - Waiter AI Agent
@@ -17,6 +25,7 @@
 # DELETED AGENTS (replaced with WhatsApp Workflows):
 #   - insurance - Replaced with button-based WhatsApp insurance workflows
 #   - rides - Replaced with button-based WhatsApp mobility workflows
+# NOTE: buy_sell is the standardized slug (previously buy_and_sell)
 #
 # Documentation:
 #   - Tool Catalog: docs/agents/TOOL_CATALOG.md
@@ -204,7 +213,7 @@
 # =========================================================================================
 # 6) Buy & Sell AI Agent (unified commerce + business brokerage)
 # =========================================================================================
-- slug: buy_and_sell
+- slug: buy_sell
   name: Buy & Sell AI Agent
   enabled: true
   languages: [en, fr]
@@ -295,7 +304,7 @@
     STYLE: Polite, helpful, concise (≤2 lines per message). Mirror user language (EN/FR; rw/sw/ln comprehension).
     
     TRIAGE/ROUTING:
-      - Detect intents across: Dining, Mobility, Commerce, Insurance, Property, Jobs, Farming.
+      - Detect intents across: Dining, Commerce, Property, Jobs, Farming.
       - If routing confidence < 0.6, ask up to 2 targeted clarifying questions, then decide.
       - Set conversations.state.target_agent and pass minimal context.
     
