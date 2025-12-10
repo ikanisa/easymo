@@ -169,13 +169,13 @@ Always be supportive, honest, and safety-focused.`;
         },
         execute: async (params) => {
           const { data, error } = await this.supabase
-            .from('worker_profiles')
+            .from('job_seekers')
             .upsert({
               user_id: params.user_id,
               skills: params.skills || [],
-              experience_years: params.experience_years || 0,
+              experience: params.experience_years ? `${params.experience_years} years` : '',
               location: params.location,
-              preferred_roles: params.preferred_roles || [],
+              location_preference: params.location,
               updated_at: new Date().toISOString()
             })
             .select()
@@ -189,7 +189,7 @@ Always be supportive, honest, and safety-focused.`;
             profile_id: data.id,
             message: 'Profile created successfully',
             skills: data.skills,
-            experience: data.experience_years
+            experience: data.experience
           };
         }
       },
@@ -207,24 +207,28 @@ Always be supportive, honest, and safety-focused.`;
         },
         execute: async (params) => {
           const { data, error } = await this.supabase
-            .from('job_applications')
+            .from('job_matches')
             .insert({
               job_id: params.job_id,
-              user_id: params.user_id,
-              cover_message: params.cover_message,
-              status: 'submitted',
-              applied_at: new Date().toISOString()
+              seeker_id: params.user_id,
+              status: 'applied',
+              score: 0.8,
+              created_at: new Date().toISOString()
             })
             .select()
             .single();
 
           if (error) {
+            // Check if already applied (duplicate key error)
+            if (error.code === '23505') {
+              return { error: 'You have already applied to this job', status: 'duplicate' };
+            }
             return { error: 'Failed to submit application' };
           }
 
           return {
             application_id: data.id,
-            status: 'submitted',
+            status: 'applied',
             message: 'Application submitted successfully. The employer will contact you if interested.'
           };
         }
@@ -241,10 +245,10 @@ Always be supportive, honest, and safety-focused.`;
         },
         execute: async (params) => {
           const { data, error } = await this.supabase
-            .from('job_applications')
-            .select('id, job_id, status, applied_at, job_listings(title, company)')
-            .eq('user_id', params.user_id)
-            .order('applied_at', { ascending: false })
+            .from('job_matches')
+            .select('id, job_id, status, created_at, job_listings(title, company)')
+            .eq('seeker_id', params.user_id)
+            .order('created_at', { ascending: false })
             .limit(5);
 
           if (error || !data || data.length === 0) {
@@ -257,7 +261,7 @@ Always be supportive, honest, and safety-focused.`;
               job: (a as any).job_listings?.title,
               company: (a as any).job_listings?.company,
               status: a.status,
-              applied: a.applied_at
+              applied: a.created_at
             }))
           };
         }

@@ -35,7 +35,7 @@ export async function searchJobs(
   try {
     // Build query
     let query = supabase
-      .from("job_posts")
+      .from("job_listings")
       .select("*", { count: "exact" })
       .eq("status", "active")
       .order("created_at", { ascending: false });
