@@ -1,103 +1,51 @@
 #!/bin/bash
-set -euo pipefail
 
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-RED='\033[0;31m'
-NC='\033[0m'
+# Deploy Supabase Edge Functions with Preferred Suppliers Support
+# Date: 2025-12-07
 
-echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║        Deploying Supabase Edge Functions                   ║${NC}"
-echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
+set -e
+
+export SUPABASE_ACCESS_TOKEN="sbp_500607f0d078e919aa24f179473291544003a035"
+PROJECT_REF="lhbowpbcpwoiparwnwgt"
+
+echo "🚀 Deploying Supabase Edge Functions..."
+echo "Project: $PROJECT_REF"
 echo ""
 
-# Check Supabase CLI
-if ! command -v supabase &> /dev/null; then
-    echo -e "${RED}❌ Supabase CLI not found${NC}"
-    exit 1
-fi
-
-echo -e "${GREEN}✅ Supabase CLI found${NC}"
-echo ""
-
-# Key functions to deploy
-FUNCTIONS=(
-  "wa-webhook-ai-agents:WhatsApp AI Agents Webhook"
-  "wa-webhook-core:WhatsApp Core Webhook"
-  "_shared:Shared utilities"
+# Functions that use the tool executor (via _shared)
+FUNCTIONS_TO_DEPLOY=(
+  "wa-webhook-core"
+  "wa-webhook-buy-sell"
+  "wa-webhook-mobility"
+  "wa-webhook-property"
+  "wa-webhook-jobs"
+  "wa-webhook-insurance"
+  "wa-agent-call-center"
+  "wa-agent-waiter"
+  "wa-agent-farmer"
+  "wa-agent-support"
 )
 
-echo -e "${YELLOW}Functions to deploy:${NC}"
-for item in "${FUNCTIONS[@]}"; do
-  IFS=':' read -r func name <<< "$item"
-  echo "  - $name ($func)"
+# Deploy each function
+for func in "${FUNCTIONS_TO_DEPLOY[@]}"; do
+  echo "📦 Deploying $func..."
+  supabase functions deploy "$func" --project-ref "$PROJECT_REF" --no-verify-jwt
+  
+  if [ $? -eq 0 ]; then
+    echo "✅ $func deployed successfully"
+  else
+    echo "❌ Failed to deploy $func"
+  fi
+  echo ""
 done
 
 echo ""
-echo -e "${YELLOW}Deploy to which environment?${NC}"
-echo "  1) Local (for testing)"
-echo "  2) Remote (production)"
+echo "🎉 Deployment complete!"
 echo ""
-read -p "Choice (1 or 2): " choice
-
-case $choice in
-  1)
-    TARGET="--local"
-    ENV="Local"
-    ;;
-  2)
-    TARGET=""
-    ENV="Remote/Production"
-    echo -e "${RED}⚠ WARNING: Deploying to PRODUCTION${NC}"
-    read -p "Are you sure? (yes/no): " confirm
-    if [ "$confirm" != "yes" ]; then
-      echo "Cancelled"
-      exit 0
-    fi
-    ;;
-  *)
-    echo "Invalid choice"
-    exit 1
-    ;;
-esac
-
+echo "To test the search_suppliers tool:"
+echo "1. Call or message the Call Center AGI via WhatsApp"
+echo "2. Say: 'I need 10kg of potatoes'"
+echo "3. The AI should return Kigali Fresh Market with benefits"
 echo ""
-echo -e "${BLUE}════════════════════════════════════════════════════════════${NC}"
-echo -e "${BLUE}Deploying to: $ENV${NC}"
-echo -e "${BLUE}════════════════════════════════════════════════════════════${NC}"
-echo ""
-
-# Deploy wa-webhook-ai-agents (main agent router)
-echo -e "${YELLOW}[1/2] Deploying wa-webhook-ai-agents...${NC}"
-if supabase functions deploy wa-webhook-ai-agents $TARGET --no-verify-jwt 2>&1; then
-  echo -e "${GREEN}✅ wa-webhook-ai-agents deployed${NC}"
-else
-  echo -e "${RED}❌ Failed to deploy wa-webhook-ai-agents${NC}"
-fi
-
-echo ""
-
-# Deploy wa-webhook-core (fallback/legacy)
-echo -e "${YELLOW}[2/2] Deploying wa-webhook-core...${NC}"
-if supabase functions deploy wa-webhook-core $TARGET --no-verify-jwt 2>&1; then
-  echo -e "${GREEN}✅ wa-webhook-core deployed${NC}"
-else
-  echo -e "${RED}❌ Failed to deploy wa-webhook-core${NC}"
-fi
-
-echo ""
-echo -e "${BLUE}════════════════════════════════════════════════════════════${NC}"
-echo -e "${GREEN}✅ Edge Functions Deployment Complete!${NC}"
-echo -e "${BLUE}════════════════════════════════════════════════════════════${NC}"
-echo ""
-
-if [ "$ENV" = "Local" ]; then
-  echo "Test endpoint:"
-  echo "  http://127.0.0.1:56311/functions/v1/wa-webhook-ai-agents"
-else
-  echo "Production endpoint:"
-  echo "  https://YOUR_PROJECT.supabase.co/functions/v1/wa-webhook-ai-agents"
-fi
-
-echo ""
+echo "Admin panel needs separate deployment:"
+echo "  cd admin-app && npm run build"
