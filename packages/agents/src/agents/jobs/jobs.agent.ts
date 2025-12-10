@@ -38,7 +38,7 @@ Guardrails & Policies:
   private defineTools(): Tool[] {
     return [
       {
-        name: 'search_gigs',
+        name: 'search_jobs',
         description: 'Find jobs by role, location, salary, type (full-time/gig). Uses semantic search for best matching.',
         parameters: {
           type: 'object',
@@ -52,7 +52,7 @@ Guardrails & Policies:
           required: ['role']
         },
         execute: async (params, context: AgentContext) => {
-          await logToolInvocation('search_gigs', context as any, params);
+          await logToolInvocation('search_jobs', context as any, params);
           
           try {
             // Build search query from role and other parameters
