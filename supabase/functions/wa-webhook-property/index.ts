@@ -7,6 +7,7 @@ import type { RouterContext, WhatsAppWebhookPayload, RawWhatsAppMessage } from "
 import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
+import { REAL_ESTATE_STATE_KEYS } from "../_shared/agents/real-estate/types.ts";
 
 // Property domain imports
 import {
@@ -337,12 +338,12 @@ async function handlePropertyButton(
   }
 
   // Handle saved location picker
-  if (buttonId === IDS.LOCATION_SAVED_LIST && state.key === "property_find_location") {
+  if (buttonId === IDS.LOCATION_SAVED_LIST && state.key === REAL_ESTATE_STATE_KEYS.FIND_LOCATION) {
     const findState = state.data as PropertyFindState;
     return await startPropertySavedLocationPicker(ctx, "find", findState);
   }
 
-  if (buttonId === IDS.LOCATION_SAVED_LIST && state.key === "property_add_location") {
+  if (buttonId === IDS.LOCATION_SAVED_LIST && state.key === REAL_ESTATE_STATE_KEYS.ADD_LOCATION) {
     const addState = state.data as PropertyAddState;
     return await startPropertySavedLocationPicker(ctx, "add", addState);
   }
@@ -378,24 +379,24 @@ async function handlePropertyList(
   }
 
   // Handle find property flow
-  if (state.key === "property_find_type") {
+  if (state.key === REAL_ESTATE_STATE_KEYS.FIND_TYPE) {
     return await handleFindPropertyType(ctx, listId);
   }
 
-  if (state.key === "property_find_bedrooms") {
+  if (state.key === REAL_ESTATE_STATE_KEYS.FIND_BEDROOMS) {
     return await handleFindPropertyBedrooms(ctx, state.data as { rentalType: string }, listId);
   }
 
   // Handle add property flow
-  if (state.key === "property_add_type") {
+  if (state.key === REAL_ESTATE_STATE_KEYS.ADD_TYPE) {
     return await handleAddPropertyType(ctx, listId);
   }
 
-  if (state.key === "property_add_bedrooms") {
+  if (state.key === REAL_ESTATE_STATE_KEYS.ADD_BEDROOMS) {
     return await handleAddPropertyBedrooms(ctx, state.data as { rentalType: string }, listId);
   }
 
-  if (state.key === "property_add_price_unit") {
+  if (state.key === REAL_ESTATE_STATE_KEYS.ADD_PRICE_UNIT) {
     return await handleAddPropertyPriceUnit(
       ctx,
       state.data as { rentalType: string; bedrooms: string },
@@ -404,42 +405,12 @@ async function handlePropertyList(
   }
 
   // Handle saved location selection
-  if (state.key === "location_saved_picker") {
+  if (state.key === REAL_ESTATE_STATE_KEYS.LOCATION_SAVED_PICKER) {
     const pickerState = state.data as PropertySavedPickerState;
     return await handlePropertySavedLocationSelection(ctx, pickerState, listId);
   }
 
   return false;
-}
-
-/**
- * Save user's shared location to cache (30-minute TTL)
- * Allows reusing location across property searches without re-sharing
- */
-async function cachePropertyLocation(
-  ctx: RouterContext,
-  lat: number,
-  lng: number
-): Promise<void> {
-  try {
-    if (!ctx.profileId) return;
-    
-    await ctx.supabase.rpc('update_user_location_cache', {
-      _user_id: ctx.profileId,
-      _lat: lat,
-      _lng: lng,
-    });
-    
-    console.log(JSON.stringify({
-      event: "PROPERTY_LOCATION_CACHED",
-      userId: ctx.profileId,
-    }));
-  } catch (error) {
-    console.error(JSON.stringify({
-      event: "PROPERTY_LOCATION_CACHE_FAILED",
-      error: String(error),
-    }));
-  }
 }
 
 async function handlePropertyLocation(
@@ -454,7 +425,7 @@ async function handlePropertyLocation(
   await cachePropertyLocation(ctx, location.latitude, location.longitude);
 
   // Handle find property location
-  if (state.key === "property_find_location") {
+  if (state.key === REAL_ESTATE_STATE_KEYS.FIND_LOCATION) {
     const findState = state.data as PropertyFindState;
     return await handleFindPropertyLocation(ctx, findState, {
       lat: location.latitude,
@@ -463,7 +434,7 @@ async function handlePropertyLocation(
   }
 
   // Handle add property location
-  if (state.key === "property_add_location") {
+  if (state.key === REAL_ESTATE_STATE_KEYS.ADD_LOCATION) {
     const addState = state.data as PropertyAddState;
     return await handleAddPropertyLocation(ctx, addState, {
       lat: location.latitude,
@@ -483,7 +454,7 @@ async function handlePropertyText(
   if (!text) return false;
 
   // Handle inquiry message
-  if (state.key === "property_inquiry") {
+  if (state.key === REAL_ESTATE_STATE_KEYS.INQUIRY) {
     const propertyId = state.data?.propertyId as string;
     if (propertyId) {
       return await handleInquiryMessage(ctx, propertyId, text);
@@ -491,12 +462,12 @@ async function handlePropertyText(
   }
 
   // Handle AI chat mode
-  if (state.key === "property_ai_chat") {
+  if (state.key === REAL_ESTATE_STATE_KEYS.PROPERTY_AI_CHAT) {
     return await handlePropertyAIChat(ctx, text);
   }
 
   // Handle duration input for short-term rentals
-  if (state.key === "property_find_duration") {
+  if (state.key === REAL_ESTATE_STATE_KEYS.FIND_DURATION) {
     const duration = text.match(/\d+/)?.[0];
     if (duration) {
       return await handleFindPropertyDuration(
@@ -508,7 +479,7 @@ async function handlePropertyText(
   }
 
   // Handle budget input
-  if (state.key === "property_find_budget") {
+  if (state.key === REAL_ESTATE_STATE_KEYS.FIND_BUDGET) {
     const budget = text.replace(/[^\d]/g, "");
     if (budget) {
       return await handleFindPropertyBudget(
@@ -520,7 +491,7 @@ async function handlePropertyText(
   }
 
   // Handle price input for adding property
-  if (state.key === "property_add_price") {
+  if (state.key === REAL_ESTATE_STATE_KEYS.ADD_PRICE) {
     const price = text.replace(/[^\d]/g, "");
     if (price) {
       return await handleAddPropertyPrice(

@@ -33,6 +33,38 @@ export const REAL_ESTATE_STATE_KEYS = {
   VIEWING_PROPERTY: "re_viewing_property",
   /** Scheduling a visit */
   SCHEDULING_VISIT: "re_scheduling_visit",
+  
+  // Property Find Flow States (for backwards compatibility with wa-webhook-property)
+  /** Selecting property type during find flow */
+  FIND_TYPE: "property_find_type",
+  /** Selecting bedrooms during find flow */
+  FIND_BEDROOMS: "property_find_bedrooms",
+  /** Selecting duration during find flow (short-term) */
+  FIND_DURATION: "property_find_duration",
+  /** Entering budget during find flow */
+  FIND_BUDGET: "property_find_budget",
+  /** Sharing location during find flow */
+  FIND_LOCATION: "property_find_location",
+  
+  // Property Add Flow States
+  /** Selecting property type during add flow */
+  ADD_TYPE: "property_add_type",
+  /** Selecting bedrooms during add flow */
+  ADD_BEDROOMS: "property_add_bedrooms",
+  /** Selecting price unit during add flow */
+  ADD_PRICE_UNIT: "property_add_price_unit",
+  /** Entering price during add flow */
+  ADD_PRICE: "property_add_price",
+  /** Sharing location during add flow */
+  ADD_LOCATION: "property_add_location",
+  
+  // Utility States
+  /** Saved location picker */
+  LOCATION_SAVED_PICKER: "location_saved_picker",
+  /** Property inquiry state */
+  INQUIRY: "property_inquiry",
+  /** Legacy AI chat state (maps to AI_CHAT) */
+  PROPERTY_AI_CHAT: "property_ai_chat",
 } as const;
 
 export type RealEstateStateKey = (typeof REAL_ESTATE_STATE_KEYS)[keyof typeof REAL_ESTATE_STATE_KEYS];
@@ -95,6 +127,8 @@ export const REAL_ESTATE_STATE_TRANSITIONS: Record<RealEstateStateKey, RealEstat
     REAL_ESTATE_STATE_KEYS.PROPERTY_LISTING,
     REAL_ESTATE_STATE_KEYS.AGENCY_MANAGEMENT,
     REAL_ESTATE_STATE_KEYS.AI_CHAT,
+    REAL_ESTATE_STATE_KEYS.FIND_TYPE,
+    REAL_ESTATE_STATE_KEYS.ADD_TYPE,
   ],
   [REAL_ESTATE_STATE_KEYS.PROPERTY_SEARCH]: [
     REAL_ESTATE_STATE_KEYS.VIEWING_PROPERTY,
@@ -123,6 +157,69 @@ export const REAL_ESTATE_STATE_TRANSITIONS: Record<RealEstateStateKey, RealEstat
   [REAL_ESTATE_STATE_KEYS.SCHEDULING_VISIT]: [
     REAL_ESTATE_STATE_KEYS.PROPERTY_SEARCH,
     REAL_ESTATE_STATE_KEYS.VIEWING_PROPERTY,
+    REAL_ESTATE_STATE_KEYS.ROLE_SELECTION,
+  ],
+  
+  // Property Find Flow Transitions
+  [REAL_ESTATE_STATE_KEYS.FIND_TYPE]: [
+    REAL_ESTATE_STATE_KEYS.FIND_BEDROOMS,
+    REAL_ESTATE_STATE_KEYS.ROLE_SELECTION,
+  ],
+  [REAL_ESTATE_STATE_KEYS.FIND_BEDROOMS]: [
+    REAL_ESTATE_STATE_KEYS.FIND_DURATION,
+    REAL_ESTATE_STATE_KEYS.FIND_BUDGET,
+    REAL_ESTATE_STATE_KEYS.ROLE_SELECTION,
+  ],
+  [REAL_ESTATE_STATE_KEYS.FIND_DURATION]: [
+    REAL_ESTATE_STATE_KEYS.FIND_BUDGET,
+    REAL_ESTATE_STATE_KEYS.ROLE_SELECTION,
+  ],
+  [REAL_ESTATE_STATE_KEYS.FIND_BUDGET]: [
+    REAL_ESTATE_STATE_KEYS.FIND_LOCATION,
+    REAL_ESTATE_STATE_KEYS.ROLE_SELECTION,
+  ],
+  [REAL_ESTATE_STATE_KEYS.FIND_LOCATION]: [
+    REAL_ESTATE_STATE_KEYS.PROPERTY_SEARCH,
+    REAL_ESTATE_STATE_KEYS.LOCATION_SAVED_PICKER,
+    REAL_ESTATE_STATE_KEYS.ROLE_SELECTION,
+  ],
+  
+  // Property Add Flow Transitions
+  [REAL_ESTATE_STATE_KEYS.ADD_TYPE]: [
+    REAL_ESTATE_STATE_KEYS.ADD_BEDROOMS,
+    REAL_ESTATE_STATE_KEYS.ROLE_SELECTION,
+  ],
+  [REAL_ESTATE_STATE_KEYS.ADD_BEDROOMS]: [
+    REAL_ESTATE_STATE_KEYS.ADD_PRICE_UNIT,
+    REAL_ESTATE_STATE_KEYS.ROLE_SELECTION,
+  ],
+  [REAL_ESTATE_STATE_KEYS.ADD_PRICE_UNIT]: [
+    REAL_ESTATE_STATE_KEYS.ADD_PRICE,
+    REAL_ESTATE_STATE_KEYS.ROLE_SELECTION,
+  ],
+  [REAL_ESTATE_STATE_KEYS.ADD_PRICE]: [
+    REAL_ESTATE_STATE_KEYS.ADD_LOCATION,
+    REAL_ESTATE_STATE_KEYS.ROLE_SELECTION,
+  ],
+  [REAL_ESTATE_STATE_KEYS.ADD_LOCATION]: [
+    REAL_ESTATE_STATE_KEYS.PROPERTY_LISTING,
+    REAL_ESTATE_STATE_KEYS.LOCATION_SAVED_PICKER,
+    REAL_ESTATE_STATE_KEYS.ROLE_SELECTION,
+  ],
+  
+  // Utility State Transitions
+  [REAL_ESTATE_STATE_KEYS.LOCATION_SAVED_PICKER]: [
+    REAL_ESTATE_STATE_KEYS.FIND_LOCATION,
+    REAL_ESTATE_STATE_KEYS.ADD_LOCATION,
+    REAL_ESTATE_STATE_KEYS.ROLE_SELECTION,
+  ],
+  [REAL_ESTATE_STATE_KEYS.INQUIRY]: [
+    REAL_ESTATE_STATE_KEYS.PROPERTY_SEARCH,
+    REAL_ESTATE_STATE_KEYS.ROLE_SELECTION,
+  ],
+  [REAL_ESTATE_STATE_KEYS.PROPERTY_AI_CHAT]: [
+    REAL_ESTATE_STATE_KEYS.PROPERTY_SEARCH,
+    REAL_ESTATE_STATE_KEYS.PROPERTY_LISTING,
     REAL_ESTATE_STATE_KEYS.ROLE_SELECTION,
   ],
 };
