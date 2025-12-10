@@ -34,4 +34,3 @@ onlyBuiltDependencies:
   - sharp
   - unrs-resolver
   - workerd
-  - wrtc
