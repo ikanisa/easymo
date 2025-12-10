@@ -120,6 +120,25 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
   if (routingText) {
     const normalized = routingText.trim().toLowerCase();
     
+    // PRIORITY: Route referral codes (REF:CODE or 8-char codes) to profile service
+    // This handles new users clicking referral links with unique codes
+    const isReferralCode = /^ref[:\s]*[a-z0-9]{4,12}$/i.test(routingText.trim()) ||
+                          /^[A-Z0-9]{6,12}$/i.test(routingText.trim());
+    if (isReferralCode) {
+      logInfo("WA_CORE_REFERRAL_CODE_DETECTED", { 
+        code: routingText.substring(0, 8) + "***",
+        from: phoneNumber?.substring(0, 6) ?? "unknown"
+      }, { correlationId: crypto.randomUUID() });
+      if (phoneNumber) {
+        await setActiveService(supabase, phoneNumber, "wa-webhook-profile");
+      }
+      return {
+        service: "wa-webhook-profile",
+        reason: "keyword",
+        routingText,
+      };
+    }
+    
     // Always show home menu for generic greetings and menu keywords
     // This ensures users get the home menu regardless of other settings
     const isGreeting = /^(hi|hello|hey|hola|bonjour|menu|home|exit|start|help|\?)$/i.test(normalized);
