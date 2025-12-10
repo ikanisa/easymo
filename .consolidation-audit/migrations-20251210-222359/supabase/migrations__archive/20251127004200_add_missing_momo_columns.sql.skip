@@ -1,0 +1,124 @@
+-- Add missing columns to momo_transactions table
+-- Fixes partial migration issue
+
+BEGIN;
+
+-- Add missing columns to momo_transactions if they don't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='momo_transactions' AND column_name='service_type') THEN
+        ALTER TABLE momo_transactions 
+        ADD COLUMN service_type TEXT CHECK (service_type IN ('rides', 'marketplace', 'jobs', 'insurance'));
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='momo_transactions' AND column_name='matched_record_id') THEN
+        ALTER TABLE momo_transactions 
+        ADD COLUMN matched_record_id UUID;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='momo_transactions' AND column_name='matched_table') THEN
+        ALTER TABLE momo_transactions 
+        ADD COLUMN matched_table TEXT;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='momo_transactions' AND column_name='match_confidence') THEN
+        ALTER TABLE momo_transactions 
+        ADD COLUMN match_confidence DECIMAL(3,2);
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='momo_transactions' AND column_name='processed_at') THEN
+        ALTER TABLE momo_transactions 
+        ADD COLUMN processed_at TIMESTAMPTZ;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='momo_transactions' AND column_name='device_id') THEN
+        ALTER TABLE momo_transactions 
+        ADD COLUMN device_id TEXT;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='momo_transactions' AND column_name='signature') THEN
+        ALTER TABLE momo_transactions 
+        ADD COLUMN signature TEXT;
+    END IF;
+END$$;
+
+-- Now create the missing indexes
+CREATE INDEX IF NOT EXISTS idx_momo_transactions_service ON momo_transactions(service_type);
+CREATE INDEX IF NOT EXISTS idx_momo_transactions_received ON momo_transactions(received_at DESC);
+CREATE INDEX IF NOT EXISTS idx_momo_transactions_txn_id ON momo_transactions(transaction_id);
+
+-- Create momo_webhook_endpoints table if it doesn't exist
+CREATE TABLE IF NOT EXISTS momo_webhook_endpoints (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  momo_phone_number TEXT NOT NULL UNIQUE,
+  service_type TEXT NOT NULL CHECK (service_type IN ('rides', 'marketplace', 'jobs', 'insurance')),
+  webhook_secret TEXT NOT NULL,
+  device_id TEXT,
+  description TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_momo_webhook_endpoints_phone ON momo_webhook_endpoints(momo_phone_number);
+
+-- Enable RLS
+ALTER TABLE momo_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE momo_webhook_endpoints ENABLE ROW LEVEL SECURITY;
+
+-- Policies
+DROP POLICY IF EXISTS "Service role manages momo_transactions" ON momo_transactions;
+CREATE POLICY "Service role manages momo_transactions" ON momo_transactions
+  FOR ALL TO service_role
+  USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Service role manages momo_webhook_endpoints" ON momo_webhook_endpoints;
+CREATE POLICY "Service role manages momo_webhook_endpoints" ON momo_webhook_endpoints
+  FOR ALL TO service_role
+  USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Admins read momo_transactions" ON momo_transactions;
+CREATE POLICY "Admins read momo_transactions" ON momo_transactions
+  FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM users 
+      WHERE users.id = auth.uid() 
+      AND users.role IN ('admin', 'super_admin')
+    )
+  );
+
+DROP POLICY IF EXISTS "Admins manage momo_webhook_endpoints" ON momo_webhook_endpoints;
+CREATE POLICY "Admins manage momo_webhook_endpoints" ON momo_webhook_endpoints
+  FOR ALL TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM users 
+      WHERE users.id = auth.uid() 
+      AND users.role IN ('admin', 'super_admin')
+    )
+  );
+
+-- Trigger
+CREATE OR REPLACE FUNCTION update_momo_webhook_endpoints_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_update_momo_webhook_endpoints_updated_at ON momo_webhook_endpoints;
+CREATE TRIGGER trigger_update_momo_webhook_endpoints_updated_at
+  BEFORE UPDATE ON momo_webhook_endpoints
+  FOR EACH ROW
+  EXECUTE FUNCTION update_momo_webhook_endpoints_updated_at();
+
+COMMIT;
