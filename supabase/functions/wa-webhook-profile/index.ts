@@ -1047,12 +1047,14 @@ serve(async (req: Request): Promise<Response> => {
     else if (message.type === "text") {
       const text = (message.text as any)?.body?.toLowerCase() ?? "";
       const originalText = (message.text as any)?.body?.trim() ?? "";
+      const upperText = originalText.toUpperCase();
       
       // PRIORITY: Check for referral code (REF:CODE or standalone 6-12 char alphanumeric code)
       // This handles new users who click referral links and send the code
+      // Patterns match wa-webhook-core/router.ts for consistency
       const refMatch = originalText.match(/^REF[:\s]+([A-Z0-9]{4,12})$/i);
-      const isStandaloneCode = /^[A-Z0-9]{6,12}$/.test(originalText) && 
-                              !/^(HELLO|THANKS|CANCEL|SUBMIT|ACCEPT|REJECT|STATUS|URGENT|PLEASE|PROFILE|WALLET)$/i.test(originalText);
+      const isStandaloneCode = /^[A-Z0-9]{6,12}$/.test(upperText) && 
+                              !/^(HELLO|THANKS|CANCEL|SUBMIT|ACCEPT|REJECT|STATUS|URGENT|PLEASE|PROFILE|WALLET)$/.test(upperText);
       
       if (refMatch || isStandaloneCode) {
         const code = refMatch ? refMatch[1] : originalText;

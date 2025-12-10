@@ -265,8 +265,12 @@ BEGIN
         )
     );
 
-    -- Record in wallet_transactions if table exists
-    BEGIN
+    -- Record in wallet_transactions if table exists (check schema first)
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'wallet_transactions'
+    ) THEN
         INSERT INTO public.wallet_transactions (
             profile_id,
             amount_minor,
@@ -283,10 +287,7 @@ BEGIN
             'Referral bonus for inviting ' || LEFT(_joiner_whatsapp, 6) || '***',
             NOW() AT TIME ZONE 'utc'
         );
-    EXCEPTION WHEN undefined_table THEN
-        -- Table doesn't exist, skip
-        NULL;
-    END;
+    END IF;
 
     -- Record the attribution with credit
     INSERT INTO public.referral_attributions (

@@ -120,15 +120,16 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
   if (routingText) {
     const normalized = routingText.trim().toLowerCase();
     const trimmedText = routingText.trim();
+    const upperText = trimmedText.toUpperCase();
     
     // PRIORITY: Route referral codes (REF:CODE or standalone codes) to profile service
     // This handles new users clicking referral links with unique codes
-    // Patterns:
+    // Patterns (case-insensitive):
     //   - "REF:ABC12345" or "REF ABC12345" (with 4-12 alphanumeric characters after prefix)
-    //   - Standalone codes: 6-12 uppercase alphanumeric characters (avoiding common words)
-    const hasRefPrefix = /^ref[:\s]+[a-z0-9]{4,12}$/i.test(trimmedText);
-    const isStandaloneCode = /^[A-Z0-9]{6,12}$/.test(trimmedText) && 
-                            !/^(HELLO|THANKS|CANCEL|SUBMIT|ACCEPT|REJECT|STATUS|URGENT|PLEASE)$/i.test(trimmedText);
+    //   - Standalone codes: 6-12 alphanumeric characters (avoiding common words)
+    const hasRefPrefix = /^REF[:\s]+[A-Z0-9]{4,12}$/i.test(trimmedText);
+    const isStandaloneCode = /^[A-Z0-9]{6,12}$/.test(upperText) && 
+                            !/^(HELLO|THANKS|CANCEL|SUBMIT|ACCEPT|REJECT|STATUS|URGENT|PLEASE)$/.test(upperText);
     
     const isReferralCode = hasRefPrefix || isStandaloneCode;
     
