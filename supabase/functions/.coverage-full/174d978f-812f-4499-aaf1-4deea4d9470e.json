@@ -1,0 +1,140 @@
+{
+  "scriptId": "333",
+  "url": "file:///Users/jeanbosco/workspace/easymo/supabase/functions/wa-webhook-profile/__tests__/profile.test.ts",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 0,
+          "endOffset": 2459,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "validateProfileUpdate",
+      "ranges": [
+        {
+          "startOffset": 225,
+          "endOffset": 1039,
+          "count": 9
+        },
+        {
+          "startOffset": 321,
+          "endOffset": 550,
+          "count": 2
+        },
+        {
+          "startOffset": 365,
+          "endOffset": 435,
+          "count": 1
+        },
+        {
+          "startOffset": 473,
+          "endOffset": 546,
+          "count": 0
+        },
+        {
+          "startOffset": 583,
+          "endOffset": 736,
+          "count": 2
+        },
+        {
+          "startOffset": 680,
+          "endOffset": 732,
+          "count": 1
+        },
+        {
+          "startOffset": 772,
+          "endOffset": 965,
+          "count": 5
+        },
+        {
+          "startOffset": 906,
+          "endOffset": 961,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 1153,
+          "endOffset": 1269,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 1319,
+          "endOffset": 1508,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 1555,
+          "endOffset": 1675,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 1724,
+          "endOffset": 1902,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 1952,
+          "endOffset": 2176,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 2013,
+          "endOffset": 2172,
+          "count": 4
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 2232,
+          "endOffset": 2406,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    }
+  ]
+}

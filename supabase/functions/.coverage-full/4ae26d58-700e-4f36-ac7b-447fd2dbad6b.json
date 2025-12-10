@@ -1,0 +1,116 @@
+{
+  "scriptId": "338",
+  "url": "file:///Users/jeanbosco/workspace/easymo/supabase/functions/wa-webhook-marketplace/media.ts",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 0,
+          "endOffset": 5694,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "downloadWhatsAppMedia",
+      "ranges": [
+        {
+          "startOffset": 429,
+          "endOffset": 1536,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "uploadToStorage",
+      "ranges": [
+        {
+          "startOffset": 1581,
+          "endOffset": 2328,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "handleMediaUpload",
+      "ranges": [
+        {
+          "startOffset": 2389,
+          "endOffset": 4941,
+          "count": 2
+        },
+        {
+          "startOffset": 2569,
+          "endOffset": 2832,
+          "count": 1
+        },
+        {
+          "startOffset": 2832,
+          "endOffset": 2848,
+          "count": 0
+        },
+        {
+          "startOffset": 2850,
+          "endOffset": 2938,
+          "count": 0
+        },
+        {
+          "startOffset": 2938,
+          "endOffset": 3181,
+          "count": 1
+        },
+        {
+          "startOffset": 2976,
+          "endOffset": 2995,
+          "count": 0
+        },
+        {
+          "startOffset": 2997,
+          "endOffset": 3041,
+          "count": 0
+        },
+        {
+          "startOffset": 3181,
+          "endOffset": 3848,
+          "count": 0
+        },
+        {
+          "startOffset": 3849,
+          "endOffset": 3854,
+          "count": 0
+        },
+        {
+          "startOffset": 4081,
+          "endOffset": 4489,
+          "count": 0
+        },
+        {
+          "startOffset": 4490,
+          "endOffset": 4494,
+          "count": 0
+        },
+        {
+          "startOffset": 4606,
+          "endOffset": 4939,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "ensureStorageBucket",
+      "ranges": [
+        {
+          "startOffset": 5002,
+          "endOffset": 5693,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    }
+  ]
+}

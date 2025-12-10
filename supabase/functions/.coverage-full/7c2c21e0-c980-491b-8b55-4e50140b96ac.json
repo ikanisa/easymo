@@ -1,0 +1,160 @@
+{
+  "scriptId": "349",
+  "url": "file:///Users/jeanbosco/workspace/easymo/supabase/functions/_shared/observability.ts",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 0,
+          "endOffset": 8864,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "logStructuredEvent",
+      "ranges": [
+        {
+          "startOffset": 611,
+          "endOffset": 1109,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "logError",
+      "ranges": [
+        {
+          "startOffset": 1511,
+          "endOffset": 2034,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "normalizeDimensions",
+      "ranges": [
+        {
+          "startOffset": 2091,
+          "endOffset": 2338,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "recordMetric",
+      "ranges": [
+        {
+          "startOffset": 2719,
+          "endOffset": 2902,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "recordDurationMetric",
+      "ranges": [
+        {
+          "startOffset": 3276,
+          "endOffset": 3463,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "recordGauge",
+      "ranges": [
+        {
+          "startOffset": 3739,
+          "endOffset": 3866,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "maskPII",
+      "ranges": [
+        {
+          "startOffset": 4198,
+          "endOffset": 4494,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "generateCorrelationId",
+      "ranges": [
+        {
+          "startOffset": 4557,
+          "endOffset": 4623,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "getCorrelationId",
+      "ranges": [
+        {
+          "startOffset": 4686,
+          "endOffset": 4828,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "logRequest",
+      "ranges": [
+        {
+          "startOffset": 5078,
+          "endOffset": 5379,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "logResponse",
+      "ranges": [
+        {
+          "startOffset": 5651,
+          "endOffset": 5850,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "createTracedFetch",
+      "ranges": [
+        {
+          "startOffset": 5851,
+          "endOffset": 6367,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "withRequestInstrumentation",
+      "ranges": [
+        {
+          "startOffset": 7319,
+          "endOffset": 8863,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    }
+  ]
+}

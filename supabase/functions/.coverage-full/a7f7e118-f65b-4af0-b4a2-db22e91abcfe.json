@@ -1,0 +1,210 @@
+{
+  "scriptId": "338",
+  "url": "file:///Users/jeanbosco/workspace/easymo/supabase/functions/wa-webhook-marketplace/payment.ts",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 0,
+          "endOffset": 13353,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "generateMoMoUssd",
+      "ranges": [
+        {
+          "startOffset": 1462,
+          "endOffset": 1608,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "createTelLink",
+      "ranges": [
+        {
+          "startOffset": 1706,
+          "endOffset": 1770,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "formatUssdDisplay",
+      "ranges": [
+        {
+          "startOffset": 1827,
+          "endOffset": 1925,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "initiatePayment",
+      "ranges": [
+        {
+          "startOffset": 2111,
+          "endOffset": 6368,
+          "count": 2
+        },
+        {
+          "startOffset": 2448,
+          "endOffset": 2481,
+          "count": 0
+        },
+        {
+          "startOffset": 2483,
+          "endOffset": 2658,
+          "count": 0
+        },
+        {
+          "startOffset": 2660,
+          "endOffset": 3076,
+          "count": 0
+        },
+        {
+          "startOffset": 3098,
+          "endOffset": 3116,
+          "count": 0
+        },
+        {
+          "startOffset": 3118,
+          "endOffset": 4258,
+          "count": 0
+        },
+        {
+          "startOffset": 4260,
+          "endOffset": 6129,
+          "count": 0
+        },
+        {
+          "startOffset": 6313,
+          "endOffset": 6328,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "buyerConfirmPayment",
+      "ranges": [
+        {
+          "startOffset": 6566,
+          "endOffset": 8695,
+          "count": 1
+        },
+        {
+          "startOffset": 6905,
+          "endOffset": 6937,
+          "count": 0
+        },
+        {
+          "startOffset": 6939,
+          "endOffset": 7588,
+          "count": 0
+        },
+        {
+          "startOffset": 7716,
+          "endOffset": 8174,
+          "count": 0
+        },
+        {
+          "startOffset": 8175,
+          "endOffset": 8179,
+          "count": 0
+        },
+        {
+          "startOffset": 8487,
+          "endOffset": 8502,
+          "count": 0
+        },
+        {
+          "startOffset": 8651,
+          "endOffset": 8680,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "sellerConfirmPayment",
+      "ranges": [
+        {
+          "startOffset": 8755,
+          "endOffset": 11163,
+          "count": 1
+        },
+        {
+          "startOffset": 9073,
+          "endOffset": 9105,
+          "count": 0
+        },
+        {
+          "startOffset": 9107,
+          "endOffset": 10800,
+          "count": 0
+        },
+        {
+          "startOffset": 10952,
+          "endOffset": 10967,
+          "count": 0
+        },
+        {
+          "startOffset": 11119,
+          "endOffset": 11148,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "cancelTransaction",
+      "ranges": [
+        {
+          "startOffset": 11343,
+          "endOffset": 12876,
+          "count": 1
+        },
+        {
+          "startOffset": 11636,
+          "endOffset": 11668,
+          "count": 0
+        },
+        {
+          "startOffset": 11670,
+          "endOffset": 12120,
+          "count": 0
+        },
+        {
+          "startOffset": 12196,
+          "endOffset": 12719,
+          "count": 0
+        },
+        {
+          "startOffset": 12829,
+          "endOffset": 12861,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "getTransactionDetails",
+      "ranges": [
+        {
+          "startOffset": 12919,
+          "endOffset": 13352,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    }
+  ]
+}

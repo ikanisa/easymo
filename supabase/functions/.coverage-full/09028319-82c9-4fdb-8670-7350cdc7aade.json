@@ -1,0 +1,88 @@
+{
+  "scriptId": "333",
+  "url": "file:///Users/jeanbosco/workspace/easymo/supabase/functions/wa-webhook-mobility/__tests__/trip-lifecycle.test.ts",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 0,
+          "endOffset": 2123,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "isValidTransition",
+      "ranges": [
+        {
+          "startOffset": 708,
+          "endOffset": 805,
+          "count": 10
+        },
+        {
+          "startOffset": 794,
+          "endOffset": 802,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 934,
+          "endOffset": 1019,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 1082,
+          "endOffset": 1170,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 1235,
+          "endOffset": 1327,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 1382,
+          "endOffset": 1556,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 1645,
+          "endOffset": 2074,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    }
+  ]
+}

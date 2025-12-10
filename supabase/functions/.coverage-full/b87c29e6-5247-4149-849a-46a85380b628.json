@@ -1,0 +1,726 @@
+{
+  "scriptId": "348",
+  "url": "file:///Users/jeanbosco/Library/Caches/deno/npm/registry.npmjs.org/@google/generative-ai/0.21.0/dist/index.mjs",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 0,
+          "endOffset": 61004,
+          "count": 1
+        },
+        {
+          "startOffset": 25119,
+          "endOffset": 25283,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 158,
+          "endOffset": 552,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 1242,
+          "endOffset": 1405,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 1538,
+          "endOffset": 2162,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 3011,
+          "endOffset": 3445,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 3593,
+          "endOffset": 4225,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 4385,
+          "endOffset": 4909,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 5029,
+          "endOffset": 5358,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 5471,
+          "endOffset": 6235,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 6345,
+          "endOffset": 6700,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 6777,
+          "endOffset": 7621,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 7783,
+          "endOffset": 8080,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "GoogleGenerativeAIError",
+      "ranges": [
+        {
+          "startOffset": 8845,
+          "endOffset": 8930,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "GoogleGenerativeAIResponseError",
+      "ranges": [
+        {
+          "startOffset": 9163,
+          "endOffset": 9259,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "GoogleGenerativeAIFetchError",
+      "ranges": [
+        {
+          "startOffset": 9510,
+          "endOffset": 9706,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 10808,
+          "endOffset": 11083,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "RequestUrl",
+      "ranges": [
+        {
+          "startOffset": 11130,
+          "endOffset": 11354,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "toString",
+      "ranges": [
+        {
+          "startOffset": 11359,
+          "endOffset": 11811,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "getClientHeaders",
+      "ranges": [
+        {
+          "startOffset": 11893,
+          "endOffset": 12232,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "getHeaders",
+      "ranges": [
+        {
+          "startOffset": 12233,
+          "endOffset": 13530,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "constructModelRequest",
+      "ranges": [
+        {
+          "startOffset": 13531,
+          "endOffset": 13897,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "makeModelRequest",
+      "ranges": [
+        {
+          "startOffset": 13898,
+          "endOffset": 14212,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "makeRequest",
+      "ranges": [
+        {
+          "startOffset": 14213,
+          "endOffset": 14526,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "handleResponseError",
+      "ranges": [
+        {
+          "startOffset": 14527,
+          "endOffset": 14848,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "handleResponseNotOk",
+      "ranges": [
+        {
+          "startOffset": 14849,
+          "endOffset": 15434,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "buildFetchOptions",
+      "ranges": [
+        {
+          "startOffset": 15611,
+          "endOffset": 16450,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "addHelpers",
+      "ranges": [
+        {
+          "startOffset": 17217,
+          "endOffset": 20105,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "getText",
+      "ranges": [
+        {
+          "startOffset": 20173,
+          "endOffset": 21177,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "getFunctionCalls",
+      "ranges": [
+        {
+          "startOffset": 21230,
+          "endOffset": 21863,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "hadBadFinishReason",
+      "ranges": [
+        {
+          "startOffset": 21975,
+          "endOffset": 22117,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "formatBlockErrorMessage",
+      "ranges": [
+        {
+          "startOffset": 22118,
+          "endOffset": 23169,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "__await",
+      "ranges": [
+        {
+          "startOffset": 24051,
+          "endOffset": 24150,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "__asyncGenerator",
+      "ranges": [
+        {
+          "startOffset": 24154,
+          "endOffset": 25059,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "responseLineRE",
+      "ranges": [
+        {
+          "startOffset": 25121,
+          "endOffset": 25283,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "processStream",
+      "ranges": [
+        {
+          "startOffset": 26233,
+          "endOffset": 26598,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "getResponsePromise",
+      "ranges": [
+        {
+          "startOffset": 26599,
+          "endOffset": 26919,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "generateResponseSequence",
+      "ranges": [
+        {
+          "startOffset": 26920,
+          "endOffset": 27314,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "getResponseStream",
+      "ranges": [
+        {
+          "startOffset": 27501,
+          "endOffset": 29016,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "aggregateResponses",
+      "ranges": [
+        {
+          "startOffset": 29120,
+          "endOffset": 32156,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "generateContentStream",
+      "ranges": [
+        {
+          "startOffset": 32763,
+          "endOffset": 33032,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "generateContent",
+      "ranges": [
+        {
+          "startOffset": 33033,
+          "endOffset": 33413,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "formatSystemInstruction",
+      "ranges": [
+        {
+          "startOffset": 34020,
+          "endOffset": 34519,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "formatNewContent",
+      "ranges": [
+        {
+          "startOffset": 34520,
+          "endOffset": 35007,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "assignRoleToPartsAndValidateSendMessageRequest",
+      "ranges": [
+        {
+          "startOffset": 35348,
+          "endOffset": 36335,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "formatCountTokensInput",
+      "ranges": [
+        {
+          "startOffset": 36336,
+          "endOffset": 38067,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "formatGenerateContentInput",
+      "ranges": [
+        {
+          "startOffset": 38068,
+          "endOffset": 38522,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "formatEmbedContentInput",
+      "ranges": [
+        {
+          "startOffset": 38523,
+          "endOffset": 38733,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "validateChatHistory",
+      "ranges": [
+        {
+          "startOffset": 39811,
+          "endOffset": 41421,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "ChatSession",
+      "ranges": [
+        {
+          "startOffset": 42275,
+          "endOffset": 42732,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "getHistory",
+      "ranges": [
+        {
+          "startOffset": 42932,
+          "endOffset": 43021,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "sendMessage",
+      "ranges": [
+        {
+          "startOffset": 43351,
+          "endOffset": 45513,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "sendMessageStream",
+      "ranges": [
+        {
+          "startOffset": 45911,
+          "endOffset": 48763,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "countTokens",
+      "ranges": [
+        {
+          "startOffset": 49372,
+          "endOffset": 49607,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "embedContent",
+      "ranges": [
+        {
+          "startOffset": 50214,
+          "endOffset": 50439,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "batchEmbedContents",
+      "ranges": [
+        {
+          "startOffset": 50440,
+          "endOffset": 50845,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "GenerativeModel",
+      "ranges": [
+        {
+          "startOffset": 51535,
+          "endOffset": 52378,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "generateContent",
+      "ranges": [
+        {
+          "startOffset": 52749,
+          "endOffset": 53391,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "generateContentStream",
+      "ranges": [
+        {
+          "startOffset": 53870,
+          "endOffset": 54524,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "startChat",
+      "ranges": [
+        {
+          "startOffset": 54639,
+          "endOffset": 55060,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "countTokens",
+      "ranges": [
+        {
+          "startOffset": 55345,
+          "endOffset": 56004,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "embedContent",
+      "ranges": [
+        {
+          "startOffset": 56275,
+          "endOffset": 56617,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "batchEmbedContents",
+      "ranges": [
+        {
+          "startOffset": 56908,
+          "endOffset": 57222,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "GoogleGenerativeAI",
+      "ranges": [
+        {
+          "startOffset": 57913,
+          "endOffset": 57970,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "getGenerativeModel",
+      "ranges": [
+        {
+          "startOffset": 58067,
+          "endOffset": 58404,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "getGenerativeModelFromCachedContent",
+      "ranges": [
+        {
+          "startOffset": 58504,
+          "endOffset": 60587,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    }
+  ]
+}
