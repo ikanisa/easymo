@@ -4,19 +4,16 @@
  * 
  * Part of Unified AI Agent Architecture
  * Created: 2025-11-27
- * Updated: 2025-12-01 - Added Rides and Insurance agents
  * Updated: 2025-12-05 - Merged marketplace and business_broker into buy_and_sell
  * 
- * OFFICIAL AGENTS (9 production agents matching ai_agents database table):
+ * OFFICIAL AGENTS (7 production agents):
  * 1. waiter - Restaurant/Bar ordering, table booking
  * 2. farmer - Agricultural support, market prices
  * 3. jobs - Job search, employment, gigs
  * 4. real_estate - Property rentals, listings
  * 5. buy_and_sell - Buy & Sell (merged: marketplace + business_broker)
- * 6. rides - Transport, ride-sharing, delivery
- * 7. insurance - Motor insurance, policies, claims
- * 8. support - General help, customer service
- * 9. sales_cold_caller - Sales/Marketing outreach
+ * 6. support - General help, customer service
+ * 7. sales_cold_caller - Sales/Marketing outreach
  * 
  * DEPRECATED (merged into buy_and_sell):
  * - marketplace
@@ -30,8 +27,6 @@ import { FarmerAgent } from '../agents/farmer-agent.ts';
 import { JobsAgent } from '../agents/jobs-agent.ts';
 import { PropertyAgent } from '../agents/property-agent.ts';
 import { BuyAndSellAgent } from '../agents/buy-and-sell-agent.ts';
-import { RidesAgent } from '../agents/rides-agent.ts';
-import { InsuranceAgent } from '../agents/insurance-agent.ts';
 
 export class AgentRegistry {
   private agents = new Map<string, BaseAgent>();
@@ -54,8 +49,6 @@ export class AgentRegistry {
     this.register(new JobsAgent());
     this.register(new PropertyAgent());
     this.register(new BuyAndSellAgent());
-    this.register(new RidesAgent());
-    this.register(new InsuranceAgent());
   }
 
   /**
@@ -123,23 +116,6 @@ export class AgentRegistry {
     this.intentMapping.set('opportunity', 'buy_and_sell_agent');
     this.intentMapping.set('marketplace', 'buy_and_sell_agent');
     this.intentMapping.set('shopping', 'buy_and_sell_agent');
-    
-    // Rides Agent
-    this.intentMapping.set('rides', 'rides_agent');
-    this.intentMapping.set('ride', 'rides_agent');
-    this.intentMapping.set('driver', 'rides_agent');
-    this.intentMapping.set('passenger', 'rides_agent');
-    this.intentMapping.set('transport', 'rides_agent');
-    this.intentMapping.set('taxi', 'rides_agent');
-    this.intentMapping.set('moto', 'rides_agent');
-    
-    // Insurance Agent
-    this.intentMapping.set('insurance', 'insurance_agent');
-    this.intentMapping.set('insure', 'insurance_agent');
-    this.intentMapping.set('policy', 'insurance_agent');
-    this.intentMapping.set('certificate', 'insurance_agent');
-    this.intentMapping.set('carte_jaune', 'insurance_agent');
-    this.intentMapping.set('claim', 'insurance_agent');
   }
 
   /**

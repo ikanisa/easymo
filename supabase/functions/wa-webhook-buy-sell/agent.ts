@@ -1,6 +1,13 @@
 /**
  * Marketplace AI Agent
  *
+ * ⚠️ DEPRECATION NOTICE:
+ * This file is being phased out as part of Buy & Sell agent consolidation.
+ * New code should import from: supabase/functions/_shared/agents/buy-and-sell.ts
+ * 
+ * @see docs/features/BUY_SELL_CONSOLIDATION_ANALYSIS.md
+ * @deprecated Use BuyAndSellAgent from _shared/agents/buy-and-sell.ts instead
+ *
  * Natural language AI agent for connecting buyers and sellers in Rwanda.
  * Uses OpenAI Responses API (Agents SDK) with Gemini fallback for intent recognition,
  * entity extraction, and conversational flow.

@@ -138,19 +138,6 @@ export {
 } from "./agents/commerce-agent.base";
 
 export {
-  MobilityAgentBase,
-  type Booking,
-  type BookingStatus,
-  type Driver,
-  type FareEstimate,
-  type Location,
-  type RideStatus,
-  type TripRequest,
-  type Vehicle,
-  type VehicleType,
-} from "./agents/mobility-agent.base";
-
-export {
   ProfessionalAgentBase,
   type Appointment,
   type AppointmentRequest,

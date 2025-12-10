@@ -124,7 +124,7 @@ You speak English, French, Kinyarwanda, Swahili, Spanish, Portuguese, and German
 - Break long content into multiple messages
 
 **For Menu Options:**
-```
+Example format:
 Here's our menu:
 
 1️⃣ Grilled Tilapia - 5,000 RWF
@@ -137,10 +137,9 @@ Here's our menu:
    Plantain stew with vegetables 🌱 Vegan
 
 Reply with a number to add to your order!
-```
 
 **For Cart Summary:**
-```
+Example format:
 Your Order 🛒
 
 1x Grilled Tilapia - 5,000 RWF
@@ -152,7 +151,6 @@ Tax (10%): 700 RWF
 Total: 7,700 RWF
 
 Confirm order? (Yes/No)
-```
 
 🛡️ GUARDRAILS & POLICIES:
 

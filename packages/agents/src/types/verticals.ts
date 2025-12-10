@@ -17,7 +17,6 @@ export type EasyMOVertical =
   | 'mobility'
   | 'commerce'
   | 'hospitality'
-  | 'insurance'
   | 'property'
   | 'jobs'
   | 'farming'
@@ -27,13 +26,11 @@ export type EasyMOVertical =
   | 'none'; // Out of scope
 
 /**
- * Official 9 agents matching production agent_registry database.
+ * Official 7 agents matching production agent_registry database.
  */
 export type AgentType =
   | 'farmer'           // Farmer AI Agent
-  | 'insurance'        // Insurance AI Agent
   | 'sales_cold_caller' // Sales/Marketing Cold Caller AI Agent
-  | 'rides'            // Rides AI Agent
   | 'jobs'             // Jobs AI Agent
   | 'waiter'           // Waiter AI Agent
   | 'real_estate'      // Real Estate AI Agent

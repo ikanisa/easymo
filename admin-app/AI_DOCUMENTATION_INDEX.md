@@ -168,11 +168,11 @@ admin-app/
 **Duration:** Week 4  
 **Status:** Complete  
 **Key Deliverables:**
-- Mobility Agent (ride booking)
 - Marketplace Agent (product search)
 - Support Agent (knowledge base)
 - Conversation history management
 - Context window optimization
+- Mobility handled via WhatsApp workflows (no AI agent)
 
 ### Phase 5: UI Components ✅
 **Duration:** Week 5  
@@ -256,7 +256,7 @@ import { ImageGenerator } from '@/components/ai';
 import { AgentToolConfig } from '@/components/agents';
 
 <AgentToolConfig
-  agentId="mobility-agent"
+  agentId="support-agent"
   onToolsUpdated={(tools) => console.log('Updated:', tools)}
 />
 ```
