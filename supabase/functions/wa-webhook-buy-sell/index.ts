@@ -264,7 +264,8 @@ serve(async (req: Request): Promise<Response> => {
         lower === "buy" ||
         lower === "sell"
       ) {
-        await showBuySellCategories(userPhone);
+        const userCountry = mapCountry(getCountryCode(userPhone));
+        await showBuySellCategories(userPhone, userCountry);
         
         const duration = Date.now() - startTime;
         recordMetric("buy_sell.message.processed", 1, {
@@ -275,7 +276,8 @@ serve(async (req: Request): Promise<Response> => {
       }
 
       // Fallback: Show categories (NO AI agent - this is category workflow only)
-      await showBuySellCategories(userPhone);
+      const userCountry = mapCountry(getCountryCode(userPhone));
+      await showBuySellCategories(userPhone, userCountry);
 
       const duration = Date.now() - startTime;
       recordMetric("buy_sell.message.processed", 1, {
