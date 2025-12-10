@@ -1,13 +1,9 @@
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
-import type { RawWhatsAppMessage } from "../../_shared/wa-webhook-shared/types.ts";
 import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import { sendButtonsMessage, sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 import { setState, clearState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
-import { fetchInsuranceMedia, uploadInsuranceBytes } from "../../_shared/wa-webhook-shared/domains/insurance/ins_media.ts";
-
-const INSURANCE_MEDIA_BUCKET = Deno.env.get("INSURANCE_MEDIA_BUCKET") ?? "insurance-docs";
 
 /**
  * Start the vehicle addition flow - Step 1: Select vehicle type
@@ -65,7 +61,7 @@ export async function startAddVehicle(ctx: RouterContext): Promise<boolean> {
 }
 
 /**
- * Handle vehicle type selection - Step 2: Request insurance certificate
+ * Handle vehicle type selection - Step 2: Request number plate
  */
 export async function handleVehicleTypeSelection(
   ctx: RouterContext,
@@ -88,20 +84,19 @@ export async function handleVehicleTypeSelection(
   const vehicleName = vehicleNames[vehicleType] || vehicleType;
 
   await setState(ctx.supabase, ctx.profileId, {
-    key: "vehicle_add_insurance",
+    key: "vehicle_add_plate",
     data: { vehicleType },
   });
 
   await sendButtonsMessage(
     ctx,
     `🚗 *Add ${vehicleName}*\n\n` +
-    "Please send a photo or PDF of your valid insurance certificate (Yellow Card).\n\n" +
-    "📋 The system will automatically extract:\n" +
-    "• Vehicle registration plate\n" +
-    "• Insurance policy number\n" +
-    "• Insurance company name\n" +
-    "• Policy expiry date\n\n" +
-    "⚠️ *Important:* Your insurance must be valid (not expired).",
+    "Please type your vehicle's number plate.\n\n" +
+    "📋 *Examples:*\n" +
+    "• RAB 123 B (car)\n" +
+    "• RA 123 B (moto)\n" +
+    "• RAC 456 A (truck)\n\n" +
+    "Type the plate number below:",
     [
       { id: IDS.MY_VEHICLES, title: "← Cancel" },
     ],
@@ -116,12 +111,37 @@ export async function handleVehicleTypeSelection(
 }
 
 /**
- * Handle insurance document upload for vehicle addition
+ * Validate Rwandan vehicle plate number format
+ * Formats: RAB 123 B, RA 123 B, RAC 456 A, etc.
  */
-export async function handleVehicleInsuranceUpload(
+function isValidPlateNumber(plate: string): boolean {
+  // Normalize: remove extra spaces, convert to uppercase
+  const normalized = plate.toUpperCase().replace(/\s+/g, " ").trim();
+  
+  // Rwanda plate patterns:
+  // Cars: RAB 123 A (3 letters + 3 digits + 1 letter)
+  // Motos: RA 123 B (2 letters + 3 digits + 1 letter)
+  // Trucks: RAC 123 A, etc.
+  const carPattern = /^R[A-Z]{2}\s?\d{3}\s?[A-Z]$/;
+  const motoPattern = /^R[A-Z]\s?\d{3}\s?[A-Z]$/;
+  
+  return carPattern.test(normalized) || motoPattern.test(normalized);
+}
+
+/**
+ * Normalize plate number to standard format
+ */
+function normalizePlateNumber(plate: string): string {
+  return plate.toUpperCase().replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Handle plate number text input - Step 3: Create vehicle
+ */
+export async function handleVehiclePlateInput(
   ctx: RouterContext,
-  message: RawWhatsAppMessage,
-  state: any,
+  plateText: string,
+  state: { key: string; data?: { vehicleType?: string } },
 ): Promise<boolean> {
   if (!ctx.profileId) {
     await sendText(ctx.from, "⚠️ Please create your profile first.");
@@ -130,260 +150,135 @@ export async function handleVehicleInsuranceUpload(
 
   // Get vehicle type from state
   const vehicleType = state?.data?.vehicleType || "veh_other";
+  const plateNumber = normalizePlateNumber(plateText);
 
-  // Extract media ID from message
-  const mediaId = message.type === "image"
-    ? (message as any).image?.id
-    : message.type === "document"
-    ? (message as any).document?.id
-    : null;
-
-  if (!mediaId) {
+  // Validate plate number format
+  if (!isValidPlateNumber(plateNumber)) {
     await sendButtonsMessage(
       ctx,
-      "⚠️ Please send a valid image or PDF of your insurance certificate.",
+      "⚠️ *Invalid plate number format*\n\n" +
+      `You entered: ${plateText}\n\n` +
+      "Please enter a valid Rwandan plate number:\n" +
+      "• RAB 123 B (car)\n" +
+      "• RA 123 B (moto)\n" +
+      "• RAC 456 A (truck)\n\n" +
+      "Type the correct plate number:",
       [
-        { id: IDS.MY_VEHICLES, title: "← Back" },
+        { id: IDS.MY_VEHICLES, title: "← Cancel" },
       ],
     );
     return true;
   }
 
   try {
-    // Check if this media has already been processed (deduplication)
-    const { data: existingMedia } = await ctx.supabase
-      .from("insurance_media")
-      .select("lead_id, insurance_leads!inner(status)")
-      .eq("wa_media_id", mediaId)
-      .eq("insurance_leads.user_id", ctx.profileId)
-      .single();
+    // Check if plate already exists in vehicles table
+    const { data: existingVehicle } = await ctx.supabase
+      .from("vehicles")
+      .select("id, registration_plate")
+      .eq("registration_plate", plateNumber)
+      .maybeSingle();
 
-    if (existingMedia) {
-      // Already processed - skip silently (WhatsApp duplicate webhook)
-      logStructuredEvent("VEHICLE_DUPLICATE_MEDIA", {
-        userId: ctx.profileId,
-        mediaId,
-        existingLeadId: existingMedia.lead_id,
-      }, "info");
-      return true;
-    }
+    if (existingVehicle) {
+      // Check if vehicle is owned by someone else
+      const { data: vehicleOwner } = await ctx.supabase
+        .from("vehicle_ownerships")
+        .select("user_id")
+        .eq("vehicle_id", existingVehicle.id)
+        .eq("is_current", true)
+        .neq("user_id", ctx.profileId)
+        .maybeSingle();
 
-    // Show processing message
-    await sendText(ctx.from, "⏳ Processing your insurance certificate...\n\nThis may take a few seconds.");
+      if (vehicleOwner) {
+        await clearState(ctx.supabase, ctx.profileId);
+        await sendButtonsMessage(
+          ctx,
+          "⚠️ *Vehicle Already Registered*\n\n" +
+          `The vehicle with plate *${plateNumber}* is already registered to another user.\n\n` +
+          "If you believe this is an error, please contact support.",
+          [
+            { id: "ADD_VEHICLE", title: "🔄 Try Different Plate" },
+            { id: IDS.MY_VEHICLES, title: "← Back" },
+          ],
+        );
+        return true;
+      }
 
-    // Create insurance lead
-    const { data: lead, error: leadError } = await ctx.supabase
-      .from("insurance_leads")
-      .insert({
-        user_id: ctx.profileId,
-        whatsapp: ctx.from,
-        status: "received",
-      })
-      .select("id")
-      .single();
+      // Check if user already owns this vehicle
+      const { data: userOwnsVehicle } = await ctx.supabase
+        .from("vehicle_ownerships")
+        .select("id")
+        .eq("vehicle_id", existingVehicle.id)
+        .eq("user_id", ctx.profileId)
+        .eq("is_current", true)
+        .maybeSingle();
 
-    if (leadError || !lead) {
-      throw new Error("Failed to create insurance record");
-    }
-
-    const leadId = lead.id;
-
-    // Fetch media from WhatsApp
-    const media = await fetchInsuranceMedia(mediaId, leadId);
-
-    // Upload to storage
-    const { path, signedUrl } = await uploadInsuranceBytes(ctx.supabase, leadId, media);
-
-    // Store media record
-    await ctx.supabase
-      .from("insurance_media")
-      .insert({
-        lead_id: leadId,
-        wa_media_id: mediaId,
-        storage_path: path,
-        mime_type: media.mime,
-      });
-
-    // Call unified OCR function with vehicle domain
-    const { data: ocrResult, error: ocrError } = await ctx.supabase.functions.invoke(
-      "unified-ocr",
-      {
-        body: {
-          domain: "vehicle",
-          profile_id: ctx.profileId,
-          org_id: "default", // TODO: Get from context
-          vehicle_plate: "PENDING", // Will be extracted from OCR
-          file_url: signedUrl,
-        },
-      },
-    );
-
-    if (ocrError || !ocrResult) {
-      logStructuredEvent("VEHICLE_OCR_FAILED", { 
-        userId: ctx.profileId, 
-        leadId,
-        error: ocrError?.message 
-      }, "error");
-      
-      // Queue for manual review
-      await ctx.supabase
-        .from("insurance_media_queue")
-        .insert({
-          profile_id: ctx.profileId,
-          wa_id: ctx.from,
-          storage_path: path,
-          mime_type: media.mime,
-          status: "queued",
-          lead_id: leadId,
-        });
-
-      await clearState(ctx.supabase, ctx.profileId);
-      await sendButtonsMessage(
-        ctx,
-        "⚠️ *Unable to read the document automatically.*\n\n" +
-        "Your document has been queued for manual review. Our team will process it shortly and notify you.\n\n" +
-        "Please ensure:\n" +
-        "• The image is clear and well-lit\n" +
-        "• All text is readable\n" +
-        "• The document is a valid insurance certificate",
-        [
-          { id: IDS.MY_VEHICLES, title: "📋 My Vehicles" },
-          { id: IDS.BACK_PROFILE, title: "← Back" },
-        ],
-      );
-      return true;
-    }
-
-    // Extract OCR data
-    const extracted = ocrResult.normalized || ocrResult.raw;
-    
-    // Log OCR result for debugging
-    logStructuredEvent("VEHICLE_OCR_RESULT", {
-      userId: ctx.profileId,
-      leadId,
-      hasNormalized: !!ocrResult.normalized,
-      hasRaw: !!ocrResult.raw,
-      extractedKeys: extracted ? Object.keys(extracted) : [],
-      extracted: extracted || {},
-    }, "info");
-    
-    // Validate required fields
-    const plateNumber = extracted?.registration_plate || extracted?.vehicle_plate || extracted?.plate_number;
-    const policyExpiry = extracted?.policy_expiry || extracted?.expires_on;
-    const insurerName = extracted?.insurer_name || extracted?.insurer;
-    const policyNumber = extracted?.policy_number || extracted?.policy_no;
-
-    if (!plateNumber) {
-      logStructuredEvent("VEHICLE_PLATE_NOT_FOUND", {
-        userId: ctx.profileId,
-        leadId,
-        extractedFields: extracted ? Object.keys(extracted) : [],
-      }, "warn");
-      
-      await clearState(ctx.supabase, ctx.profileId);
-      await sendButtonsMessage(
-        ctx,
-        "⚠️ *Could not find vehicle plate number.*\n\n" +
-        "Please make sure the document clearly shows the vehicle registration plate and try again.",
-        [
-          { id: "ADD_VEHICLE", title: "🔄 Try Again" },
-          { id: IDS.MY_VEHICLES, title: "← Back" },
-        ],
-      );
-      return true;
-    }
-
-    // Check if insurance is expired
-    const isExpired = policyExpiry ? new Date(policyExpiry) < new Date() : false;
-
-    if (isExpired) {
-      await clearState(ctx.supabase, ctx.profileId);
-      await sendButtonsMessage(
-        ctx,
-        `⚠️ *Insurance certificate is expired!*\n\n` +
-        `Plate: ${plateNumber}\n` +
-        `Expiry Date: ${policyExpiry}\n\n` +
-        `Please upload a valid (non-expired) insurance certificate to add your vehicle.`,
-        [
-          { id: "ADD_VEHICLE", title: "🔄 Upload Valid Certificate" },
-          { id: IDS.MY_VEHICLES, title: "← Back" },
-        ],
-      );
-      return true;
+      if (userOwnsVehicle) {
+        await clearState(ctx.supabase, ctx.profileId);
+        await sendButtonsMessage(
+          ctx,
+          "ℹ️ *Vehicle Already Added*\n\n" +
+          `The vehicle with plate *${plateNumber}* is already in your vehicles list.`,
+          [
+            { id: IDS.MY_VEHICLES, title: "📋 View My Vehicles" },
+            { id: IDS.BACK_PROFILE, title: "← Back to Profile" },
+          ],
+        );
+        return true;
+      }
     }
 
     // Upsert vehicle in database
     const { data: vehicleId, error: vehicleError } = await ctx.supabase
       .rpc("upsert_vehicle", {
         p_plate: plateNumber,
-        p_make: extracted?.make || null,
-        p_model: extracted?.model || null,
-        p_year: extracted?.vehicle_year || extracted?.year || null,
-        p_vin: extracted?.vin_chassis || extracted?.vin || null,
-        p_vehicle_type: vehicleType, // Use the vehicle type selected by user
+        p_make: null,
+        p_model: null,
+        p_year: null,
+        p_vin: null,
+        p_vehicle_type: vehicleType,
       });
 
     if (vehicleError || !vehicleId) {
-      throw new Error("Failed to create vehicle record");
+      throw new Error(vehicleError?.message || "Failed to create vehicle record");
     }
 
-    // Create insurance certificate record
-    const { data: certificate, error: certError } = await ctx.supabase
-      .from("driver_insurance_certificates")
-      .insert({
-        user_id: ctx.profileId,
-        vehicle_id: vehicleId,
-        vehicle_plate: plateNumber,
-        insurer_name: insurerName || "Unknown",
-        policy_number: policyNumber || null,
-        policy_expiry: policyExpiry || null,
-        status: "approved",
-        media_url: signedUrl,
-      })
-      .select("id")
-      .single();
-
-    if (certError) {
-      logStructuredEvent("VEHICLE_CERT_INSERT_FAILED", { 
-        userId: ctx.profileId, 
-        vehicleId,
-        error: certError.message 
-      }, "warn");
-    }
-
-    // Create vehicle ownership
-    await ctx.supabase.rpc("create_vehicle_ownership", {
+    // Create vehicle ownership (without insurance certificate)
+    const { error: ownershipError } = await ctx.supabase.rpc("create_vehicle_ownership", {
       p_vehicle_id: vehicleId,
       p_user_id: ctx.profileId,
-      p_certificate_id: certificate?.id || null,
+      p_certificate_id: null,
     });
 
-    // Update insurance lead status
-    await ctx.supabase
-      .from("insurance_leads")
-      .update({
-        raw_ocr: ocrResult.raw,
-        extracted,
-        status: "approved",
-        file_path: path,
-      })
-      .eq("id", leadId);
+    if (ownershipError) {
+      logStructuredEvent("VEHICLE_OWNERSHIP_ERROR", {
+        userId: ctx.profileId,
+        vehicleId,
+        plate: plateNumber,
+        error: ownershipError.message,
+      }, "error");
+      throw new Error("Failed to associate vehicle with your account");
+    }
 
     // Clear state
     await clearState(ctx.supabase, ctx.profileId);
 
-    // Send success message
-    const expiryText = policyExpiry 
-      ? `\n📅 Insurance Expires: ${new Date(policyExpiry).toLocaleDateString()}`
-      : "";
+    // Map vehicle type IDs to display names
+    const vehicleNames: Record<string, string> = {
+      veh_moto: "Moto taxi",
+      veh_cab: "Cab",
+      veh_lifan: "Lifan",
+      veh_truck: "Truck",
+      veh_other: "Other vehicle",
+    };
 
+    const vehicleName = vehicleNames[vehicleType] || vehicleType;
+
+    // Send success message
     await sendButtonsMessage(
       ctx,
       `✅ *Vehicle Added Successfully!*\n\n` +
       `🚗 *Plate Number:* ${plateNumber}\n` +
-      `🏢 *Insurance Company:* ${insurerName || "Unknown"}\n` +
-      `${policyNumber ? `📄 *Policy Number:* ${policyNumber}\n` : ""}` +
-      `${expiryText}\n\n` +
+      `🚙 *Type:* ${vehicleName}\n\n` +
       `Your vehicle is now registered and ready to use for rides!`,
       [
         { id: IDS.MY_VEHICLES, title: "📋 View My Vehicles" },
@@ -395,7 +290,7 @@ export async function handleVehicleInsuranceUpload(
       userId: ctx.profileId,
       vehicleId,
       plate: plateNumber,
-      leadId,
+      vehicleType,
     });
 
     return true;
@@ -405,6 +300,7 @@ export async function handleVehicleInsuranceUpload(
     
     logStructuredEvent("VEHICLE_ADD_ERROR", {
       userId: ctx.profileId,
+      plate: plateNumber,
       error: errorMsg,
     }, "error");
 
@@ -412,7 +308,7 @@ export async function handleVehicleInsuranceUpload(
 
     await sendButtonsMessage(
       ctx,
-      `❌ *Failed to process insurance certificate*\n\n` +
+      `❌ *Failed to add vehicle*\n\n` +
       `Error: ${errorMsg}\n\n` +
       `Please try again or contact support if the issue persists.`,
       [
