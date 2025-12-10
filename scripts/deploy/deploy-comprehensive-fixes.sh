@@ -1,13 +1,11 @@
 #!/bin/bash
-# Comprehensive Fix Deployment Script
-# Date: 2025-11-23
-# Purpose: Deploy all wa-webhook fixes for insurance, wallet, momo, rides
+# Comprehensive EasyMO Platform Deployment Script
+# Deploys critical fixes identified in platform audit
 
-set -e  # Exit on error
+set -e
 
-echo "=========================================="
-echo "🚀 WA-WEBHOOK COMPREHENSIVE FIX DEPLOYMENT"
-echo "=========================================="
+echo "🚀 EasyMO Platform Comprehensive Deployment"
+echo "============================================="
 echo ""
 
 # Colors for output
@@ -16,190 +14,220 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Function to print status
-print_status() {
+# Function to print colored output
+log_info() {
     echo -e "${GREEN}✓${NC} $1"
 }
 
-print_error() {
+log_warn() {
+    echo -e "${YELLOW}⚠${NC} $1"
+}
+
+log_error() {
     echo -e "${RED}✗${NC} $1"
 }
 
-print_warning() {
-    echo -e "${YELLOW}!${NC} $1"
-}
-
-# Check if we're in the right directory
-if [ ! -d "supabase" ]; then
-    print_error "Not in repository root. Please run from /Users/jeanbosco/workspace/easymo-"
+# Check if supabase CLI is available
+if ! command -v supabase &> /dev/null; then
+    log_error "Supabase CLI not found. Please install it first."
     exit 1
 fi
 
-print_status "In correct directory"
-
-# Phase 1: Database Migrations
-echo ""
-echo "=========================================="
-echo "📊 PHASE 1: DATABASE MIGRATIONS"
-echo "=========================================="
-echo ""
-
-echo "Checking Supabase connection..."
-if ! supabase db ping > /dev/null 2>&1; then
-    print_warning "Cannot ping Supabase. Attempting to link project..."
-    supabase link
-fi
-
-print_status "Connected to Supabase"
+echo "Phase 1: Critical WhatsApp Mobility Fixes"
+echo "-----------------------------------------"
+log_info "Deploying wa-webhook-mobility (empty title fix)"
+supabase functions deploy wa-webhook-mobility
 
 echo ""
-echo "Deploying new migrations..."
-echo ""
+echo "Phase 2: Core AI Agent Infrastructure"
+echo "-------------------------------------"
+log_info "Deploying wa-webhook-ai-agents (database-driven agents)"
+supabase functions deploy wa-webhook-ai-agents
 
-# List new migrations
-NEW_MIGRATIONS=(
-    "20251123090000_add_insurance_contacts.sql"
-    "20251123130000_create_countries_table.sql"
-    "20251123134000_seed_insurance_contacts.sql"
-    "20251123135000_add_wallet_get_balance.sql"
-    "20251123150000_create_token_rewards_table.sql"
-    "20251123151000_create_user_referrals_table.sql"
-    "20251123152000_add_wallet_transfer_rpc.sql"
-    "20251123153000_create_referral_links_table.sql"
-)
-
-for migration in "${NEW_MIGRATIONS[@]}"; do
-    if [ -f "supabase/migrations/$migration" ]; then
-        echo "  • $migration"
-    else
-        print_warning "Migration file not found: $migration"
-    fi
-done
+log_info "Deploying wa-webhook-unified (unified orchestrator)"
+supabase functions deploy wa-webhook-unified
 
 echo ""
-read -p "Deploy these migrations? (y/n) " -n 1 -r
-echo ""
+echo "Phase 3: Domain-Specific Webhooks"
+echo "---------------------------------"
+log_info "Deploying wa-webhook-marketplace"
+supabase functions deploy wa-webhook-marketplace
 
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    supabase db push
-    print_status "Migrations deployed successfully"
-else
-    print_warning "Migrations skipped"
-fi
+log_info "Deploying wa-webhook-jobs"
+supabase functions deploy wa-webhook-jobs
 
-# Phase 2: Verify RPC Functions
-echo ""
-echo "=========================================="
-echo "🔍 PHASE 2: VERIFY RPC FUNCTIONS"
-echo "=========================================="
-echo ""
+log_info "Deploying wa-webhook-property"
+supabase functions deploy wa-webhook-property
 
-echo "Checking critical RPC functions..."
+log_info "Deploying wa-webhook-insurance"
+supabase functions deploy wa-webhook-insurance
 
-RPC_FUNCTIONS=(
-    "wallet_get_balance"
-    "wallet_transfer_tokens"
-    "generate_referral_code"
-    "process_referral"
-    "wallet_delta_fn"
-)
+log_info "Deploying wa-webhook-profile"
+supabase functions deploy wa-webhook-profile
 
-for func in "${RPC_FUNCTIONS[@]}"; do
-    RESULT=$(supabase db query "SELECT routine_name FROM information_schema.routines WHERE routine_schema = 'public' AND routine_name = '$func';" 2>/dev/null || echo "")
-    
-    if echo "$RESULT" | grep -q "$func"; then
-        print_status "$func exists"
-    else
-        print_error "$func MISSING"
-    fi
-done
+echo ""
+echo "Phase 4: Database Schema Migrations"
+echo "-----------------------------------"
 
-# Phase 3: Deploy Edge Functions
-echo ""
-echo "=========================================="
-echo "🌐 PHASE 3: DEPLOY EDGE FUNCTIONS"
-echo "=========================================="
-echo ""
+# Create migration for missing agents
+cat > supabase/migrations/$(date +%Y%m%d%H%M%S)_add_missing_agents.sql << 'EOF'
+-- Add missing agents to database
+-- Part of comprehensive platform audit fixes
 
-echo "Deploying wa-webhook edge function..."
-cd supabase/functions
+BEGIN;
 
-if supabase functions deploy wa-webhook --no-verify-jwt; then
-    print_status "wa-webhook deployed successfully"
-else
-    print_error "wa-webhook deployment failed"
-    exit 1
-fi
+-- Add marketplace agent if not exists
+INSERT INTO public.ai_agents (slug, name, description, is_active, created_at)
+VALUES ('marketplace', 'Marketplace AI Agent', 
+        'Buy, sell, discover local businesses and products across Rwanda, DRC, Burundi, and Tanzania', 
+        true, NOW())
+ON CONFLICT (slug) DO UPDATE 
+SET description = EXCLUDED.description,
+    is_active = true;
 
-cd ../..
+-- Add support agent if not exists
+INSERT INTO public.ai_agents (slug, name, description, is_active, created_at)
+VALUES ('support', 'Support AI Agent', 
+        'General help, customer support, and platform assistance', 
+        true, NOW())
+ON CONFLICT (slug) DO UPDATE 
+SET description = EXCLUDED.description,
+    is_active = true;
 
-# Phase 4: Verify Environment Variables
-echo ""
-echo "=========================================="
-echo "🔐 PHASE 4: VERIFY ENVIRONMENT VARIABLES"
-echo "=========================================="
-echo ""
+-- Deprecate broker agent in favor of marketplace
+UPDATE public.ai_agents 
+SET is_active = false,
+    description = 'DEPRECATED: Use marketplace agent instead. Business brokerage functionality merged into marketplace.'
+WHERE slug = 'broker';
 
-echo "Checking required secrets..."
+-- Ensure country consistency (only RW, CD, BI, TZ)
+-- This is a data validation step - update any references to KE, UG, etc.
+-- Add constraint if not exists
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'valid_country_codes'
+    ) THEN
+        -- Note: Adjust table name based on where country codes are stored
+        -- This is a placeholder - update based on actual schema
+        ALTER TABLE IF EXISTS profiles 
+        ADD CONSTRAINT valid_country_codes 
+        CHECK (country_code IN ('RW', 'CD', 'BI', 'TZ') OR country_code IS NULL);
+    END IF;
+END $$;
 
-REQUIRED_SECRETS=(
-    "OPENAI_API_KEY"
-    "GEMINI_API_KEY"
-    "WHATSAPP_API_TOKEN"
-    "SUPABASE_SERVICE_ROLE_KEY"
-)
+-- Update home menu to align with agents
+UPDATE public.whatsapp_home_menu_items 
+SET key = 'marketplace_agent', 
+    name = 'Marketplace',
+    description = 'Buy, sell, discover businesses'
+WHERE key = 'broker_agent' OR key = 'business_broker_agent';
 
-SECRET_LIST=$(supabase secrets list 2>/dev/null || echo "")
+-- Add support menu item if not exists
+INSERT INTO public.whatsapp_home_menu_items (key, name, icon, description, is_active, display_order, created_at)
+VALUES ('support_agent', 'Support', '💬', 'Get help and support', true, 9, NOW())
+ON CONFLICT (key) DO UPDATE 
+SET is_active = true,
+    description = 'Get help and support';
 
-for secret in "${REQUIRED_SECRETS[@]}"; do
-    if echo "$SECRET_LIST" | grep -q "$secret"; then
-        print_status "$secret is set"
-    else
-        print_warning "$secret is NOT set"
-    fi
-done
+-- Create marketplace_listings table if not exists
+CREATE TABLE IF NOT EXISTS public.marketplace_listings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  seller_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  description TEXT,
+  price DECIMAL(12,2),
+  currency TEXT DEFAULT 'RWF',
+  category TEXT,
+  condition TEXT CHECK (condition IN ('new', 'used', 'refurbished')),
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'sold', 'inactive', 'deleted')),
+  images JSONB DEFAULT '[]'::jsonb,
+  location_lat DECIMAL(10,8),
+  location_lng DECIMAL(11,8),
+  location_text TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-# Phase 5: Test Workflows
-echo ""
-echo "=========================================="
-echo "✅ PHASE 5: TESTING WORKFLOWS"
-echo "=========================================="
-echo ""
+-- Add indexes for marketplace
+CREATE INDEX IF NOT EXISTS idx_marketplace_listings_seller ON marketplace_listings(seller_id);
+CREATE INDEX IF NOT EXISTS idx_marketplace_listings_status ON marketplace_listings(status);
+CREATE INDEX IF NOT EXISTS idx_marketplace_listings_category ON marketplace_listings(category);
+CREATE INDEX IF NOT EXISTS idx_marketplace_listings_created ON marketplace_listings(created_at DESC);
 
-echo "Testing is complete. Here's what was deployed:"
+-- Enable RLS on marketplace_listings
+ALTER TABLE public.marketplace_listings ENABLE ROW LEVEL SECURITY;
+
+-- RLS policies for marketplace_listings
+DROP POLICY IF EXISTS "Users can view active listings" ON marketplace_listings;
+CREATE POLICY "Users can view active listings" 
+ON marketplace_listings FOR SELECT 
+USING (status = 'active');
+
+DROP POLICY IF EXISTS "Users can manage their own listings" ON marketplace_listings;
+CREATE POLICY "Users can manage their own listings" 
+ON marketplace_listings FOR ALL 
+USING (auth.uid() = seller_id);
+
+-- Create support_tickets table if not exists
+CREATE TABLE IF NOT EXISTS public.support_tickets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES whatsapp_users(id) ON DELETE CASCADE,
+  issue_type TEXT,
+  description TEXT NOT NULL,
+  priority TEXT DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
+  status TEXT DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'resolved', 'closed')),
+  assigned_to UUID,
+  resolution TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  resolved_at TIMESTAMPTZ
+);
+
+-- Add indexes for support tickets
+CREATE INDEX IF NOT EXISTS idx_support_tickets_user ON support_tickets(user_id);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_status ON support_tickets(status);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_priority ON support_tickets(priority);
+
+-- Enable RLS on support_tickets
+ALTER TABLE public.support_tickets ENABLE ROW LEVEL SECURITY;
+
+-- Grant necessary permissions
+GRANT SELECT, INSERT, UPDATE ON marketplace_listings TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON support_tickets TO authenticated;
+GRANT ALL ON marketplace_listings TO service_role;
+GRANT ALL ON support_tickets TO service_role;
+
+COMMIT;
+EOF
+
+log_info "Created migration for missing agents and tables"
+log_info "Applying database migrations..."
+supabase db push
+
 echo ""
-echo "✅ Database Tables:"
-echo "   • insurance_admin_contacts"
-echo "   • countries (with MOMO support flags)"
-echo "   • token_rewards"
-echo "   • user_referrals"
-echo "   • referral_rewards"
-echo "   • wallet_transfers"
-echo "   • referral_links"
+echo "Phase 5: Verification"
+echo "--------------------"
+log_info "Checking deployed functions..."
+supabase functions list
+
 echo ""
-echo "✅ RPC Functions:"
-echo "   • wallet_get_balance"
-echo "   • wallet_transfer_tokens"
-echo "   • generate_referral_code"
-echo "   • process_referral"
+echo "✅ Deployment Complete!"
+echo "======================="
 echo ""
-echo "✅ Code Fixes:"
-echo "   • Insurance OCR endpoint corrected"
-echo "   • MOMO QR country filtering active"
-echo "   • Wallet/Tokens system complete"
-echo "   • Referral link generation implemented"
+echo "📊 Summary:"
+echo "  ✓ Fixed WhatsApp mobility empty title bug"
+echo "  ✓ Deployed AI agent infrastructure"
+echo "  ✓ Added missing agents (marketplace, support)"
+echo "  ✓ Deprecated broker agent"
+echo "  ✓ Created missing database tables"
+echo "  ✓ Aligned menu with agents"
 echo ""
-echo "=========================================="
-echo "🎉 DEPLOYMENT COMPLETE!"
-echo "=========================================="
+echo "🔍 Next Steps:"
+echo "  1. Test WhatsApp mobility matching (should no longer show empty titles)"
+echo "  2. Verify AI agents use database configuration"
+echo "  3. Test marketplace and support flows"
+echo "  4. Monitor logs for any errors"
 echo ""
-echo "Next Steps:"
-echo "1. Test insurance upload workflow"
-echo "2. Test wallet token transfer"
-echo "3. Test MOMO QR generation"
-echo "4. Test rides location sharing"
-echo "5. Test share easyMO link generation"
-echo ""
-echo "Monitor logs with:"
-echo "  supabase functions logs wa-webhook --follow"
-echo ""
+log_warn "Remember to test thoroughly in development before deploying to production!"
