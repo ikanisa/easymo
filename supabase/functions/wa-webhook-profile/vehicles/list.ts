@@ -51,8 +51,7 @@ export async function listMyVehicles(
     await sendButtonsMessage(
       ctx,
       "🚗 *You don't have any registered vehicles yet.*\n\n" +
-      "To add a vehicle, simply send us a photo or PDF of your valid insurance certificate (Yellow Card).\n\n" +
-      "We'll automatically extract the vehicle details and register it for you!",
+      "Tap the button below to add your vehicle by entering the plate number.",
       [
         { id: "ADD_VEHICLE", title: "➕ Add Vehicle" },
         { id: IDS.BACK_PROFILE, title: "← Back" },
@@ -64,25 +63,31 @@ export async function listMyVehicles(
   const rows = ownerships
     .map((ownership: any) => {
       const vehicle = ownership.vehicles;
-      const cert = ownership.driver_insurance_certificates;
       
       if (!vehicle) return null;
       
-      const make = vehicle.make || "Unknown";
+      const make = vehicle.make || "";
       const model = vehicle.model || "";
       const year = vehicle.vehicle_year || "";
       const plate = vehicle.registration_plate || "No plate";
+      const vehicleType = vehicle.vehicle_type || "";
       
       const title = `${plate}`;
-      const description = `${make} ${model} ${year}`.trim() || "Vehicle";
-      
-      // Check if insurance is expired
-      const isExpired = cert?.policy_expiry && new Date(cert.policy_expiry) < new Date();
-      const statusEmoji = isExpired ? "⚠️" : cert?.status === "approved" ? "✅" : "🕐";
+      const typeLabels: Record<string, string> = {
+        veh_moto: "Moto",
+        veh_cab: "Cab",
+        veh_lifan: "Lifan",
+        veh_truck: "Truck",
+        veh_other: "Vehicle",
+      };
+      const typeLabel = typeLabels[vehicleType] || "Vehicle";
+      const description = make && model 
+        ? `${make} ${model} ${year}`.trim() 
+        : typeLabel;
 
       return {
         id: `VEHICLE::${vehicle.id}`,
-        title: `${statusEmoji} ${title}`,
+        title: `🚗 ${title}`,
         description,
       };
     })
@@ -92,7 +97,7 @@ export async function listMyVehicles(
     {
       id: "ADD_VEHICLE",
       title: "➕ Add New Vehicle",
-      description: "Upload insurance certificate",
+      description: "Enter plate number",
     },
     {
       id: IDS.BACK_PROFILE,
@@ -138,14 +143,6 @@ export async function handleVehicleSelection(
         color,
         vehicle_type,
         status
-      ),
-      driver_insurance_certificates:insurance_certificate_id (
-        id,
-        policy_number,
-        policy_expiry,
-        insurer_name,
-        status,
-        media_url
       )
     `)
     .eq("user_id", ctx.profileId)
@@ -163,59 +160,38 @@ export async function handleVehicleSelection(
   }
 
   const vehicle = ownership.vehicles as any;
-  const cert = ownership.driver_insurance_certificates as any;
   const plate = vehicle.registration_plate || "No plate";
   
-  // Check insurance expiry
-  const isExpired = cert?.policy_expiry && new Date(cert.policy_expiry) < new Date();
-  const daysUntilExpiry = cert?.policy_expiry 
-    ? Math.ceil((new Date(cert.policy_expiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-    : null;
-  
-  const insuranceStatus = isExpired 
-    ? "⚠️ *EXPIRED*" 
-    : daysUntilExpiry && daysUntilExpiry <= 7
-    ? `⚠️ Expiring in ${daysUntilExpiry} days`
-    : cert?.status === "approved"
-    ? "✅ Active"
-    : "🕐 Pending";
+  // Map vehicle type IDs to display names
+  const vehicleNames: Record<string, string> = {
+    veh_moto: "Moto taxi",
+    veh_cab: "Cab",
+    veh_lifan: "Lifan",
+    veh_truck: "Truck",
+    veh_other: "Other vehicle",
+  };
+  const vehicleTypeName = vehicleNames[vehicle.vehicle_type] || "Vehicle";
   
   const details = [
     `🚗 *Vehicle Details*`,
     ``,
     `📋 *Plate:* ${plate}`,
+    `🚙 *Type:* ${vehicleTypeName}`,
     vehicle.make ? `🏢 *Make:* ${vehicle.make}` : null,
-    vehicle.model ? `🚙 *Model:* ${vehicle.model}` : null,
+    vehicle.model ? `📦 *Model:* ${vehicle.model}` : null,
     vehicle.vehicle_year ? `📅 *Year:* ${vehicle.vehicle_year}` : null,
     vehicle.color ? `🎨 *Color:* ${vehicle.color}` : null,
-    vehicle.vin_chassis ? `🔢 *VIN:* ${vehicle.vin_chassis}` : null,
-    ``,
-    `🛡️ *Insurance*`,
-    `Status: ${insuranceStatus}`,
-    cert?.insurer_name ? `Company: ${cert.insurer_name}` : null,
-    cert?.policy_number ? `Policy: ${cert.policy_number}` : null,
-    cert?.policy_expiry ? `Expires: ${new Date(cert.policy_expiry).toLocaleDateString()}` : null,
   ]
     .filter(Boolean)
     .join("\n");
 
-  const actions = [];
-  
-  if (isExpired || (daysUntilExpiry && daysUntilExpiry <= 30)) {
-    actions.push({
-      id: `RENEW_INSURANCE::${vehicleId}`,
-      title: "🔄 Renew Insurance",
-      description: "Upload new insurance certificate",
-    });
-  }
-  
-  actions.push(
+  const actions = [
     {
       id: IDS.MY_VEHICLES,
       title: "← Back",
       description: "Return to vehicles list",
     },
-  );
+  ];
 
   await sendListMessage(
     ctx,

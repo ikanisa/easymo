@@ -598,12 +598,6 @@ serve(async (req: Request): Promise<Response> => {
           const { handleVehicleSelection } = await import("./vehicles/list.ts");
           handled = await handleVehicleSelection(ctx, vehicleId);
         }
-        else if (id.startsWith("RENEW_INSURANCE::")) {
-          const vehicleId = id.replace("RENEW_INSURANCE::", "");
-          const { startAddVehicle } = await import("./vehicles/add.ts");
-          // Reuse add vehicle flow for renewal (it will update existing vehicle)
-          handled = await startAddVehicle(ctx);
-        }
         
         // Saved Locations
         else if (id === IDS.SAVED_LOCATIONS || id === "SAVED_LOCATIONS" || id === "saved_locations") {
@@ -1215,6 +1209,12 @@ serve(async (req: Request): Promise<Response> => {
         handled = await handleEditName(ctx, (message.text as any)?.body ?? "");
       }
       
+      // Handle vehicle plate number input
+      else if (state?.key === "vehicle_add_plate") {
+        const { handleVehiclePlateInput } = await import("./vehicles/add.ts");
+        handled = await handleVehiclePlateInput(ctx, (message.text as any)?.body ?? "", state);
+      }
+      
       // Handle add location (text address)
       else if (state?.key === IDS.ADD_LOCATION && message.type === "text") {
         if (ctx.profileId && state.data?.type) {
@@ -1235,12 +1235,6 @@ serve(async (req: Request): Promise<Response> => {
           handled = true;
         }
       }
-    }
-    
-    // Handle vehicle insurance document upload
-    else if ((message.type === "image" || message.type === "document") && state?.key === "vehicle_add_insurance") {
-      const { handleVehicleInsuranceUpload } = await import("./vehicles/add.ts");
-      handled = await handleVehicleInsuranceUpload(ctx, message, state);
     }
     
     // ============================================================
