@@ -12,12 +12,13 @@
  * 5. jobs - Jobs AI Agent
  * 6. waiter - Waiter AI Agent
  * 7. real_estate - Real Estate AI Agent
- * 8. buy_and_sell - Buy & Sell AI Agent (unified: marketplace + business broker + legal intake)
+ * 8. buy_sell - Buy & Sell AI Agent (unified: marketplace + business broker + legal intake)
  * 9. support - Support AI Agent (includes concierge routing)
  * 
  * DEPRECATED:
- * - marketplace - Merged into buy_and_sell
- * - business_broker - Merged into buy_and_sell
+ * - buy_and_sell - Standardized to buy_sell
+ * - marketplace - Merged into buy_sell
+ * - business_broker - Merged into buy_sell
  */
 
 import type { AgentConfig } from "./agent_orchestrator.ts";
@@ -487,8 +488,8 @@ Available tools:
 
   // 8. Buy & Sell Agent - Unified Commerce & Business (replaces marketplace + business_broker)
   {
-    id: "buy-and-sell-agent-01",
-    type: "buy_and_sell",
+    id: "buy-sell-agent-01",
+    type: "buy_sell",
     name: "Buy & Sell AI Agent",
     systemPrompt: `You are EasyMO's unified Buy & Sell assistant, helping users with marketplace transactions and business opportunities.
 

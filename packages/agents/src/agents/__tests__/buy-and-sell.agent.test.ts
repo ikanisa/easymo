@@ -88,7 +88,7 @@ describe('BuyAndSellAgent', () => {
 
   describe('initialization', () => {
     it('should have correct name', () => {
-      expect(agent.name).toBe('buy_and_sell_agent');
+      expect(agent.name).toBe('buy_sell_agent');
     });
 
     it('should have comprehensive instructions', () => {

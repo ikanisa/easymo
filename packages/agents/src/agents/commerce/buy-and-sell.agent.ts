@@ -21,7 +21,7 @@ const log = childLogger({ service: 'agents' });
  * - Legal intake: Triage cases, collect facts, prepare engagement letters
  */
 export class BuyAndSellAgent extends BaseAgent {
-  name = 'buy_and_sell_agent';
+  name = 'buy_sell_agent';
   instructions = `You are EasyMO's unified Buy & Sell assistant, helping users with marketplace transactions and business opportunities.
 
 MARKETPLACE CAPABILITIES:
@@ -338,7 +338,7 @@ RESPONSE FORMATTING:
               owner_user_id: context?.userId,
               domain: listing_type === 'business' ? 'business' : 'marketplace',
               status: 'active',
-              source_agent: 'buy_and_sell',
+              source_agent: 'buy_sell',
               created_at: new Date().toISOString()
             })
             .select()
@@ -380,7 +380,7 @@ RESPONSE FORMATTING:
               delivery_address,
               user_id: context?.userId,
               status: 'pending',
-              source_agent: 'buy_and_sell',
+              source_agent: 'buy_sell',
               created_at: new Date().toISOString()
             })
             .select()

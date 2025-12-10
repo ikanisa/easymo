@@ -107,7 +107,7 @@ export class VendorOutreachService {
         .from("agent_outreach_sessions")
         .insert({
           user_phone: params.userPhone,
-          agent_type: "buy_and_sell",
+          agent_type: "buy_sell",
           request_summary: params.requestSummary,
           items_requested: params.itemsRequested,
           user_location: params.userLocation,
