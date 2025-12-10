@@ -1,10 +1,17 @@
 /**
  * Standardized Location Request Utility
  * 
+ * @deprecated This module is deprecated. Use the unified LocationService instead.
+ * @see supabase/functions/_shared/location/location-service.ts
+ * 
  * Provides unified location sharing workflow for all services:
  * - Shows "Use Last Location" button if recent location exists
  * - Prompts for new location if needed
  * - Handles location caching automatically
+ * 
+ * Migration Guide:
+ * Old: requestLocationWithCache(ctx, "mobility")
+ * New: LocationService.resolve(supabase, userId, { source: 'mobility' })
  * 
  * Usage:
  *   import { requestLocationWithCache } from "../_shared/wa-webhook-shared/locations/request-location.ts";
@@ -18,6 +25,11 @@ import {
   getLocationReusedMessage 
 } from "./messages.ts";
 
+/**
+ * @deprecated Use LocationConfig.source (string) instead
+ * This enum is hardcoded and doesn't scale. The new LocationService
+ * accepts ANY string as source identifier.
+ */
 export type LocationSource = 
   | 'mobility' 
   | 'jobs' 
@@ -54,12 +66,32 @@ export interface LocationResult {
 /**
  * Request location with automatic cache checking and "Use Last Location" button
  * 
+ * @deprecated Use LocationService.resolve() instead
+ * @see supabase/functions/_shared/location/location-service.ts
+ * 
  * Flow:
  * 1. Check if user has recent location (within TTL)
  * 2. If yes, return it immediately
  * 3. If no, check if user has ANY recent location (expired but exists)
  * 4. If yes, show "Use Last Location" button + prompt
  * 5. If no, show simple location prompt
+ * 
+ * Migration Example:
+ * ```typescript
+ * // OLD
+ * const result = await requestLocationWithCache(ctx, "mobility", {
+ *   maxAgeMinutes: 30,
+ *   preferredSavedLabel: 'home',
+ * });
+ * 
+ * // NEW
+ * import { LocationService } from "../../location/index.ts";
+ * const result = await LocationService.resolve(ctx.supabase, ctx.userId, {
+ *   source: 'mobility',
+ *   cacheTTLMinutes: 30,
+ *   preferredSavedLabel: 'home',
+ * }, ctx.locale);
+ * ```
  */
 export async function requestLocationWithCache(
   ctx: LocationRequestContext,

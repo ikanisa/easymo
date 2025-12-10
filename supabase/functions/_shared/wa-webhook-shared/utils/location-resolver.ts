@@ -1,8 +1,15 @@
 /**
  * Standardized Location Resolution for AI Agents
  * 
+ * @deprecated This module is deprecated. Use the unified LocationService instead.
+ * @see supabase/functions/_shared/location/location-service.ts
+ * 
  * Critical component for all AI agents to obtain user location
  * Priority: 30-min cache → Saved locations → Prompt user
+ * 
+ * Migration Guide:
+ * Old: resolveUserLocation(supabase, userId, { agentType: 'jobs_agent' })
+ * New: LocationService.resolve(supabase, userId, { source: 'jobs_agent' })
  * 
  * @module location-resolver
  */
@@ -29,6 +36,10 @@ export interface LocationResolutionResult {
 /**
  * Context-based location preferences
  * Maps agent type/intent to preferred saved location
+ * 
+ * @deprecated This hardcoded map is deprecated.
+ * The new LocationService uses dynamic pattern matching instead.
+ * Any service can now pass preferredSavedLabel in config.
  */
 export const LOCATION_PREFERENCES = {
   // Jobs - use home location (where user lives)
@@ -64,26 +75,29 @@ export const LOCATION_PREFERENCES = {
 /**
  * Resolve user location with standard priority logic
  * 
+ * @deprecated Use LocationService.resolve() instead
+ * @see supabase/functions/_shared/location/location-service.ts
+ * 
  * @param supabase - Supabase client
  * @param userId - User's profile ID
  * @param context - Agent context (agent type, intent)
  * @param cacheMinutes - Cache validity in minutes (default 30)
  * @returns Location resolution result
  * 
- * @example
+ * @example Migration:
  * ```typescript
+ * // OLD
  * const result = await resolveUserLocation(supabase, userId, {
  *   agentType: 'jobs_agent',
  *   intent: 'job_search'
  * });
  * 
- * if (result.location) {
- *   // Use location for search
- *   const jobs = await searchNearbyJobs(result.location.lat, result.location.lng);
- * } else if (result.needsPrompt) {
- *   // Ask user to share location
- *   await sendText(userPhone, result.promptMessage);
- * }
+ * // NEW
+ * import { LocationService } from "../../location/index.ts";
+ * const result = await LocationService.resolve(supabase, userId, {
+ *   source: 'jobs_agent',
+ *   preferredSavedLabel: 'home',
+ * });
  * ```
  */
 export async function resolveUserLocation(
