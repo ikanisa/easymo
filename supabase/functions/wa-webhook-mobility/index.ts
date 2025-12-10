@@ -89,6 +89,7 @@ import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { sendListMessage } from "./utils/reply.ts";
 import { recordLastLocation } from "./locations/favorites.ts";
 import { sendLocation, sendText } from "./wa/client.ts";
+import { t } from "./i18n/translator.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",

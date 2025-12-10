@@ -96,6 +96,18 @@ serve(async (req: Request): Promise<Response> => {
     });
   }
 
+  // Webhook verification (GET request from Meta)
+  if (req.method === "GET") {
+    const mode = url.searchParams.get("hub.mode");
+    const token = url.searchParams.get("hub.verify_token");
+    const challenge = url.searchParams.get("hub.challenge");
+
+    if (mode === "subscribe" && token === Deno.env.get("WA_VERIFY_TOKEN")) {
+      return new Response(challenge ?? "", { status: 200 });
+    }
+    return respond({ error: "forbidden" }, { status: 403 });
+  }
+
   try {
     // Only accept POST requests for webhook
     if (req.method !== "POST") {
@@ -380,60 +392,6 @@ async function handleInsuranceButton(
   }
   
   return false;
-}
-
-async function handleShareEasyMO(ctx: RouterContext): Promise<boolean> {
-  if (!ctx.profileId) return false;
-  
-  try {
-    const { ensureReferralLink } = await import("../_shared/wa-webhook-shared/utils/share.ts");
-    const { sendButtonsMessage } = await import("../_shared/wa-webhook-shared/utils/reply.ts");
-    const { t } = await import("../_shared/wa-webhook-shared/i18n/translator.ts");
-    
-    const link = await ensureReferralLink(ctx.supabase, ctx.profileId);
-    const shareText = [
-      t(ctx.locale, "wallet.earn.forward.instructions"),
-      t(ctx.locale, "wallet.earn.share_text_intro"),
-      link.waLink,
-      t(ctx.locale, "wallet.earn.copy.code", { code: link.code }),
-      t(ctx.locale, "wallet.earn.note.keep_code"),
-    ].join("\n\n");
-    
-    logStructuredEvent("SHARE_EASYMO_TAP", {
-      service: "wa-webhook-insurance",
-      profileId: ctx.profileId,
-      from: ctx.from,
-      code: link.code,
-      waLink: link.waLink,
-    });
-    
-    await sendButtonsMessage(
-      ctx,
-      shareText,
-      [
-        { id: IDS.WALLET_EARN, title: t(ctx.locale, "wallet.earn.button") },
-        { id: IDS.BACK_HOME, title: t(ctx.locale, "common.home_button") },
-      ],
-    );
-    return true;
-  } catch (e) {
-    logStructuredEvent("SHARE_EASYMO_ERROR", {
-      service: "wa-webhook-insurance",
-      profileId: ctx.profileId,
-      from: ctx.from,
-      error: (e as Error)?.message,
-      stack: (e as Error)?.stack,
-    }, "error");
-    
-    const { sendButtonsMessage } = await import("../_shared/wa-webhook-shared/utils/reply.ts");
-    const { t } = await import("../_shared/wa-webhook-shared/i18n/translator.ts");
-    await sendButtonsMessage(
-      ctx,
-      t(ctx.locale, "wallet.earn.error"),
-      [{ id: IDS.BACK_HOME, title: t(ctx.locale, "common.home_button") }],
-    );
-    return true;
-  }
 }
 
 async function handleInsuranceList(
