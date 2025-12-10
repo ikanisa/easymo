@@ -1,0 +1,43 @@
+BEGIN;
+
+-- Create referral_links table for Share easyMO functionality
+-- This table stores user referral codes and tracks referral activity
+CREATE TABLE IF NOT EXISTS referral_links (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  code TEXT NOT NULL UNIQUE,
+  short_url TEXT,
+  active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  used_count INT DEFAULT 0,
+  last_used_at TIMESTAMPTZ
+);
+
+-- Create indexes for efficient lookups
+CREATE INDEX idx_referral_links_user_id ON referral_links(user_id);
+CREATE INDEX idx_referral_links_code ON referral_links(code) WHERE active = true;
+
+-- Enable Row Level Security
+ALTER TABLE referral_links ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policy: Users can view their own referral links
+CREATE POLICY "Users can view own referral links"
+  ON referral_links FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- RLS Policy: Users can create their own referral links
+CREATE POLICY "Users can create own referral links"
+  ON referral_links FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+-- RLS Policy: Users can update their own referral links
+CREATE POLICY "Users can update own referral links"
+  ON referral_links FOR UPDATE
+  USING (auth.uid() = user_id);
+
+-- Service role can read all referral links for analytics
+CREATE POLICY "Service role can read all referral links"
+  ON referral_links FOR SELECT
+  USING (auth.jwt()->>'role' = 'service_role');
+
+COMMIT;
