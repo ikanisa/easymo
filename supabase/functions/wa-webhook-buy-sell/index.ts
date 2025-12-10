@@ -255,7 +255,7 @@ serve(async (req: Request): Promise<Response> => {
         return respond({ success: true, message: "location_processed" });
       }
 
-      // Home/menu commands -> show AI welcome (natural language chat)
+      // Home/menu commands -> show categories (NOT AI welcome)
       const lower = text.toLowerCase();
       if (
         !text ||
@@ -264,30 +264,18 @@ serve(async (req: Request): Promise<Response> => {
         lower === "buy" ||
         lower === "sell"
       ) {
-        const userCountry = mapCountry(getCountryCode(userPhone));
-        await showAIWelcome(userPhone, userCountry);
+        await showBuySellCategories(userPhone);
         
         const duration = Date.now() - startTime;
         recordMetric("buy_sell.message.processed", 1, {
           duration_ms: duration,
         });
         
-        return respond({ success: true, message: "ai_welcome_shown" });
+        return respond({ success: true, message: "categories_shown" });
       }
 
-      // User sent an actual message - forward to AI agent
-      if (text && text.trim().length > 0) {
-        const handled = await forwardToBuySellAgent(userPhone, text, correlationId);
-        if (handled) {
-          const duration = Date.now() - startTime;
-          recordMetric("buy_sell.message.processed", 1, { duration_ms: duration, ai_routed: true });
-          return respond({ success: true, message: "ai_processed" });
-        }
-      }
-
-      // Fallback: Show welcome message
-      const userCountry = mapCountry(getCountryCode(userPhone));
-      await showAIWelcome(userPhone, userCountry);
+      // Fallback: Show categories (NO AI agent - this is category workflow only)
+      await showBuySellCategories(userPhone);
 
       const duration = Date.now() - startTime;
       recordMetric("buy_sell.message.processed", 1, {
