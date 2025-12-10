@@ -150,21 +150,22 @@ INSERT INTO public.whatsapp_home_menu_items (
   country_specific_names
 ) VALUES (
   'business_broker_agent',
-  'Buy and Sell',
+  '🛒 Buy and Sell',
   true,
   ARRAY['RW', 'BI', 'TZ', 'CD', 'ZM', 'TG', 'MT'],
   4,
   '🛒',
   jsonb_build_object(
-    'RW', jsonb_build_object('name', 'Kugura & Kugurisha', 'description', 'Find businesses & services near you'),
-    'MT', jsonb_build_object('name', 'Buy & Sell', 'description', 'Find businesses & services near you'),
-    'BI', jsonb_build_object('name', 'Acheter & Vendre', 'description', 'Trouvez entreprises et services'),
-    'TZ', jsonb_build_object('name', 'Nunua & Uza', 'description', 'Pata biashara karibu nawe'),
-    'CD', jsonb_build_object('name', 'Acheter & Vendre', 'description', 'Trouvez entreprises près de vous'),
-    'ZM', jsonb_build_object('name', 'Buy & Sell', 'description', 'Find businesses near you'),
-    'TG', jsonb_build_object('name', 'Acheter & Vendre', 'description', 'Trouvez entreprises')
+    'RW', jsonb_build_object('name', '🛒 Kugura & Kugurisha', 'description', 'Find businesses & services near you'),
+    'MT', jsonb_build_object('name', '🛒 Buy & Sell', 'description', 'Find businesses & services near you'),
+    'BI', jsonb_build_object('name', '🛒 Acheter & Vendre', 'description', 'Trouvez entreprises et services'),
+    'TZ', jsonb_build_object('name', '🛒 Nunua & Uza', 'description', 'Pata biashara karibu nawe'),
+    'CD', jsonb_build_object('name', '🛒 Acheter & Vendre', 'description', 'Trouvez entreprises près de vous'),
+    'ZM', jsonb_build_object('name', '🛒 Buy & Sell', 'description', 'Find businesses near you'),
+    'TG', jsonb_build_object('name', '🛒 Acheter & Vendre', 'description', 'Trouvez entreprises')
   )
 ) ON CONFLICT (key) DO UPDATE SET
+  name = EXCLUDED.name,
   is_active = EXCLUDED.is_active,
   active_countries = EXCLUDED.active_countries,
   display_order = EXCLUDED.display_order,
