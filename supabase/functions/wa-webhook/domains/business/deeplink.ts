@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "../../deps.ts";
 import type { RouterContext } from "../../types.ts";
 import { t } from "../../i18n/translator.ts";
-import { buildWaLink, buildQrUrl, generateReferralCode } from "../../utils/share.ts";
+import { buildWaLink, buildQrUrl, generateReferralCode } from "../../../_shared/wa-webhook-shared/utils/share.ts";
 import { sendButtonsMessage } from "../../utils/reply.ts";
 import { sendImageUrl } from "../../wa/client.ts";
 import { IDS } from "../../wa/ids.ts";

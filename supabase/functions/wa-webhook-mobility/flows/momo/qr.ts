@@ -8,7 +8,7 @@ import { IDS } from "../../wa/ids.ts";
 import { clearState, setState } from "../../state/store.ts";
 import { buildMomoUssd, buildMomoUssdForQr } from "../../utils/momo.ts";
 import { maskPhone } from "../support.ts";
-import { buildWaLink } from "../../utils/share.ts";
+import { buildWaLink } from "../../../_shared/wa-webhook-shared/utils/share.ts";
 import { logMomoQrRequest } from "../../rpc/momo.ts";
 import { logEvent } from "../../observe/log.ts";
 import {

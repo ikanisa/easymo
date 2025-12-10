@@ -40,7 +40,7 @@ import {
   showWalletRedeem,
 } from "../domains/wallet/redeem.ts";
 import { showWalletTop } from "../domains/wallet/top.ts";
-import { ensureReferralLink } from "../utils/share.ts";
+import { ensureReferralLink } from "../../_shared/wa-webhook-shared/utils/share.ts";
 import { logStructuredEvent } from "../observe/log.ts";
 import { buildButtons, sendButtonsMessage, homeOnly } from "../utils/reply.ts";
 import {
@@ -201,7 +201,12 @@ export async function handleButton(
           t(ctx.locale, "wallet.earn.copy.code", { code: link.code }),
           t(ctx.locale, "wallet.earn.note.keep_code"),
         ].join("\n\n");
-        await logStructuredEvent("SHARE_EASYMO_TAP", { profileId: ctx.profileId, from: ctx.from });
+        await logStructuredEvent("SHARE_EASYMO_TAP", { 
+          profileId: ctx.profileId, 
+          from: ctx.from, 
+          code: link.code,
+          waLink: link.waLink 
+        });
         await sendButtonsMessage(
           ctx,
           shareText,
@@ -212,7 +217,12 @@ export async function handleButton(
         );
         return true;
       } catch (e) {
-        await logStructuredEvent("SHARE_EASYMO_ERROR", { profileId: ctx.profileId, from: ctx.from, error: (e as Error)?.message });
+        await logStructuredEvent("SHARE_EASYMO_ERROR", { 
+          profileId: ctx.profileId, 
+          from: ctx.from, 
+          error: (e as Error)?.message,
+          stack: (e as Error)?.stack 
+        });
         await sendButtonsMessage(
           ctx,
           t(ctx.locale, "wallet.earn.error"),

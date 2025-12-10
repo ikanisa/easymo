@@ -140,6 +140,7 @@ SET
   updated_at = now();
 
 -- WhatsApp Home Menu: Business Broker Agent (Buy & Sell)
+-- NOTE: NO Kinyarwanda translations per README.md - English/French/Swahili only
 INSERT INTO public.whatsapp_home_menu_items (
   key,
   name,
@@ -156,7 +157,6 @@ INSERT INTO public.whatsapp_home_menu_items (
   4,
   '🛒',
   jsonb_build_object(
-    'RW', jsonb_build_object('name', '🛒 Kugura & Kugurisha', 'description', 'Find businesses & services near you'),
     'MT', jsonb_build_object('name', '🛒 Buy & Sell', 'description', 'Find businesses & services near you'),
     'BI', jsonb_build_object('name', '🛒 Acheter & Vendre', 'description', 'Trouvez entreprises et services'),
     'TZ', jsonb_build_object('name', '🛒 Nunua & Uza', 'description', 'Pata biashara karibu nawe'),

@@ -279,6 +279,19 @@ async function handlePropertyButton(
   buttonId: string,
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
+  // Handle Share easyMO button (auto-appended by reply.ts)
+  if (buttonId === IDS.SHARE_EASYMO || buttonId === "share_easymo") {
+    const { handleShareEasyMOButton } = await import("../_shared/wa-webhook-shared/utils/share-button-handler.ts");
+    return await handleShareEasyMOButton(ctx, "wa-webhook-property");
+  }
+
+  // Handle back/home buttons
+  if (buttonId === IDS.BACK_HOME || buttonId === "back_menu") {
+    const { sendHomeMenu } = await import("../_shared/wa-webhook-shared/flows/home.ts");
+    await sendHomeMenu(ctx);
+    return true;
+  }
+
   // RE-Fix 1: Handle role selection buttons
   if (buttonId.startsWith("re_role_")) {
     return await handleRoleSelection(ctx, buttonId);

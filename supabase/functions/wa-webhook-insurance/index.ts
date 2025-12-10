@@ -356,6 +356,19 @@ async function handleInsuranceButton(
   buttonId: string,
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
+  // Handle Share easyMO button (auto-appended by reply.ts)
+  if (buttonId === IDS.SHARE_EASYMO || buttonId === "share_easymo") {
+    const { handleShareEasyMOButton } = await import("../_shared/wa-webhook-shared/utils/share-button-handler.ts");
+    return await handleShareEasyMOButton(ctx, "wa-webhook-insurance");
+  }
+
+  // Handle back/home buttons
+  if (buttonId === IDS.BACK_HOME || buttonId === "back_menu") {
+    const { sendHomeMenu } = await import("../_shared/wa-webhook-shared/flows/home.ts");
+    await sendHomeMenu(ctx);
+    return true;
+  }
+  
   // Handle insurance button selections
   if (buttonId.startsWith("ins_") || buttonId === IDS.INSURANCE_AGENT || buttonId === "insurance" || buttonId === IDS.INSURANCE_SUBMIT || buttonId === IDS.INSURANCE_HELP || buttonId === IDS.MOTOR_INSURANCE_UPLOAD) {
     // If it's a specific action like submit or help, delegate to list selection handler
@@ -367,6 +380,114 @@ async function handleInsuranceButton(
   }
   
   return false;
+}
+
+async function handleShareEasyMO(ctx: RouterContext): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  
+  try {
+    const { ensureReferralLink } = await import("../_shared/wa-webhook-shared/utils/share.ts");
+    const { sendButtonsMessage } = await import("../_shared/wa-webhook-shared/utils/reply.ts");
+    const { t } = await import("../_shared/wa-webhook-shared/i18n/translator.ts");
+    
+    const link = await ensureReferralLink(ctx.supabase, ctx.profileId);
+    const shareText = [
+      t(ctx.locale, "wallet.earn.forward.instructions"),
+      t(ctx.locale, "wallet.earn.share_text_intro"),
+      link.waLink,
+      t(ctx.locale, "wallet.earn.copy.code", { code: link.code }),
+      t(ctx.locale, "wallet.earn.note.keep_code"),
+    ].join("\n\n");
+    
+    logStructuredEvent("SHARE_EASYMO_TAP", {
+      service: "wa-webhook-insurance",
+      profileId: ctx.profileId,
+      from: ctx.from,
+      code: link.code,
+      waLink: link.waLink,
+    });
+    
+    await sendButtonsMessage(
+      ctx,
+      shareText,
+      [
+        { id: IDS.WALLET_EARN, title: t(ctx.locale, "wallet.earn.button") },
+        { id: IDS.BACK_HOME, title: t(ctx.locale, "common.home_button") },
+      ],
+    );
+    return true;
+  } catch (e) {
+    logStructuredEvent("SHARE_EASYMO_ERROR", {
+      service: "wa-webhook-insurance",
+      profileId: ctx.profileId,
+      from: ctx.from,
+      error: (e as Error)?.message,
+      stack: (e as Error)?.stack,
+    }, "error");
+    
+    const { sendButtonsMessage } = await import("../_shared/wa-webhook-shared/utils/reply.ts");
+    const { t } = await import("../_shared/wa-webhook-shared/i18n/translator.ts");
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "wallet.earn.error"),
+      [{ id: IDS.BACK_HOME, title: t(ctx.locale, "common.home_button") }],
+    );
+    return true;
+  }
+}
+
+async function handleShareEasyMO(ctx: RouterContext): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  
+  try {
+    const { ensureReferralLink } = await import("../_shared/wa-webhook-shared/utils/share.ts");
+    const { sendButtonsMessage } = await import("../_shared/wa-webhook-shared/utils/reply.ts");
+    const { t } = await import("../_shared/wa-webhook-shared/i18n/translator.ts");
+    
+    const link = await ensureReferralLink(ctx.supabase, ctx.profileId);
+    const shareText = [
+      t(ctx.locale, "wallet.earn.forward.instructions"),
+      t(ctx.locale, "wallet.earn.share_text_intro"),
+      link.waLink,
+      t(ctx.locale, "wallet.earn.copy.code", { code: link.code }),
+      t(ctx.locale, "wallet.earn.note.keep_code"),
+    ].join("\n\n");
+    
+    logStructuredEvent("SHARE_EASYMO_TAP", {
+      service: "wa-webhook-insurance",
+      profileId: ctx.profileId,
+      from: ctx.from,
+      code: link.code,
+      waLink: link.waLink,
+    });
+    
+    await sendButtonsMessage(
+      ctx,
+      shareText,
+      [
+        { id: IDS.WALLET_EARN, title: t(ctx.locale, "wallet.earn.button") },
+        { id: IDS.BACK_HOME, title: t(ctx.locale, "common.home_button") },
+      ],
+    );
+    return true;
+  } catch (e) {
+    logStructuredEvent("SHARE_EASYMO_ERROR", {
+      service: "wa-webhook-insurance",
+      profileId: ctx.profileId,
+      from: ctx.from,
+      error: (e as Error)?.message,
+      stack: (e as Error)?.stack,
+    }, "error");
+    
+    const { sendButtonsMessage } = await import("../_shared/wa-webhook-shared/utils/reply.ts");
+    const { t } = await import("../_shared/wa-webhook-shared/i18n/translator.ts");
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "wallet.earn.error"),
+      [{ id: IDS.BACK_HOME, title: t(ctx.locale, "common.home_button") }],
+    );
+    return true;
+  }
 }
 
 async function handleInsuranceList(

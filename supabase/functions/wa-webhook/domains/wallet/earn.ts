@@ -1,6 +1,6 @@
 import type { RouterContext } from "../../types.ts";
 import { sendButtonsMessage, sendListMessage } from "../../utils/reply.ts";
-import { ensureReferralLink as ensureReferralLinkShared } from "../../utils/share.ts";
+import { ensureReferralLink as ensureReferralLinkShared } from "../../../_shared/wa-webhook-shared/utils/share.ts";
 import { IDS } from "../../wa/ids.ts";
 import { setState } from "../../state/store.ts";
 import { logWalletAdjust } from "../../observe/log.ts";
