@@ -1,4 +1,15 @@
-// Real Estate AI Agent Integration for Property Rentals
+/**
+ * Real Estate AI Agent Integration for Property Rentals
+ * 
+ * This file contains workflow handlers for property search integration
+ * with the WhatsApp webhook system.
+ * 
+ * Note: The core Real Estate agent implementation has been unified at:
+ * packages/agents/src/agents/property/real-estate.agent.ts
+ * 
+ * These handlers integrate with that unified agent while managing
+ * the WhatsApp-specific conversation flow and state management.
+ */
 import type { RouterContext } from "../../types.ts";
 import { t } from "../../i18n/translator.ts";
 import { sendMessage, sendButtonsMessage } from "../../utils/reply.ts";

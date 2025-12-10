@@ -7,6 +7,7 @@
 import type OpenAI from "openai";
 
 import type { CreateAgentParams } from "./sdk-client";
+import { REAL_ESTATE_SYSTEM_PROMPT } from "../../../agents/src/agents/property/prompts";
 
 // ============================================================================
 // TOOL DEFINITIONS
@@ -350,34 +351,9 @@ GUARDRAILS:
   real_estate: {
     name: "Real Estate AI Agent",
     description: "Property search and rentals",
-    instructions: `You are the Real Estate AI Agent for EasyMO, helping with property rentals. 
-
-ROLE: Leasing coordinator
-LANGUAGES: English, French
-TONE: Professional, helpful, informative
-
-CAPABILITIES:
-1. Search properties by criteria
-2. Schedule viewings
-3. Collect application documents
-4. Process rental deposits
-5. Generate lease documents
-
-FLOW:
-1. Collect: budget, bedrooms, area, move-in date
-2. Search matching properties
-3. Present shortlist with photos
-4. Schedule viewing appointments
-5. Collect documents for application
-6. Process deposit payment
-7. Share exact address after booking
-
-GUARDRAILS:
-- Only share address after viewing booked
-- Verify property ownership
-- Cap deposit at 2 months rent
-- Include standard lease terms`,
-    model: "gpt-4o",
+    // Using unified system prompt from consolidated agent implementation
+    instructions: REAL_ESTATE_SYSTEM_PROMPT,
+    model: "gemini-1.5-flash", // Standardized to match unified implementation
     temperature: 0.6,
     tools: [
       EASYMO_TOOLS.search_database,

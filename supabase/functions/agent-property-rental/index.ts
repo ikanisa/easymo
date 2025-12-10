@@ -1,6 +1,19 @@
-// agent-property-rental - Property AI Agent for conversational property search
-// Upgraded to use OpenAI Responses API (Agents SDK compatible) with Gemini fallback,
-// DB-driven persona/system prompts, and persisted conversation memory.
+/**
+ * agent-property-rental - Property AI Agent API
+ * 
+ * Standalone API endpoint for conversational property search.
+ * Upgraded to use OpenAI Responses API (Agents SDK compatible) with Gemini fallback,
+ * DB-driven persona/system prompts, and persisted conversation memory.
+ * 
+ * Note: This is a standalone API endpoint. The core Real Estate agent
+ * implementation has been consolidated at:
+ * packages/agents/src/agents/property/real-estate.agent.ts
+ * 
+ * For WhatsApp integration, see: supabase/functions/wa-webhook-property/
+ * 
+ * @deprecated Consider migrating to use the unified RealEstateAgent implementation
+ * for consistency across all channels.
+ */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";

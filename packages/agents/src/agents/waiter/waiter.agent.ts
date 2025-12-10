@@ -78,6 +78,7 @@ export class WaiterAgent extends BaseAgent {
             const { data, error } = await dbQuery;
             
             if (error) {
+              log.warn({ error, restaurant_id, query, filters }, 'Menu search failed, returning fallback data');
               // Return fallback menu items for demo
               return {
                 items: [
@@ -132,6 +133,7 @@ export class WaiterAgent extends BaseAgent {
               message: `Top ${limit} popular items`
             };
           } catch (err) {
+            log.warn({ err, restaurant_id }, 'Failed to fetch popular items, returning fallback data');
             return {
               popular_items: [
                 { name: "Chef's Special", price: 6000, description: "Today's chef recommendation" },

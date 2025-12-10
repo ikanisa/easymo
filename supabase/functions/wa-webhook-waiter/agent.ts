@@ -544,7 +544,7 @@ async function getOrCreateSession(ctx: WaiterContext): Promise<ConversationSessi
     }
 
     const { data: menuItems } = await ctx.supabase
-      .from("restaurant_menu_items")
+      .from("menu_items")
       .select("id, name, description, price, currency, category, is_available")
       .eq("bar_id", barId)
       .eq("is_available", true)
@@ -613,7 +613,7 @@ async function processWithAI(
   userMessage: string
 ): Promise<boolean> {
   const { data: menuItems } = await ctx.supabase
-    .from("restaurant_menu_items")
+    .from("menu_items")
     .select("id, name, description, price, currency, category, is_available")
     .eq("bar_id", session.bar_id)
     .eq("is_available", true)
@@ -698,7 +698,7 @@ async function handleAIAction(
       if (items && items.length > 0) {
         // Fetch all menu items for fuzzy matching
         const { data: allMenuItems } = await ctx.supabase
-          .from("restaurant_menu_items")
+          .from("menu_items")
           .select("id, name, price, description")
           .eq("bar_id", session.bar_id)
           .eq("is_available", true);
@@ -709,7 +709,7 @@ async function handleAIAction(
           // Try exact ID match first
           if (item.id) {
             const { data } = await ctx.supabase
-              .from("restaurant_menu_items")
+              .from("menu_items")
               .select("id, name, price")
               .eq("id", item.id)
               .eq("bar_id", session.bar_id)
