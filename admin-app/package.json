@@ -71,7 +71,6 @@
     "@tauri-apps/plugin-updater": "^2.0.0",
     "@tauri-apps/plugin-window-state": "^2.0.0",
     "@types/bcrypt": "^6.0.0",
-    "@va/shared": "workspace:*",
     "bcrypt": "^6.0.0",
     "class-variance-authority": "^0.7.1",
     "classnames": "2.5.1",

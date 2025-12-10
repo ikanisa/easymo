@@ -46,9 +46,6 @@ importers:
       '@tauri-apps/plugin-updater':
         specifier: ^2.0.0
         version: 2.9.0
-      '@va/shared':
-        specifier: workspace:*
-        version: link:packages/shared
       axios:
         specifier: ^1.13.2
         version: 1.13.2
@@ -239,9 +236,6 @@ importers:
       '@types/bcrypt':
         specifier: ^6.0.0
         version: 6.0.0
-      '@va/shared':
-        specifier: workspace:*
-        version: link:../packages/shared
       bcrypt:
         specifier: ^6.0.0
         version: 6.0.0
@@ -1080,19 +1074,6 @@ importers:
       vitest:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.18.12)(jsdom@26.1.0)(lightningcss@1.30.2)(terser@5.44.1)
-
-  packages/shared:
-    dependencies:
-      zod:
-        specifier: ^3.25.76
-        version: 3.25.76
-    devDependencies:
-      eslint:
-        specifier: ^9.32.0
-        version: 9.39.1(jiti@1.21.7)
-      typescript:
-        specifier: 5.5.4
-        version: 5.5.4
 
   packages/sms-parser:
     dependencies:
