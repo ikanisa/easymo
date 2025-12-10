@@ -275,8 +275,17 @@ serve(async (req: Request): Promise<Response> => {
         return respond({ success: true, message: "ai_welcome_shown" });
       }
 
-      // Fallback: For now, just show welcome message (disable AI to prevent spam)
-      // TODO: Re-enable AI agent after fixing multiple invocation issue
+      // User sent an actual message - forward to AI agent
+      if (text && text.trim().length > 0) {
+        const handled = await forwardToBuySellAgent(userPhone, text, correlationId);
+        if (handled) {
+          const duration = Date.now() - startTime;
+          recordMetric("buy_sell.message.processed", 1, { duration_ms: duration, ai_routed: true });
+          return respond({ success: true, message: "ai_processed" });
+        }
+      }
+
+      // Fallback: Show welcome message
       const userCountry = mapCountry(getCountryCode(userPhone));
       await showAIWelcome(userPhone, userCountry);
 
@@ -348,8 +357,11 @@ async function forwardToBuySellAgent(
     }
 
     const data = await res.json();
-    if (data?.message) {
-      await sendText(userPhone, data.message);
+    
+    // Agent returns { response_text: "..." } or { message: "..." }
+    const responseText = data?.response_text || data?.message;
+    if (responseText) {
+      await sendText(userPhone, responseText);
       return true;
     }
     return false;
