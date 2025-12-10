@@ -40,6 +40,11 @@ import { AGENT_CONFIGURATIONS } from "./agent_configs.ts";
  * - locops → INTERNAL (not agent)
  * - analytics-risk → INTERNAL (not agent)
  * - payments-agent → INTERNAL (not agent)
+ * 
+ * DELETED AGENTS (replaced with WhatsApp Workflows):
+ * - insurance → Replaced with button-based WhatsApp insurance workflows
+ * - rides → Replaced with button-based WhatsApp mobility workflows
+ * - mobility-orchestrator → rides (DELETED)
  */
 export type AgentType =
   | "farmer"           // Farmer AI Agent
@@ -168,6 +173,11 @@ export class AgentOrchestrator {
 - jobs: Employment, job search, hiring, gigs
 - waiter: Restaurant, bar, dining, food ordering, menu
 - real_estate: Property, rentals, housing, apartments
+- buy_and_sell: Shopping, products, pharmacy, hardware, groceries, business sales, acquisitions, legal services
+- support: Help, account issues, technical problems, general questions, transportation, rides, insurance
+
+Note: For transportation/rides requests, route to "support" (handled via WhatsApp workflows).
+Note: For insurance requests, route to "support" (handled via WhatsApp workflows).
 - buy_sell: Shopping, products, pharmacy, hardware, groceries, business sales, acquisitions, legal services
 - support: Help, account issues, technical problems, general questions
 

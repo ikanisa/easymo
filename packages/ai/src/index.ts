@@ -137,6 +137,9 @@ export {
   type ProductQuery,
 } from "./agents/commerce-agent.base";
 
+// MobilityAgentBase - DELETED: Replaced with WhatsApp button-based workflows
+// See: supabase/functions/wa-webhook-mobility for workflow implementation
+
 export {
   ProfessionalAgentBase,
   type Appointment,

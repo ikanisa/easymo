@@ -2,6 +2,9 @@
  * Domain Agent Base Classes Tests
  *
  * Tests for CommerceAgentBase and ProfessionalAgentBase.
+ * 
+ * Note: MobilityAgentBase tests removed - the class was deleted
+ * as rides functionality is now handled via WhatsApp button-based workflows.
  */
 
 import { describe, expect, it, vi, beforeEach } from 'vitest';
@@ -121,6 +124,12 @@ describe('CommerceAgentBase', () => {
     expect(agent).toBeDefined();
   });
 });
+
+// ============================================================================
+// MOBILITY AGENT TESTS - DELETED
+// MobilityAgentBase was removed and replaced with WhatsApp button-based workflows
+// See: supabase/functions/wa-webhook-mobility for workflow implementation
+// ============================================================================
 
 // ============================================================================
 // PROFESSIONAL AGENT TESTS

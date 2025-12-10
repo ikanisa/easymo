@@ -21,6 +21,10 @@
  * 6. buy_and_sell - Buy & Sell AI Agent (unified: marketplace + business broker + legal intake)
  * 7. support - Support AI Agent (includes concierge routing)
  * 
+ * DELETED AGENTS (replaced with WhatsApp Workflows):
+ * - insurance - Replaced with button-based WhatsApp insurance workflows
+ * - rides - Replaced with button-based WhatsApp mobility workflows
+ * 
  * DEPRECATED:
  * - buy_and_sell - Standardized to buy_sell
  * - marketplace - Merged into buy_sell
