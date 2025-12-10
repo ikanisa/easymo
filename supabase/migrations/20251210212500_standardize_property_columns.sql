@@ -13,13 +13,27 @@ BEGIN;
 ALTER TABLE IF EXISTS property_listings 
   ADD COLUMN IF NOT EXISTS price_amount NUMERIC(12,2);
 
--- Migrate existing data from various price columns to price_amount
-UPDATE property_listings 
-SET price_amount = COALESCE(price_amount, price_monthly, price, monthly_rent)
-WHERE price_amount IS NULL AND EXISTS (
-  SELECT 1 FROM information_schema.tables 
-  WHERE table_name = 'property_listings'
-);
+-- Migrate existing data from available price columns to price_amount
+-- Only update if the source columns exist
+DO $$ 
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'property_listings') THEN
+    -- Try to migrate from price_monthly if it exists
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'property_listings' AND column_name = 'price_monthly') THEN
+      UPDATE property_listings SET price_amount = price_monthly WHERE price_amount IS NULL AND price_monthly IS NOT NULL;
+    END IF;
+    
+    -- Try to migrate from price if it exists
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'property_listings' AND column_name = 'price') THEN
+      UPDATE property_listings SET price_amount = price WHERE price_amount IS NULL AND price IS NOT NULL;
+    END IF;
+    
+    -- Try to migrate from monthly_rent if it exists
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'property_listings' AND column_name = 'monthly_rent') THEN
+      UPDATE property_listings SET price_amount = monthly_rent WHERE price_amount IS NULL AND monthly_rent IS NOT NULL;
+    END IF;
+  END IF;
+END $$;
 
 -- Add comment for clarity
 COMMENT ON COLUMN property_listings.price_amount IS 
