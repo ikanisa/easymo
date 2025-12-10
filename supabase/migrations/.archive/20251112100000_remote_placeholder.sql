@@ -1,2 +1,0 @@
--- Placeholder migration to mirror remote history entry 20251112100000
--- No-op: remote schema already applied; keeps local history aligned for pushes

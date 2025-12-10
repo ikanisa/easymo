@@ -144,7 +144,7 @@ Each stage:
 | 1. Foundation | 1 | ✅ Architecture docs |
 | 2. Unified Pipeline | 4 | Event normalizer, agent detector, runtime, intent parser, apply service, reply generator |
 | 3. Profile Extraction | 3 | @easymo/profile package, wallet module, My Stuff views, agent helpers |
-| 4. Agent Migration | 8 | All 8 agents using unified pipeline (1 week per agent) |
+| 4. Agent Migration | 7 | All 7 AI agents using unified pipeline (mobility/insurance handled via workflows) |
 | 5. Cleanup & Launch | 3 | Remove legacy code, comprehensive tests, production deployment |
 
 ### Agent Migration Order
@@ -240,7 +240,7 @@ All changes gated behind feature flags (default: false):
 
 - [ ] All code follows Ground Rules (observability, security, feature flags)
 - [ ] Every component has unit tests
-- [ ] Integration tests cover all 8 agents
+- [ ] Integration tests cover all 7 agents
 - [ ] Documentation up to date
 - [ ] Code reviews completed for all changes
 - [ ] Zero tech debt introduced
@@ -304,7 +304,7 @@ When starting Phase 2:
 ### Risks Identified
 
 ⚠️ **Scope**: 19-week project requires sustained team focus  
-⚠️ **Complexity**: 8 agents with different maturity levels  
+⚠️ **Complexity**: 7 AI agents with different maturity levels (workflows for mobility/insurance)  
 ⚠️ **Production Safety**: Must maintain 99.9% uptime during migration  
 ⚠️ **LLM Costs**: Need to budget for increased OpenAI/Gemini usage
 

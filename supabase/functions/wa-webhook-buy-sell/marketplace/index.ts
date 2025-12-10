@@ -3,10 +3,24 @@
  *
  * Re-exports the AI agent and database operations for the marketplace domain.
  * This module provides a unified interface for marketplace functionality.
+ * 
+ * @deprecated Import from _shared/agents/buy-and-sell.ts instead
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-export { MarketplaceAgent } from "../agent.ts";
+
+// Re-export from consolidated agent
+export { 
+  BuyAndSellAgent as MarketplaceAgent,
+  type BuyAndSellContext as MarketplaceContext,
+  type BuyAndSellResult as AgentResponse,
+  loadContext,
+  saveContext,
+  resetContext,
+  BUSINESS_CATEGORIES,
+  EMOJI_NUMBERS
+} from "../../_shared/agents/buy-and-sell.ts";
+
 export * from "../db/index.ts";
 export * from "../utils/index.ts";
 export * from "./vendor_inquiry_tools.ts";

@@ -1,11 +1,12 @@
 /**
  * Jobs Matching Tool
- * Searches job_posts table and creates match events for AI agent
+ * Searches job_listings table with semantic matching and creates match events for AI agent
  */
 
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 export interface JobSearchParams {
+  query?: string; // Natural language search query
   location?: string;
   category?: string;
   min_salary?: number;
@@ -13,6 +14,7 @@ export interface JobSearchParams {
   employment_type?: string;
   experience_level?: string;
   limit?: number;
+  use_semantic_search?: boolean; // Enable semantic search with embeddings
 }
 
 export interface JobMatch {
@@ -27,7 +29,157 @@ export interface JobMatch {
   match_score: number;
 }
 
+/**
+ * Generate embeddings using OpenAI
+ */
+async function generateEmbedding(text: string): Promise<number[]> {
+  const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
+  
+  if (!openaiApiKey) {
+    console.warn("OPENAI_API_KEY not set, falling back to traditional search");
+    throw new Error("OpenAI API key not configured");
+  }
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/embeddings", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${openaiApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "text-embedding-3-small",
+        input: text,
+        encoding_format: "float",
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error("OpenAI embedding error:", error);
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.data[0].embedding;
+  } catch (error) {
+    console.error("Failed to generate embedding:", error);
+    throw error;
+  }
+}
+
 export async function searchJobs(
+  supabase: SupabaseClient,
+  params: JobSearchParams,
+  userId: string
+): Promise<{ matches: JobMatch[]; total: number }> {
+  try {
+    // Use semantic search if query provided and enabled
+    if (params.query && params.use_semantic_search !== false) {
+      return await semanticSearchJobs(supabase, params, userId);
+    }
+
+    // Fallback to traditional search
+    return await traditionalSearchJobs(supabase, params, userId);
+  } catch (error) {
+    console.error("Job search error:", error);
+    return { matches: [], total: 0 };
+  }
+}
+
+/**
+ * Semantic search using match_job_listings RPC with embeddings
+ */
+async function semanticSearchJobs(
+  supabase: SupabaseClient,
+  params: JobSearchParams,
+  userId: string
+): Promise<{ matches: JobMatch[]; total: number }> {
+  try {
+    // Build search query string from all parameters
+    const searchTerms = [
+      params.query,
+      params.location && `in ${params.location}`,
+      params.category,
+    ].filter(Boolean).join(' ');
+
+    console.log('Generating embedding for:', searchTerms);
+
+    // Generate embedding for the search query
+    const embedding = await generateEmbedding(searchTerms);
+
+    // Call match_job_listings RPC with the embedding
+    const { data, error } = await supabase.rpc('match_job_listings', {
+      query_embedding: embedding,
+      match_threshold: 0.6, // Lower threshold for more results
+      match_count: params.limit || 10,
+      filter: {},
+    });
+
+    if (error) {
+      console.error("RPC match_job_listings error:", error);
+      throw error;
+    }
+
+    if (!data || data.length === 0) {
+      console.log("No semantic matches found, trying traditional search");
+      return await traditionalSearchJobs(supabase, params, userId);
+    }
+
+    // Apply additional filters
+    let filteredJobs = data;
+
+    if (params.min_salary) {
+      filteredJobs = filteredJobs.filter((job: any) => 
+        job.salary_min && job.salary_min >= params.min_salary!
+      );
+    }
+
+    if (params.max_salary) {
+      filteredJobs = filteredJobs.filter((job: any) => 
+        job.salary_max && job.salary_max <= params.max_salary!
+      );
+    }
+
+    if (params.employment_type) {
+      filteredJobs = filteredJobs.filter((job: any) => 
+        job.job_type === params.employment_type
+      );
+    }
+
+    // Map to JobMatch format
+    const matches: JobMatch[] = filteredJobs.map((job: any) => ({
+      id: job.id,
+      title: job.title,
+      company: job.company || job.posted_by || "Company",
+      location: job.location || "Not specified",
+      salary_range: job.salary_min && job.salary_max
+        ? `${job.salary_min} - ${job.salary_max} ${job.currency || "RWF"}`
+        : undefined,
+      employment_type: job.job_type || "Full-time",
+      description: job.description?.substring(0, 200) || "",
+      posted_at: job.created_at,
+      match_score: job.similarity || 0,
+    }));
+
+    console.log(`Semantic search found ${matches.length} matches`);
+
+    return {
+      matches,
+      total: matches.length,
+    };
+  } catch (error) {
+    console.error("Semantic search error:", error);
+    // Fallback to traditional search
+    console.log("Falling back to traditional search");
+    return await traditionalSearchJobs(supabase, params, userId);
+  }
+}
+
+/**
+ * Traditional keyword-based search
+ */
+async function traditionalSearchJobs(
   supabase: SupabaseClient,
   params: JobSearchParams,
   userId: string
@@ -35,12 +187,17 @@ export async function searchJobs(
   try {
     // Build query
     let query = supabase
-      .from("job_posts")
+      .from("job_listings")
       .select("*", { count: "exact" })
       .eq("status", "active")
       .order("created_at", { ascending: false });
 
     // Apply filters
+    if (params.query) {
+      // Search in title and description
+      query = query.or(`title.ilike.%${params.query}%,description.ilike.%${params.query}%`);
+    }
+
     if (params.location) {
       query = query.ilike("location", `%${params.location}%`);
     }

@@ -5,7 +5,7 @@
 # Each agent has specific instructions, tools, guardrails, and operational parameters
 # aligned with the platform architecture (Supabase + Edge Functions + WhatsApp).
 #
-# OFFICIAL AGENTS (9 production agents matching agent_registry database):
+# OFFICIAL AGENTS (7 production agents matching agent_registry database):
 #   1. farmer - Farmer AI Agent
 #   2. insurance - Insurance AI Agent
 #   3. sales_cold_caller - Sales/Marketing Cold Caller AI Agent
@@ -15,6 +15,12 @@
 #   7. real_estate - Real Estate AI Agent
 #   8. buy_sell - Buy & Sell AI Agent (unified commerce + business brokerage)
 #   9. support - Support AI Agent (includes concierge routing capabilities)
+#   2. sales_cold_caller - Sales/Marketing Cold Caller AI Agent
+#   3. jobs - Jobs AI Agent
+#   4. waiter - Waiter AI Agent
+#   5. real_estate - Real Estate AI Agent
+#   6. buy_and_sell - Buy & Sell AI Agent (unified commerce + business brokerage)
+#   7. support - Support AI Agent (includes concierge routing capabilities)
 #
 # NOTE: buy_sell is the standardized slug (previously buy_and_sell)
 #
@@ -75,39 +81,7 @@
       - Seasonal availability: Inform about typical harvest windows.
 
 # =========================================================================================
-# 2) Insurance AI Agent
-# =========================================================================================
-- slug: insurance
-  name: Insurance AI Agent
-  enabled: true
-  languages: [en, fr, rw]
-  autonomy: suggest
-  tools:
-    - ocr_extract
-    - price_insurance
-    - generate_pdf
-    - momo_charge
-    - notify_staff
-    - analytics_log
-  guardrails:
-    approval_thresholds:
-      premium_gt: 500000
-      ocr_conf_lt: 0.8
-    pii_minimization: true
-    localized_disclaimers: true
-  instructions: |
-    ROLE: Insurance intake specialist (motor/travel/health).
-    GOAL: Extract fields from photos, price policy, collect payment, and deliver the certificate PDF with correct dates and disclaimers.
-    FLOW:
-      1) Request front/back photos; coach: good light, full edges, legible text.
-      2) ocr_extract → confirm low-confidence or missing fields; request retake if needed.
-      3) price_insurance → present premium, breakdown, coverage period, exclusions.
-      4) If premium > threshold OR OCR confidence < 0.8, pause for staff approval (notify_staff).
-      5) On YES: momo_charge; after settled webhook → generate_pdf (certificate) → deliver link.
-    PRIVACY: Redact or purge original images per policy after extraction.
-
-# =========================================================================================
-# 3) Sales/Marketing Cold Caller AI Agent
+# 2) Sales/Marketing Cold Caller AI Agent
 # =========================================================================================
 - slug: sales_cold_caller
   name: Sales/Marketing Cold Caller AI Agent
@@ -137,37 +111,7 @@
     OUTPUTS: Lead qualification notes, campaign briefs, audience notes, schedule requests, and performance summaries.
 
 # =========================================================================================
-# 4) Rides AI Agent
-# =========================================================================================
-- slug: rides
-  name: Rides AI Agent
-  enabled: true
-  languages: [en, fr, rw, sw]
-  autonomy: suggest
-  tools:
-    - maps_geosearch
-    - search_supabase
-    - momo_charge
-    - notify_staff
-    - analytics_log
-  guardrails:
-    location_privacy: coarse_only
-    payment_deposit_required: false
-    pii_minimization: true
-  instructions: |
-    ROLE: Mobility coordinator matching passengers with drivers; handles ride booking and scheduling.
-    GOAL: Offer 1–3 options with ETA/price windows, confirm pickup/drop, create bookings, and coordinate payment per policy.
-    STYLE: Clear and safety-first; keep messages short; never reveal personal numbers.
-    FLOW:
-      1) Collect role (rider/driver), origin, destination, time, pax; confirm coarse locations.
-      2) maps_geosearch(lat,lng,radius,kind) to find candidates; show 1–3 best matches with ETA/price.
-      3) Confirm selection and booking; share masked identifiers; set reminders for scheduled trips.
-      4) If policy requires, take a deposit via momo_charge; only confirm after webhook settlement.
-    PRIVACY:
-      - Store only coarse coordinates; use short-lived links for live location; never expose phone numbers in chat.
-
-# =========================================================================================
-# 5) Jobs AI Agent
+# 3) Jobs AI Agent
 # =========================================================================================
 - slug: jobs
   name: Jobs AI Agent
@@ -196,7 +140,7 @@
       - Skills gaps: Suggest relevant training or alternative positions.
 
 # =========================================================================================
-# 6) Waiter AI Agent
+# 4) Waiter AI Agent
 # =========================================================================================
 - slug: waiter
   name: Waiter AI Agent
@@ -232,7 +176,7 @@
       - OOS: propose nearest alternative; Payment pending >10 minutes: resend link or cancel; Partial cancel before prep only.
 
 # =========================================================================================
-# 7) Real Estate AI Agent
+# 5) Real Estate AI Agent
 # =========================================================================================
 - slug: real_estate
   name: Real Estate AI Agent
@@ -264,7 +208,7 @@
       - Deposit disputes: Escalate to staff with documentation.
 
 # =========================================================================================
-# 8) Buy & Sell AI Agent (unified commerce + business brokerage)
+# 6) Buy & Sell AI Agent (unified commerce + business brokerage)
 # =========================================================================================
 - slug: buy_sell
   name: Buy & Sell AI Agent
@@ -334,7 +278,7 @@
       6) Notify fulfillment (notify_staff); escalate sensitive topics immediately.
 
 # =========================================================================================
-# 9) Support AI Agent (includes concierge routing capabilities)
+# 7) Support AI Agent (includes concierge routing capabilities)
 # =========================================================================================
 - slug: support
   name: Support AI Agent
@@ -357,7 +301,7 @@
     STYLE: Polite, helpful, concise (≤2 lines per message). Mirror user language (EN/FR; rw/sw/ln comprehension).
     
     TRIAGE/ROUTING:
-      - Detect intents across: Dining, Mobility, Commerce, Insurance, Property, Jobs, Farming.
+      - Detect intents across: Dining, Commerce, Property, Jobs, Farming.
       - If routing confidence < 0.6, ask up to 2 targeted clarifying questions, then decide.
       - Set conversations.state.target_agent and pass minimal context.
     

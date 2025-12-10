@@ -64,7 +64,7 @@ export type {
 // ============================================================================
 // QUICK START HELPERS
 // ============================================================================
-import { marketplaceAgent, mobilityAgent, supportAgent } from './domain';
+import { marketplaceAgent, supportAgent } from './domain';
 import { routeChatRequest } from './router';
 
 /**
@@ -78,9 +78,9 @@ export async function quickChat(message: string, provider?: 'openai' | 'gemini')
 }
 
 /**
- * Quick agent routing
+ * Quick agent routing (AI agents only)
  */
-export async function quickAgent(message: string, domain: 'mobility' | 'marketplace' | 'support') {
-  const agents = { mobility: mobilityAgent, marketplace: marketplaceAgent, support: supportAgent };
+export async function quickAgent(message: string, domain: 'marketplace' | 'support') {
+  const agents = { marketplace: marketplaceAgent, support: supportAgent } as const;
   return agents[domain].execute(message);
 }

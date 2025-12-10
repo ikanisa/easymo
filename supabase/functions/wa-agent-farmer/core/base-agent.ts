@@ -84,8 +84,6 @@ export abstract class BaseAgent {
       'real_estate_agent': 'real_estate',
       'business_broker_agent': 'marketplace', // Marketplace replaces broker
       'support_agent': 'support',
-      'rides_agent': 'rides',
-      'insurance_agent': 'insurance',
       'sales_cold_caller_agent': 'sales_cold_caller',
     };
     return mapping[this.type] || this.type.replace('_agent', '');

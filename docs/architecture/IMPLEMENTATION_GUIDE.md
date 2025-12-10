@@ -362,7 +362,7 @@ WHERE created_at > NOW() - INTERVAL '1 hour';
 - [ ] p95 latency < 4s
 - [ ] Intent application success rate > 95%
 - [ ] No increase in support tickets
-- [ ] All 8 agents working correctly
+- [ ] All 7 AI agents working correctly (mobility/insurance use workflows)
 
 ---
 
@@ -532,7 +532,7 @@ async function buildAgentContext(agent, user, conversation) {
 
 ## Phase 4: Agent-Specific Migration
 
-**Deliverables**: All 8 agents using unified pipeline  
+**Deliverables**: All 7 AI agents using unified pipeline; mobility/insurance handled via workflows  
 **Estimated Time**: 6-8 weeks (1 week per agent)  
 **Status**: Not Started
 
@@ -582,7 +582,7 @@ For each agent, complete:
 ### 5.2 Comprehensive Testing (Week 2)
 
 - [ ] Unit tests for all pipeline components
-- [ ] Integration tests for all 8 agents
+- [ ] Integration tests for all 7 agents
 - [ ] End-to-end tests for critical flows
 - [ ] Load testing (100 concurrent users)
 - [ ] Security testing (penetration testing)

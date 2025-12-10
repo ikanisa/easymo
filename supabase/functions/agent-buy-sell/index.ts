@@ -1,10 +1,17 @@
 // agent-buy-sell - Natural language Buy & Sell AI Agent
-// Uses OpenAI Responses API with Gemini fallback plus DB-backed memory.
+// Uses consolidated Buy & Sell agent from _shared/agents
+// @see docs/features/BUY_SELL_CONSOLIDATION_ANALYSIS.md
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-import { MarketplaceAgent, type MarketplaceContext } from "../wa-webhook-buy-sell/agent.ts";
+import { 
+  BuyAndSellAgent,
+  type BuyAndSellContext,
+  loadContext,
+  saveContext,
+  resetContext
+} from "../_shared/agents/buy-and-sell.ts";
 
 interface BuySellRequest {
   userPhone: string;
@@ -19,7 +26,7 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
 );
 
-const agent = new MarketplaceAgent(supabase);
+const agent = new BuyAndSellAgent(supabase);
 
 serve(async (req: Request): Promise<Response> => {
   const corsHeaders = {
@@ -51,15 +58,23 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     if (body.reset) {
-      await MarketplaceAgent.resetContext(body.userPhone, supabase);
+      await resetContext(body.userPhone, supabase);
     }
 
-    const context: MarketplaceContext = await MarketplaceAgent.loadContext(body.userPhone, supabase);
+    const context: BuyAndSellContext = await loadContext(body.userPhone, supabase);
     if (body.location) {
       context.location = body.location;
     }
 
-    const response = await agent.process(body.message, context);
+    const response = await agent.execute({ 
+      message: body.message, 
+      context 
+    });
+    
+    // Save updated context
+    if (context.phone) {
+      await saveContext(context, supabase);
+    }
 
     return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

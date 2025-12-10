@@ -98,59 +98,141 @@ Always be supportive, honest, and safety-focused.`;
     return [
       {
         name: 'search_jobs',
-        description: 'Search for jobs by role, location, and salary requirements',
+        description: 'Search for jobs using AI-powered semantic matching. Understands natural language queries.',
         parameters: {
           type: 'object',
           properties: {
-            role: { type: 'string', description: 'Job role or title' },
+            role: { type: 'string', description: 'Job role or title (e.g., "driver", "construction worker")' },
             location: { type: 'string', description: 'City or area' },
             min_salary: { type: 'number', description: 'Minimum salary in RWF' },
-            job_type: { type: 'string', enum: ['full_time', 'part_time', 'contract', 'gig'] }
+            job_type: { type: 'string', enum: ['full_time', 'part_time', 'contract', 'gig'], description: 'Employment type' },
+            use_semantic_search: { type: 'boolean', description: 'Use AI semantic search (default: true)' }
           },
           required: ['role']
         },
         execute: async (params) => {
-          let query = this.supabase
-            .from('job_listings')
-            .select('id, title, company, location, salary_min, salary_max, job_type, verified, description')
-            .eq('status', 'active');
+          try {
+            // Use semantic search if enabled and OpenAI key available
+            const useSemanticSearch = params.use_semantic_search !== false;
+            const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
 
-          if (params.role) {
-            query = query.ilike('title', `%${params.role}%`);
+            if (useSemanticSearch && openaiApiKey) {
+              // Build natural language query
+              const searchQuery = [
+                params.role,
+                params.location && `in ${params.location}`,
+                params.job_type && `${params.job_type} position`
+              ].filter(Boolean).join(' ');
+
+              console.log('Generating embedding for:', searchQuery);
+
+              // Generate embedding
+              const embeddingResponse = await fetch("https://api.openai.com/v1/embeddings", {
+                method: "POST",
+                headers: {
+                  "Authorization": `Bearer ${openaiApiKey}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  model: "text-embedding-3-small",
+                  input: searchQuery,
+                }),
+              });
+
+              if (embeddingResponse.ok) {
+                const embeddingData = await embeddingResponse.json();
+                const embedding = embeddingData.data[0].embedding;
+
+                // Call semantic search RPC
+                const { data: semanticResults, error: rpcError } = await this.supabase.rpc('match_job_listings', {
+                  query_embedding: embedding,
+                  match_threshold: 0.6,
+                  match_count: 10,
+                  filter: {},
+                });
+
+                if (!rpcError && semanticResults && semanticResults.length > 0) {
+                  // Apply additional filters
+                  let filteredResults = semanticResults;
+
+                  if (params.min_salary) {
+                    filteredResults = filteredResults.filter((j: any) => 
+                      j.salary_min && j.salary_min >= params.min_salary
+                    );
+                  }
+
+                  if (filteredResults.length > 0) {
+                    console.log(`Semantic search found ${filteredResults.length} matches`);
+                    
+                    return {
+                      count: filteredResults.length,
+                      search_type: 'semantic',
+                      jobs: filteredResults.slice(0, 5).map((j: any) => ({
+                        id: j.id,
+                        title: j.title,
+                        company: j.company || j.posted_by || 'Company',
+                        location: j.location,
+                        salary: `${j.salary_min} - ${j.salary_max} ${j.currency || 'RWF'}`,
+                        type: j.job_type,
+                        verified: j.verified || false,
+                        match_score: Math.round((j.similarity || 0) * 100)
+                      }))
+                    };
+                  }
+                }
+
+                console.log('Semantic search returned no results, falling back to keyword search');
+              }
+            }
+
+            // Fallback to traditional keyword search
+            console.log('Using traditional keyword search');
+            let query = this.supabase
+              .from('job_listings')
+              .select('id, title, company, location, salary_min, salary_max, job_type, verified, description, currency, posted_by')
+              .eq('status', 'active');
+
+            if (params.role) {
+              query = query.ilike('title', `%${params.role}%`);
+            }
+
+            if (params.location) {
+              query = query.ilike('location', `%${params.location}%`);
+            }
+
+            if (params.min_salary) {
+              query = query.gte('salary_min', params.min_salary);
+            }
+
+            if (params.job_type) {
+              query = query.eq('job_type', params.job_type);
+            }
+
+            query = query.limit(5);
+
+            const { data, error } = await query;
+
+            if (error || !data || data.length === 0) {
+              return { message: 'No jobs found matching your criteria.', search_type: 'keyword' };
+            }
+
+            return {
+              count: data.length,
+              search_type: 'keyword',
+              jobs: data.map(j => ({
+                id: j.id,
+                title: j.title,
+                company: j.company || j.posted_by || 'Company',
+                location: j.location,
+                salary: `${j.salary_min} - ${j.salary_max} ${j.currency || 'RWF'}`,
+                type: j.job_type,
+                verified: j.verified || false
+              }))
+            };
+          } catch (error) {
+            console.error('Job search error:', error);
+            return { message: 'Job search temporarily unavailable. Please try again.', error: String(error) };
           }
-
-          if (params.location) {
-            query = query.ilike('location', `%${params.location}%`);
-          }
-
-          if (params.min_salary) {
-            query = query.gte('salary_min', params.min_salary);
-          }
-
-          if (params.job_type) {
-            query = query.eq('job_type', params.job_type);
-          }
-
-          query = query.limit(5);
-
-          const { data, error } = await query;
-
-          if (error || !data || data.length === 0) {
-            return { message: 'No jobs found matching your criteria.' };
-          }
-
-          return {
-            count: data.length,
-            jobs: data.map(j => ({
-              id: j.id,
-              title: j.title,
-              company: j.company,
-              location: j.location,
-              salary: `${j.salary_min} - ${j.salary_max} RWF`,
-              type: j.job_type,
-              verified: j.verified
-            }))
-          };
         }
       },
       {
@@ -169,13 +251,13 @@ Always be supportive, honest, and safety-focused.`;
         },
         execute: async (params) => {
           const { data, error } = await this.supabase
-            .from('worker_profiles')
+            .from('job_seekers')
             .upsert({
               user_id: params.user_id,
               skills: params.skills || [],
-              experience_years: params.experience_years || 0,
+              experience: params.experience_years ? `${params.experience_years} years` : '',
               location: params.location,
-              preferred_roles: params.preferred_roles || [],
+              location_preference: params.location,
               updated_at: new Date().toISOString()
             })
             .select()
@@ -189,7 +271,7 @@ Always be supportive, honest, and safety-focused.`;
             profile_id: data.id,
             message: 'Profile created successfully',
             skills: data.skills,
-            experience: data.experience_years
+            experience: data.experience
           };
         }
       },
@@ -207,24 +289,28 @@ Always be supportive, honest, and safety-focused.`;
         },
         execute: async (params) => {
           const { data, error } = await this.supabase
-            .from('job_applications')
+            .from('job_matches')
             .insert({
               job_id: params.job_id,
-              user_id: params.user_id,
-              cover_message: params.cover_message,
-              status: 'submitted',
-              applied_at: new Date().toISOString()
+              seeker_id: params.user_id,
+              status: 'applied',
+              score: 0.8,
+              created_at: new Date().toISOString()
             })
             .select()
             .single();
 
           if (error) {
+            // Check if already applied (duplicate key error)
+            if (error.code === '23505') {
+              return { error: 'You have already applied to this job', status: 'duplicate' };
+            }
             return { error: 'Failed to submit application' };
           }
 
           return {
             application_id: data.id,
-            status: 'submitted',
+            status: 'applied',
             message: 'Application submitted successfully. The employer will contact you if interested.'
           };
         }
@@ -241,10 +327,10 @@ Always be supportive, honest, and safety-focused.`;
         },
         execute: async (params) => {
           const { data, error } = await this.supabase
-            .from('job_applications')
-            .select('id, job_id, status, applied_at, job_listings(title, company)')
-            .eq('user_id', params.user_id)
-            .order('applied_at', { ascending: false })
+            .from('job_matches')
+            .select('id, job_id, status, created_at, job_listings(title, company)')
+            .eq('seeker_id', params.user_id)
+            .order('created_at', { ascending: false })
             .limit(5);
 
           if (error || !data || data.length === 0) {
@@ -257,7 +343,7 @@ Always be supportive, honest, and safety-focused.`;
               job: (a as any).job_listings?.title,
               company: (a as any).job_listings?.company,
               status: a.status,
-              applied: a.applied_at
+              applied: a.created_at
             }))
           };
         }
