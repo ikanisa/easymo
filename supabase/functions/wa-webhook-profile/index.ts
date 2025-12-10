@@ -1040,9 +1040,24 @@ serve(async (req: Request): Promise<Response> => {
     // Handle Text Messages
     else if (message.type === "text") {
       const text = (message.text as any)?.body?.toLowerCase() ?? "";
+      const originalText = (message.text as any)?.body?.trim() ?? "";
+      const upperText = originalText.toUpperCase();
       
+      // PRIORITY: Check for referral code (REF:CODE or standalone 6-12 char alphanumeric code)
+      // This handles new users who click referral links and send the code
+      // Patterns match wa-webhook-core/router.ts for consistency
+      const refMatch = originalText.match(/^REF[:\s]+([A-Z0-9]{4,12})$/i);
+      const isStandaloneCode = /^[A-Z0-9]{6,12}$/.test(upperText) && 
+                              !/^(HELLO|THANKS|CANCEL|SUBMIT|ACCEPT|REJECT|STATUS|URGENT|PLEASE|PROFILE|WALLET)$/.test(upperText);
+      
+      if (refMatch || isStandaloneCode) {
+        const code = refMatch ? refMatch[1] : originalText;
+        logEvent("PROFILE_REFERRAL_CODE_DETECTED", { code: code.substring(0, 4) + "***" });
+        const { applyReferralCodeFromMessage } = await import("./wallet/referral.ts");
+        handled = await applyReferralCodeFromMessage(ctx, code);
+      }
       // Check for menu selection key first
-      if (text === "profile") {
+      else if (text === "profile") {
         const { startProfile } = await import("./profile/home.ts");
         handled = await startProfile(ctx, state ?? { key: "home" });
       }

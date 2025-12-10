@@ -119,6 +119,34 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
 
   if (routingText) {
     const normalized = routingText.trim().toLowerCase();
+    const trimmedText = routingText.trim();
+    const upperText = trimmedText.toUpperCase();
+    
+    // PRIORITY: Route referral codes (REF:CODE or standalone codes) to profile service
+    // This handles new users clicking referral links with unique codes
+    // Patterns (case-insensitive):
+    //   - "REF:ABC12345" or "REF ABC12345" (with 4-12 alphanumeric characters after prefix)
+    //   - Standalone codes: 6-12 alphanumeric characters (avoiding common words)
+    const hasRefPrefix = /^REF[:\s]+[A-Z0-9]{4,12}$/i.test(trimmedText);
+    const isStandaloneCode = /^[A-Z0-9]{6,12}$/.test(upperText) && 
+                            !/^(HELLO|THANKS|CANCEL|SUBMIT|ACCEPT|REJECT|STATUS|URGENT|PLEASE)$/.test(upperText);
+    
+    const isReferralCode = hasRefPrefix || isStandaloneCode;
+    
+    if (isReferralCode) {
+      logInfo("WA_CORE_REFERRAL_CODE_DETECTED", { 
+        code: trimmedText.substring(0, 8) + "***",
+        from: phoneNumber?.substring(0, 6) ?? "unknown"
+      }, { correlationId: crypto.randomUUID() });
+      if (phoneNumber) {
+        await setActiveService(supabase, phoneNumber, "wa-webhook-profile");
+      }
+      return {
+        service: "wa-webhook-profile",
+        reason: "keyword",
+        routingText,
+      };
+    }
     
     // Always show home menu for generic greetings and menu keywords
     // This ensures users get the home menu regardless of other settings
