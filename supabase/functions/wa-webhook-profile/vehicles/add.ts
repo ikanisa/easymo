@@ -171,6 +171,62 @@ export async function handleVehiclePlateInput(
   }
 
   try {
+    // Check if plate already exists in vehicles table
+    const { data: existingVehicle } = await ctx.supabase
+      .from("vehicles")
+      .select("id, registration_plate")
+      .eq("registration_plate", plateNumber)
+      .maybeSingle();
+
+    if (existingVehicle) {
+      // Check if vehicle is owned by someone else
+      const { data: vehicleOwner } = await ctx.supabase
+        .from("vehicle_ownerships")
+        .select("user_id")
+        .eq("vehicle_id", existingVehicle.id)
+        .eq("is_current", true)
+        .neq("user_id", ctx.profileId)
+        .maybeSingle();
+
+      if (vehicleOwner) {
+        await clearState(ctx.supabase, ctx.profileId);
+        await sendButtonsMessage(
+          ctx,
+          "⚠️ *Vehicle Already Registered*\n\n" +
+          `The vehicle with plate *${plateNumber}* is already registered to another user.\n\n` +
+          "If you believe this is an error, please contact support.",
+          [
+            { id: "ADD_VEHICLE", title: "🔄 Try Different Plate" },
+            { id: IDS.MY_VEHICLES, title: "← Back" },
+          ],
+        );
+        return true;
+      }
+
+      // Check if user already owns this vehicle
+      const { data: userOwnsVehicle } = await ctx.supabase
+        .from("vehicle_ownerships")
+        .select("id")
+        .eq("vehicle_id", existingVehicle.id)
+        .eq("user_id", ctx.profileId)
+        .eq("is_current", true)
+        .maybeSingle();
+
+      if (userOwnsVehicle) {
+        await clearState(ctx.supabase, ctx.profileId);
+        await sendButtonsMessage(
+          ctx,
+          "ℹ️ *Vehicle Already Added*\n\n" +
+          `The vehicle with plate *${plateNumber}* is already in your vehicles list.`,
+          [
+            { id: IDS.MY_VEHICLES, title: "📋 View My Vehicles" },
+            { id: IDS.BACK_PROFILE, title: "← Back to Profile" },
+          ],
+        );
+        return true;
+      }
+    }
+
     // Upsert vehicle in database
     const { data: vehicleId, error: vehicleError } = await ctx.supabase
       .rpc("upsert_vehicle", {
@@ -187,11 +243,21 @@ export async function handleVehiclePlateInput(
     }
 
     // Create vehicle ownership (without insurance certificate)
-    await ctx.supabase.rpc("create_vehicle_ownership", {
+    const { error: ownershipError } = await ctx.supabase.rpc("create_vehicle_ownership", {
       p_vehicle_id: vehicleId,
       p_user_id: ctx.profileId,
       p_certificate_id: null,
     });
+
+    if (ownershipError) {
+      logStructuredEvent("VEHICLE_OWNERSHIP_ERROR", {
+        userId: ctx.profileId,
+        vehicleId,
+        plate: plateNumber,
+        error: ownershipError.message,
+      }, "error");
+      throw new Error("Failed to associate vehicle with your account");
+    }
 
     // Clear state
     await clearState(ctx.supabase, ctx.profileId);
