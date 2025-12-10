@@ -100,12 +100,12 @@ LANGUAGE:
               source: 'database'
             };
           } catch (err) {
+            console.error('Property search failed:', err);
             return { 
-              listings: [
-                { id: '1', title: 'Cozy Apartment in Kicukiro', price_monthly: 300000, location: 'Kigali', bedrooms: 2, amenities: ['WiFi', 'Parking'] },
-                { id: '2', title: 'Luxury Villa in Nyarutarama', price_monthly: 1000000, location: 'Kigali', bedrooms: 4, amenities: ['Pool', 'Garden', 'Security'] }
-              ],
-              source: 'fallback'
+              listings: [],
+              count: 0,
+              error: 'Search temporarily unavailable. Please try again.',
+              source: 'error'
             };
           }
         }
