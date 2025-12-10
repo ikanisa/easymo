@@ -1,5 +1,5 @@
-import { DetectionResult } from "./detection.ts";
-import { ToneLocale, ToneProfile } from "./types.ts";
+import { DetectionResult } from "./detection.js";
+import { ToneLocale, ToneProfile } from "./types.js";
 
 const TONE_PROFILES: Record<ToneLocale, ToneProfile> = {
   en: {

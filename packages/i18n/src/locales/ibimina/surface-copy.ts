@@ -43,7 +43,7 @@ type SurfaceCopy = {
 
 const FALLBACK: LocaleCode = "en-RW";
 
-const SURFACE_COPY: Record<LocaleCode, SurfaceCopy> = {
+const SURFACE_COPY: Partial<Record<LocaleCode, SurfaceCopy>> = {
   "en-RW": {
     client: {
       home: {
@@ -216,9 +216,9 @@ const SURFACE_COPY: Record<LocaleCode, SurfaceCopy> = {
 
 function getCopyForLocale(locale: LocaleCode): SurfaceCopy {
   if (SURFACE_COPY[locale]) {
-    return SURFACE_COPY[locale];
+    return SURFACE_COPY[locale]!;
   }
-  return SURFACE_COPY[FALLBACK];
+  return SURFACE_COPY[FALLBACK]!;
 }
 
 export function getSurfaceCopy(locale: LocaleCode, surface: keyof SurfaceCopy = "client") {
