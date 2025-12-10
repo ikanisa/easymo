@@ -19,32 +19,17 @@ import { buildToneDirective } from "../../../../packages/localization/src/tone.t
 import { AGENT_CONFIGURATIONS } from "./agent_configs.ts";
 
 /**
- * Official 7 agents matching production agent_registry database.
+ * Official 7 AI Agents (as of Dec 10, 2025)
  * 
- * Agent slug mapping (from removed agents):
- * - concierge-router → support
- * - mobility-orchestrator → rides
- * - pharmacy-agent → buy_sell
- * - hardware-agent → buy_sell
- * - shop-agent → buy_sell
- * - pharmacy-agent → buy_and_sell
- * - hardware-agent → buy_and_sell
- * - shop-agent → buy_and_sell
- * - property-agent → real_estate
- * - legal-intake → buy_sell
- * - marketing-sales → sales_cold_caller
+ * DELETED AGENTS (replaced with WhatsApp Workflows - Dec 10, 2025):
+ * - insurance → WhatsApp button-based workflows (wa-webhook-insurance)
+ * - rides → WhatsApp button-based workflows (wa-webhook-mobility)
+ * - mobility-orchestrator → Merged into wa-webhook-mobility workflows
+ * 
+ * DEPRECATED SLUGS (kept for backward compatibility):
+ * - buy_and_sell → buy_sell (standardized)
  * - marketplace → buy_sell (merged)
  * - business_broker → buy_sell (merged)
- * - buy_and_sell → buy_sell (standardized)
- * - sora-video → REMOVED
- * - locops → INTERNAL (not agent)
- * - analytics-risk → INTERNAL (not agent)
- * - payments-agent → INTERNAL (not agent)
- * 
- * DELETED AGENTS (replaced with WhatsApp Workflows):
- * - insurance → Replaced with button-based WhatsApp insurance workflows
- * - rides → Replaced with button-based WhatsApp mobility workflows
- * - mobility-orchestrator → rides (DELETED)
  */
 export type AgentType =
   | "farmer"           // Farmer AI Agent

@@ -4,20 +4,18 @@
  * Centralized configurations for all AI agents in the EasyMO platform.
  * Each agent has a chat-first interface with emoji-numbered lists and action buttons.
  * 
- * OFFICIAL AGENTS (7 production agents matching agent_registry database):
+ * OFFICIAL AGENTS (7 production agents):
  * 1. farmer - Farmer AI Agent
- * 2. insurance - Insurance AI Agent
- * 3. sales_cold_caller - Sales/Marketing Cold Caller AI Agent
- * 4. rides - Rides AI Agent
- * 5. jobs - Jobs AI Agent
- * 6. waiter - Waiter AI Agent
- * 7. real_estate - Real Estate AI Agent
- * 8. buy_sell - Buy & Sell AI Agent (unified: marketplace + business broker + legal intake)
- * 9. support - Support AI Agent (includes concierge routing)
+ * 2. sales_cold_caller - Sales/Marketing Cold Caller AI Agent
+ * 3. jobs - Jobs AI Agent
+ * 4. waiter - Waiter AI Agent
+ * 5. real_estate - Real Estate AI Agent
+ * 6. buy_sell - Buy & Sell AI Agent (unified: marketplace + business broker + legal intake)
+ * 7. support - Support AI Agent (includes concierge routing)
  * 
- * DELETED AGENTS (replaced with WhatsApp Workflows):
- * - insurance - Replaced with button-based WhatsApp insurance workflows
- * - rides - Replaced with button-based WhatsApp mobility workflows
+ * DELETED AGENTS (replaced with WhatsApp Workflows - Dec 10, 2025):
+ * - insurance → WhatsApp button-based insurance workflows (wa-webhook-insurance)
+ * - rides → WhatsApp button-based mobility workflows (wa-webhook-mobility)
  * 
  * DEPRECATED:
  * - buy_and_sell - RENAMED to buy_sell (standardized slug in v2.0)

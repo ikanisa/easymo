@@ -88,20 +88,15 @@ WHERE key IN ('rides_agent', 'rides', 'mobility');
 -- 4. Log the changes for audit purposes (if audit log table exists)
 -- ============================================================================
 
--- Insert audit log entry for insurance agent deletion
-INSERT INTO system_audit_log (action, details, created_at)
-SELECT 
-  'DELETE_AI_AGENT',
-  '{"slug": "insurance", "reason": "Replaced with WhatsApp button-based workflows"}'::jsonb,
-  NOW()
-WHERE EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'system_audit_log');
-
--- Insert audit log entry for rides agent deletion
-INSERT INTO system_audit_log (action, details, created_at)
-SELECT 
-  'DELETE_AI_AGENT',
-  '{"slug": "rides", "reason": "Replaced with WhatsApp button-based workflows"}'::jsonb,
-  NOW()
-WHERE EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'system_audit_log');
+-- Try to insert audit log entries, but ignore if table doesn't exist
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'system_audit_log') THEN
+        INSERT INTO system_audit_log (action, details, created_at)
+        VALUES 
+          ('DELETE_AI_AGENT', '{"slug": "insurance", "reason": "Replaced with WhatsApp button-based workflows"}'::jsonb, NOW()),
+          ('DELETE_AI_AGENT', '{"slug": "rides", "reason": "Replaced with WhatsApp button-based workflows"}'::jsonb, NOW());
+    END IF;
+END $$;
 
 COMMIT;
