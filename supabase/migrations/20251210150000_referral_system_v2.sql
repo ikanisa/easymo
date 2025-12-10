@@ -19,6 +19,28 @@ CREATE TABLE IF NOT EXISTS public.promo_rules (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Ensure description column exists if table was created before
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'promo_rules' 
+        AND column_name = 'description'
+    ) THEN
+        ALTER TABLE public.promo_rules ADD COLUMN description TEXT;
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'promo_rules' 
+        AND column_name = 'max_daily_referrals'
+    ) THEN
+        ALTER TABLE public.promo_rules ADD COLUMN max_daily_referrals INTEGER DEFAULT 50;
+    END IF;
+END $$;
+
 -- Insert default promo rule if none exists
 INSERT INTO public.promo_rules (tokens_per_new_user, description)
 SELECT 10, 'Default referral reward: 10 tokens per new user'
@@ -32,8 +54,8 @@ CREATE TABLE IF NOT EXISTS public.wallet_accounts (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Create wallet_ledger table if missing (for audit trail)
-CREATE TABLE IF NOT EXISTS public.wallet_ledger (
+-- Create referral_ledger table for referral-specific transactions
+CREATE TABLE IF NOT EXISTS public.referral_ledger (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.profiles(user_id) ON DELETE CASCADE,
     delta_tokens INTEGER NOT NULL,
@@ -75,7 +97,7 @@ END $$;
 
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_wallet_accounts_tokens ON public.wallet_accounts(tokens) WHERE tokens > 0;
-CREATE INDEX IF NOT EXISTS idx_wallet_ledger_user_id ON public.wallet_ledger(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_referral_ledger_user_id ON public.referral_ledger(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_referral_links_code ON public.referral_links(code);
 CREATE INDEX IF NOT EXISTS idx_referral_links_user_active ON public.referral_links(user_id, active) WHERE active = true;
 
@@ -251,8 +273,8 @@ BEGIN
         tokens = wallet_accounts.tokens + v_tokens,
         updated_at = NOW() AT TIME ZONE 'utc';
 
-    -- Record in wallet ledger for audit trail
-    INSERT INTO public.wallet_ledger (user_id, delta_tokens, type, meta)
+    -- Record in referral ledger for audit trail
+    INSERT INTO public.referral_ledger (user_id, delta_tokens, type, meta)
     VALUES (
         v_promoter,
         v_tokens,
@@ -424,7 +446,7 @@ $$;
 -- Enable RLS on new tables
 ALTER TABLE public.promo_rules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.wallet_accounts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.wallet_ledger ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.referral_ledger ENABLE ROW LEVEL SECURITY;
 
 -- Promo rules: service role only
 DO $$
@@ -452,13 +474,13 @@ END $$;
 -- Wallet ledger: users can view their own
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'wallet_ledger' AND policyname = 'users_view_own_ledger') THEN
-        CREATE POLICY "users_view_own_ledger" ON public.wallet_ledger 
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'referral_ledger' AND policyname = 'users_view_own_ledger') THEN
+        CREATE POLICY "users_view_own_ledger" ON public.referral_ledger 
             FOR SELECT USING (user_id = auth.uid());
     END IF;
     
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'wallet_ledger' AND policyname = 'service_role_manage_ledger') THEN
-        CREATE POLICY "service_role_manage_ledger" ON public.wallet_ledger 
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'referral_ledger' AND policyname = 'service_role_manage_ledger') THEN
+        CREATE POLICY "service_role_manage_ledger" ON public.referral_ledger 
             FOR ALL USING (auth.role() = 'service_role');
     END IF;
 END $$;
@@ -469,7 +491,7 @@ END $$;
 
 GRANT SELECT ON public.promo_rules TO authenticated;
 GRANT SELECT ON public.wallet_accounts TO authenticated;
-GRANT SELECT ON public.wallet_ledger TO authenticated;
+GRANT SELECT ON public.referral_ledger TO authenticated;
 GRANT EXECUTE ON FUNCTION public.referral_apply_code_v2(UUID, TEXT, TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.generate_referral_code(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.wallet_summary(UUID) TO authenticated;
@@ -482,6 +504,6 @@ COMMENT ON FUNCTION public.referral_apply_code_v2 IS 'Process referral code: val
 COMMENT ON FUNCTION public.generate_referral_code IS 'Generate unique 8-character referral code for a profile';
 COMMENT ON TABLE public.promo_rules IS 'Configuration for referral rewards (tokens per new user)';
 COMMENT ON TABLE public.wallet_accounts IS 'Token wallet accounts linked to profiles';
-COMMENT ON TABLE public.wallet_ledger IS 'Audit trail for all token transactions';
+COMMENT ON TABLE public.referral_ledger IS 'Audit trail for all referral token transactions';
 
 COMMIT;
