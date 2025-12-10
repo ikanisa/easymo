@@ -23,6 +23,18 @@ UPDATE public.insurance_admin_contacts
 SET category = 'insurance'
 WHERE category IS NULL OR category = 'support';
 
+-- Add unique constraint on destination to prevent duplicates (only if doesn't exist)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint 
+    WHERE conname = 'insurance_admin_contacts_destination_unique'
+  ) THEN
+    ALTER TABLE public.insurance_admin_contacts 
+    ADD CONSTRAINT insurance_admin_contacts_destination_unique UNIQUE (destination);
+  END IF;
+END $$;
+
 -- Insert admin authentication numbers (migrating from hardcoded DEFAULT_ADMIN_NUMBERS)
 INSERT INTO public.insurance_admin_contacts (
   channel, 
@@ -42,11 +54,6 @@ ON CONFLICT (destination) DO UPDATE SET
   display_name = EXCLUDED.display_name,
   priority = EXCLUDED.priority,
   is_active = EXCLUDED.is_active;
-
--- Add unique constraint on destination to prevent duplicates
-ALTER TABLE public.insurance_admin_contacts 
-ADD CONSTRAINT IF NOT EXISTS insurance_admin_contacts_destination_unique 
-UNIQUE (destination);
 
 -- Create helper function to get contacts by category
 CREATE OR REPLACE FUNCTION public.get_admin_contacts(
