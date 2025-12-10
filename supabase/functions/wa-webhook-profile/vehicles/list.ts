@@ -25,11 +25,6 @@ export async function listMyVehicles(
         vehicle_year,
         vehicle_type,
         status
-      ),
-      driver_insurance_certificates:insurance_certificate_id (
-        policy_expiry,
-        insurer_name,
-        status
       )
     `)
     .eq("user_id", ctx.profileId)
