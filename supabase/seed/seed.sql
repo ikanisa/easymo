@@ -139,6 +139,37 @@ SET
   metadata = public.produce_catalog.metadata || EXCLUDED.metadata,
   updated_at = now();
 
+-- WhatsApp Home Menu: Business Broker Agent (Buy & Sell)
+INSERT INTO public.whatsapp_home_menu_items (
+  key,
+  name,
+  is_active,
+  active_countries,
+  display_order,
+  icon,
+  country_specific_names
+) VALUES (
+  'business_broker_agent',
+  'Buy and Sell',
+  true,
+  ARRAY['RW', 'BI', 'TZ', 'CD', 'ZM', 'TG', 'MT'],
+  4,
+  '🛒',
+  jsonb_build_object(
+    'RW', jsonb_build_object('name', 'Kugura & Kugurisha', 'description', 'Find businesses & services near you'),
+    'MT', jsonb_build_object('name', 'Buy & Sell', 'description', 'Find businesses & services near you'),
+    'BI', jsonb_build_object('name', 'Acheter & Vendre', 'description', 'Trouvez entreprises et services'),
+    'TZ', jsonb_build_object('name', 'Nunua & Uza', 'description', 'Pata biashara karibu nawe'),
+    'CD', jsonb_build_object('name', 'Acheter & Vendre', 'description', 'Trouvez entreprises près de vous'),
+    'ZM', jsonb_build_object('name', 'Buy & Sell', 'description', 'Find businesses near you'),
+    'TG', jsonb_build_object('name', 'Acheter & Vendre', 'description', 'Trouvez entreprises')
+  )
+) ON CONFLICT (key) DO UPDATE SET
+  is_active = EXCLUDED.is_active,
+  active_countries = EXCLUDED.active_countries,
+  display_order = EXCLUDED.display_order,
+  country_specific_names = EXCLUDED.country_specific_names;
+
 -- WhatsApp Home Menu: Farmer Agent
 INSERT INTO public.whatsapp_home_menu_items (
   key,
