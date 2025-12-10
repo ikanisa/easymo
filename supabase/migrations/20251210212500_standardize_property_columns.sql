@@ -113,7 +113,9 @@ BEGIN
     END as distance_km
   FROM property_listings pl
   WHERE 
-    pl.is_available = TRUE
+    -- Only filter by is_available if column exists
+    (NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'property_listings' AND column_name = 'is_available')
+     OR pl.is_available = TRUE)
     AND (p_location IS NULL OR pl.location ILIKE '%' || p_location || '%')
     AND (p_price_min IS NULL OR pl.price_amount >= p_price_min)
     AND (p_price_max IS NULL OR pl.price_amount <= p_price_max)
@@ -137,11 +139,21 @@ COMMENT ON FUNCTION search_properties_unified IS
 DO $$ 
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'property_listings') THEN
-    CREATE INDEX IF NOT EXISTS idx_property_listings_price_amount 
-      ON property_listings(price_amount) WHERE is_available = TRUE;
-    
-    CREATE INDEX IF NOT EXISTS idx_property_listings_available 
-      ON property_listings(is_available);
+    -- Create index on price_amount if column exists
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'property_listings' AND column_name = 'price_amount') THEN
+      -- Check if is_available column exists for filtered index
+      IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'property_listings' AND column_name = 'is_available') THEN
+        CREATE INDEX IF NOT EXISTS idx_property_listings_price_amount 
+          ON property_listings(price_amount) WHERE is_available = TRUE;
+        
+        CREATE INDEX IF NOT EXISTS idx_property_listings_available 
+          ON property_listings(is_available);
+      ELSE
+        -- Create simple index without filter if is_available doesn't exist
+        CREATE INDEX IF NOT EXISTS idx_property_listings_price_amount 
+          ON property_listings(price_amount);
+      END IF;
+    END IF;
   END IF;
 END $$;
 
