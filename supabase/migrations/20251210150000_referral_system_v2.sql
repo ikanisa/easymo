@@ -356,7 +356,7 @@ BEGIN
         -- Generate 8-character code
         v_code := '';
         FOR i IN 1..8 LOOP
-            v_code := v_code || SUBSTR(v_alphabet, FLOOR(RANDOM() * LENGTH(v_alphabet) + 1)::INTEGER, 1);
+            v_code := v_code || SUBSTR(v_alphabet, (FLOOR(RANDOM() * LENGTH(v_alphabet))::INTEGER + 1), 1);
         END LOOP;
         
         -- Check if code is unique

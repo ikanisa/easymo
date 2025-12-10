@@ -31,10 +31,13 @@ export async function applyReferralCodeFromMessage(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
   
-  // Normalize and strip REF: prefix if present
+  // Normalize and strip REF: or REF prefix if present
   let normalized = code.trim().toUpperCase();
-  if (normalized.startsWith("REF:") || normalized.startsWith("REF ")) {
-    normalized = normalized.substring(4).trim();
+  
+  // Handle various REF prefix formats: "REF:ABC123", "REF ABC123", "REF:  ABC123"
+  const refPrefixMatch = normalized.match(/^REF[:\s]+(.+)$/);
+  if (refPrefixMatch) {
+    normalized = refPrefixMatch[1].trim();
   }
   
   if (!normalized || normalized.length < 4) {

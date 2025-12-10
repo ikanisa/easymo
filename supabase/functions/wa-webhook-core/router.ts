@@ -119,14 +119,22 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
 
   if (routingText) {
     const normalized = routingText.trim().toLowerCase();
+    const trimmedText = routingText.trim();
     
-    // PRIORITY: Route referral codes (REF:CODE or 8-char codes) to profile service
+    // PRIORITY: Route referral codes (REF:CODE or standalone codes) to profile service
     // This handles new users clicking referral links with unique codes
-    const isReferralCode = /^ref[:\s]*[a-z0-9]{4,12}$/i.test(routingText.trim()) ||
-                          /^[A-Z0-9]{6,12}$/i.test(routingText.trim());
+    // Patterns:
+    //   - "REF:ABC12345" or "REF ABC12345" (with 4-12 alphanumeric characters after prefix)
+    //   - Standalone codes: 6-12 uppercase alphanumeric characters (avoiding common words)
+    const hasRefPrefix = /^ref[:\s]+[a-z0-9]{4,12}$/i.test(trimmedText);
+    const isStandaloneCode = /^[A-Z0-9]{6,12}$/.test(trimmedText) && 
+                            !/^(HELLO|THANKS|CANCEL|SUBMIT|ACCEPT|REJECT|STATUS|URGENT|PLEASE)$/i.test(trimmedText);
+    
+    const isReferralCode = hasRefPrefix || isStandaloneCode;
+    
     if (isReferralCode) {
       logInfo("WA_CORE_REFERRAL_CODE_DETECTED", { 
-        code: routingText.substring(0, 8) + "***",
+        code: trimmedText.substring(0, 8) + "***",
         from: phoneNumber?.substring(0, 6) ?? "unknown"
       }, { correlationId: crypto.randomUUID() });
       if (phoneNumber) {
