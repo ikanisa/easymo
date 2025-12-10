@@ -20,3 +20,8 @@
 
 ### Step 2: Document functions for Supabase deletion
 
+## PHASE 2: Edge Function Cleanup
+**Started:** Wed Dec 10 22:17:59 CET 2025
+
+### Step 1: Remove Archived Directories
+
