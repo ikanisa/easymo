@@ -242,7 +242,6 @@ serve(async (req: Request): Promise<Response> => {
         // Handle Share easyMO button (auto-appended by reply.ts)
         if (buttonId === "share_easymo") {
           const { handleShareEasyMOButton } = await import("../_shared/wa-webhook-shared/utils/share-button-handler.ts");
-          const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
           const supabase = createClient(
             Deno.env.get("SUPABASE_URL") ?? "",
             Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
