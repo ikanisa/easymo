@@ -33,19 +33,22 @@ Transforming the EasyMO repository into a world-class, maintainable codebase fol
 **Priority:** 🔴 CRITICAL
 
 #### Current State:
-- **Total functions:** 112 (down from 121) ✅
+- **Total functions:** 110 (down from 121) ✅
 - **Webhook functions:** 9
 - **Agent functions:** 2
 - **Admin functions:** Consolidated into `admin-api` ✅
 - **Archived directories:** Removed ✅
+- **Coverage files:** Removed ✅
 
 #### Consolidation Opportunities:
-1. **Archived Cleanup:** Remove 3 `.archived` directories
+1. **Archived Cleanup:** ✅ COMPLETE - Removed `.archived`, `.coverage`, `.coverage-full` directories
 2. **Webhook Review:** Keep domain-specific (mobility, insurance, property)
 3. **Agent Consolidation:** Review agent-buy-sell vs wa-webhook-buy-sell overlap
 
 #### Completed Actions:
-- [x] Remove `.archived` directories
+- [x] Remove `.archived` directories (13 archived functions)
+- [x] Remove `.coverage` and `.coverage-full` directories (test artifacts)
+- [x] Remove nested `supabase/supabase/` duplicate directory
 - [x] Create function inventory spreadsheet
 - [x] Identify merge candidates
 - [x] Consolidate admin functions → `admin-api`
@@ -56,7 +59,7 @@ Transforming the EasyMO repository into a world-class, maintainable codebase fol
 - [ ] Consolidate agent functions (2) - LOW PRIORITY
 - [ ] Consolidate lookup functions (3) - OPTIONAL
 
-**Target:** Reduce from 112 to ~80-90 active functions (optional)
+**Target:** Reduce from 110 to ~80-90 active functions (optional)
 
 ---
 
@@ -188,14 +191,14 @@ Documentation is already well-organized in `docs/` with proper subdirectories:
 
 ```
 Phase 1: ████████████████████ 100% ✅ COMPLETE
-Phase 2: ████████████░░░░░░░░  60% 🔄 Partial (admin, auth-qr done)
+Phase 2: ██████████████░░░░░░  70% 🔄 Partial (admin, auth-qr, archives done)
 Phase 3: ████░░░░░░░░░░░░░░░░  20% 📋 READY (analysis & scripts done)
 Phase 4: ░░░░░░░░░░░░░░░░░░░░   0% 📋 Planned
 Phase 5: ░░░░░░░░░░░░░░░░░░░░   0% 📋 Planned
 Phase 6: ░░░░░░░░░░░░░░░░░░░░   0% 📋 Planned
 Phase 7: ████████████████░░░░  80% ✅ MOSTLY COMPLETE
 
-Overall: ██████░░░░░░░░░░░░░░  31% 🔄 Ready for Phase 3
+Overall: ██████░░░░░░░░░░░░░░  34% 🔄 Ready for Phase 3
 ```
 
 ---
@@ -226,8 +229,8 @@ git status
 | Metric | Baseline | Target | Current | Status |
 |--------|----------|--------|---------|--------|
 | Root files | 45 | <20 | 44 | 🟢 Stable |
-| Edge functions | 121 | ~80-90 | **112** | 🟡 Improved (-9) |
-| Packages | 35 | ~20 | 35 | 🟡 Ready to reduce |
+| Edge functions | 121 | ~80-90 | **110** | 🟡 Improved (-11) |
+| Packages | 35 | ~20 | 26 | 🟡 Ready to reduce |
 | Hardcoded values | Unknown | 0 | TBD | 📋 |
 | CI pass rate | Active | 100% | Active | 🟢 |
 | Test coverage | Unknown | >80% | TBD | 📋 |
