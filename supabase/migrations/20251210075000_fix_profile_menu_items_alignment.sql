@@ -1,11 +1,14 @@
 BEGIN;
 
 -- Migration: Fix Profile Menu Items Alignment
--- Purpose: Ensure profile menu items are properly configured to use correct table structure
+-- Purpose: Ensure profile_menu_items are properly configured to use correct table structure
 -- Date: 2025-12-10
 
--- Create profile_menu_items table if it doesn't exist (modern structure)
-CREATE TABLE IF NOT EXISTS public.profile_menu_items (
+-- Drop and recreate the table with correct structure
+DROP TABLE IF EXISTS public.profile_menu_items CASCADE;
+
+-- Create profile_menu_items table (modern structure)
+CREATE TABLE public.profile_menu_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   
   -- Menu Item Identity
@@ -43,9 +46,9 @@ CREATE TABLE IF NOT EXISTS public.profile_menu_items (
 );
 
 -- Indexes
-CREATE INDEX IF NOT EXISTS idx_profile_menu_items_active ON public.profile_menu_items(is_active) WHERE is_active = true;
-CREATE INDEX IF NOT EXISTS idx_profile_menu_items_order ON public.profile_menu_items(display_order);
-CREATE INDEX IF NOT EXISTS idx_profile_menu_items_countries ON public.profile_menu_items USING GIN(active_countries) WHERE active_countries IS NOT NULL;
+CREATE INDEX idx_profile_menu_items_active ON public.profile_menu_items(is_active) WHERE is_active = true;
+CREATE INDEX idx_profile_menu_items_order ON public.profile_menu_items(display_order);
+CREATE INDEX idx_profile_menu_items_countries ON public.profile_menu_items USING GIN(active_countries) WHERE active_countries IS NOT NULL;
 
 -- Enable RLS
 ALTER TABLE public.profile_menu_items ENABLE ROW LEVEL SECURITY;
