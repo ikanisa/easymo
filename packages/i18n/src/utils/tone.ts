@@ -12,8 +12,7 @@ const TONE_PROFILES: Record<ToneLocale, ToneProfile> = {
     locale: "sw",
     label: "Kiswahili",
     sampleGreeting: "Habari yako rafiki yangu!",
-    summary:
-      "Lean into a warm, communal tone. Mix in Kiswahili honorifics and keep sentences short.",
+    summary: "Lean into a warm, communal tone. Mix in Kiswahili honorifics and keep sentences short.",
   },
 };
 

@@ -216,7 +216,7 @@ const SURFACE_COPY: Partial<Record<LocaleCode, SurfaceCopy>> = {
 
 function getCopyForLocale(locale: LocaleCode): SurfaceCopy {
   if (SURFACE_COPY[locale]) {
-    return SURFACE_COPY[locale];
+    return SURFACE_COPY[locale]!;
   }
   return SURFACE_COPY[FALLBACK]!;
 }
