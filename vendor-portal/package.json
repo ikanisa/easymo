@@ -42,7 +42,7 @@
     "@easymo/ibimina-config": "workspace:*",
     "@easymo/ibimina-flags": "workspace:*",
     "@easymo/ibimina-lib": "workspace:^",
-    "@easymo/ibimina-locales": "workspace:*",
+    "@easymo/i18n": "workspace:*",
     "@easymo/ibimina-supabase-schemas": "workspace:^",
     "@easymo/ibimina-ui": "workspace:*",
     "@openai/agents": "^0.1.11",
