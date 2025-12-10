@@ -72,3 +72,4 @@ packages/ibimina-ui
 
 ### Step 2: Remove .skip migrations and document
 
+Found 26 .skip migration files - these need review
