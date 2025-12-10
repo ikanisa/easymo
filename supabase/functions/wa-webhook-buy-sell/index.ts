@@ -260,17 +260,8 @@ serve(async (req: Request): Promise<Response> => {
         return respond({ success: true, message: "ai_welcome_shown" });
       }
 
-      // Fallback: unknown message - try AI agent first
-      if (isBuySellAIEnabled()) {
-        const handled = await forwardToBuySellAgent(userPhone, text, correlationId);
-        if (handled) {
-          const duration = Date.now() - startTime;
-          recordMetric("buy_sell.message.processed", 1, { duration_ms: duration, ai_routed: true });
-          return respond({ success: true, message: "ai_routed" });
-        }
-      }
-
-      // If AI unavailable, show AI welcome
+      // Fallback: For now, just show welcome message (disable AI to prevent spam)
+      // TODO: Re-enable AI agent after fixing multiple invocation issue
       const userCountry = mapCountry(getCountryCode(userPhone));
       await showAIWelcome(userPhone, userCountry);
 
