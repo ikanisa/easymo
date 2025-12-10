@@ -1,4 +1,4 @@
-import { ToneLocale } from "./types.ts";
+import { ToneLocale } from "./types.js";
 
 const SWAHILI_HINTS = [
   "habari",
