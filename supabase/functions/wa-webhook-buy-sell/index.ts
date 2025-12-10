@@ -203,8 +203,10 @@ serve(async (req: Request): Promise<Response> => {
         }
 
         if (selectedId === "chat_with_ai" || selectedId === "buy_sell_chat_ai") {
-          const aiHandled = await forwardToBuySellAgent(userPhone, text || "Start Buy & Sell chat", correlationId);
-          return respond({ success: aiHandled, message: aiHandled ? "ai_routed" : "ai_forward_failed" }, aiHandled ? undefined : { status: 502 });
+          // Show welcome message instead of calling AI immediately
+          const userCountry = mapCountry(getCountryCode(userPhone));
+          await showAIWelcome(userPhone, userCountry);
+          return respond({ success: true, message: "welcome_shown" });
         }
       }
 
