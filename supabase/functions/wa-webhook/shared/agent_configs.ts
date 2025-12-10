@@ -4,16 +4,18 @@
  * Centralized configurations for all AI agents in the EasyMO platform.
  * Each agent has a chat-first interface with emoji-numbered lists and action buttons.
  * 
- * OFFICIAL AGENTS (9 production agents matching agent_registry database):
+ * OFFICIAL AGENTS (7 production agents matching agent_registry database):
  * 1. farmer - Farmer AI Agent
- * 2. insurance - Insurance AI Agent
- * 3. sales_cold_caller - Sales/Marketing Cold Caller AI Agent
- * 4. rides - Rides AI Agent
- * 5. jobs - Jobs AI Agent
- * 6. waiter - Waiter AI Agent
- * 7. real_estate - Real Estate AI Agent
- * 8. buy_and_sell - Buy & Sell AI Agent (unified: marketplace + business broker + legal intake)
- * 9. support - Support AI Agent (includes concierge routing)
+ * 2. sales_cold_caller - Sales/Marketing Cold Caller AI Agent
+ * 3. jobs - Jobs AI Agent
+ * 4. waiter - Waiter AI Agent
+ * 5. real_estate - Real Estate AI Agent
+ * 6. buy_and_sell - Buy & Sell AI Agent (unified: marketplace + business broker + legal intake)
+ * 7. support - Support AI Agent (includes concierge routing)
+ * 
+ * DELETED AGENTS (replaced with WhatsApp Workflows):
+ * - insurance - Replaced with button-based WhatsApp insurance workflows
+ * - rides - Replaced with button-based WhatsApp mobility workflows
  * 
  * DEPRECATED:
  * - marketplace - Merged into buy_and_sell
@@ -87,71 +89,7 @@ Available tools:
     ],
   },
 
-  // 2. Insurance Agent - Quotes, Claims, Policies
-  {
-    id: "insurance-agent-01",
-    type: "insurance",
-    name: "Insurance AI Agent",
-    systemPrompt: `You are an insurance assistant for EasyMO, helping with motor, travel, and health insurance.
-
-Your responsibilities:
-- Provide insurance quotes
-- Help with policy applications
-- Assist with claims filing
-- Answer insurance questions
-
-Chat-First Guidelines:
-- ALWAYS format insurance options as emoji-numbered lists (1️⃣, 2️⃣, 3️⃣)
-- Use insurance emojis (🛡️, 💰, 🚗, 📋, ✅)
-- Show coverage and premium clearly
-- Prompt: "Reply with the number to get a quote!"
-- For complex forms (vehicle details), trigger fallback to WhatsApp flow
-
-Message Format Example:
-"🛡️ Available insurance plans:
-
-1️⃣ Third Party Coverage
-   💰 50,000 RWF/year
-   ✅ Basic liability coverage
-
-2️⃣ Comprehensive Coverage
-   💰 150,000 RWF/year
-   ✅ Full protection + theft
-
-3️⃣ Premium Coverage
-   💰 250,000 RWF/year
-   ✅ All risks + roadside assistance
-
-Reply with 1, 2, or 3 to get your quote!"
-
-Available tools:
-- get_insurance_quote: Calculate premium
-- start_application: Begin policy application
-- file_claim: Submit insurance claim
-- check_policy_status: View policy details`,
-    temperature: 0.5,
-    maxTokens: 600,
-    enabledTools: [
-      "get_insurance_quote",
-      "start_application",
-      "file_claim",
-      "check_policy_status",
-    ],
-    priority: 2,
-    triggers: [
-      "insurance",
-      "policy",
-      "claim",
-      "coverage",
-      "premium",
-      "motor",
-      "vehicle",
-      "health",
-      "travel",
-    ],
-  },
-
-  // 3. Sales/Marketing Cold Caller Agent
+  // 2. Sales/Marketing Cold Caller Agent
   {
     id: "sales-cold-caller-agent-01",
     type: "sales_cold_caller",
@@ -217,75 +155,7 @@ Available tools:
     ],
   },
 
-  // 4. Rides Agent - Mobility Coordinator
-  {
-    id: "rides-agent-01",
-    type: "rides",
-    name: "Rides AI Agent",
-    systemPrompt: `You are a mobility coordinator for EasyMO, helping users with all transportation needs.
-
-Your responsibilities:
-- Find nearby drivers and passengers
-- Help book trips and schedule rides
-- Coordinate carpooling and shared rides
-- Provide route information and ETAs
-- Handle trip modifications and cancellations
-
-Chat-First Guidelines:
-- ALWAYS format driver/passenger lists as emoji-numbered lists (1️⃣, 2️⃣, 3️⃣)
-- Use transport emojis (🚗, 🏍️, 🚕, 🚌, 📍, ⏱️)
-- Show distance and ETA for each option
-- After listing options, prompt: "Reply with the number to book!"
-
-Message Format Example:
-"🚗 I found 3 drivers nearby:
-
-1️⃣ Jean - Toyota Corolla
-   📍 500m away • ⏱️ 2 min
-   ⭐ 4.8/5 (127 trips)
-
-2️⃣ Marie - Honda Fit
-   📍 800m away • ⏱️ 4 min
-   ⭐ 4.9/5 (203 trips)
-
-3️⃣ Patrick - Suzuki Swift
-   📍 1.2km away • ⏱️ 6 min
-   ⭐ 4.7/5 (89 trips)
-
-Reply with 1, 2, or 3 to book your ride!"
-
-Available tools:
-- find_nearby_drivers: Search for available drivers
-- find_nearby_passengers: Search for passengers (for drivers)
-- book_ride: Complete ride booking
-- schedule_trip: Schedule future trip
-- get_trip_status: Check trip status`,
-    temperature: 0.6,
-    maxTokens: 600,
-    enabledTools: [
-      "find_nearby_drivers",
-      "find_nearby_passengers",
-      "book_ride",
-      "schedule_trip",
-      "get_trip_status",
-    ],
-    priority: 1,
-    triggers: [
-      "ride",
-      "driver",
-      "passenger",
-      "trip",
-      "transport",
-      "taxi",
-      "moto",
-      "car",
-      "travel",
-      "book",
-      "schedule",
-    ],
-  },
-
-  // 5. Jobs Agent - Job Board and Gigs
+  // 3. Jobs Agent - Job Board and Gigs
   {
     id: "jobs-agent-01",
     type: "jobs",
@@ -347,7 +217,7 @@ Available tools:
     ],
   },
 
-  // 6. Waiter Agent - Bars & Restaurants
+  // 4. Waiter Agent - Bars & Restaurants
   {
     id: "waiter-agent-01",
     type: "waiter",
@@ -419,7 +289,7 @@ Available tools:
     ],
   },
 
-  // 7. Real Estate Agent - Property Rentals and Sales
+  // 5. Real Estate Agent - Property Rentals and Sales
   {
     id: "real-estate-agent-01",
     type: "real_estate",
@@ -485,7 +355,7 @@ Available tools:
     ],
   },
 
-  // 8. Buy & Sell Agent - Unified Commerce & Business (replaces marketplace + business_broker)
+  // 6. Buy & Sell Agent - Unified Commerce & Business (replaces marketplace + business_broker)
   {
     id: "buy-and-sell-agent-01",
     type: "buy_and_sell",
@@ -613,7 +483,7 @@ Available tools:
     ],
   },
 
-  // 9. Support Agent - Customer Support and Triage
+  // 7. Support Agent - Customer Support and Triage
   {
     id: "support-agent-01",
     type: "support",

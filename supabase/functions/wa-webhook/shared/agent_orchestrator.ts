@@ -19,11 +19,10 @@ import { buildToneDirective } from "../../../../packages/localization/src/tone.t
 import { AGENT_CONFIGURATIONS } from "./agent_configs.ts";
 
 /**
- * Official 9 agents matching production agent_registry database.
+ * Official 7 agents matching production agent_registry database.
  * 
  * Agent slug mapping (from removed agents):
  * - concierge-router → support
- * - mobility-orchestrator → rides
  * - pharmacy-agent → buy_and_sell
  * - hardware-agent → buy_and_sell
  * - shop-agent → buy_and_sell
@@ -36,12 +35,15 @@ import { AGENT_CONFIGURATIONS } from "./agent_configs.ts";
  * - locops → INTERNAL (not agent)
  * - analytics-risk → INTERNAL (not agent)
  * - payments-agent → INTERNAL (not agent)
+ * 
+ * DELETED AGENTS (replaced with WhatsApp Workflows):
+ * - insurance → Replaced with button-based WhatsApp insurance workflows
+ * - rides → Replaced with button-based WhatsApp mobility workflows
+ * - mobility-orchestrator → rides (DELETED)
  */
 export type AgentType =
   | "farmer"           // Farmer AI Agent
-  | "insurance"        // Insurance AI Agent
   | "sales_cold_caller" // Sales/Marketing Cold Caller AI Agent
-  | "rides"            // Rides AI Agent
   | "jobs"             // Jobs AI Agent
   | "waiter"           // Waiter AI Agent
   | "real_estate"      // Real Estate AI Agent
@@ -161,16 +163,17 @@ export class AgentOrchestrator {
         role: "system",
         content: `Classify the user's intent into one of these agent categories:
 - farmer: Agricultural produce, farming, crops, harvest
-- insurance: Insurance quotes, claims, policies, coverage
 - sales_cold_caller: Marketing, campaigns, sales outreach
-- rides: Transportation, trips, drivers, passengers, mobility
 - jobs: Employment, job search, hiring, gigs
 - waiter: Restaurant, bar, dining, food ordering, menu
 - real_estate: Property, rentals, housing, apartments
 - buy_and_sell: Shopping, products, pharmacy, hardware, groceries, business sales, acquisitions, legal services
-- support: Help, account issues, technical problems, general questions
+- support: Help, account issues, technical problems, general questions, transportation, rides, insurance
 
-Respond with just the agent type (e.g., "rides").`,
+Note: For transportation/rides requests, route to "support" (handled via WhatsApp workflows).
+Note: For insurance requests, route to "support" (handled via WhatsApp workflows).
+
+Respond with just the agent type (e.g., "support").`,
         tool_calls: undefined,
         tool_call_id: undefined,
         name: undefined,
