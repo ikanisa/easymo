@@ -1,5 +1,6 @@
 import { childLogger } from '@easymo/commons';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import axios from 'axios';
 
 import type { AgentInput, AgentResult, Tool } from '../../types/agent.types';
 import { BaseAgent } from '../base/agent.base';
@@ -139,6 +140,7 @@ export async function runBuyAndSellAgent(input: AgentInput): Promise<AgentResult
 // TODO: Remove after confirming new modular structure works
 class BuyAndSellAgentLegacy extends BaseAgent {
   name = 'buy_and_sell_agent_legacy';
+  instructions = BUY_SELL_SYSTEM_PROMPT; // Add missing instructions
   tools: Tool[];
   private supabase: SupabaseClient;
 
@@ -148,6 +150,21 @@ class BuyAndSellAgentLegacy extends BaseAgent {
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY;
     this.supabase = createClient(supabaseUrl || '', supabaseKey || '', { auth: { persistSession: false } });
     this.tools = this.defineToolsLegacy();
+    this.model = BUY_SELL_DEFAULT_MODEL;
+  }
+  
+  // Required abstract method implementations
+  protected formatSingleOption(option: any): string {
+    if (option.name) {
+      return `${option.name} (${option.category}) - ${option.address}\nPhone: ${option.phone || 'N/A'}\nRating: ${option.rating || 'N/A'}⭐`;
+    } else if (option.title) {
+      return `${option.title} - ${option.price || 'Price TBD'}\n${option.description || ''}`;
+    }
+    return JSON.stringify(option);
+  }
+
+  protected calculateScore(option: any, criteria: any): number {
+    return option.rating || option.views || 0;
   }
 
   private defineToolsLegacy(): Tool[] {
@@ -571,27 +588,5 @@ class BuyAndSellAgentLegacy extends BaseAgent {
       duration: Date.now() - startTime
     };
   }
-
-  protected formatSingleOption(option: any): string {
-    if (option.name) {
-      // Business format
-      return `${option.name} (${option.category}) - ${option.address}\nPhone: ${option.phone || 'N/A'}\nRating: ${option.rating || 'N/A'}⭐`;
-    } else if (option.title) {
-      // Product/listing format
-      return `${option.title} - ${option.price || 'Price TBD'}\n${option.description || ''}`;
-    }
-    return JSON.stringify(option);
-  }
-
-  protected calculateScore(option: any, criteria: any): number {
-    return option.rating || option.views || 0;
-  }
 }
 
-/**
- * Export a convenience function to run the Buy & Sell Agent
- */
-export async function runBuyAndSellAgent(input: AgentInput): Promise<AgentResult> {
-  const agent = new BuyAndSellAgent();
-  return agent.execute(input);
-}
