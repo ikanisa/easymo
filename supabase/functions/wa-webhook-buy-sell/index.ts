@@ -30,6 +30,12 @@ import {
 } from "./show_categories.ts";
 import { showAIWelcome } from "./show_ai_welcome.ts";
 import { getCountryCode } from "../_shared/phone-utils.ts";
+import {
+  ensureProfile,
+  getState,
+  setState,
+  clearState,
+} from "../_shared/wa-webhook-shared/state/store.ts";
 
 // =====================================================
 // CONFIGURATION
@@ -236,7 +242,6 @@ serve(async (req: Request): Promise<Response> => {
         // Handle Share easyMO button (auto-appended by reply.ts)
         if (buttonId === "share_easymo") {
           const { handleShareEasyMOButton } = await import("../_shared/wa-webhook-shared/utils/share-button-handler.ts");
-          const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
           const supabase = createClient(
             Deno.env.get("SUPABASE_URL") ?? "",
             Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -260,29 +265,21 @@ serve(async (req: Request): Promise<Response> => {
 
         // Handle Back/Home/Exit buttons - clear AI state and show categories
         if (buttonId === "back_home" || buttonId === "back_menu" || buttonId === "exit_ai") {
-          const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
           const supabase = createClient(
             Deno.env.get("SUPABASE_URL") ?? "",
             Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
           );
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("user_id")
-            .eq("whatsapp_number", userPhone)
-            .single();
           
-          if (profile?.user_id) {
-            // Clear AI state
-            await supabase
-              .from("whatsapp_state")
-              .delete()
-              .eq("user_id", profile.user_id);
-            
-            await logStructuredEvent("BUY_SELL_AI_STATE_CLEARED", {
-              userId: profile.user_id,
-              triggeredBy: buttonId,
-            });
-          }
+          // Use proper state management - ensureProfile returns user_id
+          const profile = await ensureProfile(supabase, userPhone);
+          
+          // Clear state using clearState function (writes to chat_state table)
+          await clearState(supabase, profile.user_id);
+          
+          await logStructuredEvent("BUY_SELL_AI_STATE_CLEARED", {
+            userId: profile.user_id,
+            triggeredBy: buttonId,
+          });
           
           const userCountry = mapCountry(getCountryCode(userPhone));
           await showBuySellCategories(userPhone, userCountry);
@@ -336,24 +333,16 @@ serve(async (req: Request): Promise<Response> => {
         
         // Clear AI state if user types menu/exit keywords
         if (lower === "menu" || lower === "home" || lower === "stop" || lower === "exit") {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("user_id")
-            .eq("whatsapp_number", userPhone)
-            .single();
+          const profile = await ensureProfile(supabase, userPhone);
           
-          if (profile?.user_id) {
-            await supabase
-              .from("whatsapp_state")
-              .delete()
-              .eq("user_id", profile.user_id);
-            
-            await logStructuredEvent("BUY_SELL_AI_STATE_CLEARED", {
-              userId: profile.user_id,
-              triggeredBy: "keyword",
-              keyword: lower,
-            });
-          }
+          // Use clearState to properly clear from chat_state table
+          await clearState(supabase, profile.user_id);
+          
+          await logStructuredEvent("BUY_SELL_AI_STATE_CLEARED", {
+            userId: profile.user_id,
+            triggeredBy: "keyword",
+            keyword: lower,
+          });
         }
         
         const userCountry = mapCountry(getCountryCode(userPhone));
@@ -374,72 +363,59 @@ serve(async (req: Request): Promise<Response> => {
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
       );
       
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("user_id")
-        .eq("whatsapp_number", userPhone)
-        .single();
+      // Use proper state management functions instead of direct table queries
+      const profile = await ensureProfile(supabase, userPhone);
       
-      if (profile?.user_id) {
-        const { data: stateData } = await supabase
-          .from("whatsapp_state")
-          .select("key, data, created_at")
-          .eq("user_id", profile.user_id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .single();
+      // Get state using getState function (reads from chat_state table)
+      const stateData = await getState(supabase, profile.user_id);
+      
+      // If user is in AI chat mode, forward ONLY text messages
+      if (stateData?.key === "business_broker_chat" && (stateData?.data as any)?.active) {
+        // Check for session timeout (30 minutes)
+        const started = new Date((stateData.data as any)?.started_at || new Date());
+        const elapsed = Date.now() - started.getTime();
+        const THIRTY_MINUTES = 30 * 60 * 1000;
         
-        // If user is in AI chat mode, forward ONLY text messages
-        if (stateData?.key === "business_broker_chat" && stateData?.data?.active) {
-          // Check for session timeout (30 minutes)
-          const started = new Date(stateData.data?.started_at || stateData.created_at);
-          const elapsed = Date.now() - started.getTime();
-          const THIRTY_MINUTES = 30 * 60 * 1000;
+        if (elapsed > THIRTY_MINUTES) {
+          // Session expired - clear state and show categories
+          await clearState(supabase, profile.user_id);
           
-          if (elapsed > THIRTY_MINUTES) {
-            // Session expired - clear state and show categories
-            await supabase
-              .from("whatsapp_state")
-              .delete()
-              .eq("user_id", profile.user_id);
-            
-            await logStructuredEvent("BUY_SELL_AI_SESSION_EXPIRED", {
-              userId: profile.user_id,
-              elapsedMs: elapsed,
-            });
-            
-            await sendText(userPhone, "⏱️ Your AI session has expired. Showing categories...");
-            const userCountry = mapCountry(getCountryCode(userPhone));
-            await showBuySellCategories(userPhone, userCountry);
-            return respond({ success: true, message: "session_expired" });
+          await logStructuredEvent("BUY_SELL_AI_SESSION_EXPIRED", {
+            userId: profile.user_id,
+            elapsedMs: elapsed,
+          });
+          
+          await sendText(userPhone, "⏱️ Your AI session has expired. Showing categories...");
+          const userCountry = mapCountry(getCountryCode(userPhone));
+          await showBuySellCategories(userPhone, userCountry);
+          return respond({ success: true, message: "session_expired" });
+        }
+        
+        // Only forward TEXT messages to AI
+        if (message.type === "text" && text.trim()) {
+          const forwarded = await forwardToBuySellAgent(userPhone, text, correlationId);
+          
+          if (forwarded) {
+            const duration = Date.now() - startTime;
+            recordMetric("buy_sell.ai_forwarded", 1, { duration_ms: duration });
+            return respond({ success: true, message: "forwarded_to_ai" });
           }
           
-          // Only forward TEXT messages to AI
-          if (message.type === "text" && text.trim()) {
-            const forwarded = await forwardToBuySellAgent(userPhone, text, correlationId);
-            
-            if (forwarded) {
-              const duration = Date.now() - startTime;
-              recordMetric("buy_sell.ai_forwarded", 1, { duration_ms: duration });
-              return respond({ success: true, message: "forwarded_to_ai" });
-            }
-            
-            // If forward failed, fall through to show categories
-            await logStructuredEvent("BUY_SELL_AI_FORWARD_FAILED", {
-              from: `***${userPhone.slice(-4)}`,
-              correlationId,
-            }, "warn");
-          } else {
-            // User sent button/location/media while in AI mode
-            // Don't forward to AI, show helpful message
-            await logStructuredEvent("BUY_SELL_NON_TEXT_IN_AI_MODE", {
-              userId: profile.user_id,
-              messageType: message.type,
-            }, "warn");
-            
-            await sendText(userPhone, "⚠️ I can only understand text messages in AI mode.\n\nType 'menu' to return to categories.");
-            return respond({ success: true, message: "non_text_in_ai_mode" });
-          }
+          // If forward failed, fall through to show categories
+          await logStructuredEvent("BUY_SELL_AI_FORWARD_FAILED", {
+            from: `***${userPhone.slice(-4)}`,
+            correlationId,
+          }, "warn");
+        } else {
+          // User sent button/location/media while in AI mode
+          // Don't forward to AI, show helpful message
+          await logStructuredEvent("BUY_SELL_NON_TEXT_IN_AI_MODE", {
+            userId: profile.user_id,
+            messageType: message.type,
+          }, "warn");
+          
+          await sendText(userPhone, "⚠️ I can only understand text messages in AI mode.\n\nType 'menu' to return to categories.");
+          return respond({ success: true, message: "non_text_in_ai_mode" });
         }
       }
 
