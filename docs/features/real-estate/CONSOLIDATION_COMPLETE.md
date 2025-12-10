@@ -145,8 +145,8 @@ packages/agents/src/agents/property/
    - `20251128000007_enhance_property_viewings.sql.skip`
 
 2. **Backup Directory:**
-   - Kept `backup_20251114_104454/` for safety
-   - Can be deleted manually after verification period
+   - ~~Kept `backup_20251114_104454/` for safety~~
+   - **DELETED** on 2025-12-10 as part of database schema cleanup
 
 3. **Documentation:**
    - Created comprehensive completion report
