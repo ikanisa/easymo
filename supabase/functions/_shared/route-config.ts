@@ -86,15 +86,16 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
   },
   {
     service: "wa-webhook-buy-sell",
-    keywords: ["buy", "sell", "shop", "store", "product", "business", "broker"],
-    menuKeys: ["buy_and_sell", "buy and sell", "business_broker_agent", "general_broker", "shops_services", "6"],
+    keywords: ["buy", "sell", "category", "categories", "browse"],
+    menuKeys: ["buy_sell_categories", "buy_and_sell", "buy and sell", "shops_services", "6"],
     priority: 1,
   },
   {
+    // AI-powered business search agent (natural language)
     service: "agent-buy-sell",
-    keywords: ["buy_sell_agent", "marketplace agent", "shopping agent", "ai shopping"],
-    menuKeys: ["buy_sell_agent", "marketplace_agent", "shop_ai"],
-    priority: 2,
+    keywords: ["business broker", "find business", "shopping assistant", "ai search"],
+    menuKeys: ["business_broker_agent", "chat_with_agent", "buy_sell_agent", "marketplace_agent", "shop_ai"],
+    priority: 1,
   },
   {
     service: "wa-agent-farmer",

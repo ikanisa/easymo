@@ -4,7 +4,7 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
+import { sendText, sendButtons } from "../_shared/wa-webhook-shared/wa/client.ts";
 import { ensureProfile, setState } from "../_shared/wa-webhook-shared/state/store.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 
@@ -30,10 +30,10 @@ export async function showAIWelcome(
     });
   }
 
-  // Send welcome message (English only - no Kinyarwanda translation)
-  const welcomeMessage = `🤖 *Chat with Agent*
+  // Send welcome message with exit button
+  const welcomeMessage = `🤖 *AI Chat Mode*
 
-Welcome! I'm your AI business assistant.
+I'm your AI business assistant.
 
 I can help you find ANY local business or service:
 💊 Pharmacies  🍔 Restaurants  ✂️ Salons
@@ -47,9 +47,13 @@ Examples:
 • "hungry want pizza"
 • "haircut"
 
+💡 Type 'menu' anytime to exit AI mode
+
 What are you looking for?`;
 
-  await sendText(userPhone, welcomeMessage);
+  await sendButtons(userPhone, welcomeMessage, [
+    { id: "exit_ai", title: "← Back to Categories" },
+  ]);
 
   // Log event
   await logStructuredEvent("CHAT_AGENT_WELCOME_SHOWN", {

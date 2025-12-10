@@ -9,6 +9,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent, recordMetric } from "../_shared/observability.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
@@ -217,17 +218,76 @@ serve(async (req: Request): Promise<Response> => {
           return respond({ success: true, message: "category_selection_sent" });
         }
 
-        if (selectedId === "chat_with_ai" || selectedId === "buy_sell_chat_ai") {
-          // Show welcome message instead of calling AI immediately
+        // Handle "Chat with Agent" selection - show AI welcome and set state
+        if (selectedId === "business_broker_agent" || selectedId === "chat_with_agent") {
           const userCountry = mapCountry(getCountryCode(userPhone));
           await showAIWelcome(userPhone, userCountry);
-          return respond({ success: true, message: "welcome_shown" });
+          return respond({ success: true, message: "ai_welcome_shown" });
         }
+        
+        // Note: Actual AI processing happens in agent-buy-sell function
+        // This webhook only shows the welcome message and sets state
       }
 
-      // Button replies (pagination)
+      // Button replies (pagination + common actions)
       if (message.type === "interactive" && message.interactive?.button_reply?.id) {
         const buttonId = message.interactive.button_reply.id;
+
+        // Handle Share easyMO button (auto-appended by reply.ts)
+        if (buttonId === "share_easymo") {
+          const { handleShareEasyMOButton } = await import("../_shared/wa-webhook-shared/utils/share-button-handler.ts");
+          const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+          const supabase = createClient(
+            Deno.env.get("SUPABASE_URL") ?? "",
+            Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+          );
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("user_id, language")
+            .eq("whatsapp_number", userPhone)
+            .single();
+          
+          if (profile?.user_id) {
+            await handleShareEasyMOButton({
+              from: userPhone,
+              profileId: profile.user_id,
+              locale: (profile.language || "en") as any,
+              supabase,
+            }, "wa-webhook-buy-sell");
+          }
+          return respond({ success: true, message: "share_button_handled" });
+        }
+
+        // Handle Back/Home/Exit buttons - clear AI state and show categories
+        if (buttonId === "back_home" || buttonId === "back_menu" || buttonId === "exit_ai") {
+          const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+          const supabase = createClient(
+            Deno.env.get("SUPABASE_URL") ?? "",
+            Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+          );
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("user_id")
+            .eq("whatsapp_number", userPhone)
+            .single();
+          
+          if (profile?.user_id) {
+            // Clear AI state
+            await supabase
+              .from("whatsapp_state")
+              .delete()
+              .eq("user_id", profile.user_id);
+            
+            await logStructuredEvent("BUY_SELL_AI_STATE_CLEARED", {
+              userId: profile.user_id,
+              triggeredBy: buttonId,
+            });
+          }
+          
+          const userCountry = mapCountry(getCountryCode(userPhone));
+          await showBuySellCategories(userPhone, userCountry);
+          return respond({ success: true, message: "returned_to_categories" });
+        }
 
         if (buttonId === "buy_sell_show_more") {
           await handleShowMore(userPhone);
@@ -256,14 +316,46 @@ serve(async (req: Request): Promise<Response> => {
       }
 
       // Home/menu commands -> show categories (NOT AI welcome)
+      // Also works as escape from AI mode
       const lower = text.toLowerCase();
       if (
         !text ||
         lower === "menu" ||
         lower === "home" ||
         lower === "buy" ||
-        lower === "sell"
+        lower === "sell" ||
+        lower === "categories" ||
+        lower === "stop" ||
+        lower === "exit"
       ) {
+        // Create supabase client
+        const supabase = createClient(
+          Deno.env.get("SUPABASE_URL") ?? "",
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+        );
+        
+        // Clear AI state if user types menu/exit keywords
+        if (lower === "menu" || lower === "home" || lower === "stop" || lower === "exit") {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("user_id")
+            .eq("whatsapp_number", userPhone)
+            .single();
+          
+          if (profile?.user_id) {
+            await supabase
+              .from("whatsapp_state")
+              .delete()
+              .eq("user_id", profile.user_id);
+            
+            await logStructuredEvent("BUY_SELL_AI_STATE_CLEARED", {
+              userId: profile.user_id,
+              triggeredBy: "keyword",
+              keyword: lower,
+            });
+          }
+        }
+        
         const userCountry = mapCountry(getCountryCode(userPhone));
         await showBuySellCategories(userPhone, userCountry);
         
@@ -275,7 +367,83 @@ serve(async (req: Request): Promise<Response> => {
         return respond({ success: true, message: "categories_shown" });
       }
 
-      // Fallback: Show categories (NO AI agent - this is category workflow only)
+      // Check if user is in AI chat mode (business_broker_chat state)
+      // ONLY forward TEXT messages, NOT buttons/locations/media
+      const supabase = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      );
+      
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .eq("whatsapp_number", userPhone)
+        .single();
+      
+      if (profile?.user_id) {
+        const { data: stateData } = await supabase
+          .from("whatsapp_state")
+          .select("key, data, created_at")
+          .eq("user_id", profile.user_id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+        
+        // If user is in AI chat mode, forward ONLY text messages
+        if (stateData?.key === "business_broker_chat" && stateData?.data?.active) {
+          // Check for session timeout (30 minutes)
+          const started = new Date(stateData.data?.started_at || stateData.created_at);
+          const elapsed = Date.now() - started.getTime();
+          const THIRTY_MINUTES = 30 * 60 * 1000;
+          
+          if (elapsed > THIRTY_MINUTES) {
+            // Session expired - clear state and show categories
+            await supabase
+              .from("whatsapp_state")
+              .delete()
+              .eq("user_id", profile.user_id);
+            
+            await logStructuredEvent("BUY_SELL_AI_SESSION_EXPIRED", {
+              userId: profile.user_id,
+              elapsedMs: elapsed,
+            });
+            
+            await sendText(userPhone, "⏱️ Your AI session has expired. Showing categories...");
+            const userCountry = mapCountry(getCountryCode(userPhone));
+            await showBuySellCategories(userPhone, userCountry);
+            return respond({ success: true, message: "session_expired" });
+          }
+          
+          // Only forward TEXT messages to AI
+          if (message.type === "text" && text.trim()) {
+            const forwarded = await forwardToBuySellAgent(userPhone, text, correlationId);
+            
+            if (forwarded) {
+              const duration = Date.now() - startTime;
+              recordMetric("buy_sell.ai_forwarded", 1, { duration_ms: duration });
+              return respond({ success: true, message: "forwarded_to_ai" });
+            }
+            
+            // If forward failed, fall through to show categories
+            await logStructuredEvent("BUY_SELL_AI_FORWARD_FAILED", {
+              from: `***${userPhone.slice(-4)}`,
+              correlationId,
+            }, "warn");
+          } else {
+            // User sent button/location/media while in AI mode
+            // Don't forward to AI, show helpful message
+            await logStructuredEvent("BUY_SELL_NON_TEXT_IN_AI_MODE", {
+              userId: profile.user_id,
+              messageType: message.type,
+            }, "warn");
+            
+            await sendText(userPhone, "⚠️ I can only understand text messages in AI mode.\n\nType 'menu' to return to categories.");
+            return respond({ success: true, message: "non_text_in_ai_mode" });
+          }
+        }
+      }
+
+      // Fallback: Show categories (category workflow by default)
       const userCountry = mapCountry(getCountryCode(userPhone));
       await showBuySellCategories(userPhone, userCountry);
 
@@ -287,10 +455,16 @@ serve(async (req: Request): Promise<Response> => {
       return respond({ success: true });
     } catch (error) {
       const duration = Date.now() - startTime;
+      
+      // Properly serialize error for logging
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      
       logStructuredEvent(
         "BUY_SELL_ERROR",
         {
-          error: error instanceof Error ? error.message : String(error),
+          error: errorMessage,
+          stack: errorStack,
           durationMs: duration,
           requestId,
           correlationId,
@@ -300,7 +474,7 @@ serve(async (req: Request): Promise<Response> => {
 
       recordMetric("buy_sell.message.error", 1);
 
-      return respond({ error: String(error) }, { status: 500 });
+      return respond({ error: errorMessage }, { status: 500 });
   }
 });
 
