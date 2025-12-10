@@ -1,10 +1,13 @@
 /**
  * Property Location Handler
  * Integrates location caching and saved locations for property search
+ * 
+ * @see supabase/functions/_shared/location/location-service.ts for unified implementation
  */
 
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
+import { LocationService } from "../../_shared/location/index.ts";
 
 export interface LocationResult {
   location: {
@@ -19,6 +22,8 @@ export interface LocationResult {
 
 /**
  * Resolve user location with priority: cache → saved home → prompt
+ * 
+ * Now powered by unified LocationService!
  */
 export async function resolvePropertyLocation(
   ctx: RouterContext
@@ -31,86 +36,58 @@ export async function resolvePropertyLocation(
     };
   }
 
-  // 1. Check location cache (30-min TTL) - using recent_locations table
-  try {
-    const { data: cacheData } = await ctx.supabase.rpc('get_recent_location', {
-      _user_id: ctx.profileId,
-      _source: 'property',
-      _max_age_minutes: 30
-    });
+  // Use unified LocationService - much simpler!
+  const result = await LocationService.resolve(
+    ctx.supabase,
+    ctx.profileId,
+    {
+      source: 'property',
+      cacheTTLMinutes: 30,
+      preferredSavedLabel: 'home',
+      customPrompt: "📍 Please share your location to find properties nearby, or use a saved location.",
+    },
+    ctx.locale || 'en',
+  );
 
-    if (cacheData && cacheData.length > 0 && cacheData[0].is_valid) {
-      const row = cacheData[0];
+  // Log events for observability
+  if (result.location) {
+    if (result.source === 'cache') {
       logStructuredEvent("PROPERTY_LOCATION_CACHE_HIT", {
         user: ctx.profileId,
-        age_minutes: row.age_minutes,
-        lat: row.lat,
-        lng: row.lng
+        age_minutes: result.ageMinutes,
+        lat: result.location.lat,
+        lng: result.location.lng,
       });
-
-      return {
-        location: {
-          lat: row.lat,
-          lng: row.lng,
-          source: 'cache',
-          label: 'recent location'
-        },
-        needsPrompt: false
-      };
-    }
-  } catch (error) {
-    logStructuredEvent("PROPERTY_CACHE_CHECK_ERROR", {
-      error: error instanceof Error ? error.message : String(error)
-    }, "warn");
-  }
-
-  // 2. Check saved home location
-  try {
-    const { data: savedLoc } = await ctx.supabase
-      .from('saved_locations')
-      .select('lat, lng, label')
-      .eq('user_id', ctx.profileId)
-      .eq('label', 'home')
-      .single();
-
-    if (savedLoc?.lat && savedLoc?.lng) {
+    } else if (result.source === 'saved') {
       logStructuredEvent("PROPERTY_LOCATION_SAVED_USED", {
         user: ctx.profileId,
-        label: savedLoc.label,
-        lat: savedLoc.lat,
-        lng: savedLoc.lng
+        label: result.label,
+        lat: result.location.lat,
+        lng: result.location.lng,
       });
-
-      return {
-        location: {
-          lat: savedLoc.lat,
-          lng: savedLoc.lng,
-          source: 'saved',
-          label: savedLoc.label || 'home'
-        },
-        needsPrompt: false
-      };
     }
-  } catch (error) {
-    logStructuredEvent("PROPERTY_SAVED_CHECK_ERROR", {
-      error: error instanceof Error ? error.message : String(error)
-    }, "warn");
+  } else if (result.needsPrompt) {
+    logStructuredEvent("PROPERTY_LOCATION_PROMPT_NEEDED", {
+      user: ctx.profileId,
+    });
   }
 
-  // 3. Need to prompt user
-  logStructuredEvent("PROPERTY_LOCATION_PROMPT_NEEDED", {
-    user: ctx.profileId
-  });
-
   return {
-    location: null,
-    needsPrompt: true,
-    promptMessage: "📍 Please share your location to find properties nearby, or use a saved location."
+    location: result.location ? {
+      lat: result.location.lat,
+      lng: result.location.lng,
+      source: result.source as 'cache' | 'saved' | 'shared',
+      label: result.label,
+    } : null,
+    needsPrompt: result.needsPrompt,
+    promptMessage: result.prompt?.message,
   };
 }
 
 /**
  * Save shared location to cache
+ * 
+ * Now powered by unified LocationService!
  */
 export async function cachePropertyLocation(
   ctx: RouterContext,
@@ -119,23 +96,25 @@ export async function cachePropertyLocation(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
 
-  try {
-    await ctx.supabase.rpc('update_user_location_cache', {
-      _user_id: ctx.profileId,
-      _lat: lat,
-      _lng: lng
-    });
+  const result = await LocationService.save(
+    ctx.supabase,
+    ctx.profileId,
+    { lat, lng },
+    'property',
+    { action: 'property_search' },
+    30,  // 30-minute TTL
+  );
 
+  if (result) {
     logStructuredEvent("PROPERTY_LOCATION_CACHED", {
       user: ctx.profileId,
       lat,
-      lng
+      lng,
     });
-
     return true;
-  } catch (error) {
+  } else {
     logStructuredEvent("PROPERTY_CACHE_SAVE_ERROR", {
-      error: error instanceof Error ? error.message : String(error)
+      error: "LocationService.save returned null",
     }, "warn");
     return false;
   }
