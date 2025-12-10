@@ -90,3 +90,4 @@ InhouseDevSigning.*
 .env.scraper
 data/*.json
 data/pharmacies*.json
+.env.local

@@ -1,4 +1,5 @@
 import type { RouterContext } from "../../types.ts";
+import { getAdminAuthNumbers } from "../../../admin-contacts.ts";
 
 type AdminCache = {
   numbers: Set<string>;
@@ -8,50 +9,55 @@ type AdminCache = {
 let cache: AdminCache | null = null;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
-const DEFAULT_ADMIN_NUMBERS = [
-  "+250788767816",
-  "+35677186193",
-  "+250795588248",
-  "+35699742524",
-];
-
 function normalizePhone(value: string): string {
   if (!value) return value;
   let s = value.trim();
   if (!s) return s;
+  
+  // Remove all non-digit characters
+  const digits = s.replace(/[^0-9]/g, '');
+  
   if (!s.startsWith("+")) {
-    if (s.startsWith("250")) s = `+${s}`;
-    else if (s.startsWith("0")) s = `+250${s.slice(1)}`;
-    else s = `+${s}`;
+    if (digits.startsWith("250") || digits.startsWith("356")) {
+      return `+${digits}`;
+    } else if (digits.startsWith("0") && digits.length === 10) {
+      return `+250${digits.slice(1)}`;
+    }
+    return `+${digits}`;
   }
   return s;
 }
 
+/**
+ * Load admin numbers from insurance_admin_contacts table (category: admin_auth)
+ * This replaces the old hardcoded DEFAULT_ADMIN_NUMBERS array
+ */
 async function loadAdminNumbers(ctx: RouterContext): Promise<Set<string>> {
   const now = Date.now();
+  
+  // Return cached data if still valid
   if (cache && (now - cache.loadedAt) < CACHE_TTL_MS) {
     return cache.numbers;
   }
-  const { data, error } = await ctx.supabase
-    .from("app_config")
-    .select("*")
-    .eq("id", 1)
-    .maybeSingle();
-  if (error) {
-    console.error("admin.load_config_fail", error);
+
+  try {
+    // Fetch from unified admin contacts table
+    const numbers = await getAdminAuthNumbers(ctx.supabase);
+    
+    cache = {
+      numbers,
+      loadedAt: now,
+    };
+    
+    return cache.numbers;
+  } catch (error) {
+    console.error("admin.load_numbers_fail", error);
+    
+    // Return empty set on error (no fallback to hardcoded numbers)
+    // Admin numbers MUST be configured in database
     cache = { numbers: new Set(), loadedAt: now };
     return cache.numbers;
   }
-  const merged = [
-    ...(data?.admin_numbers ?? []),
-    ...(data?.insurance_admin_numbers ?? []),
-    ...DEFAULT_ADMIN_NUMBERS,
-  ].map((n: string) => normalizePhone(n)).filter(Boolean);
-  cache = {
-    numbers: new Set(merged),
-    loadedAt: now,
-  };
-  return cache.numbers;
 }
 
 export async function isAdminNumber(ctx: RouterContext): Promise<boolean> {
