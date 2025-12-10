@@ -137,18 +137,8 @@ export {
   type ProductQuery,
 } from "./agents/commerce-agent.base";
 
-export {
-  MobilityAgentBase,
-  type Booking,
-  type BookingStatus,
-  type Driver,
-  type FareEstimate,
-  type Location,
-  type RideStatus,
-  type TripRequest,
-  type Vehicle,
-  type VehicleType,
-} from "./agents/mobility-agent.base";
+// MobilityAgentBase - DELETED: Replaced with WhatsApp button-based workflows
+// See: supabase/functions/wa-webhook-mobility for workflow implementation
 
 export {
   ProfessionalAgentBase,

@@ -6,17 +6,20 @@
  * Created: 2025-11-27
  * Updated: 2025-12-01 - Added Rides and Insurance agents
  * Updated: 2025-12-05 - Merged marketplace and business_broker into buy_and_sell
+ * Updated: 2025-12-10 - Removed Rides and Insurance agents (replaced with WhatsApp workflows)
  * 
- * OFFICIAL AGENTS (9 production agents matching ai_agents database table):
+ * OFFICIAL AGENTS (7 production agents matching ai_agents database table):
  * 1. waiter - Restaurant/Bar ordering, table booking
  * 2. farmer - Agricultural support, market prices
  * 3. jobs - Job search, employment, gigs
  * 4. real_estate - Property rentals, listings
  * 5. buy_and_sell - Buy & Sell (merged: marketplace + business_broker)
- * 6. rides - Transport, ride-sharing, delivery
- * 7. insurance - Motor insurance, policies, claims
- * 8. support - General help, customer service
- * 9. sales_cold_caller - Sales/Marketing outreach
+ * 6. support - General help, customer service
+ * 7. sales_cold_caller - Sales/Marketing outreach
+ * 
+ * DELETED (replaced with WhatsApp button-based workflows):
+ * - rides - Now handled via wa-webhook-mobility workflows
+ * - insurance - Now handled via wa-webhook-insurance workflows
  * 
  * DEPRECATED (merged into buy_and_sell):
  * - marketplace
@@ -30,8 +33,6 @@ import { FarmerAgent } from '../agents/farmer-agent.ts';
 import { JobsAgent } from '../agents/jobs-agent.ts';
 import { PropertyAgent } from '../agents/property-agent.ts';
 import { BuyAndSellAgent } from '../agents/buy-and-sell-agent.ts';
-import { RidesAgent } from '../agents/rides-agent.ts';
-import { InsuranceAgent } from '../agents/insurance-agent.ts';
 
 export class AgentRegistry {
   private agents = new Map<string, BaseAgent>();
@@ -54,8 +55,7 @@ export class AgentRegistry {
     this.register(new JobsAgent());
     this.register(new PropertyAgent());
     this.register(new BuyAndSellAgent());
-    this.register(new RidesAgent());
-    this.register(new InsuranceAgent());
+    // RidesAgent and InsuranceAgent removed - replaced with WhatsApp workflows
   }
 
   /**
@@ -70,7 +70,7 @@ export class AgentRegistry {
     this.intentMapping.set('menu', 'waiter_agent');
     this.intentMapping.set('order', 'waiter_agent');
     
-    // Support Agent
+    // Support Agent (now also handles rides and insurance routing via workflows)
     this.intentMapping.set('support', 'support_agent');
     this.intentMapping.set('help', 'support_agent');
     this.intentMapping.set('question', 'support_agent');
@@ -124,22 +124,22 @@ export class AgentRegistry {
     this.intentMapping.set('marketplace', 'buy_and_sell_agent');
     this.intentMapping.set('shopping', 'buy_and_sell_agent');
     
-    // Rides Agent
-    this.intentMapping.set('rides', 'rides_agent');
-    this.intentMapping.set('ride', 'rides_agent');
-    this.intentMapping.set('driver', 'rides_agent');
-    this.intentMapping.set('passenger', 'rides_agent');
-    this.intentMapping.set('transport', 'rides_agent');
-    this.intentMapping.set('taxi', 'rides_agent');
-    this.intentMapping.set('moto', 'rides_agent');
+    // Rides intents - route to support (handled via WhatsApp workflows)
+    this.intentMapping.set('rides', 'support_agent');
+    this.intentMapping.set('ride', 'support_agent');
+    this.intentMapping.set('driver', 'support_agent');
+    this.intentMapping.set('passenger', 'support_agent');
+    this.intentMapping.set('transport', 'support_agent');
+    this.intentMapping.set('taxi', 'support_agent');
+    this.intentMapping.set('moto', 'support_agent');
     
-    // Insurance Agent
-    this.intentMapping.set('insurance', 'insurance_agent');
-    this.intentMapping.set('insure', 'insurance_agent');
-    this.intentMapping.set('policy', 'insurance_agent');
-    this.intentMapping.set('certificate', 'insurance_agent');
-    this.intentMapping.set('carte_jaune', 'insurance_agent');
-    this.intentMapping.set('claim', 'insurance_agent');
+    // Insurance intents - route to support (handled via WhatsApp workflows)
+    this.intentMapping.set('insurance', 'support_agent');
+    this.intentMapping.set('insure', 'support_agent');
+    this.intentMapping.set('policy', 'support_agent');
+    this.intentMapping.set('certificate', 'support_agent');
+    this.intentMapping.set('carte_jaune', 'support_agent');
+    this.intentMapping.set('claim', 'support_agent');
   }
 
   /**
@@ -157,6 +157,10 @@ export class AgentRegistry {
     // Handle legacy agent types
     if (type === 'business_broker_agent' || type === 'marketplace_agent') {
       type = 'buy_and_sell_agent';
+    }
+    // Handle deleted agents - route to support
+    if (type === 'rides_agent' || type === 'insurance_agent') {
+      type = 'support_agent';
     }
     
     const agent = this.agents.get(type);

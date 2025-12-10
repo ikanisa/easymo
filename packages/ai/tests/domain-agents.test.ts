@@ -1,7 +1,10 @@
 /**
  * Domain Agent Base Classes Tests
  *
- * Tests for CommerceAgentBase, MobilityAgentBase, and ProfessionalAgentBase.
+ * Tests for CommerceAgentBase and ProfessionalAgentBase.
+ * 
+ * Note: MobilityAgentBase tests removed - the class was deleted
+ * as rides functionality is now handled via WhatsApp button-based workflows.
  */
 
 import { describe, expect, it, vi, beforeEach } from 'vitest';
@@ -15,16 +18,6 @@ import {
   PaymentResult,
   OrderStatus,
 } from '../src/agents/commerce-agent.base.js';
-import {
-  MobilityAgentBase,
-  Location,
-  Driver,
-  TripRequest,
-  Booking,
-  FareEstimate,
-  RideStatus,
-  VehicleType,
-} from '../src/agents/mobility-agent.base.js';
 import {
   ProfessionalAgentBase,
   DocumentData,
@@ -133,118 +126,10 @@ describe('CommerceAgentBase', () => {
 });
 
 // ============================================================================
-// MOBILITY AGENT TESTS
+// MOBILITY AGENT TESTS - DELETED
+// MobilityAgentBase was removed and replaced with WhatsApp button-based workflows
+// See: supabase/functions/wa-webhook-mobility for workflow implementation
 // ============================================================================
-
-class TestMobilityAgent extends MobilityAgentBase {
-  readonly name = 'Test Mobility Agent';
-  readonly slug = 'test-mobility';
-  readonly instructions = 'You are a test mobility agent.';
-  readonly tools: Tool[] = [];
-
-  protected async doFindNearbyDrivers(
-    _location: Location,
-    _vehicleType?: VehicleType,
-    _context?: ToolContext,
-  ): Promise<Driver[]> {
-    return [
-      {
-        id: 'driver-1',
-        name: 'Test Driver',
-        vehicle: {
-          id: 'v-1',
-          make: 'Toyota',
-          model: 'Corolla',
-          licensePlate: 'RAA 123A',
-          color: 'White',
-          type: 'car',
-          capacity: 4,
-        },
-        location: { latitude: -1.9403, longitude: 29.8739 },
-        distance: 500,
-        eta: 5,
-        rating: 4.5,
-      },
-    ];
-  }
-
-  protected async doCreateBooking(
-    trip: TripRequest,
-    customerId: string,
-    fareEstimate: FareEstimate,
-    _context?: ToolContext,
-  ): Promise<Booking> {
-    return {
-      id: 'booking-1',
-      customerId,
-      trip,
-      estimatedFare: fareEstimate.total,
-      currency: 'RWF',
-      status: 'pending',
-      createdAt: new Date(),
-    };
-  }
-
-  protected async doTrackRide(
-    _bookingId: string,
-    _context?: ToolContext,
-  ): Promise<RideStatus> {
-    return {
-      status: 'in_progress',
-      eta: 10,
-      distanceRemaining: 2000,
-      updatedAt: new Date(),
-    };
-  }
-
-  protected async doEstimateFare(
-    _trip: TripRequest,
-    _context?: ToolContext,
-  ): Promise<FareEstimate> {
-    return {
-      baseFare: 500,
-      distanceFare: 1000,
-      timeFare: 200,
-      surgeMultiplier: 1,
-      total: 1700,
-      currency: 'RWF',
-      estimatedDuration: 15,
-      estimatedDistance: 5000,
-    };
-  }
-
-  protected async doCancelBooking(
-    _bookingId: string,
-    _reason: string,
-    _context?: ToolContext,
-  ): Promise<boolean> {
-    return true;
-  }
-
-  protected async doGeocodeAddress(
-    _address: string,
-    _context?: ToolContext,
-  ): Promise<Location | null> {
-    return {
-      latitude: -1.9403,
-      longitude: 29.8739,
-      address: 'Kigali, Rwanda',
-    };
-  }
-}
-
-describe('MobilityAgentBase', () => {
-  let agent: TestMobilityAgent;
-
-  beforeEach(() => {
-    agent = new TestMobilityAgent();
-  });
-
-  it('should create a mobility agent', () => {
-    expect(agent.name).toBe('Test Mobility Agent');
-    expect(agent.slug).toBe('test-mobility');
-  });
-});
 
 // ============================================================================
 // PROFESSIONAL AGENT TESTS
