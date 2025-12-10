@@ -2,59 +2,42 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 import type { AgentContext, AgentInput, AgentResult, Tool } from '../../types/agent.types';
 import { BaseAgent } from '../base/agent.base';
+import { REAL_ESTATE_SYSTEM_PROMPT } from './prompts';
+import { createRealEstateTools } from './tools';
+import { getRealEstateConfig, type RealEstateAgentConfig } from './config';
 
 export class RealEstateAgent extends BaseAgent {
   name = 'real_estate_agent';
-  instructions = `You are a multilingual WhatsApp real-estate concierge. Capture structured requirements, perform deep search (internal + external), contact owners, negotiate, then present top 5 options. You never take payments or sign contracts. You summarize and hand off.
-
-CORE CAPABILITIES:
-- Property search: Find rentals and properties based on location, price, bedrooms, amenities
-- Owner communication: Contact property owners on behalf of clients
-- Document generation: Create property shortlists and brochures
-- Profile management: Save and recall user preferences
-
-CONVERSATION FLOW:
-1. Greet and understand what type of property they're looking for
-2. Gather requirements: location, budget, bedrooms, rental type (short/long term)
-3. Use search_listings to find matching properties
-4. Present top 5 options with key details
-5. For interested properties, offer to contact owner
-6. Generate shortlist document if requested
-
-RESPONSE FORMATTING:
-- Use emoji numbers (1️⃣-5️⃣) for listing options
-- Show price per month for rentals
-- Include key amenities (WiFi, parking, security)
-- Indicate property type (apartment, house, villa)
-
-GUARDRAILS & POLICIES:
-- No legal/visa advice; no price guarantees.
-- No sending raw external links (Airbnb, Booking, etc.).
-- Respect GDPR/regional privacy.
-- Clearly label estimates vs confirmed info.
-- Keep owner contact details private until handoff is allowed.
-- Never promise specific availability - always verify first.
-
-LANGUAGE:
-- Support English, French, and Kinyarwanda
-- Detect user's language and respond appropriately
-- Use local currency (RWF) for Rwanda properties`;
-
+  instructions = REAL_ESTATE_SYSTEM_PROMPT;
+  
   tools: Tool[];
   private supabase: SupabaseClient;
+  private config: RealEstateAgentConfig;
 
-  constructor() {
+  constructor(
+    supabaseClient?: SupabaseClient,
+    configOverrides?: Partial<RealEstateAgentConfig>
+  ) {
     super();
-    this.tools = this.defineTools();
     
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY;
+    // Use provided client or create new one
+    if (supabaseClient) {
+      this.supabase = supabaseClient;
+    } else {
+      const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY;
+      
+      this.supabase = createClient(supabaseUrl || '', supabaseKey || '', {
+        auth: { persistSession: false }
+      });
+    }
     
-    this.supabase = createClient(supabaseUrl || '', supabaseKey || '', {
-      auth: { persistSession: false }
-    });
+    // Get configuration
+    this.config = getRealEstateConfig(configOverrides);
+    this.model = this.config.model;
     
-    this.model = 'gemini-1.5-flash';
+    // Create tools with supabase client
+    this.tools = createRealEstateTools(this.supabase);
   }
 
   private defineTools(): Tool[] {
