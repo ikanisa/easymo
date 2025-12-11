@@ -469,15 +469,12 @@ export async function handleNearbyResultSelection(
   state: NearbyState,
   id: string,
 ): Promise<boolean> {
-  if (!ctx.profileId) {
   // Validate state
   if (!ctx.profileId || !state.rows) {
     await sendText(ctx.from, t(ctx.locale, "mobility.nearby.session_expired"));
     return true;
   }
 
-  // Find the selected match from stored rows
-  const match = state.rows?.find((row) => row.id === id);
   // Extract the actual trip ID from the list row identifier
   const matchId = id.startsWith("MTCH::") ? id.replace("MTCH::", "") : id;
   
@@ -490,30 +487,6 @@ export async function handleNearbyResultSelection(
     return true;
   }
 
-  // Build WhatsApp deep link with prefilled message
-  const isPassenger = state.mode === "drivers";
-  const prefill = isPassenger
-    ? t(ctx.locale, "mobility.nearby.prefill.driver")
-    : t(ctx.locale, "mobility.nearby.prefill.passenger");
-
-  const link = waChatLink(match.whatsapp, prefill);
-
-  // Send clickable link to user
-  await sendButtonsMessage(
-    ctx,
-    t(ctx.locale, "mobility.nearby.chat_cta", { link }),
-    homeOnly(),
-  );
-
-  await clearState(ctx.supabase, ctx.profileId);
-
-  await logStructuredEvent("MATCH_SELECTED", {
-    mode: state.mode,
-    vehicle: state.vehicle,
-    selectedRef: match.ref,
-  });
-
-  
   // Build WhatsApp deep link with prefilled message
   const isPassenger = state.mode === "drivers";
   const prefill = isPassenger
