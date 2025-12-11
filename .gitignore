@@ -96,3 +96,7 @@ supabase/migrations/.archive/
 supabase/migrations/archive/
 supabase/migrations/_archived_duplicates/
 docs/archive/
+
+# Test coverage artifacts (prevent committing generated files)
+supabase/functions/.coverage/
+supabase/functions/.coverage-full/
