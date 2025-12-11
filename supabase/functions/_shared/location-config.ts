@@ -26,8 +26,8 @@ export const LOCATION_CONFIG = {
   LONGITUDE_MIN: -180,
   LONGITUDE_MAX: 180,
   
-  // Trip expiration
-  TRIP_EXPIRY_MINUTES: 90,
+  // Trip expiration (30 minutes for real-time matching)
+  TRIP_EXPIRY_MINUTES: 30,
   
   // Matching limits
   MAX_MATCHES_TO_RETURN: 20,
