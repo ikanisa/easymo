@@ -385,6 +385,10 @@ async function handleInsuranceButton(
   
   // Handle insurance button selections
   if (buttonId.startsWith("ins_") || buttonId === IDS.INSURANCE_AGENT || buttonId === "insurance" || buttonId === IDS.INSURANCE_SUBMIT || buttonId === IDS.INSURANCE_HELP || buttonId === IDS.MOTOR_INSURANCE_UPLOAD) {
+    // Handle new simplified flow buttons
+    if (buttonId === IDS.INSURANCE_SEND_CERTIFICATE || buttonId === IDS.INSURANCE_SEND_CARTE_JAUNE || buttonId === IDS.INSURANCE_CHAT_TEAM) {
+      return await handleInsuranceListSelection(ctx, state, buttonId);
+    }
     // If it's a specific action like submit or help, delegate to list selection handler
     if (buttonId === IDS.INSURANCE_SUBMIT || buttonId === IDS.INSURANCE_HELP || buttonId === IDS.MOTOR_INSURANCE_UPLOAD) {
       return await handleInsuranceListSelection(ctx, state, buttonId);
@@ -403,6 +407,10 @@ async function handleInsuranceList(
 ): Promise<boolean> {
   // Handle insurance list selections
   if (listId.startsWith("ins_") || listId === IDS.INSURANCE_AGENT || listId === "insurance" || listId === IDS.INSURANCE_SUBMIT || listId === IDS.INSURANCE_HELP || listId === IDS.MOTOR_INSURANCE_UPLOAD) {
+    // Handle new simplified flow list selections
+    if (listId === IDS.INSURANCE_SEND_CERTIFICATE || listId === IDS.INSURANCE_SEND_CARTE_JAUNE || listId === IDS.INSURANCE_CHAT_TEAM) {
+      return await handleInsuranceListSelection(ctx, state, listId);
+    }
     // If it's a specific action like submit or help, handle the selection
     if (listId === IDS.INSURANCE_SUBMIT || listId === IDS.INSURANCE_HELP || listId === IDS.MOTOR_INSURANCE_UPLOAD) {
       return await handleInsuranceListSelection(ctx, state, listId);

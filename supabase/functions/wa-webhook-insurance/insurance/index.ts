@@ -43,17 +43,17 @@ export async function startInsurance(
       buttonText: "Choose",
       rows: [
         {
-          id: "ins_send_certificate",
+          id: IDS.INSURANCE_SEND_CERTIFICATE,
           title: "📄 Send Certificate",
           description: "Upload your insurance certificate",
         },
         {
-          id: "ins_send_carte_jaune",
+          id: IDS.INSURANCE_SEND_CARTE_JAUNE,
           title: "🟡 Send Carte Jaune",
           description: "Upload your yellow card (carte jaune)",
         },
         {
-          id: "ins_chat_team",
+          id: IDS.INSURANCE_CHAT_TEAM,
           title: "💬 Chat with Team",
           description: "Connect directly with our insurance team",
         },
@@ -78,7 +78,7 @@ export async function handleInsuranceListSelection(
   if (!ctx.profileId) return false;
   
   switch (id) {
-    case "ins_send_certificate": {
+    case IDS.INSURANCE_SEND_CERTIFICATE: {
       await setState(ctx.supabase, ctx.profileId, {
         key: STATES.WAIT_CERTIFICATE,
         data: {},
@@ -91,7 +91,7 @@ export async function handleInsuranceListSelection(
       return true;
     }
     
-    case "ins_send_carte_jaune": {
+    case IDS.INSURANCE_SEND_CARTE_JAUNE: {
       await setState(ctx.supabase, ctx.profileId, {
         key: STATES.WAIT_CARTE_JAUNE,
         data: {},
@@ -104,7 +104,7 @@ export async function handleInsuranceListSelection(
       return true;
     }
     
-    case "ins_chat_team": {
+    case IDS.INSURANCE_CHAT_TEAM: {
       const userName = ctx.name || "User";
       const result = await handleChatRequest(ctx.supabase, ctx.from, userName);
       await sendText(ctx.from, result.message);
