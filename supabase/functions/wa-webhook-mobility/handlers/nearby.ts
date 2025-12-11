@@ -470,98 +470,67 @@ export async function handleNearbyResultSelection(
   state: NearbyState,
   id: string,
 ): Promise<boolean> {
-  if (!ctx.profileId || !state.myTripId) {
+  // Validate state
+  if (!ctx.profileId || !state.rows) {
     await sendText(ctx.from, t(ctx.locale, "mobility.nearby.session_expired"));
     return true;
   }
 
   // Extract the actual trip ID from the list row identifier
-  const tripId = id.startsWith("MTCH::") ? id.replace("MTCH::", "") : id;
+  const matchId = id.startsWith("MTCH::") ? id.replace("MTCH::", "") : id;
   
-  try {
-    // Fetch the selected trip details
-    const { data: selectedTrip, error: tripError } = await ctx.supabase
-      .from("trips")
-      .select("user_id, role, vehicle_type, pickup_lat, pickup_lng")
-      .eq("id", tripId)
-      .single();
-      
-    if (tripError || !selectedTrip) {
-      await sendText(ctx.from, t(ctx.locale, "mobility.nearby.match_unavailable"));
-      await clearState(ctx.supabase, ctx.profileId);
-      return true;
-    }
-    
-    // Fetch user phone numbers for both users
-    const { data: profiles } = await ctx.supabase
-      .from("profiles")
-      .select("user_id, whatsapp_number, phone_number, wa_id")
-      .in("user_id", [ctx.profileId, selectedTrip.user_id]);
-    
-    const myProfile = profiles?.find(p => p.user_id === ctx.profileId);
-    const otherProfile = profiles?.find(p => p.user_id === selectedTrip.user_id);
-
-    const resolveWhatsApp = (profile?: any) =>
-      profile?.whatsapp_number || profile?.phone_number || profile?.wa_id;
-    const myWa = resolveWhatsApp(myProfile);
-    const otherWa = resolveWhatsApp(otherProfile);
-    
-    if (!myWa || !otherWa) {
-      await sendText(ctx.from, t(ctx.locale, "mobility.nearby.match_error"));
-      return true;
-    }
-    
-    // Determine roles - if searching for drivers, I'm the passenger
-    const isPassenger = state.mode === "drivers";
-    const passengerTripId = isPassenger ? state.myTripId : tripId;
-    const driverTripId = isPassenger ? tripId : state.myTripId;
-    const passengerUserId = isPassenger ? ctx.profileId : selectedTrip.user_id;
-    const driverUserId = isPassenger ? selectedTrip.user_id : ctx.profileId;
-    const passengerPhone = isPassenger ? myWa : otherWa;
-    const driverPhone = isPassenger ? otherWa : myWa;
-    
-    // Create the match using existing RPC function
-    await createTripMatch(ctx.supabase, {
-      driverTripId,
-      passengerTripId,
-      driverUserId,
-      passengerUserId,
-      vehicleType: state.vehicle || selectedTrip.vehicle_type,
-      pickupLocation: `POINT(${selectedTrip.pickup_lng} ${selectedTrip.pickup_lat})`,
-      driverPhone,
-      passengerPhone,
-    });
-    
-    // Log success
-    await logStructuredEvent("MATCH_CREATED", {
-      passengerTripId,
-      driverTripId,
-      via: "nearby_selection",
-      mode: state.mode,
-      vehicle: state.vehicle,
-    });
-    
-    // Clear state and notify user
+  // Find the selected match from stored rows (same pattern as schedule flow)
+  const match = state.rows.find((row) => row.id === matchId || row.tripId === matchId);
+  
+  if (!match || !match.whatsapp) {
+    await sendText(ctx.from, t(ctx.locale, "mobility.nearby.match_unavailable"));
     await clearState(ctx.supabase, ctx.profileId);
-    
-    const successMessage = isPassenger 
-      ? t(ctx.locale, "mobility.nearby.driver_notified")
-      : t(ctx.locale, "mobility.nearby.passenger_notified");
-    
-    await sendButtonsMessage(ctx, successMessage, homeOnly());
-    
-    return true;
-  } catch (err) {
-    console.error("handleNearbyResultSelection error:", err);
-    await sendText(ctx.from, t(ctx.locale, "mobility.nearby.match_error"));
-    await logStructuredEvent("MATCH_CREATION_ERROR", {
-      error: String(err),
-      mode: state.mode,
-      myTripId: state.myTripId,
-      selectedId: id,
-    });
     return true;
   }
+  
+  // Build WhatsApp deep link with prefilled message
+  const isPassenger = state.mode === "drivers";
+  const prefill = isPassenger
+    ? t(ctx.locale, "mobility.nearby.prefill.passenger", { 
+        ref: match.ref,
+        defaultValue: `Hi! I need a ride. Ref ${match.ref}` 
+      })
+    : t(ctx.locale, "mobility.nearby.prefill.driver", { 
+        ref: match.ref,
+        defaultValue: `Hi! I'm available for a ride. Ref ${match.ref}` 
+      });
+  
+  const link = waChatLink(match.whatsapp, prefill);
+  
+  // Send clickable WhatsApp link to user (matches schedule flow pattern)
+  await sendButtonsMessage(
+    ctx,
+    t(ctx.locale, "mobility.nearby.chat_cta", { 
+      link,
+      defaultValue: `✅ Contact them directly:\n\n${link}\n\nTap the link to start chatting on WhatsApp!`
+    }),
+    [
+      {
+        id: IDS.NEARBY_RECENT,
+        title: t(ctx.locale, "common.buttons.new_search", {
+          defaultValue: "New search"
+        }),
+      },
+    ],
+  );
+  
+  // Clear state
+  await clearState(ctx.supabase, ctx.profileId);
+  
+  // Log success
+  await logStructuredEvent("MATCH_SELECTED", {
+    mode: state.mode,
+    vehicle: state.vehicle,
+    matchId: match.tripId,
+    via: "nearby_selection",
+  });
+  
+  return true;
 }
 
 export async function handleChangeVehicleRequest(
