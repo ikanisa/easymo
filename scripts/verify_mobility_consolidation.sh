@@ -81,6 +81,27 @@ echo ""
 
 # Test 4: Test trip creation
 echo "Test 4: Trip creation test"
+# Test 4: Check foreign key constraints
+echo "Test 4: Foreign key constraints"
+echo "--------------------------------"
+
+FK_COUNT=$(psql "$DATABASE_URL" -t -c "
+SELECT COUNT(*) FROM information_schema.table_constraints tc
+JOIN information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name
+WHERE tc.constraint_type = 'FOREIGN KEY'
+  AND tc.table_name IN ('mobility_matches', 'trips', 'recurring_trips');
+" | tr -d ' ')
+
+if [ "$FK_COUNT" -gt 0 ]; then
+  echo "✅ PASS: Foreign key constraints verified ($FK_COUNT found)"
+  PASSED=$((PASSED + 1))
+else
+  echo "⚠️  WARNING: No foreign key constraints found"
+fi
+echo ""
+
+# Test 5: Test trip creation
+echo "Test 5: Trip creation test"
 echo "--------------------------------"
 
 TEST_USER_ID=$(psql "$DATABASE_URL" -t -c "SELECT user_id FROM profiles LIMIT 1;" | tr -d ' ')
