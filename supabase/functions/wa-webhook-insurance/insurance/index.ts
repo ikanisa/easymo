@@ -11,7 +11,7 @@ import { sendListMessage, sendButtonsMessage, buildButtons } from "../../_shared
 import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import { sendHomeMenu } from "../../_shared/wa-webhook-shared/flows/home.ts";
 import { handleDocumentUpload, handleChatRequest } from "./simple_flow.ts";
-import { fetchMediaUrl } from "../../_shared/wa-webhook-shared/wa/media.ts";
+import { fetchWhatsAppMedia } from "../../_shared/wa-webhook-shared/utils/media.ts";
 
 const STATES = {
   MENU: "insurance_menu",
@@ -145,8 +145,8 @@ export async function handleInsuranceMedia(
       return true;
     }
     
-    const mediaUrl = await fetchMediaUrl(mediaId);
-    if (!mediaUrl) {
+    const mediaResult = await fetchWhatsAppMedia(mediaId);
+    if (!mediaResult) {
       await sendText(ctx.from, "Sorry, couldn't download your file. Please try again.");
       return true;
     }
@@ -160,8 +160,8 @@ export async function handleInsuranceMedia(
       userName,
       documentType,
       mediaId,
-      mediaUrl,
-      mimeType
+      "", // We'll use mediaId instead of URL for forwarding
+      mediaResult.mime
     );
     
     await sendText(ctx.from, result.message);
