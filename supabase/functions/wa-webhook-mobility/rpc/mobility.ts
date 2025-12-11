@@ -219,39 +219,6 @@ export async function updateTripLocation(
   if (error) throw error;
 }
 
-export async function createTripMatch(
-  client: SupabaseClient,
-  params: {
-    driverTripId: string;
-    passengerTripId: string;
-    driverUserId: string;
-    passengerUserId: string;
-    vehicleType: string;
-    pickupLocation: string; // WKT or similar
-    driverPhone: string;
-    passengerPhone: string;
-    estimatedFare?: number;
-    distanceKm?: number;
-  }
-): Promise<string> {
-  const { data, error } = await client
-    .from("mobility_trip_matches")
-    .insert({
-      driver_trip_id: params.driverTripId,
-      passenger_trip_id: params.passengerTripId,
-      driver_user_id: params.driverUserId,
-      passenger_user_id: params.passengerUserId,
-      vehicle_type: params.vehicleType,
-      pickup_location: params.pickupLocation, // Expecting geography string
-      status: "pending",
-      driver_phone: params.driverPhone,
-      passenger_phone: params.passengerPhone,
-      estimated_fare: params.estimatedFare,
-      distance_km: params.distanceKm,
-    })
-    .select("id")
-    .single();
-
-  if (error) throw error;
-  return data.id;
-}
+// NOTE: createTripMatch function was removed because it referenced the deleted
+// mobility_trip_matches table. The simplified flow now uses direct WhatsApp links
+// via waChatLink() instead of creating match records in the database.

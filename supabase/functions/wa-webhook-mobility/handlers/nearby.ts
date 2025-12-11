@@ -469,20 +469,17 @@ export async function handleNearbyResultSelection(
   state: NearbyState,
   id: string,
 ): Promise<boolean> {
-  if (!ctx.profileId) {
   // Validate state
   if (!ctx.profileId || !state.rows) {
     await sendText(ctx.from, t(ctx.locale, "mobility.nearby.session_expired"));
     return true;
   }
 
-  // Find the selected match from stored rows
-  const match = state.rows?.find((row) => row.id === id);
   // Extract the actual trip ID from the list row identifier
   const matchId = id.startsWith("MTCH::") ? id.replace("MTCH::", "") : id;
   
-  // Find the selected match from stored rows (same pattern as schedule flow)
-  const match = state.rows.find((row) => row.id === matchId || row.tripId === matchId);
+  // Find the selected match from stored rows
+  const match = state.rows.find((row) => row.id === id || row.id === matchId || row.tripId === matchId);
   
   if (!match || !match.whatsapp) {
     await sendText(ctx.from, t(ctx.locale, "mobility.nearby.match_unavailable"));
@@ -491,30 +488,7 @@ export async function handleNearbyResultSelection(
   }
 
   // Build WhatsApp deep link with prefilled message
-  const isPassenger = state.mode === "drivers";
-  const prefill = isPassenger
-    ? t(ctx.locale, "mobility.nearby.prefill.driver")
-    : t(ctx.locale, "mobility.nearby.prefill.passenger");
-
-  const link = waChatLink(match.whatsapp, prefill);
-
-  // Send clickable link to user
-  await sendButtonsMessage(
-    ctx,
-    t(ctx.locale, "mobility.nearby.chat_cta", { link }),
-    homeOnly(),
-  );
-
-  await clearState(ctx.supabase, ctx.profileId);
-
-  await logStructuredEvent("MATCH_SELECTED", {
-    mode: state.mode,
-    vehicle: state.vehicle,
-    selectedRef: match.ref,
-  });
-
-  
-  // Build WhatsApp deep link with prefilled message
+  // isPassenger means the user is looking for drivers (they are a passenger)
   const isPassenger = state.mode === "drivers";
   const prefill = isPassenger
     ? t(ctx.locale, "mobility.nearby.prefill.passenger", { 
@@ -528,7 +502,7 @@ export async function handleNearbyResultSelection(
   
   const link = waChatLink(match.whatsapp, prefill);
   
-  // Send clickable WhatsApp link to user (matches schedule flow pattern)
+  // Send clickable WhatsApp link to user
   await sendButtonsMessage(
     ctx,
     t(ctx.locale, "mobility.nearby.chat_cta", { 
