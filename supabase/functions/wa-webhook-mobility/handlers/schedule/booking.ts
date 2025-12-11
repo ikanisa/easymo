@@ -1124,16 +1124,14 @@ export async function fetchMatches(
       state.tripId!,
       options.limit,
       options.preferDropoff,
-      options.radiusMeters,
-      MOBILITY_CONFIG.
+      options.radiusMeters
     )
     : await matchPassengersForTrip(
       ctx.supabase,
       state.tripId!,
       options.limit,
       options.preferDropoff,
-      options.radiusMeters,
-      MOBILITY_CONFIG.
+      options.radiusMeters
     );
   return sortMatches(matches, { prioritize: "time" }).slice(0, 9);
 }

@@ -9,7 +9,7 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { logStructuredEvent, recordMetric, maskPII } from "../../observability.ts";
+import { logStructuredEvent, recordMetric, scrubPII } from "../../observability.ts";
 import {
   REAL_ESTATE_STATE_KEYS,
   ROLE_LABELS,
@@ -55,7 +55,7 @@ export async function getRealEstateState(
     };
   } catch (error) {
     await logStructuredEvent("REAL_ESTATE_STATE_GET_ERROR", {
-      userId: maskPII(userId),
+      userId: scrubPII(userId),
       error: error instanceof Error ? error.message : String(error),
     }, "error");
     return null;
@@ -86,7 +86,7 @@ export async function setRealEstateState(
 
     if (error) {
       await logStructuredEvent("REAL_ESTATE_STATE_SET_ERROR", {
-        userId: maskPII(userId),
+        userId: scrubPII(userId),
         key,
         error: error.message,
       }, "error");
@@ -94,7 +94,7 @@ export async function setRealEstateState(
     }
 
     await logStructuredEvent("REAL_ESTATE_STATE_SET", {
-      userId: maskPII(userId),
+      userId: scrubPII(userId),
       key,
       role: context.role,
       entrySource: context.entrySource,
@@ -103,7 +103,7 @@ export async function setRealEstateState(
     return true;
   } catch (error) {
     await logStructuredEvent("REAL_ESTATE_STATE_SET_EXCEPTION", {
-      userId: maskPII(userId),
+      userId: scrubPII(userId),
       key,
       error: error instanceof Error ? error.message : String(error),
     }, "error");
@@ -127,7 +127,7 @@ export async function clearRealEstateState(
 
     if (error) {
       await logStructuredEvent("REAL_ESTATE_STATE_CLEAR_ERROR", {
-        userId: maskPII(userId),
+        userId: scrubPII(userId),
         error: error.message,
       }, "error");
       return false;
@@ -136,7 +136,7 @@ export async function clearRealEstateState(
     return true;
   } catch (error) {
     await logStructuredEvent("REAL_ESTATE_STATE_CLEAR_EXCEPTION", {
-      userId: maskPII(userId),
+      userId: scrubPII(userId),
       error: error instanceof Error ? error.message : String(error),
     }, "error");
     return false;
@@ -152,7 +152,7 @@ export async function initializeRoleSelection(
   entrySource: "whatsapp" | "pwa" | "deep_link" = "whatsapp"
 ): Promise<RealEstateState> {
   await logStructuredEvent("REAL_ESTATE_ROLE_SELECTION_INIT", {
-    userId: maskPII(userId),
+    userId: scrubPII(userId),
     entrySource,
   });
 
@@ -208,7 +208,7 @@ export async function setUserRole(
   await setRealEstateState(supabase, userId, nextKey, newContext);
 
   await logStructuredEvent("REAL_ESTATE_ROLE_SET", {
-    userId: maskPII(userId),
+    userId: scrubPII(userId),
     role,
     nextState: nextKey,
   });

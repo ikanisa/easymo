@@ -967,7 +967,7 @@ async function runMatchingFallback(
         vehicle: state.vehicle,
         pickup: `${pickup.lat.toFixed(4)},${pickup.lng.toFixed(4)}`,
         radiusMeters,
-        windowMinutes: 
+        windowMinutes: 30,
         possibleCauses: [
           "No active trips in area",
           "Vehicle type mismatch", 
@@ -975,7 +975,7 @@ async function runMatchingFallback(
           "Trips outside radius",
         ],
         hint: "Check mobility_trips table for open trips with role=driver/passenger",
-      }, "warn");
+      });
       
       // Use specific message based on what user was searching for
       const messageKey = state.mode === "drivers" 

@@ -91,6 +91,23 @@ import { recordLastLocation } from "./locations/favorites.ts";
 import { sendLocation, sendText } from "./wa/client.ts";
 import { t } from "./i18n/translator.ts";
 
+const STATE_KEYS = {
+  MOBILITY: {
+    NEARBY_SELECT: "mobility_nearby_select",
+    NEARBY_LOCATION: "mobility_nearby_location",
+    NEARBY_RESULTS: "mobility_nearby_results",
+    GO_ONLINE: "mobility_go_online",
+    LOCATION_SAVED_PICKER: "mobility_location_saved_picker",
+    SCHEDULE_ROLE: "mobility_schedule_role",
+    SCHEDULE_VEHICLE: "mobility_schedule_vehicle",
+    SCHEDULE_LOCATION: "mobility_schedule_location",
+    SCHEDULE_DROPOFF: "mobility_schedule_dropoff",
+    SCHEDULE_TIME: "mobility_schedule_time",
+    SCHEDULE_RECURRENCE: "mobility_schedule_recurrence",
+    TRIP_IN_PROGRESS: "mobility_trip_in_progress",
+  },
+} as const;
+
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",

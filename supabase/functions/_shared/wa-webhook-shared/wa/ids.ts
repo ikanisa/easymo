@@ -239,33 +239,6 @@ export const IDS = {
   WAITER_CLEAR_CART: "waiter_clear_cart",
   WAITER_ADD_MORE: "waiter_add_more",
   WAITER_HELP: "waiter_help",
-  // Business Management - My Bars & Restaurants
-  MY_BARS_RESTAURANTS: "my_bars_restaurants",
-  BUSINESS_SEARCH: "business_search",
-  BUSINESS_SEARCH_NAME: "business_search_name",
-  BUSINESS_CLAIM: "business_claim",
-  BUSINESS_CLAIM_CONFIRM: "business_claim_confirm",
-  BUSINESS_ADD_MANUAL: "business_add_manual",
-  BUSINESS_ADD_MANUAL_CONFIRM: "business_add_manual_confirm",
-  
-  // Bar/Restaurant Menu Management
-  BAR_MANAGE_MENU: "bar_manage_menu",
-  BAR_VIEW_ORDERS: "bar_view_orders",
-  BAR_UPLOAD_MENU: "bar_upload_menu",
-  MENU_SAVE_ALL: "menu_save_all",
-  MENU_EDIT_NAME: "menu_edit_name",
-  MENU_EDIT_PRICE: "menu_edit_price",
-  MENU_TOGGLE_AVAILABLE: "menu_toggle_available",
-  MENU_SET_PROMO: "menu_set_promo",
-  MENU_DELETE_ITEM: "menu_delete_item",
-  MENU_ITEM_DETAIL: "menu_item_detail",
-  
-  // Waiter AI Agent
-  WAITER_CHECKOUT: "waiter_checkout",
-  WAITER_CONFIRM_PAID: "waiter_confirm_paid",
-  WAITER_ADD_TO_CART: "waiter_add_to_cart",
-  WAITER_VIEW_CART: "waiter_view_cart",
-  WAITER_CLEAR_CART: "waiter_clear_cart",
   
   // Order Status Updates
   ORDER_STATUS_RECEIVED: "order_status_received",
