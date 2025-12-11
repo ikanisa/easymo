@@ -1,9 +1,17 @@
-// wa-webhook-mobility - Standalone version
+// ============================================================================
+// WA-WEBHOOK-MOBILITY - MAIN ENTRY POINT
+// ============================================================================
+// Handles WhatsApp webhook events for mobility domain (rides, trips, drivers)
+// Refactored for cleaner architecture with separated routing logic
+// ============================================================================
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "./deps.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
-import { getState, setState } from "./state/store.ts";
+import { getState, setState, clearState } from "./state/store.ts";
+
+// Nearby handlers
 import {
   handleSeeDrivers,
   handleSeePassengers,
@@ -17,6 +25,8 @@ import {
   handleRecentSearchSelection,
   isVehicleOption,
 } from "./handlers/nearby.ts";
+
+// Schedule handlers
 import {
   startScheduleTrip,
   handleScheduleRole,
@@ -31,82 +41,33 @@ import {
   startScheduleSavedLocationPicker,
   handleScheduleSavedLocationSelection,
 } from "./handlers/schedule.ts";
-import {
-  startGoOnline,
-  handleGoOnlineLocation,
-  handleGoOnlineUseCached,
-  handleGoOffline,
-} from "./handlers/go_online.ts";
-import {
-  routeDriverAction,
-} from "./handlers/driver_response.ts";
-import {
-  vehiclePlateStateKey,
-  parsePlateState,
-  handleVehiclePlateInput,
-} from "./handlers/vehicle_plate.ts";
+
+// Driver handlers
+import { startGoOnline, handleGoOnlineLocation, handleGoOnlineUseCached, handleGoOffline } from "./handlers/go_online.ts";
+import { routeDriverAction } from "./handlers/driver_response.ts";
+import { vehiclePlateStateKey, parsePlateState, handleVehiclePlateInput } from "./handlers/vehicle_plate.ts";
+
 // Payment handlers
-import {
-  handlePaymentConfirmation,
-  processTransactionReference,
-  handleSkipPayment,
-  PAYMENT_STATES,
-  type PaymentState,
-} from "./handlers/trip_payment.ts";
+import { handlePaymentConfirmation, processTransactionReference, handleSkipPayment, PAYMENT_STATES, type PaymentState } from "./handlers/trip_payment.ts";
 
 // Verification handlers
-import {
-  showVerificationMenu,
-  startLicenseVerification,
-  handleLicenseUpload,
-  VERIFICATION_STATES,
-} from "./handlers/driver_verification.ts";
-// TEMPORARY: Trip lifecycle handlers disabled due to bundler issue
-// TODO: Re-enable after splitting trip_lifecycle.ts into modular files
-// See: MOBILITY_QUICK_ACTION_PLAN.md
-/*
-import {
-  handleTripStart,
-  handleTripArrivedAtPickup,
-  handleTripPickedUp,
-  handleTripComplete,
-  handleTripCancel,
-  handleTripRate,
-} from "./handlers/trip_lifecycle.ts";
-*/
-import {
-  startDriverTracking,
-  updateDriverLocation,
-  stopDriverTracking,
-  getTripProgress,
-} from "./handlers/tracking.ts";
-import {
-  calculateFareEstimate,
-} from "./handlers/fare.ts";
-import type { RouterContext, WhatsAppWebhookPayload, RawWhatsAppMessage } from "./types.ts";
+import { showVerificationMenu, startLicenseVerification, handleLicenseUpload, VERIFICATION_STATES } from "./handlers/driver_verification.ts";
+
+// Trip lifecycle handlers (re-enabled from modular trip/ directory)
+import { handleTripStart, handleTripArrivedAtPickup, handleTripPickedUp, handleTripComplete, handleTripCancel, handleTripRate } from "./handlers/trip/index.ts";
+
+// Tracking handlers
+import { updateDriverLocation, getTripProgress } from "./handlers/tracking.ts";
+
+// Core utilities
+import type { RouterContext, WhatsAppWebhookPayload } from "./types.ts";
 import { IDS } from "./wa/ids.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
-import { sendListMessage } from "./utils/reply.ts";
+import { sendListMessage, sendButtonsMessage } from "./utils/reply.ts";
 import { recordLastLocation } from "./locations/favorites.ts";
 import { sendLocation, sendText } from "./wa/client.ts";
 import { t } from "./i18n/translator.ts";
-
-const STATE_KEYS = {
-  MOBILITY: {
-    NEARBY_SELECT: "mobility_nearby_select",
-    NEARBY_LOCATION: "mobility_nearby_location",
-    NEARBY_RESULTS: "mobility_nearby_results",
-    GO_ONLINE: "mobility_go_online",
-    LOCATION_SAVED_PICKER: "mobility_location_saved_picker",
-    SCHEDULE_ROLE: "mobility_schedule_role",
-    SCHEDULE_VEHICLE: "mobility_schedule_vehicle",
-    SCHEDULE_LOCATION: "mobility_schedule_location",
-    SCHEDULE_DROPOFF: "mobility_schedule_dropoff",
-    SCHEDULE_TIME: "mobility_schedule_time",
-    SCHEDULE_RECURRENCE: "mobility_schedule_recurrence",
-    TRIP_IN_PROGRESS: "mobility_trip_in_progress",
-  },
-} as const;
+import { STATE_KEYS } from "./router.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -433,24 +394,11 @@ serve(async (req: Request): Promise<Response> => {
            handled = await startScheduleSavedLocationPicker(ctx, state.data as any, "dropoff");
         } else if (id.startsWith("FAV::") && state?.key === STATE_KEYS.MOBILITY.LOCATION_SAVED_PICKER && state.data?.source === "schedule") {
            handled = await handleScheduleSavedLocationSelection(ctx, state.data as any, id);
-         }        else if (id === IDS.TRIP_START || id === IDS.TRIP_ARRIVED || id === IDS.TRIP_PICKED_UP || 
-                 id === IDS.TRIP_COMPLETE || id.startsWith(IDS.TRIP_CANCEL_PREFIX) || id.startsWith(IDS.RATE_PREFIX)) {
-          await sendText(
-            ctx.from,
-            "🚧 *Trip Management Temporarily Unavailable*\n\n" +
-            "We're upgrading our trip management system.\n" +
-            "This feature will be back online shortly.\n\n" +
-            "✅ Nearby matching still works\n" +
-            "✅ Driver/passenger lists available\n" +
-            "✅ Schedule features active\n\n" +
-            "Thank you for your patience!"
-          );
-          handled = true;
         }
-        /* COMMENTED OUT - Re-enable after handler split
-        else if (id === IDS.TRIP_START && state?.data?.matchId) {
-          const matchId = String(state.data.matchId);
-          handled = await handleTripStart(ctx, matchId);
+        // Trip Lifecycle Handlers (re-enabled from modular handlers/trip/)
+        else if (id === IDS.TRIP_START && state?.data?.tripId) {
+          const tripId = String(state.data.tripId);
+          handled = await handleTripStart(ctx, tripId);
         } else if (id === IDS.TRIP_ARRIVED && state?.data?.tripId) {
           const tripId = String(state.data.tripId);
           handled = await handleTripArrivedAtPickup(ctx, tripId);
@@ -463,14 +411,13 @@ serve(async (req: Request): Promise<Response> => {
         } else if (id.startsWith(IDS.TRIP_CANCEL_PREFIX + "::")) {
           const tripId = id.replace(IDS.TRIP_CANCEL_PREFIX + "::", "");
           const initiator = state?.data?.role === "passenger" ? "passenger" : "driver";
-          handled = await handleTripCancel(ctx, tripId, "user", initiator);
+          handled = await handleTripCancel(ctx, tripId, "user_cancelled", initiator);
         } else if (id.startsWith(IDS.RATE_PREFIX + "::")) {
           const parts = id.split("::");
           const tripId = parts[1];
           const rating = parseInt(parts[2]);
           handled = await handleTripRate(ctx, tripId, rating);
         }
-        */
         
         // Payment Handlers
         else if (id === IDS.TRIP_PAYMENT_PAID && state?.key === PAYMENT_STATES.PENDING) {
