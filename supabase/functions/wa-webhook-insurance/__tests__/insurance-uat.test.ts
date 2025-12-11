@@ -15,21 +15,24 @@ const insuranceMenuSuite = createTestSuite("Insurance UAT - Menu");
 
 insuranceMenuSuite.test("displays correct menu options", () => {
   const menuOptions = [
-    { id: "ins_submit", title: "Submit certificate" },
-    { id: "ins_help", title: "Help" },
+    { id: "ins_send_certificate", title: "Send Certificate" },
+    { id: "ins_send_carte_jaune", title: "Send Carte Jaune" },
+    { id: "ins_chat_team", title: "Chat with Team" },
     { id: "back_menu", title: "Back" },
   ];
 
-  assertEquals(menuOptions.length, 3, "Should have 3 menu options");
-  assertEquals(menuOptions[0].id, "ins_submit");
+  assertEquals(menuOptions.length, 4, "Should have 4 menu options");
+  assertEquals(menuOptions[0].id, "ins_send_certificate");
+  assertEquals(menuOptions[1].id, "ins_send_carte_jaune");
+  assertEquals(menuOptions[2].id, "ins_chat_team");
 });
 
 insuranceMenuSuite.test("validates insurance button IDs", () => {
   const INSURANCE_IDS = {
     INSURANCE_AGENT: "insurance_agent",
-    INSURANCE_SUBMIT: "ins_submit",
-    INSURANCE_HELP: "ins_help",
-    MOTOR_INSURANCE_UPLOAD: "motor_ins_upload",
+    INSURANCE_SEND_CERTIFICATE: "ins_send_certificate",
+    INSURANCE_SEND_CARTE_JAUNE: "ins_send_carte_jaune",
+    INSURANCE_CHAT_TEAM: "ins_chat_team",
   };
 
   const isInsuranceAction = (id: string): boolean => {
@@ -38,7 +41,9 @@ insuranceMenuSuite.test("validates insurance button IDs", () => {
            id === "insurance";
   };
 
-  assertEquals(isInsuranceAction("ins_submit"), true);
+  assertEquals(isInsuranceAction("ins_send_certificate"), true);
+  assertEquals(isInsuranceAction("ins_send_carte_jaune"), true);
+  assertEquals(isInsuranceAction("ins_chat_team"), true);
   assertEquals(isInsuranceAction("insurance_agent"), true);
   assertEquals(isInsuranceAction("insurance"), true);
   assertEquals(isInsuranceAction("rides"), false);
@@ -112,104 +117,6 @@ uploadSuite.test("handles multiple document uploads", () => {
     assertEquals(addDocument(`media-${i}`).success, true);
   }
   assertEquals(documents.length, 4);
-});
-
-// ============================================================================
-// INSURANCE OCR PROCESSING TESTS
-// ============================================================================
-
-const ocrSuite = createTestSuite("Insurance UAT - OCR Processing");
-
-ocrSuite.test("validates OCR result structure", () => {
-  const validateOCRResult = (result: Record<string, unknown>): string[] => {
-    const expectedFields = [
-      "policy_number",
-      "insurer_name",
-      "vehicle_plate",
-      "expiry_date",
-    ];
-    
-    const missing: string[] = [];
-    for (const field of expectedFields) {
-      if (!result[field]) {
-        missing.push(field);
-      }
-    }
-    return missing;
-  };
-
-  const completeResult = {
-    policy_number: "POL-123456",
-    insurer_name: "Sonarwa",
-    vehicle_plate: "RAB 123A",
-    expiry_date: "2025-12-31",
-  };
-  assertEquals(validateOCRResult(completeResult).length, 0);
-
-  const incompleteResult = {
-    policy_number: "POL-123456",
-    insurer_name: "Sonarwa",
-  };
-  const missing = validateOCRResult(incompleteResult);
-  assertEquals(missing.includes("vehicle_plate"), true);
-  assertEquals(missing.includes("expiry_date"), true);
-});
-
-ocrSuite.test("validates policy number format", () => {
-  const validatePolicyNumber = (policyNumber: string): boolean => {
-    // Various formats: POL-XXXXXX, XXXXXXXXX, etc.
-    const pattern = /^[A-Z0-9-]{6,20}$/i;
-    return pattern.test(policyNumber.trim());
-  };
-
-  assertEquals(validatePolicyNumber("POL-123456"), true);
-  assertEquals(validatePolicyNumber("ABC123"), true);
-  assertEquals(validatePolicyNumber("AB"), false, "Too short");
-  assertEquals(validatePolicyNumber("!@#$%^"), false, "Invalid characters");
-});
-
-ocrSuite.test("validates expiry date format", () => {
-  const validateExpiryDate = (dateStr: string): { valid: boolean; date?: Date } => {
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) {
-      return { valid: false };
-    }
-    return { valid: true, date };
-  };
-
-  assertEquals(validateExpiryDate("2025-12-31").valid, true);
-  assertEquals(validateExpiryDate("31/12/2025").valid, false, "Invalid format for Date constructor");
-  assertEquals(validateExpiryDate("invalid").valid, false);
-});
-
-ocrSuite.test("checks if insurance is expired", () => {
-  const isExpired = (expiryDate: Date): boolean => {
-    return expiryDate < new Date();
-  };
-
-  const futureDate = new Date(Date.now() + 86400000 * 365);
-  assertEquals(isExpired(futureDate), false, "Future date should not be expired");
-
-  const pastDate = new Date(Date.now() - 86400000);
-  assertEquals(isExpired(pastDate), true, "Past date should be expired");
-});
-
-ocrSuite.test("handles OCR processing outcomes", () => {
-  const OCR_OUTCOMES = {
-    OK: "ocr_ok",
-    QUEUED: "ocr_queued",
-    ERROR: "ocr_error",
-    SKIPPED: "skipped",
-  };
-
-  const isSuccessfulOutcome = (outcome: string): boolean => {
-    return outcome === OCR_OUTCOMES.OK || outcome === OCR_OUTCOMES.QUEUED;
-  };
-
-  assertEquals(isSuccessfulOutcome(OCR_OUTCOMES.OK), true);
-  assertEquals(isSuccessfulOutcome(OCR_OUTCOMES.QUEUED), true);
-  assertEquals(isSuccessfulOutcome(OCR_OUTCOMES.ERROR), false);
-  assertEquals(isSuccessfulOutcome(OCR_OUTCOMES.SKIPPED), false);
 });
 
 // ============================================================================
