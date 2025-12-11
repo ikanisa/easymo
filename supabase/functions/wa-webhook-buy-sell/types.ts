@@ -2,7 +2,7 @@
  * Shared types for Buy & Sell module
  * 
  * Extracted from agent.ts to reduce coupling and improve maintainability.
- * See: REFACTORING_ASSESSMENT.md for future modularization plan
+ * See: REFACTORING_ASSESSMENT.md Part 4.2 for Buy & Sell restructuring analysis
  */
 
 /**
