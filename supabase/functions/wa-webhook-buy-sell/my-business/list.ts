@@ -126,10 +126,14 @@ export async function handleBusinessSelection(
     },
   });
 
-  // Forward to main webhook's business detail handler
-  const { showBusinessDetail } = await import(
-    "../../wa-webhook/domains/business/management.ts"
+  // TODO: Implement business detail view
+  await sendButtonsMessage(
+    ctx,
+    `Business selected: ${businessId}\n\n(Detail view coming soon)`,
+    [
+      [{ id: "MY_BUSINESSES", title: "← Back to My Businesses" }],
+    ]
   );
   
-  return await showBusinessDetail(ctx, businessId);
+  return true;
 }
