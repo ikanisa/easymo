@@ -16,7 +16,7 @@ import { ensureProfile } from "../_shared/wa-webhook-shared/utils/profile.ts";
 const profileConfig = WEBHOOK_CONFIG.profile;
 
 const SERVICE_NAME = "wa-webhook-profile";
-const SERVICE_VERSION = "2.2.1";
+const SERVICE_VERSION = "3.0.0"; // v3.0.0: Wallet functionality extracted to wa-webhook-wallet
 const MAX_BODY_SIZE = profileConfig.maxBodySize;
 
 const supabase = createClient(
