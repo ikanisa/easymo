@@ -244,6 +244,169 @@ serve(async (req: Request): Promise<Response> => {
         await handleNewSearch(userPhone);
         return respond({ success: true, message: "new_search_requested" });
       }
+
+      // === MY BUSINESSES MANAGEMENT ===
+      
+      // List user's businesses
+      if (buttonId === "MY_BUSINESSES" || buttonId === "my_business") {
+        const { listMyBusinesses } = await import("./my-business/list.ts");
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("user_id, language")
+          .eq("whatsapp_number", userPhone)
+          .single();
+        
+        if (profile) {
+          const ctx = {
+            supabase,
+            from: userPhone,
+            profileId: profile.user_id,
+            locale: (profile.language || "en") as any,
+          };
+          await listMyBusinesses(ctx);
+        }
+        return respond({ success: true, message: "my_businesses_shown" });
+      }
+
+      // Create business
+      if (buttonId === "CREATE_BUSINESS") {
+        const { startCreateBusiness } = await import("./my-business/list.ts");
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("user_id, language")
+          .eq("whatsapp_number", userPhone)
+          .single();
+        
+        if (profile) {
+          const ctx = {
+            supabase,
+            from: userPhone,
+            profileId: profile.user_id,
+            locale: (profile.language || "en") as any,
+          };
+          await startCreateBusiness(ctx);
+        }
+        return respond({ success: true, message: "create_business_started" });
+      }
+
+      // Business selection
+      if (buttonId.startsWith("BIZ::")) {
+        const businessId = buttonId.replace("BIZ::", "");
+        const { handleBusinessSelection } = await import("./my-business/list.ts");
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("user_id, language")
+          .eq("whatsapp_number", userPhone)
+          .single();
+        
+        if (profile) {
+          const ctx = {
+            supabase,
+            from: userPhone,
+            profileId: profile.user_id,
+            locale: (profile.language || "en") as any,
+          };
+          await handleBusinessSelection(ctx, businessId);
+        }
+        return respond({ success: true, message: "business_selected" });
+      }
+
+      // Edit business
+      if (buttonId.startsWith("EDIT_BIZ::")) {
+        const businessId = buttonId.replace("EDIT_BIZ::", "");
+        const { startEditBusiness } = await import("./my-business/update.ts");
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("user_id, language")
+          .eq("whatsapp_number", userPhone)
+          .single();
+        
+        if (profile) {
+          const ctx = {
+            supabase,
+            from: userPhone,
+            profileId: profile.user_id,
+            locale: (profile.language || "en") as any,
+          };
+          await startEditBusiness(ctx, businessId);
+        }
+        return respond({ success: true, message: "edit_business_started" });
+      }
+
+      // Delete business (confirmation)
+      if (buttonId.startsWith("DELETE_BIZ::")) {
+        const businessId = buttonId.replace("DELETE_BIZ::", "");
+        const { confirmDeleteBusiness } = await import("./my-business/delete.ts");
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("user_id, language")
+          .eq("whatsapp_number", userPhone)
+          .single();
+        
+        if (profile) {
+          const ctx = {
+            supabase,
+            from: userPhone,
+            profileId: profile.user_id,
+            locale: (profile.language || "en") as any,
+          };
+          await confirmDeleteBusiness(ctx, businessId);
+        }
+        return respond({ success: true, message: "delete_confirmation_shown" });
+      }
+
+      // Confirm delete
+      if (buttonId.startsWith("CONFIRM_DELETE_BIZ::")) {
+        const businessId = buttonId.replace("CONFIRM_DELETE_BIZ::", "");
+        const { handleDeleteBusiness } = await import("./my-business/delete.ts");
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("user_id, language")
+          .eq("whatsapp_number", userPhone)
+          .single();
+        
+        if (profile) {
+          const ctx = {
+            supabase,
+            from: userPhone,
+            profileId: profile.user_id,
+            locale: (profile.language || "en") as any,
+          };
+          await handleDeleteBusiness(ctx, businessId);
+        }
+        return respond({ success: true, message: "business_deleted" });
+      }
+
+      // Other business actions
+      if (buttonId.startsWith("EDIT_BIZ_NAME::") || buttonId.startsWith("EDIT_BIZ_DESC::") || buttonId.startsWith("BACK_BIZ::")) {
+        const businessId = buttonId.replace(/^(EDIT_BIZ_NAME|EDIT_BIZ_DESC|BACK_BIZ)::/, "");
+        const action = buttonId.split("::")[0];
+        
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("user_id, language")
+          .eq("whatsapp_number", userPhone)
+          .single();
+        
+        if (profile) {
+          const ctx = {
+            supabase,
+            from: userPhone,
+            profileId: profile.user_id,
+            locale: (profile.language || "en") as any,
+          };
+
+          if (action === "EDIT_BIZ_NAME" || action === "EDIT_BIZ_DESC") {
+            const { promptEditField } = await import("./my-business/update.ts");
+            const field = action === "EDIT_BIZ_NAME" ? "name" : "description";
+            await promptEditField(ctx, businessId, field);
+          } else if (action === "BACK_BIZ") {
+            const { handleBusinessSelection } = await import("./my-business/list.ts");
+            await handleBusinessSelection(ctx, businessId);
+          }
+        }
+        return respond({ success: true, message: "business_action_handled" });
+      }
     }
 
     // === LOCATION HANDLER ===
@@ -259,6 +422,83 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // === TEXT HANDLERS ===
+
+    // Business state handlers
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("user_id, language")
+      .eq("whatsapp_number", userPhone)
+      .maybeSingle();
+
+    if (profile) {
+      const { getState } = await import("../_shared/wa-webhook-shared/state/store.ts");
+      const state = await getState(supabase, profile.user_id);
+
+      // Business creation - name input
+      if (state?.key === "business_create_name") {
+        const { handleCreateBusinessName } = await import("./my-business/create.ts");
+        const ctx = {
+          supabase,
+          from: userPhone,
+          profileId: profile.user_id,
+          locale: (profile.language || "en") as any,
+        };
+        await handleCreateBusinessName(ctx, text);
+        return respond({ success: true, message: "business_name_processed" });
+      }
+
+      // Business edit - name field
+      if (state?.key === "business_edit_name" && state.data) {
+        const { handleUpdateBusinessField } = await import("./my-business/update.ts");
+        const ctx = {
+          supabase,
+          from: userPhone,
+          profileId: profile.user_id,
+          locale: (profile.language || "en") as any,
+        };
+        await handleUpdateBusinessField(ctx, String(state.data.businessId), "name", text);
+        return respond({ success: true, message: "business_name_updated" });
+      }
+
+      // Business edit - description field
+      if (state?.key === "business_edit_description" && state.data) {
+        const { handleUpdateBusinessField } = await import("./my-business/update.ts");
+        const ctx = {
+          supabase,
+          from: userPhone,
+          profileId: profile.user_id,
+          locale: (profile.language || "en") as any,
+        };
+        await handleUpdateBusinessField(ctx, String(state.data.businessId), "description", text);
+        return respond({ success: true, message: "business_description_updated" });
+      }
+
+      // Business search - name input
+      if (state?.key === "business_search" && state.data?.step === "awaiting_name") {
+        const { handleBusinessNameSearch } = await import("./my-business/search.ts");
+        const ctx = {
+          supabase,
+          from: userPhone,
+          profileId: profile.user_id,
+          locale: (profile.language || "en") as any,
+        };
+        await handleBusinessNameSearch(ctx, text);
+        return respond({ success: true, message: "business_search_processed" });
+      }
+
+      // Manual business add - step-by-step
+      if (state?.key === "business_add_manual" && state.data) {
+        const { handleManualBusinessStep } = await import("./my-business/add_manual.ts");
+        const ctx = {
+          supabase,
+          from: userPhone,
+          profileId: profile.user_id,
+          locale: (profile.language || "en") as any,
+        };
+        await handleManualBusinessStep(ctx, state.data, text);
+        return respond({ success: true, message: "manual_business_step_processed" });
+      }
+    }
 
     // Home/menu commands → show categories
     const lower = text.toLowerCase();

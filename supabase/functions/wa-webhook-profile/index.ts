@@ -230,103 +230,44 @@ serve(async (req: Request): Promise<Response> => {
           handled = await handleMomoButton(ctx, id, state ?? { key: "home", data: {} });
         }
         
-        // Wallet Home
-        else if (id === IDS.WALLET_HOME || id === "WALLET_HOME" || id === IDS.WALLET || id === "wallet" || id === "wallet_tokens") {
-          const { startWallet } = await import("./wallet/home.ts");
-          handled = await startWallet(ctx, state ?? { key: "home" });
-        }
-        
-        // My Businesses
-        else if (id === IDS.MY_BUSINESSES || id === "MY_BUSINESSES" || id === "my_business") {
-          const { listMyBusinesses } = await import("./business/list.ts");
-          handled = await listMyBusinesses(ctx);
-        }
-        else if (id === IDS.CREATE_BUSINESS) {
-          const { startCreateBusiness } = await import("./business/list.ts");
-          handled = await startCreateBusiness(ctx);
-        }
-        else if (id.startsWith("BIZ::")) {
-          const businessId = id.replace("BIZ::", "");
-          const { handleBusinessSelection } = await import("./business/list.ts");
-          handled = await handleBusinessSelection(ctx, businessId);
-        }
-        else if (id.startsWith("EDIT_BIZ::")) {
-          const businessId = id.replace("EDIT_BIZ::", "");
-          const { startEditBusiness } = await import("./business/update.ts");
-          handled = await startEditBusiness(ctx, businessId);
-        }
-        else if (id.startsWith("DELETE_BIZ::")) {
-          const businessId = id.replace("DELETE_BIZ::", "");
-          const { confirmDeleteBusiness } = await import("./business/delete.ts");
-          handled = await confirmDeleteBusiness(ctx, businessId);
-        }
-        else if (id.startsWith("CONFIRM_DELETE_BIZ::")) {
-          const businessId = id.replace("CONFIRM_DELETE_BIZ::", "");
-          const { handleDeleteBusiness } = await import("./business/delete.ts");
-          handled = await handleDeleteBusiness(ctx, businessId);
-        }
-        else if (id.startsWith("EDIT_BIZ_NAME::")) {
-          const businessId = id.replace("EDIT_BIZ_NAME::", "");
-          const { promptEditField } = await import("./business/update.ts");
-          handled = await promptEditField(ctx, businessId, "name");
-        }
-        else if (id.startsWith("EDIT_BIZ_DESC::")) {
-          const businessId = id.replace("EDIT_BIZ_DESC::", "");
-          const { promptEditField } = await import("./business/update.ts");
-          handled = await promptEditField(ctx, businessId, "description");
-        }
-        else if (id.startsWith("BACK_BIZ::")) {
-          const businessId = id.replace("BACK_BIZ::", "");
-          const { handleBusinessSelection } = await import("./business/list.ts");
-          handled = await handleBusinessSelection(ctx, businessId);
-        }
-        
-        // ⚡ NEW: Business Detail Selection (lowercase prefix)
-        else if (id.startsWith("biz::")) {
-          const businessId = id.replace("biz::", "");
-          const { handleBusinessSelection } = await import("./business/list.ts");
-          handled = await handleBusinessSelection(ctx, businessId);
-        }
-        
-        // ⚡ NEW: Manage Menu (Restaurant/Bar only)
-        else if (id === IDS.BUSINESS_MANAGE_MENU && state?.key === "business_detail") {
-          const { startRestaurantManager } = await import(
-            "../wa-webhook/domains/vendor/restaurant.ts"
+        // Wallet - Forward to wa-webhook-wallet
+        else if (id === IDS.WALLET_HOME || id === "WALLET_HOME" || id === IDS.WALLET || id === "wallet" || id === "wallet_tokens" ||
+                 id === IDS.WALLET_EARN || id === IDS.WALLET_VIEW_BALANCE || id === IDS.WALLET_TRANSFER ||
+                 id === IDS.WALLET_REDEEM || id === IDS.WALLET_TOP || id === IDS.WALLET_TRANSACTIONS ||
+                 id === IDS.WALLET_REFERRAL || id === IDS.WALLET_SHARE || id === "WALLET_PURCHASE" ||
+                 id === "buy_tokens" || id === "WALLET_CASHOUT" || id === "cash_out" ||
+                 id.startsWith("partner::") || id.startsWith("wallet_tx::") || id.startsWith("wallet_top::") ||
+                 id.startsWith("purchase_") || id.startsWith("cashout_confirm_") || id === "manual_recipient" ||
+                 id === IDS.WALLET_SHARE_WHATSAPP || id === IDS.WALLET_SHARE_QR || id === IDS.WALLET_SHARE_DONE) {
+          // All wallet functionality has been moved to wa-webhook-wallet
+          // This profile webhook no longer handles wallet operations
+          logEvent("WALLET_DEPRECATED_ROUTE", { id }, "warn");
+          await sendText(
+            ctx.from,
+            "⚠️ Wallet feature has been moved. Please restart the conversation by sending 'hi' or 'menu'."
           );
-          const barId = state.data?.barId as string;
-          if (barId) {
-            handled = await startRestaurantManager(ctx, { barId, initialAction: "menu" });
-          } else {
-            await sendButtonsMessage(
-              ctx,
-              "⚠️ This business is not set up for menu management yet.",
-              [{ id: IDS.MY_BUSINESSES, title: "← Back to Businesses" }],
-            );
-            handled = true;
-          }
+          handled = true;
         }
         
-        // ⚡ NEW: View Orders (Restaurant/Bar only)
-        else if (id === IDS.BUSINESS_VIEW_ORDERS && state?.key === "business_detail") {
-          const { startRestaurantManager } = await import(
-            "../wa-webhook/domains/vendor/restaurant.ts"
+        // My Businesses - Moved to wa-webhook-buy-sell
+        else if (id === IDS.MY_BUSINESSES || id === "MY_BUSINESSES" || id === "my_business" ||
+                 id === IDS.CREATE_BUSINESS || id.startsWith("BIZ::") || id.startsWith("EDIT_BIZ::") ||
+                 id.startsWith("DELETE_BIZ::") || id.startsWith("CONFIRM_DELETE_BIZ::") ||
+                 id.startsWith("EDIT_BIZ_NAME::") || id.startsWith("EDIT_BIZ_DESC::") ||
+                 id.startsWith("BACK_BIZ::") || id.startsWith("biz::") ||
+                 id === IDS.BUSINESS_MANAGE_MENU || id === IDS.BUSINESS_VIEW_ORDERS ||
+                 id === IDS.BUSINESS_SEARCH || id.startsWith("claim::") ||
+                 id === IDS.BUSINESS_CLAIM_CONFIRM || id === IDS.BUSINESS_ADD_MANUAL ||
+                 id === IDS.BUSINESS_ADD_CONFIRM || id === "skip_description" ||
+                 id === "skip_location" || id.startsWith("cat::")) {
+          // Business management moved to wa-webhook-buy-sell
+          logEvent("BUSINESS_DEPRECATED_ROUTE", { id }, "warn");
+          await sendText(
+            ctx.from,
+            "⚠️ Business management has been moved. Please restart by sending 'hi' or 'menu'."
           );
-          const barId = state.data?.barId as string;
-          if (barId) {
-            handled = await startRestaurantManager(ctx, { barId, initialAction: "orders" });
-          } else {
-            await sendButtonsMessage(
-              ctx,
-              "⚠️ This business is not set up for order management yet.",
-              [{ id: IDS.MY_BUSINESSES, title: "← Back to Businesses" }],
-            );
-            handled = true;
-          }
+          handled = true;
         }
-        
-        // ============================================================
-        // PHASE 2-5: My Business Workflow - Bars & Restaurants
-        // ============================================================
         
         // My Bars & Restaurants
         else if (id === IDS.MY_BARS_RESTAURANTS) {
@@ -893,72 +834,10 @@ serve(async (req: Request): Promise<Response> => {
           handled = await startProfile(ctx, state ?? { key: "home" });
         }
         
-        // Back to Menu (from wallet/other submenus)
+        // Back to Menu (from submenus)
         else if (id === IDS.BACK_MENU || id === "back_menu") {
           const { startProfile } = await import("./profile/home.ts");
           handled = await startProfile(ctx, state ?? { key: "home" });
-        }
-        
-        // Wallet Earn
-        else if (id === IDS.WALLET_EARN) {
-          const { showWalletEarn } = await import("./wallet/earn.ts");
-          handled = await showWalletEarn(ctx);
-        }
-        else if (id === IDS.WALLET_VIEW_BALANCE) {
-          const { showWalletBalance } = await import("./wallet/home.ts");
-          handled = await showWalletBalance(ctx);
-        }
-
-        // Wallet Share - WhatsApp
-        else if (id === IDS.WALLET_SHARE_WHATSAPP || id === IDS.WALLET_SHARE_QR || id === IDS.WALLET_SHARE_DONE) {
-          const { handleWalletEarnSelection, handleWalletShareDone } = await import("./wallet/earn.ts");
-          if (id === IDS.WALLET_SHARE_DONE) {
-            handled = await handleWalletShareDone(ctx);
-          } else {
-            handled = await handleWalletEarnSelection(ctx, state as any, id);
-          }
-        }
-        
-        // Wallet Transfer
-        else if (id === IDS.WALLET_TRANSFER) {
-          const { startWalletTransfer } = await import("./wallet/transfer.ts");
-          handled = await startWalletTransfer(ctx);
-        }
-        
-        // Wallet Redeem
-        else if (id === IDS.WALLET_REDEEM) {
-          const { showWalletRedeem } = await import("./wallet/redeem.ts");
-          handled = await showWalletRedeem(ctx);
-        }
-        
-        // Wallet Top (Leaderboard)
-        else if (id === IDS.WALLET_TOP) {
-          const { showWalletTop } = await import("./wallet/top.ts");
-          handled = await showWalletTop(ctx);
-        }
-        
-        // Wallet Transactions
-        else if (id === IDS.WALLET_TRANSACTIONS) {
-          const { showWalletTransactions } = await import("./wallet/transactions.ts");
-          handled = await showWalletTransactions(ctx);
-        }
-        
-        // Wallet Referral
-        else if (id === IDS.WALLET_REFERRAL || id === IDS.WALLET_SHARE) {
-          const { handleWalletReferral } = await import("./wallet/referral.ts");
-          handled = await handleWalletReferral(ctx);
-        }
-        else if (id.startsWith("partner::") || id === "manual_recipient") {
-          const { handleWalletTransferSelection } = await import("./wallet/transfer.ts");
-          handled = await handleWalletTransferSelection(ctx, state as any, id);
-        }
-        else if (id.startsWith("wallet_tx::")) {
-          const { showWalletTransactions } = await import("./wallet/transactions.ts");
-          handled = await showWalletTransactions(ctx);
-        }
-        else if (id.startsWith("wallet_top::")) {
-          const { showWalletTop } = await import("./wallet/top.ts");
-          handled = await showWalletTop(ctx);
         }
         
         // Share EasyMO
@@ -996,29 +875,6 @@ serve(async (req: Request): Promise<Response> => {
           }
         }
         
-        // Token Purchase
-        else if (id === "WALLET_PURCHASE" || id === "buy_tokens") {
-          const { handleWalletPurchase } = await import("./wallet/purchase.ts");
-          handled = await handleWalletPurchase(ctx);
-        }
-        else if (id.startsWith("purchase_")) {
-          const { handlePurchasePackage } = await import("./wallet/purchase.ts");
-          handled = await handlePurchasePackage(ctx, id);
-        }
-        
-        // Cash Out
-        else if (id === "WALLET_CASHOUT" || id === "cash_out") {
-          const { handleCashOut } = await import("./wallet/cashout.ts");
-          handled = await handleCashOut(ctx);
-        }
-        else if (id === "cashout_confirm_yes") {
-          const { handleCashOutConfirm } = await import("./wallet/cashout.ts");
-          handled = await handleCashOutConfirm(ctx);
-        }
-        else if (id === "cashout_confirm_no") {
-          const { handleCashOutCancel } = await import("./wallet/cashout.ts");
-          handled = await handleCashOutCancel(ctx);
-        }
         
         // MoMo QR
         else if (id === IDS.MOMO_QR || id.startsWith("momoqr_")) {
@@ -1030,12 +886,6 @@ serve(async (req: Request): Promise<Response> => {
             handled = await handleMomoButton(ctx, id, momoState);
           }
         }
-        
-        // Reward selection (TODO: implement handleRewardSelection)
-        // else if (id.startsWith("REWARD::") && state?.key === IDS.WALLET_REDEEM) {
-        //   const { handleRewardSelection } = await import("./wallet/redeem.ts");
-        //   handled = await handleRewardSelection(ctx, state.data as any, id);
-        // }
         
       }
     }
@@ -1054,47 +904,18 @@ serve(async (req: Request): Promise<Response> => {
                               !/^(HELLO|THANKS|CANCEL|SUBMIT|ACCEPT|REJECT|STATUS|URGENT|PLEASE|PROFILE|WALLET)$/.test(upperText);
       
       if (refMatch || isStandaloneCode) {
-        const code = refMatch ? refMatch[1] : originalText;
-        logEvent("PROFILE_REFERRAL_CODE_DETECTED", { code: code.substring(0, 4) + "***" });
-        const { applyReferralCodeFromMessage } = await import("./wallet/referral.ts");
-        handled = await applyReferralCodeFromMessage(ctx, code);
+        // Referral codes are handled by wa-webhook-wallet
+        logEvent("PROFILE_REFERRAL_DEPRECATED", { type: "referral_code" }, "warn");
+        await sendText(
+          ctx.from,
+          "⚠️ Referral feature has been moved. Please restart by sending 'hi' or 'menu'."
+        );
+        handled = true;
       }
       // Check for menu selection key first
       else if (text === "profile") {
         const { startProfile } = await import("./profile/home.ts");
         handled = await startProfile(ctx, state ?? { key: "home" });
-      }
-      // Wallet keywords
-      else if (text.includes("wallet") || text.includes("balance")) {
-        const { startWallet } = await import("./wallet/home.ts");
-        handled = await startWallet(ctx, state ?? { key: "home" });
-      } else if (text.includes("transfer") || text.includes("send")) {
-        const { startWalletTransfer } = await import("./wallet/transfer.ts");
-        handled = await startWalletTransfer(ctx);
-      } else if (text.includes("redeem") || text.includes("reward")) {
-        const { showWalletRedeem } = await import("./wallet/redeem.ts");
-        handled = await showWalletRedeem(ctx);
-      } else if (text.includes("earn") || text.includes("get token")) {
-        const { showWalletEarn } = await import("./wallet/earn.ts");
-        handled = await showWalletEarn(ctx);
-      } else if (text.includes("share") || text.includes("referral")) {
-        const { handleWalletReferral } = await import("./wallet/referral.ts");
-        handled = await handleWalletReferral(ctx);
-      } else if (text.includes("transaction") || text.includes("history")) {
-        const { showWalletTransactions } = await import("./wallet/transactions.ts");
-        handled = await showWalletTransactions(ctx);
-      }
-      
-      // Purchase keywords
-      else if (["buy", "buy tokens", "purchase", "purchase tokens"].includes(text)) {
-        const { handleWalletPurchase } = await import("./wallet/purchase.ts");
-        handled = await handleWalletPurchase(ctx);
-      }
-      
-      // Cash-out keywords
-      else if (["cash out", "cashout", "withdraw", "withdrawal"].includes(text)) {
-        const { handleCashOut } = await import("./wallet/cashout.ts");
-        handled = await handleCashOut(ctx);
       }
       
       // MOMO QR Text - handle state-based input or keywords
@@ -1109,70 +930,6 @@ serve(async (req: Request): Promise<Response> => {
         }
       }
 
-      else if (state?.key === IDS.WALLET_TRANSFER) {
-        const { handleWalletTransferText } = await import("./wallet/transfer.ts");
-        handled = await handleWalletTransferText(ctx, (message.text as any)?.body ?? "", state as any);
-      }
-      else if (state?.key === IDS.WALLET_REFERRAL) {
-        const { applyReferralCodeFromMessage } = await import("./wallet/referral.ts");
-        handled = await applyReferralCodeFromMessage(ctx, (message.text as any)?.body ?? "");
-      }
-      
-      // Handle purchase amount input
-      else if (state?.key === "wallet_purchase_amount") {
-        const { handlePurchaseAmount } = await import("./wallet/purchase.ts");
-        handled = await handlePurchaseAmount(ctx, text);
-      }
-      
-      // Handle cash-out amount input
-      else if (state?.key === "wallet_cashout_amount") {
-        const { handleCashOutAmount } = await import("./wallet/cashout.ts");
-        handled = await handleCashOutAmount(ctx, text);
-      }
-      
-      // Handle cash-out phone input
-      else if (state?.key === "wallet_cashout_phone") {
-        const { handleCashOutPhone } = await import("./wallet/cashout.ts");
-        handled = await handleCashOutPhone(ctx, text);
-      }
-      
-      // Handle business creation name
-      else if (state?.key === "business_create_name") {
-        const { handleCreateBusinessName } = await import("./business/create.ts");
-        handled = await handleCreateBusinessName(ctx, (message.text as any)?.body ?? "");
-      }
-      
-      // Handle business edit fields
-      else if (state?.key === "business_edit_name" && state.data) {
-        const { handleUpdateBusinessField } = await import("./business/update.ts");
-        handled = await handleUpdateBusinessField(ctx, String(state.data.businessId), "name", (message.text as any)?.body ?? "");
-      }
-      else if (state?.key === "business_edit_description" && state.data) {
-        const { handleUpdateBusinessField } = await import("./business/update.ts");
-        handled = await handleUpdateBusinessField(ctx, String(state.data.businessId), "description", (message.text as any)?.body ?? "");
-      }
-      
-      // ============================================================
-      // PHASE 2-5: Text Handlers for Business Search & Manual Add
-      // ============================================================
-      
-      // Business Search - awaiting name input
-      else if (state?.key === "business_search" && state.data?.step === "awaiting_name") {
-        const { handleBusinessNameSearch } = await import("./business/search.ts");
-        handled = await handleBusinessNameSearch(ctx, (message.text as any)?.body ?? "");
-      }
-      
-      // Manual Business Add - step-by-step text input
-      else if (state?.key === "business_add_manual" && state.data) {
-        const { handleManualBusinessStep } = await import("./business/add_manual.ts");
-        const textInput = (message.text as any)?.body ?? "";
-        handled = await handleManualBusinessStep(ctx, state.data, textInput);
-      }
-      
-      // ============================================================
-      // END PHASE 2-5 Text Handlers
-      // ============================================================
-      
       // Handle job creation title
       else if (state?.key === "job_create_title") {
         const { handleCreateJobTitle } = await import("./jobs/create.ts");

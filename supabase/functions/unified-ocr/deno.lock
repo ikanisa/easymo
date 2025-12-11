@@ -1,8 +1,0 @@
-{
-  "version": "5",
-  "remote": {
-    "https://esm.sh/@supabase/supabase-js@2.76.1": "99f07a2597a0be25436c7520104699b5570de0c91d8e42b1679359dba7716324",
-    "https://esm.sh/@supabase/supabase-js@2.86.0": "03cff32ee9cd57294c4fbaef936d61d1842ebeb0e4c72c01667524c7f1e23912",
-    "https://esm.sh/@upstash/redis@1.28.0": "758f569a7c190661425db5ea2bce369923ca921ac242a96525fbdee166b511d2"
-  }
-}
