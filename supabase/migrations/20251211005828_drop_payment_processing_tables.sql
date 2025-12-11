@@ -55,7 +55,10 @@ END $$;
 
 DO $$
 BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'system_logs') THEN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables 
+    WHERE table_schema = 'public' AND table_name = 'system_logs'
+  ) THEN
     INSERT INTO public.system_logs (event_type, details)
     VALUES ('PAYMENT_TABLES_CLEANUP', jsonb_build_object(
       'migration', '20251211005828_drop_payment_processing_tables',
