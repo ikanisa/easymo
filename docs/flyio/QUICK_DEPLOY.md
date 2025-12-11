@@ -22,20 +22,21 @@ fly deploy --app <app-name>
 
 ## 📦 Service Quick Reference
 
-| Service | Directory | App Name | Port |
-|---------|-----------|----------|------|
-| Admin PWA | `admin-app/` | `easymo-admin` | 3000 |
-| Vendor Portal | `client-pwa/` | `easymo-vendor` | 3000 |
-| Voice Bridge | `services/whatsapp-voice-bridge/` | `easymo-voice-bridge` | 8080 |
-| WA Router | `services/wa-router/` | `easymo-wa-router` | 8080 |
-| Agents | `services/agents/` | `easymo-agents` | 8080 |
-| Agent Core | `services/agent-core/` | `easymo-agent-core` | 8080 |
+| Service       | Directory                         | App Name              | Port |
+| ------------- | --------------------------------- | --------------------- | ---- |
+| Admin PWA     | `admin-app/`                      | `easymo-admin`        | 3000 |
+| Vendor Portal | `client-pwa/`                     | `easymo-vendor`       | 3000 |
+| Voice Bridge  | `services/whatsapp-voice-bridge/` | `easymo-voice-bridge` | 8080 |
+| WA Router     | `services/wa-router/`             | `easymo-wa-router`    | 8080 |
+| Agents        | `services/agents/`                | `easymo-agents`       | 8080 |
+| Agent Core    | `services/agent-core/`            | `easymo-agent-core`   | 8080 |
 
 ---
 
 ## 🔑 Common Secrets
 
 ### Frontend PWAs:
+
 ```bash
 fly secrets set \
   NEXT_PUBLIC_SUPABASE_URL=https://lhbowpbcpwoiparwnwgt.supabase.co \
@@ -45,6 +46,7 @@ fly secrets set \
 ```
 
 ### Voice Bridge:
+
 ```bash
 fly secrets set \
   OPENAI_API_KEY=sk-proj-... \
@@ -53,6 +55,7 @@ fly secrets set \
 ```
 
 ### WhatsApp Router:
+
 ```bash
 fly secrets set \
   WHATSAPP_PHONE_ID=your-id \

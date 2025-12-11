@@ -2,7 +2,8 @@
 
 **Date:** November 27, 2025  
 **Status:** ✅ COMPLETED & DEPLOYED  
-**Commits:** 
+**Commits:**
+
 - `7e24d6ee` - feat: comprehensive AI agent integration and desktop admin support
 - `640182c1` - docs: add comprehensive AI agent integration summary
 
@@ -16,20 +17,21 @@
 
 All 10 AI agents are now fully integrated with their complete configurations:
 
-| Agent | Status | Personas | Tools | Tasks | Intents | Knowledge |
-|-------|--------|----------|-------|-------|---------|-----------|
-| Support | ✅ Complete | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Marketplace | ✅ Complete | ✅ | ✅ | - | - | - |
-| Waiter | ✅ Complete | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Property | ✅ Complete | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Jobs | ✅ Complete | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Rides | ✅ Complete | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Insurance | ✅ Complete | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Farmer | ✅ Complete | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Broker | ✅ Complete | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Sales | ✅ Complete | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Agent       | Status      | Personas | Tools | Tasks | Intents | Knowledge |
+| ----------- | ----------- | -------- | ----- | ----- | ------- | --------- |
+| Support     | ✅ Complete | ✅       | ✅    | ✅    | ✅      | ✅        |
+| Marketplace | ✅ Complete | ✅       | ✅    | -     | -       | -         |
+| Waiter      | ✅ Complete | ✅       | ✅    | ✅    | ✅      | ✅        |
+| Property    | ✅ Complete | ✅       | ✅    | ✅    | ✅      | ✅        |
+| Jobs        | ✅ Complete | ✅       | ✅    | ✅    | ✅      | ✅        |
+| Rides       | ✅ Complete | ✅       | ✅    | ✅    | ✅      | ✅        |
+| Insurance   | ✅ Complete | ✅       | ✅    | ✅    | ✅      | ✅        |
+| Farmer      | ✅ Complete | ✅       | ✅    | ✅    | ✅      | ✅        |
+| Broker      | ✅ Complete | ✅       | ✅    | ✅    | ✅      | ✅        |
+| Sales       | ✅ Complete | ✅       | ✅    | ✅    | ✅      | ✅        |
 
 **Key Additions:**
+
 - **Marketplace Agent**: Full configuration with tools for listing creation, search, seller contact
 - **Property Tools**: 5 tools added (search, details, viewing, application, listing)
 - **Jobs Tools**: 4 tools added (search, details, application, posting)
@@ -41,6 +43,7 @@ All 10 AI agents are now fully integrated with their complete configurations:
 **Problem:** Support chat in desktop admin panel wasn't getting responses
 
 **Solution:**
+
 - Updated API route to call `wa-webhook-unified` instead of deprecated `wa-webhook`
 - Added admin panel detection via `X-Admin-Panel` header
 - Modified orchestrator to return response text synchronously
@@ -48,6 +51,7 @@ All 10 AI agents are now fully integrated with their complete configurations:
 - Enhanced response extraction with multiple fallback formats
 
 **Files Modified:**
+
 - `admin-app-v2/app/api/agents/support/chat/route.ts`
 - `supabase/functions/wa-webhook-unified/core/orchestrator.ts`
 - `supabase/functions/wa-webhook-unified/index.ts`
@@ -55,6 +59,7 @@ All 10 AI agents are now fully integrated with their complete configurations:
 ### 3. ✅ Unified Webhook Enhanced
 
 **New Capabilities:**
+
 - **Synchronous Mode**: Returns agent response for admin panel (doesn't send WhatsApp)
 - **Async Mode**: Normal WhatsApp webhook flow (sends message to user)
 - **Admin Detection**: Recognizes admin panel calls via headers or payload
@@ -76,6 +81,7 @@ supabase db push --include-all
 ```
 
 This will:
+
 - Link all AI agents with their configurations
 - Create marketplace agent with tools
 - Add tools to waiter, property, jobs agents
@@ -101,7 +107,7 @@ Expected: You should get intelligent responses from the support agent
 SELECT * FROM ai_agents_overview_v ORDER BY slug;
 
 -- Detailed check
-SELECT 
+SELECT
   a.slug,
   a.name,
   COUNT(DISTINCT p.id) as personas,
@@ -109,7 +115,7 @@ SELECT
   COUNT(DISTINCT tk.id) as tasks
 FROM ai_agents a
 LEFT JOIN ai_agent_personas p ON p.agent_id = a.id
-LEFT JOIN ai_agent_tools t ON t.agent_id = a.id  
+LEFT JOIN ai_agent_tools t ON t.agent_id = a.id
 LEFT JOIN ai_agent_tasks tk ON tk.agent_id = a.id
 GROUP BY a.id, a.slug, a.name
 ORDER BY a.slug;
@@ -227,6 +233,7 @@ LIMIT 20;
 ## ⚡ QUICK REFERENCE
 
 ### Deploy Everything
+
 ```bash
 # 1. Deploy migration
 supabase db push --include-all
@@ -238,6 +245,7 @@ cd admin-app-v2 && npm run dev
 ```
 
 ### Check Status
+
 ```sql
 -- Agent configuration status
 SELECT * FROM ai_agents_overview_v;

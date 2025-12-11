@@ -1,4 +1,5 @@
 # Phase 3: Package Consolidation Plan
+
 **Date:** December 10, 2025  
 **Current Count:** 33 packages  
 **Target:** ~20 packages  
@@ -52,15 +53,18 @@ packages/
 ## 📦 Merge Groups
 
 ### Group 1: Common/Shared Utilities ⭐ HIGH PRIORITY
+
 **Current:** 3 packages  
 **Target:** 1 package (`@easymo/commons`)
 
 #### Packages to Merge:
+
 - `commons` - Common utilities
 - `shared` - Shared code
 - `types` - TypeScript types
 
 #### Migration Plan:
+
 ```bash
 # 1. Create unified structure
 packages/commons/
@@ -89,10 +93,12 @@ import { User, formatPhone, API_VERSION } from '@easymo/commons'
 ---
 
 ### Group 2: AI/Agent Logic ⭐ HIGH PRIORITY
+
 **Current:** 5 packages  
 **Target:** 1 package (`@easymo/ai`)
 
 #### Packages to Merge:
+
 - `ai` - AI utilities
 - `ai-core` - Core AI logic
 - `agents` - Agent implementations
@@ -100,6 +106,7 @@ import { User, formatPhone, API_VERSION } from '@easymo/commons'
 - `video-agent-schema` - (consider keeping separate if specialized)
 
 #### Migration Plan:
+
 ```bash
 packages/ai/
 ├── src/
@@ -118,15 +125,18 @@ packages/ai/
 ---
 
 ### Group 3: Localization ⭐ MEDIUM PRIORITY
+
 **Current:** 3 packages  
 **Target:** 1 package (`@easymo/i18n` or `@easymo/localization`)
 
 #### Packages to Merge:
+
 - `locales` - Locale data
 - `localization` - i18n utilities
 - `ibimina-locales` - Ibimina-specific locales
 
 #### Migration Plan:
+
 ```bash
 packages/i18n/
 ├── src/
@@ -146,14 +156,17 @@ packages/i18n/
 ---
 
 ### Group 4: UI Components 🟡 LOWER PRIORITY
+
 **Current:** 2 packages  
 **Target:** 1 package (`@easymo/ui`)
 
 #### Packages to Merge:
+
 - `ui` - Main UI components
 - `ibimina-ui` - Ibimina-specific UI
 
 #### Migration Plan:
+
 ```bash
 packages/ui/
 ├── src/
@@ -172,15 +185,18 @@ packages/ui/
 ---
 
 ### Group 5: Configuration 🟡 LOWER PRIORITY
+
 **Current:** 3 packages  
 **Target:** 1 package (`@easymo/config`)
 
 #### Packages to Merge:
+
 - `flags` - Feature flags
 - `ibimina-flags` - Ibimina flags
 - `ibimina-config` - Ibimina configuration
 
 #### Migration Plan:
+
 ```bash
 packages/config/
 ├── src/
@@ -199,15 +215,18 @@ packages/config/
 ---
 
 ### Group 6: Database Schemas 🟡 LOWER PRIORITY
+
 **Current:** 3 packages  
 **Target:** 1 package (`@easymo/schemas`)
 
 #### Packages to Merge:
+
 - `supabase-schemas` - Main schemas
 - `ibimina-supabase-schemas` - Ibimina schemas
 - `video-agent-schema` - (consider keeping if specialized)
 
 #### Migration Plan:
+
 ```bash
 packages/schemas/
 ├── src/
@@ -226,15 +245,15 @@ packages/schemas/
 
 ## 📊 Consolidation Summary
 
-| Group | Current | Target | Priority | Effort | Savings |
-|-------|---------|--------|----------|--------|---------|
-| Common/Shared | 3 | 1 | ⭐ HIGH | 2-3 days | 2 |
-| AI/Agent | 5 | 1-2 | ⭐ HIGH | 3-4 days | 3-4 |
-| Localization | 3 | 1 | ⭐ MEDIUM | 1-2 days | 2 |
-| UI Components | 2 | 1 | 🟡 LOWER | 2 days | 1 |
-| Configuration | 3 | 1 | 🟡 LOWER | 1-2 days | 2 |
-| Schemas | 3 | 1-2 | 🟡 LOWER | 2 days | 1-2 |
-| **TOTAL** | **19** | **6-8** | | **11-15 days** | **11-13** |
+| Group         | Current | Target  | Priority  | Effort         | Savings   |
+| ------------- | ------- | ------- | --------- | -------------- | --------- |
+| Common/Shared | 3       | 1       | ⭐ HIGH   | 2-3 days       | 2         |
+| AI/Agent      | 5       | 1-2     | ⭐ HIGH   | 3-4 days       | 3-4       |
+| Localization  | 3       | 1       | ⭐ MEDIUM | 1-2 days       | 2         |
+| UI Components | 2       | 1       | 🟡 LOWER  | 2 days         | 1         |
+| Configuration | 3       | 1       | 🟡 LOWER  | 1-2 days       | 2         |
+| Schemas       | 3       | 1-2     | 🟡 LOWER  | 2 days         | 1-2       |
+| **TOTAL**     | **19**  | **6-8** |           | **11-15 days** | **11-13** |
 
 **Remaining specialized packages:** ~14 (keep as-is)  
 **Final target:** 33 → ~20-22 packages
@@ -246,6 +265,7 @@ packages/schemas/
 ### Week 1: High-Priority Merges
 
 **Day 1-3: Common/Shared Consolidation**
+
 ```bash
 # Create @easymo/commons
 pnpm create @easymo/commons
@@ -256,6 +276,7 @@ pnpm create @easymo/commons
 ```
 
 **Day 4-7: AI/Agent Consolidation**
+
 ```bash
 # Create @easymo/ai
 # Migrate agent packages
@@ -267,6 +288,7 @@ pnpm create @easymo/commons
 ### Week 2: Medium & Lower Priority
 
 **Day 8-10: Localization + UI**
+
 ```bash
 # Create @easymo/i18n
 # Merge localization packages
@@ -275,6 +297,7 @@ pnpm create @easymo/commons
 ```
 
 **Day 11-13: Configuration + Schemas**
+
 ```bash
 # Create @easymo/config
 # Merge config packages
@@ -283,6 +306,7 @@ pnpm create @easymo/commons
 ```
 
 **Day 14-15: Testing & Cleanup**
+
 ```bash
 # Full build test
 # Update documentation
@@ -297,6 +321,7 @@ pnpm create @easymo/commons
 ### Step-by-Step Process (Per Package)
 
 #### 1. Create New Package
+
 ```bash
 cd packages
 mkdir new-package
@@ -305,6 +330,7 @@ pnpm init
 ```
 
 #### 2. Setup Package Structure
+
 ```json
 {
   "name": "@easymo/new-package",
@@ -317,6 +343,7 @@ pnpm init
 ```
 
 #### 3. Migrate Code
+
 ```bash
 # Copy source files
 cp -r ../old-package-1/src/* ./src/category-1/
@@ -327,6 +354,7 @@ cp -r ../old-package-2/src/* ./src/category-2/
 ```
 
 #### 4. Update Workspace References
+
 ```json
 // pnpm-workspace.yaml - already configured
 
@@ -341,6 +369,7 @@ cp -r ../old-package-2/src/* ./src/category-2/
 ```
 
 #### 5. Update All Import Statements
+
 ```bash
 # Find all imports
 grep -r "from '@easymo/old-package'" --include="*.ts" --include="*.tsx"
@@ -350,6 +379,7 @@ grep -r "from '@easymo/old-package'" --include="*.ts" --include="*.tsx"
 ```
 
 #### 6. Test & Validate
+
 ```bash
 # Build all packages
 pnpm run -r build
@@ -362,6 +392,7 @@ pnpm run typecheck
 ```
 
 #### 7. Archive Old Packages
+
 ```bash
 # Don't delete immediately - archive
 mv packages/old-package packages/.archived/old-package-$(date +%Y%m%d)
@@ -396,6 +427,7 @@ mv packages/old-package packages/.archived/old-package-$(date +%Y%m%d)
 ## 📋 Execution Checklist
 
 ### Phase 3A: Common/Shared ⭐ START HERE
+
 - [ ] Create `@easymo/commons` structure
 - [ ] Migrate `@easymo/types` code
 - [ ] Migrate `@easymo/shared` code
@@ -408,6 +440,7 @@ mv packages/old-package packages/.archived/old-package-$(date +%Y%m%d)
 - [ ] Update documentation
 
 ### Phase 3B: AI/Agent
+
 - [ ] Create `@easymo/ai` structure
 - [ ] Migrate `@easymo/ai-core`
 - [ ] Migrate `@easymo/agents`
@@ -418,6 +451,7 @@ mv packages/old-package packages/.archived/old-package-$(date +%Y%m%d)
 - [ ] Archive old packages
 
 ### Phase 3C: Localization
+
 - [ ] Create `@easymo/i18n`
 - [ ] Migrate locale data
 - [ ] Merge ibimina locales
@@ -425,6 +459,7 @@ mv packages/old-package packages/.archived/old-package-$(date +%Y%m%d)
 - [ ] Archive old packages
 
 ### Phase 3D: UI, Config, Schemas
+
 - [ ] Merge UI packages
 - [ ] Merge config packages
 - [ ] Merge schema packages
@@ -432,6 +467,7 @@ mv packages/old-package packages/.archived/old-package-$(date +%Y%m%d)
 - [ ] Archive old packages
 
 ### Phase 3E: Final Validation
+
 - [ ] Full monorepo build
 - [ ] All tests passing
 - [ ] Documentation updated

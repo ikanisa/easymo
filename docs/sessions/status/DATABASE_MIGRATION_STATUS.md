@@ -8,7 +8,9 @@
 
 ## What Happened
 
-The `supabase db push` command is hanging at "Initialising login role..." This is a known issue with the Supabase CLI when:
+The `supabase db push` command is hanging at "Initialising login role..." This is a known issue with
+the Supabase CLI when:
+
 - Docker is not running
 - Network connectivity issues
 - CLI state conflicts
@@ -34,7 +36,8 @@ https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/sql/new
 
 #### **Migration 1: Create Tables**
 
-1. Open: `/Users/jeanbosco/workspace/easymo/supabase/migrations/20251209190000_create_app_schema_sacco_tables.sql`
+1. Open:
+   `/Users/jeanbosco/workspace/easymo/supabase/migrations/20251209190000_create_app_schema_sacco_tables.sql`
 2. Copy entire file content
 3. Paste in SQL Editor
 4. Click "Run"
@@ -43,7 +46,8 @@ https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/sql/new
 
 #### **Migration 2: Webhook Support**
 
-1. Open: `/Users/jeanbosco/workspace/easymo/supabase/migrations/20251209190001_add_sacco_webhook_support.sql`
+1. Open:
+   `/Users/jeanbosco/workspace/easymo/supabase/migrations/20251209190001_add_sacco_webhook_support.sql`
 2. Copy entire file content
 3. Paste in SQL Editor
 4. Click "Run"
@@ -52,7 +56,8 @@ https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/sql/new
 
 #### **Migration 3: Payment Functions**
 
-1. Open: `/Users/jeanbosco/workspace/easymo/supabase/migrations/20251209190002_sacco_payment_functions.sql`
+1. Open:
+   `/Users/jeanbosco/workspace/easymo/supabase/migrations/20251209190002_sacco_payment_functions.sql`
 2. Copy entire file content
 3. Paste in SQL Editor
 4. Click "Run"
@@ -68,11 +73,12 @@ Run in SQL Editor:
 SELECT tablename FROM pg_tables WHERE schemaname = 'app';
 
 -- Check functions
-SELECT routine_name FROM information_schema.routines 
+SELECT routine_name FROM information_schema.routines
 WHERE routine_schema = 'app' AND routine_name LIKE '%sacco%';
 ```
 
 Expected output:
+
 - **Tables**: 7 (saccos, ikimina, members, accounts, sms_inbox, payments, ledger_entries)
 - **Functions**: 9+ (including register_sacco_webhook, match_member_by_phone, etc.)
 
@@ -182,12 +188,12 @@ npm run dev
 
 ## Complete Deployment Status
 
-| Component | Status | Action Required |
-|-----------|--------|-----------------|
-| Edge Function | ✅ Deployed | None |
-| Database Migrations | ⚠️ Pending | **Apply via SQL Editor** |
-| Vendor Portal UI | ✅ Ready | Start with `npm run dev` |
-| Test Data | ⚠️ Not Created | Create after migrations |
+| Component           | Status         | Action Required          |
+| ------------------- | -------------- | ------------------------ |
+| Edge Function       | ✅ Deployed    | None                     |
+| Database Migrations | ⚠️ Pending     | **Apply via SQL Editor** |
+| Vendor Portal UI    | ✅ Ready       | Start with `npm run dev` |
+| Test Data           | ⚠️ Not Created | Create after migrations  |
 
 ---
 

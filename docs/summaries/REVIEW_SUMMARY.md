@@ -2,7 +2,8 @@
 
 ## Overview
 
-A comprehensive review of the EasyMO platform's user structure and authentication systems has been completed. The full report is available in `USER_AUTHENTICATION_REVIEW.md` (1,082 lines).
+A comprehensive review of the EasyMO platform's user structure and authentication systems has been
+completed. The full report is available in `USER_AUTHENTICATION_REVIEW.md` (1,082 lines).
 
 ## Quick Stats
 
@@ -38,6 +39,7 @@ A comprehensive review of the EasyMO platform's user structure and authenticatio
 ## Critical Issues
 
 ### 🔴 #1: Fragmented User Identity
+
 - WhatsApp users in `public.profiles`
 - Admin users in `public.users`
 - Agent-Core users in separate database
@@ -46,11 +48,13 @@ A comprehensive review of the EasyMO platform's user structure and authenticatio
 **Impact**: A SACCO manager cannot use WhatsApp AND admin panel with same account
 
 ### 🔴 #2: Inconsistent Role Definitions
+
 - Different role enums in different packages
 - Makes migrations and testing difficult
 - No single source of truth
 
 ### 🔴 #3: No User Lifecycle Management
+
 - User creation scattered across edge functions
 - No standardized account deletion process
 - No GDPR compliance mechanisms
@@ -65,16 +69,19 @@ A comprehensive review of the EasyMO platform's user structure and authenticatio
 ## Priority Roadmap
 
 ### Phase 1: Immediate (2 weeks)
+
 1. ✅ **Standardize role definitions** → Single source of truth
 2. ✅ **Complete audit logging** → Track all auth actions
 3. ✅ **Apply rate limiting** → Prevent brute force attacks
 
 ### Phase 2: Short-term (1 month)
+
 4. 🔲 **Implement MFA** → TOTP enrollment and verification
 5. 🔲 **Build user management UI** → Admin interface
 6. 🔲 **Document authentication** → Architecture guide
 
 ### Phase 3: Long-term (3-6 months)
+
 7. 🔲 **Unified user identity** → Single user across all systems
 8. 🔲 **Service mesh auth** → Replace custom JWT
 9. 🔲 **Advanced security** → Anomaly detection, device binding
@@ -82,18 +89,21 @@ A comprehensive review of the EasyMO platform's user structure and authenticatio
 ## Implementation Status
 
 ### ✅ Working Well
+
 - Multiple auth methods for different use cases
 - Strong service-to-service security (JWT + scopes)
 - Audit logging foundation
 - RLS policies and webhook verification
 
 ### ⚠️ Needs Improvement
+
 - MFA schema exists but not implemented
 - User management requires manual database ops
 - No self-service user features
 - Documentation gaps
 
 ### ❌ Missing
+
 - Centralized user directory UI
 - Session management
 - Social login / SSO
@@ -102,12 +112,12 @@ A comprehensive review of the EasyMO platform's user structure and authenticatio
 
 ## Risk Assessment
 
-| Risk | Likelihood | Impact | Priority |
-|------|------------|--------|----------|
-| Credential stuffing | High | High | P1 |
-| SIM swap attack | Medium | High | P2 |
-| Operational errors | High | Medium | P2 |
-| Identity confusion | Medium | Medium | P3 |
+| Risk                | Likelihood | Impact | Priority |
+| ------------------- | ---------- | ------ | -------- |
+| Credential stuffing | High       | High   | P1       |
+| SIM swap attack     | Medium     | High   | P2       |
+| Operational errors  | High       | Medium | P2       |
+| Identity confusion  | Medium     | Medium | P3       |
 
 ## Next Steps
 
@@ -122,6 +132,7 @@ A comprehensive review of the EasyMO platform's user structure and authenticatio
 **Main Report**: `USER_AUTHENTICATION_REVIEW.md` (1,082 lines)
 
 **Key Implementation Files**:
+
 - `admin-app/lib/auth/` - Admin authentication
 - `vendor-portal/lib/auth/` - Vendor portal auth
 - `packages/commons/src/service-auth.ts` - Service JWT
@@ -129,6 +140,7 @@ A comprehensive review of the EasyMO platform's user structure and authenticatio
 - `packages/ibimina-supabase-schemas/` - Database types
 
 **Related Documentation**:
+
 - `docs/ARCHITECTURE.md` - System architecture
 - `docs/SECURITY_HARDENING.md` - Security guide
 - `docs/GROUND_RULES.md` - Development standards

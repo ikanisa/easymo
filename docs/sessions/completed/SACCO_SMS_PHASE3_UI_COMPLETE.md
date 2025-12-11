@@ -7,7 +7,8 @@
 
 ## Overview
 
-Phase 3 implementation complete: Full React/Next.js UI for the SACCO vendor portal payments dashboard with automatic and manual payment matching workflows.
+Phase 3 implementation complete: Full React/Next.js UI for the SACCO vendor portal payments
+dashboard with automatic and manual payment matching workflows.
 
 ---
 
@@ -172,6 +173,7 @@ useQuery({
 ## UI/UX Highlights
 
 ### **Status Badges**
+
 ```typescript
 matched    → Green background, green text
 pending    → Yellow background, yellow text
@@ -180,6 +182,7 @@ failed     → Red background, red text
 ```
 
 ### **Confidence Indicators**
+
 ```typescript
 ≥ 90% → Green progress bar
 70-89% → Yellow progress bar
@@ -187,6 +190,7 @@ failed     → Red background, red text
 ```
 
 ### **Time Display**
+
 ```typescript
 < 1 min  → "Just now"
 < 1 hour → "5m ago"
@@ -253,7 +257,7 @@ VALUES (
 # 3. Create test member
 psql $DATABASE_URL -c "
 INSERT INTO app.members (
-  sacco_id, full_name, member_code, 
+  sacco_id, full_name, member_code,
   msisdn_hash, msisdn_masked, status
 ) VALUES (
   '00000000-0000-0000-0000-000000000000',
@@ -320,6 +324,7 @@ INSERT INTO app.sms_inbox (
 **Total Size**: ~36.4 KB
 
 ### **Breakdown**:
+
 - API Clients: 3 files (4.7 KB)
 - React Hooks: 3 files (3.8 KB)
 - Utils: 1 file (1.9 KB)

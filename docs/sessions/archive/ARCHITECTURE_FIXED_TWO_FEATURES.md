@@ -5,14 +5,15 @@
 
 ## Critical Fix Applied
 
-I initially misunderstood the architecture and created ONE combined menu item. 
-Now CORRECTLY split into TWO separate features as originally designed.
+I initially misunderstood the architecture and created ONE combined menu item. Now CORRECTLY split
+into TWO separate features as originally designed.
 
 ## The Two Separate Features
 
 ### 1. 🛒 Buy and Sell (Category Workflow)
 
 **Menu Item:**
+
 - Key: `buy_sell_categories`
 - Name: 🛒 Buy and Sell
 - Position: 4
@@ -21,6 +22,7 @@ Now CORRECTLY split into TWO separate features as originally designed.
 **Function:** `wa-webhook-buy-sell`
 
 **Flow:**
+
 ```
 User taps "🛒 Buy and Sell"
     ↓
@@ -38,6 +40,7 @@ Returns list with contact info
 ```
 
 **Technology:**
+
 - Pure WhatsApp interactive lists
 - No AI involved
 - Database query with location
@@ -50,6 +53,7 @@ Returns list with contact info
 ### 2. 🤖 Chat with Agent (AI Natural Language)
 
 **Menu Item:**
+
 - Key: `business_broker_agent`
 - Name: 🤖 Chat with Agent
 - Position: 5
@@ -58,6 +62,7 @@ Returns list with contact info
 **Function:** `agent-buy-sell`
 
 **Flow:**
+
 ```
 User taps "🤖 Chat with Agent"
     ↓
@@ -73,6 +78,7 @@ Returns matched results
 ```
 
 **Technology:**
+
 - Natural language processing
 - AI-powered (OpenAI Responses API + Gemini fallback)
 - Tag-based matching
@@ -104,9 +110,11 @@ DELETE FROM whatsapp_home_menu_items WHERE key = 'business_broker_agent';
 ## Edge Functions Deployed
 
 ### 1. wa-webhook-buy-sell (715.7kB)
+
 **Purpose:** Category workflow handler  
 **AI:** NO - Pure workflow  
 **Features:**
+
 - Category selection
 - Location collection
 - Nearby business search
@@ -114,9 +122,11 @@ DELETE FROM whatsapp_home_menu_items WHERE key = 'business_broker_agent';
 - Deduplication
 
 ### 2. agent-buy-sell (1.898MB)
+
 **Purpose:** AI agent  
 **AI:** YES - Natural language  
 **Features:**
+
 - OpenAI/Gemini integration
 - Tag-based search
 - Context management
@@ -124,8 +134,10 @@ DELETE FROM whatsapp_home_menu_items WHERE key = 'business_broker_agent';
 - Location handling
 
 ### 3. webhook-traffic-router (70.61kB)
+
 **Purpose:** Routes to correct function  
 **Logic:**
+
 - `buy_sell_categories` → `wa-webhook-buy-sell`
 - `business_broker_agent` → Handled by main `wa-webhook`
 
@@ -133,47 +145,51 @@ DELETE FROM whatsapp_home_menu_items WHERE key = 'business_broker_agent';
 
 ## Key Differences
 
-| Feature | Buy and Sell | Chat with Agent |
-|---------|-------------|-----------------|
-| **Menu Key** | `buy_sell_categories` | `business_broker_agent` |
-| **Position** | 4 | 5 |
-| **Icon** | 🛒 | 🤖 |
-| **Input** | Interactive lists | Natural language text |
-| **AI** | NO | YES |
-| **Function** | wa-webhook-buy-sell | agent-buy-sell |
-| **Flow** | Category → Location → Results | Chat → AI → Results |
-| **Use Case** | Browse by category | Search by description |
+| Feature      | Buy and Sell                  | Chat with Agent         |
+| ------------ | ----------------------------- | ----------------------- |
+| **Menu Key** | `buy_sell_categories`         | `business_broker_agent` |
+| **Position** | 4                             | 5                       |
+| **Icon**     | 🛒                            | 🤖                      |
+| **Input**    | Interactive lists             | Natural language text   |
+| **AI**       | NO                            | YES                     |
+| **Function** | wa-webhook-buy-sell           | agent-buy-sell          |
+| **Flow**     | Category → Location → Results | Chat → AI → Results     |
+| **Use Case** | Browse by category            | Search by description   |
 
 ---
 
 ## User Experience
 
 ### Buy and Sell Flow:
-1. User: *Taps 🛒 Buy and Sell*
-2. Bot: *Shows categories: Pharmacies, Restaurants, etc.*
-3. User: *Taps "Pharmacies"*
-4. Bot: *"Please share your location"*
-5. User: *Shares location*
-6. Bot: *Returns 5 pharmacies near user*
+
+1. User: _Taps 🛒 Buy and Sell_
+2. Bot: _Shows categories: Pharmacies, Restaurants, etc._
+3. User: _Taps "Pharmacies"_
+4. Bot: _"Please share your location"_
+5. User: _Shares location_
+6. Bot: _Returns 5 pharmacies near user_
 
 ### Chat with Agent Flow:
-1. User: *Taps 🤖 Chat with Agent*
-2. Bot: *"I'm your AI assistant. What are you looking for?"*
-3. User: *"I need medicine"*
-4. AI: *Processes → Searches tags [medicine, health, pharmacy]*
-5. Bot: *Returns pharmacies with matched tags*
+
+1. User: _Taps 🤖 Chat with Agent_
+2. Bot: _"I'm your AI assistant. What are you looking for?"_
+3. User: _"I need medicine"_
+4. AI: _Processes → Searches tags [medicine, health, pharmacy]_
+5. Bot: _Returns pharmacies with matched tags_
 
 ---
 
 ## What Was Fixed
 
 ### ❌ Before (Broken):
+
 - ONE menu item `business_broker_agent`
 - Confused AI and category workflow
 - Spam issues
 - Wrong architecture
 
 ### ✅ After (Fixed):
+
 - TWO separate menu items
 - Clear separation of concerns
 - No spam (deduplication added)
@@ -184,6 +200,7 @@ DELETE FROM whatsapp_home_menu_items WHERE key = 'business_broker_agent';
 ## Technical Implementation
 
 ### wa-webhook-buy-sell Changes:
+
 ```typescript
 // REMOVED AI calls
 // REMOVED showAIWelcome()
@@ -194,6 +211,7 @@ await showBuySellCategories(userPhone);
 ```
 
 ### Deduplication (Both Functions):
+
 ```typescript
 const messageId = payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.id;
 const claimed = await claimEvent(messageId);
@@ -212,7 +230,7 @@ if (!claimed) {
 ✅ wa-webhook-buy-sell fixed (no AI)  
 ✅ agent-buy-sell deployed (AI enabled)  
 ✅ Deduplication working  
-✅ Architecture correct  
+✅ Architecture correct
 
 ## Files Changed
 

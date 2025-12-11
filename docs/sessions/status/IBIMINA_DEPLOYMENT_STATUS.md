@@ -6,6 +6,7 @@
 ## ✅ Completed (Phases 1-5)
 
 ### Phase 1-4: Structure & Packages ✅
+
 - Admin routes migrated to `admin-app/app/ibimina-admin/`
 - Vendor portal setup at `vendor-portal/`
 - 7 packages migrated to `packages/ibimina-*`
@@ -13,6 +14,7 @@
 - Dependencies installed
 
 ### Phase 5: Database & Supabase ✅
+
 - **43 Edge Functions** copied to `supabase/functions/ibimina/`
 - **119 SQL Migrations** copied to `supabase/migrations/ibimina/`
 - **Seed data** copied to `supabase/seed/ibimina/`
@@ -20,6 +22,7 @@
 ## 🔧 Current Status
 
 ### Packages Building:
+
 - ✅ `ibimina-config` - Built successfully
 - ✅ `ibimina-flags` - Built successfully
 - ✅ `ibimina-locales` - Built successfully
@@ -31,7 +34,9 @@
 ### Supabase Assets Copied:
 
 #### Edge Functions (43 total):
+
 **Core Functions:**
+
 - `reconcile` - Payment reconciliation
 - `scheduled-reconciliation` - Auto reconciliation
 - `recon-exceptions` - Handle exceptions
@@ -39,6 +44,7 @@
 - `settle-payment` - Settlement
 
 **SMS Processing:**
+
 - `ingest-sms` - Ingest incoming SMS
 - `parse-sms` - Parse SMS content
 - `sms-ai-parse` - AI-powered parsing
@@ -48,10 +54,12 @@
 - `momo-sms-webhook` - MoMo SMS webhook
 
 **Member Management:**
+
 - `secure-import-members` - Bulk member import
 - `invite-user` - User invitations
 
 **Reports & Export:**
+
 - `export-allocation` - Export allocations
 - `export-report` - Export reports
 - `export-statement` - Export statements
@@ -60,6 +68,7 @@
 - `reporting-summary` - Summary reports
 
 **Wallet Operations:**
+
 - `wallet-operations` - Wallet ops
 - `wallet-transfer` - Transfers
 - `group-contribute` - Group contributions
@@ -67,6 +76,7 @@
 - `tapmomo-reconcile` - TapMoMo reconciliation
 
 **Authentication:**
+
 - `auth-qr-generate` - Generate QR codes
 - `auth-qr-poll` - Poll QR status
 - `auth-qr-verify` - Verify QR auth
@@ -74,28 +84,33 @@
 - `debug-auth-users` - Auth debugging
 
 **Notifications:**
+
 - `notification-dispatch-email` - Email notifications
 - `notification-dispatch-whatsapp` - WhatsApp notifications
 - `send-push-notification` - Push notifications
 
 **Analytics & Monitoring:**
+
 - `analytics-forecast` - Forecasting
 - `metrics-anomaly-detector` - Detect anomalies
 - `metrics-exporter` - Export metrics
 
 **Infrastructure:**
+
 - `gateway-health-check` - Health checks
 - `gsm-heartbeat` - GSM gateway heartbeat
 - `gsm-maintenance` - GSM maintenance
 - `reference-decode` - Decode references
 
 **Shared:**
+
 - `_shared/` - 18 shared utilities
 - `_tests/` - Test utilities
 
 ## 🚧 Next Actions
 
 ### 1. Complete Package Builds
+
 ```bash
 cd /Users/jeanbosco/workspace/easymo
 
@@ -112,6 +127,7 @@ pnpm --filter "@easymo/ibimina-*" build
 **CRITICAL DECISION NEEDED:**
 
 **Option A: Separate Supabase Projects** (Recommended)
+
 - Keep ibimina migrations separate
 - Vendor portal uses its own Supabase project
 - EasyMO admin just proxies to ibimina routes
@@ -119,6 +135,7 @@ pnpm --filter "@easymo/ibimina-*" build
 - ❌ Cons: Two Supabase projects to manage
 
 **Option B: Merge into Single Supabase Project**
+
 - Merge 119 migrations into easymo
 - Requires careful review of RLS policies
 - Potential table name conflicts
@@ -130,6 +147,7 @@ pnpm --filter "@easymo/ibimina-*" build
 ### 3. Environment Configuration
 
 Create `vendor-portal/.env`:
+
 ```bash
 # Vendor Portal (Ibimina) Supabase Project
 NEXT_PUBLIC_SUPABASE_URL=https://ibimina-project.supabase.co
@@ -205,6 +223,7 @@ pnpm --filter @easymo/admin-app dev
 ## 📋 Compliance Checklist
 
 ### GROUND_RULES Observability
+
 - [ ] Add structured logging to vendor-portal routes
 - [ ] Add correlation IDs to all API calls
 - [ ] Implement event metrics for key actions
@@ -213,6 +232,7 @@ pnpm --filter @easymo/admin-app dev
 - [ ] Log all reconciliation events
 
 ### Security
+
 - [x] No secrets in `NEXT_PUBLIC_*` vars
 - [ ] Verify webhook signatures (MoMo, SMS)
 - [ ] Rate limit SMS endpoints
@@ -221,12 +241,14 @@ pnpm --filter @easymo/admin-app dev
 - [ ] Audit RLS policies
 
 ### Performance
+
 - [ ] Add database indexes for SMS queries
 - [ ] Add indexes for reconciliation queries
 - [ ] Cache frequently accessed member data
 - [ ] Monitor slow SMS parsing queries
 
 ### Feature Flags (All default OFF)
+
 ```bash
 FEATURE_VENDOR_PORTAL=false
 FEATURE_IBIMINA_ADMIN=false
@@ -238,6 +260,7 @@ FEATURE_AUTO_RECONCILIATION=false
 ```
 
 ### Health Checks
+
 - [ ] Add `/health` endpoint to vendor-portal
 - [ ] Add health checks for Supabase connection
 - [ ] Add health checks for SMS gateway
@@ -246,6 +269,7 @@ FEATURE_AUTO_RECONCILIATION=false
 ## 🔐 Security Considerations
 
 ### SMS Webhooks
+
 All SMS webhook endpoints MUST verify signatures:
 
 ```typescript
@@ -259,6 +283,7 @@ if (!isValid) {
 ```
 
 ### Database Access
+
 - Vendor portal uses its own Supabase RLS policies
 - Admin routes have elevated permissions
 - All queries must be parameterized
@@ -266,6 +291,7 @@ if (!isValid) {
 ## 📊 Migration Summary
 
 ### Files Migrated:
+
 - **Admin routes**: 12 files
 - **Vendor portal**: 2000+ files
 - **Packages**: 7 packages (~500 files)
@@ -274,6 +300,7 @@ if (!isValid) {
 - **Total**: ~2,600+ files
 
 ### Package Dependencies:
+
 ```json
 {
   "@easymo/ibimina-admin-core": "workspace:*",
@@ -303,21 +330,16 @@ if (!isValid) {
 ## 📞 Next Steps for User
 
 **Immediate:**
+
 1. ✅ Review this document
 2. **Decide**: Separate vs merged Supabase project
 3. Provide Supabase project credentials for vendor-portal
 4. Complete package builds
 
-**Short-term:**
-5. Deploy edge functions
-6. Apply migrations
-7. Test integration
-8. Add observability
+**Short-term:** 5. Deploy edge functions 6. Apply migrations 7. Test integration 8. Add
+observability
 
-**Long-term:**
-9. Production deployment
-10. User training
-11. Documentation updates
+**Long-term:** 9. Production deployment 10. User training 11. Documentation updates
 
 ---
 

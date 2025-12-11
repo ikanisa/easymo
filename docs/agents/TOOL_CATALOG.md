@@ -685,7 +685,8 @@ All tools **MUST** return:
 
 #### search_businesses_with_tags(query, tags, category, location, radius, limit)
 
-**Purpose**: Search businesses using category, tags, metadata, and user location for semantic matching
+**Purpose**: Search businesses using category, tags, metadata, and user location for semantic
+matching
 
 **Parameters**:
 
@@ -720,19 +721,21 @@ All tools **MUST** return:
     metadata?: Record<string, any>;
     distance_km?: number;
     relevance_score?: number;
-    response_rate?: number;           // Vendor quality metric
-    response_time_avg_sec?: number;   // Avg response time
+    response_rate?: number; // Vendor quality metric
+    response_time_avg_sec?: number; // Avg response time
   }>;
 }
 ```
 
-**Ranking**: Results ranked by relevance (tag overlap + category match) and vendor quality (response rate)
+**Ranking**: Results ranked by relevance (tag overlap + category match) and vendor quality (response
+rate)
 
 ---
 
 #### create_vendor_inquiries_and_message_vendors(user_id, business_ids, request, consent)
 
-**Purpose**: Create inquiry record and message vendors on user's behalf. REQUIRES explicit user consent.
+**Purpose**: Create inquiry record and message vendors on user's behalf. REQUIRES explicit user
+consent.
 
 **Parameters**:
 
@@ -774,12 +777,14 @@ All tools **MUST** return:
 }
 ```
 
-**Side Effects**: 
+**Side Effects**:
+
 - Creates `market_vendor_inquiries` record
 - Sends WhatsApp messages to each vendor
 - Creates `market_vendor_inquiry_messages` records
 
 **Guardrails**:
+
 - MAX 5 vendors per inquiry
 - User consent is REQUIRED before calling
 - Messages are short and professional
@@ -807,7 +812,7 @@ All tools **MUST** return:
   ok: true;
   data: {
     inquiry_id: string;
-    status: 'pending' | 'partial' | 'complete' | 'expired';
+    status: "pending" | "partial" | "complete" | "expired";
     vendor_count: number;
     replied_count: number;
     confirmed_count: number;
@@ -815,7 +820,7 @@ All tools **MUST** return:
       business_id: string;
       business_name: string;
       business_phone: string;
-      status: 'yes' | 'no' | 'other' | 'pending';
+      status: "yes" | "no" | "other" | "pending";
       price?: number;
       quantity?: number;
       notes?: string;
@@ -827,6 +832,7 @@ All tools **MUST** return:
 ```
 
 **Parsing**: Understands responses like:
+
 - "YES 1500 2" → yes, price=1500, quantity=2
 - "YEE 1500" → yes, price=1500 (Kinyarwanda)
 - "NO" or "OYA" → no
@@ -855,7 +861,7 @@ All tools **MUST** return:
   ok: true;
   data: {
     inquiry_id: string;
-    parsed: boolean;    // Whether response was understood
+    parsed: boolean; // Whether response was understood
   }
 }
 ```
@@ -961,31 +967,31 @@ All tools **MUST** return:
 
 ## Tool Implementation Status
 
-| Tool                                  | Implementation | Edge Function          | Status   |
-| ------------------------------------- | -------------- | ---------------------- | -------- |
-| notify_staff                          | ✅             | admin-messages         | Complete |
-| search_supabase                       | ✅             | Multiple               | Complete |
-| inventory_check                       | ⚠️             | Via search_supabase    | Partial  |
-| order_create                          | ⚠️             | Multiple               | Partial  |
-| order_status_update                   | ⚠️             | Multiple               | Partial  |
-| reservation_book                      | ❌             | TBD                    | Planned  |
-| maps_geosearch                        | ✅             | agent-negotiation      | Complete |
-| trip_price_estimate                   | ⚠️             | agent-negotiation      | Partial  |
-| ocr_extract                           | ✅             | ocr-processor          | Complete |
-| price_insurance                       | ❌             | TBD                    | Planned  |
-| generate_pdf                          | ❌             | TBD                    | Planned  |
-| momo_charge                           | ✅             | momo-allocator         | Complete |
-| property_search                       | ✅             | agent-property-rental  | Complete |
-| schedule_viewing                      | ⚠️             | agent-property-rental  | Partial  |
-| case_intake                           | ❌             | TBD                    | Planned  |
-| broadcast_schedule                    | ❌             | TBD                    | Planned  |
-| analytics_log                         | ✅             | observability          | Complete |
-| sora_generate_video                   | ❌             | TBD                    | Planned  |
-| search_businesses_with_tags           | ✅             | wa-webhook-buy-sell    | Complete |
-| create_vendor_inquiries_and_message   | ✅             | wa-webhook-buy-sell    | Complete |
-| get_vendor_inquiry_updates            | ✅             | wa-webhook-buy-sell    | Complete |
-| process_vendor_reply                  | ✅             | wa-webhook-buy-sell    | Complete |
-| log_user_feedback_on_vendor           | ✅             | wa-webhook-buy-sell    | Complete |
+| Tool                                | Implementation | Edge Function         | Status   |
+| ----------------------------------- | -------------- | --------------------- | -------- |
+| notify_staff                        | ✅             | admin-messages        | Complete |
+| search_supabase                     | ✅             | Multiple              | Complete |
+| inventory_check                     | ⚠️             | Via search_supabase   | Partial  |
+| order_create                        | ⚠️             | Multiple              | Partial  |
+| order_status_update                 | ⚠️             | Multiple              | Partial  |
+| reservation_book                    | ❌             | TBD                   | Planned  |
+| maps_geosearch                      | ✅             | agent-negotiation     | Complete |
+| trip_price_estimate                 | ⚠️             | agent-negotiation     | Partial  |
+| ocr_extract                         | ✅             | ocr-processor         | Complete |
+| price_insurance                     | ❌             | TBD                   | Planned  |
+| generate_pdf                        | ❌             | TBD                   | Planned  |
+| momo_charge                         | ✅             | momo-allocator        | Complete |
+| property_search                     | ✅             | agent-property-rental | Complete |
+| schedule_viewing                    | ⚠️             | agent-property-rental | Partial  |
+| case_intake                         | ❌             | TBD                   | Planned  |
+| broadcast_schedule                  | ❌             | TBD                   | Planned  |
+| analytics_log                       | ✅             | observability         | Complete |
+| sora_generate_video                 | ❌             | TBD                   | Planned  |
+| search_businesses_with_tags         | ✅             | wa-webhook-buy-sell   | Complete |
+| create_vendor_inquiries_and_message | ✅             | wa-webhook-buy-sell   | Complete |
+| get_vendor_inquiry_updates          | ✅             | wa-webhook-buy-sell   | Complete |
+| process_vendor_reply                | ✅             | wa-webhook-buy-sell   | Complete |
+| log_user_feedback_on_vendor         | ✅             | wa-webhook-buy-sell   | Complete |
 
 **Legend**:
 
@@ -997,24 +1003,24 @@ All tools **MUST** return:
 
 ## Tool Access by Agent
 
-| Agent                 | Tools Allowed                                                                                                                                                              |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Concierge Router      | search_supabase, notify_staff, analytics_log                                                                                                                               |
-| Waiter AI             | search_supabase, order_create, order_status_update, momo_charge, notify_staff, analytics_log                                                                               |
-| Mobility Orchestrator | maps_geosearch, search_supabase, momo_charge, notify_staff, analytics_log                                                                                                  |
+| Agent                 | Tools Allowed                                                                                                                                                                                                   |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Concierge Router      | search_supabase, notify_staff, analytics_log                                                                                                                                                                    |
+| Waiter AI             | search_supabase, order_create, order_status_update, momo_charge, notify_staff, analytics_log                                                                                                                    |
+| Mobility Orchestrator | maps_geosearch, search_supabase, momo_charge, notify_staff, analytics_log                                                                                                                                       |
 | Buy & Sell            | search_businesses_with_tags, create_vendor_inquiries_and_message, get_vendor_inquiry_updates, log_user_feedback_on_vendor, inventory_check, order_create, momo_charge, ocr_extract, notify_staff, analytics_log |
-| Pharmacy              | search_supabase, inventory_check, order_create, order_status_update, momo_charge, ocr_extract, notify_staff, analytics_log                                                 |
-| Hardware              | search_supabase, inventory_check, order_create, order_status_update, momo_charge, notify_staff, analytics_log              |
-| Shop                  | search_supabase, inventory_check, order_create, order_status_update, momo_charge, notify_staff, analytics_log              |
-| Insurance             | ocr_extract, price_insurance, generate_pdf, momo_charge, notify_staff, analytics_log                                       |
-| Property              | search_supabase, schedule_viewing, generate_pdf, momo_charge, notify_staff, analytics_log                                  |
-| Legal Intake          | search_supabase, generate_pdf, momo_charge, notify_staff, analytics_log                                                    |
-| Payments              | momo_charge, notify_staff, analytics_log                                                                                   |
-| Marketing & Sales     | search_supabase, broadcast_schedule, analytics_log, notify_staff                                                           |
-| Sora-2 Video          | sora_generate_video, search_supabase, analytics_log                                                                        |
-| Support & Handoff     | notify_staff, analytics_log                                                                                                |
-| Locops                | search_supabase, analytics_log                                                                                             |
-| Analytics & Risk      | analytics_log, notify_staff                                                                                                |
+| Pharmacy              | search_supabase, inventory_check, order_create, order_status_update, momo_charge, ocr_extract, notify_staff, analytics_log                                                                                      |
+| Hardware              | search_supabase, inventory_check, order_create, order_status_update, momo_charge, notify_staff, analytics_log                                                                                                   |
+| Shop                  | search_supabase, inventory_check, order_create, order_status_update, momo_charge, notify_staff, analytics_log                                                                                                   |
+| Insurance             | ocr_extract, price_insurance, generate_pdf, momo_charge, notify_staff, analytics_log                                                                                                                            |
+| Property              | search_supabase, schedule_viewing, generate_pdf, momo_charge, notify_staff, analytics_log                                                                                                                       |
+| Legal Intake          | search_supabase, generate_pdf, momo_charge, notify_staff, analytics_log                                                                                                                                         |
+| Payments              | momo_charge, notify_staff, analytics_log                                                                                                                                                                        |
+| Marketing & Sales     | search_supabase, broadcast_schedule, analytics_log, notify_staff                                                                                                                                                |
+| Sora-2 Video          | sora_generate_video, search_supabase, analytics_log                                                                                                                                                             |
+| Support & Handoff     | notify_staff, analytics_log                                                                                                                                                                                     |
+| Locops                | search_supabase, analytics_log                                                                                                                                                                                  |
+| Analytics & Risk      | analytics_log, notify_staff                                                                                                                                                                                     |
 
 ---
 

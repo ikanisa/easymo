@@ -5,7 +5,8 @@
 
 ## Problem
 
-The buy/sell webhook was receiving errors because it wasn't properly handling two DISTINCT user interfaces:
+The buy/sell webhook was receiving errors because it wasn't properly handling two DISTINCT user
+interfaces:
 
 1. **Buy and Sell (Category Workflow)** - Menu-based browsing
 2. **Chat with Agent (AI Natural Language)** - Conversational search
@@ -19,8 +20,9 @@ Both were being confused and routed incorrectly.
 **Menu Key**: `buy_sell_categories`  
 **Function**: `wa-webhook-buy-sell`  
 **User Flow**:
+
 ```
-User taps "Buy and Sell" 
+User taps "Buy and Sell"
    ↓
 Shows list of categories (Pharmacies, Restaurants, Hardware, etc.)
    ↓
@@ -34,6 +36,7 @@ Shows nearby businesses from that category (paginated results)
 ```
 
 **Technical**:
+
 - NO AI involved
 - Pure menu navigation with interactive lists
 - Uses `buy_sell_categories` table for categories
@@ -45,6 +48,7 @@ Shows nearby businesses from that category (paginated results)
 **Menu Key**: `business_broker_agent`  
 **Function**: `agent-buy-sell`  
 **User Flow**:
+
 ```
 User taps "Chat with Agent"
    ↓
@@ -58,6 +62,7 @@ Returns relevant businesses, can message on user's behalf
 ```
 
 **Technical**:
+
 - AI-powered (OpenAI/Gemini)
 - Natural language processing
 - Smart tag-based business discovery
@@ -67,8 +72,10 @@ Returns relevant businesses, can message on user's behalf
 ## Issues Fixed
 
 ### 1. Error Serialization
+
 **Before**: `error: "[object Object]"` in logs  
 **After**: Proper error message extraction
+
 ```typescript
 // BEFORE
 error: error instanceof Error ? error.message : String(error)  // Sometimes [object Object]
@@ -84,8 +91,10 @@ logStructuredEvent("BUY_SELL_ERROR", {
 ```
 
 ### 2. Menu Key Mismatch
+
 **Before**: Code checked for `chat_with_ai`, `buy_sell_chat_ai`  
 **After**: Matches actual database keys
+
 ```typescript
 // BEFORE
 if (selectedId === "chat_with_ai" || selectedId === "buy_sell_chat_ai") {
@@ -95,8 +104,10 @@ if (selectedId === "business_broker_agent" || selectedId === "chat_with_agent") 
 ```
 
 ### 3. Missing State-Based Routing
+
 **Before**: AI chat messages fell through to category workflow  
 **After**: Checks for `business_broker_chat` state and forwards to AI
+
 ```typescript
 // NEW: Check if user is in AI chat mode
 if (profile?.user_id) {
@@ -105,7 +116,7 @@ if (profile?.user_id) {
     .select("key, data")
     .eq("user_id", profile.user_id)
     .single();
-  
+
   // Forward to AI agent if in chat mode
   if (stateData?.key === "business_broker_chat" && stateData?.data?.active) {
     const forwarded = await forwardToBuySellAgent(userPhone, text, correlationId);
@@ -117,8 +128,10 @@ if (profile?.user_id) {
 ```
 
 ### 4. Route Configuration Clarity
+
 **Before**: Both services had overlapping keywords  
 **After**: Clear separation
+
 ```typescript
 // wa-webhook-buy-sell: Category browsing
 {
@@ -217,6 +230,7 @@ INSERT INTO whatsapp_home_menu_items (
 ## Testing Checklist
 
 ### Category Workflow
+
 - [ ] User taps "Buy and Sell" home menu
 - [ ] Sees category list (Pharmacies, Restaurants, etc.)
 - [ ] Selects a category
@@ -227,6 +241,7 @@ INSERT INTO whatsapp_home_menu_items (
 - [ ] "Show More" works
 
 ### AI Chat Workflow
+
 - [ ] User taps "Chat with Agent" home menu
 - [ ] Sees AI welcome message
 - [ ] Types "I need medicine"
@@ -236,6 +251,7 @@ INSERT INTO whatsapp_home_menu_items (
 - [ ] State persists across messages
 
 ### Error Handling
+
 - [ ] No `[object Object]` errors in logs
 - [ ] Proper error messages logged
 - [ ] Stack traces captured
@@ -260,6 +276,7 @@ supabase db query "SELECT key, name FROM whatsapp_home_menu_items WHERE key IN (
 ## Monitoring
 
 ### Events to Track
+
 - `BUY_SELL_CATEGORIES_SENT` - Category list shown
 - `CHAT_AGENT_WELCOME_SHOWN` - AI welcome sent
 - `BUY_SELL_AI_FORWARD_FAILED` - Failed to forward to AI
@@ -267,6 +284,7 @@ supabase db query "SELECT key, name FROM whatsapp_home_menu_items WHERE key IN (
 - `buy_sell.ai_forwarded` - Successful AI forwards (metric)
 
 ### Key Metrics
+
 ```
 buy_sell.message.processed - Total messages
 buy_sell.ai_forwarded - AI chat messages
@@ -280,9 +298,10 @@ buy_sell.message.error - Errors
 ✅ **AI chat properly forwards to agent-buy-sell**  
 ✅ **Error logging now shows actual error messages**  
 ✅ **State-based routing works correctly**  
-✅ **Menu keys match database configuration**  
+✅ **Menu keys match database configuration**
 
 Users now have:
+
 - **Quick browsing** via categories
 - **Smart AI search** via natural language chat
 

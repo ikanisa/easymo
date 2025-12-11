@@ -77,11 +77,11 @@ Created migration `20251128000005_comprehensive_ai_agent_linkage.sql` that:
 From previous migration `20251127130000_comprehensive_ai_agents_integration.sql`:
 
 - **Persona**: Helpful Support Representative - empathetic, patient, solution-oriented
-- **System Instructions**: 
+- **System Instructions**:
   - Help with navigation, troubleshooting, ticket creation
   - Handle login, payment, booking issues
   - Escalation criteria defined
-- **Tools**: 
+- **Tools**:
   - `get_user_profile` - Retrieve user info
   - `create_support_ticket` - Escalate to human support
   - `search_faq` - Knowledge base search
@@ -95,13 +95,16 @@ From previous migration `20251127130000_comprehensive_ai_agents_integration.sql`
 ## 🔧 DEPLOYMENT STATUS
 
 ### Migrations
+
 - ✅ **Committed to main**: `20251128000005_comprehensive_ai_agent_linkage.sql`
 - ⏳ **Pending deployment**: Run `supabase db push --include-all` and accept migration
 
 ### Edge Functions
+
 - ✅ **Deployed**: `wa-webhook-unified` with orchestrator enhancements
 
 ### Desktop Admin App
+
 - ✅ **Updated**: Support chat route to call unified webhook
 - ✅ **Pushed to main**: Changes committed and pushed
 
@@ -109,24 +112,25 @@ From previous migration `20251127130000_comprehensive_ai_agents_integration.sql`
 
 All agents now have comprehensive linkage:
 
-| Agent | Personas | Instructions | Tools | Tasks | Intents | Knowledge |
-|-------|----------|--------------|-------|-------|---------|-----------|
-| **Support** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Marketplace** | ✅ | ✅ | ✅ | - | - | - |
-| **Waiter** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Property** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Jobs** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Rides** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Insurance** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Farmer** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Broker** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Sales** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Agent           | Personas | Instructions | Tools | Tasks | Intents | Knowledge |
+| --------------- | -------- | ------------ | ----- | ----- | ------- | --------- |
+| **Support**     | ✅       | ✅           | ✅    | ✅    | ✅      | ✅        |
+| **Marketplace** | ✅       | ✅           | ✅    | -     | -       | -         |
+| **Waiter**      | ✅       | ✅           | ✅    | ✅    | ✅      | ✅        |
+| **Property**    | ✅       | ✅           | ✅    | ✅    | ✅      | ✅        |
+| **Jobs**        | ✅       | ✅           | ✅    | ✅    | ✅      | ✅        |
+| **Rides**       | ✅       | ✅           | ✅    | ✅    | ✅      | ✅        |
+| **Insurance**   | ✅       | ✅           | ✅    | ✅    | ✅      | ✅        |
+| **Farmer**      | ✅       | ✅           | ✅    | ✅    | ✅      | ✅        |
+| **Broker**      | ✅       | ✅           | ✅    | ✅    | ✅      | ✅        |
+| **Sales**       | ✅       | ✅           | ✅    | ✅    | ✅      | ✅        |
 
 ## 🚀 HOW TO USE
 
 ### Testing Desktop Admin Support Chat
 
 1. **Start Desktop Admin App:**
+
    ```bash
    cd admin-app-v2
    npm run dev
@@ -151,7 +155,7 @@ SELECT * FROM ai_agents_overview_v
 ORDER BY slug;
 
 -- Detailed agent configuration
-SELECT 
+SELECT
   a.slug,
   a.name,
   p.name as persona,
@@ -170,6 +174,7 @@ ORDER BY a.slug;
 ## 📋 NEXT STEPS
 
 1. **Deploy Migration:**
+
    ```bash
    supabase db push --include-all
    # Type 'Y' when prompted
@@ -185,13 +190,14 @@ ORDER BY a.slug;
    - Each agent: Review and enhance as needed
 
 4. **Monitor Logs:**
+
    ```sql
    -- Check unified agent events
    SELECT * FROM unified_agent_events
    WHERE agent_type = 'support'
    ORDER BY created_at DESC
    LIMIT 20;
-   
+
    -- Check orchestrator logs
    SELECT * FROM logs
    WHERE metadata->>'service' = 'wa-webhook-unified'
@@ -215,6 +221,7 @@ ORDER BY a.slug;
 ### Migration Errors
 
 If migration fails:
+
 ```bash
 # Check current migration status
 supabase migration list
@@ -246,6 +253,7 @@ supabase migration repair --status applied <migration_version>
 **Status:** ✅ READY FOR DEPLOYMENT
 
 **Deployment Command:**
+
 ```bash
 supabase db push --include-all
 ```

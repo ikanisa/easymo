@@ -1,14 +1,16 @@
 # Identity-Aware Proxy (IAP) for Admin & Vendor Portal
 
 ## Overview
-IAP restricts access to internal apps (Admin PWA, Vendor Portal) to authorized Google accounts only. Users authenticate with Google, then IAP checks if they have the correct role.
+
+IAP restricts access to internal apps (Admin PWA, Vendor Portal) to authorized Google accounts only.
+Users authenticate with Google, then IAP checks if they have the correct role.
 
 ---
 
 ## Architecture
 
 ```
-User (Google Account) 
+User (Google Account)
     ↓
 Google Sign-In
     ↓
@@ -23,6 +25,7 @@ Supabase Auth (app-level role check: admin/vendor)
 ```
 
 **Two layers of auth**:
+
 1. **IAP** (Google account must be in allowed list)
 2. **Supabase** (user must have correct app role in DB)
 
@@ -171,9 +174,11 @@ gcloud iap web get-iam-policy \
 When adding a new vendor (bar/restaurant):
 
 ### 1. Create Vendor in Admin App
+
 Admin creates vendor business in Admin PWA, collects Google account email.
 
 ### 2. Add to IAP
+
 ```bash
 VENDOR_EMAIL="newbar@gmail.com"
 
@@ -188,9 +193,11 @@ echo "✅ ${VENDOR_EMAIL} can now access Vendor Portal"
 ```
 
 ### 3. Create Supabase User Record
+
 In Supabase DB, create user with `role='vendor'` and link to business.
 
 ### 4. Send Onboarding Email
+
 ```
 Subject: Welcome to easyMO Vendor Portal
 
@@ -210,6 +217,7 @@ Support: support@easymo.rw
 ## Testing IAP
 
 ### Test as authorized user
+
 ```bash
 # Open in browser (will prompt for Google sign-in)
 SERVICE_URL=$(gcloud run services describe easymo-admin --region europe-west1 --format="value(status.url)")
@@ -217,11 +225,13 @@ open $SERVICE_URL
 ```
 
 Expected flow:
+
 1. Redirected to Google Sign-In
 2. If authorized: Access granted → App loads
 3. If unauthorized: `403 Forbidden` error
 
 ### Test as unauthorized user
+
 Use incognito mode with different Google account → Should see 403 error.
 
 ---
@@ -231,19 +241,20 @@ Use incognito mode with different Google account → Should see 403 error.
 Create custom 403 page for better UX:
 
 In app (e.g., `admin-app/middleware.ts` or Next.js layout):
+
 ```typescript
 // Check if IAP headers exist
-const iapEmail = req.headers['x-goog-authenticated-user-email'];
-const iapId = req.headers['x-goog-authenticated-user-id'];
+const iapEmail = req.headers["x-goog-authenticated-user-email"];
+const iapId = req.headers["x-goog-authenticated-user-id"];
 
 if (!iapEmail) {
-  return new Response('Forbidden: IAP authentication required', { 
-    status: 403 
+  return new Response("Forbidden: IAP authentication required", {
+    status: 403,
   });
 }
 
 // Extract email from format: accounts.google.com:user@example.com
-const userEmail = iapEmail.split(':')[1];
+const userEmail = iapEmail.split(":")[1];
 
 // Verify user in Supabase has admin role
 // ...
@@ -278,29 +289,26 @@ gcloud iap web remove-iam-policy-binding \
 IAP ensures **Google account** is allowed. Apps must verify **Supabase role**:
 
 ### In Admin App (`admin-app/middleware.ts`):
+
 ```typescript
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient } from "@supabase/ssr";
 
 export async function middleware(req: NextRequest) {
   // IAP provides authenticated user email
-  const iapEmail = req.headers.get('x-goog-authenticated-user-email');
-  
+  const iapEmail = req.headers.get("x-goog-authenticated-user-email");
+
   if (!iapEmail) {
-    return new Response('Unauthorized', { status: 401 });
+    return new Response("Unauthorized", { status: 401 });
   }
 
-  const email = iapEmail.split(':')[1]; // Extract email
+  const email = iapEmail.split(":")[1]; // Extract email
 
   // Check Supabase role
   const supabase = createServerClient(/* ... */);
-  const { data: user } = await supabase
-    .from('users')
-    .select('role')
-    .eq('email', email)
-    .single();
+  const { data: user } = await supabase.from("users").select("role").eq("email", email).single();
 
-  if (user?.role !== 'admin') {
-    return new Response('Forbidden: Admin role required', { status: 403 });
+  if (user?.role !== "admin") {
+    return new Response("Forbidden: Admin role required", { status: 403 });
   }
 
   // Allow request
@@ -309,10 +317,11 @@ export async function middleware(req: NextRequest) {
 ```
 
 ### In Vendor Portal (`waiter-pwa/middleware.ts`):
+
 ```typescript
 // Similar, but check role === 'vendor'
-if (user?.role !== 'vendor') {
-  return new Response('Forbidden: Vendor role required', { status: 403 });
+if (user?.role !== "vendor") {
+  return new Response("Forbidden: Vendor role required", { status: 403 });
 }
 ```
 
@@ -321,11 +330,13 @@ if (user?.role !== 'vendor') {
 ## Using Google Groups (Recommended)
 
 **Benefits**:
+
 - Centralized management
 - Easy onboarding/offboarding
 - Audit trail
 
 **Setup**:
+
 1. Create Google Groups in Google Workspace:
    - `easymo-admins@ikanisa.com`
    - `easymo-vendors@ikanisa.com`
@@ -350,6 +361,7 @@ gcloud iap web add-iam-policy-binding \
 ## Monitoring & Auditing
 
 ### View IAP access logs
+
 ```bash
 gcloud logging read '
   resource.type="cloud_run_revision"
@@ -359,6 +371,7 @@ gcloud logging read '
 ```
 
 ### Set up alerts for unauthorized access attempts
+
 ```bash
 # Create log-based metric for 403 errors
 gcloud logging metrics create iap_unauthorized_access \
@@ -395,6 +408,7 @@ gcloud run domain-mappings create \
 ```
 
 DNS setup:
+
 ```
 Type: CNAME
 Name: admin
@@ -406,17 +420,22 @@ Value: ghs.googlehosted.com
 ## Troubleshooting
 
 ### Issue: "OAuth consent screen not configured"
+
 **Solution**: Configure OAuth consent screen first (see Step 1)
 
 ### Issue: "User gets 403 even though added to IAP"
+
 **Checks**:
+
 1. User signed in with correct Google account?
 2. Run `gcloud iap web get-iam-policy` to verify user listed
 3. Wait 1-2 minutes for IAM propagation
 4. Clear browser cache
 
 ### Issue: "Service unavailable" after enabling IAP
+
 **Solution**: Ensure service has `--allow-unauthenticated=false`:
+
 ```bash
 gcloud run services update easymo-admin \
   --region europe-west1 \
@@ -428,6 +447,7 @@ gcloud run services update easymo-admin \
 ## Helper Script: Add Vendor to IAP
 
 **scripts/gcp-add-vendor-iap.sh**:
+
 ```bash
 #!/bin/bash
 set -e
@@ -458,6 +478,7 @@ echo "Send this URL: ${SERVICE_URL}"
 ```
 
 Usage:
+
 ```bash
 chmod +x scripts/gcp-add-vendor-iap.sh
 ./scripts/gcp-add-vendor-iap.sh newvendor@gmail.com
@@ -485,5 +506,6 @@ chmod +x scripts/gcp-add-vendor-iap.sh
 6. Set up monitoring alerts
 
 See:
+
 - [cloud-run-services.md](./cloud-run-services.md) - Service deployment
 - [ci-cd.md](./ci-cd.md) - Automate IAP in CI/CD

@@ -8,7 +8,9 @@
 
 ## Executive Summary
 
-EasyMO has been successfully refactored from a collection of feature-specific flows into a **clean, WhatsApp-first, AI-agent-centric architecture**. All user-facing services are now implemented as natural language agents following a single, standard pattern.
+EasyMO has been successfully refactored from a collection of feature-specific flows into a **clean,
+WhatsApp-first, AI-agent-centric architecture**. All user-facing services are now implemented as
+natural language agents following a single, standard pattern.
 
 ### Top-Level Product Structure
 
@@ -43,6 +45,7 @@ WhatsApp Message → whatsapp_users
 ```
 
 **Tables:**
+
 - `whatsapp_users` - Normalized WhatsApp user registry
 - `whatsapp_conversations` - Active conversation contexts
 - `whatsapp_messages` - Message history with correlation IDs
@@ -78,11 +81,13 @@ ai_agent_knowledge_bases (data sources)
 3. **Agent Response** → Short message + emoji-numbered options (1️⃣ 2️⃣ 3️⃣)
 
 **Domain updates happen via:**
+
 - Database queries and inserts
 - Semantic search (pgvector where applicable)
 - Match events for notifications
 
 **Response format:**
+
 - Very short messages (1-2 sentences max)
 - Emoji-numbered options to minimize typing
 - Optional WhatsApp interactive buttons/lists
@@ -98,22 +103,26 @@ ai_agent_knowledge_bases (data sources)
 **Purpose:** Restaurant/bar menu browsing, ordering, tipping
 
 **Files:**
+
 - Migration: `supabase/migrations/20251122082500_apply_intent_waiter.sql`
 - Function: `apply_intent_waiter(intent_id, user_id, agent_id, intent_type, extracted_params)`
 
 **Domain Tables:**
+
 - `bars` - Restaurant/bar listings
 - `menus` - Food/drink menus
 - `bar_orders` - Order history
 - `tips` - Tip transactions
 
 **Intent Types:**
+
 - `browse_bars` - Search nearby bars/restaurants
 - `view_menu` - Display menu items
 - `place_order` - Create order
 - `leave_tip` - Process tip payment
 
 **Example Flow:**
+
 ```
 User: "Show me bars near Kicukiro"
 → Intent: browse_bars { location: "Kicukiro" }
@@ -132,28 +141,32 @@ User: "Show me bars near Kicukiro"
 **Purpose:** Produce listing, buyer matching, agricultural services
 
 **Files:**
+
 - Migration: `supabase/migrations/20251122110000_apply_intent_farmer.sql`
 - Function: `apply_intent_farmer(intent_id, user_id, agent_id, intent_type, extracted_params)`
 
 **Domain Tables:**
+
 - `produce_listings` - Agricultural produce for sale
 - `farmer_profiles` - Farmer metadata
 - `buyer_profiles` - Buyer preferences
 - `agri_transactions` - Sale history
 
 **Intent Types:**
+
 - `list_produce` - Create new produce listing
 - `search_produce` - Find produce to buy
 - `update_listing` - Modify existing listing
 - `match_buyer` - Connect with interested buyers
 
 **Example Flow:**
+
 ```
 User: "I have 50kg of tomatoes to sell"
 → Intent: list_produce { produce: "tomatoes", quantity: 50, unit: "kg" }
 → Insert: produce_listings (user_id, produce_type, quantity, status: "active")
 → Match: Check buyer_profiles for tomato buyers in area
-→ Response: "Listing created! 
+→ Response: "Listing created!
             1️⃣ Set price
             2️⃣ Add location
             3️⃣ Notify nearby buyers"
@@ -167,22 +180,27 @@ User: "I have 50kg of tomatoes to sell"
 **Purpose:** Find nearby services (pharmacy, repairs, hardware, etc.)
 
 **Files:**
+
 - Migration: `supabase/migrations/20251122090000_apply_intent_business_broker.sql`
-- Function: `apply_intent_business_broker(intent_id, user_id, agent_id, intent_type, extracted_params)`
+- Function:
+  `apply_intent_business_broker(intent_id, user_id, agent_id, intent_type, extracted_params)`
 
 **Domain Tables:**
+
 - `business_listings` - Service business directory
 - `business_categories` - Taxonomy (pharmacy, repair shop, etc.)
 - `business_hours` - Operating schedules
 - `user_business_favorites` - Saved businesses
 
 **Intent Types:**
+
 - `find_service` - Search nearby businesses by category
 - `view_business` - Get details for specific business
 - `save_favorite` - Bookmark business
 - `get_directions` - Route to business
 
 **Example Flow:**
+
 ```
 User: "I need a pharmacy near me"
 → Intent: find_service { category: "pharmacy", location: "user_location" }
@@ -200,22 +218,26 @@ User: "I need a pharmacy near me"
 **Purpose:** Property rental/listing, landlord-tenant matching
 
 **Files:**
+
 - Migration: `supabase/migrations/20251122111000_apply_intent_real_estate.sql`
 - Function: `apply_intent_real_estate(intent_id, user_id, agent_id, intent_type, extracted_params)`
 
 **Domain Tables:**
+
 - `properties` - Property listings
 - `property_images` - Photos/media
 - `property_inquiries` - Interest tracking
 - `rental_agreements` - Lease contracts (metadata)
 
 **Intent Types:**
+
 - `search_property` - Find properties by criteria
 - `list_property` - Create property listing
 - `inquire_property` - Express interest
 - `schedule_viewing` - Book property tour
 
 **Example Flow:**
+
 ```
 User: "2 bedroom apartment in Kicukiro under 400k"
 → Intent: search_property { bedrooms: 2, location: "Kicukiro", max_price: 400000 }
@@ -234,22 +256,26 @@ User: "2 bedroom apartment in Kicukiro under 400k"
 **Purpose:** Job search, gig posting, employer-seeker matching
 
 **Files:**
+
 - Migration: `supabase/migrations/20251122085000_apply_intent_jobs.sql`
 - Function: `apply_intent_jobs(intent_id, user_id, agent_id, intent_type, extracted_params)`
 
 **Domain Tables:**
+
 - `job_listings` - Job postings
 - `job_applications` - Application tracking
 - `job_seeker_profiles` - Candidate profiles
 - `employer_profiles` - Company/poster metadata
 
 **Intent Types:**
+
 - `search_jobs` - Find jobs by criteria
 - `post_job` - Create job listing
 - `apply_job` - Submit application
 - `view_applications` - Check application status
 
 **Example Flow:**
+
 ```
 User: "Looking for driver jobs in Kigali"
 → Intent: search_jobs { role: "driver", location: "Kigali" }
@@ -268,22 +294,26 @@ User: "Looking for driver jobs in Kigali"
 **Purpose:** Internal sales, cold outreach, lead management (staff-facing)
 
 **Files:**
+
 - Migration: `supabase/migrations/20251122112000_apply_intent_sales_sdr.sql`
 - Function: `apply_intent_sales_sdr(intent_id, user_id, agent_id, intent_type, extracted_params)`
 
 **Domain Tables:**
+
 - `sales_leads` - Prospect tracking
 - `outreach_campaigns` - Bulk messaging campaigns
 - `lead_interactions` - Touch point history
 - `sales_targets` - Performance metrics
 
 **Intent Types:**
+
 - `create_lead` - Add new prospect
 - `log_interaction` - Record call/message
 - `send_campaign` - Launch outreach
 - `check_targets` - Review KPIs
 
 **Example Flow:**
+
 ```
 Staff: "Add new lead: John Doe, +250788123456, restaurant owner"
 → Intent: create_lead { name: "John Doe", phone: "+250788123456", segment: "restaurant" }
@@ -298,13 +328,15 @@ Staff: "Add new lead: John Doe, +250788123456, restaurant owner"
 
 ### Mobility Workflow (formerly Agent 7)
 
-Mobility is now handled by WhatsApp button flows (menu, booking, schedule, go-online). The rides AI agent and related migrations (`apply_intent_rides`) have been removed.
+Mobility is now handled by WhatsApp button flows (menu, booking, schedule, go-online). The rides AI
+agent and related migrations (`apply_intent_rides`) have been removed.
 
 ---
 
 ### Insurance Workflow (formerly Agent 8)
 
-Insurance intake (quotes, claims, policies) now runs as WhatsApp workflows. The insurance AI agent and associated migrations (`apply_intent_insurance`) have been removed.
+Insurance intake (quotes, claims, policies) now runs as WhatsApp workflows. The insurance AI agent
+and associated migrations (`apply_intent_insurance`) have been removed.
 
 ---
 
@@ -320,20 +352,24 @@ Insurance intake (quotes, claims, policies) now runs as WhatsApp workflows. The 
 **Components:**
 
 #### A. MoMo QR Code
+
 - View/manage personal MoMo QR
 - Semi-structured flow (security-sensitive)
 
 #### B. Wallet & Tokens
+
 - View token balance
 - Transaction history
 - Actions: Earn, Use, Withdraw
 
 **Tables:**
+
 - `wallet_balances`
 - `token_transactions`
 - `momo_accounts`
 
 #### C. My Stuff (Read-Only Mirrors)
+
 Shows entities created by agents:
 
 - **My Businesses** (Business Broker agent)
@@ -347,18 +383,22 @@ Shows entities created by agents:
 **Rule:** Profile displays them, but changes happen by launching the respective agent conversation.
 
 #### D. Saved Locations
+
 - Home, Work, Favorite places
 - Saved once via location sharing
 - Re-used by all agents
 
 **Tables:**
+
 - `user_saved_locations`
 
 **Example:**
+
 ```
 Mobility workflow: "1️⃣ Home → Work
                    2️⃣ Send new location"
 ```
+
 User never re-shares map pins unnecessarily.
 
 ---
@@ -368,6 +408,7 @@ User never re-shares map pins unnecessarily.
 ### Core Infrastructure
 
 #### WhatsApp Pipeline
+
 ```
 supabase/functions/wa-webhook-ai-agents/
 ├── index.ts                    # Main webhook handler
@@ -381,6 +422,7 @@ supabase/functions/_shared/
 ```
 
 #### Database Schema
+
 ```
 supabase/migrations/
 ├── 20251122073000_ai_agent_ecosystem_schema.sql      # Core agent tables
@@ -399,6 +441,7 @@ supabase/migrations/
 ### Legacy Code Status
 
 #### ✅ Migrated (Now using unified framework)
+
 - `wa-webhook-jobs` → Jobs agent
 - `wa-webhook-marketplace` → Business Broker agent
 - `wa-webhook-mobility` → Mobility workflows (no AI agent)
@@ -406,11 +449,13 @@ supabase/migrations/
 - `waiter-ai-agent` → Waiter agent
 
 #### ⚠️ To Deprecate (Replaced by agents)
+
 - Old per-feature webhook handlers
 - Multi-step wizard flows
 - Hard-coded conversation logic
 
 #### 🔒 Keep (Core utilities)
+
 - `supabase/functions/_shared/` - Shared libraries
 - `admin-app/` - Admin dashboard
 - Profile/Wallet modules
@@ -475,18 +520,22 @@ supabase/migrations/
 ### Personalization Strategy
 
 **Per-User Profile (Shared across all agents):**
+
 - Saved locations (Home, Work, favorites)
 - Language preference
 - Owned entities (businesses, vehicles, properties, etc.)
 
 **Per-Agent "Taste" Model:**
+
 - Waiter: cuisines liked, typical spend
 - Rides: usual routes, preferred vehicle type
 - Real Estate: budget bands, location types
 - Jobs: skills, job categories, pay expectations
 
 **Implementation:**
-- Agent system instructions include: *"Always retrieve this user's profile before asking questions. If you can safely infer the answer from history, do it."*
+
+- Agent system instructions include: _"Always retrieve this user's profile before asking questions.
+  If you can safely infer the answer from history, do it."_
 - Result: **Agents ask fewer questions over time**
 
 ---
@@ -494,32 +543,41 @@ supabase/migrations/
 ## Conversation UX Rules (All Agents)
 
 ### 1. Short Messages Only
+
 - 1-2 sentences max
 - No essays
 
 ### 2. Always Give Immediate Options
+
 Every message ends with:
+
 - Emoji-numbered options (1️⃣ 2️⃣ 3️⃣)
 - Or clear single action (✅ Confirm / ❌ Cancel)
 
 ### 3. Always Show Context in Lists
+
 Bad:
+
 ```
 1. Property A
 2. Property B
 ```
 
 Good:
+
 ```
 1️⃣ 2BR in Kicukiro – 350k – available Dec 1
 2️⃣ 2BR in Kanombe – 380k – available now
 ```
 
 ### 4. One Intent Per Turn
+
 If user says three things at once, agent picks the main one and clarifies.
 
 ### 5. Prediction, Not Just Reaction
+
 Use past behavior to pre-fill likely values:
+
 ```
 "You usually go from Home to Work at 8am.
  1️⃣ Do that again
@@ -534,9 +592,11 @@ Use past behavior to pre-fill likely values:
 ## Testing & Validation
 
 ### Integration Tests
+
 Located in: `tests/agents/`
 
 **Coverage:**
+
 - ✅ Waiter agent: Browse bars, view menu, place order
 - ✅ Farmer agent: List produce, search, match buyers
 - ✅ Business Broker: Find services, save favorites
@@ -545,6 +605,7 @@ Located in: `tests/agents/`
 - ✅ Support: Route requests, escalate
 
 ### End-to-End Flow Tests
+
 ```bash
 # Test full webhook → agent → DB → reply cycle
 pnpm test:agents
@@ -554,6 +615,7 @@ pnpm test:agent:waiter
 ```
 
 ### Staging Validation
+
 ```bash
 # Deploy to staging
 ./deploy-to-staging.sh
@@ -567,12 +629,14 @@ pnpm test:agent:waiter
 ## Migration Status
 
 ### ✅ Phase 1: Core Infrastructure (Complete)
+
 - [x] AI agent ecosystem schema
 - [x] WhatsApp pipeline normalization
 - [x] Agent orchestrator implementation
 - [x] Seed agent definitions
 
 ### ✅ Phase 2: Agent Migration (Complete - 8/8)
+
 - [x] Waiter agent
 - [x] Farmer agent
 - [x] Business Broker agent
@@ -583,18 +647,21 @@ pnpm test:agent:waiter
 - [x] Insurance agent
 
 ### ✅ Phase 3: Profile & Wallet Isolation (Complete)
+
 - [x] Extract Profile module
 - [x] Implement "My Stuff" views
 - [x] Saved Locations integration
 - [x] Wallet/Tokens CRUD APIs
 
 ### 🔄 Phase 4: Legacy Cleanup (In Progress)
+
 - [ ] Remove old webhook handlers
 - [ ] Delete wizard-style flows
 - [ ] Archive unused components
 - [ ] Clean up domain services
 
 ### 📋 Phase 5: Production Rollout (Pending)
+
 - [ ] Deploy to staging
 - [ ] Enable feature flags gradually
 - [ ] Monitor metrics
@@ -616,6 +683,7 @@ featureToggles: {
 ```
 
 **Rollout Strategy:**
+
 1. Deploy with flags OFF
 2. Test on staging
 3. Enable for 10% users
@@ -628,23 +696,26 @@ featureToggles: {
 ## Observability & Monitoring
 
 ### Structured Logging
+
 All events logged as JSON with correlation IDs:
 
 ```typescript
-await logStructuredEvent("USER_CREATED", { 
-  userId, 
+await logStructuredEvent("USER_CREATED", {
+  userId,
   method: "whatsapp",
-  correlationId 
+  correlationId,
 });
 ```
 
 ### Key Metrics
+
 - `agent.request.count` - Requests per agent
 - `agent.intent.parse.duration` - LLM latency
 - `agent.intent.apply.duration` - DB operation time
 - `agent.response.success_rate` - Reply delivery %
 
 ### Error Tracking
+
 - Failed intent parsing → Retry with simpler prompt
 - DB errors → Log + return graceful fallback
 - WhatsApp API errors → Queue for retry
@@ -656,7 +727,9 @@ await logStructuredEvent("USER_CREATED", {
 ## Next Steps
 
 ### Immediate (Week 1)
+
 1. **Deploy to staging** (30 min)
+
    ```bash
    ./deploy-to-staging.sh
    ```
@@ -669,6 +742,7 @@ await logStructuredEvent("USER_CREATED", {
    - Verify intent parsing + DB updates + responses
 
 ### Short-term (Week 2-3)
+
 4. **Enhance apply_intent functions**
    - Add real semantic search (pgvector)
    - Optimize queries with proper indexes
@@ -684,6 +758,7 @@ await logStructuredEvent("USER_CREATED", {
    - Update documentation
 
 ### Long-term (Month 2+)
+
 7. **Advanced personalization**
    - Train per-user preference models
    - Implement "taste vectors" for better matching
@@ -704,18 +779,21 @@ await logStructuredEvent("USER_CREATED", {
 ## Success Metrics
 
 **Before Refactor:**
+
 - 12+ separate webhook handlers
 - Hard-coded conversation flows
 - No shared agent framework
 - ~3000+ lines of duplicated logic
 
 **After Refactor:**
+
 - 1 unified webhook handler
 - 7 agents using identical pattern (mobility/insurance moved to workflows)
 - ~90% code reduction in agent logic
 - Standard, testable, maintainable
 
 **User Experience:**
+
 - Faster responses (intent caching)
 - Fewer questions asked (personalization)
 - Consistent UX across all services
@@ -725,16 +803,17 @@ await logStructuredEvent("USER_CREATED", {
 
 ## Conclusion
 
-The EasyMO refactor successfully transforms a complex, feature-sprawled system into a **clean, boringly-standard, WhatsApp-first platform** powered by AI agents.
+The EasyMO refactor successfully transforms a complex, feature-sprawled system into a **clean,
+boringly-standard, WhatsApp-first platform** powered by AI agents.
 
-**Key Achievements:**
-✅ Single standard for all agents  
+**Key Achievements:** ✅ Single standard for all agents  
 ✅ No more per-feature spaghetti code  
 ✅ Easy to extend (just add new agent + intent functions)  
 ✅ Easy to debug (all messages go through same pipeline)  
 ✅ Easy to reason about (Profile only mirrors what agents manage)
 
 **Maintenance Burden:**
+
 - **Before:** Add new feature = new webhook + new flows + new DB logic
 - **After:** Add new feature = new agent row + new intent function
 

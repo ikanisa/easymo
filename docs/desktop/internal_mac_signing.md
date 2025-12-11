@@ -1,6 +1,7 @@
 # macOS Code Signing Guide - Internal Distribution
 
-This guide explains how to code-sign the **EasyMO Desktop Applications** for internal distribution on macOS.
+This guide explains how to code-sign the **EasyMO Desktop Applications** for internal distribution
+on macOS.
 
 ## Applications
 
@@ -25,6 +26,7 @@ This repository contains **two** macOS desktop applications:
 ### What is Code Signing?
 
 Code signing on macOS:
+
 - Proves the application comes from a trusted source
 - Prevents unauthorized modifications
 - Required for distribution (even internal)
@@ -32,12 +34,13 @@ Code signing on macOS:
 
 ### Internal vs. Apple Distribution
 
-| Type | Certificate | Distribution | Gatekeeper |
-|------|------------|--------------|------------|
-| **Internal** (Current) | Self-signed | Internal team only | Requires right-click → Open |
-| **Apple Developer ID** (Future) | Apple-issued | Public or internal | No warnings |
+| Type                            | Certificate  | Distribution       | Gatekeeper                  |
+| ------------------------------- | ------------ | ------------------ | --------------------------- |
+| **Internal** (Current)          | Self-signed  | Internal team only | Requires right-click → Open |
+| **Apple Developer ID** (Future) | Apple-issued | Public or internal | No warnings                 |
 
-This guide covers **internal distribution** using a self-signed certificate. You can upgrade to an Apple Developer ID certificate later by simply changing the signing identity name.
+This guide covers **internal distribution** using a self-signed certificate. You can upgrade to an
+Apple Developer ID certificate later by simply changing the signing identity name.
 
 ---
 
@@ -171,6 +174,7 @@ Add this to your `~/.zshrc` or `~/.bashrc` to make it permanent.
 ```
 
 This script:
+
 - Signs the Admin Panel app
 - Signs the Client/Staff Portal app
 - Verifies both signatures
@@ -187,6 +191,7 @@ codesign --verify --deep --strict --verbose=2 ./admin-app/dist/mac/AdminPanel.ap
 ```
 
 **Expected output:**
+
 ```
 ./admin-app/dist/mac/AdminPanel.app: valid on disk
 ./admin-app/dist/mac/AdminPanel.app: satisfies its Designated Requirement
@@ -199,6 +204,7 @@ spctl --assess --verbose=4 ./admin-app/dist/mac/AdminPanel.app
 ```
 
 **For self-signed certificates**, this will show:
+
 ```
 ./admin-app/dist/mac/AdminPanel.app: rejected
 source=no usable signature
@@ -212,7 +218,8 @@ This is **expected** for self-signed certificates. Users will need to bypass Gat
 
 ### First-Time Launch Instructions
 
-When internal users download and run the apps for the first time, macOS will show a security warning because the certificate is self-signed.
+When internal users download and run the apps for the first time, macOS will show a security warning
+because the certificate is self-signed.
 
 **Tell users to:**
 
@@ -239,22 +246,26 @@ If the right-click method doesn't work:
 ## Quick Reference
 
 ### Sign all apps
+
 ```bash
 export SIGNING_IDENTITY="Inhouse Dev Signing"
 ./scripts/sign_all_apps.sh
 ```
 
 ### Verify signature
+
 ```bash
 codesign --verify --deep --strict --verbose=2 AdminPanel.app
 ```
 
 ### Check identity
+
 ```bash
 ./scripts/list_identities.sh
 ```
 
 ### First-time user instructions
+
 ```
 Right-click app → Open → Open
 ```

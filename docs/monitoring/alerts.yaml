@@ -19,7 +19,7 @@ alerts:
     notification:
       - pagerduty: critical
       - slack: "#easymo-alerts"
-  
+
   - name: DatabaseDown
     severity: critical
     description: "Database connectivity lost"
@@ -32,7 +32,7 @@ alerts:
     notification:
       - pagerduty: critical
       - slack: "#easymo-alerts"
-  
+
   - name: HighLatency
     severity: warning
     description: "Request latency exceeds threshold"
@@ -43,7 +43,7 @@ alerts:
       critical: 3000ms
     notification:
       - slack: "#easymo-alerts"
-  
+
   - name: HighErrorRate
     severity: warning
     description: "Error rate exceeds threshold"
@@ -54,7 +54,7 @@ alerts:
       critical: 10%
     notification:
       - slack: "#easymo-alerts"
-  
+
   - name: LowCacheHitRate
     severity: warning
     description: "Cache hit rate below threshold"
@@ -65,7 +65,7 @@ alerts:
       critical: 30%
     notification:
       - slack: "#easymo-alerts"
-  
+
   - name: NoMessagesProcessed
     severity: warning
     description: "No webhook messages processed"
@@ -74,7 +74,7 @@ alerts:
       AND time_of_day BETWEEN 06:00 AND 22:00
     notification:
       - slack: "#easymo-alerts"
-  
+
   - name: HighAuthFailures
     severity: warning
     description: "High rate of authentication failures"

@@ -7,7 +7,9 @@
 
 ## Overview
 
-Successfully implemented SACCO SMS payment integration connecting EasyMO's MoMo webhook infrastructure to the vendor portal. The system automatically matches incoming MoMo SMS payments to SACCO members and provides a manual matching workflow for unmatched payments.
+Successfully implemented SACCO SMS payment integration connecting EasyMO's MoMo webhook
+infrastructure to the vendor portal. The system automatically matches incoming MoMo SMS payments to
+SACCO members and provides a manual matching workflow for unmatched payments.
 
 ---
 
@@ -39,11 +41,11 @@ Successfully implemented SACCO SMS payment integration connecting EasyMO's MoMo 
 
 ### **No Duplication Strategy**
 
-| Table | Purpose | Relationship |
-|-------|---------|--------------|
-| `public.momo_transactions` | Generic SMS audit trail | Parent (existing) |
-| `app.sms_inbox` | SACCO-specific SMS inbox | Child (links to momo_transactions.id) |
-| `app.payments` | Matched SACCO payments | Child (links to sms_inbox.id) |
+| Table                      | Purpose                  | Relationship                          |
+| -------------------------- | ------------------------ | ------------------------------------- |
+| `public.momo_transactions` | Generic SMS audit trail  | Parent (existing)                     |
+| `app.sms_inbox`            | SACCO-specific SMS inbox | Child (links to momo_transactions.id) |
+| `app.payments`             | Matched SACCO payments   | Child (links to sms_inbox.id)         |
 
 ---
 
@@ -133,6 +135,7 @@ Successfully implemented SACCO SMS payment integration connecting EasyMO's MoMo 
 ## Database Schema
 
 ### **app.saccos**
+
 ```sql
 - id (uuid, pk)
 - name (text)
@@ -142,6 +145,7 @@ Successfully implemented SACCO SMS payment integration connecting EasyMO's MoMo 
 ```
 
 ### **app.members**
+
 ```sql
 - id (uuid, pk)
 - sacco_id (uuid, fk)
@@ -153,6 +157,7 @@ Successfully implemented SACCO SMS payment integration connecting EasyMO's MoMo 
 ```
 
 ### **app.sms_inbox**
+
 ```sql
 - id (uuid, pk)
 - sacco_id (uuid, fk)
@@ -165,6 +170,7 @@ Successfully implemented SACCO SMS payment integration connecting EasyMO's MoMo 
 ```
 
 ### **app.payments**
+
 ```sql
 - id (uuid, pk)
 - sacco_id, member_id, account_id (uuid, fk)
@@ -182,6 +188,7 @@ Successfully implemented SACCO SMS payment integration connecting EasyMO's MoMo 
 ### **1. Automatic Member Matching**
 
 **Phone-based matching (preferred)**:
+
 ```typescript
 // Normalize: "0781234567" → "781234567"
 // Hash: SHA-256("781234567") = "abc123..."
@@ -189,12 +196,14 @@ Successfully implemented SACCO SMS payment integration connecting EasyMO's MoMo 
 ```
 
 **Name-based matching (fallback)**:
+
 ```sql
 -- Exact: UPPER(full_name) = UPPER("Jean Bosco")
 -- Partial: full_name LIKE '%JEAN BOSCO%'
 ```
 
 **Confidence scoring**:
+
 - 1.0 = Exact phone match
 - 0.9 = Phone hash variant
 - 0.7 = Partial name match
@@ -233,12 +242,14 @@ Successfully implemented SACCO SMS payment integration connecting EasyMO's MoMo 
 ## API Endpoints
 
 ### **Health Check**
+
 ```http
 GET /api/health
 Response: { status: "healthy", database: "connected", timestamp: "..." }
 ```
 
 ### **List Payments**
+
 ```http
 GET /api/payments?sacco_id={uuid}&status=matched&limit=50&offset=0
 Query Params:
@@ -251,6 +262,7 @@ Query Params:
 ```
 
 ### **Unmatched SMS**
+
 ```http
 GET /api/payments/unmatched?sacco_id={uuid}
 POST /api/payments/unmatched
@@ -258,11 +270,13 @@ Body: { sms_id: uuid, member_id: uuid, sacco_id: uuid }
 ```
 
 ### **Members**
+
 ```http
 GET /api/members?sacco_id={uuid}&search=Jean&status=ACTIVE
 ```
 
 ### **Stats**
+
 ```http
 GET /api/stats?sacco_id={uuid}&days=30
 ```
@@ -272,6 +286,7 @@ GET /api/stats?sacco_id={uuid}&days=30
 ## Deployment Checklist
 
 ### **1. Apply Database Migrations**
+
 ```bash
 # Production (Supabase remote)
 supabase db push
@@ -283,11 +298,13 @@ psql $DATABASE_URL < supabase/migrations/20251209190002_sacco_payment_functions.
 ```
 
 ### **2. Deploy Edge Function**
+
 ```bash
 supabase functions deploy momo-sms-webhook --no-verify-jwt
 ```
 
 ### **3. Register SACCO Webhook**
+
 ```sql
 -- Example: Register SACCO's MoMo receiving number
 SELECT app.register_sacco_webhook(
@@ -298,6 +315,7 @@ SELECT app.register_sacco_webhook(
 ```
 
 ### **4. Test SACCO Member Import**
+
 ```sql
 -- Example: Create test member
 INSERT INTO app.members (
@@ -318,6 +336,7 @@ INSERT INTO app.members (
 ```
 
 ### **5. Send Test SMS**
+
 ```bash
 # Simulate MoMo SMS via webhook
 curl -X POST https://your-project.supabase.co/functions/v1/momo-sms-webhook \
@@ -332,6 +351,7 @@ curl -X POST https://your-project.supabase.co/functions/v1/momo-sms-webhook \
 ```
 
 ### **6. Verify in Database**
+
 ```sql
 -- Check SMS was stored
 SELECT * FROM app.sms_inbox ORDER BY created_at DESC LIMIT 5;
@@ -340,7 +360,7 @@ SELECT * FROM app.sms_inbox ORDER BY created_at DESC LIMIT 5;
 SELECT * FROM app.payments ORDER BY created_at DESC LIMIT 5;
 
 -- Check account balance updated
-SELECT m.full_name, a.balance 
+SELECT m.full_name, a.balance
 FROM app.accounts a
 JOIN app.members m ON m.id = a.member_id
 WHERE a.sacco_id = '<sacco_uuid>';
@@ -354,7 +374,7 @@ WHERE a.sacco_id = '<sacco_uuid>';
 ✅ **Security**: PII protected via SHA-256 hashing, RLS policies enabled  
 ✅ **No Duplication**: Links to existing `momo_transactions` table  
 ✅ **Single Source of Truth**: `app.payments` is canonical for SACCO payments  
-✅ **Feature Flags**: Not required (isolated to `service_type = 'sacco'`)  
+✅ **Feature Flags**: Not required (isolated to `service_type = 'sacco'`)
 
 ---
 
@@ -362,9 +382,11 @@ WHERE a.sacco_id = '<sacco_uuid>';
 
 ### **Phase 3: UI Components (Not Implemented)**
 
-The following files were specified in your prompt but NOT created (as per guardrails - UI implementation only after backend verified):
+The following files were specified in your prompt but NOT created (as per guardrails - UI
+implementation only after backend verified):
 
 **Pending UI Files**:
+
 - `app/(dashboard)/payments/page.tsx`
 - `app/(dashboard)/payments/components/payments-table.tsx`
 - `app/(dashboard)/payments/components/unmatched-table.tsx`
@@ -374,7 +396,8 @@ The following files were specified in your prompt but NOT created (as per guardr
 - `lib/api/payments.ts`, `lib/api/members.ts`, `lib/api/stats.ts`
 - `lib/hooks/use-payments.ts`, `lib/hooks/use-members.ts`, `lib/hooks/use-stats.ts`
 
-**Recommendation**: Deploy and test backend APIs first, then create UI components in a separate session.
+**Recommendation**: Deploy and test backend APIs first, then create UI components in a separate
+session.
 
 ---
 
@@ -416,7 +439,7 @@ curl "http://localhost:3003/api/payments/unmatched?sacco_id=<uuid>"
 - [x] Migrations follow naming convention (YYYYMMDDHHMMSS_description.sql)
 - [x] All migrations have BEGIN/COMMIT wrappers
 - [x] No duplicate table names with existing schema
-- [x] RLS policies enabled on all app.* tables
+- [x] RLS policies enabled on all app.\* tables
 - [x] Foreign keys link app.sms_inbox to public.momo_transactions
 - [x] Database functions have SECURITY DEFINER
 - [x] Edge function imports added to index.ts

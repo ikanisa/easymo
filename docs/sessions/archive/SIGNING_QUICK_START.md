@@ -17,6 +17,7 @@ Open **Keychain Access** → Menu: **Certificate Assistant** → **Create a Cert
 ### 2. Trust Certificate
 
 In Keychain Access:
+
 - Find `Inhouse Dev Signing`
 - Double-click → **Trust** section
 - Set **Code Signing** to **Always Trust**
@@ -62,6 +63,7 @@ CLIENT_APP_PATH="./path/to/ClientPortal.app"
 ### 1. Export Certificate
 
 Keychain Access:
+
 - Right-click `Inhouse Dev Signing`
 - **Export "Inhouse Dev Signing"...**
 - Save as `InhouseDevSigning.p12`
@@ -70,6 +72,7 @@ Keychain Access:
 ### 2. Share Securely
 
 Send `InhouseDevSigning.p12` + password via:
+
 - Slack DM
 - 1Password
 - Encrypted email
@@ -79,6 +82,7 @@ Send `InhouseDevSigning.p12` + password via:
 ### 3. Team Members Import
 
 On each Mac:
+
 1. Double-click `InhouseDevSigning.p12`
 2. Enter password
 3. Open Keychain Access
@@ -88,6 +92,7 @@ On each Mac:
 ### 4. First App Launch
 
 If macOS shows warning:
+
 1. **Right-click** app → **Open**
 2. Click **Open** in dialog
 3. Never needed again
@@ -134,6 +139,7 @@ DEFAULT_IDENTITY="Developer ID Application: Your Company (TEAMID)"
 ## 📚 Full Documentation
 
 See **`docs/internal_mac_signing.md`** for:
+
 - Detailed certificate creation steps
 - Troubleshooting guide
 - Security best practices

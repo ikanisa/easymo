@@ -14,6 +14,7 @@ Week 1 focus: Security & Critical Testing (4 tasks, 56 hours)
 **Status**: Infrastructure Ready, Needs Application
 
 **Completed**:
+
 - [x] Rate limiting module created (`supabase/functions/_shared/rate-limit/index.ts`)
 - [x] Sliding window algorithm implemented
 - [x] Fail-open error handling
@@ -21,6 +22,7 @@ Week 1 focus: Security & Critical Testing (4 tasks, 56 hours)
 - [x] Documentation complete
 
 **Next Steps**:
+
 1. Apply to WhatsApp webhooks (100 req/min)
 2. Apply to payment webhooks (50 req/min)
 3. Apply to AI agent endpoints (30 req/min)
@@ -28,6 +30,7 @@ Week 1 focus: Security & Critical Testing (4 tasks, 56 hours)
 5. Deploy and monitor
 
 **Files Created**:
+
 - `supabase/functions/_shared/rate-limit/index.ts` (175 lines)
 - `supabase/functions/_shared/rate-limit/README.md` (documentation)
 
@@ -38,11 +41,13 @@ Week 1 focus: Security & Critical Testing (4 tasks, 56 hours)
 **Status**: Scripts Ready, Needs Execution
 
 **Completed**:
+
 - [x] RLS audit SQL script (`scripts/sql/rls-audit.sql`)
 - [x] GitHub Actions workflow for automated audits
 - [x] Documentation for policy implementation
 
 **Next Steps**:
+
 1. Run initial audit: `psql $DATABASE_URL -f scripts/sql/rls-audit.sql`
 2. Document findings
 3. Create RLS policies for tables without protection
@@ -50,6 +55,7 @@ Week 1 focus: Security & Critical Testing (4 tasks, 56 hours)
 5. Verify with re-audit
 
 **Files Created**:
+
 - `scripts/sql/rls-audit.sql` (80 lines)
 - `.github/workflows/rls-audit.yml` (automated weekly audits)
 
@@ -60,10 +66,12 @@ Week 1 focus: Security & Critical Testing (4 tasks, 56 hours)
 **Status**: Not Started (Test framework exists)
 
 **Completed**:
+
 - [x] Test framework available (Vitest)
 - [x] Wallet service exists
 
 **Next Steps**:
+
 1. Create test file structure:
    ```
    services/wallet-service/src/__tests__/
@@ -77,6 +85,7 @@ Week 1 focus: Security & Critical Testing (4 tasks, 56 hours)
 4. Add to CI pipeline
 
 **Target Coverage**:
+
 - Transfer module: 95%+
 - Balance module: 90%+
 - Overall: 80%+
@@ -88,11 +97,13 @@ Week 1 focus: Security & Critical Testing (4 tasks, 56 hours)
 **Status**: Scripts Ready, Needs Database Application
 
 **Completed**:
+
 - [x] Audit log table schema (`scripts/sql/audit-log-schema.sql`)
 - [x] Audit trigger function with field change tracking
 - [x] Trigger creation script for 10 financial tables
 
 **Next Steps**:
+
 1. Apply schema: `psql $DATABASE_URL -f scripts/sql/audit-log-schema.sql`
 2. Apply triggers: `psql $DATABASE_URL -f scripts/sql/audit-triggers.sql`
 3. Verify triggers created
@@ -100,10 +111,12 @@ Week 1 focus: Security & Critical Testing (4 tasks, 56 hours)
 5. Monitor audit log growth
 
 **Files Created**:
+
 - `scripts/sql/audit-log-schema.sql` (60 lines)
 - `scripts/sql/audit-triggers.sql` (95 lines)
 
 **Financial Tables Covered**:
+
 1. wallet_accounts
 2. wallet_entries
 3. wallet_transactions
@@ -120,6 +133,7 @@ Week 1 focus: Security & Critical Testing (4 tasks, 56 hours)
 ## Verification
 
 **P0 Readiness Check**:
+
 ```bash
 ./scripts/verify/p0-readiness.sh
 ```
@@ -131,6 +145,7 @@ Week 1 focus: Security & Critical Testing (4 tasks, 56 hours)
 ## Summary
 
 ### Completed (Infrastructure)
+
 - ✅ Rate limiting module
 - ✅ RLS audit scripts
 - ✅ Audit log schema & triggers
@@ -138,12 +153,14 @@ Week 1 focus: Security & Critical Testing (4 tasks, 56 hours)
 - ✅ GitHub Actions workflow
 
 ### Remaining (Execution)
+
 - ⏳ Apply rate limiting to 80+ edge functions
 - ⏳ Run RLS audit and create policies
 - ⏳ Implement wallet service tests (80%+ coverage)
 - ⏳ Apply audit triggers to database
 
 ### Time Estimate
+
 - Infrastructure: ✅ 4 hours (Complete)
 - Application: ⏳ 52 hours (Remaining)
 
@@ -156,6 +173,7 @@ Week 1 focus: Security & Critical Testing (4 tasks, 56 hours)
 ## Next Session Priorities
 
 1. **Immediate** (2h): Apply database scripts
+
    ```bash
    psql $DATABASE_URL -f scripts/sql/audit-log-schema.sql
    psql $DATABASE_URL -f scripts/sql/audit-triggers.sql
@@ -177,6 +195,7 @@ Week 1 focus: Security & Critical Testing (4 tasks, 56 hours)
 ## Files Summary
 
 **Created** (7 files, ~400 lines):
+
 - `supabase/functions/_shared/rate-limit/index.ts`
 - `scripts/sql/rls-audit.sql`
 - `scripts/sql/audit-log-schema.sql`

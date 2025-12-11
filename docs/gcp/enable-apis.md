@@ -31,24 +31,24 @@ echo "✅ All APIs enabled!"
 
 ### Core APIs (Required)
 
-| API | Purpose | When Used |
-|-----|---------|-----------|
-| **artifactregistry.googleapis.com** | Artifact Registry | Storing Docker images |
-| **cloudbuild.googleapis.com** | Cloud Build | Building containers (optional, can use local Docker) |
-| **run.googleapis.com** | Cloud Run | Running services |
-| **iap.googleapis.com** | Identity-Aware Proxy | Protecting Admin + Vendor apps |
-| **secretmanager.googleapis.com** | Secret Manager | Storing API keys, DB passwords |
+| API                                 | Purpose              | When Used                                            |
+| ----------------------------------- | -------------------- | ---------------------------------------------------- |
+| **artifactregistry.googleapis.com** | Artifact Registry    | Storing Docker images                                |
+| **cloudbuild.googleapis.com**       | Cloud Build          | Building containers (optional, can use local Docker) |
+| **run.googleapis.com**              | Cloud Run            | Running services                                     |
+| **iap.googleapis.com**              | Identity-Aware Proxy | Protecting Admin + Vendor apps                       |
+| **secretmanager.googleapis.com**    | Secret Manager       | Storing API keys, DB passwords                       |
 
 ### Supporting APIs (Recommended)
 
-| API | Purpose |
-|-----|---------|
-| **cloudresourcemanager.googleapis.com** | Project management |
-| **containerregistry.googleapis.com** | Legacy container registry (fallback) |
-| **logging.googleapis.com** | Cloud Logging (service logs) |
-| **monitoring.googleapis.com** | Cloud Monitoring (metrics, alerts) |
-| **compute.googleapis.com** | Compute resources (networking) |
-| **iam.googleapis.com** | IAM (service accounts, roles) |
+| API                                     | Purpose                              |
+| --------------------------------------- | ------------------------------------ |
+| **cloudresourcemanager.googleapis.com** | Project management                   |
+| **containerregistry.googleapis.com**    | Legacy container registry (fallback) |
+| **logging.googleapis.com**              | Cloud Logging (service logs)         |
+| **monitoring.googleapis.com**           | Cloud Monitoring (metrics, alerts)   |
+| **compute.googleapis.com**              | Compute resources (networking)       |
+| **iam.googleapis.com**                  | IAM (service accounts, roles)        |
 
 ---
 
@@ -63,6 +63,7 @@ gcloud services list --enabled | grep -E '(artifact|run|iap|build|secret)'
 ```
 
 Expected output:
+
 ```
 artifactregistry.googleapis.com    Artifact Registry API
 cloudbuild.googleapis.com          Cloud Build API
@@ -113,6 +114,7 @@ gcloud services list --enabled --filter="state:ENABLED"
 ## API Quotas
 
 Check usage and quotas:
+
 ```bash
 # View quotas
 gcloud compute project-info describe --project=easymoai
@@ -122,6 +124,7 @@ gcloud compute project-info describe --project=easymoai
 ```
 
 **Relevant quotas**:
+
 - Cloud Run: 1000 requests/second (default)
 - Cloud Build: 10 concurrent builds (default)
 - Artifact Registry: Unlimited storage (pay per GB)
@@ -131,6 +134,7 @@ gcloud compute project-info describe --project=easymoai
 ## Costs
 
 Most APIs are **free** (only pay for resources used):
+
 - Cloud Run: Pay per request + compute time
 - Artifact Registry: $0.10/GB/month storage
 - Secret Manager: $0.06/10k accesses
@@ -144,13 +148,16 @@ Most APIs are **free** (only pay for resources used):
 ## Troubleshooting
 
 ### Issue: "API not enabled" error
+
 ```bash
 # Enable the API mentioned in error
 gcloud services enable <API_NAME>
 ```
 
 ### Issue: "Insufficient permissions to enable API"
+
 **Solution**: Ensure you have `roles/serviceusage.serviceUsageAdmin` role:
+
 ```bash
 gcloud projects add-iam-policy-binding easymoai \
   --member="user:YOUR_EMAIL" \
@@ -172,4 +179,5 @@ gcloud projects add-iam-policy-binding easymoai \
 
 - **API Dashboard**: https://console.cloud.google.com/apis/dashboard?project=easymoai
 - **API Library**: https://console.cloud.google.com/apis/library?project=easymoai
-- **Service Usage**: https://console.cloud.google.com/apis/api/serviceusage.googleapis.com?project=easymoai
+- **Service Usage**:
+  https://console.cloud.google.com/apis/api/serviceusage.googleapis.com?project=easymoai

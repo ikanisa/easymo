@@ -1,6 +1,7 @@
 # Cloud Run Services Deployment – easyMO
 
 ## Project Configuration
+
 - **Project**: `easymoai`
 - **Region**: `europe-west1`
 - **Repository**: `europe-west1-docker.pkg.dev/easymoai/easymo-repo`
@@ -31,6 +32,7 @@ gcloud run deploy easymo-admin \
 ```
 
 **Notes**:
+
 - `--allow-unauthenticated=false`: Requires auth (IAP will be enabled)
 - Min instances 0: Cost savings (cold starts acceptable for internal tool)
 - Max instances 5: Reasonable for ~50 staff users
@@ -57,6 +59,7 @@ gcloud run deploy easymo-vendor \
 ```
 
 **Notes**:
+
 - Max instances 10: More vendors than internal staff
 - Also requires IAP configuration
 
@@ -82,6 +85,7 @@ gcloud run deploy easymo-client \
 ```
 
 **Notes**:
+
 - `--allow-unauthenticated=true`: Public access
 - Min instances 1: Always warm (avoid cold starts for users)
 - Max instances 50: Handle traffic spikes
@@ -110,6 +114,7 @@ gcloud run deploy easymo-voice-bridge \
 ```
 
 **Notes**:
+
 - Higher memory/CPU: Real-time audio processing
 - Longer timeout (900s = 15 min): Voice calls can be long
 - Concurrency 10: WebSocket connections per instance
@@ -140,6 +145,7 @@ gcloud run deploy easymo-wa-router \
 ```
 
 **Notes**:
+
 - Public endpoint (Meta webhooks), but verify signatures in code
 - High concurrency: Many simultaneous WhatsApp messages
 - Always warm: Avoid delays in message processing
@@ -169,6 +175,7 @@ gcloud run deploy easymo-agent-core \
 ```
 
 **Notes**:
+
 - Requires auth: Service-to-service calls only
 - Higher resources: AI agent orchestration
 - DATABASE_URL: Separate Prisma DB for agent state
@@ -178,6 +185,7 @@ gcloud run deploy easymo-agent-core \
 ## Phase 2 Services (Deploy after Phase 1 stable)
 
 ### Voice Media Server
+
 ```bash
 gcloud run deploy easymo-voice-media \
   --image europe-west1-docker.pkg.dev/easymoai/easymo-repo/voice-media:latest \
@@ -192,6 +200,7 @@ gcloud run deploy easymo-voice-media \
 ```
 
 ### Mobility Orchestrator
+
 ```bash
 gcloud run deploy easymo-mobility \
   --image europe-west1-docker.pkg.dev/easymoai/easymo-repo/mobility:latest \
@@ -206,6 +215,7 @@ gcloud run deploy easymo-mobility \
 ```
 
 ### Ranking Service
+
 ```bash
 gcloud run deploy easymo-ranking \
   --image europe-west1-docker.pkg.dev/easymoai/easymo-repo/ranking:latest \
@@ -220,6 +230,7 @@ gcloud run deploy easymo-ranking \
 ```
 
 ### Wallet Service
+
 ```bash
 gcloud run deploy easymo-wallet \
   --image europe-west1-docker.pkg.dev/easymoai/easymo-repo/wallet:latest \
@@ -281,6 +292,7 @@ gcloud run services describe ${SERVICE_NAME} --region ${REGION} --format="value(
 ```
 
 Usage:
+
 ```bash
 ./scripts/gcp-deploy-service.sh easymo-admin admin false 512Mi 1 0 5
 ./scripts/gcp-deploy-service.sh easymo-client client true 512Mi 1 1 50
@@ -291,6 +303,7 @@ Usage:
 ## Environment Variables Management
 
 ### Option 1: Use --set-env-vars (for few vars)
+
 ```bash
 gcloud run deploy SERVICE \
   --set-env-vars "KEY1=value1,KEY2=value2"
@@ -299,6 +312,7 @@ gcloud run deploy SERVICE \
 ### Option 2: Use --env-vars-file (recommended)
 
 Create `env/easymo-admin.yaml`:
+
 ```yaml
 NODE_ENV: production
 NEXT_TELEMETRY_DISABLED: "1"
@@ -307,6 +321,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbG...
 ```
 
 Deploy:
+
 ```bash
 gcloud run deploy easymo-admin \
   --image IMAGE \
@@ -316,17 +331,20 @@ gcloud run deploy easymo-admin \
 ### Option 3: Use Secret Manager (for sensitive data)
 
 Create secret:
+
 ```bash
 echo -n "your-secret-key" | gcloud secrets create SUPABASE_SERVICE_ROLE_KEY --data-file=-
 ```
 
 Reference in deployment:
+
 ```bash
 gcloud run deploy SERVICE \
   --set-secrets "SUPABASE_SERVICE_ROLE_KEY=SUPABASE_SERVICE_ROLE_KEY:latest"
 ```
 
 **Best practice**: Use Secret Manager for:
+
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `OPENAI_API_KEY`
 - `DATABASE_URL`
@@ -339,6 +357,7 @@ See [env-vars.md](./env-vars.md) for full details.
 ## Service URLs
 
 After deployment, get service URLs:
+
 ```bash
 # Single service
 gcloud run services describe easymo-admin \
@@ -350,6 +369,7 @@ gcloud run services list --region europe-west1 --format="table(name,status.url)"
 ```
 
 Example outputs:
+
 ```
 easymo-admin        https://easymo-admin-xxx-ew.a.run.app
 easymo-vendor       https://easymo-vendor-xxx-ew.a.run.app
@@ -362,6 +382,7 @@ easymo-wa-router    https://easymo-wa-router-xxx-ew.a.run.app
 ## Custom Domains (Optional)
 
 Map custom domains:
+
 ```bash
 # Add domain mapping
 gcloud run domain-mappings create \
@@ -376,6 +397,7 @@ gcloud run domain-mappings describe \
 ```
 
 Configure DNS:
+
 ```
 Type: CNAME
 Name: admin
@@ -387,6 +409,7 @@ Value: ghs.googlehosted.com
 ## Monitoring & Logs
 
 ### View logs
+
 ```bash
 # Stream logs
 gcloud run services logs tail easymo-admin --region europe-west1
@@ -398,7 +421,9 @@ gcloud logging read "resource.type=cloud_run_revision AND resource.labels.servic
 ```
 
 ### Metrics
+
 View in Cloud Console:
+
 - **URL**: https://console.cloud.google.com/run?project=easymoai
 - Metrics: Request count, latency, error rate, instance count
 
@@ -407,6 +432,7 @@ View in Cloud Console:
 ## Update Service
 
 ### Update image only
+
 ```bash
 gcloud run services update easymo-admin \
   --image europe-west1-docker.pkg.dev/easymoai/easymo-repo/admin:latest \
@@ -414,6 +440,7 @@ gcloud run services update easymo-admin \
 ```
 
 ### Update env vars
+
 ```bash
 gcloud run services update easymo-admin \
   --update-env-vars "NEW_VAR=value" \
@@ -421,6 +448,7 @@ gcloud run services update easymo-admin \
 ```
 
 ### Update traffic (blue/green)
+
 ```bash
 # Deploy new revision without traffic
 gcloud run deploy easymo-admin \
@@ -466,11 +494,13 @@ gcloud run services delete easymo-admin --region europe-west1
 ## Cost Estimation
 
 **Pricing** (europe-west1):
+
 - CPU: $0.00002400/vCPU-second
 - Memory: $0.00000250/GiB-second
 - Requests: $0.40/million
 
 **Example**: Admin PWA (512Mi, 1 CPU, ~1000 requests/day, ~10s avg)
+
 - CPU: 1000 × 10s × 0.00002400 = $0.24/day
 - Memory: 1000 × 10s × 0.5GB × 0.00000250 = $0.0125/day
 - Requests: negligible
@@ -487,6 +517,7 @@ gcloud run services delete easymo-admin --region europe-west1
 5. Deploy Phase 2 services
 
 See:
+
 - [env-vars.md](./env-vars.md) - Environment configuration
 - [iap-admin-vendor.md](./iap-admin-vendor.md) - IAP setup
 - [ci-cd.md](./ci-cd.md) - Automate deployments

@@ -9,16 +9,18 @@
 
 ## Executive Summary
 
-This plan addresses all 23 issues identified in the audit, organized into 4 phases prioritized by risk and impact. P0 blockers are resolved in Week 1, followed by infrastructure improvements and cleanup.
+This plan addresses all 23 issues identified in the audit, organized into 4 phases prioritized by
+risk and impact. P0 blockers are resolved in Week 1, followed by infrastructure improvements and
+cleanup.
 
 ## Phase Summary
 
-| Phase | Duration | Focus | Issues | Effort |
-|-------|----------|-------|--------|--------|
-| **Phase 1** | Week 1 | Security & Testing | #5, #6, #7, #18 | 56h |
-| **Phase 2** | Week 2 | DevOps & Infrastructure | #10, #11, #9, #16, #23 | 42h |
-| **Phase 3** | Week 3 | Code Quality | #2, #3, #8, #12, #13, #14 | 36h |
-| **Phase 4** | Week 4 | Documentation & Cleanup | #1, #4, #15, #17, #19, #20, #21, #22 | 26h |
+| Phase       | Duration | Focus                   | Issues                               | Effort |
+| ----------- | -------- | ----------------------- | ------------------------------------ | ------ |
+| **Phase 1** | Week 1   | Security & Testing      | #5, #6, #7, #18                      | 56h    |
+| **Phase 2** | Week 2   | DevOps & Infrastructure | #10, #11, #9, #16, #23               | 42h    |
+| **Phase 3** | Week 3   | Code Quality            | #2, #3, #8, #12, #13, #14            | 36h    |
+| **Phase 4** | Week 4   | Documentation & Cleanup | #1, #4, #15, #17, #19, #20, #21, #22 | 26h    |
 
 ---
 
@@ -28,22 +30,24 @@ This plan addresses all 23 issues identified in the audit, organized into 4 phas
 
 ### Tasks Overview
 
-| Task | Issue | Priority | Effort | Owner |
-|------|-------|----------|--------|-------|
-| Rate Limiting | #5 | P0 | 8h | Backend Dev |
-| RLS Audit | #6 | P0 | 16h | DB Engineer |
-| Wallet Tests | #7 | P0 | 24h | Senior Dev |
-| Audit Triggers | #18 | P0 | 8h | DB Engineer |
+| Task           | Issue | Priority | Effort | Owner       |
+| -------------- | ----- | -------- | ------ | ----------- |
+| Rate Limiting  | #5    | P0       | 8h     | Backend Dev |
+| RLS Audit      | #6    | P0       | 16h    | DB Engineer |
+| Wallet Tests   | #7    | P0       | 24h    | Senior Dev  |
+| Audit Triggers | #18   | P0       | 8h     | DB Engineer |
 
 ### 1.1 Rate Limiting Implementation
 
 **Deliverables**:
+
 - [ ] Rate limit module in `_shared/rate-limit.ts`
 - [ ] Applied to all 80+ edge functions
 - [ ] Verification script passing
 - [ ] Metrics logged
 
 **Rate Limits**:
+
 - WhatsApp Webhooks: 100 req/min
 - Payment Webhooks: 50 req/min
 - AI Agents: 30 req/min
@@ -54,12 +58,14 @@ This plan addresses all 23 issues identified in the audit, organized into 4 phas
 ### 1.2 Complete RLS Audit
 
 **Deliverables**:
+
 - [ ] RLS audit SQL script
 - [ ] All financial tables have RLS enabled
 - [ ] Audit triggers on 10 financial tables
 - [ ] Weekly RLS audit GitHub Action
 
 **Tables Requiring RLS**:
+
 1. `wallet_accounts`
 2. `wallet_entries`
 3. `wallet_transactions`
@@ -75,15 +81,12 @@ This plan addresses all 23 issues identified in the audit, organized into 4 phas
 
 ### 1.3 Wallet Service Test Coverage
 
-**Coverage Goals**:
-| Module | Current | Target |
-|--------|---------|--------|
-| wallet-service/transfer | ~40% | 95% |
-| wallet-service/balance | ~50% | 90% |
-| wallet-service/reconciliation | ~30% | 90% |
-| momo-allocator | ~45% | 85% |
+**Coverage Goals**: | Module | Current | Target | |--------|---------|--------| |
+wallet-service/transfer | ~40% | 95% | | wallet-service/balance | ~50% | 90% | |
+wallet-service/reconciliation | ~30% | 90% | | momo-allocator | ~45% | 85% |
 
 **Critical Test Cases**:
+
 - ✅ Double-entry bookkeeping verification
 - ✅ Idempotency enforcement
 - ✅ Overdraft prevention
@@ -96,6 +99,7 @@ This plan addresses all 23 issues identified in the audit, organized into 4 phas
 ### 1.4 Audit Trigger Verification
 
 **Deliverables**:
+
 - [ ] Audit log table with proper schema
 - [ ] Triggers on all 10 financial tables
 - [ ] Changed fields tracking
@@ -111,19 +115,20 @@ This plan addresses all 23 issues identified in the audit, organized into 4 phas
 
 ### Tasks Overview
 
-| Task | Issue | Priority | Effort | Owner |
-|------|-------|----------|--------|-------|
-| Deployment Consolidation | #10 | P1 | 8h | DevOps |
-| Build Automation | #11 | P1 | 2h | Build Engineer |
-| Workflow Deduplication | #9 | P2 | 4h | DevOps |
-| Health Checks | #16 | P1 | 8h | Backend Dev |
-| Deployment Docs | #23 | P2 | 4h | DevOps |
+| Task                     | Issue | Priority | Effort | Owner          |
+| ------------------------ | ----- | -------- | ------ | -------------- |
+| Deployment Consolidation | #10   | P1       | 8h     | DevOps         |
+| Build Automation         | #11   | P1       | 2h     | Build Engineer |
+| Workflow Deduplication   | #9    | P2       | 4h     | DevOps         |
+| Health Checks            | #16   | P1       | 8h     | Backend Dev    |
+| Deployment Docs          | #23   | P2       | 4h     | DevOps         |
 
 ### 2.1 Consolidate Deployment Scripts
 
 **Problem**: 50+ shell scripts in root directory
 
 **Solution**: New structure
+
 ```
 scripts/
 ├── deploy/
@@ -142,6 +147,7 @@ scripts/
 ```
 
 **Deliverables**:
+
 - [ ] Unified `deploy/all.sh` script
 - [ ] Old scripts archived to `scripts/.archive/`
 - [ ] Documentation in `scripts/README.md`
@@ -151,6 +157,7 @@ scripts/
 **Problem**: Manual build sequence required
 
 **Solution**: Add to root `package.json`
+
 ```json
 {
   "scripts": {
@@ -162,6 +169,7 @@ scripts/
 ```
 
 **Deliverables**:
+
 - [ ] Automated prebuild script
 - [ ] Turbo configuration
 - [ ] CI using new scripts
@@ -169,11 +177,13 @@ scripts/
 ### 2.3 Health Check Implementation
 
 **Required Endpoints**:
+
 - `/health` - Overall status
 - `/health/liveness` - K8s liveness probe
 - `/health/readiness` - Service readiness
 
 **Services Requiring Health Checks** (12):
+
 1. wallet-service
 2. agent-core
 3. broker-orchestrator
@@ -188,6 +198,7 @@ scripts/
 12. whatsapp-webhook-worker
 
 **Deliverables**:
+
 - [ ] Health check module in `@easymo/commons`
 - [ ] Endpoints on all 12 services
 - [ ] Verification script
@@ -195,11 +206,13 @@ scripts/
 ### 2.4 Document Deployment Architecture
 
 **Deliverables**:
+
 - [ ] Platform responsibility matrix
 - [ ] Environment configuration guide
 - [ ] Deployment runbook
 
 **Platform Breakdown**:
+
 - **Netlify**: Frontend apps (admin-app, waiter-pwa)
 - **Supabase**: Edge Functions (80+ functions)
 - **Cloud Run**: Microservices (12 services)
@@ -213,14 +226,14 @@ scripts/
 
 ### Tasks Overview
 
-| Task | Issue | Priority | Effort | Owner |
-|------|-------|----------|--------|-------|
-| Admin App Decision | #2 | P1 | 8h | Tech Lead |
-| Clean Services Dir | #3 | P2 | 2h | Backend Dev |
-| Standardize Tests | #8 | P2 | 16h | QA Engineer |
-| Fix TypeScript Versions | #12 | P2 | 4h | Build Engineer |
-| Fix Dependencies | #13 | P2 | 2h | Build Engineer |
-| Zero ESLint Warnings | #14 | P2 | 4h | All Devs |
+| Task                    | Issue | Priority | Effort | Owner          |
+| ----------------------- | ----- | -------- | ------ | -------------- |
+| Admin App Decision      | #2    | P1       | 8h     | Tech Lead      |
+| Clean Services Dir      | #3    | P2       | 2h     | Backend Dev    |
+| Standardize Tests       | #8    | P2       | 16h    | QA Engineer    |
+| Fix TypeScript Versions | #12   | P2       | 4h     | Build Engineer |
+| Fix Dependencies        | #13   | P2       | 2h     | Build Engineer |
+| Zero ESLint Warnings    | #14   | P2       | 4h     | All Devs       |
 
 ### 3.1 Deprecate Duplicate Admin App
 
@@ -229,6 +242,7 @@ scripts/
 **Recommendation**: Keep `admin-app` (has Tauri desktop support)
 
 **Tasks**:
+
 - [ ] Migrate improvements from v2 to main
 - [ ] Archive admin-app-v2
 - [ ] Update documentation
@@ -241,6 +255,7 @@ scripts/
 **Solution**: Migrate all to Vitest
 
 **Deliverables**:
+
 - [ ] All services using Vitest
 - [ ] Consistent test configuration
 - [ ] Updated CI workflows
@@ -251,6 +266,7 @@ scripts/
 **Target**: 0 warnings
 
 **Tasks**:
+
 - [ ] Fix existing warnings
 - [ ] Update ESLint config to error on warnings
 - [ ] Update CI to fail on warnings
@@ -263,22 +279,23 @@ scripts/
 
 ### Tasks Overview
 
-| Task | Issue | Priority | Effort | Owner |
-|------|-------|----------|--------|-------|
-| Clean Root Directory | #1 | P1 | 2h | Any Dev |
-| Verify .env.example | #4 | P2 | 1h | Security |
-| Observability Audit | #15 | P2 | 4h | Backend Dev |
-| Clarify Migration Dirs | #17 | P2 | 2h | DB Engineer |
-| Bundle Analysis | #19 | P2 | 4h | Frontend Dev |
-| Index Verification | #20 | P2 | 4h | DB Engineer |
-| Organize Docs | #21 | P2 | 6h | Tech Writer |
-| API Documentation | #22 | P2 | 8h | Backend Dev |
+| Task                   | Issue | Priority | Effort | Owner        |
+| ---------------------- | ----- | -------- | ------ | ------------ |
+| Clean Root Directory   | #1    | P1       | 2h     | Any Dev      |
+| Verify .env.example    | #4    | P2       | 1h     | Security     |
+| Observability Audit    | #15   | P2       | 4h     | Backend Dev  |
+| Clarify Migration Dirs | #17   | P2       | 2h     | DB Engineer  |
+| Bundle Analysis        | #19   | P2       | 4h     | Frontend Dev |
+| Index Verification     | #20   | P2       | 4h     | DB Engineer  |
+| Organize Docs          | #21   | P2       | 6h     | Tech Writer  |
+| API Documentation      | #22   | P2       | 8h     | Backend Dev  |
 
 ### 4.1 Clean Root Directory
 
 **Problem**: 80+ markdown files in root
 
 **Solution**:
+
 ```bash
 mkdir -p docs/sessions docs/architecture/diagrams
 mv *_COMPLETE*.md *_STATUS*.md *_SUMMARY*.txt docs/sessions/
@@ -286,6 +303,7 @@ mv *_VISUAL*.txt *_ARCHITECTURE*.txt docs/architecture/
 ```
 
 **Deliverables**:
+
 - [ ] Root directory clean
 - [ ] Files organized in `/docs`
 - [ ] Updated `.gitignore`
@@ -293,6 +311,7 @@ mv *_VISUAL*.txt *_ARCHITECTURE*.txt docs/architecture/
 ### 4.2 Organize Documentation
 
 **New Structure**:
+
 ```
 docs/
 ├── README.md (index)
@@ -315,6 +334,7 @@ docs/
 ### 4.3 Create API Documentation
 
 **Deliverables**:
+
 - [ ] OpenAPI specs for REST endpoints
 - [ ] GraphQL schema documentation
 - [ ] Webhook documentation
@@ -323,6 +343,7 @@ docs/
 ### 4.4 Database Index Verification
 
 **Tasks**:
+
 - [ ] Audit all high-traffic queries
 - [ ] Run EXPLAIN ANALYZE on critical queries
 - [ ] Verify indexes exist
@@ -333,24 +354,28 @@ docs/
 ## Success Criteria by Phase
 
 ### ✅ Phase 1 Complete When:
+
 - [ ] All P0 security issues resolved
 - [ ] Rate limiting active on 80+ edge functions
 - [ ] All financial tables have RLS + audit triggers
 - [ ] Wallet service test coverage ≥ 80%
 
 ### ✅ Phase 2 Complete When:
+
 - [ ] Single unified deployment script works
 - [ ] All 12 services have health check endpoints
 - [ ] Build order automated
 - [ ] Deployment architecture documented
 
 ### ✅ Phase 3 Complete When:
+
 - [ ] Single admin app version active
 - [ ] All tests use Vitest
 - [ ] TypeScript versions consistent
 - [ ] Zero ESLint warnings
 
 ### ✅ Phase 4 Complete When:
+
 - [ ] Root directory clean (<10 files)
 - [ ] Documentation organized in `/docs`
 - [ ] API documentation complete
@@ -363,16 +388,19 @@ docs/
 ### High-Risk Items
 
 **1. Wallet Test Coverage (24h)**
+
 - **Risk**: Most time-consuming task
 - **Mitigation**: Allocate senior developer, start Day 1
 - **Contingency**: Focus on critical paths if time runs short
 
 **2. RLS Audit (16h)**
+
 - **Risk**: Database expertise required
 - **Mitigation**: Assign experienced DB engineer
 - **Contingency**: Phased rollout if complex
 
 **3. Admin App Deprecation**
+
 - **Risk**: Requires product decision
 - **Mitigation**: Get decision in Phase 1
 - **Contingency**: Can delay to post-launch if needed
@@ -389,21 +417,21 @@ docs/
 
 ### Recommended Team
 
-| Role | Allocation | Primary Tasks |
-|------|-----------|---------------|
-| Senior Backend Developer | 100% Week 1, 50% Weeks 2-4 | Wallet tests, health checks |
-| Database Engineer | 100% Week 1-2, 25% Weeks 3-4 | RLS audit, triggers, indexes |
-| DevOps Engineer | 25% Week 1, 100% Week 2, 50% Weeks 3-4 | Deployment consolidation, CI/CD |
-| Technical Writer | 0% Weeks 1-3, 100% Week 4 | Documentation cleanup |
+| Role                     | Allocation                             | Primary Tasks                   |
+| ------------------------ | -------------------------------------- | ------------------------------- |
+| Senior Backend Developer | 100% Week 1, 50% Weeks 2-4             | Wallet tests, health checks     |
+| Database Engineer        | 100% Week 1-2, 25% Weeks 3-4           | RLS audit, triggers, indexes    |
+| DevOps Engineer          | 25% Week 1, 100% Week 2, 50% Weeks 3-4 | Deployment consolidation, CI/CD |
+| Technical Writer         | 0% Weeks 1-3, 100% Week 4              | Documentation cleanup           |
 
 ### Weekly Commitment
 
-| Week | Focus | Team Commitment |
-|------|-------|-----------------|
-| Week 1 | P0 Blockers | 100% (all hands) |
-| Week 2 | Infrastructure | 80% |
-| Week 3 | Code Quality | 60% |
-| Week 4 | Documentation | 40% (can parallel) |
+| Week   | Focus          | Team Commitment    |
+| ------ | -------------- | ------------------ |
+| Week 1 | P0 Blockers    | 100% (all hands)   |
+| Week 2 | Infrastructure | 80%                |
+| Week 3 | Code Quality   | 60%                |
+| Week 4 | Documentation  | 40% (can parallel) |
 
 ---
 
@@ -419,15 +447,15 @@ docs/
 
 Track in GitHub Project:
 
-| Week | Metric | Target | Actual |
-|------|--------|--------|--------|
-| 1 | P0 issues resolved | 4/4 | ___ |
-| 1 | Edge functions with rate limiting | 80/80 | ___ |
-| 1 | Wallet test coverage | 80%+ | ___ |
-| 2 | Services with health checks | 12/12 | ___ |
-| 2 | Deployment scripts consolidated | Yes | ___ |
-| 3 | ESLint warnings | 0 | ___ |
-| 4 | Root directory file count | <10 | ___ |
+| Week | Metric                            | Target | Actual |
+| ---- | --------------------------------- | ------ | ------ |
+| 1    | P0 issues resolved                | 4/4    | \_\_\_ |
+| 1    | Edge functions with rate limiting | 80/80  | \_\_\_ |
+| 1    | Wallet test coverage              | 80%+   | \_\_\_ |
+| 2    | Services with health checks       | 12/12  | \_\_\_ |
+| 2    | Deployment scripts consolidated   | Yes    | \_\_\_ |
+| 3    | ESLint warnings                   | 0      | \_\_\_ |
+| 4    | Root directory file count         | <10    | \_\_\_ |
 
 ---
 
@@ -436,6 +464,7 @@ Track in GitHub Project:
 ### Production Readiness Checklist
 
 #### Security (Must Pass)
+
 - [ ] Rate limiting verified on all public endpoints
 - [ ] RLS policies on all financial tables
 - [ ] Audit triggers functional
@@ -443,29 +472,32 @@ Track in GitHub Project:
 - [ ] Webhook signatures verified
 
 #### Testing (Must Pass)
+
 - [ ] Wallet service ≥80% coverage
 - [ ] E2E payment flow tests pass
 - [ ] Load testing completed
 
 #### Operations (Must Pass)
+
 - [ ] All services have health checks
 - [ ] Monitoring dashboards configured
 - [ ] Rollback procedures documented
 - [ ] On-call rotation defined
 
 #### Documentation (Nice to Have)
+
 - [ ] API documentation complete
 - [ ] Deployment runbook exists
 - [ ] Root directory clean
 
 ### Decision Matrix
 
-| Must Pass Failed | Nice to Have Failed | Decision |
-|------------------|---------------------|----------|
-| 0 | 0-1 | ✅ GO |
-| 0 | 2-3 | ⚠️ GO with caveats |
-| 1 | Any | ❌ NO-GO - Fix blocker |
-| 2+ | Any | ❌ NO-GO - Postpone launch |
+| Must Pass Failed | Nice to Have Failed | Decision                   |
+| ---------------- | ------------------- | -------------------------- |
+| 0                | 0-1                 | ✅ GO                      |
+| 0                | 2-3                 | ⚠️ GO with caveats         |
+| 1                | Any                 | ❌ NO-GO - Fix blocker     |
+| 2+               | Any                 | ❌ NO-GO - Postpone launch |
 
 ---
 
@@ -481,6 +513,7 @@ Track in GitHub Project:
 ### Quick Wins
 
 After launch, address remaining P2 issues:
+
 - Bundle size optimization
 - Remaining documentation
 - Code quality improvements
@@ -521,7 +554,7 @@ Week 5: 🚀 LAUNCH
 ## Next Steps
 
 1. **Immediate**: Review and approve this plan
-2. **Day 1**: Assign owners to Phase 1 tasks  
+2. **Day 1**: Assign owners to Phase 1 tasks
 3. **Week 1**: Daily standups to track P0 progress
 4. **Week 2**: Begin Phase 2 while monitoring Phase 1 completion
 5. **Week 4**: Final go/no-go decision

@@ -1,19 +1,26 @@
 # Wallet Notifications Cron Job Setup
 
 ## Overview
-The `wallet-notifications` edge function processes queued wallet transaction notifications and sends WhatsApp messages to users. This function must be triggered regularly (ideally every minute) to ensure timely delivery of notifications.
+
+The `wallet-notifications` edge function processes queued wallet transaction notifications and sends
+WhatsApp messages to users. This function must be triggered regularly (ideally every minute) to
+ensure timely delivery of notifications.
 
 ## ⚠️ Important: GitHub Actions Limitation
-**GitHub Actions can only run scheduled workflows every 5 minutes minimum**, not every minute. For production with high notification volume, use an external cron service.
+
+**GitHub Actions can only run scheduled workflows every 5 minutes minimum**, not every minute. For
+production with high notification volume, use an external cron service.
 
 ## Setup Options
 
 ### Option 1: GitHub Actions (✅ Already Configured)
+
 **File**: `.github/workflows/cron-wallet-notifications.yml`
 
-**Schedule**: Every 5 minutes (*/5 * * * *)
+**Schedule**: Every 5 minutes (_/5 _ \* \* \*)
 
 **Setup**:
+
 1. Add `SUPABASE_SERVICE_ROLE_KEY` to GitHub repository secrets
    - Go to: Repository → Settings → Secrets and variables → Actions
    - Click "New repository secret"
@@ -29,23 +36,26 @@ The `wallet-notifications` edge function processes queued wallet transaction not
    gh workflow run cron-wallet-notifications.yml
    ```
 
-**Pros**: 
+**Pros**:
+
 - Free
 - Already configured
 - Easy to monitor
 - Integrates with GitHub
 
 **Cons**:
+
 - 5-minute minimum interval (not 1 minute)
 - Depends on GitHub Actions availability
 
 ---
 
 ### Option 2: Render.com Cron Job (Recommended for Production)
-**Cost**: Free tier available
-**Frequency**: Every 1 minute
+
+**Cost**: Free tier available **Frequency**: Every 1 minute
 
 **Setup**:
+
 1. Go to https://dashboard.render.com
 2. Sign up/login (can use GitHub account)
 3. Click "New +" → "Cron Job"
@@ -64,22 +74,25 @@ The `wallet-notifications` edge function processes queued wallet transaction not
 5. Click "Create Cron Job"
 
 **Pros**:
+
 - Runs every 1 minute
 - Free tier available
 - Reliable
 - Auto-restarts on failure
 
 **Cons**:
+
 - Requires external service
 - Need to manage credentials
 
 ---
 
 ### Option 3: cron-job.org (Easy External Service)
-**Cost**: Free
-**Frequency**: Every 1 minute (free tier)
+
+**Cost**: Free **Frequency**: Every 1 minute (free tier)
 
 **Setup**:
+
 1. Go to https://cron-job.org
 2. Sign up for free account
 3. Click "Create cronjob"
@@ -93,27 +106,30 @@ The `wallet-notifications` edge function processes queued wallet transaction not
      Content-Type: application/json
      ```
    - **Request Body**: `{}`
-   - **Schedule**: Every minute (*/1)
+   - **Schedule**: Every minute (\*/1)
 
 5. Click "Create cronjob"
 
 **Pros**:
+
 - Very easy to set up
 - Free
 - Runs every 1 minute
 - Email alerts on failures
 
 **Cons**:
+
 - Requires external service
 - Free tier has limits (25 cron jobs)
 
 ---
 
 ### Option 4: EasyCron.com
-**Cost**: Free tier (15 cron jobs)
-**Frequency**: Every 1 minute
+
+**Cost**: Free tier (15 cron jobs) **Frequency**: Every 1 minute
 
 **Setup**:
+
 1. Go to https://www.easycron.com
 2. Sign up for free account
 3. Click "Add Cron Job"
@@ -131,17 +147,20 @@ The `wallet-notifications` edge function processes queued wallet transaction not
 5. Click "Create"
 
 **Pros**:
+
 - Runs every 1 minute
 - Free tier available
 - Good dashboard
 - Logs and monitoring
 
 **Cons**:
+
 - Free tier limited to 15 jobs
 
 ---
 
 ### Option 5: Local Development (Testing Only)
+
 For local testing, use the provided script:
 
 ```bash
@@ -153,6 +172,7 @@ export SUPABASE_SERVICE_ROLE_KEY='your_service_role_key_here'
 ```
 
 Or use `watch`:
+
 ```bash
 watch -n 60 'curl -X POST "https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wallet-notifications" \
   -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
@@ -165,6 +185,7 @@ watch -n 60 'curl -X POST "https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1
 ## Monitoring
 
 ### Check Pending Notifications
+
 ```sql
 -- Count pending notifications
 SELECT COUNT(*) as pending_count
@@ -172,7 +193,7 @@ FROM wallet_notification_queue
 WHERE sent_at IS NULL;
 
 -- View oldest pending notification
-SELECT 
+SELECT
     MIN(created_at) as oldest_pending,
     NOW() - MIN(created_at) as age
 FROM wallet_notification_queue
@@ -180,9 +201,10 @@ WHERE sent_at IS NULL;
 ```
 
 ### Check Recent Processing
+
 ```sql
 -- Recently sent notifications
-SELECT 
+SELECT
     COUNT(*) as sent_count,
     MAX(sent_at) as last_sent
 FROM wallet_notification_queue
@@ -190,6 +212,7 @@ WHERE sent_at > NOW() - INTERVAL '1 hour';
 ```
 
 ### Manual Trigger
+
 ```bash
 # Test the function manually
 curl -X POST \
@@ -204,6 +227,7 @@ curl -X POST \
 ## Troubleshooting
 
 ### No notifications being sent
+
 1. Check if cron job is running:
    - GitHub Actions: Check workflow runs
    - External service: Check their dashboard
@@ -213,21 +237,22 @@ curl -X POST \
 
 3. Check queue:
    ```sql
-   SELECT * FROM wallet_notification_queue 
-   WHERE sent_at IS NULL 
-   ORDER BY created_at ASC 
+   SELECT * FROM wallet_notification_queue
+   WHERE sent_at IS NULL
+   ORDER BY created_at ASC
    LIMIT 10;
    ```
 
 ### Notifications delayed
+
 - **If using GitHub Actions**: Expected (5-minute delay)
   - Solution: Switch to external cron service
-  
 - **If using external service**: Check service status
   - Render.com: Check cron job logs
   - cron-job.org: Check execution history
 
 ### High volume of stuck notifications
+
 1. Increase function timeout (default 30s)
 2. Check WhatsApp API rate limits
 3. Consider processing in batches (already does 50 per run)

@@ -3,21 +3,21 @@ info:
   title: EasyMO WhatsApp Webhook API
   description: |
     API documentation for EasyMO WhatsApp webhook microservices.
-    
+
     ## Overview
     This API handles incoming WhatsApp webhook events and routes them to
     appropriate microservices for processing.
-    
+
     ## Services
     - **wa-webhook-core**: Central router and home menu
     - **wa-webhook-profile**: User profiles and wallet management
     - **wa-webhook-mobility**: Ride booking and transport services
     - **wa-webhook-insurance**: Insurance document processing and claims
-    
+
     ## Authentication
     All webhook endpoints use HMAC-SHA256 signature verification via the
     `X-Hub-Signature-256` header.
-    
+
   version: 2.3.0
   contact:
     name: EasyMO Development Team
@@ -74,20 +74,20 @@ paths:
             type: string
           description: Challenge string to echo back
       responses:
-        '200':
+        "200":
           description: Verification successful
           content:
             text/plain:
               schema:
                 type: string
               example: "challenge_string_from_meta"
-        '403':
+        "403":
           description: Verification failed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-    
+                $ref: "#/components/schemas/ErrorResponse"
+
     post:
       tags:
         - Core
@@ -102,17 +102,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/WebhookPayload'
+              $ref: "#/components/schemas/WebhookPayload"
       responses:
-        '200':
+        "200":
           description: Webhook processed successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WebhookResponse'
-        '401':
+                $ref: "#/components/schemas/WebhookResponse"
+        "401":
           description: Invalid signature
-        '429':
+        "429":
           description: Rate limit exceeded
 
   /wa-webhook-core/health:
@@ -121,12 +121,12 @@ paths:
         - Health
       summary: Core service health check
       responses:
-        '200':
+        "200":
           description: Service is healthy
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HealthResponse'
+                $ref: "#/components/schemas/HealthResponse"
 
   /wa-webhook-core/metrics:
     get:
@@ -134,7 +134,7 @@ paths:
         - Health
       summary: Performance metrics
       responses:
-        '200':
+        "200":
           description: Metrics data
 
 components:

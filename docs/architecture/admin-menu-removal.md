@@ -5,21 +5,26 @@
 
 ## Overview
 
-Removed the admin menu item that appeared on the WhatsApp home menu for specific admin phone numbers. Admin functionality is now exclusively accessed through the dedicated admin panel at **easymo-admin.netlify.app**.
+Removed the admin menu item that appeared on the WhatsApp home menu for specific admin phone
+numbers. Admin functionality is now exclusively accessed through the dedicated admin panel at
+**easymo-admin.netlify.app**.
 
 ## What Was Removed
 
 ### 1. **Admin Menu Item on WhatsApp Home**
+
 - Menu item that appeared only for admin phone numbers
 - Showed "Admin Hub" or similar admin-specific options
 - Was injected based on phone number matching
 
 ### 2. **Admin Phone Number Checking**
+
 - Code that checked if user's phone number was in admin list
 - Admin number caching and loading from `app_config` table
 - Default hardcoded admin numbers
 
 ### 3. **Admin Workflows in WhatsApp**
+
 - Admin hub navigation
 - Quick admin actions (trips, insurance, marketplace, wallet, etc.)
 - Admin-specific diagnostic tools
@@ -28,6 +33,7 @@ Removed the admin menu item that appeared on the WhatsApp home menu for specific
 ## Files Modified
 
 ### Migration
+
 - **supabase/migrations/20251122150000_remove_admin_menu_item.sql**
   - Deletes admin menu items from `whatsapp_home_menu_items`
   - Clears `admin_numbers` and `insurance_admin_numbers` from `app_config`
@@ -35,16 +41,19 @@ Removed the admin menu item that appeared on the WhatsApp home menu for specific
 ### Code Changes
 
 #### 1. Home Menu (`supabase/functions/wa-webhook/flows/home.ts`)
+
 **Removed**:
+
 - `ADMIN_ROW_DEF` constant
 - `isAdmin` parameter from `buildRows()`
 - Admin row injection logic
 - Admin menu title/description translation keys
 
 **Before**:
+
 ```typescript
 const rows = await buildRows({
-  isAdmin: gate.isAdmin,  // ❌ Removed
+  isAdmin: gate.isAdmin, // ❌ Removed
   showInsurance: gate.allowed,
   locale: ctx.locale,
   ctx,
@@ -63,6 +72,7 @@ return [
 ```
 
 **After**:
+
 ```typescript
 const rows = await buildRows({
   showInsurance: gate.allowed,
@@ -74,7 +84,9 @@ return filteredRows; // ✅ No admin injection
 ```
 
 #### 2. Interactive Button Router (`router/interactive_button.ts`)
+
 **Removed**:
+
 - Imports: `openAdminHub`, `showAdminHubList`, `handleAdminQuickAction`, `handleInsuranceButton`
 - Case handlers for:
   - `IDS.ADMIN_HUB`
@@ -85,19 +97,24 @@ return filteredRows; // ✅ No admin injection
   - `IDS.ADMIN_INSURANCE_*` (multiple)
 
 #### 3. Interactive List Router (`router/interactive_list.ts`)
+
 **Removed**:
+
 - Import: `openAdminHub`
 - Case handler for `IDS.ADMIN_HUB`
 
 **Kept** (still used by admin flows):
+
 - Import: `ADMIN_ROW_IDS` (used by `handleAdminRow`)
 - Import: `handleAdminRow` (handles admin-specific rows)
 
 ## Files Preserved (Not Deleted)
 
-The following admin-related files are **kept** because they may be used by other systems or edge functions:
+The following admin-related files are **kept** because they may be used by other systems or edge
+functions:
 
 ### Kept Files:
+
 ```
 supabase/functions/wa-webhook/flows/admin/
 ├── actions.ts              # Admin quick actions
@@ -122,6 +139,7 @@ supabase/functions/wa-webhook/domains/insurance/
 ```
 
 ### Reason for Preservation:
+
 1. May be called by other edge functions
 2. Referenced by flow definitions
 3. Could be needed for backoffice operations
@@ -132,17 +150,20 @@ supabase/functions/wa-webhook/domains/insurance/
 ## What Still Works
 
 ### ✅ Admin Panel (Web)
+
 - **URL**: https://easymo-admin.netlify.app/
 - Full admin functionality available
 - All operations (trips, insurance, marketplace, wallet, etc.)
 - Better UI/UX than WhatsApp-based admin
 
 ### ✅ Insurance Admin Workflows
+
 - Admin can still receive notifications (via edge functions)
 - Admin can still manage insurance requests (via web panel)
 - WhatsApp integration for notifications may still work
 
 ### ✅ Regular WhatsApp Features
+
 - All 9 canonical menu items work normally
 - No impact on end-user experience
 - Insurance gate logic still functions
@@ -150,11 +171,13 @@ supabase/functions/wa-webhook/domains/insurance/
 ## What No Longer Works
 
 ### ❌ Admin Menu on WhatsApp Home
+
 - Admins no longer see "Admin Hub" in WhatsApp menu
 - Phone number-based admin access removed
 - WhatsApp-based admin diagnostics unavailable
 
 ### ❌ Admin Quick Actions via WhatsApp
+
 - Can't reconcile menus via WhatsApp
 - Can't access diagnostic tools via WhatsApp
 - Can't view admin-specific data via WhatsApp
@@ -162,11 +185,13 @@ supabase/functions/wa-webhook/domains/insurance/
 ## Migration Path
 
 ### For Admins:
+
 1. **Stop using WhatsApp for admin tasks**
 2. **Use the admin panel** at https://easymo-admin.netlify.app/
 3. **Bookmark the admin panel** for quick access
 
 ### For Operations:
+
 1. All admin functionality migrated to web panel
 2. More powerful tools available in admin panel
 3. Better analytics and reporting
@@ -174,6 +199,7 @@ supabase/functions/wa-webhook/domains/insurance/
 ## Database Changes
 
 ### Before:
+
 ```sql
 -- app_config table
 {
@@ -190,6 +216,7 @@ supabase/functions/wa-webhook/domains/insurance/
 ```
 
 ### After:
+
 ```sql
 -- app_config table
 {
@@ -204,6 +231,7 @@ supabase/functions/wa-webhook/domains/insurance/
 ## Testing
 
 ### Verification Steps:
+
 ```bash
 # 1. Check database
 supabase db query "
@@ -230,6 +258,7 @@ SELECT admin_numbers, insurance_admin_numbers FROM app_config WHERE id = 1;
 If admin WhatsApp access is needed again:
 
 1. **Restore admin numbers**:
+
 ```sql
 UPDATE app_config
 SET admin_numbers = ARRAY['+250788767816', '+35677186193', '+250795588248', '+35699742524']
@@ -237,11 +266,13 @@ WHERE id = 1;
 ```
 
 2. **Restore code** (revert this commit):
+
 ```bash
 git revert <this_commit_hash>
 ```
 
 3. **Redeploy edge functions**:
+
 ```bash
 supabase functions deploy wa-webhook
 ```
@@ -257,6 +288,7 @@ supabase functions deploy wa-webhook
 ## Related Changes
 
 This removal is part of the larger **WhatsApp Home Menu Cleanup** (9 canonical items):
+
 - See: `docs/architecture/whatsapp-home-menu.md`
 - Migration: `20251122112950_cleanup_home_menu_9_items.sql`
 

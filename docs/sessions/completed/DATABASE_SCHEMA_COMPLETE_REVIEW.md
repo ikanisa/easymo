@@ -1,4 +1,5 @@
 # Complete Database Schema Review
+
 **Date:** 2025-12-09 13:20 UTC  
 **Task:** Waiter AI + Buy & Sell AI Agent Implementation
 
@@ -7,9 +8,11 @@
 ## ✅ CONFIRMED: Tables That EXIST in Production
 
 ### 1. AI Agent Infrastructure (✅ COMPLETE)
+
 - **`ai_agents`** - Agent registry (10 agents configured)
 - **`ai_agent_configs`** - Agent configurations (PRIMARY table)
-  - Columns: `agent_type` (PK), `name`, `description`, `system_prompt`, `keywords[]`, `tools[]`, `enabled`, `priority`, `config` (JSONB)
+  - Columns: `agent_type` (PK), `name`, `description`, `system_prompt`, `keywords[]`, `tools[]`,
+    `enabled`, `priority`, `config` (JSONB)
 - **`ai_agent_personas`** - Persona definitions
 - **`ai_agent_system_instructions`** - System prompts
 - **`ai_agent_tools`** - Tool definitions
@@ -20,6 +23,7 @@
 **Status:** ✅ FULLY IMPLEMENTED - No changes needed
 
 **Current Agents (10):**
+
 1. ✅ `waiter` - Waiter Agent
 2. ✅ `farmer` - Farmer Agent
 3. ✅ `marketplace` - Marketplace Agent
@@ -38,6 +42,7 @@
 ### 2. Business & Bar Tables (✅ EXIST, Need Enhancement)
 
 #### **`business`** - PRIMARY business registry
+
 - **Rows:** 302 active businesses
 - **Schema:**
   ```
@@ -60,6 +65,7 @@
   - `idx_business_tag`
 
 **MISSING COLUMNS (need to add):**
+
 - ❌ `latitude`, `longitude` - Location coords
 - ❌ `location` (PostGIS geography)
 - ❌ `description` TEXT
@@ -76,6 +82,7 @@
 - ❌ `phone` TEXT - Contact phone
 
 #### **`bars`** - Bar/restaurant listings
+
 - **Rows:** 302 active bars (same count as business!)
 - **Schema:** (from database.types.ts)
   ```
@@ -98,6 +105,7 @@
 **Status:** ✅ FULLY POPULATED - Ready to use for Waiter Agent
 
 #### **`restaurants`** - Full restaurant records
+
 - **Rows:** 0 (EMPTY!)
 - **Schema:**
   ```
@@ -116,6 +124,7 @@
 **Status:** ✅ Table exists but EMPTY - Waiter Agent should use `bars` instead
 
 #### Related Tables:
+
 - ✅ `restaurant_menu_items` (FK: restaurant_id)
 - ✅ `restaurant_tables` (FK: restaurant_id)
 - ✅ `orders` (FK: restaurant_id)
@@ -129,6 +138,7 @@
 ### 3. Search Functions (✅ EXIST, Some Need Enhancement)
 
 **Existing Functions (17 found):**
+
 1. ✅ `search_businesses_nearby(search_term, lat, lng, radius, limit)`
 2. ✅ `search_businesses()`
 3. ✅ `search_businesses_semantic()`
@@ -137,7 +147,7 @@
 6. ✅ `search_marketplace_listings_nearby()`
 7. ✅ `search_nearby_jobs()`
 8. ✅ `vendors_nearby()`
-9. + other mobility/property functions
+9. - other mobility/property functions
 
 **Status:** ✅ Basic search EXISTS - Need AI-enhanced version
 
@@ -146,6 +156,7 @@
 ### 4. Session Tables (❌ MISSING!)
 
 **Found:**
+
 - ❌ NO `ai_agent_sessions` table!
 - ✅ `omnichannel_sessions` (different purpose)
 - ✅ `openai_sessions` (different purpose)
@@ -155,6 +166,7 @@
 **Impact:** Session manager code in `wa-agent-waiter/core/session-manager.ts` WILL FAIL!
 
 **Must Create:**
+
 ```sql
 CREATE TABLE ai_agent_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -176,23 +188,28 @@ CREATE INDEX idx_ai_agent_sessions_agent_type ON ai_agent_sessions(agent_type);
 ## ❌ CRITICAL ISSUES FOUND
 
 ### Issue 1: No AI Agent Sessions Table
+
 **Problem:** Code references `ai_agent_sessions` but table doesn't exist  
 **Impact:** 🔴 CRITICAL - All agents will crash on session creation  
 **Solution:** Create migration for `ai_agent_sessions` table
 
 ### Issue 2: No Buy & Sell Agent
+
 **Problem:** Only `marketplace` and `business_broker` exist separately  
 **Impact:** 🟡 MEDIUM - Need to either:
-  - Option A: Use existing `marketplace` and `business_broker` agents
-  - Option B: Create new `buy_and_sell` agent (requires db insert + code)
-**Recommendation:** Use `business_broker` as it already handles business discovery
+
+- Option A: Use existing `marketplace` and `business_broker` agents
+- Option B: Create new `buy_and_sell` agent (requires db insert + code) **Recommendation:** Use
+  `business_broker` as it already handles business discovery
 
 ### Issue 3: Business Table Missing Key Columns
+
 **Problem:** No `lat/lng`, `description`, `tags[]`, `services[]`, `keywords[]`, etc.  
 **Impact:** 🟡 MEDIUM - Can't do AI-powered search without these  
 **Solution:** Add columns via migration (non-breaking, all nullable)
 
 ### Issue 4: Restaurants Table is Empty
+
 **Problem:** `restaurants` table has 0 rows, `bars` has 302  
 **Impact:** 🟢 LOW - Waiter Agent just needs to query `bars` instead  
 **Solution:** Update Waiter Agent to use `bars` table as primary source
@@ -202,6 +219,7 @@ CREATE INDEX idx_ai_agent_sessions_agent_type ON ai_agent_sessions(agent_type);
 ## 📋 IMPLEMENTATION PLAN (Updated)
 
 ### Phase 1: Critical Fixes (MUST DO)
+
 **Priority: 🔴 BLOCKER**
 
 1. **Create `ai_agent_sessions` table**
@@ -220,6 +238,7 @@ CREATE INDEX idx_ai_agent_sessions_agent_type ON ai_agent_sessions(agent_type);
 ---
 
 ### Phase 2: Waiter Agent Discovery Flow
+
 **Priority: 🟡 HIGH**
 
 1. **Update Waiter Agent to use `bars` table**
@@ -246,22 +265,26 @@ CREATE INDEX idx_ai_agent_sessions_agent_type ON ai_agent_sessions(agent_type);
 ---
 
 ### Phase 3: Business Discovery Agent (Buy & Sell)
+
 **Priority: 🟢 MEDIUM**
 
 **Decision Required:** Use existing or create new?
 
 **Option A: Use Existing `business_broker` Agent (RECOMMENDED)**
+
 - ✅ Already in database (`agent_type = 'business_broker'`)
 - ✅ Already enabled
 - ✅ Already has system prompt
 - ⚠️ Need to enhance with natural language understanding
 
 **Option B: Create New `buy_and_sell` Agent**
+
 - ❌ Requires INSERT into `ai_agent_configs`
 - ❌ Requires new TypeScript agent class
 - ❌ More complexity
 
 **Recommendation:** Use `business_broker`, enhance it with:
+
 1. Natural language intent classification
 2. Product/service-specific queries
 3. AI-powered search using new `search_businesses_ai()` function
@@ -269,6 +292,7 @@ CREATE INDEX idx_ai_agent_sessions_agent_type ON ai_agent_sessions(agent_type);
 ---
 
 ### Phase 4: Home Menu Integration
+
 **Priority: 🟢 LOW - Already Works!**
 
 - ✅ `waiter` agent already in `ai_agent_configs`
@@ -277,6 +301,7 @@ CREATE INDEX idx_ai_agent_sessions_agent_type ON ai_agent_sessions(agent_type);
 - ✅ IDs defined in `wa-webhook/wa/ids.ts`: `WAITER_AGENT`, `BUSINESS_BROKER_AGENT`
 
 **Just need to:**
+
 1. Ensure menu items are active in `whatsapp_home_menu_items`
 2. Test routing flow
 
@@ -325,34 +350,37 @@ CREATE INDEX idx_ai_agent_sessions_agent_type ON ai_agent_sessions(agent_type);
 
 ## ✅ FINAL DECISION MATRIX
 
-| Component | Status | Action |
-|-----------|--------|--------|
-| `ai_agent_sessions` table | ❌ Missing | **CREATE** |
-| `business` table columns | ⚠️ Incomplete | **ALTER TABLE** |
-| `search_businesses_ai()` | ❌ Missing | **CREATE FUNCTION** |
-| `bars` table | ✅ Ready (302 rows) | **USE AS-IS** |
-| `restaurants` table | ⚠️ Empty | **IGNORE** |
-| Waiter Agent code | ⚠️ Needs updates | **UPDATE** |
-| Business Broker Agent | ✅ Exists | **ENHANCE** |
-| Buy & Sell Agent | ❌ Doesn't exist | **DON'T CREATE** (use business_broker) |
-| Home Menu | ✅ Working | **TEST ONLY** |
-| QR Code Handler | ❌ Missing | **CREATE** |
+| Component                 | Status              | Action                                 |
+| ------------------------- | ------------------- | -------------------------------------- |
+| `ai_agent_sessions` table | ❌ Missing          | **CREATE**                             |
+| `business` table columns  | ⚠️ Incomplete       | **ALTER TABLE**                        |
+| `search_businesses_ai()`  | ❌ Missing          | **CREATE FUNCTION**                    |
+| `bars` table              | ✅ Ready (302 rows) | **USE AS-IS**                          |
+| `restaurants` table       | ⚠️ Empty            | **IGNORE**                             |
+| Waiter Agent code         | ⚠️ Needs updates    | **UPDATE**                             |
+| Business Broker Agent     | ✅ Exists           | **ENHANCE**                            |
+| Buy & Sell Agent          | ❌ Doesn't exist    | **DON'T CREATE** (use business_broker) |
+| Home Menu                 | ✅ Working          | **TEST ONLY**                          |
+| QR Code Handler           | ❌ Missing          | **CREATE**                             |
 
 ---
 
 ## 🎯 ESTIMATED EFFORT
 
 **Phase 1 (Critical):** 4-6 hours
+
 - 3 migration files
 - Testing
 
 **Phase 2 (Waiter Discovery):** 8-10 hours
+
 - Discovery flow state machine
 - QR handler
 - Bar search integration
 - Testing with real bar data
 
 **Phase 3 (Business Discovery):** 6-8 hours
+
 - Enhance business_broker agent
 - Natural language understanding
 - AI search integration
@@ -365,6 +393,7 @@ CREATE INDEX idx_ai_agent_sessions_agent_type ON ai_agent_sessions(agent_type);
 ## ✅ READY TO PROCEED?
 
 **All clarifications resolved:**
+
 - ✅ Tables identified
 - ✅ Missing tables documented
 - ✅ Architecture decisions made
@@ -372,4 +401,3 @@ CREATE INDEX idx_ai_agent_sessions_agent_type ON ai_agent_sessions(agent_type);
 - ✅ No more unknowns
 
 **Shall I proceed with Phase 1 migrations?**
-

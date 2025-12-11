@@ -1,4 +1,5 @@
 # Admin API Consolidation - Implementation Guide
+
 **Date:** December 10, 2025  
 **Target:** Consolidate 6 admin functions into 1 unified API  
 **Savings:** 5 functions (6 → 1)  
@@ -10,6 +11,7 @@
 ## 🎯 Objective
 
 Consolidate these admin functions:
+
 - `admin-health` - System health checks
 - `admin-messages` - Message management
 - `admin-settings` - Settings management
@@ -35,97 +37,85 @@ mkdir -p admin-api/utils
 ### Step 2: Create Route Handlers (2-3 hours)
 
 #### routes/health.ts
+
 ```typescript
 // Copy from admin-health/index.ts, extract handler logic
 import { SupabaseClient } from "@supabase/supabase-js";
 
-export async function handleHealth(
-  _req: Request,
-  supabase: SupabaseClient
-): Promise<Response> {
+export async function handleHealth(_req: Request, supabase: SupabaseClient): Promise<Response> {
   // Check database connection
-  const { error } = await supabase.from('profiles').select('count').limit(1);
-  
+  const { error } = await supabase.from("profiles").select("count").limit(1);
+
   const health = {
-    status: error ? 'degraded' : 'healthy',
+    status: error ? "degraded" : "healthy",
     timestamp: new Date().toISOString(),
     services: {
-      database: error ? 'down' : 'up',
+      database: error ? "down" : "up",
     },
   };
 
   return new Response(JSON.stringify(health), {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { "Content-Type": "application/json" },
     status: error ? 503 : 200,
   });
 }
 ```
 
 #### routes/messages.ts
+
 ```typescript
 // Copy from admin-messages/index.ts, extract handler logic
-export async function handleMessages(
-  req: Request,
-  supabase: SupabaseClient
-): Promise<Response> {
+export async function handleMessages(req: Request, supabase: SupabaseClient): Promise<Response> {
   const url = new URL(req.url);
   const method = req.method;
-  
-  if (method === 'GET') {
+
+  if (method === "GET") {
     // List messages logic from admin-messages
     return await listMessages(req, supabase);
-  } else if (method === 'POST') {
+  } else if (method === "POST") {
     // Create message logic
     return await createMessage(req, supabase);
-  } else if (method === 'DELETE') {
+  } else if (method === "DELETE") {
     // Delete message logic
     return await deleteMessage(req, supabase);
   }
-  
-  return new Response('Method not allowed', { status: 405 });
+
+  return new Response("Method not allowed", { status: 405 });
 }
 ```
 
 #### routes/settings.ts
+
 ```typescript
 // Copy from admin-settings/index.ts
-export async function handleSettings(
-  req: Request,
-  supabase: SupabaseClient
-): Promise<Response> {
+export async function handleSettings(req: Request, supabase: SupabaseClient): Promise<Response> {
   // Settings CRUD logic from admin-settings
 }
 ```
 
 #### routes/stats.ts
+
 ```typescript
 // Copy from admin-stats/index.ts
-export async function handleStats(
-  req: Request,
-  supabase: SupabaseClient
-): Promise<Response> {
+export async function handleStats(req: Request, supabase: SupabaseClient): Promise<Response> {
   // Statistics aggregation logic from admin-stats
 }
 ```
 
 #### routes/users.ts
+
 ```typescript
 // Copy from admin-users/index.ts
-export async function handleUsers(
-  req: Request,
-  supabase: SupabaseClient
-): Promise<Response> {
+export async function handleUsers(req: Request, supabase: SupabaseClient): Promise<Response> {
   // User management logic from admin-users
 }
 ```
 
 #### routes/trips.ts
+
 ```typescript
 // Copy from admin-trips/index.ts
-export async function handleTrips(
-  req: Request,
-  supabase: SupabaseClient
-): Promise<Response> {
+export async function handleTrips(req: Request, supabase: SupabaseClient): Promise<Response> {
   // Trip management logic from admin-trips (mobility)
 }
 ```
@@ -135,6 +125,7 @@ export async function handleTrips(
 ### Step 3: Create Main Handler (1 hour)
 
 #### index.ts
+
 ```typescript
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -159,42 +150,45 @@ serve(async (req: Request): Promise<Response> => {
 
   // Parse route from URL
   const url = new URL(req.url);
-  const pathParts = url.pathname.split('/').filter(Boolean);
+  const pathParts = url.pathname.split("/").filter(Boolean);
   const route = pathParts[pathParts.length - 1]; // Last part after /admin-api/
 
   // Initialize Supabase client
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
   );
 
   try {
     // Route to appropriate handler
     let response: Response;
-    
+
     switch (route) {
-      case 'health':
+      case "health":
         response = await handleHealth(req, supabase);
         break;
-      case 'messages':
+      case "messages":
         response = await handleMessages(req, supabase);
         break;
-      case 'settings':
+      case "settings":
         response = await handleSettings(req, supabase);
         break;
-      case 'stats':
+      case "stats":
         response = await handleStats(req, supabase);
         break;
-      case 'users':
+      case "users":
         response = await handleUsers(req, supabase);
         break;
-      case 'trips':
+      case "trips":
         response = await handleTrips(req, supabase);
         break;
       default:
         response = new Response(
-          JSON.stringify({ error: "Route not found", available: ['health', 'messages', 'settings', 'stats', 'users', 'trips'] }),
-          { status: 404, headers: { 'Content-Type': 'application/json' } }
+          JSON.stringify({
+            error: "Route not found",
+            available: ["health", "messages", "settings", "stats", "users", "trips"],
+          }),
+          { status: 404, headers: { "Content-Type": "application/json" } }
         );
     }
 
@@ -209,14 +203,13 @@ serve(async (req: Request): Promise<Response> => {
       statusText: response.statusText,
       headers,
     });
-
   } catch (error) {
-    console.error('Admin API error:', error);
+    console.error("Admin API error:", error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error', message: error.message }),
+      JSON.stringify({ error: "Internal server error", message: error.message }),
       {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
   }
@@ -224,6 +217,7 @@ serve(async (req: Request): Promise<Response> => {
 ```
 
 #### function.json
+
 ```json
 {
   "verify_jwt": true
@@ -231,6 +225,7 @@ serve(async (req: Request): Promise<Response> => {
 ```
 
 #### deno.json
+
 ```json
 {
   "imports": {
@@ -244,6 +239,7 @@ serve(async (req: Request): Promise<Response> => {
 ### Step 4: Testing (4-6 hours)
 
 #### Local Testing
+
 ```bash
 # Start Supabase locally
 supabase start
@@ -271,6 +267,7 @@ curl http://localhost:54321/functions/v1/admin-api/trips
 ```
 
 #### Integration Testing
+
 ```bash
 # Test with actual auth tokens
 # Test POST/PUT/DELETE methods
@@ -283,6 +280,7 @@ curl http://localhost:54321/functions/v1/admin-api/trips
 ### Step 5: Deployment (1-2 hours)
 
 #### Deploy to Staging
+
 ```bash
 # Deploy new function
 supabase functions deploy admin-api --project-ref <staging-ref>
@@ -295,11 +293,13 @@ curl https://<staging-project>.supabase.co/functions/v1/admin-api/health
 ```
 
 #### Monitor Staging (24h)
+
 - Check logs for errors
 - Monitor performance
 - Verify all routes working
 
 #### Deploy to Production
+
 ```bash
 # Deploy to production
 supabase functions deploy admin-api --project-ref <prod-ref>
@@ -339,6 +339,7 @@ git commit -m "chore: Archive old admin functions after successful consolidation
 ### For API Consumers
 
 **Old URLs:**
+
 ```
 POST https://<project>.supabase.co/functions/v1/admin-health
 POST https://<project>.supabase.co/functions/v1/admin-messages
@@ -349,6 +350,7 @@ POST https://<project>.supabase.co/functions/v1/admin-trips
 ```
 
 **New URLs:**
+
 ```
 POST https://<project>.supabase.co/functions/v1/admin-api/health
 POST https://<project>.supabase.co/functions/v1/admin-api/messages
@@ -359,6 +361,7 @@ POST https://<project>.supabase.co/functions/v1/admin-api/trips
 ```
 
 **Migration Strategy:**
+
 1. Deploy new admin-api alongside old functions
 2. Update clients to use new URLs (gradual rollout)
 3. Monitor both endpoints for 1-2 weeks

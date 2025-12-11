@@ -10,7 +10,7 @@ Generated on: 2025-12-02T21:57:27.095Z
 
 Initialize OpenAI Realtime session
 
-*Source: supabase/functions/openai-realtime-sip/index.ts:24*
+_Source: supabase/functions/openai-realtime-sip/index.ts:24_
 
 ---
 
@@ -18,7 +18,7 @@ Initialize OpenAI Realtime session
 
 Build agent instructions based on locale and context
 
-*Source: supabase/functions/openai-realtime-sip/index.ts:70*
+_Source: supabase/functions/openai-realtime-sip/index.ts:70_
 
 ---
 
@@ -26,15 +26,16 @@ Build agent instructions based on locale and context
 
 Parse deep research output and extract property listings
 
-*Source: supabase/functions/openai-deep-research/index.ts:179*
+_Source: supabase/functions/openai-deep-research/index.ts:179_
 
 ---
 
 ### `extractPropertyFromSearchResult`
 
-Extract structured property data from search result Uses OpenAI to parse unstructured text into property details
+Extract structured property data from search result Uses OpenAI to parse unstructured text into
+property details
 
-*Source: supabase/functions/openai-deep-research/index.ts:643*
+_Source: supabase/functions/openai-deep-research/index.ts:643_
 
 ---
 
@@ -42,7 +43,7 @@ Extract structured property data from search result Uses OpenAI to parse unstruc
 
 Normalize phone number to international format with country code
 
-*Source: supabase/functions/openai-deep-research/index.ts:752*
+_Source: supabase/functions/openai-deep-research/index.ts:752_
 
 ---
 
@@ -50,7 +51,7 @@ Normalize phone number to international format with country code
 
 Get currency code for country
 
-*Source: supabase/functions/openai-deep-research/index.ts:802*
+_Source: supabase/functions/openai-deep-research/index.ts:802_
 
 ---
 
@@ -58,15 +59,22 @@ Get currency code for country
 
 Validate and normalize extracted property data
 
-*Source: supabase/functions/openai-deep-research/index.ts:957*
+_Source: supabase/functions/openai-deep-research/index.ts:957_
 
 ---
 
 ### `unnamed`
 
-Agent Registry Central registry for all AI agents Part of Unified AI Agent Architecture Created: 2025-11-27 Updated: 2025-12-01 - Added Rides and Insurance agents OFFICIAL AGENTS (10 production agents matching ai_agents database table): 1. waiter - Restaurant/Bar ordering, table booking 2. farmer - Agricultural support, market prices 3. jobs - Job search, employment, gigs 4. real_estate - Property rentals, listings 5. marketplace - Buy/sell products, business directory 6. rides - Transport, ride-sharing, delivery 7. insurance - Motor insurance, policies, claims 8. support - General help, customer service 9. sales_cold_caller - Sales/Marketing outreach 10. business_broker - Deprecated, use marketplace
+Agent Registry Central registry for all AI agents Part of Unified AI Agent Architecture Created:
+2025-11-27 Updated: 2025-12-01 - Added Rides and Insurance agents OFFICIAL AGENTS (10 production
+agents matching ai_agents database table): 1. waiter - Restaurant/Bar ordering, table booking 2.
+farmer - Agricultural support, market prices 3. jobs - Job search, employment, gigs 4. real_estate -
+Property rentals, listings 5. marketplace - Buy/sell products, business directory 6. rides -
+Transport, ride-sharing, delivery 7. insurance - Motor insurance, policies, claims 8. support -
+General help, customer service 9. sales_cold_caller - Sales/Marketing outreach 10. business_broker -
+Deprecated, use marketplace
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/agent-registry.ts:1*
+_Source: supabase/functions/wa-webhook-ai-agents/core/agent-registry.ts:1_
 
 ---
 
@@ -74,7 +82,7 @@ Agent Registry Central registry for all AI agents Part of Unified AI Agent Archi
 
 Register all available agents All agents use database-driven configuration via AgentConfigLoader
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/agent-registry.ts:41*
+_Source: supabase/functions/wa-webhook-ai-agents/core/agent-registry.ts:41_
 
 ---
 
@@ -82,7 +90,7 @@ Register all available agents All agents use database-driven configuration via A
 
 Map intents/keywords to agent types
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/agent-registry.ts:57*
+_Source: supabase/functions/wa-webhook-ai-agents/core/agent-registry.ts:57_
 
 ---
 
@@ -90,7 +98,7 @@ Map intents/keywords to agent types
 
 Register a new agent
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/agent-registry.ts:121*
+_Source: supabase/functions/wa-webhook-ai-agents/core/agent-registry.ts:121_
 
 ---
 
@@ -98,7 +106,7 @@ Register a new agent
 
 Get agent by type
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/agent-registry.ts:129*
+_Source: supabase/functions/wa-webhook-ai-agents/core/agent-registry.ts:129_
 
 ---
 
@@ -106,7 +114,7 @@ Get agent by type
 
 Get agent by intent/keyword
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/agent-registry.ts:142*
+_Source: supabase/functions/wa-webhook-ai-agents/core/agent-registry.ts:142_
 
 ---
 
@@ -114,7 +122,7 @@ Get agent by intent/keyword
 
 List all registered agents
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/agent-registry.ts:154*
+_Source: supabase/functions/wa-webhook-ai-agents/core/agent-registry.ts:154_
 
 ---
 
@@ -122,31 +130,37 @@ List all registered agents
 
 Check if agent exists
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/agent-registry.ts:161*
+_Source: supabase/functions/wa-webhook-ai-agents/core/agent-registry.ts:161_
 
 ---
 
 ### `unnamed`
 
-Base Agent Interface All AI agents must extend this abstract class Part of Unified AI Agent Architecture Created: 2025-11-27 NOW USES DATABASE-DRIVEN CONFIGURATION: - Loads personas, system instructions, tools from database via AgentConfigLoader - Falls back to hardcoded prompts if database config not available - Provides tool execution via ToolExecutor
+Base Agent Interface All AI agents must extend this abstract class Part of Unified AI Agent
+Architecture Created: 2025-11-27 NOW USES DATABASE-DRIVEN CONFIGURATION: - Loads personas, system
+instructions, tools from database via AgentConfigLoader - Falls back to hardcoded prompts if
+database config not available - Provides tool execution via ToolExecutor
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:1*
-
----
-
-### `unnamed`
-
-Base Agent Class All agents (Waiter, Farmer, Jobs, etc.) extend this NOW DATABASE-DRIVEN: - System prompts loaded from ai_agent_system_instructions table - Personas loaded from ai_agent_personas table - Tools loaded from ai_agent_tools table
-
-*Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:59*
+_Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:1_
 
 ---
 
 ### `unnamed`
 
-The database agent slug - maps to ai_agents.slug Override this if agent type differs from database slug
+Base Agent Class All agents (Waiter, Farmer, Jobs, etc.) extend this NOW DATABASE-DRIVEN: - System
+prompts loaded from ai_agent_system_instructions table - Personas loaded from ai_agent_personas
+table - Tools loaded from ai_agent_tools table
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:73*
+_Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:59_
+
+---
+
+### `unnamed`
+
+The database agent slug - maps to ai_agents.slug Override this if agent type differs from database
+slug
+
+_Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:73_
 
 ---
 
@@ -154,55 +168,61 @@ The database agent slug - maps to ai_agents.slug Override this if agent type dif
 
 Main processing method - must be implemented by each agent
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:99*
+_Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:99_
 
 ---
 
 ### `unnamed`
 
-Default system prompt for this agent - used as fallback if database config unavailable Subclasses should override this with their specific prompt
+Default system prompt for this agent - used as fallback if database config unavailable Subclasses
+should override this with their specific prompt
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:104*
-
----
-
-### `unnamed`
-
-System prompt for this agent - NOW LOADS FROM DATABASE Falls back to getDefaultSystemPrompt() if database config not available
-
-*Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:110*
+_Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:104_
 
 ---
 
 ### `unnamed`
 
-Initialize database-driven config loader and tool executor Must be called with supabase client before using database features
+System prompt for this agent - NOW LOADS FROM DATABASE Falls back to getDefaultSystemPrompt() if
+database config not available
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:123*
-
----
-
-### `unnamed`
-
-Load agent configuration from database Returns cached config if already loaded (5-min cache TTL in AgentConfigLoader)
-
-*Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:136*
+_Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:110_
 
 ---
 
 ### `unnamed`
 
-Get system prompt from database - async version Falls back to getDefaultSystemPrompt() if database unavailable
+Initialize database-driven config loader and tool executor Must be called with supabase client
+before using database features
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:167*
+_Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:123_
 
 ---
 
 ### `unnamed`
 
-Build complete system prompt from database config Combines persona, instructions, guardrails, and available tools
+Load agent configuration from database Returns cached config if already loaded (5-min cache TTL in
+AgentConfigLoader)
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:196*
+_Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:136_
+
+---
+
+### `unnamed`
+
+Get system prompt from database - async version Falls back to getDefaultSystemPrompt() if database
+unavailable
+
+_Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:167_
+
+---
+
+### `unnamed`
+
+Build complete system prompt from database config Combines persona, instructions, guardrails, and
+available tools
+
+_Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:196_
 
 ---
 
@@ -210,7 +230,7 @@ Build complete system prompt from database config Combines persona, instructions
 
 Get available tools from database config
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:239*
+_Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:239_
 
 ---
 
@@ -218,7 +238,7 @@ Get available tools from database config
 
 Execute a tool by name using database-driven tool execution
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:247*
+_Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:247_
 
 ---
 
@@ -226,7 +246,7 @@ Execute a tool by name using database-driven tool execution
 
 Get agent ID from database
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:295*
+_Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:295_
 
 ---
 
@@ -234,7 +254,7 @@ Get agent ID from database
 
 Helper to build conversation history from session NOW USES DATABASE-DRIVEN SYSTEM PROMPT
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:309*
+_Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:309_
 
 ---
 
@@ -242,7 +262,7 @@ Helper to build conversation history from session NOW USES DATABASE-DRIVEN SYSTE
 
 Build conversation history with async database prompt loading
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:339*
+_Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:339_
 
 ---
 
@@ -250,7 +270,7 @@ Build conversation history with async database prompt loading
 
 Helper to update conversation history in session
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:373*
+_Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:373_
 
 ---
 
@@ -258,15 +278,16 @@ Helper to update conversation history in session
 
 Helper to log agent interaction
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:412*
+_Source: supabase/functions/wa-webhook-ai-agents/core/base-agent.ts:412_
 
 ---
 
 ### `unnamed`
 
-Unified AI Agent Orchestrator Single source of truth for all AI agent interactions Part of Unified AI Agent Architecture Created: 2025-11-27
+Unified AI Agent Orchestrator Single source of truth for all AI agent interactions Part of Unified
+AI Agent Architecture Created: 2025-11-27
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/unified-orchestrator.ts:1*
+_Source: supabase/functions/wa-webhook-ai-agents/core/unified-orchestrator.ts:1_
 
 ---
 
@@ -274,7 +295,7 @@ Unified AI Agent Orchestrator Single source of truth for all AI agent interactio
 
 Main entry point - processes any message
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/unified-orchestrator.ts:34*
+_Source: supabase/functions/wa-webhook-ai-agents/core/unified-orchestrator.ts:34_
 
 ---
 
@@ -282,7 +303,7 @@ Main entry point - processes any message
 
 Intelligently determines which agent should handle the message
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/unified-orchestrator.ts:111*
+_Source: supabase/functions/wa-webhook-ai-agents/core/unified-orchestrator.ts:111_
 
 ---
 
@@ -290,7 +311,7 @@ Intelligently determines which agent should handle the message
 
 Use AI to classify user intent
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/unified-orchestrator.ts:150*
+_Source: supabase/functions/wa-webhook-ai-agents/core/unified-orchestrator.ts:150_
 
 ---
 
@@ -298,7 +319,7 @@ Use AI to classify user intent
 
 Get AI provider (for agents that need direct access)
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/unified-orchestrator.ts:187*
+_Source: supabase/functions/wa-webhook-ai-agents/core/unified-orchestrator.ts:187_
 
 ---
 
@@ -306,15 +327,16 @@ Get AI provider (for agents that need direct access)
 
 Get agent registry (for testing/admin)
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/unified-orchestrator.ts:194*
+_Source: supabase/functions/wa-webhook-ai-agents/core/unified-orchestrator.ts:194_
 
 ---
 
 ### `unnamed`
 
-Gemini AI Provider Unified AI provider using Google Gemini Part of Unified AI Agent Architecture Created: 2025-11-27
+Gemini AI Provider Unified AI provider using Google Gemini Part of Unified AI Agent Architecture
+Created: 2025-11-27
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/providers/gemini.ts:1*
+_Source: supabase/functions/wa-webhook-ai-agents/core/providers/gemini.ts:1_
 
 ---
 
@@ -322,7 +344,7 @@ Gemini AI Provider Unified AI provider using Google Gemini Part of Unified AI Ag
 
 Chat completion - main method for agent interactions
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/providers/gemini.ts:24*
+_Source: supabase/functions/wa-webhook-ai-agents/core/providers/gemini.ts:24_
 
 ---
 
@@ -330,7 +352,7 @@ Chat completion - main method for agent interactions
 
 Streaming chat (optional - for future use)
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/providers/gemini.ts:92*
+_Source: supabase/functions/wa-webhook-ai-agents/core/providers/gemini.ts:92_
 
 ---
 
@@ -338,15 +360,16 @@ Streaming chat (optional - for future use)
 
 Convert standard message format to Gemini format
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/providers/gemini.ts:159*
+_Source: supabase/functions/wa-webhook-ai-agents/core/providers/gemini.ts:159_
 
 ---
 
 ### `unnamed`
 
-Session Manager Manages AI agent sessions and context Part of Unified AI Agent Architecture Created: 2025-11-27
+Session Manager Manages AI agent sessions and context Part of Unified AI Agent Architecture Created:
+2025-11-27
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/session-manager.ts:1*
+_Source: supabase/functions/wa-webhook-ai-agents/core/session-manager.ts:1_
 
 ---
 
@@ -354,7 +377,7 @@ Session Manager Manages AI agent sessions and context Part of Unified AI Agent A
 
 Get existing session or create new one
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/session-manager.ts:15*
+_Source: supabase/functions/wa-webhook-ai-agents/core/session-manager.ts:15_
 
 ---
 
@@ -362,7 +385,7 @@ Get existing session or create new one
 
 Update session context
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/session-manager.ts:53*
+_Source: supabase/functions/wa-webhook-ai-agents/core/session-manager.ts:53_
 
 ---
 
@@ -370,7 +393,7 @@ Update session context
 
 Set current agent for session
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/session-manager.ts:73*
+_Source: supabase/functions/wa-webhook-ai-agents/core/session-manager.ts:73_
 
 ---
 
@@ -378,7 +401,7 @@ Set current agent for session
 
 Clear current agent (back to home menu)
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/session-manager.ts:89*
+_Source: supabase/functions/wa-webhook-ai-agents/core/session-manager.ts:89_
 
 ---
 
@@ -386,7 +409,7 @@ Clear current agent (back to home menu)
 
 End session
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/session-manager.ts:105*
+_Source: supabase/functions/wa-webhook-ai-agents/core/session-manager.ts:105_
 
 ---
 
@@ -394,7 +417,7 @@ End session
 
 Map database row to Session interface
 
-*Source: supabase/functions/wa-webhook-ai-agents/core/session-manager.ts:121*
+_Source: supabase/functions/wa-webhook-ai-agents/core/session-manager.ts:121_
 
 ---
 
@@ -402,7 +425,7 @@ Map database row to Session interface
 
 Sales AI Agent (Cold Caller) - Rebuilt with AI Core Uses Gemini 2.5 Pro + GPT-5 with shared tools
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/sales_agent.ts:1*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/sales_agent.ts:1_
 
 ---
 
@@ -410,7 +433,7 @@ Sales AI Agent (Cold Caller) - Rebuilt with AI Core Uses Gemini 2.5 Pro + GPT-5 
 
 Execute sales agent with Gemini 2.5 Pro ReAct loop
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/sales_agent.ts:238*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/sales_agent.ts:238_
 
 ---
 
@@ -418,23 +441,27 @@ Execute sales agent with Gemini 2.5 Pro ReAct loop
 
 Run Sales Agent handler for wa-webhook
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/sales_agent.ts:336*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/sales_agent.ts:336_
 
 ---
 
 ### `unnamed`
 
-AI Agents Location Integration Helper Standard location integration for all AI agents in wa-webhook-ai-agents Provides unified location handling across jobs, farmer, business, waiter, and real estate agents Usage: ```typescript import { AgentLocationHelper } from './location-helper.ts'; const helper = new AgentLocationHelper(supabase); const location = await helper.resolveUserLocation(userId, 'jobs_agent'); if (!location) { await helper.promptForLocation(phone, locale, 'job_search'); return; } // Use location for search const results = await searchNearby(location.lat, location.lng); ```
+AI Agents Location Integration Helper Standard location integration for all AI agents in
+wa-webhook-ai-agents Provides unified location handling across jobs, farmer, business, waiter, and
+real estate agents Usage:
+`typescript import { AgentLocationHelper } from './location-helper.ts'; const helper = new AgentLocationHelper(supabase); const location = await helper.resolveUserLocation(userId, 'jobs_agent'); if (!location) { await helper.promptForLocation(phone, locale, 'job_search'); return; } // Use location for search const results = await searchNearby(location.lat, location.lng); `
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/location-helper.ts:1*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/location-helper.ts:1_
 
 ---
 
 ### `unnamed`
 
-Resolve user location with standard priority logic Priority: Cache (30min) → Saved (home/work) → Prompt
+Resolve user location with standard priority logic Priority: Cache (30min) → Saved (home/work) →
+Prompt
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/location-helper.ts:97*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/location-helper.ts:97_
 
 ---
 
@@ -442,7 +469,7 @@ Resolve user location with standard priority logic Priority: Cache (30min) → S
 
 Save location to cache after user shares
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/location-helper.ts:188*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/location-helper.ts:188_
 
 ---
 
@@ -450,7 +477,7 @@ Save location to cache after user shares
 
 Prompt user to share location
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/location-helper.ts:220*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/location-helper.ts:220_
 
 ---
 
@@ -458,7 +485,7 @@ Prompt user to share location
 
 Format location context for display in agent responses
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/location-helper.ts:239*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/location-helper.ts:239_
 
 ---
 
@@ -466,7 +493,7 @@ Format location context for display in agent responses
 
 Get nearby items using PostGIS search Generic helper for any table with lat/lng/geography columns
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/location-helper.ts:258*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/location-helper.ts:258_
 
 ---
 
@@ -474,23 +501,26 @@ Get nearby items using PostGIS search Generic helper for any table with lat/lng/
 
 Quick helper to add location-aware search to agent tools
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/location-helper.ts:304*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/location-helper.ts:304_
 
 ---
 
 ### `unnamed`
 
-Waiter AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for restaurant orders, menu queries, and reservations
+Waiter AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for restaurant orders, menu queries, and
+reservations
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/waiter_agent.ts:1*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/waiter_agent.ts:1_
 
 ---
 
 ### `unnamed`
 
-AI Agents Integration Module Connects database search agents with the WhatsApp webhook system. Agents search ONLY from database - NO web search or external APIs. All agents must have proper error handling and fallback messages.
+AI Agents Integration Module Connects database search agents with the WhatsApp webhook system.
+Agents search ONLY from database - NO web search or external APIs. All agents must have proper error
+handling and fallback messages.
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/integration.ts:1*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/integration.ts:1_
 
 ---
 
@@ -498,7 +528,7 @@ AI Agents Integration Module Connects database search agents with the WhatsApp w
 
 Route request to appropriate AI agent based on intent
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/integration.ts:40*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/integration.ts:40_
 
 ---
 
@@ -506,7 +536,7 @@ Route request to appropriate AI agent based on intent
 
 Invoke Property Rental Agent - DATABASE SEARCH ONLY
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/integration.ts:90*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/integration.ts:90_
 
 ---
 
@@ -514,7 +544,7 @@ Invoke Property Rental Agent - DATABASE SEARCH ONLY
 
 Send agent options to user as interactive list with fallback buttons
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/integration.ts:148*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/integration.ts:148_
 
 ---
 
@@ -522,7 +552,7 @@ Send agent options to user as interactive list with fallback buttons
 
 Handle agent option selection with proper error handling
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/integration.ts:209*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/integration.ts:209_
 
 ---
 
@@ -530,15 +560,16 @@ Handle agent option selection with proper error handling
 
 Check agent session status with proper error handling
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/integration.ts:309*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/integration.ts:309_
 
 ---
 
 ### `unnamed`
 
-Insurance AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for insurance quotes, claims, and policy management
+Insurance AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for insurance quotes, claims, and
+policy management
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/insurance_agent.ts:1*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/insurance_agent.ts:1_
 
 ---
 
@@ -546,15 +577,16 @@ Insurance AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for insurance quot
 
 Start General Broker AI Agent Routes user to the general broker AI agent for service requests
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/general_broker.ts:6*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/general_broker.ts:6_
 
 ---
 
 ### `unnamed`
 
-AI Agent Handlers for WhatsApp Flows Provides convenient handlers that can be called from the text router to initiate AI agent sessions for various use cases.
+AI Agent Handlers for WhatsApp Flows Provides convenient handlers that can be called from the text
+router to initiate AI agent sessions for various use cases.
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/handlers.ts:1*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/handlers.ts:1_
 
 ---
 
@@ -562,7 +594,7 @@ AI Agent Handlers for WhatsApp Flows Provides convenient handlers that can be ca
 
 Handle "Nearby Drivers" request with AI agent DATABASE SEARCH ONLY - No web search
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/handlers.ts:28*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/handlers.ts:28_
 
 ---
 
@@ -570,7 +602,7 @@ Handle "Nearby Drivers" request with AI agent DATABASE SEARCH ONLY - No web sear
 
 Handle "Nearby Pharmacies" request with AI agent
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/handlers.ts:34*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/handlers.ts:34_
 
 ---
 
@@ -578,15 +610,16 @@ Handle "Nearby Pharmacies" request with AI agent
 
 Handle "Nearby Quincailleries" request with AI agent
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/handlers.ts:39*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/handlers.ts:39_
 
 ---
 
 ### `unnamed`
 
-Handle "Nearby Shops" request with AI agent TWO-PHASE APPROACH: Phase 1: Immediately show top 9 nearby shops from database Phase 2: AI agent processes in background for curated shortlist
+Handle "Nearby Shops" request with AI agent TWO-PHASE APPROACH: Phase 1: Immediately show top 9
+nearby shops from database Phase 2: AI agent processes in background for curated shortlist
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/handlers.ts:44*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/handlers.ts:44_
 
 ---
 
@@ -594,7 +627,7 @@ Handle "Nearby Shops" request with AI agent TWO-PHASE APPROACH: Phase 1: Immedia
 
 Handle "Property Rental" request with AI agent
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/handlers.ts:52*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/handlers.ts:52_
 
 ---
 
@@ -602,7 +635,7 @@ Handle "Property Rental" request with AI agent
 
 Handle "Schedule Trip" request with AI agent
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/handlers.ts:147*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/handlers.ts:147_
 
 ---
 
@@ -610,7 +643,7 @@ Handle "Schedule Trip" request with AI agent
 
 Handle AI agent selection from interactive list
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/handlers.ts:152*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/handlers.ts:152_
 
 ---
 
@@ -618,39 +651,43 @@ Handle AI agent selection from interactive list
 
 Handle location update for pending AI agent request
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/handlers.ts:177*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/handlers.ts:177_
 
 ---
 
 ### `unnamed`
 
-Phase 2: Background AI agent processing for shops Agent contacts shops on behalf of user to create curated shortlist
+Phase 2: Background AI agent processing for shops Agent contacts shops on behalf of user to create
+curated shortlist
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/handlers.ts:201*
-
----
-
-### `unnamed`
-
-Phase 1: Send immediate database results (top 9 nearby shops) This provides instant results while AI agent processes in background
-
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/handlers.ts:207*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/handlers.ts:201_
 
 ---
 
 ### `unnamed`
 
-Business Broker AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for business discovery and recommendations
+Phase 1: Send immediate database results (top 9 nearby shops) This provides instant results while AI
+agent processes in background
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/business_broker_agent.ts:1*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/handlers.ts:207_
 
 ---
 
 ### `unnamed`
 
-Rides AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for ride matching and transportation services
+Business Broker AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for business discovery and
+recommendations
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/rides_agent.ts:1*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/business_broker_agent.ts:1_
+
+---
+
+### `unnamed`
+
+Rides AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for ride matching and transportation
+services
+
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/rides_agent.ts:1_
 
 ---
 
@@ -658,7 +695,7 @@ Rides AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for ride matching and 
 
 Farmer AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for agricultural services and marketplace
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/farmer_agent.ts:1*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/farmer_agent.ts:1_
 
 ---
 
@@ -666,7 +703,7 @@ Farmer AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for agricultural serv
 
 AI Agents Module Central export point for all AI agent functionality in the WhatsApp webhook system.
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/index.ts:1*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/index.ts:1_
 
 ---
 
@@ -674,39 +711,27 @@ AI Agents Module Central export point for all AI agent functionality in the What
 
 Jobs AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for job matching and career guidance
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/jobs_agent.ts:1*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/jobs_agent.ts:1_
 
 ---
 
 ### `unnamed`
 
-Real Estate AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro with vision for property search and viewings
+Real Estate AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro with vision for property search and
+viewings
 
-*Source: supabase/functions/wa-webhook-ai-agents/ai-agents/real_estate_agent.ts:1*
-
----
-
-### `unnamed`
-
-Insurance AI Agent Handles motor insurance quotes, renewals, claims, and policy management Part of Unified AI Agent Architecture Created: 2025-12-01 DATABASE-DRIVEN: - System prompt loaded from ai_agent_system_instructions table - Persona loaded from ai_agent_personas table - Tools loaded from ai_agent_tools table (via AgentConfigLoader)
-
-*Source: supabase/functions/wa-webhook-ai-agents/agents/insurance-agent.ts:1*
+_Source: supabase/functions/wa-webhook-ai-agents/ai-agents/real_estate_agent.ts:1_
 
 ---
 
 ### `unnamed`
 
-Default system prompt - fallback if database config not available
+Insurance AI Agent Handles motor insurance quotes, renewals, claims, and policy management Part of
+Unified AI Agent Architecture Created: 2025-12-01 DATABASE-DRIVEN: - System prompt loaded from
+ai_agent_system_instructions table - Persona loaded from ai_agent_personas table - Tools loaded from
+ai_agent_tools table (via AgentConfigLoader)
 
-*Source: supabase/functions/wa-webhook-ai-agents/agents/insurance-agent.ts:95*
-
----
-
-### `unnamed`
-
-Farmer AI Agent Handles agricultural support, market prices, crop advice Part of Unified AI Agent Architecture Created: 2025-11-27 NOW DATABASE-DRIVEN: - System prompt loaded from ai_agent_system_instructions table - Persona loaded from ai_agent_personas table - Tools loaded from ai_agent_tools table (via AgentConfigLoader)
-
-*Source: supabase/functions/wa-webhook-ai-agents/agents/farmer-agent.ts:1*
+_Source: supabase/functions/wa-webhook-ai-agents/agents/insurance-agent.ts:1_
 
 ---
 
@@ -714,31 +739,18 @@ Farmer AI Agent Handles agricultural support, market prices, crop advice Part of
 
 Default system prompt - fallback if database config not available
 
-*Source: supabase/functions/wa-webhook-ai-agents/agents/farmer-agent.ts:95*
+_Source: supabase/functions/wa-webhook-ai-agents/agents/insurance-agent.ts:95_
 
 ---
 
 ### `unnamed`
 
-Rides AI Agent Handles transport services, ride-sharing, driver/passenger matching Part of Unified AI Agent Architecture Created: 2025-12-01 DATABASE-DRIVEN: - System prompt loaded from ai_agent_system_instructions table - Persona loaded from ai_agent_personas table - Tools loaded from ai_agent_tools table (via AgentConfigLoader)
+Farmer AI Agent Handles agricultural support, market prices, crop advice Part of Unified AI Agent
+Architecture Created: 2025-11-27 NOW DATABASE-DRIVEN: - System prompt loaded from
+ai_agent_system_instructions table - Persona loaded from ai_agent_personas table - Tools loaded from
+ai_agent_tools table (via AgentConfigLoader)
 
-*Source: supabase/functions/wa-webhook-ai-agents/agents/rides-agent.ts:1*
-
----
-
-### `unnamed`
-
-Default system prompt - fallback if database config not available
-
-*Source: supabase/functions/wa-webhook-ai-agents/agents/rides-agent.ts:95*
-
----
-
-### `unnamed`
-
-Jobs AI Agent Handles job search, posting, applications, gig work Part of Unified AI Agent Architecture Created: 2025-11-27 NOW DATABASE-DRIVEN: - System prompt loaded from ai_agent_system_instructions table - Persona loaded from ai_agent_personas table - Tools loaded from ai_agent_tools table (via AgentConfigLoader)
-
-*Source: supabase/functions/wa-webhook-ai-agents/agents/jobs-agent.ts:1*
+_Source: supabase/functions/wa-webhook-ai-agents/agents/farmer-agent.ts:1_
 
 ---
 
@@ -746,31 +758,18 @@ Jobs AI Agent Handles job search, posting, applications, gig work Part of Unifie
 
 Default system prompt - fallback if database config not available
 
-*Source: supabase/functions/wa-webhook-ai-agents/agents/jobs-agent.ts:94*
+_Source: supabase/functions/wa-webhook-ai-agents/agents/farmer-agent.ts:95_
 
 ---
 
 ### `unnamed`
 
-Property AI Agent Handles rental property search, listings, inquiries Part of Unified AI Agent Architecture Created: 2025-11-27 NOW DATABASE-DRIVEN: - System prompt loaded from ai_agent_system_instructions table - Persona loaded from ai_agent_personas table - Tools loaded from ai_agent_tools table (via AgentConfigLoader)
+Rides AI Agent Handles transport services, ride-sharing, driver/passenger matching Part of Unified
+AI Agent Architecture Created: 2025-12-01 DATABASE-DRIVEN: - System prompt loaded from
+ai_agent_system_instructions table - Persona loaded from ai_agent_personas table - Tools loaded from
+ai_agent_tools table (via AgentConfigLoader)
 
-*Source: supabase/functions/wa-webhook-ai-agents/agents/property-agent.ts:1*
-
----
-
-### `unnamed`
-
-Default system prompt - fallback if database config not available
-
-*Source: supabase/functions/wa-webhook-ai-agents/agents/property-agent.ts:94*
-
----
-
-### `unnamed`
-
-Support AI Agent General help, navigation, and customer support Part of Unified AI Agent Architecture Created: 2025-11-27 NOW DATABASE-DRIVEN: - System prompt loaded from ai_agent_system_instructions table - Persona loaded from ai_agent_personas table - Tools loaded from ai_agent_tools table (via AgentConfigLoader)
-
-*Source: supabase/functions/wa-webhook-ai-agents/agents/support-agent.ts:1*
+_Source: supabase/functions/wa-webhook-ai-agents/agents/rides-agent.ts:1_
 
 ---
 
@@ -778,31 +777,18 @@ Support AI Agent General help, navigation, and customer support Part of Unified 
 
 Default system prompt - fallback if database config not available
 
-*Source: supabase/functions/wa-webhook-ai-agents/agents/support-agent.ts:94*
+_Source: supabase/functions/wa-webhook-ai-agents/agents/rides-agent.ts:95_
 
 ---
 
 ### `unnamed`
 
-Waiter AI Agent Handles restaurant/bar ordering, table booking, recommendations Part of Unified AI Agent Architecture Created: 2025-11-27 NOW DATABASE-DRIVEN: - System prompt loaded from ai_agent_system_instructions table - Persona loaded from ai_agent_personas table - Tools loaded from ai_agent_tools table (via AgentConfigLoader)
+Jobs AI Agent Handles job search, posting, applications, gig work Part of Unified AI Agent
+Architecture Created: 2025-11-27 NOW DATABASE-DRIVEN: - System prompt loaded from
+ai_agent_system_instructions table - Persona loaded from ai_agent_personas table - Tools loaded from
+ai_agent_tools table (via AgentConfigLoader)
 
-*Source: supabase/functions/wa-webhook-ai-agents/agents/waiter-agent.ts:1*
-
----
-
-### `unnamed`
-
-Default system prompt - fallback if database config not available
-
-*Source: supabase/functions/wa-webhook-ai-agents/agents/waiter-agent.ts:94*
-
----
-
-### `unnamed`
-
-Marketplace AI Agent Handles buying/selling products, business listings, shopping Part of Unified AI Agent Architecture Created: 2025-11-27 NOTE: This agent replaces the business_broker agent. The type is 'business_broker_agent' for backward compatibility but it maps to the 'marketplace' slug in the database. NOW DATABASE-DRIVEN: - System prompt loaded from ai_agent_system_instructions table - Persona loaded from ai_agent_personas table - Tools loaded from ai_agent_tools table (via AgentConfigLoader)
-
-*Source: supabase/functions/wa-webhook-ai-agents/agents/marketplace-agent.ts:1*
+_Source: supabase/functions/wa-webhook-ai-agents/agents/jobs-agent.ts:1_
 
 ---
 
@@ -810,23 +796,103 @@ Marketplace AI Agent Handles buying/selling products, business listings, shoppin
 
 Default system prompt - fallback if database config not available
 
-*Source: supabase/functions/wa-webhook-ai-agents/agents/marketplace-agent.ts:97*
+_Source: supabase/functions/wa-webhook-ai-agents/agents/jobs-agent.ts:94_
 
 ---
 
 ### `unnamed`
 
-WA-Webhook-AI-Agents - Unified AI Agent System Single microservice for all AI-powered agents Part of Unified AI Agent Architecture Created: 2025-11-27
+Property AI Agent Handles rental property search, listings, inquiries Part of Unified AI Agent
+Architecture Created: 2025-11-27 NOW DATABASE-DRIVEN: - System prompt loaded from
+ai_agent_system_instructions table - Persona loaded from ai_agent_personas table - Tools loaded from
+ai_agent_tools table (via AgentConfigLoader)
 
-*Source: supabase/functions/wa-webhook-ai-agents/index.ts:1*
+_Source: supabase/functions/wa-webhook-ai-agents/agents/property-agent.ts:1_
 
 ---
 
 ### `unnamed`
 
-Notification Filters - Quiet Hours, Opt-out, and Policy Enforcement Ground Rules Compliance: Structured logging and security
+Default system prompt - fallback if database config not available
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/filters.ts:1*
+_Source: supabase/functions/wa-webhook-ai-agents/agents/property-agent.ts:94_
+
+---
+
+### `unnamed`
+
+Support AI Agent General help, navigation, and customer support Part of Unified AI Agent
+Architecture Created: 2025-11-27 NOW DATABASE-DRIVEN: - System prompt loaded from
+ai_agent_system_instructions table - Persona loaded from ai_agent_personas table - Tools loaded from
+ai_agent_tools table (via AgentConfigLoader)
+
+_Source: supabase/functions/wa-webhook-ai-agents/agents/support-agent.ts:1_
+
+---
+
+### `unnamed`
+
+Default system prompt - fallback if database config not available
+
+_Source: supabase/functions/wa-webhook-ai-agents/agents/support-agent.ts:94_
+
+---
+
+### `unnamed`
+
+Waiter AI Agent Handles restaurant/bar ordering, table booking, recommendations Part of Unified AI
+Agent Architecture Created: 2025-11-27 NOW DATABASE-DRIVEN: - System prompt loaded from
+ai_agent_system_instructions table - Persona loaded from ai_agent_personas table - Tools loaded from
+ai_agent_tools table (via AgentConfigLoader)
+
+_Source: supabase/functions/wa-webhook-ai-agents/agents/waiter-agent.ts:1_
+
+---
+
+### `unnamed`
+
+Default system prompt - fallback if database config not available
+
+_Source: supabase/functions/wa-webhook-ai-agents/agents/waiter-agent.ts:94_
+
+---
+
+### `unnamed`
+
+Marketplace AI Agent Handles buying/selling products, business listings, shopping Part of Unified AI
+Agent Architecture Created: 2025-11-27 NOTE: This agent replaces the business_broker agent. The type
+is 'business_broker_agent' for backward compatibility but it maps to the 'marketplace' slug in the
+database. NOW DATABASE-DRIVEN: - System prompt loaded from ai_agent_system_instructions table -
+Persona loaded from ai_agent_personas table - Tools loaded from ai_agent_tools table (via
+AgentConfigLoader)
+
+_Source: supabase/functions/wa-webhook-ai-agents/agents/marketplace-agent.ts:1_
+
+---
+
+### `unnamed`
+
+Default system prompt - fallback if database config not available
+
+_Source: supabase/functions/wa-webhook-ai-agents/agents/marketplace-agent.ts:97_
+
+---
+
+### `unnamed`
+
+WA-Webhook-AI-Agents - Unified AI Agent System Single microservice for all AI-powered agents Part of
+Unified AI Agent Architecture Created: 2025-11-27
+
+_Source: supabase/functions/wa-webhook-ai-agents/index.ts:1_
+
+---
+
+### `unnamed`
+
+Notification Filters - Quiet Hours, Opt-out, and Policy Enforcement Ground Rules Compliance:
+Structured logging and security
+
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/filters.ts:1_
 
 ---
 
@@ -834,7 +900,7 @@ Notification Filters - Quiet Hours, Opt-out, and Policy Enforcement Ground Rules
 
 Check if contact has opted out of notifications
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/filters.ts:21*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/filters.ts:21_
 
 ---
 
@@ -842,7 +908,7 @@ Check if contact has opted out of notifications
 
 Check if current time is within contact's quiet hours
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/filters.ts:53*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/filters.ts:53_
 
 ---
 
@@ -850,7 +916,7 @@ Check if current time is within contact's quiet hours
 
 Calculate when quiet hours end for a contact
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/filters.ts:105*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/filters.ts:105_
 
 ---
 
@@ -858,7 +924,7 @@ Calculate when quiet hours end for a contact
 
 Apply all notification filters
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/filters.ts:145*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/filters.ts:145_
 
 ---
 
@@ -866,7 +932,7 @@ Apply all notification filters
 
 Mask WhatsApp ID for logging (PII protection)
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/filters.ts:173*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/filters.ts:173_
 
 ---
 
@@ -874,7 +940,7 @@ Mask WhatsApp ID for logging (PII protection)
 
 Check if notification should be rate limited Simple implementation - can be enhanced with Redis
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/filters.ts:181*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/filters.ts:181_
 
 ---
 
@@ -882,23 +948,25 @@ Check if notification should be rate limited Simple implementation - can be enha
 
 Initialize contact preferences if they don't exist
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/filters.ts:223*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/filters.ts:223_
 
 ---
 
 ### `unnamed`
 
-Enhanced Notification Processing with Filters Integrates quiet hours, opt-out, and rate limiting Ground Rules Compliance: Structured logging, security, observability
+Enhanced Notification Processing with Filters Integrates quiet hours, opt-out, and rate limiting
+Ground Rules Compliance: Structured logging, security, observability
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/processor.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/processor.ts:1_
 
 ---
 
 ### `processNotificationWithFilters`
 
-Process notification with filters before delivery Returns true if notification should be delivered, false if deferred/blocked
+Process notification with filters before delivery Returns true if notification should be delivered,
+false if deferred/blocked
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/processor.ts:25*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/processor.ts:25_
 
 ---
 
@@ -906,7 +974,7 @@ Process notification with filters before delivery Returns true if notification s
 
 Handle notification blocked by filters
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/processor.ts:66*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/processor.ts:66_
 
 ---
 
@@ -914,7 +982,7 @@ Handle notification blocked by filters
 
 Extract Meta error code from WhatsApp API error response
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/processor.ts:151*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/processor.ts:151_
 
 ---
 
@@ -922,7 +990,7 @@ Extract Meta error code from WhatsApp API error response
 
 Categorize Meta error codes for retry logic
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/processor.ts:172*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/processor.ts:172_
 
 ---
 
@@ -930,7 +998,7 @@ Categorize Meta error codes for retry logic
 
 Calculate backoff time for rate limit errors
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/processor.ts:204*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/processor.ts:204_
 
 ---
 
@@ -938,7 +1006,7 @@ Calculate backoff time for rate limit errors
 
 Mask WhatsApp ID for logging (PII protection)
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/processor.ts:224*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/processor.ts:224_
 
 ---
 
@@ -946,7 +1014,7 @@ Mask WhatsApp ID for logging (PII protection)
 
 Get preferred locale for notification
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/processor.ts:232*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/processor.ts:232_
 
 ---
 
@@ -954,7 +1022,7 @@ Get preferred locale for notification
 
 Log notification delivery metrics by domain and message format
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/processor.ts:258*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/notify/processor.ts:258_
 
 ---
 
@@ -962,7 +1030,8 @@ Log notification delivery metrics by domain and message format
 
 Extract country code from phone number
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/exchange/country_support.ts:11*
+_Source:
+supabase/functions/.archive/wa-webhook-legacy-20251124/domains/exchange/country_support.ts:11_
 
 ---
 
@@ -970,7 +1039,8 @@ Extract country code from phone number
 
 Check if country supports a specific feature
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/exchange/country_support.ts:38*
+_Source:
+supabase/functions/.archive/wa-webhook-legacy-20251124/domains/exchange/country_support.ts:38_
 
 ---
 
@@ -978,7 +1048,8 @@ Check if country supports a specific feature
 
 Get MOMO provider info for country
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/exchange/country_support.ts:127*
+_Source:
+supabase/functions/.archive/wa-webhook-legacy-20251124/domains/exchange/country_support.ts:127_
 
 ---
 
@@ -986,7 +1057,8 @@ Get MOMO provider info for country
 
 List all supported countries for a feature
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/exchange/country_support.ts:166*
+_Source:
+supabase/functions/.archive/wa-webhook-legacy-20251124/domains/exchange/country_support.ts:166_
 
 ---
 
@@ -994,7 +1066,8 @@ List all supported countries for a feature
 
 Display list of WhatsApp numbers for a business
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/whatsapp_numbers.ts:19*
+_Source:
+supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/whatsapp_numbers.ts:19_
 
 ---
 
@@ -1002,7 +1075,8 @@ Display list of WhatsApp numbers for a business
 
 Start the flow to add a new WhatsApp number
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/whatsapp_numbers.ts:95*
+_Source:
+supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/whatsapp_numbers.ts:95_
 
 ---
 
@@ -1010,7 +1084,8 @@ Start the flow to add a new WhatsApp number
 
 Handle text input for adding WhatsApp number
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/whatsapp_numbers.ts:119*
+_Source:
+supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/whatsapp_numbers.ts:119_
 
 ---
 
@@ -1018,7 +1093,8 @@ Handle text input for adding WhatsApp number
 
 Handle selection of a specific WhatsApp number (for future edit/delete)
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/whatsapp_numbers.ts:203*
+_Source:
+supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/whatsapp_numbers.ts:203_
 
 ---
 
@@ -1026,7 +1102,8 @@ Handle selection of a specific WhatsApp number (for future edit/delete)
 
 Mask phone number for display (show only last 4 digits)
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/whatsapp_numbers.ts:224*
+_Source:
+supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/whatsapp_numbers.ts:224_
 
 ---
 
@@ -1034,7 +1111,8 @@ Mask phone number for display (show only last 4 digits)
 
 Format date for display
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/whatsapp_numbers.ts:234*
+_Source:
+supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/whatsapp_numbers.ts:234_
 
 ---
 
@@ -1042,7 +1120,7 @@ Format date for display
 
 Display list of businesses owned by the current user
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/management.ts:41*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/management.ts:41_
 
 ---
 
@@ -1050,7 +1128,7 @@ Display list of businesses owned by the current user
 
 Show detail view for a specific business with management options
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/management.ts:150*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/management.ts:150_
 
 ---
 
@@ -1058,7 +1136,7 @@ Show detail view for a specific business with management options
 
 Handle business deletion with confirmation
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/management.ts:254*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/management.ts:254_
 
 ---
 
@@ -1066,7 +1144,7 @@ Handle business deletion with confirmation
 
 Confirm and execute business deletion
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/management.ts:287*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/management.ts:287_
 
 ---
 
@@ -1074,7 +1152,7 @@ Confirm and execute business deletion
 
 Handle business selection from the list
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/management.ts:335*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/management.ts:335_
 
 ---
 
@@ -1082,7 +1160,7 @@ Handle business selection from the list
 
 Start business claiming flow
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/claim.ts:40*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/claim.ts:40_
 
 ---
 
@@ -1090,7 +1168,7 @@ Start business claiming flow
 
 Handle business name search with OpenAI semantic search
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/claim.ts:71*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/claim.ts:71_
 
 ---
 
@@ -1098,7 +1176,7 @@ Handle business name search with OpenAI semantic search
 
 Handle business selection and claiming
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/claim.ts:175*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/claim.ts:175_
 
 ---
 
@@ -1106,7 +1184,7 @@ Handle business selection and claiming
 
 OpenAI-powered semantic business search Uses embeddings and smart matching to find businesses
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/claim.ts:281*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/claim.ts:281_
 
 ---
 
@@ -1114,7 +1192,7 @@ OpenAI-powered semantic business search Uses embeddings and smart matching to fi
 
 Simple fallback search (no OpenAI)
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/claim.ts:441*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/claim.ts:441_
 
 ---
 
@@ -1122,7 +1200,7 @@ Simple fallback search (no OpenAI)
 
 Fuzzy/semantic business search (fast path)
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/claim.ts:485*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/claim.ts:485_
 
 ---
 
@@ -1130,7 +1208,7 @@ Fuzzy/semantic business search (fast path)
 
 Claim a business for the user
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/claim.ts:599*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/claim.ts:599_
 
 ---
 
@@ -1138,7 +1216,7 @@ Claim a business for the user
 
 Create a business entry from a bars table record
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/claim.ts:654*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/claim.ts:654_
 
 ---
 
@@ -1146,23 +1224,25 @@ Create a business entry from a bars table record
 
 Format business description for list display
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/claim.ts:720*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/business/claim.ts:720_
 
 ---
 
 ### `handleProfileMenu`
 
-Profile Hub Unified entry point for managing: - Vehicles - Businesses - Properties - Tokens - Settings
+Profile Hub Unified entry point for managing: - Vehicles - Businesses - Properties - Tokens -
+Settings
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/profile/index.ts:12*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/profile/index.ts:12_
 
 ---
 
 ### `getProfileMenuItemId`
 
-Map profile menu item action_targets to route IDs This ensures the router can handle actions from database-driven menu
+Map profile menu item action_targets to route IDs This ensures the router can handle actions from
+database-driven menu
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/profile/index.ts:160*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/profile/index.ts:160_
 
 ---
 
@@ -1170,7 +1250,7 @@ Map profile menu item action_targets to route IDs This ensures the router can ha
 
 Handle vehicle certificate media upload
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/profile/index.ts:270*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/profile/index.ts:270_
 
 ---
 
@@ -1178,15 +1258,18 @@ Handle vehicle certificate media upload
 
 Get localized menu item name for a specific country
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/menu/dynamic_home_menu.ts:58*
+_Source:
+supabase/functions/.archive/wa-webhook-legacy-20251124/domains/menu/dynamic_home_menu.ts:58_
 
 ---
 
 ### `fetchActiveMenuItems`
 
-Fetch active menu items from database filtered by country Returns items with country-specific names applied
+Fetch active menu items from database filtered by country Returns items with country-specific names
+applied
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/menu/dynamic_home_menu.ts:71*
+_Source:
+supabase/functions/.archive/wa-webhook-legacy-20251124/domains/menu/dynamic_home_menu.ts:71_
 
 ---
 
@@ -1194,7 +1277,8 @@ Fetch active menu items from database filtered by country Returns items with cou
 
 Normalize a menu key (legacy or canonical) to its canonical agent key.
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/menu/dynamic_home_menu.ts:150*
+_Source:
+supabase/functions/.archive/wa-webhook-legacy-20251124/domains/menu/dynamic_home_menu.ts:150_
 
 ---
 
@@ -1202,7 +1286,8 @@ Normalize a menu key (legacy or canonical) to its canonical agent key.
 
 Map menu item keys to IDS constants
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/menu/dynamic_home_menu.ts:159*
+_Source:
+supabase/functions/.archive/wa-webhook-legacy-20251124/domains/menu/dynamic_home_menu.ts:159_
 
 ---
 
@@ -1210,7 +1295,8 @@ Map menu item keys to IDS constants
 
 Get translation key for menu item
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/domains/menu/dynamic_home_menu.ts:170*
+_Source:
+supabase/functions/.archive/wa-webhook-legacy-20251124/domains/menu/dynamic_home_menu.ts:170_
 
 ---
 
@@ -1218,7 +1304,7 @@ Get translation key for menu item
 
 Normalizes a menu key to its canonical agent key
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/config/home_menu_aliases.ts:88*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/config/home_menu_aliases.ts:88_
 
 ---
 
@@ -1226,7 +1312,7 @@ Normalizes a menu key to its canonical agent key
 
 Checks if a key is a legacy (aliased) key
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/config/home_menu_aliases.ts:95*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/config/home_menu_aliases.ts:95_
 
 ---
 
@@ -1234,15 +1320,16 @@ Checks if a key is a legacy (aliased) key
 
 Validates if a key is a canonical menu key
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/config/home_menu_aliases.ts:119*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/config/home_menu_aliases.ts:119_
 
 ---
 
 ### `unnamed`
 
-Connection Pool Manager for Supabase Client Implements connection pooling to: - Reduce connection overhead - Improve performance - Manage connection lifecycle - Monitor pool health
+Connection Pool Manager for Supabase Client Implements connection pooling to: - Reduce connection
+overhead - Improve performance - Manage connection lifecycle - Monitor pool health
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:1_
 
 ---
 
@@ -1250,7 +1337,7 @@ Connection Pool Manager for Supabase Client Implements connection pooling to: - 
 
 Initialize pool with minimum connections
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:71*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:71_
 
 ---
 
@@ -1258,7 +1345,7 @@ Initialize pool with minimum connections
 
 Create a new pooled connection
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:91*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:91_
 
 ---
 
@@ -1266,7 +1353,7 @@ Create a new pooled connection
 
 Acquire a connection from the pool
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:138*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:138_
 
 ---
 
@@ -1274,7 +1361,7 @@ Acquire a connection from the pool
 
 Release a connection back to the pool
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:188*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:188_
 
 ---
 
@@ -1282,7 +1369,7 @@ Release a connection back to the pool
 
 Execute operation with pooled connection
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:213*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:213_
 
 ---
 
@@ -1290,7 +1377,7 @@ Execute operation with pooled connection
 
 Perform pool maintenance
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:227*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:227_
 
 ---
 
@@ -1298,7 +1385,7 @@ Perform pool maintenance
 
 Get pool statistics
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:270*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:270_
 
 ---
 
@@ -1306,7 +1393,7 @@ Get pool statistics
 
 Check pool health
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:287*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:287_
 
 ---
 
@@ -1314,7 +1401,7 @@ Check pool health
 
 Destroy the pool
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:298*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:298_
 
 ---
 
@@ -1322,7 +1409,7 @@ Destroy the pool
 
 Singleton pool instance
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:315*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:315_
 
 ---
 
@@ -1330,15 +1417,17 @@ Singleton pool instance
 
 Helper function to execute with pooled connection
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:327*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/connection_pool.ts:327_
 
 ---
 
 ### `unnamed`
 
-Streaming Response Handler for OpenAI Handles server-sent events (SSE) from OpenAI Chat Completions API Accumulates chunks and provides real-time updates ADDITIVE ONLY - New file, no modifications to existing code
+Streaming Response Handler for OpenAI Handles server-sent events (SSE) from OpenAI Chat Completions
+API Accumulates chunks and provides real-time updates ADDITIVE ONLY - New file, no modifications to
+existing code
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/streaming_handler.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/streaming_handler.ts:1_
 
 ---
 
@@ -1346,15 +1435,16 @@ Streaming Response Handler for OpenAI Handles server-sent events (SSE) from Open
 
 Stream chat completion responses Yields chunks as they arrive from OpenAI
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/streaming_handler.ts:42*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/streaming_handler.ts:42_
 
 ---
 
 ### `unnamed`
 
-Accumulate full response from stream Useful when you want streaming internally but need the complete response
+Accumulate full response from stream Useful when you want streaming internally but need the complete
+response
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/streaming_handler.ts:208*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/streaming_handler.ts:208_
 
 ---
 
@@ -1362,15 +1452,16 @@ Accumulate full response from stream Useful when you want streaming internally b
 
 Singleton instance
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/streaming_handler.ts:260*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/streaming_handler.ts:260_
 
 ---
 
 ### `unnamed`
 
-Agent Context Builder Builds comprehensive context for AI agents from WhatsApp messages Extracts user profile, conversation history, and session state
+Agent Context Builder Builds comprehensive context for AI agents from WhatsApp messages Extracts
+user profile, conversation history, and session state
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_context.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_context.ts:1_
 
 ---
 
@@ -1378,7 +1469,7 @@ Agent Context Builder Builds comprehensive context for AI agents from WhatsApp m
 
 Extract message content from different message types
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_context.ts:115*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_context.ts:115_
 
 ---
 
@@ -1386,7 +1477,7 @@ Extract message content from different message types
 
 Fetch user profile from database
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_context.ts:139*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_context.ts:139_
 
 ---
 
@@ -1394,7 +1485,7 @@ Fetch user profile from database
 
 Fetch recent message history for context
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_context.ts:174*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_context.ts:174_
 
 ---
 
@@ -1402,7 +1493,7 @@ Fetch recent message history for context
 
 Extract content from stored interaction
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_context.ts:229*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_context.ts:229_
 
 ---
 
@@ -1410,7 +1501,7 @@ Extract content from stored interaction
 
 Extract content from stored response
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_context.ts:252*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_context.ts:252_
 
 ---
 
@@ -1418,15 +1509,16 @@ Extract content from stored response
 
 Save agent interaction to database
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_context.ts:267*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_context.ts:267_
 
 ---
 
 ### `unnamed`
 
-OpenAI Client for wa-webhook Provides OpenAI API integration with: - Chat completions with function calling - Streaming support - Token usage tracking - Cost calculation - Error handling & retries
+OpenAI Client for wa-webhook Provides OpenAI API integration with: - Chat completions with function
+calling - Streaming support - Token usage tracking - Cost calculation - Error handling & retries
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/openai_client.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/openai_client.ts:1_
 
 ---
 
@@ -1434,7 +1526,7 @@ OpenAI Client for wa-webhook Provides OpenAI API integration with: - Chat comple
 
 Safely extract error message from unknown error
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/openai_client.ts:15*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/openai_client.ts:15_
 
 ---
 
@@ -1442,7 +1534,7 @@ Safely extract error message from unknown error
 
 Create chat completion
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/openai_client.ts:86*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/openai_client.ts:86_
 
 ---
 
@@ -1450,7 +1542,7 @@ Create chat completion
 
 Make HTTP request to OpenAI API
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/openai_client.ts:130*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/openai_client.ts:130_
 
 ---
 
@@ -1458,7 +1550,7 @@ Make HTTP request to OpenAI API
 
 Calculate API cost based on model and token usage
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/openai_client.ts:211*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/openai_client.ts:211_
 
 ---
 
@@ -1466,7 +1558,7 @@ Calculate API cost based on model and token usage
 
 Delay helper for retries
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/openai_client.ts:234*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/openai_client.ts:234_
 
 ---
 
@@ -1474,7 +1566,7 @@ Delay helper for retries
 
 Generate embeddings for text
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/openai_client.ts:241*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/openai_client.ts:241_
 
 ---
 
@@ -1482,15 +1574,16 @@ Generate embeddings for text
 
 Singleton instance
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/openai_client.ts:290*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/openai_client.ts:290_
 
 ---
 
 ### `unnamed`
 
-Comprehensive Error Handler for Webhook Provides error categorization, user notifications, and retry logic
+Comprehensive Error Handler for Webhook Provides error categorization, user notifications, and retry
+logic
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/error-handler.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/error-handler.ts:1_
 
 ---
 
@@ -1498,7 +1591,7 @@ Comprehensive Error Handler for Webhook Provides error categorization, user noti
 
 Handle error and return appropriate response
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/error-handler.ts:100*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/error-handler.ts:100_
 
 ---
 
@@ -1506,7 +1599,7 @@ Handle error and return appropriate response
 
 Normalize error to WebhookError
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/error-handler.ts:124*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/error-handler.ts:124_
 
 ---
 
@@ -1514,7 +1607,7 @@ Normalize error to WebhookError
 
 Log error with structured data
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/error-handler.ts:199*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/error-handler.ts:199_
 
 ---
 
@@ -1522,7 +1615,7 @@ Log error with structured data
 
 Notify user via WhatsApp
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/error-handler.ts:216*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/error-handler.ts:216_
 
 ---
 
@@ -1530,7 +1623,7 @@ Notify user via WhatsApp
 
 Create HTTP response
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/error-handler.ts:243*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/error-handler.ts:243_
 
 ---
 
@@ -1538,15 +1631,16 @@ Create HTTP response
 
 Get error statistics
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/error-handler.ts:279*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/error-handler.ts:279_
 
 ---
 
 ### `unnamed`
 
-Response Formatting Utilities Helper methods for formatting agent responses with emoji-numbered lists and action buttons for chat-first architecture.
+Response Formatting Utilities Helper methods for formatting agent responses with emoji-numbered
+lists and action buttons for chat-first architecture.
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/response_formatter.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/response_formatter.ts:1_
 
 ---
 
@@ -1554,7 +1648,7 @@ Response Formatting Utilities Helper methods for formatting agent responses with
 
 Format agent response with emoji-numbered lists and action buttons
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/response_formatter.ts:17*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/response_formatter.ts:17_
 
 ---
 
@@ -1562,7 +1656,7 @@ Format agent response with emoji-numbered lists and action buttons
 
 Extract options from response text
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/response_formatter.ts:64*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/response_formatter.ts:64_
 
 ---
 
@@ -1570,7 +1664,7 @@ Extract options from response text
 
 Extract header text before the list
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/response_formatter.ts:102*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/response_formatter.ts:102_
 
 ---
 
@@ -1578,15 +1672,17 @@ Extract header text before the list
 
 Generate contextual action buttons based on agent type
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/response_formatter.ts:111*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/response_formatter.ts:111_
 
 ---
 
 ### `unnamed`
 
-Message Formatter Utilities Provides standardized formatting for AI agent chat messages including: - Emoji-numbered lists (1️⃣, 2️⃣, 3️⃣) - Action buttons - User selection parsing - Fallback flow detection
+Message Formatter Utilities Provides standardized formatting for AI agent chat messages including: -
+Emoji-numbered lists (1️⃣, 2️⃣, 3️⃣) - Action buttons - User selection parsing - Fallback flow
+detection
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/message_formatter.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/message_formatter.ts:1_
 
 ---
 
@@ -1594,15 +1690,17 @@ Message Formatter Utilities Provides standardized formatting for AI agent chat m
 
 Format options as emoji-numbered list
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/message_formatter.ts:49*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/message_formatter.ts:49_
 
 ---
 
 ### `parseEmojiSelection`
 
-Parse user's emoji selection from message Supports multiple formats: - Numbers: "1", "2", "3" - Emojis: "1️⃣", "2️⃣", "3️⃣" - Text: "one", "two", "three", "first", "second" - Phrases: "option 1", "number 2", "the first one"
+Parse user's emoji selection from message Supports multiple formats: - Numbers: "1", "2", "3" -
+Emojis: "1️⃣", "2️⃣", "3️⃣" - Text: "one", "two", "three", "first", "second" - Phrases: "option 1",
+"number 2", "the first one"
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/message_formatter.ts:82*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/message_formatter.ts:82_
 
 ---
 
@@ -1610,7 +1708,7 @@ Parse user's emoji selection from message Supports multiple formats: - Numbers: 
 
 Format message with action buttons
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/message_formatter.ts:148*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/message_formatter.ts:148_
 
 ---
 
@@ -1618,7 +1716,7 @@ Format message with action buttons
 
 Detect if message should trigger fallback to WhatsApp flow
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/message_formatter.ts:176*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/message_formatter.ts:176_
 
 ---
 
@@ -1626,7 +1724,7 @@ Detect if message should trigger fallback to WhatsApp flow
 
 Create a formatted list message with emoji numbers and action buttons
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/message_formatter.ts:224*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/message_formatter.ts:224_
 
 ---
 
@@ -1634,7 +1732,7 @@ Create a formatted list message with emoji numbers and action buttons
 
 Validate action button configuration Ensures buttons meet WhatsApp requirements
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/message_formatter.ts:268*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/message_formatter.ts:268_
 
 ---
 
@@ -1642,7 +1740,7 @@ Validate action button configuration Ensures buttons meet WhatsApp requirements
 
 Extract option metadata from formatted list Useful for tracking what options were presented
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/message_formatter.ts:283*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/message_formatter.ts:283_
 
 ---
 
@@ -1650,7 +1748,7 @@ Extract option metadata from formatted list Useful for tracking what options wer
 
 Check if user message is a valid selection from previous options
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/message_formatter.ts:299*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/message_formatter.ts:299_
 
 ---
 
@@ -1658,15 +1756,16 @@ Check if user message is a valid selection from previous options
 
 Generate help text for emoji selection
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/message_formatter.ts:318*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/message_formatter.ts:318_
 
 ---
 
 ### `unnamed`
 
-WhatsApp-Specific Tools for AI Agents Provides tools that agents can use to interact with WhatsApp Business API and EasyMO backend services ADDITIVE ONLY - New tools for agent system
+WhatsApp-Specific Tools for AI Agents Provides tools that agents can use to interact with WhatsApp
+Business API and EasyMO backend services ADDITIVE ONLY - New tools for agent system
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/whatsapp_tools.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/whatsapp_tools.ts:1_
 
 ---
 
@@ -1674,7 +1773,7 @@ WhatsApp-Specific Tools for AI Agents Provides tools that agents can use to inte
 
 Register default tools
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/whatsapp_tools.ts:39*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/whatsapp_tools.ts:39_
 
 ---
 
@@ -1682,7 +1781,7 @@ Register default tools
 
 Register a tool
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/whatsapp_tools.ts:623*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/whatsapp_tools.ts:623_
 
 ---
 
@@ -1690,7 +1789,7 @@ Register a tool
 
 Get tool definition for OpenAI format
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/whatsapp_tools.ts:630*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/whatsapp_tools.ts:630_
 
 ---
 
@@ -1698,7 +1797,7 @@ Get tool definition for OpenAI format
 
 Execute a tool
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/whatsapp_tools.ts:647*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/whatsapp_tools.ts:647_
 
 ---
 
@@ -1706,7 +1805,7 @@ Execute a tool
 
 Get all registered tools
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/whatsapp_tools.ts:687*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/whatsapp_tools.ts:687_
 
 ---
 
@@ -1714,15 +1813,17 @@ Get all registered tools
 
 Singleton instance
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/whatsapp_tools.ts:695*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/whatsapp_tools.ts:695_
 
 ---
 
 ### `unnamed`
 
-Agent Orchestrator Central hub for managing multiple specialized agents Routes messages to appropriate agents based on intent Handles agent-to-agent handoffs and conversation state ADDITIVE ONLY - New file, complements existing ai_agent_handler.ts
+Agent Orchestrator Central hub for managing multiple specialized agents Routes messages to
+appropriate agents based on intent Handles agent-to-agent handoffs and conversation state ADDITIVE
+ONLY - New file, complements existing ai_agent_handler.ts
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:1_
 
 ---
 
@@ -1730,7 +1831,7 @@ Agent Orchestrator Central hub for managing multiple specialized agents Routes m
 
 Initialize default agent configurations
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:75*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:75_
 
 ---
 
@@ -1738,7 +1839,7 @@ Initialize default agent configurations
 
 Register an agent configuration
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:90*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:90_
 
 ---
 
@@ -1746,7 +1847,7 @@ Register an agent configuration
 
 Classify user intent and select appropriate agent
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:97*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:97_
 
 ---
 
@@ -1754,7 +1855,7 @@ Classify user intent and select appropriate agent
 
 Use LLM to classify intent
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:134*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:134_
 
 ---
 
@@ -1762,7 +1863,7 @@ Use LLM to classify intent
 
 Process message with selected agent
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:181*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:181_
 
 ---
 
@@ -1770,7 +1871,7 @@ Process message with selected agent
 
 Build message history for agent
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:303*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:303_
 
 ---
 
@@ -1778,7 +1879,7 @@ Build message history for agent
 
 Get tools available for agent
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:354*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:354_
 
 ---
 
@@ -1786,7 +1887,7 @@ Get tools available for agent
 
 Extract topic from message
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:370*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:370_
 
 ---
 
@@ -1794,7 +1895,7 @@ Extract topic from message
 
 Transfer conversation to different agent
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:394*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:394_
 
 ---
 
@@ -1802,7 +1903,7 @@ Transfer conversation to different agent
 
 End conversation and cleanup
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:406*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:406_
 
 ---
 
@@ -1810,15 +1911,16 @@ End conversation and cleanup
 
 Singleton instance
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:441*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_orchestrator.ts:441_
 
 ---
 
 ### `unnamed`
 
-Advanced Rate Limiter with Blacklisting Provides per-user rate limiting, violation tracking, and blacklist management
+Advanced Rate Limiter with Blacklisting Provides per-user rate limiting, violation tracking, and
+blacklist management
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/rate-limiter.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/rate-limiter.ts:1_
 
 ---
 
@@ -1826,7 +1928,7 @@ Advanced Rate Limiter with Blacklisting Provides per-user rate limiting, violati
 
 Check if request should be rate limited
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/rate-limiter.ts:42*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/rate-limiter.ts:42_
 
 ---
 
@@ -1834,7 +1936,7 @@ Check if request should be rate limited
 
 Manually unblock an identifier
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/rate-limiter.ts:130*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/rate-limiter.ts:130_
 
 ---
 
@@ -1842,7 +1944,7 @@ Manually unblock an identifier
 
 Get current state for monitoring
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/rate-limiter.ts:142*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/rate-limiter.ts:142_
 
 ---
 
@@ -1850,7 +1952,7 @@ Get current state for monitoring
 
 Check health
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/rate-limiter.ts:157*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/rate-limiter.ts:157_
 
 ---
 
@@ -1858,15 +1960,16 @@ Check health
 
 Clean up expired buckets
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/rate-limiter.ts:164*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/rate-limiter.ts:164_
 
 ---
 
 ### `unnamed`
 
-Agent Configurations Centralized configurations for all AI agents in the EasyMO platform. Each agent has a chat-first interface with emoji-numbered lists and action buttons.
+Agent Configurations Centralized configurations for all AI agents in the EasyMO platform. Each agent
+has a chat-first interface with emoji-numbered lists and action buttons.
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_configs.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_configs.ts:1_
 
 ---
 
@@ -1874,7 +1977,7 @@ Agent Configurations Centralized configurations for all AI agents in the EasyMO 
 
 Simple In-Memory Cache for Webhook Processing Provides TTL-based caching with LRU eviction
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/cache.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/cache.ts:1_
 
 ---
 
@@ -1882,7 +1985,7 @@ Simple In-Memory Cache for Webhook Processing Provides TTL-based caching with LR
 
 Get value from cache
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/cache.ts:44*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/cache.ts:44_
 
 ---
 
@@ -1890,7 +1993,7 @@ Get value from cache
 
 Set value in cache
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/cache.ts:67*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/cache.ts:67_
 
 ---
 
@@ -1898,7 +2001,7 @@ Set value in cache
 
 Get or set value
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/cache.ts:90*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/cache.ts:90_
 
 ---
 
@@ -1906,7 +2009,7 @@ Get or set value
 
 Delete from cache
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/cache.ts:108*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/cache.ts:108_
 
 ---
 
@@ -1914,7 +2017,7 @@ Delete from cache
 
 Clear all cache
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/cache.ts:119*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/cache.ts:119_
 
 ---
 
@@ -1922,7 +2025,7 @@ Clear all cache
 
 Evict least recently used entry
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/cache.ts:129*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/cache.ts:129_
 
 ---
 
@@ -1930,7 +2033,7 @@ Evict least recently used entry
 
 Clean up expired entries
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/cache.ts:151*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/cache.ts:151_
 
 ---
 
@@ -1938,7 +2041,7 @@ Clean up expired entries
 
 Get cache statistics
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/cache.ts:175*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/cache.ts:175_
 
 ---
 
@@ -1946,15 +2049,16 @@ Get cache statistics
 
 Check if cache is healthy
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/cache.ts:186*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/cache.ts:186_
 
 ---
 
 ### `unnamed`
 
-AI Agent Configuration Centralized configuration for all AI agent features Allows feature flags and dynamic configuration
+AI Agent Configuration Centralized configuration for all AI agent features Allows feature flags and
+dynamic configuration
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/ai_agent_config.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/ai_agent_config.ts:1_
 
 ---
 
@@ -1962,7 +2066,7 @@ AI Agent Configuration Centralized configuration for all AI agent features Allow
 
 Get AI agent configuration Can be overridden by database settings or environment variables
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/ai_agent_config.ts:266*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/ai_agent_config.ts:266_
 
 ---
 
@@ -1970,7 +2074,7 @@ Get AI agent configuration Can be overridden by database settings or environment
 
 Validate configuration
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/ai_agent_config.ts:288*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/ai_agent_config.ts:288_
 
 ---
 
@@ -1978,15 +2082,16 @@ Validate configuration
 
 Get agent-specific configuration
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/ai_agent_config.ts:310*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/ai_agent_config.ts:310_
 
 ---
 
 ### `unnamed`
 
-Health & Metrics Endpoint for AI Agents Provides: - Health check status - Aggregated metrics - System diagnostics - Configuration status ADDITIVE ONLY - New endpoints for monitoring
+Health & Metrics Endpoint for AI Agents Provides: - Health check status - Aggregated metrics -
+System diagnostics - Configuration status ADDITIVE ONLY - New endpoints for monitoring
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/health_metrics.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/health_metrics.ts:1_
 
 ---
 
@@ -1994,7 +2099,7 @@ Health & Metrics Endpoint for AI Agents Provides: - Health check status - Aggreg
 
 Check overall system health
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/health_metrics.ts:42*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/health_metrics.ts:42_
 
 ---
 
@@ -2002,7 +2107,7 @@ Check overall system health
 
 Check database health
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/health_metrics.ts:93*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/health_metrics.ts:93_
 
 ---
 
@@ -2010,7 +2115,7 @@ Check database health
 
 Get detailed metrics for monitoring
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/health_metrics.ts:109*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/health_metrics.ts:109_
 
 ---
 
@@ -2018,7 +2123,7 @@ Get detailed metrics for monitoring
 
 Handle health check request
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/health_metrics.ts:127*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/health_metrics.ts:127_
 
 ---
 
@@ -2026,7 +2131,7 @@ Handle health check request
 
 Handle metrics request
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/health_metrics.ts:168*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/health_metrics.ts:168_
 
 ---
 
@@ -2034,7 +2139,7 @@ Handle metrics request
 
 Handle metrics summary request (plain text)
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/health_metrics.ts:198*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/health_metrics.ts:198_
 
 ---
 
@@ -2042,15 +2147,16 @@ Handle metrics summary request (plain text)
 
 Handle Prometheus-style metrics export
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/health_metrics.ts:221*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/health_metrics.ts:221_
 
 ---
 
 ### `unnamed`
 
-Advanced Rate Limiter with Blacklisting Features: - Per-user rate limiting - Automatic blacklisting for abuse - Violation tracking - Exponential backoff - Redis-backed (future enhancement)
+Advanced Rate Limiter with Blacklisting Features: - Per-user rate limiting - Automatic blacklisting
+for abuse - Violation tracking - Exponential backoff - Redis-backed (future enhancement)
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/advanced_rate_limiter.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/advanced_rate_limiter.ts:1_
 
 ---
 
@@ -2058,7 +2164,7 @@ Advanced Rate Limiter with Blacklisting Features: - Per-user rate limiting - Aut
 
 Check if request should be rate limited
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/advanced_rate_limiter.ts:62*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/advanced_rate_limiter.ts:62_
 
 ---
 
@@ -2066,7 +2172,7 @@ Check if request should be rate limited
 
 Manually unblock an identifier
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/advanced_rate_limiter.ts:172*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/advanced_rate_limiter.ts:172_
 
 ---
 
@@ -2074,7 +2180,7 @@ Manually unblock an identifier
 
 Get current state for monitoring
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/advanced_rate_limiter.ts:187*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/advanced_rate_limiter.ts:187_
 
 ---
 
@@ -2082,7 +2188,7 @@ Get current state for monitoring
 
 Check health
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/advanced_rate_limiter.ts:207*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/advanced_rate_limiter.ts:207_
 
 ---
 
@@ -2090,7 +2196,7 @@ Check health
 
 Clean up expired buckets and blacklist entries
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/advanced_rate_limiter.ts:217*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/advanced_rate_limiter.ts:217_
 
 ---
 
@@ -2098,7 +2204,7 @@ Clean up expired buckets and blacklist entries
 
 Destroy the rate limiter
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/advanced_rate_limiter.ts:251*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/advanced_rate_limiter.ts:251_
 
 ---
 
@@ -2106,15 +2212,16 @@ Destroy the rate limiter
 
 Singleton instance
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/advanced_rate_limiter.ts:266*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/advanced_rate_limiter.ts:266_
 
 ---
 
 ### `unnamed`
 
-AI Agent Monitoring & Metrics Collection Comprehensive monitoring system for AI agent performance, cost tracking, and quality metrics ADDITIVE ONLY - New file
+AI Agent Monitoring & Metrics Collection Comprehensive monitoring system for AI agent performance,
+cost tracking, and quality metrics ADDITIVE ONLY - New file
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/monitoring.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/monitoring.ts:1_
 
 ---
 
@@ -2122,7 +2229,7 @@ AI Agent Monitoring & Metrics Collection Comprehensive monitoring system for AI 
 
 Record metrics for an agent interaction
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/monitoring.ts:104*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/monitoring.ts:104_
 
 ---
 
@@ -2130,7 +2237,7 @@ Record metrics for an agent interaction
 
 Get aggregated metrics for a time period
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/monitoring.ts:158*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/monitoring.ts:158_
 
 ---
 
@@ -2138,7 +2245,7 @@ Get aggregated metrics for a time period
 
 Calculate aggregations from raw metrics
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/monitoring.ts:193*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/monitoring.ts:193_
 
 ---
 
@@ -2146,7 +2253,7 @@ Calculate aggregations from raw metrics
 
 Get empty aggregated metrics
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/monitoring.ts:320*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/monitoring.ts:320_
 
 ---
 
@@ -2154,7 +2261,7 @@ Get empty aggregated metrics
 
 Check for alert conditions
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/monitoring.ts:353*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/monitoring.ts:353_
 
 ---
 
@@ -2162,7 +2269,7 @@ Check for alert conditions
 
 Get real-time statistics
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/monitoring.ts:402*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/monitoring.ts:402_
 
 ---
 
@@ -2170,15 +2277,17 @@ Get real-time statistics
 
 Create monitoring service instance
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/monitoring.ts:453*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/monitoring.ts:453_
 
 ---
 
 ### `unnamed`
 
-Enhanced Tool Library with External APIs Provides additional tools for AI agents: - Web search (Tavily API) - Deep research (Perplexity API) - Weather information - Currency conversion - Translation
+Enhanced Tool Library with External APIs Provides additional tools for AI agents: - Web search
+(Tavily API) - Deep research (Perplexity API) - Weather information - Currency conversion -
+Translation
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/enhanced_tools.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/enhanced_tools.ts:1_
 
 ---
 
@@ -2186,7 +2295,7 @@ Enhanced Tool Library with External APIs Provides additional tools for AI agents
 
 Safely extract error message from unknown error
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/enhanced_tools.ts:15*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/enhanced_tools.ts:15_
 
 ---
 
@@ -2194,7 +2303,7 @@ Safely extract error message from unknown error
 
 Get all enhanced tools
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/enhanced_tools.ts:351*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/enhanced_tools.ts:351_
 
 ---
 
@@ -2202,7 +2311,7 @@ Get all enhanced tools
 
 Register all enhanced tools with a tool manager
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/enhanced_tools.ts:363*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/enhanced_tools.ts:363_
 
 ---
 
@@ -2210,7 +2319,7 @@ Register all enhanced tools with a tool manager
 
 Get AI Agent configuration from environment
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/config_manager.ts:56*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/config_manager.ts:56_
 
 ---
 
@@ -2218,7 +2327,7 @@ Get AI Agent configuration from environment
 
 Validate configuration
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/config_manager.ts:113*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/config_manager.ts:113_
 
 ---
 
@@ -2226,7 +2335,7 @@ Validate configuration
 
 Get configuration summary for logging
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/config_manager.ts:157*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/config_manager.ts:157_
 
 ---
 
@@ -2234,7 +2343,7 @@ Get configuration summary for logging
 
 Singleton instance
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/config_manager.ts:185*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/config_manager.ts:185_
 
 ---
 
@@ -2242,15 +2351,17 @@ Singleton instance
 
 Reset configuration (for testing)
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/config_manager.ts:204*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/config_manager.ts:204_
 
 ---
 
 ### `unnamed`
 
-Memory Manager for AI Agents Manages conversation memory using: - Short-term: Recent messages from wa_interactions table - Working memory: Session state - Long-term: Important facts stored in agent_conversations ENHANCED: Added caching layer for performance optimization
+Memory Manager for AI Agents Manages conversation memory using: - Short-term: Recent messages from
+wa_interactions table - Working memory: Session state - Long-term: Important facts stored in
+agent_conversations ENHANCED: Added caching layer for performance optimization
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:1_
 
 ---
 
@@ -2258,7 +2369,7 @@ Memory Manager for AI Agents Manages conversation memory using: - Short-term: Re
 
 Safely extract error message from unknown error
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:18*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:18_
 
 ---
 
@@ -2266,7 +2377,7 @@ Safely extract error message from unknown error
 
 Get recent conversation history for a user ENHANCED: Added caching layer
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:52*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:52_
 
 ---
 
@@ -2274,7 +2385,7 @@ Get recent conversation history for a user ENHANCED: Added caching layer
 
 Save important information to long-term memory with embeddings
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:144*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:144_
 
 ---
 
@@ -2282,7 +2393,7 @@ Save important information to long-term memory with embeddings
 
 Retrieve relevant memories using semantic search
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:196*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:196_
 
 ---
 
@@ -2290,7 +2401,7 @@ Retrieve relevant memories using semantic search
 
 Calculate importance score for content
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:249*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:249_
 
 ---
 
@@ -2298,7 +2409,7 @@ Calculate importance score for content
 
 Summarize conversation using OpenAI
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:280*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:280_
 
 ---
 
@@ -2306,7 +2417,7 @@ Summarize conversation using OpenAI
 
 Save message interaction to memory
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:344*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:344_
 
 ---
 
@@ -2314,7 +2425,7 @@ Save message interaction to memory
 
 Store important facts in agent_conversations for long-term memory
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:379*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:379_
 
 ---
 
@@ -2322,7 +2433,7 @@ Store important facts in agent_conversations for long-term memory
 
 Get conversation summary for a user
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:415*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:415_
 
 ---
 
@@ -2330,7 +2441,7 @@ Get conversation summary for a user
 
 Clear old conversation history (privacy/GDPR)
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:457*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:457_
 
 ---
 
@@ -2338,7 +2449,7 @@ Clear old conversation history (privacy/GDPR)
 
 Extract message content from various formats
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:495*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:495_
 
 ---
 
@@ -2346,7 +2457,7 @@ Extract message content from various formats
 
 Extract important information from conversation
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:498*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:498_
 
 ---
 
@@ -2354,7 +2465,7 @@ Extract important information from conversation
 
 Clear old conversation history (privacy/GDPR)
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:571*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:571_
 
 ---
 
@@ -2362,7 +2473,7 @@ Clear old conversation history (privacy/GDPR)
 
 Extract message content from various formats
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:609*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:609_
 
 ---
 
@@ -2370,7 +2481,7 @@ Extract message content from various formats
 
 Extract response content from various formats
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:632*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:632_
 
 ---
 
@@ -2378,7 +2489,7 @@ Extract response content from various formats
 
 Build context string from recent messages
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:647*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:647_
 
 ---
 
@@ -2386,15 +2497,16 @@ Build context string from recent messages
 
 Create memory manager instance
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:671*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/memory_manager.ts:671_
 
 ---
 
 ### `unnamed`
 
-Agent Session Management Functions for tracking and managing agent chat sessions. Sessions track conversation state, presented options, and user selections.
+Agent Session Management Functions for tracking and managing agent chat sessions. Sessions track
+conversation state, presented options, and user selections.
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_session.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_session.ts:1_
 
 ---
 
@@ -2402,7 +2514,7 @@ Agent Session Management Functions for tracking and managing agent chat sessions
 
 Get active agent chat session for user by phone number
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_session.ts:26*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_session.ts:26_
 
 ---
 
@@ -2410,7 +2522,7 @@ Get active agent chat session for user by phone number
 
 Get active agent chat session for user by user ID
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_session.ts:69*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_session.ts:69_
 
 ---
 
@@ -2418,7 +2530,7 @@ Get active agent chat session for user by user ID
 
 Save or update agent chat session
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_session.ts:101*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_session.ts:101_
 
 ---
 
@@ -2426,7 +2538,7 @@ Save or update agent chat session
 
 Update session with user selection
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_session.ts:182*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_session.ts:182_
 
 ---
 
@@ -2434,7 +2546,7 @@ Update session with user selection
 
 Trigger fallback for session
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_session.ts:211*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_session.ts:211_
 
 ---
 
@@ -2442,7 +2554,7 @@ Trigger fallback for session
 
 Clear agent chat session
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_session.ts:244*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_session.ts:244_
 
 ---
 
@@ -2450,7 +2562,7 @@ Clear agent chat session
 
 Clear all sessions for a user
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_session.ts:269*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_session.ts:269_
 
 ---
 
@@ -2458,15 +2570,16 @@ Clear all sessions for a user
 
 Get session statistics for monitoring
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_session.ts:294*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/agent_session.ts:294_
 
 ---
 
 ### `unnamed`
 
-Enhanced Webhook Verification with Security Features Provides signature verification, caching, and timing-safe comparison
+Enhanced Webhook Verification with Security Features Provides signature verification, caching, and
+timing-safe comparison
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/webhook-verification.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/webhook-verification.ts:1_
 
 ---
 
@@ -2474,7 +2587,7 @@ Enhanced Webhook Verification with Security Features Provides signature verifica
 
 Verify WhatsApp webhook signature with caching
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/webhook-verification.ts:29*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/webhook-verification.ts:29_
 
 ---
 
@@ -2482,7 +2595,7 @@ Verify WhatsApp webhook signature with caching
 
 Handle WhatsApp verification challenge
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/webhook-verification.ts:103*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/webhook-verification.ts:103_
 
 ---
 
@@ -2490,7 +2603,7 @@ Handle WhatsApp verification challenge
 
 Timing-safe string comparison
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/webhook-verification.ts:128*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/webhook-verification.ts:128_
 
 ---
 
@@ -2498,7 +2611,7 @@ Timing-safe string comparison
 
 Hash payload for cache key
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/webhook-verification.ts:144*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/webhook-verification.ts:144_
 
 ---
 
@@ -2506,7 +2619,7 @@ Hash payload for cache key
 
 Cleanup expired cache entries
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/webhook-verification.ts:154*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/webhook-verification.ts:154_
 
 ---
 
@@ -2514,15 +2627,17 @@ Cleanup expired cache entries
 
 Get verification statistics
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/webhook-verification.ts:166*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/webhook-verification.ts:166_
 
 ---
 
 ### `unnamed`
 
-Tool Manager for AI Agents Manages tool definitions and execution for OpenAI function calling Provides built-in tools for common operations: - check_wallet_balance - search_trips - create_booking - transfer_money - get_user_profile
+Tool Manager for AI Agents Manages tool definitions and execution for OpenAI function calling
+Provides built-in tools for common operations: - check_wallet_balance - search_trips -
+create_booking - transfer_money - get_user_profile
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/tool_manager.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/tool_manager.ts:1_
 
 ---
 
@@ -2530,7 +2645,7 @@ Tool Manager for AI Agents Manages tool definitions and execution for OpenAI fun
 
 Safely extract error message from unknown error
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/tool_manager.ts:17*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/tool_manager.ts:17_
 
 ---
 
@@ -2538,7 +2653,7 @@ Safely extract error message from unknown error
 
 Register built-in tools
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/tool_manager.ts:53*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/tool_manager.ts:53_
 
 ---
 
@@ -2546,7 +2661,7 @@ Register built-in tools
 
 Register a custom tool
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/tool_manager.ts:144*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/tool_manager.ts:144_
 
 ---
 
@@ -2554,7 +2669,7 @@ Register a custom tool
 
 Get all tool definitions for OpenAI
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/tool_manager.ts:151*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/tool_manager.ts:151_
 
 ---
 
@@ -2562,7 +2677,7 @@ Get all tool definitions for OpenAI
 
 Execute a tool call
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/tool_manager.ts:161*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/tool_manager.ts:161_
 
 ---
 
@@ -2570,7 +2685,7 @@ Execute a tool call
 
 Execute multiple tool calls
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/tool_manager.ts:249*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/tool_manager.ts:249_
 
 ---
 
@@ -2578,7 +2693,7 @@ Execute multiple tool calls
 
 Save tool execution to database
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/tool_manager.ts:262*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/tool_manager.ts:262_
 
 ---
 
@@ -2586,15 +2701,17 @@ Save tool execution to database
 
 Singleton instance
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/tool_manager.ts:439*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/tool_manager.ts:439_
 
 ---
 
 ### `unnamed`
 
-Metrics Aggregator for AI Agents Collects and aggregates metrics for monitoring: - Request counts - Success/failure rates - Token usage & costs - Latency statistics - Tool execution metrics ADDITIVE ONLY - New file for enhanced monitoring
+Metrics Aggregator for AI Agents Collects and aggregates metrics for monitoring: - Request counts -
+Success/failure rates - Token usage & costs - Latency statistics - Tool execution metrics ADDITIVE
+ONLY - New file for enhanced monitoring
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:1_
 
 ---
 
@@ -2602,7 +2719,7 @@ Metrics Aggregator for AI Agents Collects and aggregates metrics for monitoring:
 
 Record a request
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:76*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:76_
 
 ---
 
@@ -2610,7 +2727,7 @@ Record a request
 
 Get aggregated metrics
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:121*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:121_
 
 ---
 
@@ -2618,7 +2735,7 @@ Get aggregated metrics
 
 Get metrics summary for logging
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:164*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:164_
 
 ---
 
@@ -2626,7 +2743,7 @@ Get metrics summary for logging
 
 Reset metrics (for testing)
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:185*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:185_
 
 ---
 
@@ -2634,7 +2751,7 @@ Reset metrics (for testing)
 
 Cleanup resources
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:205*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:205_
 
 ---
 
@@ -2642,7 +2759,7 @@ Cleanup resources
 
 Add metrics to hourly bucket
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:214*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:214_
 
 ---
 
@@ -2650,7 +2767,7 @@ Add metrics to hourly bucket
 
 Get last hour statistics
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:238*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:238_
 
 ---
 
@@ -2658,7 +2775,7 @@ Get last hour statistics
 
 Cleanup old hourly buckets (keep last 24 hours)
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:262*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:262_
 
 ---
 
@@ -2666,7 +2783,7 @@ Cleanup old hourly buckets (keep last 24 hours)
 
 Check if metrics cross important thresholds
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:273*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:273_
 
 ---
 
@@ -2674,7 +2791,7 @@ Check if metrics cross important thresholds
 
 Format duration in human-readable form
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:305*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:305_
 
 ---
 
@@ -2682,7 +2799,7 @@ Format duration in human-readable form
 
 Singleton instance
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:322*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:322_
 
 ---
 
@@ -2690,15 +2807,17 @@ Singleton instance
 
 Reset metrics (for testing)
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:334*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/shared/metrics_aggregator.ts:334_
 
 ---
 
 ### `unnamed`
 
-Example: Integrating Enhanced Processor into wa-webhook This example shows how to integrate the enhanced processor into the existing wa-webhook handler. USAGE: 1. Import this in your index.ts 2. Set WA_ENHANCED_PROCESSING=true in environment 3. Monitor with health checks
+Example: Integrating Enhanced Processor into wa-webhook This example shows how to integrate the
+enhanced processor into the existing wa-webhook handler. USAGE: 1. Import this in your index.ts 2.
+Set WA_ENHANCED_PROCESSING=true in environment 3. Monitor with health checks
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/integration-example.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/integration-example.ts:1_
 
 ---
 
@@ -2706,15 +2825,18 @@ Example: Integrating Enhanced Processor into wa-webhook This example shows how t
 
 ALTERNATIVE: Gradual Rollout by User You can enable enhanced processing for specific users first:
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/integration-example.ts:125*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/integration-example.ts:125_
 
 ---
 
 ### `unnamed`
 
-Enhanced Webhook Processor with Advanced Error Recovery This module extends the existing wa-webhook processor with: - Dead letter queue for failed messages - Conversation-level distributed locking - Timeout protection - Enhanced error recovery Can be enabled via WA_ENHANCED_PROCESSING environment variable.
+Enhanced Webhook Processor with Advanced Error Recovery This module extends the existing wa-webhook
+processor with: - Dead letter queue for failed messages - Conversation-level distributed locking -
+Timeout protection - Enhanced error recovery Can be enabled via WA_ENHANCED_PROCESSING environment
+variable.
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/router/enhanced_processor.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/router/enhanced_processor.ts:1_
 
 ---
 
@@ -2722,7 +2844,7 @@ Enhanced Webhook Processor with Advanced Error Recovery This module extends the 
 
 Enhanced webhook processing wrapper Adds DLQ, locking, and timeout protection to existing processor
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/router/enhanced_processor.ts:34*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/router/enhanced_processor.ts:34_
 
 ---
 
@@ -2730,7 +2852,7 @@ Enhanced webhook processing wrapper Adds DLQ, locking, and timeout protection to
 
 Process individual message with enhanced features
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/router/enhanced_processor.ts:147*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/router/enhanced_processor.ts:147_
 
 ---
 
@@ -2738,15 +2860,17 @@ Process individual message with enhanced features
 
 Get feature flag status
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/router/enhanced_processor.ts:253*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/router/enhanced_processor.ts:253_
 
 ---
 
 ### `unnamed`
 
-AI Agent Handler Routes WhatsApp messages to AI agents for intelligent processing Falls back to existing handlers if AI is not applicable This handler respects the additive-only guards by: - Being a completely new file - Not modifying existing handlers - Providing fallback to existing flows
+AI Agent Handler Routes WhatsApp messages to AI agents for intelligent processing Falls back to
+existing handlers if AI is not applicable This handler respects the additive-only guards by: - Being
+a completely new file - Not modifying existing handlers - Providing fallback to existing flows
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/router/ai_agent_handler.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/router/ai_agent_handler.ts:1_
 
 ---
 
@@ -2754,7 +2878,7 @@ AI Agent Handler Routes WhatsApp messages to AI agents for intelligent processin
 
 Singleton rate limiter instance
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/router/ai_agent_handler.ts:49*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/router/ai_agent_handler.ts:49_
 
 ---
 
@@ -2762,39 +2886,44 @@ Singleton rate limiter instance
 
 Determines if a message should be processed by AI agents
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/router/ai_agent_handler.ts:90*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/router/ai_agent_handler.ts:90_
 
 ---
 
 ### `tryAIAgentHandler`
 
-Try to handle message with AI agent Returns true if handled, false if should fallback to existing handlers
+Try to handle message with AI agent Returns true if handled, false if should fallback to existing
+handlers
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/router/ai_agent_handler.ts:110*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/router/ai_agent_handler.ts:110_
 
 ---
 
 ### `processWithAIAgent`
 
-Process message with AI agent using orchestrator Enhanced with full OpenAI integration and specialized agents
+Process message with AI agent using orchestrator Enhanced with full OpenAI integration and
+specialized agents
 
-*Source: supabase/functions/.archive/wa-webhook-legacy-20251124/router/ai_agent_handler.ts:434*
-
----
-
-### `unnamed`
-
-Search Indexer Edge Function Automatically indexes content from various domains for semantic search Triggered by: - Database triggers on insert/update - Manual indexing requests - Scheduled batch jobs
-
-*Source: supabase/functions/search-indexer/index.ts:1*
+_Source: supabase/functions/.archive/wa-webhook-legacy-20251124/router/ai_agent_handler.ts:434_
 
 ---
 
 ### `unnamed`
 
-WA-Webhook-Jobs Microservice Handles WhatsApp webhook events for the Job Board domain. Part of Phase 2 webhook decomposition strategy. Features: - Job listings search - Job applications - Job alerts - Employer postings - Job categories
+Search Indexer Edge Function Automatically indexes content from various domains for semantic search
+Triggered by: - Database triggers on insert/update - Manual indexing requests - Scheduled batch jobs
 
-*Source: supabase/functions/wa-webhook-jobs/index.ts:1*
+_Source: supabase/functions/search-indexer/index.ts:1_
+
+---
+
+### `unnamed`
+
+WA-Webhook-Jobs Microservice Handles WhatsApp webhook events for the Job Board domain. Part of Phase
+2 webhook decomposition strategy. Features: - Job listings search - Job applications - Job alerts -
+Employer postings - Job categories
+
+_Source: supabase/functions/wa-webhook-jobs/index.ts:1_
 
 ---
 
@@ -2802,7 +2931,7 @@ WA-Webhook-Jobs Microservice Handles WhatsApp webhook events for the Job Board d
 
 Health check handler - verifies database connectivity and table access
 
-*Source: supabase/functions/wa-webhook-jobs/index.ts:294*
+_Source: supabase/functions/wa-webhook-jobs/index.ts:294_
 
 ---
 
@@ -2810,7 +2939,7 @@ Health check handler - verifies database connectivity and table access
 
 Show job board menu with WhatsApp list message
 
-*Source: supabase/functions/wa-webhook-jobs/index.ts:359*
+_Source: supabase/functions/wa-webhook-jobs/index.ts:359_
 
 ---
 
@@ -2818,7 +2947,7 @@ Show job board menu with WhatsApp list message
 
 Handle my applications query
 
-*Source: supabase/functions/wa-webhook-jobs/index.ts:395*
+_Source: supabase/functions/wa-webhook-jobs/index.ts:395_
 
 ---
 
@@ -2826,7 +2955,7 @@ Handle my applications query
 
 Handle my posted jobs query
 
-*Source: supabase/functions/wa-webhook-jobs/index.ts:455*
+_Source: supabase/functions/wa-webhook-jobs/index.ts:455_
 
 ---
 
@@ -2834,7 +2963,7 @@ Handle my posted jobs query
 
 Route complex queries to job-board-ai-agent
 
-*Source: supabase/functions/wa-webhook-jobs/index.ts:498*
+_Source: supabase/functions/wa-webhook-jobs/index.ts:498_
 
 ---
 
@@ -2842,7 +2971,7 @@ Route complex queries to job-board-ai-agent
 
 Extract text/selection from WhatsApp message
 
-*Source: supabase/functions/wa-webhook-jobs/index.ts:542*
+_Source: supabase/functions/wa-webhook-jobs/index.ts:542_
 
 ---
 
@@ -2850,7 +2979,7 @@ Extract text/selection from WhatsApp message
 
 Get first message from webhook payload
 
-*Source: supabase/functions/wa-webhook-jobs/index.ts:569*
+_Source: supabase/functions/wa-webhook-jobs/index.ts:569_
 
 ---
 
@@ -2858,7 +2987,7 @@ Get first message from webhook payload
 
 Detect user locale from payload
 
-*Source: supabase/functions/wa-webhook-jobs/index.ts:580*
+_Source: supabase/functions/wa-webhook-jobs/index.ts:580_
 
 ---
 
@@ -2866,7 +2995,7 @@ Detect user locale from payload
 
 Check if text is a menu trigger
 
-*Source: supabase/functions/wa-webhook-jobs/index.ts:595*
+_Source: supabase/functions/wa-webhook-jobs/index.ts:595_
 
 ---
 
@@ -2874,15 +3003,16 @@ Check if text is a menu trigger
 
 Mask phone number for logging (privacy)
 
-*Source: supabase/functions/wa-webhook-jobs/index.ts:603*
+_Source: supabase/functions/wa-webhook-jobs/index.ts:603_
 
 ---
 
 ### `unnamed`
 
-Job Applications Module Handles job application flow: - Apply to jobs - Track application status - Prevent duplicates - Employer notifications Audit Gap: Job application flow was missing (30% → 100%)
+Job Applications Module Handles job application flow: - Apply to jobs - Track application status -
+Prevent duplicates - Employer notifications Audit Gap: Job application flow was missing (30% → 100%)
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/applications.ts:1*
+_Source: supabase/functions/wa-webhook-jobs/jobs/applications.ts:1_
 
 ---
 
@@ -2890,7 +3020,7 @@ Job Applications Module Handles job application flow: - Apply to jobs - Track ap
 
 Generate apply button ID for a job
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/applications.ts:30*
+_Source: supabase/functions/wa-webhook-jobs/jobs/applications.ts:30_
 
 ---
 
@@ -2898,7 +3028,7 @@ Generate apply button ID for a job
 
 Extract job ID from apply button selection
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/applications.ts:37*
+_Source: supabase/functions/wa-webhook-jobs/jobs/applications.ts:37_
 
 ---
 
@@ -2906,7 +3036,7 @@ Extract job ID from apply button selection
 
 Check if user has already applied to this job
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/applications.ts:45*
+_Source: supabase/functions/wa-webhook-jobs/jobs/applications.ts:45_
 
 ---
 
@@ -2914,7 +3044,7 @@ Check if user has already applied to this job
 
 Check if user is trying to apply to their own job
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/applications.ts:63*
+_Source: supabase/functions/wa-webhook-jobs/jobs/applications.ts:63_
 
 ---
 
@@ -2922,7 +3052,7 @@ Check if user is trying to apply to their own job
 
 Initiate job application process Called when user taps "Apply Now" button
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/applications.ts:79*
+_Source: supabase/functions/wa-webhook-jobs/jobs/applications.ts:79_
 
 ---
 
@@ -2930,7 +3060,7 @@ Initiate job application process Called when user taps "Apply Now" button
 
 Handle cover message submission
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/applications.ts:169*
+_Source: supabase/functions/wa-webhook-jobs/jobs/applications.ts:169_
 
 ---
 
@@ -2938,7 +3068,7 @@ Handle cover message submission
 
 Notify employer of new application
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/applications.ts:239*
+_Source: supabase/functions/wa-webhook-jobs/jobs/applications.ts:239_
 
 ---
 
@@ -2946,7 +3076,7 @@ Notify employer of new application
 
 Show user's application history
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/applications.ts:281*
+_Source: supabase/functions/wa-webhook-jobs/jobs/applications.ts:281_
 
 ---
 
@@ -2954,7 +3084,7 @@ Show user's application history
 
 Show job board main menu
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/index.ts:203*
+_Source: supabase/functions/wa-webhook-jobs/jobs/index.ts:203_
 
 ---
 
@@ -2962,7 +3092,7 @@ Show job board main menu
 
 Start job search conversation (job seeker)
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/index.ts:261*
+_Source: supabase/functions/wa-webhook-jobs/jobs/index.ts:261_
 
 ---
 
@@ -2970,7 +3100,7 @@ Start job search conversation (job seeker)
 
 Start job posting conversation (job poster)
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/index.ts:286*
+_Source: supabase/functions/wa-webhook-jobs/jobs/index.ts:286_
 
 ---
 
@@ -2978,7 +3108,7 @@ Start job posting conversation (job poster)
 
 Handle ongoing job board conversation Routes user messages to the job-board-ai-agent edge function
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/index.ts:977*
+_Source: supabase/functions/wa-webhook-jobs/jobs/index.ts:977_
 
 ---
 
@@ -2986,7 +3116,7 @@ Handle ongoing job board conversation Routes user messages to the job-board-ai-a
 
 Show user's job applications
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/index.ts:1061*
+_Source: supabase/functions/wa-webhook-jobs/jobs/index.ts:1061_
 
 ---
 
@@ -2994,7 +3124,7 @@ Show user's job applications
 
 Show user's posted jobs
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/index.ts:1149*
+_Source: supabase/functions/wa-webhook-jobs/jobs/index.ts:1149_
 
 ---
 
@@ -3002,23 +3132,26 @@ Show user's posted jobs
 
 Main text message router Handles state-based routing for text messages
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/index.ts:1277*
+_Source: supabase/functions/wa-webhook-jobs/jobs/index.ts:1277_
 
 ---
 
 ### `unnamed`
 
-Job Seeker Profile Module Handles job seeker profile creation and onboarding: - 3-step onboarding (skills → locations → experience) - Profile retrieval and creation - Profile updates Audit Gap: Profile management was 20% → Now 100%
+Job Seeker Profile Module Handles job seeker profile creation and onboarding: - 3-step onboarding
+(skills → locations → experience) - Profile retrieval and creation - Profile updates Audit Gap:
+Profile management was 20% → Now 100%
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/seeker-profile.ts:1*
+_Source: supabase/functions/wa-webhook-jobs/jobs/seeker-profile.ts:1_
 
 ---
 
 ### `getOrCreateSeeker`
 
-Get existing seeker profile or initiate onboarding Returns null if onboarding started (not completed yet)
+Get existing seeker profile or initiate onboarding Returns null if onboarding started (not completed
+yet)
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/seeker-profile.ts:35*
+_Source: supabase/functions/wa-webhook-jobs/jobs/seeker-profile.ts:35_
 
 ---
 
@@ -3026,7 +3159,7 @@ Get existing seeker profile or initiate onboarding Returns null if onboarding st
 
 Start seeker profile onboarding
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/seeker-profile.ts:60*
+_Source: supabase/functions/wa-webhook-jobs/jobs/seeker-profile.ts:60_
 
 ---
 
@@ -3034,7 +3167,7 @@ Start seeker profile onboarding
 
 Handle onboarding step input
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/seeker-profile.ts:89*
+_Source: supabase/functions/wa-webhook-jobs/jobs/seeker-profile.ts:89_
 
 ---
 
@@ -3042,7 +3175,7 @@ Handle onboarding step input
 
 Handle skills input (Step 1)
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/seeker-profile.ts:124*
+_Source: supabase/functions/wa-webhook-jobs/jobs/seeker-profile.ts:124_
 
 ---
 
@@ -3050,7 +3183,7 @@ Handle skills input (Step 1)
 
 Handle locations input (Step 2)
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/seeker-profile.ts:170*
+_Source: supabase/functions/wa-webhook-jobs/jobs/seeker-profile.ts:170_
 
 ---
 
@@ -3058,7 +3191,7 @@ Handle locations input (Step 2)
 
 Handle experience input (Step 3 - Final)
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/seeker-profile.ts:216*
+_Source: supabase/functions/wa-webhook-jobs/jobs/seeker-profile.ts:216_
 
 ---
 
@@ -3066,15 +3199,16 @@ Handle experience input (Step 3 - Final)
 
 Update seeker profile
 
-*Source: supabase/functions/wa-webhook-jobs/jobs/seeker-profile.ts:296*
+_Source: supabase/functions/wa-webhook-jobs/jobs/seeker-profile.ts:296_
 
 ---
 
 ### `unnamed`
 
-Location Message Handler for Jobs Service Handles WhatsApp location messages and integrates with: - 30-minute location cache - Saved locations (home/work) - GPS-based job search
+Location Message Handler for Jobs Service Handles WhatsApp location messages and integrates with: -
+30-minute location cache - Saved locations (home/work) - GPS-based job search
 
-*Source: supabase/functions/wa-webhook-jobs/handlers/location-handler.ts:1*
+_Source: supabase/functions/wa-webhook-jobs/handlers/location-handler.ts:1_
 
 ---
 
@@ -3082,15 +3216,16 @@ Location Message Handler for Jobs Service Handles WhatsApp location messages and
 
 Parse WhatsApp location message
 
-*Source: supabase/functions/wa-webhook-jobs/handlers/location-handler.ts:25*
+_Source: supabase/functions/wa-webhook-jobs/handlers/location-handler.ts:25_
 
 ---
 
 ### `handleLocationMessage`
 
-Handle location message for jobs service Flow: 1. Parse location from WhatsApp message 2. Save to 30-minute cache 3. Search nearby jobs 4. Send results to user
+Handle location message for jobs service Flow: 1. Parse location from WhatsApp message 2. Save to
+30-minute cache 3. Search nearby jobs 4. Send results to user
 
-*Source: supabase/functions/wa-webhook-jobs/handlers/location-handler.ts:52*
+_Source: supabase/functions/wa-webhook-jobs/handlers/location-handler.ts:52_
 
 ---
 
@@ -3098,7 +3233,7 @@ Handle location message for jobs service Flow: 1. Parse location from WhatsApp m
 
 Search for nearby jobs and send results to user
 
-*Source: supabase/functions/wa-webhook-jobs/handlers/location-handler.ts:129*
+_Source: supabase/functions/wa-webhook-jobs/handlers/location-handler.ts:129_
 
 ---
 
@@ -3106,7 +3241,7 @@ Search for nearby jobs and send results to user
 
 Get user location from cache or saved locations Returns null if no location available
 
-*Source: supabase/functions/wa-webhook-jobs/handlers/location-handler.ts:225*
+_Source: supabase/functions/wa-webhook-jobs/handlers/location-handler.ts:225_
 
 ---
 
@@ -3114,7 +3249,7 @@ Get user location from cache or saved locations Returns null if no location avai
 
 Prompt user to share location
 
-*Source: supabase/functions/wa-webhook-jobs/handlers/location-handler.ts:296*
+_Source: supabase/functions/wa-webhook-jobs/handlers/location-handler.ts:296_
 
 ---
 
@@ -3122,7 +3257,7 @@ Prompt user to share location
 
 Mask phone for logging (privacy)
 
-*Source: supabase/functions/wa-webhook-jobs/handlers/location-handler.ts:311*
+_Source: supabase/functions/wa-webhook-jobs/handlers/location-handler.ts:311_
 
 ---
 
@@ -3130,7 +3265,7 @@ Mask phone for logging (privacy)
 
 Show job board main menu
 
-*Source: supabase/functions/wa-webhook-jobs/handlers/jobs-handler.ts:30*
+_Source: supabase/functions/wa-webhook-jobs/handlers/jobs-handler.ts:30_
 
 ---
 
@@ -3138,7 +3273,7 @@ Show job board main menu
 
 Start job search conversation (job seeker)
 
-*Source: supabase/functions/wa-webhook-jobs/handlers/jobs-handler.ts:86*
+_Source: supabase/functions/wa-webhook-jobs/handlers/jobs-handler.ts:86_
 
 ---
 
@@ -3146,7 +3281,7 @@ Start job search conversation (job seeker)
 
 Start job posting conversation (job poster)
 
-*Source: supabase/functions/wa-webhook-jobs/handlers/jobs-handler.ts:115*
+_Source: supabase/functions/wa-webhook-jobs/handlers/jobs-handler.ts:115_
 
 ---
 
@@ -3154,7 +3289,7 @@ Start job posting conversation (job poster)
 
 Handle ongoing job board conversation Routes user messages to the job-board-ai-agent edge function
 
-*Source: supabase/functions/wa-webhook-jobs/handlers/jobs-handler.ts:145*
+_Source: supabase/functions/wa-webhook-jobs/handlers/jobs-handler.ts:145_
 
 ---
 
@@ -3162,7 +3297,7 @@ Handle ongoing job board conversation Routes user messages to the job-board-ai-a
 
 Show user's job applications
 
-*Source: supabase/functions/wa-webhook-jobs/handlers/jobs-handler.ts:229*
+_Source: supabase/functions/wa-webhook-jobs/handlers/jobs-handler.ts:229_
 
 ---
 
@@ -3170,47 +3305,52 @@ Show user's job applications
 
 Show user's posted jobs
 
-*Source: supabase/functions/wa-webhook-jobs/handlers/jobs-handler.ts:300*
+_Source: supabase/functions/wa-webhook-jobs/handlers/jobs-handler.ts:300_
 
 ---
 
 ### `handleHealthCheck`
 
-Comprehensive health check for wa-webhook-jobs service. Verifies connectivity to all job-related tables.
+Comprehensive health check for wa-webhook-jobs service. Verifies connectivity to all job-related
+tables.
 
-*Source: supabase/functions/wa-webhook-jobs/handlers/health.ts:11*
+_Source: supabase/functions/wa-webhook-jobs/handlers/health.ts:11_
 
 ---
 
 ### `searchBusinessDirectory`
 
-Search business directory using Gemini API directly Gets real-time results from Google Maps via Gemini
+Search business directory using Gemini API directly Gets real-time results from Google Maps via
+Gemini
 
-*Source: supabase/functions/agent-tools-general-broker/index.ts:515*
+_Source: supabase/functions/agent-tools-general-broker/index.ts:515_
 
 ---
 
 ### `searchBusinessByLocation`
 
-Search businesses by geographic location using Gemini Finds businesses near a specific location via Google Maps
+Search businesses by geographic location using Gemini Finds businesses near a specific location via
+Google Maps
 
-*Source: supabase/functions/agent-tools-general-broker/index.ts:550*
+_Source: supabase/functions/agent-tools-general-broker/index.ts:550_
 
 ---
 
 ### `getBusinessDetails`
 
-Get detailed information about a specific business Note: Since we're not storing businesses, this searches by name
+Get detailed information about a specific business Note: Since we're not storing businesses, this
+searches by name
 
-*Source: supabase/functions/agent-tools-general-broker/index.ts:578*
+_Source: supabase/functions/agent-tools-general-broker/index.ts:578_
 
 ---
 
 ### `searchBusinessViaGemini`
 
-Search businesses via Gemini API with Google Maps grounding Uses Google Maps tool to get real-time business data
+Search businesses via Gemini API with Google Maps grounding Uses Google Maps tool to get real-time
+business data
 
-*Source: supabase/functions/agent-tools-general-broker/index.ts:600*
+_Source: supabase/functions/agent-tools-general-broker/index.ts:600_
 
 ---
 
@@ -3218,7 +3358,7 @@ Search businesses via Gemini API with Google Maps grounding Uses Google Maps too
 
 Search businesses via Gemini API with location context and Google Maps grounding
 
-*Source: supabase/functions/agent-tools-general-broker/index.ts:705*
+_Source: supabase/functions/agent-tools-general-broker/index.ts:705_
 
 ---
 
@@ -3226,15 +3366,19 @@ Search businesses via Gemini API with location context and Google Maps grounding
 
 Calculate distance between two points using Haversine formula
 
-*Source: supabase/functions/agent-tools-general-broker/index.ts:789*
+_Source: supabase/functions/agent-tools-general-broker/index.ts:789_
 
 ---
 
 ### `unnamed`
 
-Marketplace Payment Module Handles USSD-based MoMo payments for marketplace transactions. Uses tap-to-dial tel: links for seamless mobile payment experience. Payment Flow: 1. Buyer expresses interest in listing 2. System creates transaction record 3. Sends USSD link to buyer (tel:*182*8*1*MERCHANT*AMOUNT#) 4. Buyer taps link → dials USSD → completes MoMo payment 5. Buyer confirms payment in chat 6. Seller confirms receipt 7. Transaction marked complete
+Marketplace Payment Module Handles USSD-based MoMo payments for marketplace transactions. Uses
+tap-to-dial tel: links for seamless mobile payment experience. Payment Flow: 1. Buyer expresses
+interest in listing 2. System creates transaction record 3. Sends USSD link to buyer
+(tel:*182*8*1*MERCHANT\*AMOUNT#) 4. Buyer taps link → dials USSD → completes MoMo payment 5. Buyer
+confirms payment in chat 6. Seller confirms receipt 7. Transaction marked complete
 
-*Source: supabase/functions/wa-webhook-marketplace/payment.ts:1*
+_Source: supabase/functions/wa-webhook-marketplace/payment.ts:1_
 
 ---
 
@@ -3242,7 +3386,7 @@ Marketplace Payment Module Handles USSD-based MoMo payments for marketplace tran
 
 Generate USSD code for MoMo merchant payment
 
-*Source: supabase/functions/wa-webhook-marketplace/payment.ts:86*
+_Source: supabase/functions/wa-webhook-marketplace/payment.ts:86_
 
 ---
 
@@ -3250,7 +3394,7 @@ Generate USSD code for MoMo merchant payment
 
 Create tap-to-dial tel: link Note: Keep unencoded for better Android compatibility
 
-*Source: supabase/functions/wa-webhook-marketplace/payment.ts:94*
+_Source: supabase/functions/wa-webhook-marketplace/payment.ts:94_
 
 ---
 
@@ -3258,7 +3402,7 @@ Create tap-to-dial tel: link Note: Keep unencoded for better Android compatibili
 
 Format USSD code for display (user-friendly)
 
-*Source: supabase/functions/wa-webhook-marketplace/payment.ts:102*
+_Source: supabase/functions/wa-webhook-marketplace/payment.ts:102_
 
 ---
 
@@ -3266,7 +3410,7 @@ Format USSD code for display (user-friendly)
 
 Initiate a payment transaction
 
-*Source: supabase/functions/wa-webhook-marketplace/payment.ts:113*
+_Source: supabase/functions/wa-webhook-marketplace/payment.ts:113_
 
 ---
 
@@ -3274,7 +3418,7 @@ Initiate a payment transaction
 
 Buyer confirms they've completed payment
 
-*Source: supabase/functions/wa-webhook-marketplace/payment.ts:273*
+_Source: supabase/functions/wa-webhook-marketplace/payment.ts:273_
 
 ---
 
@@ -3282,7 +3426,7 @@ Buyer confirms they've completed payment
 
 Seller confirms they've received payment
 
-*Source: supabase/functions/wa-webhook-marketplace/payment.ts:355*
+_Source: supabase/functions/wa-webhook-marketplace/payment.ts:355_
 
 ---
 
@@ -3290,7 +3434,7 @@ Seller confirms they've received payment
 
 Cancel a transaction
 
-*Source: supabase/functions/wa-webhook-marketplace/payment.ts:458*
+_Source: supabase/functions/wa-webhook-marketplace/payment.ts:458_
 
 ---
 
@@ -3298,15 +3442,18 @@ Cancel a transaction
 
 Get transaction details
 
-*Source: supabase/functions/wa-webhook-marketplace/payment.ts:522*
+_Source: supabase/functions/wa-webhook-marketplace/payment.ts:522_
 
 ---
 
 ### `unnamed`
 
-Marketplace AI Agent Natural language AI agent for connecting buyers and sellers in Rwanda. Uses Gemini for intent recognition, entity extraction, and conversational flow. Features: - Intent classification (selling, buying, inquiry) - Entity extraction (product, price, location, attributes) - Conversation state management - Proximity-based matching
+Marketplace AI Agent Natural language AI agent for connecting buyers and sellers in Rwanda. Uses
+Gemini for intent recognition, entity extraction, and conversational flow. Features: - Intent
+classification (selling, buying, inquiry) - Entity extraction (product, price, location,
+attributes) - Conversation state management - Proximity-based matching
 
-*Source: supabase/functions/wa-webhook-marketplace/agent.ts:1*
+_Source: supabase/functions/wa-webhook-marketplace/agent.ts:1_
 
 ---
 
@@ -3314,7 +3461,7 @@ Marketplace AI Agent Natural language AI agent for connecting buyers and sellers
 
 Process a marketplace message and generate response
 
-*Source: supabase/functions/wa-webhook-marketplace/agent.ts:154*
+_Source: supabase/functions/wa-webhook-marketplace/agent.ts:154_
 
 ---
 
@@ -3322,7 +3469,7 @@ Process a marketplace message and generate response
 
 Handle specific actions based on AI response
 
-*Source: supabase/functions/wa-webhook-marketplace/agent.ts:304*
+_Source: supabase/functions/wa-webhook-marketplace/agent.ts:304_
 
 ---
 
@@ -3330,7 +3477,7 @@ Handle specific actions based on AI response
 
 Create a new listing
 
-*Source: supabase/functions/wa-webhook-marketplace/agent.ts:367*
+_Source: supabase/functions/wa-webhook-marketplace/agent.ts:367_
 
 ---
 
@@ -3338,7 +3485,7 @@ Create a new listing
 
 Search for matching listings and businesses
 
-*Source: supabase/functions/wa-webhook-marketplace/agent.ts:427*
+_Source: supabase/functions/wa-webhook-marketplace/agent.ts:427_
 
 ---
 
@@ -3346,7 +3493,7 @@ Search for matching listings and businesses
 
 Format search results for WhatsApp message
 
-*Source: supabase/functions/wa-webhook-marketplace/agent.ts:497*
+_Source: supabase/functions/wa-webhook-marketplace/agent.ts:497_
 
 ---
 
@@ -3354,7 +3501,7 @@ Format search results for WhatsApp message
 
 Notify matching buyers when a new listing is created
 
-*Source: supabase/functions/wa-webhook-marketplace/agent.ts:532*
+_Source: supabase/functions/wa-webhook-marketplace/agent.ts:532_
 
 ---
 
@@ -3362,7 +3509,7 @@ Notify matching buyers when a new listing is created
 
 Update conversation state in database
 
-*Source: supabase/functions/wa-webhook-marketplace/agent.ts:594*
+_Source: supabase/functions/wa-webhook-marketplace/agent.ts:594_
 
 ---
 
@@ -3370,7 +3517,7 @@ Update conversation state in database
 
 Filter out null values from an object
 
-*Source: supabase/functions/wa-webhook-marketplace/agent.ts:638*
+_Source: supabase/functions/wa-webhook-marketplace/agent.ts:638_
 
 ---
 
@@ -3378,7 +3525,7 @@ Filter out null values from an object
 
 Load conversation state from database
 
-*Source: supabase/functions/wa-webhook-marketplace/agent.ts:649*
+_Source: supabase/functions/wa-webhook-marketplace/agent.ts:649_
 
 ---
 
@@ -3386,7 +3533,7 @@ Load conversation state from database
 
 Reset conversation state
 
-*Source: supabase/functions/wa-webhook-marketplace/agent.ts:687*
+_Source: supabase/functions/wa-webhook-marketplace/agent.ts:687_
 
 ---
 
@@ -3394,15 +3541,16 @@ Reset conversation state
 
 Initiate USSD-based Mobile Money payment Generates a USSD dial string and sends as clickable link
 
-*Source: supabase/functions/wa-webhook-marketplace/marketplace/payment.ts:17*
+_Source: supabase/functions/wa-webhook-marketplace/marketplace/payment.ts:17_
 
 ---
 
 ### `generateMoMoUSSD`
 
-Generate MTN Mobile Money USSD code Rwanda format: *182*8*1*amount*recipientPhone# For direct transfer to seller
+Generate MTN Mobile Money USSD code Rwanda format: *182*8*1*amount\*recipientPhone# For direct
+transfer to seller
 
-*Source: supabase/functions/wa-webhook-marketplace/marketplace/payment.ts:101*
+_Source: supabase/functions/wa-webhook-marketplace/marketplace/payment.ts:101_
 
 ---
 
@@ -3410,7 +3558,7 @@ Generate MTN Mobile Money USSD code Rwanda format: *182*8*1*amount*recipientPhon
 
 Handle payment confirmation from user User manually confirms after completing USSD payment
 
-*Source: supabase/functions/wa-webhook-marketplace/marketplace/payment.ts:119*
+_Source: supabase/functions/wa-webhook-marketplace/marketplace/payment.ts:119_
 
 ---
 
@@ -3418,7 +3566,7 @@ Handle payment confirmation from user User manually confirms after completing US
 
 Process payment reference submission
 
-*Source: supabase/functions/wa-webhook-marketplace/marketplace/payment.ts:187*
+_Source: supabase/functions/wa-webhook-marketplace/marketplace/payment.ts:187_
 
 ---
 
@@ -3426,7 +3574,7 @@ Process payment reference submission
 
 Mark payment as successful and notify both parties
 
-*Source: supabase/functions/wa-webhook-marketplace/marketplace/payment.ts:261*
+_Source: supabase/functions/wa-webhook-marketplace/marketplace/payment.ts:261_
 
 ---
 
@@ -3434,15 +3582,16 @@ Mark payment as successful and notify both parties
 
 Get transaction status
 
-*Source: supabase/functions/wa-webhook-marketplace/marketplace/payment.ts:336*
+_Source: supabase/functions/wa-webhook-marketplace/marketplace/payment.ts:336_
 
 ---
 
 ### `unnamed`
 
-Marketplace Domain Handler Re-exports the AI agent and database operations for the marketplace domain. This module provides a unified interface for marketplace functionality.
+Marketplace Domain Handler Re-exports the AI agent and database operations for the marketplace
+domain. This module provides a unified interface for marketplace functionality.
 
-*Source: supabase/functions/wa-webhook-marketplace/marketplace/index.ts:1*
+_Source: supabase/functions/wa-webhook-marketplace/marketplace/index.ts:1_
 
 ---
 
@@ -3450,7 +3599,7 @@ Marketplace Domain Handler Re-exports the AI agent and database operations for t
 
 Get marketplace feature status
 
-*Source: supabase/functions/wa-webhook-marketplace/marketplace/index.ts:25*
+_Source: supabase/functions/wa-webhook-marketplace/marketplace/index.ts:25_
 
 ---
 
@@ -3458,7 +3607,7 @@ Get marketplace feature status
 
 Marketplace Utility Functions Location parsing, formatting, and notification utilities.
 
-*Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:1*
+_Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:1_
 
 ---
 
@@ -3466,7 +3615,7 @@ Marketplace Utility Functions Location parsing, formatting, and notification uti
 
 Parse location from WhatsApp location message
 
-*Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:36*
+_Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:36_
 
 ---
 
@@ -3474,7 +3623,7 @@ Parse location from WhatsApp location message
 
 Parse location from text (city/area names in Rwanda)
 
-*Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:55*
+_Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:55_
 
 ---
 
@@ -3482,7 +3631,7 @@ Parse location from text (city/area names in Rwanda)
 
 Calculate distance between two points (Haversine formula)
 
-*Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:112*
+_Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:112_
 
 ---
 
@@ -3490,7 +3639,7 @@ Calculate distance between two points (Haversine formula)
 
 Format price with currency
 
-*Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:138*
+_Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:138_
 
 ---
 
@@ -3498,7 +3647,7 @@ Format price with currency
 
 Format distance
 
-*Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:151*
+_Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:151_
 
 ---
 
@@ -3506,7 +3655,7 @@ Format distance
 
 Format rating as stars
 
-*Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:161*
+_Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:161_
 
 ---
 
@@ -3514,7 +3663,7 @@ Format rating as stars
 
 Format listing for WhatsApp message
 
-*Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:170*
+_Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:170_
 
 ---
 
@@ -3522,7 +3671,7 @@ Format listing for WhatsApp message
 
 Format business for WhatsApp message
 
-*Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:204*
+_Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:204_
 
 ---
 
@@ -3530,7 +3679,7 @@ Format business for WhatsApp message
 
 Extract WhatsApp message from webhook payload
 
-*Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:242*
+_Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:242_
 
 ---
 
@@ -3538,7 +3687,7 @@ Extract WhatsApp message from webhook payload
 
 Build notification message for matching buyers
 
-*Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:297*
+_Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:297_
 
 ---
 
@@ -3546,7 +3695,7 @@ Build notification message for matching buyers
 
 Build notification message for sellers
 
-*Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:314*
+_Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:314_
 
 ---
 
@@ -3554,7 +3703,7 @@ Build notification message for sellers
 
 Parse price from text
 
-*Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:334*
+_Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:334_
 
 ---
 
@@ -3562,7 +3711,7 @@ Parse price from text
 
 Validate phone number format
 
-*Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:354*
+_Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:354_
 
 ---
 
@@ -3570,7 +3719,7 @@ Validate phone number format
 
 Normalize phone number to international format
 
-*Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:363*
+_Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:363_
 
 ---
 
@@ -3578,7 +3727,7 @@ Normalize phone number to international format
 
 Mask phone number for logging (PII protection)
 
-*Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:381*
+_Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:381_
 
 ---
 
@@ -3586,15 +3735,16 @@ Mask phone number for logging (PII protection)
 
 Log marketplace event with masked PII
 
-*Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:389*
+_Source: supabase/functions/wa-webhook-marketplace/utils/index.ts:389_
 
 ---
 
 ### `unnamed`
 
-Payment Handler for Marketplace Integrates payment flow with the AI agent and WhatsApp conversation. Handles text-based payment commands and transaction state management.
+Payment Handler for Marketplace Integrates payment flow with the AI agent and WhatsApp conversation.
+Handles text-based payment commands and transaction state management.
 
-*Source: supabase/functions/wa-webhook-marketplace/payment-handler.ts:1*
+_Source: supabase/functions/wa-webhook-marketplace/payment-handler.ts:1_
 
 ---
 
@@ -3602,7 +3752,7 @@ Payment Handler for Marketplace Integrates payment flow with the AI agent and Wh
 
 Check if message is a payment-related command
 
-*Source: supabase/functions/wa-webhook-marketplace/payment-handler.ts:24*
+_Source: supabase/functions/wa-webhook-marketplace/payment-handler.ts:24_
 
 ---
 
@@ -3610,7 +3760,7 @@ Check if message is a payment-related command
 
 Handle payment-related commands
 
-*Source: supabase/functions/wa-webhook-marketplace/payment-handler.ts:42*
+_Source: supabase/functions/wa-webhook-marketplace/payment-handler.ts:42_
 
 ---
 
@@ -3618,7 +3768,7 @@ Handle payment-related commands
 
 Show user's transaction status
 
-*Source: supabase/functions/wa-webhook-marketplace/payment-handler.ts:173*
+_Source: supabase/functions/wa-webhook-marketplace/payment-handler.ts:173_
 
 ---
 
@@ -3626,31 +3776,35 @@ Show user's transaction status
 
 Handle purchase intent from search results
 
-*Source: supabase/functions/wa-webhook-marketplace/payment-handler.ts:218*
+_Source: supabase/functions/wa-webhook-marketplace/payment-handler.ts:218_
 
 ---
 
 ### `unnamed`
 
-Marketplace Database Operations CRUD operations for marketplace listings, intents, and conversations.
+Marketplace Database Operations CRUD operations for marketplace listings, intents, and
+conversations.
 
-*Source: supabase/functions/wa-webhook-marketplace/db/index.ts:1*
-
----
-
-### `unnamed`
-
-Marketplace AI Agent Webhook Handler Natural language AI agent for connecting buyers and sellers in Rwanda via WhatsApp. Features: - Conversational selling flow (create listings) - Conversational buying flow (search and match) - Proximity-based matching - Integration with business directory
-
-*Source: supabase/functions/wa-webhook-marketplace/index.ts:1*
+_Source: supabase/functions/wa-webhook-marketplace/db/index.ts:1_
 
 ---
 
 ### `unnamed`
 
-Media Upload Handler for Marketplace Handles photo uploads from WhatsApp messages for marketplace listings.
+Marketplace AI Agent Webhook Handler Natural language AI agent for connecting buyers and sellers in
+Rwanda via WhatsApp. Features: - Conversational selling flow (create listings) - Conversational
+buying flow (search and match) - Proximity-based matching - Integration with business directory
 
-*Source: supabase/functions/wa-webhook-marketplace/media.ts:1*
+_Source: supabase/functions/wa-webhook-marketplace/index.ts:1_
+
+---
+
+### `unnamed`
+
+Media Upload Handler for Marketplace Handles photo uploads from WhatsApp messages for marketplace
+listings.
+
+_Source: supabase/functions/wa-webhook-marketplace/media.ts:1_
 
 ---
 
@@ -3658,7 +3812,7 @@ Media Upload Handler for Marketplace Handles photo uploads from WhatsApp message
 
 Download media from WhatsApp servers
 
-*Source: supabase/functions/wa-webhook-marketplace/media.ts:23*
+_Source: supabase/functions/wa-webhook-marketplace/media.ts:23_
 
 ---
 
@@ -3666,7 +3820,7 @@ Download media from WhatsApp servers
 
 Upload image to Supabase Storage
 
-*Source: supabase/functions/wa-webhook-marketplace/media.ts:76*
+_Source: supabase/functions/wa-webhook-marketplace/media.ts:76_
 
 ---
 
@@ -3674,7 +3828,7 @@ Upload image to Supabase Storage
 
 Handle media upload from WhatsApp message
 
-*Source: supabase/functions/wa-webhook-marketplace/media.ts:114*
+_Source: supabase/functions/wa-webhook-marketplace/media.ts:114_
 
 ---
 
@@ -3682,7 +3836,7 @@ Handle media upload from WhatsApp message
 
 Create storage bucket if it doesn't exist
 
-*Source: supabase/functions/wa-webhook-marketplace/media.ts:217*
+_Source: supabase/functions/wa-webhook-marketplace/media.ts:217_
 
 ---
 
@@ -3690,7 +3844,7 @@ Create storage bucket if it doesn't exist
 
 Start a new negotiation session
 
-*Source: supabase/functions/agent-negotiation/index.ts:53*
+_Source: supabase/functions/agent-negotiation/index.ts:53_
 
 ---
 
@@ -3698,7 +3852,7 @@ Start a new negotiation session
 
 Find matching drivers and send quote requests
 
-*Source: supabase/functions/agent-negotiation/index.ts:136*
+_Source: supabase/functions/agent-negotiation/index.ts:136_
 
 ---
 
@@ -3706,7 +3860,7 @@ Find matching drivers and send quote requests
 
 Find matching vendors (pharmacy/quincaillerie/shops) and send quote requests
 
-*Source: supabase/functions/agent-negotiation/index.ts:227*
+_Source: supabase/functions/agent-negotiation/index.ts:227_
 
 ---
 
@@ -3714,7 +3868,7 @@ Find matching vendors (pharmacy/quincaillerie/shops) and send quote requests
 
 Add a quote from a vendor
 
-*Source: supabase/functions/agent-negotiation/index.ts:319*
+_Source: supabase/functions/agent-negotiation/index.ts:319_
 
 ---
 
@@ -3722,7 +3876,7 @@ Add a quote from a vendor
 
 Get session status
 
-*Source: supabase/functions/agent-negotiation/index.ts:393*
+_Source: supabase/functions/agent-negotiation/index.ts:393_
 
 ---
 
@@ -3730,7 +3884,7 @@ Get session status
 
 Complete negotiation with selected quote
 
-*Source: supabase/functions/agent-negotiation/index.ts:441*
+_Source: supabase/functions/agent-negotiation/index.ts:441_
 
 ---
 
@@ -3738,7 +3892,7 @@ Complete negotiation with selected quote
 
 Main handler
 
-*Source: supabase/functions/agent-negotiation/index.ts:500*
+_Source: supabase/functions/agent-negotiation/index.ts:500_
 
 ---
 
@@ -3746,15 +3900,18 @@ Main handler
 
 HMAC-SHA256 signature verification for MomoTerminal webhooks
 
-*Source: supabase/functions/momo-sms-webhook/utils/hmac.ts:1*
+_Source: supabase/functions/momo-sms-webhook/utils/hmac.ts:1_
 
 ---
 
 ### `unnamed`
 
-MomoTerminal SMS Webhook Handler Receives Mobile Money SMS from MomoTerminal Android app Routes to appropriate service matchers (rides, marketplace, jobs, insurance) Ground Rules Compliance: - Structured logging with correlation IDs - PII masking for phone numbers - HMAC signature verification - Rate limiting
+MomoTerminal SMS Webhook Handler Receives Mobile Money SMS from MomoTerminal Android app Routes to
+appropriate service matchers (rides, marketplace, jobs, insurance) Ground Rules Compliance: -
+Structured logging with correlation IDs - PII masking for phone numbers - HMAC signature
+verification - Rate limiting
 
-*Source: supabase/functions/momo-sms-webhook/index.ts:1*
+_Source: supabase/functions/momo-sms-webhook/index.ts:1_
 
 ---
 
@@ -3762,7 +3919,7 @@ MomoTerminal SMS Webhook Handler Receives Mobile Money SMS from MomoTerminal And
 
 Marketplace Payment Matcher Matches MoMo SMS to pending marketplace orders
 
-*Source: supabase/functions/momo-sms-webhook/matchers/marketplace.ts:1*
+_Source: supabase/functions/momo-sms-webhook/matchers/marketplace.ts:1_
 
 ---
 
@@ -3770,7 +3927,7 @@ Marketplace Payment Matcher Matches MoMo SMS to pending marketplace orders
 
 Rides Payment Matcher Matches MoMo SMS to pending ride payments
 
-*Source: supabase/functions/momo-sms-webhook/matchers/rides.ts:1*
+_Source: supabase/functions/momo-sms-webhook/matchers/rides.ts:1_
 
 ---
 
@@ -3778,7 +3935,7 @@ Rides Payment Matcher Matches MoMo SMS to pending ride payments
 
 Jobs Payment Matcher Matches MoMo SMS to job-related payments
 
-*Source: supabase/functions/momo-sms-webhook/matchers/jobs.ts:1*
+_Source: supabase/functions/momo-sms-webhook/matchers/jobs.ts:1_
 
 ---
 
@@ -3786,15 +3943,16 @@ Jobs Payment Matcher Matches MoMo SMS to job-related payments
 
 Insurance Payment Matcher Matches MoMo SMS to insurance premium payments
 
-*Source: supabase/functions/momo-sms-webhook/matchers/insurance.ts:1*
+_Source: supabase/functions/momo-sms-webhook/matchers/insurance.ts:1_
 
 ---
 
 ### `unnamed`
 
-Property Rentals Flow User flow: Option A - Add Property: Collect criteria → Save to DB (NO AI) Option B - Find Property: Collect search criteria → AI Agent
+Property Rentals Flow User flow: Option A - Add Property: Collect criteria → Save to DB (NO AI)
+Option B - Find Property: Collect search criteria → AI Agent
 
-*Source: supabase/functions/wa-webhook-property/property/rentals.ts:1*
+_Source: supabase/functions/wa-webhook-property/property/rentals.ts:1_
 
 ---
 
@@ -3802,7 +3960,7 @@ Property Rentals Flow User flow: Option A - Add Property: Collect criteria → S
 
 Handle conversational AI agent chat for property rentals
 
-*Source: supabase/functions/wa-webhook-property/property/rentals.ts:783*
+_Source: supabase/functions/wa-webhook-property/property/rentals.ts:783_
 
 ---
 
@@ -3810,7 +3968,7 @@ Handle conversational AI agent chat for property rentals
 
 Start property search with AI Agent
 
-*Source: supabase/functions/wa-webhook-property/property/ai_agent.ts:17*
+_Source: supabase/functions/wa-webhook-property/property/ai_agent.ts:17_
 
 ---
 
@@ -3818,7 +3976,7 @@ Start property search with AI Agent
 
 Handle property search criteria input
 
-*Source: supabase/functions/wa-webhook-property/property/ai_agent.ts:98*
+_Source: supabase/functions/wa-webhook-property/property/ai_agent.ts:98_
 
 ---
 
@@ -3826,7 +3984,7 @@ Handle property search criteria input
 
 Execute property search with location
 
-*Source: supabase/functions/wa-webhook-property/property/ai_agent.ts:166*
+_Source: supabase/functions/wa-webhook-property/property/ai_agent.ts:166_
 
 ---
 
@@ -3834,7 +3992,7 @@ Execute property search with location
 
 Add property listing via AI Agent
 
-*Source: supabase/functions/wa-webhook-property/property/ai_agent.ts:284*
+_Source: supabase/functions/wa-webhook-property/property/ai_agent.ts:284_
 
 ---
 
@@ -3842,7 +4000,7 @@ Add property listing via AI Agent
 
 Clear property search state
 
-*Source: supabase/functions/wa-webhook-property/property/ai_agent.ts:329*
+_Source: supabase/functions/wa-webhook-property/property/ai_agent.ts:329_
 
 ---
 
@@ -3850,7 +4008,7 @@ Clear property search state
 
 Check if user has active property search
 
-*Source: supabase/functions/wa-webhook-property/property/ai_agent.ts:350*
+_Source: supabase/functions/wa-webhook-property/property/ai_agent.ts:350_
 
 ---
 
@@ -3858,7 +4016,7 @@ Check if user has active property search
 
 Show user's own property listings
 
-*Source: supabase/functions/wa-webhook-property/property/my_listings.ts:13*
+_Source: supabase/functions/wa-webhook-property/property/my_listings.ts:13_
 
 ---
 
@@ -3866,7 +4024,7 @@ Show user's own property listings
 
 Show details of a specific property
 
-*Source: supabase/functions/wa-webhook-property/property/my_listings.ts:84*
+_Source: supabase/functions/wa-webhook-property/property/my_listings.ts:84_
 
 ---
 
@@ -3874,7 +4032,7 @@ Show details of a specific property
 
 Handle property actions (edit, delete, mark rented)
 
-*Source: supabase/functions/wa-webhook-property/property/my_listings.ts:146*
+_Source: supabase/functions/wa-webhook-property/property/my_listings.ts:146_
 
 ---
 
@@ -3882,7 +4040,7 @@ Handle property actions (edit, delete, mark rented)
 
 Send inquiry to property owner
 
-*Source: supabase/functions/wa-webhook-property/property/my_listings.ts:239*
+_Source: supabase/functions/wa-webhook-property/property/my_listings.ts:239_
 
 ---
 
@@ -3890,7 +4048,7 @@ Send inquiry to property owner
 
 Prompt for inquiry message
 
-*Source: supabase/functions/wa-webhook-property/property/my_listings.ts:322*
+_Source: supabase/functions/wa-webhook-property/property/my_listings.ts:322_
 
 ---
 
@@ -3898,15 +4056,16 @@ Prompt for inquiry message
 
 Handle inquiry message input
 
-*Source: supabase/functions/wa-webhook-property/property/my_listings.ts:344*
+_Source: supabase/functions/wa-webhook-property/property/my_listings.ts:344_
 
 ---
 
 ### `cachePropertyLocation`
 
-Save user's shared location to cache (30-minute TTL) Allows reusing location across property searches without re-sharing
+Save user's shared location to cache (30-minute TTL) Allows reusing location across property
+searches without re-sharing
 
-*Source: supabase/functions/wa-webhook-property/index.ts:396*
+_Source: supabase/functions/wa-webhook-property/index.ts:396_
 
 ---
 
@@ -3914,7 +4073,7 @@ Save user's shared location to cache (30-minute TTL) Allows reusing location acr
 
 Property Location Handler Integrates location caching and saved locations for property search
 
-*Source: supabase/functions/wa-webhook-property/handlers/location-handler.ts:1*
+_Source: supabase/functions/wa-webhook-property/handlers/location-handler.ts:1_
 
 ---
 
@@ -3922,7 +4081,7 @@ Property Location Handler Integrates location caching and saved locations for pr
 
 Resolve user location with priority: cache → saved home → prompt
 
-*Source: supabase/functions/wa-webhook-property/handlers/location-handler.ts:20*
+_Source: supabase/functions/wa-webhook-property/handlers/location-handler.ts:20_
 
 ---
 
@@ -3930,7 +4089,7 @@ Resolve user location with priority: cache → saved home → prompt
 
 Save shared location to cache
 
-*Source: supabase/functions/wa-webhook-property/handlers/location-handler.ts:117*
+_Source: supabase/functions/wa-webhook-property/handlers/location-handler.ts:117_
 
 ---
 
@@ -3938,15 +4097,16 @@ Save shared location to cache
 
 Format location context message for user
 
-*Source: supabase/functions/wa-webhook-property/handlers/location-handler.ts:149*
+_Source: supabase/functions/wa-webhook-property/handlers/location-handler.ts:149_
 
 ---
 
 ### `unnamed`
 
-Notification Filters - Quiet Hours, Opt-out, and Policy Enforcement Ground Rules Compliance: Structured logging and security
+Notification Filters - Quiet Hours, Opt-out, and Policy Enforcement Ground Rules Compliance:
+Structured logging and security
 
-*Source: supabase/functions/wa-webhook/notify/filters.ts:1*
+_Source: supabase/functions/wa-webhook/notify/filters.ts:1_
 
 ---
 
@@ -3954,7 +4114,7 @@ Notification Filters - Quiet Hours, Opt-out, and Policy Enforcement Ground Rules
 
 Check if contact has opted out of notifications
 
-*Source: supabase/functions/wa-webhook/notify/filters.ts:21*
+_Source: supabase/functions/wa-webhook/notify/filters.ts:21_
 
 ---
 
@@ -3962,7 +4122,7 @@ Check if contact has opted out of notifications
 
 Check if current time is within contact's quiet hours
 
-*Source: supabase/functions/wa-webhook/notify/filters.ts:53*
+_Source: supabase/functions/wa-webhook/notify/filters.ts:53_
 
 ---
 
@@ -3970,7 +4130,7 @@ Check if current time is within contact's quiet hours
 
 Calculate when quiet hours end for a contact
 
-*Source: supabase/functions/wa-webhook/notify/filters.ts:105*
+_Source: supabase/functions/wa-webhook/notify/filters.ts:105_
 
 ---
 
@@ -3978,7 +4138,7 @@ Calculate when quiet hours end for a contact
 
 Apply all notification filters
 
-*Source: supabase/functions/wa-webhook/notify/filters.ts:145*
+_Source: supabase/functions/wa-webhook/notify/filters.ts:145_
 
 ---
 
@@ -3986,7 +4146,7 @@ Apply all notification filters
 
 Mask WhatsApp ID for logging (PII protection)
 
-*Source: supabase/functions/wa-webhook/notify/filters.ts:173*
+_Source: supabase/functions/wa-webhook/notify/filters.ts:173_
 
 ---
 
@@ -3994,7 +4154,7 @@ Mask WhatsApp ID for logging (PII protection)
 
 Check if notification should be rate limited Simple implementation - can be enhanced with Redis
 
-*Source: supabase/functions/wa-webhook/notify/filters.ts:181*
+_Source: supabase/functions/wa-webhook/notify/filters.ts:181_
 
 ---
 
@@ -4002,23 +4162,25 @@ Check if notification should be rate limited Simple implementation - can be enha
 
 Initialize contact preferences if they don't exist
 
-*Source: supabase/functions/wa-webhook/notify/filters.ts:223*
+_Source: supabase/functions/wa-webhook/notify/filters.ts:223_
 
 ---
 
 ### `unnamed`
 
-Enhanced Notification Processing with Filters Integrates quiet hours, opt-out, and rate limiting Ground Rules Compliance: Structured logging, security, observability
+Enhanced Notification Processing with Filters Integrates quiet hours, opt-out, and rate limiting
+Ground Rules Compliance: Structured logging, security, observability
 
-*Source: supabase/functions/wa-webhook/notify/processor.ts:1*
+_Source: supabase/functions/wa-webhook/notify/processor.ts:1_
 
 ---
 
 ### `processNotificationWithFilters`
 
-Process notification with filters before delivery Returns true if notification should be delivered, false if deferred/blocked
+Process notification with filters before delivery Returns true if notification should be delivered,
+false if deferred/blocked
 
-*Source: supabase/functions/wa-webhook/notify/processor.ts:25*
+_Source: supabase/functions/wa-webhook/notify/processor.ts:25_
 
 ---
 
@@ -4026,7 +4188,7 @@ Process notification with filters before delivery Returns true if notification s
 
 Handle notification blocked by filters
 
-*Source: supabase/functions/wa-webhook/notify/processor.ts:66*
+_Source: supabase/functions/wa-webhook/notify/processor.ts:66_
 
 ---
 
@@ -4034,7 +4196,7 @@ Handle notification blocked by filters
 
 Extract Meta error code from WhatsApp API error response
 
-*Source: supabase/functions/wa-webhook/notify/processor.ts:151*
+_Source: supabase/functions/wa-webhook/notify/processor.ts:151_
 
 ---
 
@@ -4042,7 +4204,7 @@ Extract Meta error code from WhatsApp API error response
 
 Categorize Meta error codes for retry logic
 
-*Source: supabase/functions/wa-webhook/notify/processor.ts:172*
+_Source: supabase/functions/wa-webhook/notify/processor.ts:172_
 
 ---
 
@@ -4050,7 +4212,7 @@ Categorize Meta error codes for retry logic
 
 Calculate backoff time for rate limit errors
 
-*Source: supabase/functions/wa-webhook/notify/processor.ts:204*
+_Source: supabase/functions/wa-webhook/notify/processor.ts:204_
 
 ---
 
@@ -4058,7 +4220,7 @@ Calculate backoff time for rate limit errors
 
 Mask WhatsApp ID for logging (PII protection)
 
-*Source: supabase/functions/wa-webhook/notify/processor.ts:224*
+_Source: supabase/functions/wa-webhook/notify/processor.ts:224_
 
 ---
 
@@ -4066,7 +4228,7 @@ Mask WhatsApp ID for logging (PII protection)
 
 Get preferred locale for notification
 
-*Source: supabase/functions/wa-webhook/notify/processor.ts:232*
+_Source: supabase/functions/wa-webhook/notify/processor.ts:232_
 
 ---
 
@@ -4074,15 +4236,16 @@ Get preferred locale for notification
 
 Log notification delivery metrics by domain and message format
 
-*Source: supabase/functions/wa-webhook/notify/processor.ts:258*
+_Source: supabase/functions/wa-webhook/notify/processor.ts:258_
 
 ---
 
 ### `unnamed`
 
-Property Rentals Flow User flow: Option A - Add Property: Collect criteria → Save to DB (NO AI) Option B - Find Property: Collect search criteria → AI Agent
+Property Rentals Flow User flow: Option A - Add Property: Collect criteria → Save to DB (NO AI)
+Option B - Find Property: Collect search criteria → AI Agent
 
-*Source: supabase/functions/wa-webhook/domains/property/rentals.ts:1*
+_Source: supabase/functions/wa-webhook/domains/property/rentals.ts:1_
 
 ---
 
@@ -4090,7 +4253,7 @@ Property Rentals Flow User flow: Option A - Add Property: Collect criteria → S
 
 Handle conversational AI agent chat for property rentals
 
-*Source: supabase/functions/wa-webhook/domains/property/rentals.ts:714*
+_Source: supabase/functions/wa-webhook/domains/property/rentals.ts:714_
 
 ---
 
@@ -4098,7 +4261,7 @@ Handle conversational AI agent chat for property rentals
 
 Start property search with AI Agent
 
-*Source: supabase/functions/wa-webhook/domains/property/ai_agent.ts:17*
+_Source: supabase/functions/wa-webhook/domains/property/ai_agent.ts:17_
 
 ---
 
@@ -4106,7 +4269,7 @@ Start property search with AI Agent
 
 Handle property search criteria input
 
-*Source: supabase/functions/wa-webhook/domains/property/ai_agent.ts:68*
+_Source: supabase/functions/wa-webhook/domains/property/ai_agent.ts:68_
 
 ---
 
@@ -4114,7 +4277,7 @@ Handle property search criteria input
 
 Execute property search with location
 
-*Source: supabase/functions/wa-webhook/domains/property/ai_agent.ts:136*
+_Source: supabase/functions/wa-webhook/domains/property/ai_agent.ts:136_
 
 ---
 
@@ -4122,7 +4285,7 @@ Execute property search with location
 
 Add property listing via AI Agent
 
-*Source: supabase/functions/wa-webhook/domains/property/ai_agent.ts:248*
+_Source: supabase/functions/wa-webhook/domains/property/ai_agent.ts:248_
 
 ---
 
@@ -4130,7 +4293,7 @@ Add property listing via AI Agent
 
 Clear property search state
 
-*Source: supabase/functions/wa-webhook/domains/property/ai_agent.ts:293*
+_Source: supabase/functions/wa-webhook/domains/property/ai_agent.ts:293_
 
 ---
 
@@ -4138,15 +4301,16 @@ Clear property search state
 
 Check if user has active property search
 
-*Source: supabase/functions/wa-webhook/domains/property/ai_agent.ts:314*
+_Source: supabase/functions/wa-webhook/domains/property/ai_agent.ts:314_
 
 ---
 
 ### `unnamed`
 
-Support AI Agent - Main Handler Routes support/help/customer service requests through the comprehensive AI agent
+Support AI Agent - Main Handler Routes support/help/customer service requests through the
+comprehensive AI agent
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/support_agent.ts:1*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/support_agent.ts:1_
 
 ---
 
@@ -4154,7 +4318,7 @@ Support AI Agent - Main Handler Routes support/help/customer service requests th
 
 Main entry point for Support Agent
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/support_agent.ts:15*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/support_agent.ts:15_
 
 ---
 
@@ -4162,7 +4326,7 @@ Main entry point for Support Agent
 
 Handle support agent text messages
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/support_agent.ts:31*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/support_agent.ts:31_
 
 ---
 
@@ -4170,7 +4334,7 @@ Handle support agent text messages
 
 Handle support agent button callbacks
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/support_agent.ts:41*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/support_agent.ts:41_
 
 ---
 
@@ -4178,7 +4342,7 @@ Handle support agent button callbacks
 
 Export all support functions
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/support_agent.ts:56*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/support_agent.ts:56_
 
 ---
 
@@ -4186,7 +4350,7 @@ Export all support functions
 
 Sales AI Agent (Cold Caller) - Rebuilt with AI Core Uses Gemini 2.5 Pro + GPT-5 with shared tools
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/sales_agent.ts:1*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/sales_agent.ts:1_
 
 ---
 
@@ -4194,7 +4358,7 @@ Sales AI Agent (Cold Caller) - Rebuilt with AI Core Uses Gemini 2.5 Pro + GPT-5 
 
 Execute sales agent with Gemini 2.5 Pro ReAct loop
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/sales_agent.ts:238*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/sales_agent.ts:238_
 
 ---
 
@@ -4202,15 +4366,16 @@ Execute sales agent with Gemini 2.5 Pro ReAct loop
 
 Run Sales Agent handler for wa-webhook
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/sales_agent.ts:336*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/sales_agent.ts:336_
 
 ---
 
 ### `unnamed`
 
-Customer Support AI Agent - Handles general help, navigation, and support requests Integrated with WhatsApp webhook for natural language support conversations
+Customer Support AI Agent - Handles general help, navigation, and support requests Integrated with
+WhatsApp webhook for natural language support conversations
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/customer-support.ts:1*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/customer-support.ts:1_
 
 ---
 
@@ -4218,7 +4383,7 @@ Customer Support AI Agent - Handles general help, navigation, and support reques
 
 Start a customer support chat session
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/customer-support.ts:21*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/customer-support.ts:21_
 
 ---
 
@@ -4226,7 +4391,7 @@ Start a customer support chat session
 
 Handle support message with AI agent
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/customer-support.ts:107*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/customer-support.ts:107_
 
 ---
 
@@ -4234,7 +4399,7 @@ Handle support message with AI agent
 
 Escalate to human support
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/customer-support.ts:191*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/customer-support.ts:191_
 
 ---
 
@@ -4242,7 +4407,7 @@ Escalate to human support
 
 Handle support button actions
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/customer-support.ts:256*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/customer-support.ts:256_
 
 ---
 
@@ -4250,7 +4415,7 @@ Handle support button actions
 
 Generate AI response (simplified placeholder) In production, this would call OpenAI/Gemini API
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/customer-support.ts:347*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/customer-support.ts:347_
 
 ---
 
@@ -4258,15 +4423,17 @@ Generate AI response (simplified placeholder) In production, this would call Ope
 
 Check if message indicates resolution
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/customer-support.ts:399*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/customer-support.ts:399_
 
 ---
 
 ### `unnamed`
 
-AI Agents Integration Module Connects database search agents with the WhatsApp webhook system. Agents search ONLY from database - NO web search or external APIs. All agents must have proper error handling and fallback messages.
+AI Agents Integration Module Connects database search agents with the WhatsApp webhook system.
+Agents search ONLY from database - NO web search or external APIs. All agents must have proper error
+handling and fallback messages.
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/integration.ts:1*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/integration.ts:1_
 
 ---
 
@@ -4274,7 +4441,7 @@ AI Agents Integration Module Connects database search agents with the WhatsApp w
 
 Route request to appropriate AI agent based on intent
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/integration.ts:40*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/integration.ts:40_
 
 ---
 
@@ -4282,7 +4449,7 @@ Route request to appropriate AI agent based on intent
 
 Invoke Property Rental Agent - DATABASE SEARCH ONLY
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/integration.ts:90*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/integration.ts:90_
 
 ---
 
@@ -4290,7 +4457,7 @@ Invoke Property Rental Agent - DATABASE SEARCH ONLY
 
 Send agent options to user as interactive list with fallback buttons
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/integration.ts:148*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/integration.ts:148_
 
 ---
 
@@ -4298,7 +4465,7 @@ Send agent options to user as interactive list with fallback buttons
 
 Handle agent option selection with proper error handling
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/integration.ts:209*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/integration.ts:209_
 
 ---
 
@@ -4306,15 +4473,16 @@ Handle agent option selection with proper error handling
 
 Check agent session status with proper error handling
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/integration.ts:309*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/integration.ts:309_
 
 ---
 
 ### `unnamed`
 
-Insurance AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for insurance quotes, claims, and policy management
+Insurance AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for insurance quotes, claims, and
+policy management
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/insurance_agent.ts:1*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/insurance_agent.ts:1_
 
 ---
 
@@ -4322,15 +4490,16 @@ Insurance AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for insurance quot
 
 Start General Broker AI Agent Routes user to the general broker AI agent for service requests
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/general_broker.ts:6*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/general_broker.ts:6_
 
 ---
 
 ### `unnamed`
 
-AI Agent Handlers for WhatsApp Flows Provides convenient handlers that can be called from the text router to initiate AI agent sessions for various use cases.
+AI Agent Handlers for WhatsApp Flows Provides convenient handlers that can be called from the text
+router to initiate AI agent sessions for various use cases.
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/handlers.ts:1*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/handlers.ts:1_
 
 ---
 
@@ -4338,7 +4507,7 @@ AI Agent Handlers for WhatsApp Flows Provides convenient handlers that can be ca
 
 Handle "Nearby Drivers" request with AI agent DATABASE SEARCH ONLY - No web search
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/handlers.ts:28*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/handlers.ts:28_
 
 ---
 
@@ -4346,7 +4515,7 @@ Handle "Nearby Drivers" request with AI agent DATABASE SEARCH ONLY - No web sear
 
 Handle "Nearby Pharmacies" request with AI agent
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/handlers.ts:34*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/handlers.ts:34_
 
 ---
 
@@ -4354,15 +4523,16 @@ Handle "Nearby Pharmacies" request with AI agent
 
 Handle "Nearby Quincailleries" request with AI agent
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/handlers.ts:39*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/handlers.ts:39_
 
 ---
 
 ### `unnamed`
 
-Handle "Nearby Shops" request with AI agent TWO-PHASE APPROACH: Phase 1: Immediately show top 9 nearby shops from database Phase 2: AI agent processes in background for curated shortlist
+Handle "Nearby Shops" request with AI agent TWO-PHASE APPROACH: Phase 1: Immediately show top 9
+nearby shops from database Phase 2: AI agent processes in background for curated shortlist
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/handlers.ts:44*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/handlers.ts:44_
 
 ---
 
@@ -4370,7 +4540,7 @@ Handle "Nearby Shops" request with AI agent TWO-PHASE APPROACH: Phase 1: Immedia
 
 Handle "Property Rental" request with AI agent
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/handlers.ts:52*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/handlers.ts:52_
 
 ---
 
@@ -4378,7 +4548,7 @@ Handle "Property Rental" request with AI agent
 
 Handle "Schedule Trip" request with AI agent
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/handlers.ts:147*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/handlers.ts:147_
 
 ---
 
@@ -4386,7 +4556,7 @@ Handle "Schedule Trip" request with AI agent
 
 Handle AI agent selection from interactive list
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/handlers.ts:152*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/handlers.ts:152_
 
 ---
 
@@ -4394,39 +4564,43 @@ Handle AI agent selection from interactive list
 
 Handle location update for pending AI agent request
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/handlers.ts:177*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/handlers.ts:177_
 
 ---
 
 ### `unnamed`
 
-Phase 2: Background AI agent processing for shops Agent contacts shops on behalf of user to create curated shortlist
+Phase 2: Background AI agent processing for shops Agent contacts shops on behalf of user to create
+curated shortlist
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/handlers.ts:201*
-
----
-
-### `unnamed`
-
-Phase 1: Send immediate database results (top 9 nearby shops) This provides instant results while AI agent processes in background
-
-*Source: supabase/functions/wa-webhook/domains/ai-agents/handlers.ts:207*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/handlers.ts:201_
 
 ---
 
 ### `unnamed`
 
-Business Broker AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for business discovery and recommendations
+Phase 1: Send immediate database results (top 9 nearby shops) This provides instant results while AI
+agent processes in background
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/business_broker_agent.ts:1*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/handlers.ts:207_
 
 ---
 
 ### `unnamed`
 
-Rides AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for ride matching and transportation services
+Business Broker AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for business discovery and
+recommendations
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/rides_agent.ts:1*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/business_broker_agent.ts:1_
+
+---
+
+### `unnamed`
+
+Rides AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for ride matching and transportation
+services
+
+_Source: supabase/functions/wa-webhook/domains/ai-agents/rides_agent.ts:1_
 
 ---
 
@@ -4434,7 +4608,7 @@ Rides AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for ride matching and 
 
 Farmer AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for agricultural services and marketplace
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/farmer_agent.ts:1*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/farmer_agent.ts:1_
 
 ---
 
@@ -4442,7 +4616,7 @@ Farmer AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for agricultural serv
 
 AI Agents Module Central export point for all AI agent functionality in the WhatsApp webhook system.
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/index.ts:1*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/index.ts:1_
 
 ---
 
@@ -4450,23 +4624,25 @@ AI Agents Module Central export point for all AI agent functionality in the What
 
 Jobs AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro for job matching and career guidance
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/jobs_agent.ts:1*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/jobs_agent.ts:1_
 
 ---
 
 ### `unnamed`
 
-Real Estate AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro with vision for property search and viewings
+Real Estate AI Agent - Rebuilt with AI Core Uses Gemini 2.5 Pro with vision for property search and
+viewings
 
-*Source: supabase/functions/wa-webhook/domains/ai-agents/real_estate_agent.ts:1*
+_Source: supabase/functions/wa-webhook/domains/ai-agents/real_estate_agent.ts:1_
 
 ---
 
 ### `unnamed`
 
-Marketplace Domain Handler (Coming Soon) This is a stub implementation for the marketplace domain. Full marketplace functionality will be implemented in a future release.
+Marketplace Domain Handler (Coming Soon) This is a stub implementation for the marketplace domain.
+Full marketplace functionality will be implemented in a future release.
 
-*Source: supabase/functions/wa-webhook/domains/marketplace/index.ts:1*
+_Source: supabase/functions/wa-webhook/domains/marketplace/index.ts:1_
 
 ---
 
@@ -4474,7 +4650,7 @@ Marketplace Domain Handler (Coming Soon) This is a stub implementation for the m
 
 Handle marketplace-related messages Currently returns a "coming soon" message
 
-*Source: supabase/functions/wa-webhook/domains/marketplace/index.ts:22*
+_Source: supabase/functions/wa-webhook/domains/marketplace/index.ts:22_
 
 ---
 
@@ -4482,7 +4658,7 @@ Handle marketplace-related messages Currently returns a "coming soon" message
 
 Get marketplace feature status
 
-*Source: supabase/functions/wa-webhook/domains/marketplace/index.ts:47*
+_Source: supabase/functions/wa-webhook/domains/marketplace/index.ts:47_
 
 ---
 
@@ -4490,7 +4666,7 @@ Get marketplace feature status
 
 Display list of WhatsApp numbers for a business
 
-*Source: supabase/functions/wa-webhook/domains/business/whatsapp_numbers.ts:19*
+_Source: supabase/functions/wa-webhook/domains/business/whatsapp_numbers.ts:19_
 
 ---
 
@@ -4498,7 +4674,7 @@ Display list of WhatsApp numbers for a business
 
 Start the flow to add a new WhatsApp number
 
-*Source: supabase/functions/wa-webhook/domains/business/whatsapp_numbers.ts:95*
+_Source: supabase/functions/wa-webhook/domains/business/whatsapp_numbers.ts:95_
 
 ---
 
@@ -4506,7 +4682,7 @@ Start the flow to add a new WhatsApp number
 
 Handle text input for adding WhatsApp number
 
-*Source: supabase/functions/wa-webhook/domains/business/whatsapp_numbers.ts:119*
+_Source: supabase/functions/wa-webhook/domains/business/whatsapp_numbers.ts:119_
 
 ---
 
@@ -4514,7 +4690,7 @@ Handle text input for adding WhatsApp number
 
 Handle selection of a specific WhatsApp number (for future edit/delete)
 
-*Source: supabase/functions/wa-webhook/domains/business/whatsapp_numbers.ts:203*
+_Source: supabase/functions/wa-webhook/domains/business/whatsapp_numbers.ts:203_
 
 ---
 
@@ -4522,7 +4698,7 @@ Handle selection of a specific WhatsApp number (for future edit/delete)
 
 Mask phone number for display (show only last 4 digits)
 
-*Source: supabase/functions/wa-webhook/domains/business/whatsapp_numbers.ts:224*
+_Source: supabase/functions/wa-webhook/domains/business/whatsapp_numbers.ts:224_
 
 ---
 
@@ -4530,7 +4706,7 @@ Mask phone number for display (show only last 4 digits)
 
 Format date for display
 
-*Source: supabase/functions/wa-webhook/domains/business/whatsapp_numbers.ts:234*
+_Source: supabase/functions/wa-webhook/domains/business/whatsapp_numbers.ts:234_
 
 ---
 
@@ -4538,7 +4714,7 @@ Format date for display
 
 Display list of businesses owned by the current user
 
-*Source: supabase/functions/wa-webhook/domains/business/management.ts:41*
+_Source: supabase/functions/wa-webhook/domains/business/management.ts:41_
 
 ---
 
@@ -4546,7 +4722,7 @@ Display list of businesses owned by the current user
 
 Show detail view for a specific business with management options
 
-*Source: supabase/functions/wa-webhook/domains/business/management.ts:150*
+_Source: supabase/functions/wa-webhook/domains/business/management.ts:150_
 
 ---
 
@@ -4554,7 +4730,7 @@ Show detail view for a specific business with management options
 
 Handle business deletion with confirmation
 
-*Source: supabase/functions/wa-webhook/domains/business/management.ts:254*
+_Source: supabase/functions/wa-webhook/domains/business/management.ts:254_
 
 ---
 
@@ -4562,7 +4738,7 @@ Handle business deletion with confirmation
 
 Confirm and execute business deletion
 
-*Source: supabase/functions/wa-webhook/domains/business/management.ts:287*
+_Source: supabase/functions/wa-webhook/domains/business/management.ts:287_
 
 ---
 
@@ -4570,7 +4746,7 @@ Confirm and execute business deletion
 
 Handle business selection from the list
 
-*Source: supabase/functions/wa-webhook/domains/business/management.ts:335*
+_Source: supabase/functions/wa-webhook/domains/business/management.ts:335_
 
 ---
 
@@ -4578,7 +4754,7 @@ Handle business selection from the list
 
 Start business claiming flow
 
-*Source: supabase/functions/wa-webhook/domains/business/claim.ts:40*
+_Source: supabase/functions/wa-webhook/domains/business/claim.ts:40_
 
 ---
 
@@ -4586,7 +4762,7 @@ Start business claiming flow
 
 Handle business name search with OpenAI semantic search
 
-*Source: supabase/functions/wa-webhook/domains/business/claim.ts:71*
+_Source: supabase/functions/wa-webhook/domains/business/claim.ts:71_
 
 ---
 
@@ -4594,7 +4770,7 @@ Handle business name search with OpenAI semantic search
 
 Handle business selection and claiming
 
-*Source: supabase/functions/wa-webhook/domains/business/claim.ts:175*
+_Source: supabase/functions/wa-webhook/domains/business/claim.ts:175_
 
 ---
 
@@ -4602,7 +4778,7 @@ Handle business selection and claiming
 
 OpenAI-powered semantic business search Uses embeddings and smart matching to find businesses
 
-*Source: supabase/functions/wa-webhook/domains/business/claim.ts:281*
+_Source: supabase/functions/wa-webhook/domains/business/claim.ts:281_
 
 ---
 
@@ -4610,7 +4786,7 @@ OpenAI-powered semantic business search Uses embeddings and smart matching to fi
 
 Simple fallback search (no OpenAI)
 
-*Source: supabase/functions/wa-webhook/domains/business/claim.ts:441*
+_Source: supabase/functions/wa-webhook/domains/business/claim.ts:441_
 
 ---
 
@@ -4618,7 +4794,7 @@ Simple fallback search (no OpenAI)
 
 Fuzzy/semantic business search (fast path)
 
-*Source: supabase/functions/wa-webhook/domains/business/claim.ts:485*
+_Source: supabase/functions/wa-webhook/domains/business/claim.ts:485_
 
 ---
 
@@ -4626,7 +4802,7 @@ Fuzzy/semantic business search (fast path)
 
 Claim a business for the user
 
-*Source: supabase/functions/wa-webhook/domains/business/claim.ts:599*
+_Source: supabase/functions/wa-webhook/domains/business/claim.ts:599_
 
 ---
 
@@ -4634,7 +4810,7 @@ Claim a business for the user
 
 Create a business entry from a bars table record
 
-*Source: supabase/functions/wa-webhook/domains/business/claim.ts:654*
+_Source: supabase/functions/wa-webhook/domains/business/claim.ts:654_
 
 ---
 
@@ -4642,23 +4818,25 @@ Create a business entry from a bars table record
 
 Format business description for list display
 
-*Source: supabase/functions/wa-webhook/domains/business/claim.ts:707*
+_Source: supabase/functions/wa-webhook/domains/business/claim.ts:707_
 
 ---
 
 ### `handleProfileMenu`
 
-Profile Hub Unified entry point for managing: - Vehicles - Businesses - Properties - Tokens - Settings
+Profile Hub Unified entry point for managing: - Vehicles - Businesses - Properties - Tokens -
+Settings
 
-*Source: supabase/functions/wa-webhook/domains/profile/index.ts:12*
+_Source: supabase/functions/wa-webhook/domains/profile/index.ts:12_
 
 ---
 
 ### `getProfileMenuItemId`
 
-Map profile menu item action_targets to route IDs This ensures the router can handle actions from database-driven menu
+Map profile menu item action_targets to route IDs This ensures the router can handle actions from
+database-driven menu
 
-*Source: supabase/functions/wa-webhook/domains/profile/index.ts:160*
+_Source: supabase/functions/wa-webhook/domains/profile/index.ts:160_
 
 ---
 
@@ -4666,15 +4844,18 @@ Map profile menu item action_targets to route IDs This ensures the router can ha
 
 Handle vehicle certificate media upload
 
-*Source: supabase/functions/wa-webhook/domains/profile/index.ts:270*
+_Source: supabase/functions/wa-webhook/domains/profile/index.ts:270_
 
 ---
 
 ### `parseScheduledDateTime`
 
-Parse date and time strings into a Date object for scheduled trip storage. The date/time is stored in UTC for consistency across timezones. Note: This simplified implementation treats the input as a local time string and converts to Date. For production use with multiple timezones, consider using a library like Temporal or date-fns-tz for proper timezone handling.
+Parse date and time strings into a Date object for scheduled trip storage. The date/time is stored
+in UTC for consistency across timezones. Note: This simplified implementation treats the input as a
+local time string and converts to Date. For production use with multiple timezones, consider using a
+library like Temporal or date-fns-tz for proper timezone handling.
 
-*Source: supabase/functions/wa-webhook/domains/mobility/schedule.ts:1267*
+_Source: supabase/functions/wa-webhook/domains/mobility/schedule.ts:1267_
 
 ---
 
@@ -4682,7 +4863,7 @@ Parse date and time strings into a Date object for scheduled trip storage. The d
 
 Send quote request to a driver
 
-*Source: supabase/functions/wa-webhook/domains/mobility/agent_quotes.ts:27*
+_Source: supabase/functions/wa-webhook/domains/mobility/agent_quotes.ts:27_
 
 ---
 
@@ -4690,7 +4871,7 @@ Send quote request to a driver
 
 Format driver quote request message
 
-*Source: supabase/functions/wa-webhook/domains/mobility/agent_quotes.ts:66*
+_Source: supabase/functions/wa-webhook/domains/mobility/agent_quotes.ts:66_
 
 ---
 
@@ -4698,7 +4879,7 @@ Format driver quote request message
 
 Parse driver quote response
 
-*Source: supabase/functions/wa-webhook/domains/mobility/agent_quotes.ts:99*
+_Source: supabase/functions/wa-webhook/domains/mobility/agent_quotes.ts:99_
 
 ---
 
@@ -4706,7 +4887,7 @@ Parse driver quote response
 
 Handle incoming quote response from driver
 
-*Source: supabase/functions/wa-webhook/domains/mobility/agent_quotes.ts:143*
+_Source: supabase/functions/wa-webhook/domains/mobility/agent_quotes.ts:143_
 
 ---
 
@@ -4714,7 +4895,7 @@ Handle incoming quote response from driver
 
 Send quote presentation to user
 
-*Source: supabase/functions/wa-webhook/domains/mobility/agent_quotes.ts:221*
+_Source: supabase/functions/wa-webhook/domains/mobility/agent_quotes.ts:221_
 
 ---
 
@@ -4722,7 +4903,7 @@ Send quote presentation to user
 
 Display the Rides submenu with 3 options: - Nearby Drivers - Nearby Passengers - Schedule Trip
 
-*Source: supabase/functions/wa-webhook/domains/mobility/rides_menu.ts:7*
+_Source: supabase/functions/wa-webhook/domains/mobility/rides_menu.ts:7_
 
 ---
 
@@ -4730,7 +4911,7 @@ Display the Rides submenu with 3 options: - Nearby Drivers - Nearby Passengers -
 
 Show recent searches as quick actions
 
-*Source: supabase/functions/wa-webhook/domains/mobility/nearby.ts:196*
+_Source: supabase/functions/wa-webhook/domains/mobility/nearby.ts:196_
 
 ---
 
@@ -4738,7 +4919,7 @@ Show recent searches as quick actions
 
 Save user intent to mobility_intents table for better querying and recommendations
 
-*Source: supabase/functions/wa-webhook/domains/mobility/intent_storage.ts:20*
+_Source: supabase/functions/wa-webhook/domains/mobility/intent_storage.ts:20_
 
 ---
 
@@ -4746,7 +4927,7 @@ Save user intent to mobility_intents table for better querying and recommendatio
 
 Get recent intents for a user
 
-*Source: supabase/functions/wa-webhook/domains/mobility/intent_storage.ts:51*
+_Source: supabase/functions/wa-webhook/domains/mobility/intent_storage.ts:51_
 
 ---
 
@@ -4754,7 +4935,7 @@ Get recent intents for a user
 
 Clean up expired intents (can be called periodically or via cron)
 
-*Source: supabase/functions/wa-webhook/domains/mobility/intent_storage.ts:76*
+_Source: supabase/functions/wa-webhook/domains/mobility/intent_storage.ts:76_
 
 ---
 
@@ -4762,15 +4943,16 @@ Clean up expired intents (can be called periodically or via cron)
 
 Get localized menu item name for a specific country
 
-*Source: supabase/functions/wa-webhook/domains/menu/dynamic_home_menu.ts:58*
+_Source: supabase/functions/wa-webhook/domains/menu/dynamic_home_menu.ts:58_
 
 ---
 
 ### `fetchActiveMenuItems`
 
-Fetch active menu items from database filtered by country Returns items with country-specific names applied
+Fetch active menu items from database filtered by country Returns items with country-specific names
+applied
 
-*Source: supabase/functions/wa-webhook/domains/menu/dynamic_home_menu.ts:71*
+_Source: supabase/functions/wa-webhook/domains/menu/dynamic_home_menu.ts:71_
 
 ---
 
@@ -4778,7 +4960,7 @@ Fetch active menu items from database filtered by country Returns items with cou
 
 Normalize a menu key (legacy or canonical) to its canonical agent key.
 
-*Source: supabase/functions/wa-webhook/domains/menu/dynamic_home_menu.ts:150*
+_Source: supabase/functions/wa-webhook/domains/menu/dynamic_home_menu.ts:150_
 
 ---
 
@@ -4786,7 +4968,7 @@ Normalize a menu key (legacy or canonical) to its canonical agent key.
 
 Map menu item keys to IDS constants
 
-*Source: supabase/functions/wa-webhook/domains/menu/dynamic_home_menu.ts:159*
+_Source: supabase/functions/wa-webhook/domains/menu/dynamic_home_menu.ts:159_
 
 ---
 
@@ -4794,7 +4976,7 @@ Map menu item keys to IDS constants
 
 Get translation key for menu item
 
-*Source: supabase/functions/wa-webhook/domains/menu/dynamic_home_menu.ts:170*
+_Source: supabase/functions/wa-webhook/domains/menu/dynamic_home_menu.ts:170_
 
 ---
 
@@ -4802,7 +4984,7 @@ Get translation key for menu item
 
 Show job board main menu
 
-*Source: supabase/functions/wa-webhook/domains/jobs/index.ts:196*
+_Source: supabase/functions/wa-webhook/domains/jobs/index.ts:196_
 
 ---
 
@@ -4810,7 +4992,7 @@ Show job board main menu
 
 Start job search conversation (job seeker)
 
-*Source: supabase/functions/wa-webhook/domains/jobs/index.ts:254*
+_Source: supabase/functions/wa-webhook/domains/jobs/index.ts:254_
 
 ---
 
@@ -4818,7 +5000,7 @@ Start job search conversation (job seeker)
 
 Start job posting conversation (job poster)
 
-*Source: supabase/functions/wa-webhook/domains/jobs/index.ts:279*
+_Source: supabase/functions/wa-webhook/domains/jobs/index.ts:279_
 
 ---
 
@@ -4826,7 +5008,7 @@ Start job posting conversation (job poster)
 
 Handle ongoing job board conversation Routes user messages to the job-board-ai-agent edge function
 
-*Source: supabase/functions/wa-webhook/domains/jobs/index.ts:963*
+_Source: supabase/functions/wa-webhook/domains/jobs/index.ts:963_
 
 ---
 
@@ -4834,7 +5016,7 @@ Handle ongoing job board conversation Routes user messages to the job-board-ai-a
 
 Show user's job applications
 
-*Source: supabase/functions/wa-webhook/domains/jobs/index.ts:1047*
+_Source: supabase/functions/wa-webhook/domains/jobs/index.ts:1047_
 
 ---
 
@@ -4842,7 +5024,7 @@ Show user's job applications
 
 Show user's posted jobs
 
-*Source: supabase/functions/wa-webhook/domains/jobs/index.ts:1135*
+_Source: supabase/functions/wa-webhook/domains/jobs/index.ts:1135_
 
 ---
 
@@ -4850,7 +5032,7 @@ Show user's posted jobs
 
 Handle insurance help request - show admin contacts
 
-*Source: supabase/functions/wa-webhook/domains/insurance/ins_handler.ts:369*
+_Source: supabase/functions/wa-webhook/domains/insurance/ins_handler.ts:369_
 
 ---
 
@@ -4858,7 +5040,7 @@ Handle insurance help request - show admin contacts
 
 Route message to appropriate microservice
 
-*Source: supabase/functions/wa-webhook/router.ts:57*
+_Source: supabase/functions/wa-webhook/router.ts:57_
 
 ---
 
@@ -4866,7 +5048,7 @@ Route message to appropriate microservice
 
 Get service from chat state
 
-*Source: supabase/functions/wa-webhook/router.ts:104*
+_Source: supabase/functions/wa-webhook/router.ts:104_
 
 ---
 
@@ -4874,7 +5056,7 @@ Get service from chat state
 
 Forward request to microservice
 
-*Source: supabase/functions/wa-webhook/router.ts:123*
+_Source: supabase/functions/wa-webhook/router.ts:123_
 
 ---
 
@@ -4882,7 +5064,7 @@ Forward request to microservice
 
 Get service health status
 
-*Source: supabase/functions/wa-webhook/router.ts:183*
+_Source: supabase/functions/wa-webhook/router.ts:183_
 
 ---
 
@@ -4890,7 +5072,7 @@ Get service health status
 
 Get all services health
 
-*Source: supabase/functions/wa-webhook/router.ts:202*
+_Source: supabase/functions/wa-webhook/router.ts:202_
 
 ---
 
@@ -4898,7 +5080,7 @@ Get all services health
 
 Normalizes a menu key to its canonical agent key
 
-*Source: supabase/functions/wa-webhook/config/home_menu_aliases.ts:93*
+_Source: supabase/functions/wa-webhook/config/home_menu_aliases.ts:93_
 
 ---
 
@@ -4906,7 +5088,7 @@ Normalizes a menu key to its canonical agent key
 
 Checks if a key is a legacy (aliased) key
 
-*Source: supabase/functions/wa-webhook/config/home_menu_aliases.ts:100*
+_Source: supabase/functions/wa-webhook/config/home_menu_aliases.ts:100_
 
 ---
 
@@ -4914,15 +5096,17 @@ Checks if a key is a legacy (aliased) key
 
 Validates if a key is a canonical menu key
 
-*Source: supabase/functions/wa-webhook/config/home_menu_aliases.ts:125*
+_Source: supabase/functions/wa-webhook/config/home_menu_aliases.ts:125_
 
 ---
 
 ### `unnamed`
 
-Enhanced Middleware Integration for wa-webhook Provides middleware functions that integrate rate limiting, caching, error handling, and metrics without modifying existing code. These can be optionally integrated into the existing pipeline.
+Enhanced Middleware Integration for wa-webhook Provides middleware functions that integrate rate
+limiting, caching, error handling, and metrics without modifying existing code. These can be
+optionally integrated into the existing pipeline.
 
-*Source: supabase/functions/wa-webhook/utils/middleware.ts:1*
+_Source: supabase/functions/wa-webhook/utils/middleware.ts:1_
 
 ---
 
@@ -4930,7 +5114,7 @@ Enhanced Middleware Integration for wa-webhook Provides middleware functions tha
 
 Apply rate limiting middleware Can be called from existing pipeline to add rate limiting
 
-*Source: supabase/functions/wa-webhook/utils/middleware.ts:21*
+_Source: supabase/functions/wa-webhook/utils/middleware.ts:21_
 
 ---
 
@@ -4938,7 +5122,7 @@ Apply rate limiting middleware Can be called from existing pipeline to add rate 
 
 Track webhook metrics
 
-*Source: supabase/functions/wa-webhook/utils/middleware.ts:68*
+_Source: supabase/functions/wa-webhook/utils/middleware.ts:68_
 
 ---
 
@@ -4946,15 +5130,16 @@ Track webhook metrics
 
 Cache user context with automatic expiration Can be used in message_context.ts to cache user lookups
 
-*Source: supabase/functions/wa-webhook/utils/middleware.ts:92*
+_Source: supabase/functions/wa-webhook/utils/middleware.ts:92_
 
 ---
 
 ### `wrapError`
 
-Wrap error with enhanced error handling Can be used in existing try-catch blocks to enhance error responses
+Wrap error with enhanced error handling Can be used in existing try-catch blocks to enhance error
+responses
 
-*Source: supabase/functions/wa-webhook/utils/middleware.ts:109*
+_Source: supabase/functions/wa-webhook/utils/middleware.ts:109_
 
 ---
 
@@ -4962,15 +5147,16 @@ Wrap error with enhanced error handling Can be used in existing try-catch blocks
 
 Add rate limit headers to response
 
-*Source: supabase/functions/wa-webhook/utils/middleware.ts:135*
+_Source: supabase/functions/wa-webhook/utils/middleware.ts:135_
 
 ---
 
 ### `enhanceWebhookRequest`
 
-Middleware function to enhance PreparedWebhook This can be called after processWebhookRequest to add enhancements
+Middleware function to enhance PreparedWebhook This can be called after processWebhookRequest to add
+enhancements
 
-*Source: supabase/functions/wa-webhook/utils/middleware.ts:160*
+_Source: supabase/functions/wa-webhook/utils/middleware.ts:160_
 
 ---
 
@@ -4978,15 +5164,16 @@ Middleware function to enhance PreparedWebhook This can be called after processW
 
 Log webhook processing completion
 
-*Source: supabase/functions/wa-webhook/utils/middleware.ts:197*
+_Source: supabase/functions/wa-webhook/utils/middleware.ts:197_
 
 ---
 
 ### `processMessageWithEnhancements`
 
-Example: Enhanced message processor wrapper This shows how to wrap existing handleMessage calls with enhancements
+Example: Enhanced message processor wrapper This shows how to wrap existing handleMessage calls with
+enhancements
 
-*Source: supabase/functions/wa-webhook/utils/middleware.ts:225*
+_Source: supabase/functions/wa-webhook/utils/middleware.ts:225_
 
 ---
 
@@ -4994,7 +5181,7 @@ Example: Enhanced message processor wrapper This shows how to wrap existing hand
 
 Utility to check if enhancements are enabled
 
-*Source: supabase/functions/wa-webhook/utils/middleware.ts:288*
+_Source: supabase/functions/wa-webhook/utils/middleware.ts:288_
 
 ---
 
@@ -5002,15 +5189,16 @@ Utility to check if enhancements are enabled
 
 Get enhancement configuration
 
-*Source: supabase/functions/wa-webhook/utils/middleware.ts:297*
+_Source: supabase/functions/wa-webhook/utils/middleware.ts:297_
 
 ---
 
 ### `unnamed`
 
-Message Deduplication and Queue Integration Provides deduplication checking against the database and queue integration for reliable message processing.
+Message Deduplication and Queue Integration Provides deduplication checking against the database and
+queue integration for reliable message processing.
 
-*Source: supabase/functions/wa-webhook/utils/message-deduplication.ts:1*
+_Source: supabase/functions/wa-webhook/utils/message-deduplication.ts:1_
 
 ---
 
@@ -5018,7 +5206,7 @@ Message Deduplication and Queue Integration Provides deduplication checking agai
 
 Check if a message has already been processed (database-backed deduplication)
 
-*Source: supabase/functions/wa-webhook/utils/message-deduplication.ts:14*
+_Source: supabase/functions/wa-webhook/utils/message-deduplication.ts:14_
 
 ---
 
@@ -5026,7 +5214,7 @@ Check if a message has already been processed (database-backed deduplication)
 
 Mark a message as processed
 
-*Source: supabase/functions/wa-webhook/utils/message-deduplication.ts:67*
+_Source: supabase/functions/wa-webhook/utils/message-deduplication.ts:67_
 
 ---
 
@@ -5034,7 +5222,7 @@ Mark a message as processed
 
 Add message to processing queue
 
-*Source: supabase/functions/wa-webhook/utils/message-deduplication.ts:115*
+_Source: supabase/functions/wa-webhook/utils/message-deduplication.ts:115_
 
 ---
 
@@ -5042,7 +5230,7 @@ Add message to processing queue
 
 Get or create AI conversation memory
 
-*Source: supabase/functions/wa-webhook/utils/message-deduplication.ts:175*
+_Source: supabase/functions/wa-webhook/utils/message-deduplication.ts:175_
 
 ---
 
@@ -5050,7 +5238,7 @@ Get or create AI conversation memory
 
 Update AI conversation memory
 
-*Source: supabase/functions/wa-webhook/utils/message-deduplication.ts:272*
+_Source: supabase/functions/wa-webhook/utils/message-deduplication.ts:272_
 
 ---
 
@@ -5058,15 +5246,16 @@ Update AI conversation memory
 
 Cleanup old conversation memories (older than 7 days with no activity)
 
-*Source: supabase/functions/wa-webhook/utils/message-deduplication.ts:346*
+_Source: supabase/functions/wa-webhook/utils/message-deduplication.ts:346_
 
 ---
 
 ### `unnamed`
 
-Enhanced Error Handling for wa-webhook Provides structured error handling with classification, user notifications, and retry logic. Complements existing error handling.
+Enhanced Error Handling for wa-webhook Provides structured error handling with classification, user
+notifications, and retry logic. Complements existing error handling.
 
-*Source: supabase/functions/wa-webhook/utils/error_handler.ts:1*
+_Source: supabase/functions/wa-webhook/utils/error_handler.ts:1_
 
 ---
 
@@ -5074,7 +5263,7 @@ Enhanced Error Handling for wa-webhook Provides structured error handling with c
 
 Normalize any error to WebhookError
 
-*Source: supabase/functions/wa-webhook/utils/error_handler.ts:71*
+_Source: supabase/functions/wa-webhook/utils/error_handler.ts:71_
 
 ---
 
@@ -5082,7 +5271,7 @@ Normalize any error to WebhookError
 
 Handle webhook error with logging and optional user notification
 
-*Source: supabase/functions/wa-webhook/utils/error_handler.ts:155*
+_Source: supabase/functions/wa-webhook/utils/error_handler.ts:155_
 
 ---
 
@@ -5090,7 +5279,7 @@ Handle webhook error with logging and optional user notification
 
 Send error notification to user
 
-*Source: supabase/functions/wa-webhook/utils/error_handler.ts:187*
+_Source: supabase/functions/wa-webhook/utils/error_handler.ts:187_
 
 ---
 
@@ -5098,7 +5287,7 @@ Send error notification to user
 
 Create error response
 
-*Source: supabase/functions/wa-webhook/utils/error_handler.ts:216*
+_Source: supabase/functions/wa-webhook/utils/error_handler.ts:216_
 
 ---
 
@@ -5106,7 +5295,7 @@ Create error response
 
 Mask phone number for logging (PII protection)
 
-*Source: supabase/functions/wa-webhook/utils/error_handler.ts:264*
+_Source: supabase/functions/wa-webhook/utils/error_handler.ts:264_
 
 ---
 
@@ -5114,7 +5303,7 @@ Mask phone number for logging (PII protection)
 
 Check if error is retryable
 
-*Source: supabase/functions/wa-webhook/utils/error_handler.ts:272*
+_Source: supabase/functions/wa-webhook/utils/error_handler.ts:272_
 
 ---
 
@@ -5122,15 +5311,16 @@ Check if error is retryable
 
 Get retry delay based on attempt number
 
-*Source: supabase/functions/wa-webhook/utils/error_handler.ts:288*
+_Source: supabase/functions/wa-webhook/utils/error_handler.ts:288_
 
 ---
 
 ### `unnamed`
 
-Enhanced Health Check for wa-webhook Provides comprehensive health monitoring including rate limiter, cache, and database connectivity.
+Enhanced Health Check for wa-webhook Provides comprehensive health monitoring including rate
+limiter, cache, and database connectivity.
 
-*Source: supabase/functions/wa-webhook/utils/health_check.ts:1*
+_Source: supabase/functions/wa-webhook/utils/health_check.ts:1_
 
 ---
 
@@ -5138,7 +5328,7 @@ Enhanced Health Check for wa-webhook Provides comprehensive health monitoring in
 
 Check database health
 
-*Source: supabase/functions/wa-webhook/utils/health_check.ts:39*
+_Source: supabase/functions/wa-webhook/utils/health_check.ts:39_
 
 ---
 
@@ -5146,7 +5336,7 @@ Check database health
 
 Check rate limiter health
 
-*Source: supabase/functions/wa-webhook/utils/health_check.ts:78*
+_Source: supabase/functions/wa-webhook/utils/health_check.ts:78_
 
 ---
 
@@ -5154,7 +5344,7 @@ Check rate limiter health
 
 Check cache health
 
-*Source: supabase/functions/wa-webhook/utils/health_check.ts:100*
+_Source: supabase/functions/wa-webhook/utils/health_check.ts:100_
 
 ---
 
@@ -5162,7 +5352,7 @@ Check cache health
 
 Check metrics collector health
 
-*Source: supabase/functions/wa-webhook/utils/health_check.ts:122*
+_Source: supabase/functions/wa-webhook/utils/health_check.ts:122_
 
 ---
 
@@ -5170,7 +5360,7 @@ Check metrics collector health
 
 Perform comprehensive health check
 
-*Source: supabase/functions/wa-webhook/utils/health_check.ts:143*
+_Source: supabase/functions/wa-webhook/utils/health_check.ts:143_
 
 ---
 
@@ -5178,7 +5368,7 @@ Perform comprehensive health check
 
 Create health check response
 
-*Source: supabase/functions/wa-webhook/utils/health_check.ts:180*
+_Source: supabase/functions/wa-webhook/utils/health_check.ts:180_
 
 ---
 
@@ -5186,7 +5376,7 @@ Create health check response
 
 Simple liveness probe (for Kubernetes, etc.)
 
-*Source: supabase/functions/wa-webhook/utils/health_check.ts:201*
+_Source: supabase/functions/wa-webhook/utils/health_check.ts:201_
 
 ---
 
@@ -5194,15 +5384,16 @@ Simple liveness probe (for Kubernetes, etc.)
 
 Readiness probe (checks critical dependencies)
 
-*Source: supabase/functions/wa-webhook/utils/health_check.ts:211*
+_Source: supabase/functions/wa-webhook/utils/health_check.ts:211_
 
 ---
 
 ### `unnamed`
 
-Dynamic Submenu Helper Provides reusable functions to fetch and display dynamic submenus from database Eliminates hardcoded menu lists
+Dynamic Submenu Helper Provides reusable functions to fetch and display dynamic submenus from
+database Eliminates hardcoded menu lists
 
-*Source: supabase/functions/wa-webhook/utils/dynamic_submenu.ts:1*
+_Source: supabase/functions/wa-webhook/utils/dynamic_submenu.ts:1_
 
 ---
 
@@ -5210,7 +5401,7 @@ Dynamic Submenu Helper Provides reusable functions to fetch and display dynamic 
 
 Fetch submenu items for a parent menu from database
 
-*Source: supabase/functions/wa-webhook/utils/dynamic_submenu.ts:21*
+_Source: supabase/functions/wa-webhook/utils/dynamic_submenu.ts:21_
 
 ---
 
@@ -5218,7 +5409,7 @@ Fetch submenu items for a parent menu from database
 
 Fetch profile menu items from database
 
-*Source: supabase/functions/wa-webhook/utils/dynamic_submenu.ts:51*
+_Source: supabase/functions/wa-webhook/utils/dynamic_submenu.ts:51_
 
 ---
 
@@ -5226,15 +5417,16 @@ Fetch profile menu items from database
 
 Convert submenu items to WhatsApp list row format
 
-*Source: supabase/functions/wa-webhook/utils/dynamic_submenu.ts:85*
+_Source: supabase/functions/wa-webhook/utils/dynamic_submenu.ts:85_
 
 ---
 
 ### `getSubmenuRows`
 
-Get submenu items as WhatsApp rows with back button Convenience function that combines fetch + convert + add back button
+Get submenu items as WhatsApp rows with back button Convenience function that combines fetch +
+convert + add back button
 
-*Source: supabase/functions/wa-webhook/utils/dynamic_submenu.ts:106*
+_Source: supabase/functions/wa-webhook/utils/dynamic_submenu.ts:106_
 
 ---
 
@@ -5242,7 +5434,7 @@ Get submenu items as WhatsApp rows with back button Convenience function that co
 
 Check if a submenu exists and has items
 
-*Source: supabase/functions/wa-webhook/utils/dynamic_submenu.ts:143*
+_Source: supabase/functions/wa-webhook/utils/dynamic_submenu.ts:143_
 
 ---
 
@@ -5250,7 +5442,7 @@ Check if a submenu exists and has items
 
 Get the default action for a submenu item Used for routing based on action_type
 
-*Source: supabase/functions/wa-webhook/utils/dynamic_submenu.ts:159*
+_Source: supabase/functions/wa-webhook/utils/dynamic_submenu.ts:159_
 
 ---
 
@@ -5258,7 +5450,7 @@ Get the default action for a submenu item Used for routing based on action_type
 
 Increment a counter
 
-*Source: supabase/functions/wa-webhook/utils/metrics_collector.ts:36*
+_Source: supabase/functions/wa-webhook/utils/metrics_collector.ts:36_
 
 ---
 
@@ -5266,7 +5458,7 @@ Increment a counter
 
 Set a gauge value
 
-*Source: supabase/functions/wa-webhook/utils/metrics_collector.ts:50*
+_Source: supabase/functions/wa-webhook/utils/metrics_collector.ts:50_
 
 ---
 
@@ -5274,7 +5466,7 @@ Set a gauge value
 
 Record a histogram value (for durations, sizes, etc.)
 
-*Source: supabase/functions/wa-webhook/utils/metrics_collector.ts:63*
+_Source: supabase/functions/wa-webhook/utils/metrics_collector.ts:63_
 
 ---
 
@@ -5282,7 +5474,7 @@ Record a histogram value (for durations, sizes, etc.)
 
 Get dimension key for grouping
 
-*Source: supabase/functions/wa-webhook/utils/metrics_collector.ts:81*
+_Source: supabase/functions/wa-webhook/utils/metrics_collector.ts:81_
 
 ---
 
@@ -5290,7 +5482,7 @@ Get dimension key for grouping
 
 Parse dimension key back to object
 
-*Source: supabase/functions/wa-webhook/utils/metrics_collector.ts:95*
+_Source: supabase/functions/wa-webhook/utils/metrics_collector.ts:95_
 
 ---
 
@@ -5298,7 +5490,7 @@ Parse dimension key back to object
 
 Calculate histogram statistics
 
-*Source: supabase/functions/wa-webhook/utils/metrics_collector.ts:110*
+_Source: supabase/functions/wa-webhook/utils/metrics_collector.ts:110_
 
 ---
 
@@ -5306,7 +5498,7 @@ Calculate histogram statistics
 
 Flush metrics to logs
 
-*Source: supabase/functions/wa-webhook/utils/metrics_collector.ts:151*
+_Source: supabase/functions/wa-webhook/utils/metrics_collector.ts:151_
 
 ---
 
@@ -5314,7 +5506,7 @@ Flush metrics to logs
 
 Get metrics in Prometheus format (for /metrics endpoint)
 
-*Source: supabase/functions/wa-webhook/utils/metrics_collector.ts:206*
+_Source: supabase/functions/wa-webhook/utils/metrics_collector.ts:206_
 
 ---
 
@@ -5322,7 +5514,7 @@ Get metrics in Prometheus format (for /metrics endpoint)
 
 Get summary statistics
 
-*Source: supabase/functions/wa-webhook/utils/metrics_collector.ts:260*
+_Source: supabase/functions/wa-webhook/utils/metrics_collector.ts:260_
 
 ---
 
@@ -5330,7 +5522,7 @@ Get summary statistics
 
 Start periodic flushing
 
-*Source: supabase/functions/wa-webhook/utils/metrics_collector.ts:271*
+_Source: supabase/functions/wa-webhook/utils/metrics_collector.ts:271_
 
 ---
 
@@ -5338,7 +5530,7 @@ Start periodic flushing
 
 Stop flushing and cleanup
 
-*Source: supabase/functions/wa-webhook/utils/metrics_collector.ts:282*
+_Source: supabase/functions/wa-webhook/utils/metrics_collector.ts:282_
 
 ---
 
@@ -5346,7 +5538,7 @@ Stop flushing and cleanup
 
 Get value from cache
 
-*Source: supabase/functions/wa-webhook/utils/cache.ts:48*
+_Source: supabase/functions/wa-webhook/utils/cache.ts:48_
 
 ---
 
@@ -5354,7 +5546,7 @@ Get value from cache
 
 Set value in cache
 
-*Source: supabase/functions/wa-webhook/utils/cache.ts:71*
+_Source: supabase/functions/wa-webhook/utils/cache.ts:71_
 
 ---
 
@@ -5362,7 +5554,7 @@ Set value in cache
 
 Get or set value using factory function
 
-*Source: supabase/functions/wa-webhook/utils/cache.ts:94*
+_Source: supabase/functions/wa-webhook/utils/cache.ts:94_
 
 ---
 
@@ -5370,7 +5562,7 @@ Get or set value using factory function
 
 Delete from cache
 
-*Source: supabase/functions/wa-webhook/utils/cache.ts:112*
+_Source: supabase/functions/wa-webhook/utils/cache.ts:112_
 
 ---
 
@@ -5378,7 +5570,7 @@ Delete from cache
 
 Clear all cache
 
-*Source: supabase/functions/wa-webhook/utils/cache.ts:123*
+_Source: supabase/functions/wa-webhook/utils/cache.ts:123_
 
 ---
 
@@ -5386,7 +5578,7 @@ Clear all cache
 
 Check if cache contains key
 
-*Source: supabase/functions/wa-webhook/utils/cache.ts:135*
+_Source: supabase/functions/wa-webhook/utils/cache.ts:135_
 
 ---
 
@@ -5394,7 +5586,7 @@ Check if cache contains key
 
 Evict least recently used entry
 
-*Source: supabase/functions/wa-webhook/utils/cache.ts:148*
+_Source: supabase/functions/wa-webhook/utils/cache.ts:148_
 
 ---
 
@@ -5402,7 +5594,7 @@ Evict least recently used entry
 
 Clean up expired entries
 
-*Source: supabase/functions/wa-webhook/utils/cache.ts:172*
+_Source: supabase/functions/wa-webhook/utils/cache.ts:172_
 
 ---
 
@@ -5410,7 +5602,7 @@ Clean up expired entries
 
 Get cache statistics
 
-*Source: supabase/functions/wa-webhook/utils/cache.ts:195*
+_Source: supabase/functions/wa-webhook/utils/cache.ts:195_
 
 ---
 
@@ -5418,7 +5610,7 @@ Get cache statistics
 
 Check if cache is healthy
 
-*Source: supabase/functions/wa-webhook/utils/cache.ts:212*
+_Source: supabase/functions/wa-webhook/utils/cache.ts:212_
 
 ---
 
@@ -5426,7 +5618,7 @@ Check if cache is healthy
 
 Start periodic cleanup
 
-*Source: supabase/functions/wa-webhook/utils/cache.ts:219*
+_Source: supabase/functions/wa-webhook/utils/cache.ts:219_
 
 ---
 
@@ -5434,7 +5626,7 @@ Start periodic cleanup
 
 Cleanup resources
 
-*Source: supabase/functions/wa-webhook/utils/cache.ts:231*
+_Source: supabase/functions/wa-webhook/utils/cache.ts:231_
 
 ---
 
@@ -5442,7 +5634,7 @@ Cleanup resources
 
 Check if identifier should be rate limited
 
-*Source: supabase/functions/wa-webhook/utils/rate_limiter.ts:48*
+_Source: supabase/functions/wa-webhook/utils/rate_limiter.ts:48_
 
 ---
 
@@ -5450,7 +5642,7 @@ Check if identifier should be rate limited
 
 Manually unblock an identifier
 
-*Source: supabase/functions/wa-webhook/utils/rate_limiter.ts:120*
+_Source: supabase/functions/wa-webhook/utils/rate_limiter.ts:120_
 
 ---
 
@@ -5458,7 +5650,7 @@ Manually unblock an identifier
 
 Get statistics for monitoring
 
-*Source: supabase/functions/wa-webhook/utils/rate_limiter.ts:128*
+_Source: supabase/functions/wa-webhook/utils/rate_limiter.ts:128_
 
 ---
 
@@ -5466,7 +5658,7 @@ Get statistics for monitoring
 
 Mask identifier for logging (PII protection)
 
-*Source: supabase/functions/wa-webhook/utils/rate_limiter.ts:143*
+_Source: supabase/functions/wa-webhook/utils/rate_limiter.ts:143_
 
 ---
 
@@ -5474,7 +5666,7 @@ Mask identifier for logging (PII protection)
 
 Cleanup expired buckets
 
-*Source: supabase/functions/wa-webhook/utils/rate_limiter.ts:151*
+_Source: supabase/functions/wa-webhook/utils/rate_limiter.ts:151_
 
 ---
 
@@ -5482,7 +5674,7 @@ Cleanup expired buckets
 
 Start periodic cleanup
 
-*Source: supabase/functions/wa-webhook/utils/rate_limiter.ts:174*
+_Source: supabase/functions/wa-webhook/utils/rate_limiter.ts:174_
 
 ---
 
@@ -5490,7 +5682,7 @@ Start periodic cleanup
 
 Stop cleanup (for testing/shutdown)
 
-*Source: supabase/functions/wa-webhook/utils/rate_limiter.ts:183*
+_Source: supabase/functions/wa-webhook/utils/rate_limiter.ts:183_
 
 ---
 
@@ -5498,7 +5690,7 @@ Stop cleanup (for testing/shutdown)
 
 Validate and load configuration
 
-*Source: supabase/functions/wa-webhook/utils/config_validator.ts:54*
+_Source: supabase/functions/wa-webhook/utils/config_validator.ts:54_
 
 ---
 
@@ -5506,7 +5698,7 @@ Validate and load configuration
 
 Get environment variable with fallback to multiple keys
 
-*Source: supabase/functions/wa-webhook/utils/config_validator.ts:116*
+_Source: supabase/functions/wa-webhook/utils/config_validator.ts:116_
 
 ---
 
@@ -5514,7 +5706,7 @@ Get environment variable with fallback to multiple keys
 
 Load configuration with defaults
 
-*Source: supabase/functions/wa-webhook/utils/config_validator.ts:127*
+_Source: supabase/functions/wa-webhook/utils/config_validator.ts:127_
 
 ---
 
@@ -5522,7 +5714,7 @@ Load configuration with defaults
 
 Print configuration status
 
-*Source: supabase/functions/wa-webhook/utils/config_validator.ts:174*
+_Source: supabase/functions/wa-webhook/utils/config_validator.ts:174_
 
 ---
 
@@ -5530,23 +5722,27 @@ Print configuration status
 
 Assert configuration is valid (throws if not)
 
-*Source: supabase/functions/wa-webhook/utils/config_validator.ts:202*
+_Source: supabase/functions/wa-webhook/utils/config_validator.ts:202_
 
 ---
 
 ### `encodeTelUriForQr`
 
-Encodes a USSD string as a tel: URI for QR codes. Android QR scanner apps often fail to decode percent-encoded characters before passing the URI to the dialer. This function leaves * and # unencoded for better Android compatibility while maintaining iOS support.
+Encodes a USSD string as a tel: URI for QR codes. Android QR scanner apps often fail to decode
+percent-encoded characters before passing the URI to the dialer. This function leaves \* and #
+unencoded for better Android compatibility while maintaining iOS support.
 
-*Source: supabase/functions/wa-webhook/utils/ussd.ts:14*
+_Source: supabase/functions/wa-webhook/utils/ussd.ts:14_
 
 ---
 
 ### `unnamed`
 
-AI Agent Chat Interface Utilities Provides consistent, emoji-rich, button-enabled chat interfaces for all AI agents. All agents MUST use natural language chat with: - Emoji-numbered listings (1️⃣, 2️⃣, 3️⃣) - Action buttons for quick responses - Concise messages with emojis
+AI Agent Chat Interface Utilities Provides consistent, emoji-rich, button-enabled chat interfaces
+for all AI agents. All agents MUST use natural language chat with: - Emoji-numbered listings (1️⃣,
+2️⃣, 3️⃣) - Action buttons for quick responses - Concise messages with emojis
 
-*Source: supabase/functions/wa-webhook/utils/ai-chat-interface.ts:1*
+_Source: supabase/functions/wa-webhook/utils/ai-chat-interface.ts:1_
 
 ---
 
@@ -5554,7 +5750,7 @@ AI Agent Chat Interface Utilities Provides consistent, emoji-rich, button-enable
 
 Format options/items as emoji-numbered list
 
-*Source: supabase/functions/wa-webhook/utils/ai-chat-interface.ts:20*
+_Source: supabase/functions/wa-webhook/utils/ai-chat-interface.ts:20_
 
 ---
 
@@ -5562,7 +5758,7 @@ Format options/items as emoji-numbered list
 
 Create action buttons for agent responses
 
-*Source: supabase/functions/wa-webhook/utils/ai-chat-interface.ts:62*
+_Source: supabase/functions/wa-webhook/utils/ai-chat-interface.ts:62_
 
 ---
 
@@ -5570,7 +5766,7 @@ Create action buttons for agent responses
 
 Send agent message with emoji-numbered list and action buttons
 
-*Source: supabase/functions/wa-webhook/utils/ai-chat-interface.ts:90*
+_Source: supabase/functions/wa-webhook/utils/ai-chat-interface.ts:90_
 
 ---
 
@@ -5578,7 +5774,7 @@ Send agent message with emoji-numbered list and action buttons
 
 Send concise agent message with action buttons
 
-*Source: supabase/functions/wa-webhook/utils/ai-chat-interface.ts:136*
+_Source: supabase/functions/wa-webhook/utils/ai-chat-interface.ts:136_
 
 ---
 
@@ -5586,7 +5782,7 @@ Send concise agent message with action buttons
 
 Send simple agent text message with emoji
 
-*Source: supabase/functions/wa-webhook/utils/ai-chat-interface.ts:163*
+_Source: supabase/functions/wa-webhook/utils/ai-chat-interface.ts:163_
 
 ---
 
@@ -5594,7 +5790,7 @@ Send simple agent text message with emoji
 
 Format error message for agent responses
 
-*Source: supabase/functions/wa-webhook/utils/ai-chat-interface.ts:178*
+_Source: supabase/functions/wa-webhook/utils/ai-chat-interface.ts:178_
 
 ---
 
@@ -5602,7 +5798,7 @@ Format error message for agent responses
 
 Format success message for agent responses
 
-*Source: supabase/functions/wa-webhook/utils/ai-chat-interface.ts:186*
+_Source: supabase/functions/wa-webhook/utils/ai-chat-interface.ts:186_
 
 ---
 
@@ -5610,7 +5806,7 @@ Format success message for agent responses
 
 Create quick reply instruction text
 
-*Source: supabase/functions/wa-webhook/utils/ai-chat-interface.ts:193*
+_Source: supabase/functions/wa-webhook/utils/ai-chat-interface.ts:193_
 
 ---
 
@@ -5618,23 +5814,25 @@ Create quick reply instruction text
 
 Parse emoji number from user input Supports both emoji (1️⃣) and plain numbers (1)
 
-*Source: supabase/functions/wa-webhook/utils/ai-chat-interface.ts:210*
+_Source: supabase/functions/wa-webhook/utils/ai-chat-interface.ts:210_
 
 ---
 
 ### `buildMomoUssdForQr`
 
-Builds MOMO USSD code with tel URI optimized for QR codes. Uses unencoded * and # for better Android QR scanner compatibility.
+Builds MOMO USSD code with tel URI optimized for QR codes. Uses unencoded \* and # for better
+Android QR scanner compatibility.
 
-*Source: supabase/functions/wa-webhook/utils/momo.ts:16*
+_Source: supabase/functions/wa-webhook/utils/momo.ts:16_
 
 ---
 
 ### `unnamed`
 
-Connection Pool Manager for Supabase Client Implements connection pooling to: - Reduce connection overhead - Improve performance - Manage connection lifecycle - Monitor pool health
+Connection Pool Manager for Supabase Client Implements connection pooling to: - Reduce connection
+overhead - Improve performance - Manage connection lifecycle - Monitor pool health
 
-*Source: supabase/functions/wa-webhook/shared/connection_pool.ts:1*
+_Source: supabase/functions/wa-webhook/shared/connection_pool.ts:1_
 
 ---
 
@@ -5642,7 +5840,7 @@ Connection Pool Manager for Supabase Client Implements connection pooling to: - 
 
 Initialize pool with minimum connections
 
-*Source: supabase/functions/wa-webhook/shared/connection_pool.ts:71*
+_Source: supabase/functions/wa-webhook/shared/connection_pool.ts:71_
 
 ---
 
@@ -5650,7 +5848,7 @@ Initialize pool with minimum connections
 
 Create a new pooled connection
 
-*Source: supabase/functions/wa-webhook/shared/connection_pool.ts:91*
+_Source: supabase/functions/wa-webhook/shared/connection_pool.ts:91_
 
 ---
 
@@ -5658,7 +5856,7 @@ Create a new pooled connection
 
 Acquire a connection from the pool
 
-*Source: supabase/functions/wa-webhook/shared/connection_pool.ts:138*
+_Source: supabase/functions/wa-webhook/shared/connection_pool.ts:138_
 
 ---
 
@@ -5666,7 +5864,7 @@ Acquire a connection from the pool
 
 Release a connection back to the pool
 
-*Source: supabase/functions/wa-webhook/shared/connection_pool.ts:188*
+_Source: supabase/functions/wa-webhook/shared/connection_pool.ts:188_
 
 ---
 
@@ -5674,7 +5872,7 @@ Release a connection back to the pool
 
 Execute operation with pooled connection
 
-*Source: supabase/functions/wa-webhook/shared/connection_pool.ts:213*
+_Source: supabase/functions/wa-webhook/shared/connection_pool.ts:213_
 
 ---
 
@@ -5682,7 +5880,7 @@ Execute operation with pooled connection
 
 Perform pool maintenance
 
-*Source: supabase/functions/wa-webhook/shared/connection_pool.ts:227*
+_Source: supabase/functions/wa-webhook/shared/connection_pool.ts:227_
 
 ---
 
@@ -5690,7 +5888,7 @@ Perform pool maintenance
 
 Get pool statistics
 
-*Source: supabase/functions/wa-webhook/shared/connection_pool.ts:270*
+_Source: supabase/functions/wa-webhook/shared/connection_pool.ts:270_
 
 ---
 
@@ -5698,7 +5896,7 @@ Get pool statistics
 
 Check pool health
 
-*Source: supabase/functions/wa-webhook/shared/connection_pool.ts:287*
+_Source: supabase/functions/wa-webhook/shared/connection_pool.ts:287_
 
 ---
 
@@ -5706,7 +5904,7 @@ Check pool health
 
 Destroy the pool
 
-*Source: supabase/functions/wa-webhook/shared/connection_pool.ts:298*
+_Source: supabase/functions/wa-webhook/shared/connection_pool.ts:298_
 
 ---
 
@@ -5714,7 +5912,7 @@ Destroy the pool
 
 Singleton pool instance
 
-*Source: supabase/functions/wa-webhook/shared/connection_pool.ts:315*
+_Source: supabase/functions/wa-webhook/shared/connection_pool.ts:315_
 
 ---
 
@@ -5722,15 +5920,17 @@ Singleton pool instance
 
 Helper function to execute with pooled connection
 
-*Source: supabase/functions/wa-webhook/shared/connection_pool.ts:327*
+_Source: supabase/functions/wa-webhook/shared/connection_pool.ts:327_
 
 ---
 
 ### `unnamed`
 
-Streaming Response Handler for OpenAI Handles server-sent events (SSE) from OpenAI Chat Completions API Accumulates chunks and provides real-time updates ADDITIVE ONLY - New file, no modifications to existing code
+Streaming Response Handler for OpenAI Handles server-sent events (SSE) from OpenAI Chat Completions
+API Accumulates chunks and provides real-time updates ADDITIVE ONLY - New file, no modifications to
+existing code
 
-*Source: supabase/functions/wa-webhook/shared/streaming_handler.ts:1*
+_Source: supabase/functions/wa-webhook/shared/streaming_handler.ts:1_
 
 ---
 
@@ -5738,15 +5938,16 @@ Streaming Response Handler for OpenAI Handles server-sent events (SSE) from Open
 
 Stream chat completion responses Yields chunks as they arrive from OpenAI
 
-*Source: supabase/functions/wa-webhook/shared/streaming_handler.ts:42*
+_Source: supabase/functions/wa-webhook/shared/streaming_handler.ts:42_
 
 ---
 
 ### `unnamed`
 
-Accumulate full response from stream Useful when you want streaming internally but need the complete response
+Accumulate full response from stream Useful when you want streaming internally but need the complete
+response
 
-*Source: supabase/functions/wa-webhook/shared/streaming_handler.ts:205*
+_Source: supabase/functions/wa-webhook/shared/streaming_handler.ts:205_
 
 ---
 
@@ -5754,15 +5955,16 @@ Accumulate full response from stream Useful when you want streaming internally b
 
 Singleton instance
 
-*Source: supabase/functions/wa-webhook/shared/streaming_handler.ts:257*
+_Source: supabase/functions/wa-webhook/shared/streaming_handler.ts:257_
 
 ---
 
 ### `unnamed`
 
-Agent Context Builder Builds comprehensive context for AI agents from WhatsApp messages Extracts user profile, conversation history, and session state
+Agent Context Builder Builds comprehensive context for AI agents from WhatsApp messages Extracts
+user profile, conversation history, and session state
 
-*Source: supabase/functions/wa-webhook/shared/agent_context.ts:1*
+_Source: supabase/functions/wa-webhook/shared/agent_context.ts:1_
 
 ---
 
@@ -5770,7 +5972,7 @@ Agent Context Builder Builds comprehensive context for AI agents from WhatsApp m
 
 Extract message content from different message types
 
-*Source: supabase/functions/wa-webhook/shared/agent_context.ts:115*
+_Source: supabase/functions/wa-webhook/shared/agent_context.ts:115_
 
 ---
 
@@ -5778,7 +5980,7 @@ Extract message content from different message types
 
 Fetch user profile from database
 
-*Source: supabase/functions/wa-webhook/shared/agent_context.ts:139*
+_Source: supabase/functions/wa-webhook/shared/agent_context.ts:139_
 
 ---
 
@@ -5786,7 +5988,7 @@ Fetch user profile from database
 
 Fetch recent message history for context
 
-*Source: supabase/functions/wa-webhook/shared/agent_context.ts:174*
+_Source: supabase/functions/wa-webhook/shared/agent_context.ts:174_
 
 ---
 
@@ -5794,7 +5996,7 @@ Fetch recent message history for context
 
 Extract content from stored interaction
 
-*Source: supabase/functions/wa-webhook/shared/agent_context.ts:229*
+_Source: supabase/functions/wa-webhook/shared/agent_context.ts:229_
 
 ---
 
@@ -5802,7 +6004,7 @@ Extract content from stored interaction
 
 Extract content from stored response
 
-*Source: supabase/functions/wa-webhook/shared/agent_context.ts:252*
+_Source: supabase/functions/wa-webhook/shared/agent_context.ts:252_
 
 ---
 
@@ -5810,15 +6012,16 @@ Extract content from stored response
 
 Save agent interaction to database
 
-*Source: supabase/functions/wa-webhook/shared/agent_context.ts:267*
+_Source: supabase/functions/wa-webhook/shared/agent_context.ts:267_
 
 ---
 
 ### `unnamed`
 
-OpenAI Client for wa-webhook Provides OpenAI API integration with: - Chat completions with function calling - Streaming support - Token usage tracking - Cost calculation - Error handling & retries
+OpenAI Client for wa-webhook Provides OpenAI API integration with: - Chat completions with function
+calling - Streaming support - Token usage tracking - Cost calculation - Error handling & retries
 
-*Source: supabase/functions/wa-webhook/shared/openai_client.ts:1*
+_Source: supabase/functions/wa-webhook/shared/openai_client.ts:1_
 
 ---
 
@@ -5826,7 +6029,7 @@ OpenAI Client for wa-webhook Provides OpenAI API integration with: - Chat comple
 
 Safely extract error message from unknown error
 
-*Source: supabase/functions/wa-webhook/shared/openai_client.ts:15*
+_Source: supabase/functions/wa-webhook/shared/openai_client.ts:15_
 
 ---
 
@@ -5834,7 +6037,7 @@ Safely extract error message from unknown error
 
 Create chat completion
 
-*Source: supabase/functions/wa-webhook/shared/openai_client.ts:86*
+_Source: supabase/functions/wa-webhook/shared/openai_client.ts:86_
 
 ---
 
@@ -5842,7 +6045,7 @@ Create chat completion
 
 Make HTTP request to OpenAI API
 
-*Source: supabase/functions/wa-webhook/shared/openai_client.ts:130*
+_Source: supabase/functions/wa-webhook/shared/openai_client.ts:130_
 
 ---
 
@@ -5850,7 +6053,7 @@ Make HTTP request to OpenAI API
 
 Calculate API cost based on model and token usage
 
-*Source: supabase/functions/wa-webhook/shared/openai_client.ts:208*
+_Source: supabase/functions/wa-webhook/shared/openai_client.ts:208_
 
 ---
 
@@ -5858,7 +6061,7 @@ Calculate API cost based on model and token usage
 
 Delay helper for retries
 
-*Source: supabase/functions/wa-webhook/shared/openai_client.ts:231*
+_Source: supabase/functions/wa-webhook/shared/openai_client.ts:231_
 
 ---
 
@@ -5866,7 +6069,7 @@ Delay helper for retries
 
 Generate embeddings for text
 
-*Source: supabase/functions/wa-webhook/shared/openai_client.ts:238*
+_Source: supabase/functions/wa-webhook/shared/openai_client.ts:238_
 
 ---
 
@@ -5874,15 +6077,16 @@ Generate embeddings for text
 
 Singleton instance
 
-*Source: supabase/functions/wa-webhook/shared/openai_client.ts:287*
+_Source: supabase/functions/wa-webhook/shared/openai_client.ts:287_
 
 ---
 
 ### `unnamed`
 
-Comprehensive Error Handler for Webhook Provides error categorization, user notifications, and retry logic
+Comprehensive Error Handler for Webhook Provides error categorization, user notifications, and retry
+logic
 
-*Source: supabase/functions/wa-webhook/shared/error-handler.ts:1*
+_Source: supabase/functions/wa-webhook/shared/error-handler.ts:1_
 
 ---
 
@@ -5890,7 +6094,7 @@ Comprehensive Error Handler for Webhook Provides error categorization, user noti
 
 Handle error and return appropriate response
 
-*Source: supabase/functions/wa-webhook/shared/error-handler.ts:100*
+_Source: supabase/functions/wa-webhook/shared/error-handler.ts:100_
 
 ---
 
@@ -5898,7 +6102,7 @@ Handle error and return appropriate response
 
 Normalize error to WebhookError
 
-*Source: supabase/functions/wa-webhook/shared/error-handler.ts:124*
+_Source: supabase/functions/wa-webhook/shared/error-handler.ts:124_
 
 ---
 
@@ -5906,7 +6110,7 @@ Normalize error to WebhookError
 
 Log error with structured data
 
-*Source: supabase/functions/wa-webhook/shared/error-handler.ts:199*
+_Source: supabase/functions/wa-webhook/shared/error-handler.ts:199_
 
 ---
 
@@ -5914,7 +6118,7 @@ Log error with structured data
 
 Notify user via WhatsApp
 
-*Source: supabase/functions/wa-webhook/shared/error-handler.ts:216*
+_Source: supabase/functions/wa-webhook/shared/error-handler.ts:216_
 
 ---
 
@@ -5922,7 +6126,7 @@ Notify user via WhatsApp
 
 Create HTTP response
 
-*Source: supabase/functions/wa-webhook/shared/error-handler.ts:243*
+_Source: supabase/functions/wa-webhook/shared/error-handler.ts:243_
 
 ---
 
@@ -5930,15 +6134,16 @@ Create HTTP response
 
 Get error statistics
 
-*Source: supabase/functions/wa-webhook/shared/error-handler.ts:279*
+_Source: supabase/functions/wa-webhook/shared/error-handler.ts:279_
 
 ---
 
 ### `unnamed`
 
-Response Formatting Utilities Helper methods for formatting agent responses with emoji-numbered lists and action buttons for chat-first architecture.
+Response Formatting Utilities Helper methods for formatting agent responses with emoji-numbered
+lists and action buttons for chat-first architecture.
 
-*Source: supabase/functions/wa-webhook/shared/response_formatter.ts:1*
+_Source: supabase/functions/wa-webhook/shared/response_formatter.ts:1_
 
 ---
 
@@ -5946,7 +6151,7 @@ Response Formatting Utilities Helper methods for formatting agent responses with
 
 Format agent response with emoji-numbered lists and action buttons
 
-*Source: supabase/functions/wa-webhook/shared/response_formatter.ts:17*
+_Source: supabase/functions/wa-webhook/shared/response_formatter.ts:17_
 
 ---
 
@@ -5954,7 +6159,7 @@ Format agent response with emoji-numbered lists and action buttons
 
 Extract options from response text
 
-*Source: supabase/functions/wa-webhook/shared/response_formatter.ts:64*
+_Source: supabase/functions/wa-webhook/shared/response_formatter.ts:64_
 
 ---
 
@@ -5962,7 +6167,7 @@ Extract options from response text
 
 Extract header text before the list
 
-*Source: supabase/functions/wa-webhook/shared/response_formatter.ts:102*
+_Source: supabase/functions/wa-webhook/shared/response_formatter.ts:102_
 
 ---
 
@@ -5970,15 +6175,17 @@ Extract header text before the list
 
 Generate contextual action buttons based on agent type
 
-*Source: supabase/functions/wa-webhook/shared/response_formatter.ts:111*
+_Source: supabase/functions/wa-webhook/shared/response_formatter.ts:111_
 
 ---
 
 ### `unnamed`
 
-Message Formatter Utilities Provides standardized formatting for AI agent chat messages including: - Emoji-numbered lists (1️⃣, 2️⃣, 3️⃣) - Action buttons - User selection parsing - Fallback flow detection
+Message Formatter Utilities Provides standardized formatting for AI agent chat messages including: -
+Emoji-numbered lists (1️⃣, 2️⃣, 3️⃣) - Action buttons - User selection parsing - Fallback flow
+detection
 
-*Source: supabase/functions/wa-webhook/shared/message_formatter.ts:1*
+_Source: supabase/functions/wa-webhook/shared/message_formatter.ts:1_
 
 ---
 
@@ -5986,15 +6193,17 @@ Message Formatter Utilities Provides standardized formatting for AI agent chat m
 
 Format options as emoji-numbered list
 
-*Source: supabase/functions/wa-webhook/shared/message_formatter.ts:49*
+_Source: supabase/functions/wa-webhook/shared/message_formatter.ts:49_
 
 ---
 
 ### `parseEmojiSelection`
 
-Parse user's emoji selection from message Supports multiple formats: - Numbers: "1", "2", "3" - Emojis: "1️⃣", "2️⃣", "3️⃣" - Text: "one", "two", "three", "first", "second" - Phrases: "option 1", "number 2", "the first one"
+Parse user's emoji selection from message Supports multiple formats: - Numbers: "1", "2", "3" -
+Emojis: "1️⃣", "2️⃣", "3️⃣" - Text: "one", "two", "three", "first", "second" - Phrases: "option 1",
+"number 2", "the first one"
 
-*Source: supabase/functions/wa-webhook/shared/message_formatter.ts:82*
+_Source: supabase/functions/wa-webhook/shared/message_formatter.ts:82_
 
 ---
 
@@ -6002,7 +6211,7 @@ Parse user's emoji selection from message Supports multiple formats: - Numbers: 
 
 Format message with action buttons
 
-*Source: supabase/functions/wa-webhook/shared/message_formatter.ts:148*
+_Source: supabase/functions/wa-webhook/shared/message_formatter.ts:148_
 
 ---
 
@@ -6010,7 +6219,7 @@ Format message with action buttons
 
 Detect if message should trigger fallback to WhatsApp flow
 
-*Source: supabase/functions/wa-webhook/shared/message_formatter.ts:176*
+_Source: supabase/functions/wa-webhook/shared/message_formatter.ts:176_
 
 ---
 
@@ -6018,7 +6227,7 @@ Detect if message should trigger fallback to WhatsApp flow
 
 Create a formatted list message with emoji numbers and action buttons
 
-*Source: supabase/functions/wa-webhook/shared/message_formatter.ts:224*
+_Source: supabase/functions/wa-webhook/shared/message_formatter.ts:224_
 
 ---
 
@@ -6026,7 +6235,7 @@ Create a formatted list message with emoji numbers and action buttons
 
 Validate action button configuration Ensures buttons meet WhatsApp requirements
 
-*Source: supabase/functions/wa-webhook/shared/message_formatter.ts:268*
+_Source: supabase/functions/wa-webhook/shared/message_formatter.ts:268_
 
 ---
 
@@ -6034,7 +6243,7 @@ Validate action button configuration Ensures buttons meet WhatsApp requirements
 
 Extract option metadata from formatted list Useful for tracking what options were presented
 
-*Source: supabase/functions/wa-webhook/shared/message_formatter.ts:283*
+_Source: supabase/functions/wa-webhook/shared/message_formatter.ts:283_
 
 ---
 
@@ -6042,7 +6251,7 @@ Extract option metadata from formatted list Useful for tracking what options wer
 
 Check if user message is a valid selection from previous options
 
-*Source: supabase/functions/wa-webhook/shared/message_formatter.ts:299*
+_Source: supabase/functions/wa-webhook/shared/message_formatter.ts:299_
 
 ---
 
@@ -6050,15 +6259,16 @@ Check if user message is a valid selection from previous options
 
 Generate help text for emoji selection
 
-*Source: supabase/functions/wa-webhook/shared/message_formatter.ts:318*
+_Source: supabase/functions/wa-webhook/shared/message_formatter.ts:318_
 
 ---
 
 ### `unnamed`
 
-WhatsApp-Specific Tools for AI Agents Provides tools that agents can use to interact with WhatsApp Business API and EasyMO backend services ADDITIVE ONLY - New tools for agent system
+WhatsApp-Specific Tools for AI Agents Provides tools that agents can use to interact with WhatsApp
+Business API and EasyMO backend services ADDITIVE ONLY - New tools for agent system
 
-*Source: supabase/functions/wa-webhook/shared/whatsapp_tools.ts:1*
+_Source: supabase/functions/wa-webhook/shared/whatsapp_tools.ts:1_
 
 ---
 
@@ -6066,7 +6276,7 @@ WhatsApp-Specific Tools for AI Agents Provides tools that agents can use to inte
 
 Register default tools
 
-*Source: supabase/functions/wa-webhook/shared/whatsapp_tools.ts:39*
+_Source: supabase/functions/wa-webhook/shared/whatsapp_tools.ts:39_
 
 ---
 
@@ -6074,7 +6284,7 @@ Register default tools
 
 Register a tool
 
-*Source: supabase/functions/wa-webhook/shared/whatsapp_tools.ts:623*
+_Source: supabase/functions/wa-webhook/shared/whatsapp_tools.ts:623_
 
 ---
 
@@ -6082,7 +6292,7 @@ Register a tool
 
 Get tool definition for OpenAI format
 
-*Source: supabase/functions/wa-webhook/shared/whatsapp_tools.ts:630*
+_Source: supabase/functions/wa-webhook/shared/whatsapp_tools.ts:630_
 
 ---
 
@@ -6090,7 +6300,7 @@ Get tool definition for OpenAI format
 
 Execute a tool
 
-*Source: supabase/functions/wa-webhook/shared/whatsapp_tools.ts:647*
+_Source: supabase/functions/wa-webhook/shared/whatsapp_tools.ts:647_
 
 ---
 
@@ -6098,7 +6308,7 @@ Execute a tool
 
 Get all registered tools
 
-*Source: supabase/functions/wa-webhook/shared/whatsapp_tools.ts:687*
+_Source: supabase/functions/wa-webhook/shared/whatsapp_tools.ts:687_
 
 ---
 
@@ -6106,15 +6316,17 @@ Get all registered tools
 
 Singleton instance
 
-*Source: supabase/functions/wa-webhook/shared/whatsapp_tools.ts:695*
+_Source: supabase/functions/wa-webhook/shared/whatsapp_tools.ts:695_
 
 ---
 
 ### `unnamed`
 
-Agent Orchestrator Central hub for managing multiple specialized agents Routes messages to appropriate agents based on intent Handles agent-to-agent handoffs and conversation state ADDITIVE ONLY - New file, complements existing ai_agent_handler.ts
+Agent Orchestrator Central hub for managing multiple specialized agents Routes messages to
+appropriate agents based on intent Handles agent-to-agent handoffs and conversation state ADDITIVE
+ONLY - New file, complements existing ai_agent_handler.ts
 
-*Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:1*
+_Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:1_
 
 ---
 
@@ -6122,7 +6334,7 @@ Agent Orchestrator Central hub for managing multiple specialized agents Routes m
 
 Initialize default agent configurations
 
-*Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:90*
+_Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:90_
 
 ---
 
@@ -6130,7 +6342,7 @@ Initialize default agent configurations
 
 Register an agent configuration
 
-*Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:105*
+_Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:105_
 
 ---
 
@@ -6138,7 +6350,7 @@ Register an agent configuration
 
 Classify user intent and select appropriate agent
 
-*Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:112*
+_Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:112_
 
 ---
 
@@ -6146,7 +6358,7 @@ Classify user intent and select appropriate agent
 
 Use LLM to classify intent
 
-*Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:149*
+_Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:149_
 
 ---
 
@@ -6154,7 +6366,7 @@ Use LLM to classify intent
 
 Process message with selected agent
 
-*Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:200*
+_Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:200_
 
 ---
 
@@ -6162,7 +6374,7 @@ Process message with selected agent
 
 Build message history for agent
 
-*Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:322*
+_Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:322_
 
 ---
 
@@ -6170,7 +6382,7 @@ Build message history for agent
 
 Get tools available for agent
 
-*Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:373*
+_Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:373_
 
 ---
 
@@ -6178,7 +6390,7 @@ Get tools available for agent
 
 Extract topic from message
 
-*Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:389*
+_Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:389_
 
 ---
 
@@ -6186,7 +6398,7 @@ Extract topic from message
 
 Transfer conversation to different agent
 
-*Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:413*
+_Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:413_
 
 ---
 
@@ -6194,7 +6406,7 @@ Transfer conversation to different agent
 
 End conversation and cleanup
 
-*Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:425*
+_Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:425_
 
 ---
 
@@ -6202,15 +6414,16 @@ End conversation and cleanup
 
 Singleton instance
 
-*Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:460*
+_Source: supabase/functions/wa-webhook/shared/agent_orchestrator.ts:460_
 
 ---
 
 ### `unnamed`
 
-Advanced Rate Limiter with Blacklisting Provides per-user rate limiting, violation tracking, and blacklist management
+Advanced Rate Limiter with Blacklisting Provides per-user rate limiting, violation tracking, and
+blacklist management
 
-*Source: supabase/functions/wa-webhook/shared/rate-limiter.ts:1*
+_Source: supabase/functions/wa-webhook/shared/rate-limiter.ts:1_
 
 ---
 
@@ -6218,7 +6431,7 @@ Advanced Rate Limiter with Blacklisting Provides per-user rate limiting, violati
 
 Check if request should be rate limited
 
-*Source: supabase/functions/wa-webhook/shared/rate-limiter.ts:42*
+_Source: supabase/functions/wa-webhook/shared/rate-limiter.ts:42_
 
 ---
 
@@ -6226,7 +6439,7 @@ Check if request should be rate limited
 
 Manually unblock an identifier
 
-*Source: supabase/functions/wa-webhook/shared/rate-limiter.ts:130*
+_Source: supabase/functions/wa-webhook/shared/rate-limiter.ts:130_
 
 ---
 
@@ -6234,7 +6447,7 @@ Manually unblock an identifier
 
 Get current state for monitoring
 
-*Source: supabase/functions/wa-webhook/shared/rate-limiter.ts:142*
+_Source: supabase/functions/wa-webhook/shared/rate-limiter.ts:142_
 
 ---
 
@@ -6242,7 +6455,7 @@ Get current state for monitoring
 
 Check health
 
-*Source: supabase/functions/wa-webhook/shared/rate-limiter.ts:157*
+_Source: supabase/functions/wa-webhook/shared/rate-limiter.ts:157_
 
 ---
 
@@ -6250,15 +6463,21 @@ Check health
 
 Clean up expired buckets
 
-*Source: supabase/functions/wa-webhook/shared/rate-limiter.ts:164*
+_Source: supabase/functions/wa-webhook/shared/rate-limiter.ts:164_
 
 ---
 
 ### `unnamed`
 
-Agent Configurations Centralized configurations for all AI agents in the EasyMO platform. Each agent has a chat-first interface with emoji-numbered lists and action buttons. OFFICIAL AGENTS (10 production agents matching agent_registry database): 1. farmer - Farmer AI Agent 2. insurance - Insurance AI Agent 3. sales_cold_caller - Sales/Marketing Cold Caller AI Agent 4. rides - Rides AI Agent 5. jobs - Jobs AI Agent 6. waiter - Waiter AI Agent 7. real_estate - Real Estate AI Agent 8. marketplace - Marketplace AI Agent (includes pharmacy, hardware, shop) 9. support - Support AI Agent (includes concierge routing) 10. business_broker - Business Broker AI Agent (includes legal intake)
+Agent Configurations Centralized configurations for all AI agents in the EasyMO platform. Each agent
+has a chat-first interface with emoji-numbered lists and action buttons. OFFICIAL AGENTS (10
+production agents matching agent_registry database): 1. farmer - Farmer AI Agent 2. insurance -
+Insurance AI Agent 3. sales_cold_caller - Sales/Marketing Cold Caller AI Agent 4. rides - Rides AI
+Agent 5. jobs - Jobs AI Agent 6. waiter - Waiter AI Agent 7. real_estate - Real Estate AI Agent 8.
+marketplace - Marketplace AI Agent (includes pharmacy, hardware, shop) 9. support - Support AI Agent
+(includes concierge routing) 10. business_broker - Business Broker AI Agent (includes legal intake)
 
-*Source: supabase/functions/wa-webhook/shared/agent_configs.ts:1*
+_Source: supabase/functions/wa-webhook/shared/agent_configs.ts:1_
 
 ---
 
@@ -6266,7 +6485,7 @@ Agent Configurations Centralized configurations for all AI agents in the EasyMO 
 
 Simple In-Memory Cache for Webhook Processing Provides TTL-based caching with LRU eviction
 
-*Source: supabase/functions/wa-webhook/shared/cache.ts:1*
+_Source: supabase/functions/wa-webhook/shared/cache.ts:1_
 
 ---
 
@@ -6274,7 +6493,7 @@ Simple In-Memory Cache for Webhook Processing Provides TTL-based caching with LR
 
 Get value from cache
 
-*Source: supabase/functions/wa-webhook/shared/cache.ts:44*
+_Source: supabase/functions/wa-webhook/shared/cache.ts:44_
 
 ---
 
@@ -6282,7 +6501,7 @@ Get value from cache
 
 Set value in cache
 
-*Source: supabase/functions/wa-webhook/shared/cache.ts:67*
+_Source: supabase/functions/wa-webhook/shared/cache.ts:67_
 
 ---
 
@@ -6290,7 +6509,7 @@ Set value in cache
 
 Get or set value
 
-*Source: supabase/functions/wa-webhook/shared/cache.ts:90*
+_Source: supabase/functions/wa-webhook/shared/cache.ts:90_
 
 ---
 
@@ -6298,7 +6517,7 @@ Get or set value
 
 Delete from cache
 
-*Source: supabase/functions/wa-webhook/shared/cache.ts:108*
+_Source: supabase/functions/wa-webhook/shared/cache.ts:108_
 
 ---
 
@@ -6306,7 +6525,7 @@ Delete from cache
 
 Clear all cache
 
-*Source: supabase/functions/wa-webhook/shared/cache.ts:119*
+_Source: supabase/functions/wa-webhook/shared/cache.ts:119_
 
 ---
 
@@ -6314,7 +6533,7 @@ Clear all cache
 
 Evict least recently used entry
 
-*Source: supabase/functions/wa-webhook/shared/cache.ts:129*
+_Source: supabase/functions/wa-webhook/shared/cache.ts:129_
 
 ---
 
@@ -6322,7 +6541,7 @@ Evict least recently used entry
 
 Clean up expired entries
 
-*Source: supabase/functions/wa-webhook/shared/cache.ts:151*
+_Source: supabase/functions/wa-webhook/shared/cache.ts:151_
 
 ---
 
@@ -6330,7 +6549,7 @@ Clean up expired entries
 
 Get cache statistics
 
-*Source: supabase/functions/wa-webhook/shared/cache.ts:175*
+_Source: supabase/functions/wa-webhook/shared/cache.ts:175_
 
 ---
 
@@ -6338,15 +6557,16 @@ Get cache statistics
 
 Check if cache is healthy
 
-*Source: supabase/functions/wa-webhook/shared/cache.ts:186*
+_Source: supabase/functions/wa-webhook/shared/cache.ts:186_
 
 ---
 
 ### `unnamed`
 
-AI Agent Configuration Centralized configuration for all AI agent features Allows feature flags and dynamic configuration
+AI Agent Configuration Centralized configuration for all AI agent features Allows feature flags and
+dynamic configuration
 
-*Source: supabase/functions/wa-webhook/shared/ai_agent_config.ts:1*
+_Source: supabase/functions/wa-webhook/shared/ai_agent_config.ts:1_
 
 ---
 
@@ -6354,7 +6574,7 @@ AI Agent Configuration Centralized configuration for all AI agent features Allow
 
 Get AI agent configuration Can be overridden by database settings or environment variables
 
-*Source: supabase/functions/wa-webhook/shared/ai_agent_config.ts:266*
+_Source: supabase/functions/wa-webhook/shared/ai_agent_config.ts:266_
 
 ---
 
@@ -6362,7 +6582,7 @@ Get AI agent configuration Can be overridden by database settings or environment
 
 Validate configuration
 
-*Source: supabase/functions/wa-webhook/shared/ai_agent_config.ts:288*
+_Source: supabase/functions/wa-webhook/shared/ai_agent_config.ts:288_
 
 ---
 
@@ -6370,15 +6590,16 @@ Validate configuration
 
 Get agent-specific configuration
 
-*Source: supabase/functions/wa-webhook/shared/ai_agent_config.ts:310*
+_Source: supabase/functions/wa-webhook/shared/ai_agent_config.ts:310_
 
 ---
 
 ### `unnamed`
 
-Health & Metrics Endpoint for AI Agents Provides: - Health check status - Aggregated metrics - System diagnostics - Configuration status ADDITIVE ONLY - New endpoints for monitoring
+Health & Metrics Endpoint for AI Agents Provides: - Health check status - Aggregated metrics -
+System diagnostics - Configuration status ADDITIVE ONLY - New endpoints for monitoring
 
-*Source: supabase/functions/wa-webhook/shared/health_metrics.ts:1*
+_Source: supabase/functions/wa-webhook/shared/health_metrics.ts:1_
 
 ---
 
@@ -6386,7 +6607,7 @@ Health & Metrics Endpoint for AI Agents Provides: - Health check status - Aggreg
 
 Check overall system health
 
-*Source: supabase/functions/wa-webhook/shared/health_metrics.ts:42*
+_Source: supabase/functions/wa-webhook/shared/health_metrics.ts:42_
 
 ---
 
@@ -6394,7 +6615,7 @@ Check overall system health
 
 Check database health
 
-*Source: supabase/functions/wa-webhook/shared/health_metrics.ts:93*
+_Source: supabase/functions/wa-webhook/shared/health_metrics.ts:93_
 
 ---
 
@@ -6402,7 +6623,7 @@ Check database health
 
 Get detailed metrics for monitoring
 
-*Source: supabase/functions/wa-webhook/shared/health_metrics.ts:109*
+_Source: supabase/functions/wa-webhook/shared/health_metrics.ts:109_
 
 ---
 
@@ -6410,7 +6631,7 @@ Get detailed metrics for monitoring
 
 Handle health check request
 
-*Source: supabase/functions/wa-webhook/shared/health_metrics.ts:127*
+_Source: supabase/functions/wa-webhook/shared/health_metrics.ts:127_
 
 ---
 
@@ -6418,7 +6639,7 @@ Handle health check request
 
 Handle metrics request
 
-*Source: supabase/functions/wa-webhook/shared/health_metrics.ts:168*
+_Source: supabase/functions/wa-webhook/shared/health_metrics.ts:168_
 
 ---
 
@@ -6426,7 +6647,7 @@ Handle metrics request
 
 Handle metrics summary request (plain text)
 
-*Source: supabase/functions/wa-webhook/shared/health_metrics.ts:198*
+_Source: supabase/functions/wa-webhook/shared/health_metrics.ts:198_
 
 ---
 
@@ -6434,15 +6655,16 @@ Handle metrics summary request (plain text)
 
 Handle Prometheus-style metrics export
 
-*Source: supabase/functions/wa-webhook/shared/health_metrics.ts:221*
+_Source: supabase/functions/wa-webhook/shared/health_metrics.ts:221_
 
 ---
 
 ### `unnamed`
 
-Advanced Rate Limiter with Blacklisting Features: - Per-user rate limiting - Automatic blacklisting for abuse - Violation tracking - Exponential backoff - Redis-backed (future enhancement)
+Advanced Rate Limiter with Blacklisting Features: - Per-user rate limiting - Automatic blacklisting
+for abuse - Violation tracking - Exponential backoff - Redis-backed (future enhancement)
 
-*Source: supabase/functions/wa-webhook/shared/advanced_rate_limiter.ts:1*
+_Source: supabase/functions/wa-webhook/shared/advanced_rate_limiter.ts:1_
 
 ---
 
@@ -6450,7 +6672,7 @@ Advanced Rate Limiter with Blacklisting Features: - Per-user rate limiting - Aut
 
 Check if request should be rate limited
 
-*Source: supabase/functions/wa-webhook/shared/advanced_rate_limiter.ts:62*
+_Source: supabase/functions/wa-webhook/shared/advanced_rate_limiter.ts:62_
 
 ---
 
@@ -6458,7 +6680,7 @@ Check if request should be rate limited
 
 Manually unblock an identifier
 
-*Source: supabase/functions/wa-webhook/shared/advanced_rate_limiter.ts:172*
+_Source: supabase/functions/wa-webhook/shared/advanced_rate_limiter.ts:172_
 
 ---
 
@@ -6466,7 +6688,7 @@ Manually unblock an identifier
 
 Get current state for monitoring
 
-*Source: supabase/functions/wa-webhook/shared/advanced_rate_limiter.ts:187*
+_Source: supabase/functions/wa-webhook/shared/advanced_rate_limiter.ts:187_
 
 ---
 
@@ -6474,7 +6696,7 @@ Get current state for monitoring
 
 Check health
 
-*Source: supabase/functions/wa-webhook/shared/advanced_rate_limiter.ts:207*
+_Source: supabase/functions/wa-webhook/shared/advanced_rate_limiter.ts:207_
 
 ---
 
@@ -6482,7 +6704,7 @@ Check health
 
 Clean up expired buckets and blacklist entries
 
-*Source: supabase/functions/wa-webhook/shared/advanced_rate_limiter.ts:217*
+_Source: supabase/functions/wa-webhook/shared/advanced_rate_limiter.ts:217_
 
 ---
 
@@ -6490,7 +6712,7 @@ Clean up expired buckets and blacklist entries
 
 Destroy the rate limiter
 
-*Source: supabase/functions/wa-webhook/shared/advanced_rate_limiter.ts:251*
+_Source: supabase/functions/wa-webhook/shared/advanced_rate_limiter.ts:251_
 
 ---
 
@@ -6498,15 +6720,16 @@ Destroy the rate limiter
 
 Singleton instance
 
-*Source: supabase/functions/wa-webhook/shared/advanced_rate_limiter.ts:266*
+_Source: supabase/functions/wa-webhook/shared/advanced_rate_limiter.ts:266_
 
 ---
 
 ### `unnamed`
 
-AI Agent Monitoring & Metrics Collection Comprehensive monitoring system for AI agent performance, cost tracking, and quality metrics ADDITIVE ONLY - New file
+AI Agent Monitoring & Metrics Collection Comprehensive monitoring system for AI agent performance,
+cost tracking, and quality metrics ADDITIVE ONLY - New file
 
-*Source: supabase/functions/wa-webhook/shared/monitoring.ts:1*
+_Source: supabase/functions/wa-webhook/shared/monitoring.ts:1_
 
 ---
 
@@ -6514,7 +6737,7 @@ AI Agent Monitoring & Metrics Collection Comprehensive monitoring system for AI 
 
 Record metrics for an agent interaction
 
-*Source: supabase/functions/wa-webhook/shared/monitoring.ts:104*
+_Source: supabase/functions/wa-webhook/shared/monitoring.ts:104_
 
 ---
 
@@ -6522,7 +6745,7 @@ Record metrics for an agent interaction
 
 Get aggregated metrics for a time period
 
-*Source: supabase/functions/wa-webhook/shared/monitoring.ts:158*
+_Source: supabase/functions/wa-webhook/shared/monitoring.ts:158_
 
 ---
 
@@ -6530,7 +6753,7 @@ Get aggregated metrics for a time period
 
 Calculate aggregations from raw metrics
 
-*Source: supabase/functions/wa-webhook/shared/monitoring.ts:193*
+_Source: supabase/functions/wa-webhook/shared/monitoring.ts:193_
 
 ---
 
@@ -6538,7 +6761,7 @@ Calculate aggregations from raw metrics
 
 Get empty aggregated metrics
 
-*Source: supabase/functions/wa-webhook/shared/monitoring.ts:320*
+_Source: supabase/functions/wa-webhook/shared/monitoring.ts:320_
 
 ---
 
@@ -6546,7 +6769,7 @@ Get empty aggregated metrics
 
 Check for alert conditions
 
-*Source: supabase/functions/wa-webhook/shared/monitoring.ts:353*
+_Source: supabase/functions/wa-webhook/shared/monitoring.ts:353_
 
 ---
 
@@ -6554,7 +6777,7 @@ Check for alert conditions
 
 Get real-time statistics
 
-*Source: supabase/functions/wa-webhook/shared/monitoring.ts:402*
+_Source: supabase/functions/wa-webhook/shared/monitoring.ts:402_
 
 ---
 
@@ -6562,15 +6785,17 @@ Get real-time statistics
 
 Create monitoring service instance
 
-*Source: supabase/functions/wa-webhook/shared/monitoring.ts:453*
+_Source: supabase/functions/wa-webhook/shared/monitoring.ts:453_
 
 ---
 
 ### `unnamed`
 
-Enhanced Tool Library with External APIs Provides additional tools for AI agents: - Web search (Tavily API) - Deep research (Perplexity API) - Weather information - Currency conversion - Translation
+Enhanced Tool Library with External APIs Provides additional tools for AI agents: - Web search
+(Tavily API) - Deep research (Perplexity API) - Weather information - Currency conversion -
+Translation
 
-*Source: supabase/functions/wa-webhook/shared/enhanced_tools.ts:1*
+_Source: supabase/functions/wa-webhook/shared/enhanced_tools.ts:1_
 
 ---
 
@@ -6578,7 +6803,7 @@ Enhanced Tool Library with External APIs Provides additional tools for AI agents
 
 Safely extract error message from unknown error
 
-*Source: supabase/functions/wa-webhook/shared/enhanced_tools.ts:15*
+_Source: supabase/functions/wa-webhook/shared/enhanced_tools.ts:15_
 
 ---
 
@@ -6586,7 +6811,7 @@ Safely extract error message from unknown error
 
 Get all enhanced tools
 
-*Source: supabase/functions/wa-webhook/shared/enhanced_tools.ts:351*
+_Source: supabase/functions/wa-webhook/shared/enhanced_tools.ts:351_
 
 ---
 
@@ -6594,7 +6819,7 @@ Get all enhanced tools
 
 Register all enhanced tools with a tool manager
 
-*Source: supabase/functions/wa-webhook/shared/enhanced_tools.ts:363*
+_Source: supabase/functions/wa-webhook/shared/enhanced_tools.ts:363_
 
 ---
 
@@ -6602,7 +6827,7 @@ Register all enhanced tools with a tool manager
 
 Get AI Agent configuration from environment
 
-*Source: supabase/functions/wa-webhook/shared/config_manager.ts:56*
+_Source: supabase/functions/wa-webhook/shared/config_manager.ts:56_
 
 ---
 
@@ -6610,7 +6835,7 @@ Get AI Agent configuration from environment
 
 Validate configuration
 
-*Source: supabase/functions/wa-webhook/shared/config_manager.ts:113*
+_Source: supabase/functions/wa-webhook/shared/config_manager.ts:113_
 
 ---
 
@@ -6618,7 +6843,7 @@ Validate configuration
 
 Get configuration summary for logging
 
-*Source: supabase/functions/wa-webhook/shared/config_manager.ts:157*
+_Source: supabase/functions/wa-webhook/shared/config_manager.ts:157_
 
 ---
 
@@ -6626,7 +6851,7 @@ Get configuration summary for logging
 
 Singleton instance
 
-*Source: supabase/functions/wa-webhook/shared/config_manager.ts:185*
+_Source: supabase/functions/wa-webhook/shared/config_manager.ts:185_
 
 ---
 
@@ -6634,15 +6859,17 @@ Singleton instance
 
 Reset configuration (for testing)
 
-*Source: supabase/functions/wa-webhook/shared/config_manager.ts:204*
+_Source: supabase/functions/wa-webhook/shared/config_manager.ts:204_
 
 ---
 
 ### `unnamed`
 
-Memory Manager for AI Agents Manages conversation memory using: - Short-term: Recent messages from wa_interactions table - Working memory: Session state - Long-term: Important facts stored in agent_conversations ENHANCED: Added caching layer for performance optimization
+Memory Manager for AI Agents Manages conversation memory using: - Short-term: Recent messages from
+wa_interactions table - Working memory: Session state - Long-term: Important facts stored in
+agent_conversations ENHANCED: Added caching layer for performance optimization
 
-*Source: supabase/functions/wa-webhook/shared/memory_manager.ts:1*
+_Source: supabase/functions/wa-webhook/shared/memory_manager.ts:1_
 
 ---
 
@@ -6650,7 +6877,7 @@ Memory Manager for AI Agents Manages conversation memory using: - Short-term: Re
 
 Safely extract error message from unknown error
 
-*Source: supabase/functions/wa-webhook/shared/memory_manager.ts:18*
+_Source: supabase/functions/wa-webhook/shared/memory_manager.ts:18_
 
 ---
 
@@ -6658,7 +6885,7 @@ Safely extract error message from unknown error
 
 Get recent conversation history for a user ENHANCED: Added caching layer
 
-*Source: supabase/functions/wa-webhook/shared/memory_manager.ts:52*
+_Source: supabase/functions/wa-webhook/shared/memory_manager.ts:52_
 
 ---
 
@@ -6666,7 +6893,7 @@ Get recent conversation history for a user ENHANCED: Added caching layer
 
 Save important information to long-term memory with embeddings
 
-*Source: supabase/functions/wa-webhook/shared/memory_manager.ts:144*
+_Source: supabase/functions/wa-webhook/shared/memory_manager.ts:144_
 
 ---
 
@@ -6674,7 +6901,7 @@ Save important information to long-term memory with embeddings
 
 Retrieve relevant memories using semantic search
 
-*Source: supabase/functions/wa-webhook/shared/memory_manager.ts:196*
+_Source: supabase/functions/wa-webhook/shared/memory_manager.ts:196_
 
 ---
 
@@ -6682,7 +6909,7 @@ Retrieve relevant memories using semantic search
 
 Calculate importance score for content
 
-*Source: supabase/functions/wa-webhook/shared/memory_manager.ts:249*
+_Source: supabase/functions/wa-webhook/shared/memory_manager.ts:249_
 
 ---
 
@@ -6690,7 +6917,7 @@ Calculate importance score for content
 
 Summarize conversation using OpenAI
 
-*Source: supabase/functions/wa-webhook/shared/memory_manager.ts:280*
+_Source: supabase/functions/wa-webhook/shared/memory_manager.ts:280_
 
 ---
 
@@ -6698,7 +6925,7 @@ Summarize conversation using OpenAI
 
 Save message interaction to memory
 
-*Source: supabase/functions/wa-webhook/shared/memory_manager.ts:344*
+_Source: supabase/functions/wa-webhook/shared/memory_manager.ts:344_
 
 ---
 
@@ -6706,7 +6933,7 @@ Save message interaction to memory
 
 Store important facts in agent_conversations for long-term memory
 
-*Source: supabase/functions/wa-webhook/shared/memory_manager.ts:379*
+_Source: supabase/functions/wa-webhook/shared/memory_manager.ts:379_
 
 ---
 
@@ -6714,7 +6941,7 @@ Store important facts in agent_conversations for long-term memory
 
 Get conversation summary for a user
 
-*Source: supabase/functions/wa-webhook/shared/memory_manager.ts:415*
+_Source: supabase/functions/wa-webhook/shared/memory_manager.ts:415_
 
 ---
 
@@ -6722,7 +6949,7 @@ Get conversation summary for a user
 
 Clear old conversation history (privacy/GDPR)
 
-*Source: supabase/functions/wa-webhook/shared/memory_manager.ts:457*
+_Source: supabase/functions/wa-webhook/shared/memory_manager.ts:457_
 
 ---
 
@@ -6730,7 +6957,7 @@ Clear old conversation history (privacy/GDPR)
 
 Extract message content from various formats
 
-*Source: supabase/functions/wa-webhook/shared/memory_manager.ts:495*
+_Source: supabase/functions/wa-webhook/shared/memory_manager.ts:495_
 
 ---
 
@@ -6738,7 +6965,7 @@ Extract message content from various formats
 
 Extract important information from conversation
 
-*Source: supabase/functions/wa-webhook/shared/memory_manager.ts:498*
+_Source: supabase/functions/wa-webhook/shared/memory_manager.ts:498_
 
 ---
 
@@ -6746,7 +6973,7 @@ Extract important information from conversation
 
 Clear old conversation history (privacy/GDPR)
 
-*Source: supabase/functions/wa-webhook/shared/memory_manager.ts:571*
+_Source: supabase/functions/wa-webhook/shared/memory_manager.ts:571_
 
 ---
 
@@ -6754,7 +6981,7 @@ Clear old conversation history (privacy/GDPR)
 
 Extract message content from various formats
 
-*Source: supabase/functions/wa-webhook/shared/memory_manager.ts:609*
+_Source: supabase/functions/wa-webhook/shared/memory_manager.ts:609_
 
 ---
 
@@ -6762,7 +6989,7 @@ Extract message content from various formats
 
 Extract response content from various formats
 
-*Source: supabase/functions/wa-webhook/shared/memory_manager.ts:632*
+_Source: supabase/functions/wa-webhook/shared/memory_manager.ts:632_
 
 ---
 
@@ -6770,7 +6997,7 @@ Extract response content from various formats
 
 Build context string from recent messages
 
-*Source: supabase/functions/wa-webhook/shared/memory_manager.ts:647*
+_Source: supabase/functions/wa-webhook/shared/memory_manager.ts:647_
 
 ---
 
@@ -6778,15 +7005,16 @@ Build context string from recent messages
 
 Create memory manager instance
 
-*Source: supabase/functions/wa-webhook/shared/memory_manager.ts:671*
+_Source: supabase/functions/wa-webhook/shared/memory_manager.ts:671_
 
 ---
 
 ### `unnamed`
 
-Agent Session Management Functions for tracking and managing agent chat sessions. Sessions track conversation state, presented options, and user selections.
+Agent Session Management Functions for tracking and managing agent chat sessions. Sessions track
+conversation state, presented options, and user selections.
 
-*Source: supabase/functions/wa-webhook/shared/agent_session.ts:1*
+_Source: supabase/functions/wa-webhook/shared/agent_session.ts:1_
 
 ---
 
@@ -6794,7 +7022,7 @@ Agent Session Management Functions for tracking and managing agent chat sessions
 
 Get active agent chat session for user by phone number
 
-*Source: supabase/functions/wa-webhook/shared/agent_session.ts:26*
+_Source: supabase/functions/wa-webhook/shared/agent_session.ts:26_
 
 ---
 
@@ -6802,7 +7030,7 @@ Get active agent chat session for user by phone number
 
 Get active agent chat session for user by user ID
 
-*Source: supabase/functions/wa-webhook/shared/agent_session.ts:69*
+_Source: supabase/functions/wa-webhook/shared/agent_session.ts:69_
 
 ---
 
@@ -6810,7 +7038,7 @@ Get active agent chat session for user by user ID
 
 Save or update agent chat session
 
-*Source: supabase/functions/wa-webhook/shared/agent_session.ts:101*
+_Source: supabase/functions/wa-webhook/shared/agent_session.ts:101_
 
 ---
 
@@ -6818,7 +7046,7 @@ Save or update agent chat session
 
 Update session with user selection
 
-*Source: supabase/functions/wa-webhook/shared/agent_session.ts:182*
+_Source: supabase/functions/wa-webhook/shared/agent_session.ts:182_
 
 ---
 
@@ -6826,7 +7054,7 @@ Update session with user selection
 
 Trigger fallback for session
 
-*Source: supabase/functions/wa-webhook/shared/agent_session.ts:211*
+_Source: supabase/functions/wa-webhook/shared/agent_session.ts:211_
 
 ---
 
@@ -6834,7 +7062,7 @@ Trigger fallback for session
 
 Clear agent chat session
 
-*Source: supabase/functions/wa-webhook/shared/agent_session.ts:244*
+_Source: supabase/functions/wa-webhook/shared/agent_session.ts:244_
 
 ---
 
@@ -6842,7 +7070,7 @@ Clear agent chat session
 
 Clear all sessions for a user
 
-*Source: supabase/functions/wa-webhook/shared/agent_session.ts:269*
+_Source: supabase/functions/wa-webhook/shared/agent_session.ts:269_
 
 ---
 
@@ -6850,15 +7078,16 @@ Clear all sessions for a user
 
 Get session statistics for monitoring
 
-*Source: supabase/functions/wa-webhook/shared/agent_session.ts:294*
+_Source: supabase/functions/wa-webhook/shared/agent_session.ts:294_
 
 ---
 
 ### `unnamed`
 
-Enhanced Webhook Verification with Security Features Provides signature verification, caching, and timing-safe comparison
+Enhanced Webhook Verification with Security Features Provides signature verification, caching, and
+timing-safe comparison
 
-*Source: supabase/functions/wa-webhook/shared/webhook-verification.ts:1*
+_Source: supabase/functions/wa-webhook/shared/webhook-verification.ts:1_
 
 ---
 
@@ -6866,7 +7095,7 @@ Enhanced Webhook Verification with Security Features Provides signature verifica
 
 Verify WhatsApp webhook signature with caching
 
-*Source: supabase/functions/wa-webhook/shared/webhook-verification.ts:29*
+_Source: supabase/functions/wa-webhook/shared/webhook-verification.ts:29_
 
 ---
 
@@ -6874,7 +7103,7 @@ Verify WhatsApp webhook signature with caching
 
 Handle WhatsApp verification challenge
 
-*Source: supabase/functions/wa-webhook/shared/webhook-verification.ts:103*
+_Source: supabase/functions/wa-webhook/shared/webhook-verification.ts:103_
 
 ---
 
@@ -6882,7 +7111,7 @@ Handle WhatsApp verification challenge
 
 Timing-safe string comparison
 
-*Source: supabase/functions/wa-webhook/shared/webhook-verification.ts:128*
+_Source: supabase/functions/wa-webhook/shared/webhook-verification.ts:128_
 
 ---
 
@@ -6890,7 +7119,7 @@ Timing-safe string comparison
 
 Hash payload for cache key
 
-*Source: supabase/functions/wa-webhook/shared/webhook-verification.ts:144*
+_Source: supabase/functions/wa-webhook/shared/webhook-verification.ts:144_
 
 ---
 
@@ -6898,7 +7127,7 @@ Hash payload for cache key
 
 Cleanup expired cache entries
 
-*Source: supabase/functions/wa-webhook/shared/webhook-verification.ts:154*
+_Source: supabase/functions/wa-webhook/shared/webhook-verification.ts:154_
 
 ---
 
@@ -6906,15 +7135,17 @@ Cleanup expired cache entries
 
 Get verification statistics
 
-*Source: supabase/functions/wa-webhook/shared/webhook-verification.ts:166*
+_Source: supabase/functions/wa-webhook/shared/webhook-verification.ts:166_
 
 ---
 
 ### `unnamed`
 
-Tool Manager for AI Agents Manages tool definitions and execution for OpenAI function calling Provides built-in tools for common operations: - check_wallet_balance - search_trips - create_booking - transfer_money - get_user_profile
+Tool Manager for AI Agents Manages tool definitions and execution for OpenAI function calling
+Provides built-in tools for common operations: - check_wallet_balance - search_trips -
+create_booking - transfer_money - get_user_profile
 
-*Source: supabase/functions/wa-webhook/shared/tool_manager.ts:1*
+_Source: supabase/functions/wa-webhook/shared/tool_manager.ts:1_
 
 ---
 
@@ -6922,7 +7153,7 @@ Tool Manager for AI Agents Manages tool definitions and execution for OpenAI fun
 
 Safely extract error message from unknown error
 
-*Source: supabase/functions/wa-webhook/shared/tool_manager.ts:17*
+_Source: supabase/functions/wa-webhook/shared/tool_manager.ts:17_
 
 ---
 
@@ -6930,7 +7161,7 @@ Safely extract error message from unknown error
 
 Register built-in tools
 
-*Source: supabase/functions/wa-webhook/shared/tool_manager.ts:53*
+_Source: supabase/functions/wa-webhook/shared/tool_manager.ts:53_
 
 ---
 
@@ -6938,7 +7169,7 @@ Register built-in tools
 
 Register a custom tool
 
-*Source: supabase/functions/wa-webhook/shared/tool_manager.ts:144*
+_Source: supabase/functions/wa-webhook/shared/tool_manager.ts:144_
 
 ---
 
@@ -6946,7 +7177,7 @@ Register a custom tool
 
 Get all tool definitions for OpenAI
 
-*Source: supabase/functions/wa-webhook/shared/tool_manager.ts:151*
+_Source: supabase/functions/wa-webhook/shared/tool_manager.ts:151_
 
 ---
 
@@ -6954,7 +7185,7 @@ Get all tool definitions for OpenAI
 
 Execute a tool call
 
-*Source: supabase/functions/wa-webhook/shared/tool_manager.ts:161*
+_Source: supabase/functions/wa-webhook/shared/tool_manager.ts:161_
 
 ---
 
@@ -6962,7 +7193,7 @@ Execute a tool call
 
 Execute multiple tool calls
 
-*Source: supabase/functions/wa-webhook/shared/tool_manager.ts:249*
+_Source: supabase/functions/wa-webhook/shared/tool_manager.ts:249_
 
 ---
 
@@ -6970,7 +7201,7 @@ Execute multiple tool calls
 
 Save tool execution to database
 
-*Source: supabase/functions/wa-webhook/shared/tool_manager.ts:262*
+_Source: supabase/functions/wa-webhook/shared/tool_manager.ts:262_
 
 ---
 
@@ -6978,15 +7209,17 @@ Save tool execution to database
 
 Singleton instance
 
-*Source: supabase/functions/wa-webhook/shared/tool_manager.ts:439*
+_Source: supabase/functions/wa-webhook/shared/tool_manager.ts:439_
 
 ---
 
 ### `unnamed`
 
-Metrics Aggregator for AI Agents Collects and aggregates metrics for monitoring: - Request counts - Success/failure rates - Token usage & costs - Latency statistics - Tool execution metrics ADDITIVE ONLY - New file for enhanced monitoring
+Metrics Aggregator for AI Agents Collects and aggregates metrics for monitoring: - Request counts -
+Success/failure rates - Token usage & costs - Latency statistics - Tool execution metrics ADDITIVE
+ONLY - New file for enhanced monitoring
 
-*Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:1*
+_Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:1_
 
 ---
 
@@ -6994,7 +7227,7 @@ Metrics Aggregator for AI Agents Collects and aggregates metrics for monitoring:
 
 Record a request
 
-*Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:76*
+_Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:76_
 
 ---
 
@@ -7002,7 +7235,7 @@ Record a request
 
 Get aggregated metrics
 
-*Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:121*
+_Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:121_
 
 ---
 
@@ -7010,7 +7243,7 @@ Get aggregated metrics
 
 Get metrics summary for logging
 
-*Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:164*
+_Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:164_
 
 ---
 
@@ -7018,7 +7251,7 @@ Get metrics summary for logging
 
 Reset metrics (for testing)
 
-*Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:185*
+_Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:185_
 
 ---
 
@@ -7026,7 +7259,7 @@ Reset metrics (for testing)
 
 Cleanup resources
 
-*Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:205*
+_Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:205_
 
 ---
 
@@ -7034,7 +7267,7 @@ Cleanup resources
 
 Add metrics to hourly bucket
 
-*Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:214*
+_Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:214_
 
 ---
 
@@ -7042,7 +7275,7 @@ Add metrics to hourly bucket
 
 Get last hour statistics
 
-*Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:238*
+_Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:238_
 
 ---
 
@@ -7050,7 +7283,7 @@ Get last hour statistics
 
 Cleanup old hourly buckets (keep last 24 hours)
 
-*Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:262*
+_Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:262_
 
 ---
 
@@ -7058,7 +7291,7 @@ Cleanup old hourly buckets (keep last 24 hours)
 
 Check if metrics cross important thresholds
 
-*Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:273*
+_Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:273_
 
 ---
 
@@ -7066,7 +7299,7 @@ Check if metrics cross important thresholds
 
 Format duration in human-readable form
 
-*Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:305*
+_Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:305_
 
 ---
 
@@ -7074,7 +7307,7 @@ Format duration in human-readable form
 
 Singleton instance
 
-*Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:322*
+_Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:322_
 
 ---
 
@@ -7082,23 +7315,32 @@ Singleton instance
 
 Reset metrics (for testing)
 
-*Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:334*
+_Source: supabase/functions/wa-webhook/shared/metrics_aggregator.ts:334_
 
 ---
 
 ### `unnamed`
 
-⚠️ DEPRECATED - DO NOT DEPLOY ⚠️ This function has been deprecated and replaced by the microservice architecture: WhatsApp → wa-webhook-core (router) → domain microservices ├─ wa-webhook-ai-agents ├─ wa-webhook-mobility ├─ wa-webhook-wallet ├─ wa-webhook-jobs ├─ wa-webhook-property ├─ wa-webhook-insurance └─ wa-webhook-marketplace This directory is kept for: 1. Reference/documentation purposes 2. Shared library code (being migrated to _shared/wa-webhook-shared) DO NOT DEPLOY THIS FUNCTION Use wa-webhook-core instead: https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook-core Migration date: 2025-11-24 Reason: Microservice architecture for better scalability and maintainability
+⚠️ DEPRECATED - DO NOT DEPLOY ⚠️ This function has been deprecated and replaced by the microservice
+architecture: WhatsApp → wa-webhook-core (router) → domain microservices ├─ wa-webhook-ai-agents ├─
+wa-webhook-mobility ├─ wa-webhook-wallet ├─ wa-webhook-jobs ├─ wa-webhook-property ├─
+wa-webhook-insurance └─ wa-webhook-marketplace This directory is kept for: 1.
+Reference/documentation purposes 2. Shared library code (being migrated to
+\_shared/wa-webhook-shared) DO NOT DEPLOY THIS FUNCTION Use wa-webhook-core instead:
+https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook-core Migration date: 2025-11-24
+Reason: Microservice architecture for better scalability and maintainability
 
-*Source: supabase/functions/wa-webhook/DEPRECATED.ts:1*
+_Source: supabase/functions/wa-webhook/DEPRECATED.ts:1_
 
 ---
 
 ### `unnamed`
 
-Example: Integrating Enhanced Processor into wa-webhook This example shows how to integrate the enhanced processor into the existing wa-webhook handler. USAGE: 1. Import this in your index.ts 2. Set WA_ENHANCED_PROCESSING=true in environment 3. Monitor with health checks
+Example: Integrating Enhanced Processor into wa-webhook This example shows how to integrate the
+enhanced processor into the existing wa-webhook handler. USAGE: 1. Import this in your index.ts 2.
+Set WA_ENHANCED_PROCESSING=true in environment 3. Monitor with health checks
 
-*Source: supabase/functions/wa-webhook/integration-example.ts:1*
+_Source: supabase/functions/wa-webhook/integration-example.ts:1_
 
 ---
 
@@ -7106,39 +7348,51 @@ Example: Integrating Enhanced Processor into wa-webhook This example shows how t
 
 ALTERNATIVE: Gradual Rollout by User You can enable enhanced processing for specific users first:
 
-*Source: supabase/functions/wa-webhook/integration-example.ts:125*
+_Source: supabase/functions/wa-webhook/integration-example.ts:125_
 
 ---
 
 ### `unnamed`
 
-⚠️ DEPRECATION NOTICE ⚠️ This function (wa-webhook) is DEPRECATED and should NOT be deployed. This directory now serves as a SHARED CODE LIBRARY for WhatsApp webhook microservices. The actual webhook routing is handled by wa-webhook-core. Deployed microservices that use this shared code: - wa-webhook-core (ingress/router) - wa-webhook-ai-agents - wa-webhook-mobility - wa-webhook-wallet - wa-webhook-jobs - wa-webhook-property - wa-webhook-marketplace - wa-webhook-insurance If you need to make changes, edit files here but deploy the microservices above. To deploy all WhatsApp functions: pnpm run functions:deploy:wa DO NOT USE: supabase functions deploy wa-webhook USE INSTEAD: supabase functions deploy wa-webhook-core (and other microservices)
+⚠️ DEPRECATION NOTICE ⚠️ This function (wa-webhook) is DEPRECATED and should NOT be deployed. This
+directory now serves as a SHARED CODE LIBRARY for WhatsApp webhook microservices. The actual webhook
+routing is handled by wa-webhook-core. Deployed microservices that use this shared code: -
+wa-webhook-core (ingress/router) - wa-webhook-ai-agents - wa-webhook-mobility - wa-webhook-wallet -
+wa-webhook-jobs - wa-webhook-property - wa-webhook-marketplace - wa-webhook-insurance If you need to
+make changes, edit files here but deploy the microservices above. To deploy all WhatsApp functions:
+pnpm run functions:deploy:wa DO NOT USE: supabase functions deploy wa-webhook USE INSTEAD: supabase
+functions deploy wa-webhook-core (and other microservices)
 
-*Source: supabase/functions/wa-webhook/index.ts:10*
+_Source: supabase/functions/wa-webhook/index.ts:10_
 
 ---
 
 ### `sendProfileMenu`
 
-Display the Profile menu with options for managing businesses, vehicles, and tokens Delegates to the comprehensive Profile hub implementation
+Display the Profile menu with options for managing businesses, vehicles, and tokens Delegates to the
+comprehensive Profile hub implementation
 
-*Source: supabase/functions/wa-webhook/flows/profile.ts:6*
-
----
-
-### `unnamed`
-
-Voice Handler for WhatsApp Processes voice notes using the Unified AI Gateway. 1. Transcribes audio (Whisper or Gemini) 2. Routes to appropriate agent 3. Generates audio response (TTS or Realtime)
-
-*Source: supabase/functions/wa-webhook/handlers/voice-handler.ts:1*
+_Source: supabase/functions/wa-webhook/flows/profile.ts:6_
 
 ---
 
 ### `unnamed`
 
-Enhanced Webhook Processor with Advanced Error Recovery This module extends the existing wa-webhook processor with: - Dead letter queue for failed messages - Conversation-level distributed locking - Timeout protection - Enhanced error recovery Can be enabled via WA_ENHANCED_PROCESSING environment variable.
+Voice Handler for WhatsApp Processes voice notes using the Unified AI Gateway. 1. Transcribes audio
+(Whisper or Gemini) 2. Routes to appropriate agent 3. Generates audio response (TTS or Realtime)
 
-*Source: supabase/functions/wa-webhook/router/enhanced_processor.ts:1*
+_Source: supabase/functions/wa-webhook/handlers/voice-handler.ts:1_
+
+---
+
+### `unnamed`
+
+Enhanced Webhook Processor with Advanced Error Recovery This module extends the existing wa-webhook
+processor with: - Dead letter queue for failed messages - Conversation-level distributed locking -
+Timeout protection - Enhanced error recovery Can be enabled via WA_ENHANCED_PROCESSING environment
+variable.
+
+_Source: supabase/functions/wa-webhook/router/enhanced_processor.ts:1_
 
 ---
 
@@ -7146,7 +7400,7 @@ Enhanced Webhook Processor with Advanced Error Recovery This module extends the 
 
 Enhanced webhook processing wrapper Adds DLQ, locking, and timeout protection to existing processor
 
-*Source: supabase/functions/wa-webhook/router/enhanced_processor.ts:34*
+_Source: supabase/functions/wa-webhook/router/enhanced_processor.ts:34_
 
 ---
 
@@ -7154,7 +7408,7 @@ Enhanced webhook processing wrapper Adds DLQ, locking, and timeout protection to
 
 Process individual message with enhanced features
 
-*Source: supabase/functions/wa-webhook/router/enhanced_processor.ts:147*
+_Source: supabase/functions/wa-webhook/router/enhanced_processor.ts:147_
 
 ---
 
@@ -7162,15 +7416,17 @@ Process individual message with enhanced features
 
 Get feature flag status
 
-*Source: supabase/functions/wa-webhook/router/enhanced_processor.ts:253*
+_Source: supabase/functions/wa-webhook/router/enhanced_processor.ts:253_
 
 ---
 
 ### `unnamed`
 
-AI Agent Handler Routes WhatsApp messages to AI agents for intelligent processing Falls back to existing handlers if AI is not applicable This handler respects the additive-only guards by: - Being a completely new file - Not modifying existing handlers - Providing fallback to existing flows
+AI Agent Handler Routes WhatsApp messages to AI agents for intelligent processing Falls back to
+existing handlers if AI is not applicable This handler respects the additive-only guards by: - Being
+a completely new file - Not modifying existing handlers - Providing fallback to existing flows
 
-*Source: supabase/functions/wa-webhook/router/ai_agent_handler.ts:1*
+_Source: supabase/functions/wa-webhook/router/ai_agent_handler.ts:1_
 
 ---
 
@@ -7178,7 +7434,7 @@ AI Agent Handler Routes WhatsApp messages to AI agents for intelligent processin
 
 Singleton rate limiter instance
 
-*Source: supabase/functions/wa-webhook/router/ai_agent_handler.ts:49*
+_Source: supabase/functions/wa-webhook/router/ai_agent_handler.ts:49_
 
 ---
 
@@ -7186,23 +7442,25 @@ Singleton rate limiter instance
 
 Determines if a message should be processed by AI agents
 
-*Source: supabase/functions/wa-webhook/router/ai_agent_handler.ts:90*
+_Source: supabase/functions/wa-webhook/router/ai_agent_handler.ts:90_
 
 ---
 
 ### `tryAIAgentHandler`
 
-Try to handle message with AI agent Returns true if handled, false if should fallback to existing handlers
+Try to handle message with AI agent Returns true if handled, false if should fallback to existing
+handlers
 
-*Source: supabase/functions/wa-webhook/router/ai_agent_handler.ts:110*
+_Source: supabase/functions/wa-webhook/router/ai_agent_handler.ts:110_
 
 ---
 
 ### `processWithAIAgent`
 
-Process message with AI agent using orchestrator Enhanced with full OpenAI integration and specialized agents
+Process message with AI agent using orchestrator Enhanced with full OpenAI integration and
+specialized agents
 
-*Source: supabase/functions/wa-webhook/router/ai_agent_handler.ts:434*
+_Source: supabase/functions/wa-webhook/router/ai_agent_handler.ts:434_
 
 ---
 
@@ -7210,15 +7468,16 @@ Process message with AI agent using orchestrator Enhanced with full OpenAI integ
 
 Business Handlers Index Consolidates business CRUD operations
 
-*Source: supabase/functions/wa-webhook-profile/business/index.ts:1*
+_Source: supabase/functions/wa-webhook-profile/business/index.ts:1_
 
 ---
 
 ### `unnamed`
 
-wa-webhook-profile - Profile & Wallet Service Handles user profiles, wallet operations, and business management
+wa-webhook-profile - Profile & Wallet Service Handles user profiles, wallet operations, and business
+management
 
-*Source: supabase/functions/wa-webhook-profile/index-refactored.ts:1*
+_Source: supabase/functions/wa-webhook-profile/index-refactored.ts:1_
 
 ---
 
@@ -7226,7 +7485,7 @@ wa-webhook-profile - Profile & Wallet Service Handles user profiles, wallet oper
 
 Get user's country code from profile or default to RW
 
-*Source: supabase/functions/wa-webhook-profile/profile/home_dynamic.ts:19*
+_Source: supabase/functions/wa-webhook-profile/profile/home_dynamic.ts:19_
 
 ---
 
@@ -7234,7 +7493,7 @@ Get user's country code from profile or default to RW
 
 Fetch dynamic profile menu items from database
 
-*Source: supabase/functions/wa-webhook-profile/profile/home_dynamic.ts:49*
+_Source: supabase/functions/wa-webhook-profile/profile/home_dynamic.ts:49_
 
 ---
 
@@ -7242,7 +7501,7 @@ Fetch dynamic profile menu items from database
 
 Fallback menu items if database fetch fails
 
-*Source: supabase/functions/wa-webhook-profile/profile/home_dynamic.ts:89*
+_Source: supabase/functions/wa-webhook-profile/profile/home_dynamic.ts:89_
 
 ---
 
@@ -7250,7 +7509,7 @@ Fallback menu items if database fetch fails
 
 Track menu item click analytics
 
-*Source: supabase/functions/wa-webhook-profile/profile/home_dynamic.ts:225*
+_Source: supabase/functions/wa-webhook-profile/profile/home_dynamic.ts:225_
 
 ---
 
@@ -7258,7 +7517,7 @@ Track menu item click analytics
 
 Get user's country code from profile or default to RW
 
-*Source: supabase/functions/wa-webhook-profile/profile/home.ts:20*
+_Source: supabase/functions/wa-webhook-profile/profile/home.ts:20_
 
 ---
 
@@ -7266,7 +7525,7 @@ Get user's country code from profile or default to RW
 
 Fetch dynamic profile menu items from database
 
-*Source: supabase/functions/wa-webhook-profile/profile/home.ts:50*
+_Source: supabase/functions/wa-webhook-profile/profile/home.ts:50_
 
 ---
 
@@ -7274,15 +7533,19 @@ Fetch dynamic profile menu items from database
 
 Fallback menu items if database fetch fails
 
-*Source: supabase/functions/wa-webhook-profile/profile/home.ts:90*
+_Source: supabase/functions/wa-webhook-profile/profile/home.ts:90_
 
 ---
 
 ### `unnamed`
 
-Google Places API Integration Tool Provides real-time business search using Google Places API. Features: - Text search (find businesses by query) - Nearby search (find businesses near coordinates) - Place details (get full business information) - Caching to reduce API costs - Fallback to local database Usage: const placesTool = new GooglePlacesTool(); const results = await placesTool.searchNearby({ lat, lng, radius, keyword });
+Google Places API Integration Tool Provides real-time business search using Google Places API.
+Features: - Text search (find businesses by query) - Nearby search (find businesses near
+coordinates) - Place details (get full business information) - Caching to reduce API costs -
+Fallback to local database Usage: const placesTool = new GooglePlacesTool(); const results = await
+placesTool.searchNearby({ lat, lng, radius, keyword });
 
-*Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:1*
+_Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:1_
 
 ---
 
@@ -7290,7 +7553,7 @@ Google Places API Integration Tool Provides real-time business search using Goog
 
 Check if API is available
 
-*Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:89*
+_Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:89_
 
 ---
 
@@ -7298,7 +7561,7 @@ Check if API is available
 
 Search for nearby places
 
-*Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:96*
+_Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:96_
 
 ---
 
@@ -7306,7 +7569,7 @@ Search for nearby places
 
 Search by text query
 
-*Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:160*
+_Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:160_
 
 ---
 
@@ -7314,7 +7577,7 @@ Search by text query
 
 Get detailed information about a place
 
-*Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:222*
+_Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:222_
 
 ---
 
@@ -7322,7 +7585,7 @@ Get detailed information about a place
 
 Get photo URL
 
-*Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:274*
+_Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:274_
 
 ---
 
@@ -7330,7 +7593,7 @@ Get photo URL
 
 Transform Google Places results to our format
 
-*Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:285*
+_Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:285_
 
 ---
 
@@ -7338,7 +7601,7 @@ Transform Google Places results to our format
 
 Transform place details
 
-*Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:324*
+_Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:324_
 
 ---
 
@@ -7346,7 +7609,7 @@ Transform place details
 
 Calculate distance between two coordinates (Haversine formula)
 
-*Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:350*
+_Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:350_
 
 ---
 
@@ -7354,7 +7617,7 @@ Calculate distance between two coordinates (Haversine formula)
 
 Generate cache key
 
-*Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:378*
+_Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:378_
 
 ---
 
@@ -7362,7 +7625,7 @@ Generate cache key
 
 Get from cache
 
-*Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:386*
+_Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:386_
 
 ---
 
@@ -7370,7 +7633,7 @@ Get from cache
 
 Save to cache
 
-*Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:416*
+_Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:416_
 
 ---
 
@@ -7378,7 +7641,7 @@ Save to cache
 
 Import places to local business directory
 
-*Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:431*
+_Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:431_
 
 ---
 
@@ -7386,7 +7649,7 @@ Import places to local business directory
 
 Create Google Places tool instance
 
-*Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:474*
+_Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:474_
 
 ---
 
@@ -7394,7 +7657,7 @@ Create Google Places tool instance
 
 Hybrid search: Local DB + Google Places
 
-*Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:481*
+_Source: supabase/functions/wa-webhook-unified/tools/google-places.ts:481_
 
 ---
 
@@ -7402,7 +7665,7 @@ Hybrid search: Local DB + Google Places
 
 Get feature flags from database or environment
 
-*Source: supabase/functions/wa-webhook-unified/core/feature-flags.ts:36*
+_Source: supabase/functions/wa-webhook-unified/core/feature-flags.ts:36_
 
 ---
 
@@ -7410,7 +7673,7 @@ Get feature flags from database or environment
 
 Check if user should use unified service Uses consistent hashing for stable rollout
 
-*Source: supabase/functions/wa-webhook-unified/core/feature-flags.ts:80*
+_Source: supabase/functions/wa-webhook-unified/core/feature-flags.ts:80_
 
 ---
 
@@ -7418,7 +7681,7 @@ Check if user should use unified service Uses consistent hashing for stable roll
 
 Simple string hash function
 
-*Source: supabase/functions/wa-webhook-unified/core/feature-flags.ts:97*
+_Source: supabase/functions/wa-webhook-unified/core/feature-flags.ts:97_
 
 ---
 
@@ -7426,15 +7689,17 @@ Simple string hash function
 
 Update feature flags in database
 
-*Source: supabase/functions/wa-webhook-unified/core/feature-flags.ts:110*
+_Source: supabase/functions/wa-webhook-unified/core/feature-flags.ts:110_
 
 ---
 
 ### `unnamed`
 
-Location Handler for Unified Service Provides location resolution with the standard 3-tier approach: 1. Use incoming location message (if provided) 2. Check 30-minute cache 3. Use saved home location
+Location Handler for Unified Service Provides location resolution with the standard 3-tier
+approach: 1. Use incoming location message (if provided) 2. Check 30-minute cache 3. Use saved home
+location
 
-*Source: supabase/functions/wa-webhook-unified/core/location-handler.ts:1*
+_Source: supabase/functions/wa-webhook-unified/core/location-handler.ts:1_
 
 ---
 
@@ -7442,7 +7707,7 @@ Location Handler for Unified Service Provides location resolution with the stand
 
 Resolve location for a user using the 3-tier approach
 
-*Source: supabase/functions/wa-webhook-unified/core/location-handler.ts:28*
+_Source: supabase/functions/wa-webhook-unified/core/location-handler.ts:28_
 
 ---
 
@@ -7450,7 +7715,7 @@ Resolve location for a user using the 3-tier approach
 
 Cache location for future use (30-minute TTL)
 
-*Source: supabase/functions/wa-webhook-unified/core/location-handler.ts:137*
+_Source: supabase/functions/wa-webhook-unified/core/location-handler.ts:137_
 
 ---
 
@@ -7458,23 +7723,26 @@ Cache location for future use (30-minute TTL)
 
 Format location context for display to user
 
-*Source: supabase/functions/wa-webhook-unified/core/location-handler.ts:182*
+_Source: supabase/functions/wa-webhook-unified/core/location-handler.ts:182_
 
 ---
 
 ### `unnamed`
 
-Unified Agent Orchestrator Central routing and session management for all domain agents. Handles: - Session lifecycle (create, load, save) - Intent classification (keyword + LLM hybrid) - Agent registry and routing - Agent handoff coordination - Response formatting and sending
+Unified Agent Orchestrator Central routing and session management for all domain agents. Handles: -
+Session lifecycle (create, load, save) - Intent classification (keyword + LLM hybrid) - Agent
+registry and routing - Agent handoff coordination - Response formatting and sending
 
-*Source: supabase/functions/wa-webhook-unified/core/orchestrator.ts:1*
+_Source: supabase/functions/wa-webhook-unified/core/orchestrator.ts:1_
 
 ---
 
 ### `unnamed`
 
-Main entry point: Process incoming WhatsApp message Returns the agent's response text for synchronous callers (e.g., admin panel)
+Main entry point: Process incoming WhatsApp message Returns the agent's response text for
+synchronous callers (e.g., admin panel)
 
-*Source: supabase/functions/wa-webhook-unified/core/orchestrator.ts:39*
+_Source: supabase/functions/wa-webhook-unified/core/orchestrator.ts:39_
 
 ---
 
@@ -7482,7 +7750,7 @@ Main entry point: Process incoming WhatsApp message Returns the agent's response
 
 Determine which agent should handle this message
 
-*Source: supabase/functions/wa-webhook-unified/core/orchestrator.ts:161*
+_Source: supabase/functions/wa-webhook-unified/core/orchestrator.ts:161_
 
 ---
 
@@ -7490,7 +7758,7 @@ Determine which agent should handle this message
 
 Send response to user via WhatsApp
 
-*Source: supabase/functions/wa-webhook-unified/core/orchestrator.ts:215*
+_Source: supabase/functions/wa-webhook-unified/core/orchestrator.ts:215_
 
 ---
 
@@ -7498,15 +7766,16 @@ Send response to user via WhatsApp
 
 Unified Types for All Domain Agents
 
-*Source: supabase/functions/wa-webhook-unified/core/types.ts:1*
+_Source: supabase/functions/wa-webhook-unified/core/types.ts:1_
 
 ---
 
 ### `unnamed`
 
-Session Manager Manages unified session lifecycle: - Load/create sessions from database - Update session state - Save sessions back to database - Handle session expiration
+Session Manager Manages unified session lifecycle: - Load/create sessions from database - Update
+session state - Save sessions back to database - Handle session expiration
 
-*Source: supabase/functions/wa-webhook-unified/core/session-manager.ts:1*
+_Source: supabase/functions/wa-webhook-unified/core/session-manager.ts:1_
 
 ---
 
@@ -7514,7 +7783,7 @@ Session Manager Manages unified session lifecycle: - Load/create sessions from d
 
 Get or create a session for a user
 
-*Source: supabase/functions/wa-webhook-unified/core/session-manager.ts:17*
+_Source: supabase/functions/wa-webhook-unified/core/session-manager.ts:17_
 
 ---
 
@@ -7522,7 +7791,7 @@ Get or create a session for a user
 
 Save session to database
 
-*Source: supabase/functions/wa-webhook-unified/core/session-manager.ts:70*
+_Source: supabase/functions/wa-webhook-unified/core/session-manager.ts:70_
 
 ---
 
@@ -7530,7 +7799,7 @@ Save session to database
 
 Add message to session conversation history
 
-*Source: supabase/functions/wa-webhook-unified/core/session-manager.ts:90*
+_Source: supabase/functions/wa-webhook-unified/core/session-manager.ts:90_
 
 ---
 
@@ -7538,7 +7807,7 @@ Add message to session conversation history
 
 Clear session flow state
 
-*Source: supabase/functions/wa-webhook-unified/core/session-manager.ts:112*
+_Source: supabase/functions/wa-webhook-unified/core/session-manager.ts:112_
 
 ---
 
@@ -7546,7 +7815,7 @@ Clear session flow state
 
 Expire session
 
-*Source: supabase/functions/wa-webhook-unified/core/session-manager.ts:121*
+_Source: supabase/functions/wa-webhook-unified/core/session-manager.ts:121_
 
 ---
 
@@ -7554,15 +7823,17 @@ Expire session
 
 Map database row to UnifiedSession
 
-*Source: supabase/functions/wa-webhook-unified/core/session-manager.ts:131*
+_Source: supabase/functions/wa-webhook-unified/core/session-manager.ts:131_
 
 ---
 
 ### `unnamed`
 
-Intent Classifier Hybrid intent classification using: 1. Keyword matching (fast, deterministic) 2. LLM classification (accurate, context-aware) Determines which agent should handle a message based on: - Keywords in message - Conversation history - User context
+Intent Classifier Hybrid intent classification using: 1. Keyword matching (fast, deterministic) 2.
+LLM classification (accurate, context-aware) Determines which agent should handle a message based
+on: - Keywords in message - Conversation history - User context
 
-*Source: supabase/functions/wa-webhook-unified/core/intent-classifier.ts:1*
+_Source: supabase/functions/wa-webhook-unified/core/intent-classifier.ts:1_
 
 ---
 
@@ -7570,7 +7841,7 @@ Intent Classifier Hybrid intent classification using: 1. Keyword matching (fast,
 
 Classify intent to determine which agent should handle the message
 
-*Source: supabase/functions/wa-webhook-unified/core/intent-classifier.ts:64*
+_Source: supabase/functions/wa-webhook-unified/core/intent-classifier.ts:64_
 
 ---
 
@@ -7578,7 +7849,7 @@ Classify intent to determine which agent should handle the message
 
 Classify based on keyword matching
 
-*Source: supabase/functions/wa-webhook-unified/core/intent-classifier.ts:97*
+_Source: supabase/functions/wa-webhook-unified/core/intent-classifier.ts:97_
 
 ---
 
@@ -7586,31 +7857,35 @@ Classify based on keyword matching
 
 Classify using LLM (Gemini) TODO: Implement this for more accurate classification
 
-*Source: supabase/functions/wa-webhook-unified/core/intent-classifier.ts:159*
+_Source: supabase/functions/wa-webhook-unified/core/intent-classifier.ts:159_
 
 ---
 
 ### `unnamed`
 
-Insurance Agent Motor insurance assistant for Rwanda. Helps with quotes, renewals, and policy management.
+Insurance Agent Motor insurance assistant for Rwanda. Helps with quotes, renewals, and policy
+management.
 
-*Source: supabase/functions/wa-webhook-unified/agents/insurance-agent.ts:1*
-
----
-
-### `unnamed`
-
-Farmer Agent Agricultural assistant for farmers in Rwanda. Helps with marketplace, advisory, and services.
-
-*Source: supabase/functions/wa-webhook-unified/agents/farmer-agent.ts:1*
+_Source: supabase/functions/wa-webhook-unified/agents/insurance-agent.ts:1_
 
 ---
 
 ### `unnamed`
 
-Base Agent Class Abstract base class that all domain agents extend. Provides common functionality: - AI processing logic - Flow management (structured multi-step processes) - Tool execution framework - Session context building - Handoff protocol
+Farmer Agent Agricultural assistant for farmers in Rwanda. Helps with marketplace, advisory, and
+services.
 
-*Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:1*
+_Source: supabase/functions/wa-webhook-unified/agents/farmer-agent.ts:1_
+
+---
+
+### `unnamed`
+
+Base Agent Class Abstract base class that all domain agents extend. Provides common functionality: -
+AI processing logic - Flow management (structured multi-step processes) - Tool execution framework -
+Session context building - Handoff protocol
+
+_Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:1_
 
 ---
 
@@ -7618,7 +7893,7 @@ Base Agent Class Abstract base class that all domain agents extend. Provides com
 
 Main processing logic - called by orchestrator
 
-*Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:54*
+_Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:54_
 
 ---
 
@@ -7626,7 +7901,7 @@ Main processing logic - called by orchestrator
 
 Start a structured flow Override in subclasses to implement domain-specific flows
 
-*Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:94*
+_Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:94_
 
 ---
 
@@ -7634,7 +7909,7 @@ Start a structured flow Override in subclasses to implement domain-specific flow
 
 Continue a structured flow Override in subclasses to implement domain-specific flows
 
-*Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:105*
+_Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:105_
 
 ---
 
@@ -7642,7 +7917,7 @@ Continue a structured flow Override in subclasses to implement domain-specific f
 
 Call AI (Gemini) to process message with database-driven config
 
-*Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:116*
+_Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:116_
 
 ---
 
@@ -7650,7 +7925,7 @@ Call AI (Gemini) to process message with database-driven config
 
 Load agent configuration from database
 
-*Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:143*
+_Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:143_
 
 ---
 
@@ -7658,7 +7933,7 @@ Load agent configuration from database
 
 Build system prompt with database config and session context
 
-*Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:153*
+_Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:153_
 
 ---
 
@@ -7666,7 +7941,7 @@ Build system prompt with database config and session context
 
 Build system prompt with session context (synchronous fallback)
 
-*Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:208*
+_Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:208_
 
 ---
 
@@ -7674,7 +7949,7 @@ Build system prompt with session context (synchronous fallback)
 
 Build conversation history for AI context
 
-*Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:231*
+_Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:231_
 
 ---
 
@@ -7682,7 +7957,7 @@ Build conversation history for AI context
 
 Parse AI response JSON
 
-*Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:244*
+_Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:244_
 
 ---
 
@@ -7690,7 +7965,7 @@ Parse AI response JSON
 
 Execute a tool call Override in subclasses to implement domain-specific tools
 
-*Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:268*
+_Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:268_
 
 ---
 
@@ -7698,7 +7973,7 @@ Execute a tool call Override in subclasses to implement domain-specific tools
 
 Helper: Send WhatsApp message
 
-*Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:282*
+_Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:282_
 
 ---
 
@@ -7706,7 +7981,7 @@ Helper: Send WhatsApp message
 
 Helper: Format list response
 
-*Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:294*
+_Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:294_
 
 ---
 
@@ -7714,23 +7989,25 @@ Helper: Format list response
 
 Helper: Format button response
 
-*Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:311*
+_Source: supabase/functions/wa-webhook-unified/agents/base-agent.ts:311_
 
 ---
 
 ### `unnamed`
 
-Rides Agent Transport and ride-sharing assistant. Connects drivers with passengers and manages trip scheduling.
+Rides Agent Transport and ride-sharing assistant. Connects drivers with passengers and manages trip
+scheduling.
 
-*Source: supabase/functions/wa-webhook-unified/agents/rides-agent.ts:1*
+_Source: supabase/functions/wa-webhook-unified/agents/rides-agent.ts:1_
 
 ---
 
 ### `unnamed`
 
-Jobs Agent Hybrid AI + structured flows for job search and posting. Combines conversational AI with multi-step structured processes.
+Jobs Agent Hybrid AI + structured flows for job search and posting. Combines conversational AI with
+multi-step structured processes.
 
-*Source: supabase/functions/wa-webhook-unified/agents/jobs-agent.ts:1*
+_Source: supabase/functions/wa-webhook-unified/agents/jobs-agent.ts:1_
 
 ---
 
@@ -7738,7 +8015,7 @@ Jobs Agent Hybrid AI + structured flows for job search and posting. Combines con
 
 Override to handle structured flows
 
-*Source: supabase/functions/wa-webhook-unified/agents/jobs-agent.ts:125*
+_Source: supabase/functions/wa-webhook-unified/agents/jobs-agent.ts:125_
 
 ---
 
@@ -7746,15 +8023,16 @@ Override to handle structured flows
 
 Override to handle flow continuation
 
-*Source: supabase/functions/wa-webhook-unified/agents/jobs-agent.ts:157*
+_Source: supabase/functions/wa-webhook-unified/agents/jobs-agent.ts:157_
 
 ---
 
 ### `unnamed`
 
-Property Agent Hybrid AI + structured flows for property rentals. Combines conversational AI with multi-step structured processes.
+Property Agent Hybrid AI + structured flows for property rentals. Combines conversational AI with
+multi-step structured processes.
 
-*Source: supabase/functions/wa-webhook-unified/agents/property-agent.ts:1*
+_Source: supabase/functions/wa-webhook-unified/agents/property-agent.ts:1_
 
 ---
 
@@ -7762,7 +8040,7 @@ Property Agent Hybrid AI + structured flows for property rentals. Combines conve
 
 Business Broker Agent Business opportunities and partnership facilitation.
 
-*Source: supabase/functions/wa-webhook-unified/agents/business-broker-agent.ts:1*
+_Source: supabase/functions/wa-webhook-unified/agents/business-broker-agent.ts:1_
 
 ---
 
@@ -7770,15 +8048,16 @@ Business Broker Agent Business opportunities and partnership facilitation.
 
 Sales Agent Sales and customer management assistant.
 
-*Source: supabase/functions/wa-webhook-unified/agents/sales-agent.ts:1*
+_Source: supabase/functions/wa-webhook-unified/agents/sales-agent.ts:1_
 
 ---
 
 ### `unnamed`
 
-Support Agent Fallback agent for general queries and navigation. Helps users understand available services and routes to appropriate agents.
+Support Agent Fallback agent for general queries and navigation. Helps users understand available
+services and routes to appropriate agents.
 
-*Source: supabase/functions/wa-webhook-unified/agents/support-agent.ts:1*
+_Source: supabase/functions/wa-webhook-unified/agents/support-agent.ts:1_
 
 ---
 
@@ -7786,7 +8065,7 @@ Support Agent Fallback agent for general queries and navigation. Helps users und
 
 Override process to handle simple menu-based navigation
 
-*Source: supabase/functions/wa-webhook-unified/agents/support-agent.ts:81*
+_Source: supabase/functions/wa-webhook-unified/agents/support-agent.ts:81_
 
 ---
 
@@ -7794,7 +8073,7 @@ Override process to handle simple menu-based navigation
 
 Show services menu
 
-*Source: supabase/functions/wa-webhook-unified/agents/support-agent.ts:99*
+_Source: supabase/functions/wa-webhook-unified/agents/support-agent.ts:99_
 
 ---
 
@@ -7802,15 +8081,21 @@ Show services menu
 
 Execute tool calls
 
-*Source: supabase/functions/wa-webhook-unified/agents/support-agent.ts:146*
+_Source: supabase/functions/wa-webhook-unified/agents/support-agent.ts:146_
 
 ---
 
 ### `unnamed`
 
-Agent Registry Central registry for all domain agents. Manages agent instantiation and lookup. OFFICIAL AGENTS (10 production agents matching agent_registry database): 1. farmer - Farmer AI Agent 2. insurance - Insurance AI Agent 3. sales_cold_caller - Sales/Marketing Cold Caller AI Agent 4. rides - Rides AI Agent 5. jobs - Jobs AI Agent 6. waiter - Waiter AI Agent 7. real_estate - Real Estate AI Agent 8. marketplace - Marketplace AI Agent (includes pharmacy, hardware, shop) 9. support - Support AI Agent (includes concierge routing) 10. business_broker - Business Broker AI Agent (includes legal intake)
+Agent Registry Central registry for all domain agents. Manages agent instantiation and lookup.
+OFFICIAL AGENTS (10 production agents matching agent_registry database): 1. farmer - Farmer AI
+Agent 2. insurance - Insurance AI Agent 3. sales_cold_caller - Sales/Marketing Cold Caller AI
+Agent 4. rides - Rides AI Agent 5. jobs - Jobs AI Agent 6. waiter - Waiter AI Agent 7. real_estate -
+Real Estate AI Agent 8. marketplace - Marketplace AI Agent (includes pharmacy, hardware, shop) 9.
+support - Support AI Agent (includes concierge routing) 10. business_broker - Business Broker AI
+Agent (includes legal intake)
 
-*Source: supabase/functions/wa-webhook-unified/agents/registry.ts:1*
+_Source: supabase/functions/wa-webhook-unified/agents/registry.ts:1_
 
 ---
 
@@ -7818,7 +8103,7 @@ Agent Registry Central registry for all domain agents. Manages agent instantiati
 
 Get agent instance by type Lazy-loads agents on first access
 
-*Source: supabase/functions/wa-webhook-unified/agents/registry.ts:40*
+_Source: supabase/functions/wa-webhook-unified/agents/registry.ts:40_
 
 ---
 
@@ -7826,7 +8111,7 @@ Get agent instance by type Lazy-loads agents on first access
 
 Create agent instance based on the 10 official agent types
 
-*Source: supabase/functions/wa-webhook-unified/agents/registry.ts:51*
+_Source: supabase/functions/wa-webhook-unified/agents/registry.ts:51_
 
 ---
 
@@ -7834,23 +8119,28 @@ Create agent instance based on the 10 official agent types
 
 Clear agent cache (useful for testing)
 
-*Source: supabase/functions/wa-webhook-unified/agents/registry.ts:110*
+_Source: supabase/functions/wa-webhook-unified/agents/registry.ts:110_
 
 ---
 
 ### `unnamed`
 
-Waiter Agent Restaurant and food ordering assistant. Helps users discover restaurants, view menus, and place orders.
+Waiter Agent Restaurant and food ordering assistant. Helps users discover restaurants, view menus,
+and place orders.
 
-*Source: supabase/functions/wa-webhook-unified/agents/waiter-agent.ts:1*
+_Source: supabase/functions/wa-webhook-unified/agents/waiter-agent.ts:1_
 
 ---
 
 ### `unnamed`
 
-Unified Commerce Agent World-class commerce agent that combines: - Marketplace (buy/sell products) - Business Directory (find businesses/services) - Business Broker (partnerships/investments) Features: - Natural language conversational flows - Location-based proximity matching - Payment integration (MoMo USSD) - Photo uploads - Google Places API integration - Rating & review system - Content moderation - Escrow for high-value transactions
+Unified Commerce Agent World-class commerce agent that combines: - Marketplace (buy/sell products) -
+Business Directory (find businesses/services) - Business Broker (partnerships/investments)
+Features: - Natural language conversational flows - Location-based proximity matching - Payment
+integration (MoMo USSD) - Photo uploads - Google Places API integration - Rating & review system -
+Content moderation - Escrow for high-value transactions
 
-*Source: supabase/functions/wa-webhook-unified/agents/commerce-agent.ts:1*
+_Source: supabase/functions/wa-webhook-unified/agents/commerce-agent.ts:1_
 
 ---
 
@@ -7858,7 +8148,7 @@ Unified Commerce Agent World-class commerce agent that combines: - Marketplace (
 
 Override process to handle commerce-specific logic
 
-*Source: supabase/functions/wa-webhook-unified/agents/commerce-agent.ts:455*
+_Source: supabase/functions/wa-webhook-unified/agents/commerce-agent.ts:455_
 
 ---
 
@@ -7866,7 +8156,7 @@ Override process to handle commerce-specific logic
 
 Get welcome message
 
-*Source: supabase/functions/wa-webhook-unified/agents/commerce-agent.ts:506*
+_Source: supabase/functions/wa-webhook-unified/agents/commerce-agent.ts:506_
 
 ---
 
@@ -7874,15 +8164,18 @@ Get welcome message
 
 Execute tool calls
 
-*Source: supabase/functions/wa-webhook-unified/agents/commerce-agent.ts:533*
+_Source: supabase/functions/wa-webhook-unified/agents/commerce-agent.ts:533_
 
 ---
 
 ### `unnamed`
 
-Marketplace Agent Natural language AI agent for connecting buyers and sellers in Rwanda. Migrated from wa-webhook-marketplace to unified architecture. Features: - Conversational selling flow (create listings) - Conversational buying flow (search and match) - Proximity-based matching - Integration with business directory
+Marketplace Agent Natural language AI agent for connecting buyers and sellers in Rwanda. Migrated
+from wa-webhook-marketplace to unified architecture. Features: - Conversational selling flow (create
+listings) - Conversational buying flow (search and match) - Proximity-based matching - Integration
+with business directory
 
-*Source: supabase/functions/wa-webhook-unified/agents/marketplace-agent.ts:1*
+_Source: supabase/functions/wa-webhook-unified/agents/marketplace-agent.ts:1_
 
 ---
 
@@ -7890,7 +8183,7 @@ Marketplace Agent Natural language AI agent for connecting buyers and sellers in
 
 Override process to handle marketplace-specific logic
 
-*Source: supabase/functions/wa-webhook-unified/agents/marketplace-agent.ts:134*
+_Source: supabase/functions/wa-webhook-unified/agents/marketplace-agent.ts:134_
 
 ---
 
@@ -7898,7 +8191,7 @@ Override process to handle marketplace-specific logic
 
 Execute tool calls
 
-*Source: supabase/functions/wa-webhook-unified/agents/marketplace-agent.ts:205*
+_Source: supabase/functions/wa-webhook-unified/agents/marketplace-agent.ts:205_
 
 ---
 
@@ -7906,7 +8199,7 @@ Execute tool calls
 
 Create a new marketplace listing
 
-*Source: supabase/functions/wa-webhook-unified/agents/marketplace-agent.ts:243*
+_Source: supabase/functions/wa-webhook-unified/agents/marketplace-agent.ts:243_
 
 ---
 
@@ -7914,7 +8207,7 @@ Create a new marketplace listing
 
 Search for matching listings and businesses
 
-*Source: supabase/functions/wa-webhook-unified/agents/marketplace-agent.ts:301*
+_Source: supabase/functions/wa-webhook-unified/agents/marketplace-agent.ts:301_
 
 ---
 
@@ -7922,7 +8215,7 @@ Search for matching listings and businesses
 
 Notify matching buyers when a new listing is created
 
-*Source: supabase/functions/wa-webhook-unified/agents/marketplace-agent.ts:372*
+_Source: supabase/functions/wa-webhook-unified/agents/marketplace-agent.ts:372_
 
 ---
 
@@ -7930,15 +8223,20 @@ Notify matching buyers when a new listing is created
 
 Format search results for display
 
-*Source: supabase/functions/wa-webhook-unified/agents/marketplace-agent.ts:427*
+_Source: supabase/functions/wa-webhook-unified/agents/marketplace-agent.ts:427_
 
 ---
 
 ### `unnamed`
 
-WA-Webhook-Unified - Unified AI Agent Microservice Consolidates all AI agent-based WhatsApp webhook services: - wa-webhook-ai-agents (Farmer, Waiter, Support, Insurance, Rides, Sales, Business Broker) - wa-webhook-marketplace (Buy/Sell, Shops) - wa-webhook-jobs (Job Board) - wa-webhook-property (Real Estate) Features: - Unified session management - Hybrid intent classification (keyword + LLM) - Seamless cross-domain agent handoffs - Structured flows for complex processes
+WA-Webhook-Unified - Unified AI Agent Microservice Consolidates all AI agent-based WhatsApp webhook
+services: - wa-webhook-ai-agents (Farmer, Waiter, Support, Insurance, Rides, Sales, Business
+Broker) - wa-webhook-marketplace (Buy/Sell, Shops) - wa-webhook-jobs (Job Board) -
+wa-webhook-property (Real Estate) Features: - Unified session management - Hybrid intent
+classification (keyword + LLM) - Seamless cross-domain agent handoffs - Structured flows for complex
+processes
 
-*Source: supabase/functions/wa-webhook-unified/index.ts:1*
+_Source: supabase/functions/wa-webhook-unified/index.ts:1_
 
 ---
 
@@ -7946,7 +8244,7 @@ WA-Webhook-Unified - Unified AI Agent Microservice Consolidates all AI agent-bas
 
 Mask phone number for logging (PII protection)
 
-*Source: supabase/functions/wa-webhook-unified/index.ts:278*
+_Source: supabase/functions/wa-webhook-unified/index.ts:278_
 
 ---
 
@@ -7954,7 +8252,7 @@ Mask phone number for logging (PII protection)
 
 Extract WhatsApp message from webhook payload
 
-*Source: supabase/functions/wa-webhook-unified/index.ts:292*
+_Source: supabase/functions/wa-webhook-unified/index.ts:292_
 
 ---
 
@@ -7962,7 +8260,7 @@ Extract WhatsApp message from webhook payload
 
 Check for sessions approaching deadline Send "need more time?" prompts to users
 
-*Source: supabase/functions/agent-monitor/index.ts:28*
+_Source: supabase/functions/agent-monitor/index.ts:28_
 
 ---
 
@@ -7970,7 +8268,7 @@ Check for sessions approaching deadline Send "need more time?" prompts to users
 
 Check for timed out sessions Mark sessions past deadline as timeout
 
-*Source: supabase/functions/agent-monitor/index.ts:88*
+_Source: supabase/functions/agent-monitor/index.ts:88_
 
 ---
 
@@ -7978,7 +8276,7 @@ Check for timed out sessions Mark sessions past deadline as timeout
 
 Expire old quotes
 
-*Source: supabase/functions/agent-monitor/index.ts:160*
+_Source: supabase/functions/agent-monitor/index.ts:160_
 
 ---
 
@@ -7986,7 +8284,7 @@ Expire old quotes
 
 Send warning about approaching deadline
 
-*Source: supabase/functions/agent-monitor/index.ts:193*
+_Source: supabase/functions/agent-monitor/index.ts:193_
 
 ---
 
@@ -7994,7 +8292,7 @@ Send warning about approaching deadline
 
 Offer to present partial results
 
-*Source: supabase/functions/agent-monitor/index.ts:211*
+_Source: supabase/functions/agent-monitor/index.ts:211_
 
 ---
 
@@ -8002,7 +8300,7 @@ Offer to present partial results
 
 Present partial results to user
 
-*Source: supabase/functions/agent-monitor/index.ts:230*
+_Source: supabase/functions/agent-monitor/index.ts:230_
 
 ---
 
@@ -8010,7 +8308,7 @@ Present partial results to user
 
 Notify user of no results
 
-*Source: supabase/functions/agent-monitor/index.ts:241*
+_Source: supabase/functions/agent-monitor/index.ts:241_
 
 ---
 
@@ -8018,15 +8316,16 @@ Notify user of no results
 
 Main handler
 
-*Source: supabase/functions/agent-monitor/index.ts:254*
+_Source: supabase/functions/agent-monitor/index.ts:254_
 
 ---
 
 ### `unnamed`
 
-wa-webhook-insurance - Insurance Service Handles insurance document submission, OCR, claims, and support
+wa-webhook-insurance - Insurance Service Handles insurance document submission, OCR, claims, and
+support
 
-*Source: supabase/functions/wa-webhook-insurance/index-refactored.ts:1*
+_Source: supabase/functions/wa-webhook-insurance/index-refactored.ts:1_
 
 ---
 
@@ -8034,7 +8333,7 @@ wa-webhook-insurance - Insurance Service Handles insurance document submission, 
 
 Handle insurance help request - show admin contacts
 
-*Source: supabase/functions/wa-webhook-insurance/insurance/ins_handler.ts:544*
+_Source: supabase/functions/wa-webhook-insurance/insurance/ins_handler.ts:544_
 
 ---
 
@@ -8042,7 +8341,7 @@ Handle insurance help request - show admin contacts
 
 Start customer support AI chat
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/customer-support.ts:33*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/customer-support.ts:33_
 
 ---
 
@@ -8050,7 +8349,7 @@ Start customer support AI chat
 
 Handle customer support AI message
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/customer-support.ts:93*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/customer-support.ts:93_
 
 ---
 
@@ -8058,7 +8357,7 @@ Handle customer support AI message
 
 Escalate to human support - show contact numbers
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/customer-support.ts:204*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/customer-support.ts:204_
 
 ---
 
@@ -8066,15 +8365,17 @@ Escalate to human support - show contact numbers
 
 End AI chat session
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/customer-support.ts:261*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/customer-support.ts:261_
 
 ---
 
 ### `unnamed`
 
-AI Agents Integration Module Connects database search agents with the WhatsApp webhook system. Agents search ONLY from database - NO web search or external APIs. All agents must have proper error handling and fallback messages.
+AI Agents Integration Module Connects database search agents with the WhatsApp webhook system.
+Agents search ONLY from database - NO web search or external APIs. All agents must have proper error
+handling and fallback messages.
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:1*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:1_
 
 ---
 
@@ -8082,7 +8383,7 @@ AI Agents Integration Module Connects database search agents with the WhatsApp w
 
 Route request to appropriate AI agent based on intent
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:40*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:40_
 
 ---
 
@@ -8090,7 +8391,7 @@ Route request to appropriate AI agent based on intent
 
 Invoke Nearby Drivers Agent - DATABASE SEARCH ONLY
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:103*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:103_
 
 ---
 
@@ -8098,7 +8399,7 @@ Invoke Nearby Drivers Agent - DATABASE SEARCH ONLY
 
 Invoke Pharmacy Agent - DATABASE SEARCH ONLY
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:159*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:159_
 
 ---
 
@@ -8106,7 +8407,7 @@ Invoke Pharmacy Agent - DATABASE SEARCH ONLY
 
 Invoke Property Rental Agent - DATABASE SEARCH ONLY
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:213*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:213_
 
 ---
 
@@ -8114,15 +8415,17 @@ Invoke Property Rental Agent - DATABASE SEARCH ONLY
 
 Invoke Schedule Trip Agent - DATABASE SEARCH ONLY
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:271*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:271_
 
 ---
 
 ### `invokeScheduleTripAgent`
 
-Invoke Schedule Trip Agent - WITH ENHANCED 3-TIER FALLBACK Fallback strategy: 1. Try AI agent scheduling (primary) 2. Fall back to direct database insert (manual scheduling) 3. Return user-friendly error with alternatives
+Invoke Schedule Trip Agent - WITH ENHANCED 3-TIER FALLBACK Fallback strategy: 1. Try AI agent
+scheduling (primary) 2. Fall back to direct database insert (manual scheduling) 3. Return
+user-friendly error with alternatives
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:274*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:274_
 
 ---
 
@@ -8130,7 +8433,7 @@ Invoke Schedule Trip Agent - WITH ENHANCED 3-TIER FALLBACK Fallback strategy: 1.
 
 Invoke General Shops Agent - DATABASE SEARCH ONLY
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:403*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:403_
 
 ---
 
@@ -8138,7 +8441,7 @@ Invoke General Shops Agent - DATABASE SEARCH ONLY
 
 Invoke Quincaillerie (Hardware Store) Agent - DATABASE SEARCH ONLY
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:457*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:457_
 
 ---
 
@@ -8146,7 +8449,7 @@ Invoke Quincaillerie (Hardware Store) Agent - DATABASE SEARCH ONLY
 
 Send agent options to user as interactive list with fallback buttons
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:509*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:509_
 
 ---
 
@@ -8154,7 +8457,7 @@ Send agent options to user as interactive list with fallback buttons
 
 Handle agent option selection with proper error handling
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:570*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:570_
 
 ---
 
@@ -8162,7 +8465,7 @@ Handle agent option selection with proper error handling
 
 Check agent session status with proper error handling
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:670*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/integration.ts:670_
 
 ---
 
@@ -8170,15 +8473,16 @@ Check agent session status with proper error handling
 
 Start General Broker AI Agent Routes user to the general broker AI agent for service requests
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/general_broker.ts:6*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/general_broker.ts:6_
 
 ---
 
 ### `unnamed`
 
-AI Agent Handlers for WhatsApp Flows Provides convenient handlers that can be called from the text router to initiate AI agent sessions for various use cases.
+AI Agent Handlers for WhatsApp Flows Provides convenient handlers that can be called from the text
+router to initiate AI agent sessions for various use cases.
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts:1*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts:1_
 
 ---
 
@@ -8186,7 +8490,7 @@ AI Agent Handlers for WhatsApp Flows Provides convenient handlers that can be ca
 
 Handle "Nearby Drivers" request with AI agent DATABASE SEARCH ONLY - No web search
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts:39*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts:39_
 
 ---
 
@@ -8194,7 +8498,7 @@ Handle "Nearby Drivers" request with AI agent DATABASE SEARCH ONLY - No web sear
 
 Handle "Nearby Pharmacies" request with AI agent
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts:136*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts:136_
 
 ---
 
@@ -8202,15 +8506,16 @@ Handle "Nearby Pharmacies" request with AI agent
 
 Handle "Nearby Quincailleries" request with AI agent
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts:263*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts:263_
 
 ---
 
 ### `handleAINearbyShops`
 
-Handle "Nearby Shops" request with AI agent TWO-PHASE APPROACH: Phase 1: Immediately show top 9 nearby shops from database Phase 2: AI agent processes in background for curated shortlist
+Handle "Nearby Shops" request with AI agent TWO-PHASE APPROACH: Phase 1: Immediately show top 9
+nearby shops from database Phase 2: AI agent processes in background for curated shortlist
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts:390*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts:390_
 
 ---
 
@@ -8218,7 +8523,7 @@ Handle "Nearby Shops" request with AI agent TWO-PHASE APPROACH: Phase 1: Immedia
 
 Handle "Property Rental" request with AI agent
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts:446*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts:446_
 
 ---
 
@@ -8226,7 +8531,7 @@ Handle "Property Rental" request with AI agent
 
 Handle "Schedule Trip" request with AI agent
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts:541*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts:541_
 
 ---
 
@@ -8234,7 +8539,7 @@ Handle "Schedule Trip" request with AI agent
 
 Handle AI agent selection from interactive list
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts:602*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts:602_
 
 ---
 
@@ -8242,23 +8547,25 @@ Handle AI agent selection from interactive list
 
 Handle location update for pending AI agent request
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts:627*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts:627_
 
 ---
 
 ### `triggerShopsAgentBackground`
 
-Phase 2: Background AI agent processing for shops Agent contacts shops on behalf of user to create curated shortlist
+Phase 2: Background AI agent processing for shops Agent contacts shops on behalf of user to create
+curated shortlist
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts:699*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts:699_
 
 ---
 
 ### `sendShopDatabaseResults`
 
-Phase 1: Send immediate database results (top 9 nearby shops) This provides instant results while AI agent processes in background
+Phase 1: Send immediate database results (top 9 nearby shops) This provides instant results while AI
+agent processes in background
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts:763*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts:763_
 
 ---
 
@@ -8266,15 +8573,17 @@ Phase 1: Send immediate database results (top 9 nearby shops) This provides inst
 
 AI Agents Module Central export point for all AI agent functionality in the WhatsApp webhook system.
 
-*Source: supabase/functions/wa-webhook-mobility/ai-agents/index.ts:1*
+_Source: supabase/functions/wa-webhook-mobility/ai-agents/index.ts:1_
 
 ---
 
 ### `unnamed`
 
-Enhanced Middleware Integration for wa-webhook Provides middleware functions that integrate rate limiting, caching, error handling, and metrics without modifying existing code. These can be optionally integrated into the existing pipeline.
+Enhanced Middleware Integration for wa-webhook Provides middleware functions that integrate rate
+limiting, caching, error handling, and metrics without modifying existing code. These can be
+optionally integrated into the existing pipeline.
 
-*Source: supabase/functions/wa-webhook-mobility/utils/middleware.ts:1*
+_Source: supabase/functions/wa-webhook-mobility/utils/middleware.ts:1_
 
 ---
 
@@ -8282,7 +8591,7 @@ Enhanced Middleware Integration for wa-webhook Provides middleware functions tha
 
 Apply rate limiting middleware Can be called from existing pipeline to add rate limiting
 
-*Source: supabase/functions/wa-webhook-mobility/utils/middleware.ts:21*
+_Source: supabase/functions/wa-webhook-mobility/utils/middleware.ts:21_
 
 ---
 
@@ -8290,7 +8599,7 @@ Apply rate limiting middleware Can be called from existing pipeline to add rate 
 
 Track webhook metrics
 
-*Source: supabase/functions/wa-webhook-mobility/utils/middleware.ts:68*
+_Source: supabase/functions/wa-webhook-mobility/utils/middleware.ts:68_
 
 ---
 
@@ -8298,15 +8607,16 @@ Track webhook metrics
 
 Cache user context with automatic expiration Can be used in message_context.ts to cache user lookups
 
-*Source: supabase/functions/wa-webhook-mobility/utils/middleware.ts:92*
+_Source: supabase/functions/wa-webhook-mobility/utils/middleware.ts:92_
 
 ---
 
 ### `wrapError`
 
-Wrap error with enhanced error handling Can be used in existing try-catch blocks to enhance error responses
+Wrap error with enhanced error handling Can be used in existing try-catch blocks to enhance error
+responses
 
-*Source: supabase/functions/wa-webhook-mobility/utils/middleware.ts:109*
+_Source: supabase/functions/wa-webhook-mobility/utils/middleware.ts:109_
 
 ---
 
@@ -8314,15 +8624,16 @@ Wrap error with enhanced error handling Can be used in existing try-catch blocks
 
 Add rate limit headers to response
 
-*Source: supabase/functions/wa-webhook-mobility/utils/middleware.ts:135*
+_Source: supabase/functions/wa-webhook-mobility/utils/middleware.ts:135_
 
 ---
 
 ### `enhanceWebhookRequest`
 
-Middleware function to enhance PreparedWebhook This can be called after processWebhookRequest to add enhancements
+Middleware function to enhance PreparedWebhook This can be called after processWebhookRequest to add
+enhancements
 
-*Source: supabase/functions/wa-webhook-mobility/utils/middleware.ts:160*
+_Source: supabase/functions/wa-webhook-mobility/utils/middleware.ts:160_
 
 ---
 
@@ -8330,15 +8641,16 @@ Middleware function to enhance PreparedWebhook This can be called after processW
 
 Log webhook processing completion
 
-*Source: supabase/functions/wa-webhook-mobility/utils/middleware.ts:197*
+_Source: supabase/functions/wa-webhook-mobility/utils/middleware.ts:197_
 
 ---
 
 ### `processMessageWithEnhancements`
 
-Example: Enhanced message processor wrapper This shows how to wrap existing handleMessage calls with enhancements
+Example: Enhanced message processor wrapper This shows how to wrap existing handleMessage calls with
+enhancements
 
-*Source: supabase/functions/wa-webhook-mobility/utils/middleware.ts:225*
+_Source: supabase/functions/wa-webhook-mobility/utils/middleware.ts:225_
 
 ---
 
@@ -8346,7 +8658,7 @@ Example: Enhanced message processor wrapper This shows how to wrap existing hand
 
 Utility to check if enhancements are enabled
 
-*Source: supabase/functions/wa-webhook-mobility/utils/middleware.ts:288*
+_Source: supabase/functions/wa-webhook-mobility/utils/middleware.ts:288_
 
 ---
 
@@ -8354,15 +8666,16 @@ Utility to check if enhancements are enabled
 
 Get enhancement configuration
 
-*Source: supabase/functions/wa-webhook-mobility/utils/middleware.ts:297*
+_Source: supabase/functions/wa-webhook-mobility/utils/middleware.ts:297_
 
 ---
 
 ### `unnamed`
 
-Message Deduplication and Queue Integration Provides deduplication checking against the database and queue integration for reliable message processing.
+Message Deduplication and Queue Integration Provides deduplication checking against the database and
+queue integration for reliable message processing.
 
-*Source: supabase/functions/wa-webhook-mobility/utils/message-deduplication.ts:1*
+_Source: supabase/functions/wa-webhook-mobility/utils/message-deduplication.ts:1_
 
 ---
 
@@ -8370,7 +8683,7 @@ Message Deduplication and Queue Integration Provides deduplication checking agai
 
 Check if a message has already been processed (database-backed deduplication)
 
-*Source: supabase/functions/wa-webhook-mobility/utils/message-deduplication.ts:14*
+_Source: supabase/functions/wa-webhook-mobility/utils/message-deduplication.ts:14_
 
 ---
 
@@ -8378,7 +8691,7 @@ Check if a message has already been processed (database-backed deduplication)
 
 Mark a message as processed
 
-*Source: supabase/functions/wa-webhook-mobility/utils/message-deduplication.ts:67*
+_Source: supabase/functions/wa-webhook-mobility/utils/message-deduplication.ts:67_
 
 ---
 
@@ -8386,7 +8699,7 @@ Mark a message as processed
 
 Add message to processing queue
 
-*Source: supabase/functions/wa-webhook-mobility/utils/message-deduplication.ts:115*
+_Source: supabase/functions/wa-webhook-mobility/utils/message-deduplication.ts:115_
 
 ---
 
@@ -8394,7 +8707,7 @@ Add message to processing queue
 
 Get or create AI conversation memory
 
-*Source: supabase/functions/wa-webhook-mobility/utils/message-deduplication.ts:175*
+_Source: supabase/functions/wa-webhook-mobility/utils/message-deduplication.ts:175_
 
 ---
 
@@ -8402,7 +8715,7 @@ Get or create AI conversation memory
 
 Update AI conversation memory
 
-*Source: supabase/functions/wa-webhook-mobility/utils/message-deduplication.ts:272*
+_Source: supabase/functions/wa-webhook-mobility/utils/message-deduplication.ts:272_
 
 ---
 
@@ -8410,15 +8723,16 @@ Update AI conversation memory
 
 Cleanup old conversation memories (older than 7 days with no activity)
 
-*Source: supabase/functions/wa-webhook-mobility/utils/message-deduplication.ts:346*
+_Source: supabase/functions/wa-webhook-mobility/utils/message-deduplication.ts:346_
 
 ---
 
 ### `unnamed`
 
-Enhanced Error Handling for wa-webhook Provides structured error handling with classification, user notifications, and retry logic. Complements existing error handling.
+Enhanced Error Handling for wa-webhook Provides structured error handling with classification, user
+notifications, and retry logic. Complements existing error handling.
 
-*Source: supabase/functions/wa-webhook-mobility/utils/error_handler.ts:1*
+_Source: supabase/functions/wa-webhook-mobility/utils/error_handler.ts:1_
 
 ---
 
@@ -8426,7 +8740,7 @@ Enhanced Error Handling for wa-webhook Provides structured error handling with c
 
 Normalize any error to WebhookError
 
-*Source: supabase/functions/wa-webhook-mobility/utils/error_handler.ts:71*
+_Source: supabase/functions/wa-webhook-mobility/utils/error_handler.ts:71_
 
 ---
 
@@ -8434,7 +8748,7 @@ Normalize any error to WebhookError
 
 Handle webhook error with logging and optional user notification
 
-*Source: supabase/functions/wa-webhook-mobility/utils/error_handler.ts:155*
+_Source: supabase/functions/wa-webhook-mobility/utils/error_handler.ts:155_
 
 ---
 
@@ -8442,7 +8756,7 @@ Handle webhook error with logging and optional user notification
 
 Send error notification to user
 
-*Source: supabase/functions/wa-webhook-mobility/utils/error_handler.ts:187*
+_Source: supabase/functions/wa-webhook-mobility/utils/error_handler.ts:187_
 
 ---
 
@@ -8450,7 +8764,7 @@ Send error notification to user
 
 Create error response
 
-*Source: supabase/functions/wa-webhook-mobility/utils/error_handler.ts:216*
+_Source: supabase/functions/wa-webhook-mobility/utils/error_handler.ts:216_
 
 ---
 
@@ -8458,7 +8772,7 @@ Create error response
 
 Mask phone number for logging (PII protection)
 
-*Source: supabase/functions/wa-webhook-mobility/utils/error_handler.ts:264*
+_Source: supabase/functions/wa-webhook-mobility/utils/error_handler.ts:264_
 
 ---
 
@@ -8466,7 +8780,7 @@ Mask phone number for logging (PII protection)
 
 Check if error is retryable
 
-*Source: supabase/functions/wa-webhook-mobility/utils/error_handler.ts:272*
+_Source: supabase/functions/wa-webhook-mobility/utils/error_handler.ts:272_
 
 ---
 
@@ -8474,15 +8788,16 @@ Check if error is retryable
 
 Get retry delay based on attempt number
 
-*Source: supabase/functions/wa-webhook-mobility/utils/error_handler.ts:288*
+_Source: supabase/functions/wa-webhook-mobility/utils/error_handler.ts:288_
 
 ---
 
 ### `unnamed`
 
-Enhanced Health Check for wa-webhook Provides comprehensive health monitoring including rate limiter, cache, and database connectivity.
+Enhanced Health Check for wa-webhook Provides comprehensive health monitoring including rate
+limiter, cache, and database connectivity.
 
-*Source: supabase/functions/wa-webhook-mobility/utils/health_check.ts:1*
+_Source: supabase/functions/wa-webhook-mobility/utils/health_check.ts:1_
 
 ---
 
@@ -8490,7 +8805,7 @@ Enhanced Health Check for wa-webhook Provides comprehensive health monitoring in
 
 Check database health
 
-*Source: supabase/functions/wa-webhook-mobility/utils/health_check.ts:39*
+_Source: supabase/functions/wa-webhook-mobility/utils/health_check.ts:39_
 
 ---
 
@@ -8498,7 +8813,7 @@ Check database health
 
 Check rate limiter health
 
-*Source: supabase/functions/wa-webhook-mobility/utils/health_check.ts:78*
+_Source: supabase/functions/wa-webhook-mobility/utils/health_check.ts:78_
 
 ---
 
@@ -8506,7 +8821,7 @@ Check rate limiter health
 
 Check cache health
 
-*Source: supabase/functions/wa-webhook-mobility/utils/health_check.ts:100*
+_Source: supabase/functions/wa-webhook-mobility/utils/health_check.ts:100_
 
 ---
 
@@ -8514,7 +8829,7 @@ Check cache health
 
 Check metrics collector health
 
-*Source: supabase/functions/wa-webhook-mobility/utils/health_check.ts:122*
+_Source: supabase/functions/wa-webhook-mobility/utils/health_check.ts:122_
 
 ---
 
@@ -8522,7 +8837,7 @@ Check metrics collector health
 
 Perform comprehensive health check
 
-*Source: supabase/functions/wa-webhook-mobility/utils/health_check.ts:143*
+_Source: supabase/functions/wa-webhook-mobility/utils/health_check.ts:143_
 
 ---
 
@@ -8530,7 +8845,7 @@ Perform comprehensive health check
 
 Create health check response
 
-*Source: supabase/functions/wa-webhook-mobility/utils/health_check.ts:180*
+_Source: supabase/functions/wa-webhook-mobility/utils/health_check.ts:180_
 
 ---
 
@@ -8538,7 +8853,7 @@ Create health check response
 
 Simple liveness probe (for Kubernetes, etc.)
 
-*Source: supabase/functions/wa-webhook-mobility/utils/health_check.ts:201*
+_Source: supabase/functions/wa-webhook-mobility/utils/health_check.ts:201_
 
 ---
 
@@ -8546,15 +8861,16 @@ Simple liveness probe (for Kubernetes, etc.)
 
 Readiness probe (checks critical dependencies)
 
-*Source: supabase/functions/wa-webhook-mobility/utils/health_check.ts:211*
+_Source: supabase/functions/wa-webhook-mobility/utils/health_check.ts:211_
 
 ---
 
 ### `unnamed`
 
-Dynamic Submenu Helper Provides reusable functions to fetch and display dynamic submenus from database Eliminates hardcoded menu lists
+Dynamic Submenu Helper Provides reusable functions to fetch and display dynamic submenus from
+database Eliminates hardcoded menu lists
 
-*Source: supabase/functions/wa-webhook-mobility/utils/dynamic_submenu.ts:1*
+_Source: supabase/functions/wa-webhook-mobility/utils/dynamic_submenu.ts:1_
 
 ---
 
@@ -8562,7 +8878,7 @@ Dynamic Submenu Helper Provides reusable functions to fetch and display dynamic 
 
 Fetch submenu items for a parent menu from database
 
-*Source: supabase/functions/wa-webhook-mobility/utils/dynamic_submenu.ts:21*
+_Source: supabase/functions/wa-webhook-mobility/utils/dynamic_submenu.ts:21_
 
 ---
 
@@ -8570,7 +8886,7 @@ Fetch submenu items for a parent menu from database
 
 Fetch profile menu items from database
 
-*Source: supabase/functions/wa-webhook-mobility/utils/dynamic_submenu.ts:51*
+_Source: supabase/functions/wa-webhook-mobility/utils/dynamic_submenu.ts:51_
 
 ---
 
@@ -8578,15 +8894,16 @@ Fetch profile menu items from database
 
 Convert submenu items to WhatsApp list row format
 
-*Source: supabase/functions/wa-webhook-mobility/utils/dynamic_submenu.ts:85*
+_Source: supabase/functions/wa-webhook-mobility/utils/dynamic_submenu.ts:85_
 
 ---
 
 ### `getSubmenuRows`
 
-Get submenu items as WhatsApp rows with back button Convenience function that combines fetch + convert + add back button
+Get submenu items as WhatsApp rows with back button Convenience function that combines fetch +
+convert + add back button
 
-*Source: supabase/functions/wa-webhook-mobility/utils/dynamic_submenu.ts:106*
+_Source: supabase/functions/wa-webhook-mobility/utils/dynamic_submenu.ts:106_
 
 ---
 
@@ -8594,7 +8911,7 @@ Get submenu items as WhatsApp rows with back button Convenience function that co
 
 Check if a submenu exists and has items
 
-*Source: supabase/functions/wa-webhook-mobility/utils/dynamic_submenu.ts:143*
+_Source: supabase/functions/wa-webhook-mobility/utils/dynamic_submenu.ts:143_
 
 ---
 
@@ -8602,7 +8919,7 @@ Check if a submenu exists and has items
 
 Get the default action for a submenu item Used for routing based on action_type
 
-*Source: supabase/functions/wa-webhook-mobility/utils/dynamic_submenu.ts:159*
+_Source: supabase/functions/wa-webhook-mobility/utils/dynamic_submenu.ts:159_
 
 ---
 
@@ -8610,7 +8927,7 @@ Get the default action for a submenu item Used for routing based on action_type
 
 Increment a counter
 
-*Source: supabase/functions/wa-webhook-mobility/utils/metrics_collector.ts:36*
+_Source: supabase/functions/wa-webhook-mobility/utils/metrics_collector.ts:36_
 
 ---
 
@@ -8618,7 +8935,7 @@ Increment a counter
 
 Set a gauge value
 
-*Source: supabase/functions/wa-webhook-mobility/utils/metrics_collector.ts:50*
+_Source: supabase/functions/wa-webhook-mobility/utils/metrics_collector.ts:50_
 
 ---
 
@@ -8626,7 +8943,7 @@ Set a gauge value
 
 Record a histogram value (for durations, sizes, etc.)
 
-*Source: supabase/functions/wa-webhook-mobility/utils/metrics_collector.ts:63*
+_Source: supabase/functions/wa-webhook-mobility/utils/metrics_collector.ts:63_
 
 ---
 
@@ -8634,7 +8951,7 @@ Record a histogram value (for durations, sizes, etc.)
 
 Get dimension key for grouping
 
-*Source: supabase/functions/wa-webhook-mobility/utils/metrics_collector.ts:81*
+_Source: supabase/functions/wa-webhook-mobility/utils/metrics_collector.ts:81_
 
 ---
 
@@ -8642,7 +8959,7 @@ Get dimension key for grouping
 
 Parse dimension key back to object
 
-*Source: supabase/functions/wa-webhook-mobility/utils/metrics_collector.ts:95*
+_Source: supabase/functions/wa-webhook-mobility/utils/metrics_collector.ts:95_
 
 ---
 
@@ -8650,7 +8967,7 @@ Parse dimension key back to object
 
 Calculate histogram statistics
 
-*Source: supabase/functions/wa-webhook-mobility/utils/metrics_collector.ts:110*
+_Source: supabase/functions/wa-webhook-mobility/utils/metrics_collector.ts:110_
 
 ---
 
@@ -8658,7 +8975,7 @@ Calculate histogram statistics
 
 Flush metrics to logs
 
-*Source: supabase/functions/wa-webhook-mobility/utils/metrics_collector.ts:151*
+_Source: supabase/functions/wa-webhook-mobility/utils/metrics_collector.ts:151_
 
 ---
 
@@ -8666,7 +8983,7 @@ Flush metrics to logs
 
 Get metrics in Prometheus format (for /metrics endpoint)
 
-*Source: supabase/functions/wa-webhook-mobility/utils/metrics_collector.ts:206*
+_Source: supabase/functions/wa-webhook-mobility/utils/metrics_collector.ts:206_
 
 ---
 
@@ -8674,7 +8991,7 @@ Get metrics in Prometheus format (for /metrics endpoint)
 
 Get summary statistics
 
-*Source: supabase/functions/wa-webhook-mobility/utils/metrics_collector.ts:260*
+_Source: supabase/functions/wa-webhook-mobility/utils/metrics_collector.ts:260_
 
 ---
 
@@ -8682,7 +8999,7 @@ Get summary statistics
 
 Start periodic flushing
 
-*Source: supabase/functions/wa-webhook-mobility/utils/metrics_collector.ts:271*
+_Source: supabase/functions/wa-webhook-mobility/utils/metrics_collector.ts:271_
 
 ---
 
@@ -8690,7 +9007,7 @@ Start periodic flushing
 
 Stop flushing and cleanup
 
-*Source: supabase/functions/wa-webhook-mobility/utils/metrics_collector.ts:282*
+_Source: supabase/functions/wa-webhook-mobility/utils/metrics_collector.ts:282_
 
 ---
 
@@ -8698,7 +9015,7 @@ Stop flushing and cleanup
 
 Get value from cache
 
-*Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:48*
+_Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:48_
 
 ---
 
@@ -8706,7 +9023,7 @@ Get value from cache
 
 Set value in cache
 
-*Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:71*
+_Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:71_
 
 ---
 
@@ -8714,7 +9031,7 @@ Set value in cache
 
 Get or set value using factory function
 
-*Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:94*
+_Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:94_
 
 ---
 
@@ -8722,7 +9039,7 @@ Get or set value using factory function
 
 Delete from cache
 
-*Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:112*
+_Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:112_
 
 ---
 
@@ -8730,7 +9047,7 @@ Delete from cache
 
 Clear all cache
 
-*Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:123*
+_Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:123_
 
 ---
 
@@ -8738,7 +9055,7 @@ Clear all cache
 
 Check if cache contains key
 
-*Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:135*
+_Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:135_
 
 ---
 
@@ -8746,7 +9063,7 @@ Check if cache contains key
 
 Evict least recently used entry
 
-*Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:148*
+_Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:148_
 
 ---
 
@@ -8754,7 +9071,7 @@ Evict least recently used entry
 
 Clean up expired entries
 
-*Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:172*
+_Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:172_
 
 ---
 
@@ -8762,7 +9079,7 @@ Clean up expired entries
 
 Get cache statistics
 
-*Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:195*
+_Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:195_
 
 ---
 
@@ -8770,7 +9087,7 @@ Get cache statistics
 
 Check if cache is healthy
 
-*Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:212*
+_Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:212_
 
 ---
 
@@ -8778,7 +9095,7 @@ Check if cache is healthy
 
 Start periodic cleanup
 
-*Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:219*
+_Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:219_
 
 ---
 
@@ -8786,7 +9103,7 @@ Start periodic cleanup
 
 Cleanup resources
 
-*Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:231*
+_Source: supabase/functions/wa-webhook-mobility/utils/cache.ts:231_
 
 ---
 
@@ -8794,7 +9111,7 @@ Cleanup resources
 
 Check if identifier should be rate limited
 
-*Source: supabase/functions/wa-webhook-mobility/utils/rate_limiter.ts:48*
+_Source: supabase/functions/wa-webhook-mobility/utils/rate_limiter.ts:48_
 
 ---
 
@@ -8802,7 +9119,7 @@ Check if identifier should be rate limited
 
 Manually unblock an identifier
 
-*Source: supabase/functions/wa-webhook-mobility/utils/rate_limiter.ts:120*
+_Source: supabase/functions/wa-webhook-mobility/utils/rate_limiter.ts:120_
 
 ---
 
@@ -8810,7 +9127,7 @@ Manually unblock an identifier
 
 Get statistics for monitoring
 
-*Source: supabase/functions/wa-webhook-mobility/utils/rate_limiter.ts:128*
+_Source: supabase/functions/wa-webhook-mobility/utils/rate_limiter.ts:128_
 
 ---
 
@@ -8818,7 +9135,7 @@ Get statistics for monitoring
 
 Mask identifier for logging (PII protection)
 
-*Source: supabase/functions/wa-webhook-mobility/utils/rate_limiter.ts:143*
+_Source: supabase/functions/wa-webhook-mobility/utils/rate_limiter.ts:143_
 
 ---
 
@@ -8826,7 +9143,7 @@ Mask identifier for logging (PII protection)
 
 Cleanup expired buckets
 
-*Source: supabase/functions/wa-webhook-mobility/utils/rate_limiter.ts:151*
+_Source: supabase/functions/wa-webhook-mobility/utils/rate_limiter.ts:151_
 
 ---
 
@@ -8834,7 +9151,7 @@ Cleanup expired buckets
 
 Start periodic cleanup
 
-*Source: supabase/functions/wa-webhook-mobility/utils/rate_limiter.ts:174*
+_Source: supabase/functions/wa-webhook-mobility/utils/rate_limiter.ts:174_
 
 ---
 
@@ -8842,7 +9159,7 @@ Start periodic cleanup
 
 Stop cleanup (for testing/shutdown)
 
-*Source: supabase/functions/wa-webhook-mobility/utils/rate_limiter.ts:183*
+_Source: supabase/functions/wa-webhook-mobility/utils/rate_limiter.ts:183_
 
 ---
 
@@ -8850,7 +9167,7 @@ Stop cleanup (for testing/shutdown)
 
 Validate and load configuration
 
-*Source: supabase/functions/wa-webhook-mobility/utils/config_validator.ts:54*
+_Source: supabase/functions/wa-webhook-mobility/utils/config_validator.ts:54_
 
 ---
 
@@ -8858,7 +9175,7 @@ Validate and load configuration
 
 Get environment variable with fallback to multiple keys
 
-*Source: supabase/functions/wa-webhook-mobility/utils/config_validator.ts:116*
+_Source: supabase/functions/wa-webhook-mobility/utils/config_validator.ts:116_
 
 ---
 
@@ -8866,7 +9183,7 @@ Get environment variable with fallback to multiple keys
 
 Load configuration with defaults
 
-*Source: supabase/functions/wa-webhook-mobility/utils/config_validator.ts:127*
+_Source: supabase/functions/wa-webhook-mobility/utils/config_validator.ts:127_
 
 ---
 
@@ -8874,7 +9191,7 @@ Load configuration with defaults
 
 Print configuration status
 
-*Source: supabase/functions/wa-webhook-mobility/utils/config_validator.ts:174*
+_Source: supabase/functions/wa-webhook-mobility/utils/config_validator.ts:174_
 
 ---
 
@@ -8882,23 +9199,26 @@ Print configuration status
 
 Assert configuration is valid (throws if not)
 
-*Source: supabase/functions/wa-webhook-mobility/utils/config_validator.ts:202*
+_Source: supabase/functions/wa-webhook-mobility/utils/config_validator.ts:202_
 
 ---
 
 ### `encodeTelUriForQr`
 
-Encodes a USSD string as a tel: URI for QR codes. Android QR scanner apps often fail to decode percent-encoded characters before passing the URI to the dialer. This function leaves * and # unencoded for better Android compatibility while maintaining iOS support.
+Encodes a USSD string as a tel: URI for QR codes. Android QR scanner apps often fail to decode
+percent-encoded characters before passing the URI to the dialer. This function leaves \* and #
+unencoded for better Android compatibility while maintaining iOS support.
 
-*Source: supabase/functions/wa-webhook-mobility/utils/ussd.ts:14*
+_Source: supabase/functions/wa-webhook-mobility/utils/ussd.ts:14_
 
 ---
 
 ### `buildMomoUssdForQr`
 
-Builds MOMO USSD code with tel URI optimized for QR codes. Uses unencoded * and # for better Android QR scanner compatibility.
+Builds MOMO USSD code with tel URI optimized for QR codes. Uses unencoded \* and # for better
+Android QR scanner compatibility.
 
-*Source: supabase/functions/wa-webhook-mobility/utils/momo.ts:16*
+_Source: supabase/functions/wa-webhook-mobility/utils/momo.ts:16_
 
 ---
 
@@ -8906,7 +9226,7 @@ Builds MOMO USSD code with tel URI optimized for QR codes. Uses unencoded * and 
 
 wa-webhook-mobility - Mobility Service Handles ride-hailing, scheduling, and driver management
 
-*Source: supabase/functions/wa-webhook-mobility/index-refactored.ts:1*
+_Source: supabase/functions/wa-webhook-mobility/index-refactored.ts:1_
 
 ---
 
@@ -8914,7 +9234,7 @@ wa-webhook-mobility - Mobility Service Handles ride-hailing, scheduling, and dri
 
 Observability Logger Simple event logging for mobility webhook
 
-*Source: supabase/functions/wa-webhook-mobility/observe/logger.ts:1*
+_Source: supabase/functions/wa-webhook-mobility/observe/logger.ts:1_
 
 ---
 
@@ -8922,15 +9242,16 @@ Observability Logger Simple event logging for mobility webhook
 
 Save user's location to cache (profile.last_location)
 
-*Source: supabase/functions/wa-webhook-mobility/locations/cache.ts:15*
+_Source: supabase/functions/wa-webhook-mobility/locations/cache.ts:15_
 
 ---
 
 ### `getCachedLocation`
 
-Get cached location if still valid (within 30 minutes) Returns null if no cached location or if expired
+Get cached location if still valid (within 30 minutes) Returns null if no cached location or if
+expired
 
-*Source: supabase/functions/wa-webhook-mobility/locations/cache.ts:34*
+_Source: supabase/functions/wa-webhook-mobility/locations/cache.ts:34_
 
 ---
 
@@ -8938,15 +9259,16 @@ Get cached location if still valid (within 30 minutes) Returns null if no cached
 
 Check if user has valid cached location
 
-*Source: supabase/functions/wa-webhook-mobility/locations/cache.ts:70*
+_Source: supabase/functions/wa-webhook-mobility/locations/cache.ts:70_
 
 ---
 
 ### `unnamed`
 
-Driver License OCR Module Processes driver's licenses using OCR (OpenAI Vision + Gemini fallback) Validates license data including expiry dates
+Driver License OCR Module Processes driver's licenses using OCR (OpenAI Vision + Gemini fallback)
+Validates license data including expiry dates
 
-*Source: supabase/functions/wa-webhook-mobility/insurance/driver_license_ocr.ts:1*
+_Source: supabase/functions/wa-webhook-mobility/insurance/driver_license_ocr.ts:1_
 
 ---
 
@@ -8954,7 +9276,7 @@ Driver License OCR Module Processes driver's licenses using OCR (OpenAI Vision +
 
 Process license using Gemini Vision API
 
-*Source: supabase/functions/wa-webhook-mobility/insurance/driver_license_ocr.ts:75*
+_Source: supabase/functions/wa-webhook-mobility/insurance/driver_license_ocr.ts:75_
 
 ---
 
@@ -8962,7 +9284,7 @@ Process license using Gemini Vision API
 
 Process license using OpenAI Vision API
 
-*Source: supabase/functions/wa-webhook-mobility/insurance/driver_license_ocr.ts:136*
+_Source: supabase/functions/wa-webhook-mobility/insurance/driver_license_ocr.ts:136_
 
 ---
 
@@ -8970,7 +9292,7 @@ Process license using OpenAI Vision API
 
 Process driver license with OCR Uses OpenAI Vision API with Gemini fallback
 
-*Source: supabase/functions/wa-webhook-mobility/insurance/driver_license_ocr.ts:238*
+_Source: supabase/functions/wa-webhook-mobility/insurance/driver_license_ocr.ts:238_
 
 ---
 
@@ -8978,7 +9300,7 @@ Process driver license with OCR Uses OpenAI Vision API with Gemini fallback
 
 Validate extracted license data
 
-*Source: supabase/functions/wa-webhook-mobility/insurance/driver_license_ocr.ts:264*
+_Source: supabase/functions/wa-webhook-mobility/insurance/driver_license_ocr.ts:264_
 
 ---
 
@@ -8986,15 +9308,16 @@ Validate extracted license data
 
 Save license certificate to database
 
-*Source: supabase/functions/wa-webhook-mobility/insurance/driver_license_ocr.ts:320*
+_Source: supabase/functions/wa-webhook-mobility/insurance/driver_license_ocr.ts:320_
 
 ---
 
 ### `unnamed`
 
-Driver Insurance OCR Module Processes driver insurance certificates using OCR (OpenAI Vision + Gemini fallback) Validates insurance data and checks for duplicate vehicles
+Driver Insurance OCR Module Processes driver insurance certificates using OCR (OpenAI Vision +
+Gemini fallback) Validates insurance data and checks for duplicate vehicles
 
-*Source: supabase/functions/wa-webhook-mobility/insurance/driver_insurance_ocr.ts:1*
+_Source: supabase/functions/wa-webhook-mobility/insurance/driver_insurance_ocr.ts:1_
 
 ---
 
@@ -9002,7 +9325,7 @@ Driver Insurance OCR Module Processes driver insurance certificates using OCR (O
 
 Process insurance certificate using Gemini Vision API
 
-*Source: supabase/functions/wa-webhook-mobility/insurance/driver_insurance_ocr.ts:89*
+_Source: supabase/functions/wa-webhook-mobility/insurance/driver_insurance_ocr.ts:89_
 
 ---
 
@@ -9010,7 +9333,7 @@ Process insurance certificate using Gemini Vision API
 
 Process insurance certificate using OpenAI Vision API
 
-*Source: supabase/functions/wa-webhook-mobility/insurance/driver_insurance_ocr.ts:150*
+_Source: supabase/functions/wa-webhook-mobility/insurance/driver_insurance_ocr.ts:150_
 
 ---
 
@@ -9018,7 +9341,7 @@ Process insurance certificate using OpenAI Vision API
 
 Process driver insurance certificate with OCR Uses OpenAI Vision API with Gemini fallback
 
-*Source: supabase/functions/wa-webhook-mobility/insurance/driver_insurance_ocr.ts:252*
+_Source: supabase/functions/wa-webhook-mobility/insurance/driver_insurance_ocr.ts:252_
 
 ---
 
@@ -9026,7 +9349,7 @@ Process driver insurance certificate with OCR Uses OpenAI Vision API with Gemini
 
 Validate extracted insurance data
 
-*Source: supabase/functions/wa-webhook-mobility/insurance/driver_insurance_ocr.ts:278*
+_Source: supabase/functions/wa-webhook-mobility/insurance/driver_insurance_ocr.ts:278_
 
 ---
 
@@ -9034,7 +9357,7 @@ Validate extracted insurance data
 
 Check if vehicle plate is already registered by another user
 
-*Source: supabase/functions/wa-webhook-mobility/insurance/driver_insurance_ocr.ts:325*
+_Source: supabase/functions/wa-webhook-mobility/insurance/driver_insurance_ocr.ts:325_
 
 ---
 
@@ -9042,15 +9365,16 @@ Check if vehicle plate is already registered by another user
 
 Save insurance certificate to database
 
-*Source: supabase/functions/wa-webhook-mobility/insurance/driver_insurance_ocr.ts:346*
+_Source: supabase/functions/wa-webhook-mobility/insurance/driver_insurance_ocr.ts:346_
 
 ---
 
 ### `sendProfileMenu`
 
-Display the Profile menu with options for managing businesses, vehicles, and tokens Delegates to the comprehensive Profile hub implementation
+Display the Profile menu with options for managing businesses, vehicles, and tokens Delegates to the
+comprehensive Profile hub implementation
 
-*Source: supabase/functions/wa-webhook-mobility/flows/profile.ts:6*
+_Source: supabase/functions/wa-webhook-mobility/flows/profile.ts:6_
 
 ---
 
@@ -9058,7 +9382,7 @@ Display the Profile menu with options for managing businesses, vehicles, and tok
 
 Initiates trip payment via MOMO USSD Generates USSD code and QR for user to dial
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/trip_payment.ts:44*
+_Source: supabase/functions/wa-webhook-mobility/handlers/trip_payment.ts:44_
 
 ---
 
@@ -9066,7 +9390,7 @@ Initiates trip payment via MOMO USSD Generates USSD code and QR for user to dial
 
 Handles payment confirmation from user Verifies via transaction reference number
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/trip_payment.ts:165*
+_Source: supabase/functions/wa-webhook-mobility/handlers/trip_payment.ts:165_
 
 ---
 
@@ -9074,7 +9398,7 @@ Handles payment confirmation from user Verifies via transaction reference number
 
 Processes transaction reference submitted by user
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/trip_payment.ts:206*
+_Source: supabase/functions/wa-webhook-mobility/handlers/trip_payment.ts:206_
 
 ---
 
@@ -9082,7 +9406,7 @@ Processes transaction reference submitted by user
 
 Handles skip payment action
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/trip_payment.ts:288*
+_Source: supabase/functions/wa-webhook-mobility/handlers/trip_payment.ts:288_
 
 ---
 
@@ -9090,7 +9414,7 @@ Handles skip payment action
 
 Normalizes phone number to local format (07XXXXXXXX)
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/trip_payment.ts:336*
+_Source: supabase/functions/wa-webhook-mobility/handlers/trip_payment.ts:336_
 
 ---
 
@@ -9098,7 +9422,7 @@ Normalizes phone number to local format (07XXXXXXXX)
 
 Builds QR code URL for USSD code
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/trip_payment.ts:360*
+_Source: supabase/functions/wa-webhook-mobility/handlers/trip_payment.ts:360_
 
 ---
 
@@ -9106,55 +9430,61 @@ Builds QR code URL for USSD code
 
 Logs payment request to database
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/trip_payment.ts:368*
+_Source: supabase/functions/wa-webhook-mobility/handlers/trip_payment.ts:368_
 
 ---
 
 ### `handleTripStart`
 
-Handles trip start confirmation 1. Verify both driver and passenger ready 2. Update trip status to 'in_progress' 3. Notify both parties 4. Start real-time tracking 5. Record metric: TRIP_STARTED
+Handles trip start confirmation 1. Verify both driver and passenger ready 2. Update trip status to
+'in_progress' 3. Notify both parties 4. Start real-time tracking 5. Record metric: TRIP_STARTED
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.ts:44*
+_Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.ts:44_
 
 ---
 
 ### `handleTripArrivedAtPickup`
 
-Handles driver arrival at pickup location 1. Update trip status to 'driver_arrived' 2. Notify passenger 3. Record metric: DRIVER_ARRIVED
+Handles driver arrival at pickup location 1. Update trip status to 'driver_arrived' 2. Notify
+passenger 3. Record metric: DRIVER_ARRIVED
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.ts:139*
+_Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.ts:139_
 
 ---
 
 ### `handleTripPickedUp`
 
-Handles trip start (passenger picked up) 1. Update trip status to 'in_progress' 2. Notify passenger trip started 3. Record metric: TRIP_PICKED_UP
+Handles trip start (passenger picked up) 1. Update trip status to 'in_progress' 2. Notify passenger
+trip started 3. Record metric: TRIP_PICKED_UP
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.ts:204*
+_Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.ts:204_
 
 ---
 
 ### `handleTripComplete`
 
-Handles trip completion 1. Update trip status to 'completed' 2. Calculate final fare 3. Initiate payment 4. Request ratings from both parties 5. Record metrics: TRIP_COMPLETED, TRIP_DURATION
+Handles trip completion 1. Update trip status to 'completed' 2. Calculate final fare 3. Initiate
+payment 4. Request ratings from both parties 5. Record metrics: TRIP_COMPLETED, TRIP_DURATION
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.ts:270*
+_Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.ts:270_
 
 ---
 
 ### `handleTripCancel`
 
-Handles trip cancellation 1. Update trip status 2. Calculate cancellation fee (if applicable) 3. Notify other party 4. Record metric: TRIP_CANCELLED
+Handles trip cancellation 1. Update trip status 2. Calculate cancellation fee (if applicable) 3.
+Notify other party 4. Record metric: TRIP_CANCELLED
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.ts:439*
+_Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.ts:439_
 
 ---
 
 ### `handleTripRating`
 
-Handles trip rating 1. Validate rating (1-5) 2. Insert into trip_ratings table 3. Update user's average rating 4. Record metric: TRIP_RATED
+Handles trip rating 1. Validate rating (1-5) 2. Insert into trip_ratings table 3. Update user's
+average rating 4. Record metric: TRIP_RATED
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.ts:573*
+_Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.ts:573_
 
 ---
 
@@ -9162,7 +9492,7 @@ Handles trip rating 1. Validate rating (1-5) 2. Insert into trip_ratings table 3
 
 Get trip status
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.ts:684*
+_Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.ts:684_
 
 ---
 
@@ -9170,7 +9500,7 @@ Get trip status
 
 Check if user can perform action on trip
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.ts:712*
+_Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.ts:712_
 
 ---
 
@@ -9178,7 +9508,7 @@ Check if user can perform action on trip
 
 Calculates fare estimate for a trip Used before trip starts to show estimated cost
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/fare.ts:255*
+_Source: supabase/functions/wa-webhook-mobility/handlers/fare.ts:255_
 
 ---
 
@@ -9186,15 +9516,16 @@ Calculates fare estimate for a trip Used before trip starts to show estimated co
 
 Calculates actual fare after trip completion Uses actual distance and time from trip
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/fare.ts:365*
+_Source: supabase/functions/wa-webhook-mobility/handlers/fare.ts:365_
 
 ---
 
 ### `calculateSurgeMultiplier`
 
-Calculates surge pricing multiplier based on current conditions TODO: Implement dynamic surge based on real demand/supply data
+Calculates surge pricing multiplier based on current conditions TODO: Implement dynamic surge based
+on real demand/supply data
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/fare.ts:444*
+_Source: supabase/functions/wa-webhook-mobility/handlers/fare.ts:444_
 
 ---
 
@@ -9202,7 +9533,7 @@ Calculates surge pricing multiplier based on current conditions TODO: Implement 
 
 Calculates cancellation fee based on trip status TODO: Make configurable per business rules
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/fare.ts:482*
+_Source: supabase/functions/wa-webhook-mobility/handlers/fare.ts:482_
 
 ---
 
@@ -9210,7 +9541,7 @@ Calculates cancellation fee based on trip status TODO: Make configurable per bus
 
 Formats fare for display
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/fare.ts:513*
+_Source: supabase/functions/wa-webhook-mobility/handlers/fare.ts:513_
 
 ---
 
@@ -9218,31 +9549,44 @@ Formats fare for display
 
 Formats fare breakdown for display
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/fare.ts:527*
+_Source: supabase/functions/wa-webhook-mobility/handlers/fare.ts:527_
 
 ---
 
 ### `updateDriverLocation`
 
-Updates driver location during active trip 1. Validate trip is in progress 2. Update driver_status table 3. Calculate new ETA 4. Notify passenger if ETA changes significantly (>5 minutes) 5. Record metric: LOCATION_UPDATE
+Updates driver location during active trip 1. Validate trip is in progress 2. Update driver_status
+table 3. Calculate new ETA 4. Notify passenger if ETA changes significantly (>5 minutes) 5. Record
+metric: LOCATION_UPDATE
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/tracking.ts:43*
+_Source: supabase/functions/wa-webhook-mobility/handlers/tracking.ts:43_
 
 ---
 
 ### `calculateETA`
 
-Calculates estimated time of arrival Uses simple haversine distance + average speed In production, should integrate with Google Maps Distance Matrix API
+Calculates estimated time of arrival Uses simple haversine distance + average speed In production,
+should integrate with Google Maps Distance Matrix API
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/tracking.ts:183*
+_Source: supabase/functions/wa-webhook-mobility/handlers/tracking.ts:183_
 
 ---
 
 ### `unnamed`
 
-TODO: Enhanced ETA calculation using Google Maps Distance Matrix API export async function calculateETAWithMaps( origin: Coordinates, destination: Coordinates ): Promise<ETACalculation> { const apiKey = Deno.env.get("GOOGLE_MAPS_API_KEY"); const response = await fetch( `https://maps.googleapis.com/maps/api/distancematrix/json?` + `origins=${origin.latitude},${origin.longitude}&` + `destinations=${destination.latitude},${destination.longitude}&` + `mode=driving&` + `key=${apiKey}` ); const data = await response.json(); const element = data.rows[0].elements[0]; if (element.status === "OK") { const distanceKm = element.distance.value / 1000; const durationMinutes = Math.ceil(element.duration.value / 60); const estimatedArrival = new Date(Date.now() + durationMinutes * 60000); return { distanceKm, durationMinutes, estimatedArrival }; } // Fallback to haversine if API fails return calculateETA(origin, destination); }
+TODO: Enhanced ETA calculation using Google Maps Distance Matrix API export async function
+calculateETAWithMaps( origin: Coordinates, destination: Coordinates ): Promise<ETACalculation> {
+const apiKey = Deno.env.get("GOOGLE_MAPS_API_KEY"); const response = await fetch(
+`https://maps.googleapis.com/maps/api/distancematrix/json?` +
+`origins=${origin.latitude},${origin.longitude}&` +
+`destinations=${destination.latitude},${destination.longitude}&` + `mode=driving&` + `key=${apiKey}`
+); const data = await response.json(); const element = data.rows[0].elements[0]; if (element.status
+=== "OK") { const distanceKm = element.distance.value / 1000; const durationMinutes =
+Math.ceil(element.duration.value / 60); const estimatedArrival = new Date(Date.now() +
+durationMinutes \* 60000); return { distanceKm, durationMinutes, estimatedArrival }; } // Fallback
+to haversine if API fails return calculateETA(origin, destination); }
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/tracking.ts:234*
+_Source: supabase/functions/wa-webhook-mobility/handlers/tracking.ts:234_
 
 ---
 
@@ -9250,7 +9594,7 @@ TODO: Enhanced ETA calculation using Google Maps Distance Matrix API export asyn
 
 Starts driver tracking for active trip In production, this would enable real-time location streaming
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/tracking.ts:271*
+_Source: supabase/functions/wa-webhook-mobility/handlers/tracking.ts:271_
 
 ---
 
@@ -9258,7 +9602,7 @@ Starts driver tracking for active trip In production, this would enable real-tim
 
 Stops driver tracking when trip ends
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/tracking.ts:308*
+_Source: supabase/functions/wa-webhook-mobility/handlers/tracking.ts:308_
 
 ---
 
@@ -9266,7 +9610,7 @@ Stops driver tracking when trip ends
 
 Gets driver's current location
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/tracking.ts:347*
+_Source: supabase/functions/wa-webhook-mobility/handlers/tracking.ts:347_
 
 ---
 
@@ -9274,7 +9618,7 @@ Gets driver's current location
 
 Gets trip progress (for passenger view)
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/tracking.ts:378*
+_Source: supabase/functions/wa-webhook-mobility/handlers/tracking.ts:378_
 
 ---
 
@@ -9282,7 +9626,7 @@ Gets trip progress (for passenger view)
 
 Validates coordinates are within valid ranges
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/tracking.ts:444*
+_Source: supabase/functions/wa-webhook-mobility/handlers/tracking.ts:444_
 
 ---
 
@@ -9290,7 +9634,7 @@ Validates coordinates are within valid ranges
 
 Calculates distance between two coordinates using Haversine formula Returns distance in kilometers
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/tracking.ts:460*
+_Source: supabase/functions/wa-webhook-mobility/handlers/tracking.ts:460_
 
 ---
 
@@ -9298,7 +9642,7 @@ Calculates distance between two coordinates using Haversine formula Returns dist
 
 Converts degrees to radians
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/tracking.ts:485*
+_Source: supabase/functions/wa-webhook-mobility/handlers/tracking.ts:485_
 
 ---
 
@@ -9306,15 +9650,16 @@ Converts degrees to radians
 
 Estimates speed based on consecutive location updates
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/tracking.ts:492*
+_Source: supabase/functions/wa-webhook-mobility/handlers/tracking.ts:492_
 
 ---
 
 ### `unnamed`
 
-Location cache validation utilities Helpers for validating cached location timestamps and ensuring location data is fresh enough for nearby matching.
+Location cache validation utilities Helpers for validating cached location timestamps and ensuring
+location data is fresh enough for nearby matching.
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/location_cache.ts:1*
+_Source: supabase/functions/wa-webhook-mobility/handlers/location_cache.ts:1_
 
 ---
 
@@ -9322,7 +9667,7 @@ Location cache validation utilities Helpers for validating cached location times
 
 Check if a cached location timestamp is still valid
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/location_cache.ts:14*
+_Source: supabase/functions/wa-webhook-mobility/handlers/location_cache.ts:14_
 
 ---
 
@@ -9330,7 +9675,7 @@ Check if a cached location timestamp is still valid
 
 Calculate how many minutes ago a location was cached
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/location_cache.ts:48*
+_Source: supabase/functions/wa-webhook-mobility/handlers/location_cache.ts:48_
 
 ---
 
@@ -9338,7 +9683,7 @@ Calculate how many minutes ago a location was cached
 
 Format cache age as human-readable string
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/location_cache.ts:74*
+_Source: supabase/functions/wa-webhook-mobility/handlers/location_cache.ts:74_
 
 ---
 
@@ -9346,7 +9691,7 @@ Format cache age as human-readable string
 
 Check if location needs refresh and return appropriate message
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/location_cache.ts:95*
+_Source: supabase/functions/wa-webhook-mobility/handlers/location_cache.ts:95_
 
 ---
 
@@ -9354,7 +9699,7 @@ Check if location needs refresh and return appropriate message
 
 Checks complete driver verification status
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification.ts:56*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification.ts:56_
 
 ---
 
@@ -9362,7 +9707,7 @@ Checks complete driver verification status
 
 Shows driver verification menu
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification.ts:133*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification.ts:133_
 
 ---
 
@@ -9370,7 +9715,7 @@ Shows driver verification menu
 
 Starts driver's license verification flow
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification.ts:213*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification.ts:213_
 
 ---
 
@@ -9378,7 +9723,7 @@ Starts driver's license verification flow
 
 Handles driver's license upload
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification.ts:250*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification.ts:250_
 
 ---
 
@@ -9386,7 +9731,7 @@ Handles driver's license upload
 
 Checks if license is expired
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification.ts:367*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification.ts:367_
 
 ---
 
@@ -9394,15 +9739,16 @@ Checks if license is expired
 
 Fetch media from WhatsApp and get data URL
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification.ts:377*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification.ts:377_
 
 ---
 
 ### `unnamed`
 
-Driver Insurance Handler Handles driver insurance certificate upload and validation Replaces the old vehicle plate text input flow
+Driver Insurance Handler Handles driver insurance certificate upload and validation Replaces the old
+vehicle plate text input flow
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_insurance.ts:1*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_insurance.ts:1_
 
 ---
 
@@ -9410,7 +9756,7 @@ Driver Insurance Handler Handles driver insurance certificate upload and validat
 
 Check if user has valid insurance certificate
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_insurance.ts:29*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_insurance.ts:29_
 
 ---
 
@@ -9418,7 +9764,7 @@ Check if user has valid insurance certificate
 
 Get active insurance for user
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_insurance.ts:48*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_insurance.ts:48_
 
 ---
 
@@ -9426,7 +9772,7 @@ Get active insurance for user
 
 Ensure driver has valid insurance, prompt for upload if not
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_insurance.ts:74*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_insurance.ts:74_
 
 ---
 
@@ -9434,7 +9780,7 @@ Ensure driver has valid insurance, prompt for upload if not
 
 Fetch media from WhatsApp and get signed URL
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_insurance.ts:129*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_insurance.ts:129_
 
 ---
 
@@ -9442,7 +9788,7 @@ Fetch media from WhatsApp and get signed URL
 
 Handle insurance certificate upload
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_insurance.ts:175*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_insurance.ts:175_
 
 ---
 
@@ -9450,7 +9796,7 @@ Handle insurance certificate upload
 
 Legacy function for backward compatibility Now redirects to insurance upload
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_insurance.ts:275*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_insurance.ts:275_
 
 ---
 
@@ -9458,7 +9804,7 @@ Legacy function for backward compatibility Now redirects to insurance upload
 
 Get vehicle plate from active insurance
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_insurance.ts:286*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_insurance.ts:286_
 
 ---
 
@@ -9466,7 +9812,7 @@ Get vehicle plate from active insurance
 
 Send quote request to a driver
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/agent_quotes.ts:27*
+_Source: supabase/functions/wa-webhook-mobility/handlers/agent_quotes.ts:27_
 
 ---
 
@@ -9474,7 +9820,7 @@ Send quote request to a driver
 
 Format driver quote request message
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/agent_quotes.ts:66*
+_Source: supabase/functions/wa-webhook-mobility/handlers/agent_quotes.ts:66_
 
 ---
 
@@ -9482,7 +9828,7 @@ Format driver quote request message
 
 Parse driver quote response
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/agent_quotes.ts:99*
+_Source: supabase/functions/wa-webhook-mobility/handlers/agent_quotes.ts:99_
 
 ---
 
@@ -9490,7 +9836,7 @@ Parse driver quote response
 
 Handle incoming quote response from driver
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/agent_quotes.ts:143*
+_Source: supabase/functions/wa-webhook-mobility/handlers/agent_quotes.ts:143_
 
 ---
 
@@ -9498,15 +9844,16 @@ Handle incoming quote response from driver
 
 Send quote presentation to user
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/agent_quotes.ts:221*
+_Source: supabase/functions/wa-webhook-mobility/handlers/agent_quotes.ts:221_
 
 ---
 
 ### `unnamed`
 
-Driver Verification with OCR Handles driver license and insurance certificate verification Uses OpenAI GPT-4 Vision and Google Gemini for OCR
+Driver Verification with OCR Handles driver license and insurance certificate verification Uses
+OpenAI GPT-4 Vision and Google Gemini for OCR
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification_ocr.ts:1*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification_ocr.ts:1_
 
 ---
 
@@ -9514,7 +9861,7 @@ Driver Verification with OCR Handles driver license and insurance certificate ve
 
 Extract license data using OpenAI GPT-4 Vision
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification_ocr.ts:55*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification_ocr.ts:55_
 
 ---
 
@@ -9522,7 +9869,7 @@ Extract license data using OpenAI GPT-4 Vision
 
 Extract license data using Google Gemini Vision
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification_ocr.ts:154*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification_ocr.ts:154_
 
 ---
 
@@ -9530,7 +9877,7 @@ Extract license data using Google Gemini Vision
 
 Extract insurance certificate data using OpenAI
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification_ocr.ts:256*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification_ocr.ts:256_
 
 ---
 
@@ -9538,7 +9885,7 @@ Extract insurance certificate data using OpenAI
 
 Extract insurance certificate data using Gemini
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification_ocr.ts:335*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification_ocr.ts:335_
 
 ---
 
@@ -9546,7 +9893,7 @@ Extract insurance certificate data using Gemini
 
 Process driver license upload
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification_ocr.ts:401*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification_ocr.ts:401_
 
 ---
 
@@ -9554,7 +9901,7 @@ Process driver license upload
 
 Process insurance certificate upload
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification_ocr.ts:519*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_verification_ocr.ts:519_
 
 ---
 
@@ -9562,7 +9909,7 @@ Process insurance certificate upload
 
 Parse driver action button ID Format: "driver_offer_ride::tripId" or "driver_view_details::tripId"
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_response.ts:17*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_response.ts:17_
 
 ---
 
@@ -9570,7 +9917,7 @@ Parse driver action button ID Format: "driver_offer_ride::tripId" or "driver_vie
 
 Handle when driver taps "Offer Ride"
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_response.ts:30*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_response.ts:30_
 
 ---
 
@@ -9578,7 +9925,7 @@ Handle when driver taps "Offer Ride"
 
 Handle when driver taps "View Details"
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_response.ts:130*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_response.ts:130_
 
 ---
 
@@ -9586,47 +9933,52 @@ Handle when driver taps "View Details"
 
 Route driver action button presses
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/driver_response.ts:224*
+_Source: supabase/functions/wa-webhook-mobility/handlers/driver_response.ts:224_
 
 ---
 
 ### `handleTripStart`
 
-Handles trip start confirmation 1. Verify both driver and passenger ready 2. Update trip status to 'in_progress' 3. Notify both parties 4. Start real-time tracking 5. Record metric: TRIP_STARTED
+Handles trip start confirmation 1. Verify both driver and passenger ready 2. Update trip status to
+'in_progress' 3. Notify both parties 4. Start real-time tracking 5. Record metric: TRIP_STARTED
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.backup.ts:47*
+_Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.backup.ts:47_
 
 ---
 
 ### `handleTripArrivedAtPickup`
 
-Handles driver arrival at pickup location 1. Update trip status to 'driver_arrived' 2. Notify passenger 3. Record metric: DRIVER_ARRIVED
+Handles driver arrival at pickup location 1. Update trip status to 'driver_arrived' 2. Notify
+passenger 3. Record metric: DRIVER_ARRIVED
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.backup.ts:143*
+_Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.backup.ts:143_
 
 ---
 
 ### `handleTripComplete`
 
-Handles trip completion 1. Update trip status to 'completed' 2. Calculate final fare 3. Initiate payment 4. Request ratings from both parties 5. Record metrics: TRIP_COMPLETED, TRIP_DURATION
+Handles trip completion 1. Update trip status to 'completed' 2. Calculate final fare 3. Initiate
+payment 4. Request ratings from both parties 5. Record metrics: TRIP_COMPLETED, TRIP_DURATION
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.backup.ts:205*
+_Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.backup.ts:205_
 
 ---
 
 ### `handleTripCancel`
 
-Handles trip cancellation 1. Update trip status 2. Calculate cancellation fee (if applicable) 3. Notify other party 4. Record metric: TRIP_CANCELLED
+Handles trip cancellation 1. Update trip status 2. Calculate cancellation fee (if applicable) 3.
+Notify other party 4. Record metric: TRIP_CANCELLED
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.backup.ts:316*
+_Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.backup.ts:316_
 
 ---
 
 ### `handleTripRating`
 
-Handles trip rating 1. Validate rating (1-5) 2. Insert into trip_ratings table 3. Update user's average rating 4. Record metric: TRIP_RATED
+Handles trip rating 1. Validate rating (1-5) 2. Insert into trip_ratings table 3. Update user's
+average rating 4. Record metric: TRIP_RATED
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.backup.ts:425*
+_Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.backup.ts:425_
 
 ---
 
@@ -9634,7 +9986,7 @@ Handles trip rating 1. Validate rating (1-5) 2. Insert into trip_ratings table 3
 
 Get trip status
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.backup.ts:524*
+_Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.backup.ts:524_
 
 ---
 
@@ -9642,7 +9994,7 @@ Get trip status
 
 Check if user can perform action on trip
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.backup.ts:552*
+_Source: supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.backup.ts:552_
 
 ---
 
@@ -9650,15 +10002,16 @@ Check if user can perform action on trip
 
 Handle selection from recent searches list
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/nearby.ts:234*
+_Source: supabase/functions/wa-webhook-mobility/handlers/nearby.ts:234_
 
 ---
 
 ### `showRecentSearches`
 
-Show user's recent search locations for quick re-search Returns true if recent searches were shown, false if none available
+Show user's recent search locations for quick re-search Returns true if recent searches were shown,
+false if none available
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/nearby.ts:704*
+_Source: supabase/functions/wa-webhook-mobility/handlers/nearby.ts:704_
 
 ---
 
@@ -9666,7 +10019,7 @@ Show user's recent search locations for quick re-search Returns true if recent s
 
 Mobility Handlers Registry Lazy-loaded handler registration for optimal cold starts
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/index.ts:1*
+_Source: supabase/functions/wa-webhook-mobility/handlers/index.ts:1_
 
 ---
 
@@ -9674,7 +10027,7 @@ Mobility Handlers Registry Lazy-loaded handler registration for optimal cold sta
 
 Preload handlers that are commonly used Called after initial request to warm up subsequent calls
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/index.ts:56*
+_Source: supabase/functions/wa-webhook-mobility/handlers/index.ts:56_
 
 ---
 
@@ -9682,7 +10035,7 @@ Preload handlers that are commonly used Called after initial request to warm up 
 
 Get handler for action
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/index.ts:71*
+_Source: supabase/functions/wa-webhook-mobility/handlers/index.ts:71_
 
 ---
 
@@ -9690,7 +10043,7 @@ Get handler for action
 
 Start Go Online flow - prompt driver to share location
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/go_online.ts:21*
+_Source: supabase/functions/wa-webhook-mobility/handlers/go_online.ts:21_
 
 ---
 
@@ -9698,7 +10051,7 @@ Start Go Online flow - prompt driver to share location
 
 Handle when driver shares location to go online
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/go_online.ts:68*
+_Source: supabase/functions/wa-webhook-mobility/handlers/go_online.ts:68_
 
 ---
 
@@ -9706,7 +10059,7 @@ Handle when driver shares location to go online
 
 Handle using cached location to go online
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/go_online.ts:159*
+_Source: supabase/functions/wa-webhook-mobility/handlers/go_online.ts:159_
 
 ---
 
@@ -9714,15 +10067,16 @@ Handle using cached location to go online
 
 Handle going offline
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/go_online.ts:184*
+_Source: supabase/functions/wa-webhook-mobility/handlers/go_online.ts:184_
 
 ---
 
 ### `unnamed`
 
-MOMO USSD Payment Handler Handles MTN Mobile Money USSD payments for ride fares Uses USSD flow: *182*7*1# for payment initiation
+MOMO USSD Payment Handler Handles MTN Mobile Money USSD payments for ride fares Uses USSD flow:
+*182*7\*1# for payment initiation
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/momo_ussd_payment.ts:1*
+_Source: supabase/functions/wa-webhook-mobility/handlers/momo_ussd_payment.ts:1_
 
 ---
 
@@ -9730,7 +10084,7 @@ MOMO USSD Payment Handler Handles MTN Mobile Money USSD payments for ride fares 
 
 Calculate fare for a trip
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/momo_ussd_payment.ts:25*
+_Source: supabase/functions/wa-webhook-mobility/handlers/momo_ussd_payment.ts:25_
 
 ---
 
@@ -9738,7 +10092,7 @@ Calculate fare for a trip
 
 Initialize MOMO payment for a trip
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/momo_ussd_payment.ts:75*
+_Source: supabase/functions/wa-webhook-mobility/handlers/momo_ussd_payment.ts:75_
 
 ---
 
@@ -9746,7 +10100,7 @@ Initialize MOMO payment for a trip
 
 Handle payment confirmation from user
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/momo_ussd_payment.ts:146*
+_Source: supabase/functions/wa-webhook-mobility/handlers/momo_ussd_payment.ts:146_
 
 ---
 
@@ -9754,7 +10108,7 @@ Handle payment confirmation from user
 
 Verify MOMO payment In production, this would query MTN MOMO API or check reconciliation table
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/momo_ussd_payment.ts:261*
+_Source: supabase/functions/wa-webhook-mobility/handlers/momo_ussd_payment.ts:261_
 
 ---
 
@@ -9762,7 +10116,7 @@ Verify MOMO payment In production, this would query MTN MOMO API or check reconc
 
 Handle refund request
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/momo_ussd_payment.ts:289*
+_Source: supabase/functions/wa-webhook-mobility/handlers/momo_ussd_payment.ts:289_
 
 ---
 
@@ -9770,7 +10124,7 @@ Handle refund request
 
 Get payment state
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/momo_ussd_payment.ts:355*
+_Source: supabase/functions/wa-webhook-mobility/handlers/momo_ussd_payment.ts:355_
 
 ---
 
@@ -9778,7 +10132,7 @@ Get payment state
 
 Parse payment state from stored data
 
-*Source: supabase/functions/wa-webhook-mobility/handlers/momo_ussd_payment.ts:362*
+_Source: supabase/functions/wa-webhook-mobility/handlers/momo_ussd_payment.ts:362_
 
 ---
 
@@ -9786,7 +10140,7 @@ Parse payment state from stored data
 
 Find nearby online drivers for a trip
 
-*Source: supabase/functions/wa-webhook-mobility/notifications/drivers.ts:19*
+_Source: supabase/functions/wa-webhook-mobility/notifications/drivers.ts:19_
 
 ---
 
@@ -9794,7 +10148,7 @@ Find nearby online drivers for a trip
 
 Send notification to a driver about a nearby passenger
 
-*Source: supabase/functions/wa-webhook-mobility/notifications/drivers.ts:53*
+_Source: supabase/functions/wa-webhook-mobility/notifications/drivers.ts:53_
 
 ---
 
@@ -9802,7 +10156,7 @@ Send notification to a driver about a nearby passenger
 
 Notify multiple drivers about a trip
 
-*Source: supabase/functions/wa-webhook-mobility/notifications/drivers.ts:113*
+_Source: supabase/functions/wa-webhook-mobility/notifications/drivers.ts:113_
 
 ---
 
@@ -9810,7 +10164,7 @@ Notify multiple drivers about a trip
 
 Handle driver's response to ride offer
 
-*Source: supabase/functions/wa-webhook-mobility/notifications/drivers.ts:151*
+_Source: supabase/functions/wa-webhook-mobility/notifications/drivers.ts:151_
 
 ---
 
@@ -9818,15 +10172,16 @@ Handle driver's response to ride offer
 
 Notify passenger that a driver has accepted
 
-*Source: supabase/functions/wa-webhook-mobility/notifications/drivers.ts:199*
+_Source: supabase/functions/wa-webhook-mobility/notifications/drivers.ts:199_
 
 ---
 
 ### `unnamed`
 
-Supabase Edge Function: geocode-locations Geocodes bars and businesses using Google Maps Geocoding API Can be triggered manually or via scheduled cron job
+Supabase Edge Function: geocode-locations Geocodes bars and businesses using Google Maps Geocoding
+API Can be triggered manually or via scheduled cron job
 
-*Source: supabase/functions/geocode-locations/index.ts:1*
+_Source: supabase/functions/geocode-locations/index.ts:1_
 
 ---
 
@@ -9834,7 +10189,7 @@ Supabase Edge Function: geocode-locations Geocodes bars and businesses using Goo
 
 wa-webhook-core - Optimized Entry Point Performance-optimized version with caching and lazy loading
 
-*Source: supabase/functions/wa-webhook-core/index.optimized.ts:1*
+_Source: supabase/functions/wa-webhook-core/index.optimized.ts:1_
 
 ---
 
@@ -9842,7 +10197,7 @@ wa-webhook-core - Optimized Entry Point Performance-optimized version with cachi
 
 Sleep for a given duration with optional jitter
 
-*Source: supabase/functions/wa-webhook-core/router.ts:74*
+_Source: supabase/functions/wa-webhook-core/router.ts:74_
 
 ---
 
@@ -9850,7 +10205,7 @@ Sleep for a given duration with optional jitter
 
 Check if an error or status code is retriable
 
-*Source: supabase/functions/wa-webhook-core/router.ts:82*
+_Source: supabase/functions/wa-webhook-core/router.ts:82_
 
 ---
 
@@ -9858,15 +10213,16 @@ Check if an error or status code is retriable
 
 wa-webhook-core - Central Router Service Entry point for all WhatsApp webhook messages
 
-*Source: supabase/functions/wa-webhook-core/index-refactored.ts:1*
+_Source: supabase/functions/wa-webhook-core/index-refactored.ts:1_
 
 ---
 
 ### `unnamed`
 
-Routing Test Script for wa-webhook-core Tests keyword-based routing using the consolidated route config
+Routing Test Script for wa-webhook-core Tests keyword-based routing using the consolidated route
+config
 
-*Source: supabase/functions/wa-webhook-core/test_routing.ts:3*
+_Source: supabase/functions/wa-webhook-core/test_routing.ts:3_
 
 ---
 
@@ -9874,7 +10230,7 @@ Routing Test Script for wa-webhook-core Tests keyword-based routing using the co
 
 Extract phone number from WhatsApp webhook payload
 
-*Source: supabase/functions/wa-webhook-core/index.ts:232*
+_Source: supabase/functions/wa-webhook-core/index.ts:232_
 
 ---
 
@@ -9882,7 +10238,7 @@ Extract phone number from WhatsApp webhook payload
 
 Health Check Handler Provides service health status
 
-*Source: supabase/functions/wa-webhook-core/handlers/health.ts:1*
+_Source: supabase/functions/wa-webhook-core/handlers/health.ts:1_
 
 ---
 
@@ -9890,7 +10246,7 @@ Health Check Handler Provides service health status
 
 Perform health check
 
-*Source: supabase/functions/wa-webhook-core/handlers/health.ts:13*
+_Source: supabase/functions/wa-webhook-core/handlers/health.ts:13_
 
 ---
 
@@ -9898,7 +10254,7 @@ Perform health check
 
 Create health check response
 
-*Source: supabase/functions/wa-webhook-core/handlers/health.ts:61*
+_Source: supabase/functions/wa-webhook-core/handlers/health.ts:61_
 
 ---
 
@@ -9906,7 +10262,7 @@ Create health check response
 
 Webhook Verification Handler Handles WhatsApp webhook verification
 
-*Source: supabase/functions/wa-webhook-core/handlers/webhook.ts:1*
+_Source: supabase/functions/wa-webhook-core/handlers/webhook.ts:1_
 
 ---
 
@@ -9914,7 +10270,7 @@ Webhook Verification Handler Handles WhatsApp webhook verification
 
 Handle webhook verification (GET request)
 
-*Source: supabase/functions/wa-webhook-core/handlers/webhook.ts:9*
+_Source: supabase/functions/wa-webhook-core/handlers/webhook.ts:9_
 
 ---
 
@@ -9922,7 +10278,7 @@ Handle webhook verification (GET request)
 
 Home Menu Handler Handles home menu display and navigation
 
-*Source: supabase/functions/wa-webhook-core/handlers/home.ts:1*
+_Source: supabase/functions/wa-webhook-core/handlers/home.ts:1_
 
 ---
 
@@ -9930,7 +10286,7 @@ Home Menu Handler Handles home menu display and navigation
 
 Handle home menu request
 
-*Source: supabase/functions/wa-webhook-core/handlers/home.ts:12*
+_Source: supabase/functions/wa-webhook-core/handlers/home.ts:12_
 
 ---
 
@@ -9938,7 +10294,7 @@ Handle home menu request
 
 Handle back to home button
 
-*Source: supabase/functions/wa-webhook-core/handlers/home.ts:53*
+_Source: supabase/functions/wa-webhook-core/handlers/home.ts:53_
 
 ---
 
@@ -9946,7 +10302,7 @@ Handle back to home button
 
 State Router Routes messages based on current user state
 
-*Source: supabase/functions/wa-webhook-core/router/state-router.ts:1*
+_Source: supabase/functions/wa-webhook-core/router/state-router.ts:1_
 
 ---
 
@@ -9954,7 +10310,7 @@ State Router Routes messages based on current user state
 
 Route message based on current user state
 
-*Source: supabase/functions/wa-webhook-core/router/state-router.ts:51*
+_Source: supabase/functions/wa-webhook-core/router/state-router.ts:51_
 
 ---
 
@@ -9962,7 +10318,7 @@ Route message based on current user state
 
 Keyword Router Routes messages based on text content keywords
 
-*Source: supabase/functions/wa-webhook-core/router/keyword-router.ts:1*
+_Source: supabase/functions/wa-webhook-core/router/keyword-router.ts:1_
 
 ---
 
@@ -9970,7 +10326,7 @@ Keyword Router Routes messages based on text content keywords
 
 Route message based on keywords in text
 
-*Source: supabase/functions/wa-webhook-core/router/keyword-router.ts:51*
+_Source: supabase/functions/wa-webhook-core/router/keyword-router.ts:51_
 
 ---
 
@@ -9978,7 +10334,7 @@ Route message based on keywords in text
 
 Calculate keyword match score
 
-*Source: supabase/functions/wa-webhook-core/router/keyword-router.ts:114*
+_Source: supabase/functions/wa-webhook-core/router/keyword-router.ts:114_
 
 ---
 
@@ -9986,7 +10342,7 @@ Calculate keyword match score
 
 Message Router Determines which service should handle incoming messages
 
-*Source: supabase/functions/wa-webhook-core/router/index.ts:1*
+_Source: supabase/functions/wa-webhook-core/router/index.ts:1_
 
 ---
 
@@ -9994,7 +10350,7 @@ Message Router Determines which service should handle incoming messages
 
 Route incoming message to appropriate service
 
-*Source: supabase/functions/wa-webhook-core/router/index.ts:18*
+_Source: supabase/functions/wa-webhook-core/router/index.ts:18_
 
 ---
 
@@ -10002,7 +10358,7 @@ Route incoming message to appropriate service
 
 Service Forwarder Forwards requests to appropriate microservices
 
-*Source: supabase/functions/wa-webhook-core/router/forwarder.ts:1*
+_Source: supabase/functions/wa-webhook-core/router/forwarder.ts:1_
 
 ---
 
@@ -10010,7 +10366,7 @@ Service Forwarder Forwards requests to appropriate microservices
 
 Forward webhook payload to target service
 
-*Source: supabase/functions/wa-webhook-core/router/forwarder.ts:14*
+_Source: supabase/functions/wa-webhook-core/router/forwarder.ts:14_
 
 ---
 
@@ -10018,7 +10374,7 @@ Forward webhook payload to target service
 
 Forward to service by name (convenience function)
 
-*Source: supabase/functions/wa-webhook-core/router/forwarder.ts:88*
+_Source: supabase/functions/wa-webhook-core/router/forwarder.ts:88_
 
 ---
 
@@ -10026,7 +10382,7 @@ Forward to service by name (convenience function)
 
 Detect dominant language from text
 
-*Source: supabase/functions/_shared/multilingual-utils.ts:18*
+_Source: supabase/functions/\_shared/multilingual-utils.ts:18_
 
 ---
 
@@ -10034,7 +10390,7 @@ Detect dominant language from text
 
 Translate text between languages
 
-*Source: supabase/functions/_shared/multilingual-utils.ts:58*
+_Source: supabase/functions/\_shared/multilingual-utils.ts:58_
 
 ---
 
@@ -10042,7 +10398,7 @@ Translate text between languages
 
 Get language name
 
-*Source: supabase/functions/_shared/multilingual-utils.ts:98*
+_Source: supabase/functions/\_shared/multilingual-utils.ts:98_
 
 ---
 
@@ -10050,15 +10406,16 @@ Get language name
 
 Get country from language
 
-*Source: supabase/functions/_shared/multilingual-utils.ts:110*
+_Source: supabase/functions/\_shared/multilingual-utils.ts:110_
 
 ---
 
 ### `unnamed`
 
-Feature Flags for Supabase Edge Functions Provides feature flag checking to control feature rollout. Flags are controlled via environment variables.
+Feature Flags for Supabase Edge Functions Provides feature flag checking to control feature rollout.
+Flags are controlled via environment variables.
 
-*Source: supabase/functions/_shared/feature-flags.ts:1*
+_Source: supabase/functions/\_shared/feature-flags.ts:1_
 
 ---
 
@@ -10066,7 +10423,7 @@ Feature Flags for Supabase Edge Functions Provides feature flag checking to cont
 
 Convert feature flag name to environment variable name
 
-*Source: supabase/functions/_shared/feature-flags.ts:65*
+_Source: supabase/functions/\_shared/feature-flags.ts:65_
 
 ---
 
@@ -10074,15 +10431,16 @@ Convert feature flag name to environment variable name
 
 Get feature flag value from environment
 
-*Source: supabase/functions/_shared/feature-flags.ts:75*
+_Source: supabase/functions/\_shared/feature-flags.ts:75_
 
 ---
 
 ### `isFeatureEnabled`
 
-Check if a feature flag is enabled Priority: 1. Environment variable (FEATURE_*) 2. Consolidated flag for agent.* features (FEATURE_AGENT_ALL) 3. Default value
+Check if a feature flag is enabled Priority: 1. Environment variable (FEATURE\__) 2. Consolidated
+flag for agent._ features (FEATURE_AGENT_ALL) 3. Default value
 
-*Source: supabase/functions/_shared/feature-flags.ts:88*
+_Source: supabase/functions/\_shared/feature-flags.ts:88_
 
 ---
 
@@ -10090,7 +10448,7 @@ Check if a feature flag is enabled Priority: 1. Environment variable (FEATURE_*)
 
 Require feature flag or throw error
 
-*Source: supabase/functions/_shared/feature-flags.ts:122*
+_Source: supabase/functions/\_shared/feature-flags.ts:122_
 
 ---
 
@@ -10098,7 +10456,7 @@ Require feature flag or throw error
 
 Get all feature flag states (for debugging/admin endpoints)
 
-*Source: supabase/functions/_shared/feature-flags.ts:138*
+_Source: supabase/functions/\_shared/feature-flags.ts:138_
 
 ---
 
@@ -10106,7 +10464,7 @@ Get all feature flag states (for debugging/admin endpoints)
 
 Validate request body against schema Returns parsed data or throws validation error
 
-*Source: supabase/functions/_shared/validation.ts:61*
+_Source: supabase/functions/\_shared/validation.ts:61_
 
 ---
 
@@ -10114,7 +10472,7 @@ Validate request body against schema Returns parsed data or throws validation er
 
 Create validation error response
 
-*Source: supabase/functions/_shared/validation.ts:77*
+_Source: supabase/functions/\_shared/validation.ts:77_
 
 ---
 
@@ -10122,7 +10480,7 @@ Create validation error response
 
 Check if request exceeds rate limit
 
-*Source: supabase/functions/_shared/validation.ts:114*
+_Source: supabase/functions/\_shared/validation.ts:114_
 
 ---
 
@@ -10130,7 +10488,7 @@ Check if request exceeds rate limit
 
 Create rate limit error response
 
-*Source: supabase/functions/_shared/validation.ts:159*
+_Source: supabase/functions/\_shared/validation.ts:159_
 
 ---
 
@@ -10138,7 +10496,7 @@ Create rate limit error response
 
 Cleanup expired rate limit entries (run periodically)
 
-*Source: supabase/functions/_shared/validation.ts:181*
+_Source: supabase/functions/\_shared/validation.ts:181_
 
 ---
 
@@ -10146,7 +10504,7 @@ Cleanup expired rate limit entries (run periodically)
 
 Extract IP address from request
 
-*Source: supabase/functions/_shared/validation.ts:196*
+_Source: supabase/functions/\_shared/validation.ts:196_
 
 ---
 
@@ -10154,7 +10512,7 @@ Extract IP address from request
 
 Extract user identifier from request (for user-based rate limiting)
 
-*Source: supabase/functions/_shared/validation.ts:215*
+_Source: supabase/functions/\_shared/validation.ts:215_
 
 ---
 
@@ -10162,7 +10520,7 @@ Extract user identifier from request (for user-based rate limiting)
 
 Wrap a handler function with correlation ID handling
 
-*Source: supabase/functions/_shared/middleware/correlation.ts:27*
+_Source: supabase/functions/\_shared/middleware/correlation.ts:27_
 
 ---
 
@@ -10170,7 +10528,7 @@ Wrap a handler function with correlation ID handling
 
 Extract correlation ID from request (for use without middleware)
 
-*Source: supabase/functions/_shared/middleware/correlation.ts:74*
+_Source: supabase/functions/\_shared/middleware/correlation.ts:74_
 
 ---
 
@@ -10178,7 +10536,7 @@ Extract correlation ID from request (for use without middleware)
 
 Request Deduplication Middleware Prevents duplicate message processing
 
-*Source: supabase/functions/_shared/middleware/deduplication.ts:1*
+_Source: supabase/functions/\_shared/middleware/deduplication.ts:1_
 
 ---
 
@@ -10186,7 +10544,7 @@ Request Deduplication Middleware Prevents duplicate message processing
 
 Time window for deduplication in milliseconds
 
-*Source: supabase/functions/_shared/middleware/deduplication.ts:14*
+_Source: supabase/functions/\_shared/middleware/deduplication.ts:14_
 
 ---
 
@@ -10194,7 +10552,7 @@ Time window for deduplication in milliseconds
 
 Maximum entries to track
 
-*Source: supabase/functions/_shared/middleware/deduplication.ts:16*
+_Source: supabase/functions/\_shared/middleware/deduplication.ts:16_
 
 ---
 
@@ -10202,7 +10560,7 @@ Maximum entries to track
 
 Key extraction function
 
-*Source: supabase/functions/_shared/middleware/deduplication.ts:18*
+_Source: supabase/functions/\_shared/middleware/deduplication.ts:18_
 
 ---
 
@@ -10210,7 +10568,7 @@ Key extraction function
 
 Check if request is a duplicate
 
-*Source: supabase/functions/_shared/middleware/deduplication.ts:51*
+_Source: supabase/functions/\_shared/middleware/deduplication.ts:51_
 
 ---
 
@@ -10218,7 +10576,7 @@ Check if request is a duplicate
 
 Deduplication middleware
 
-*Source: supabase/functions/_shared/middleware/deduplication.ts:80*
+_Source: supabase/functions/\_shared/middleware/deduplication.ts:80_
 
 ---
 
@@ -10226,7 +10584,7 @@ Deduplication middleware
 
 Get deduplication stats
 
-*Source: supabase/functions/_shared/middleware/deduplication.ts:136*
+_Source: supabase/functions/\_shared/middleware/deduplication.ts:136_
 
 ---
 
@@ -10234,7 +10592,7 @@ Get deduplication stats
 
 Clear deduplication cache
 
-*Source: supabase/functions/_shared/middleware/deduplication.ts:143*
+_Source: supabase/functions/\_shared/middleware/deduplication.ts:143_
 
 ---
 
@@ -10242,7 +10600,7 @@ Clear deduplication cache
 
 Supabase Client Pool Manages Supabase client instances for optimal connection reuse
 
-*Source: supabase/functions/_shared/database/client-pool.ts:1*
+_Source: supabase/functions/\_shared/database/client-pool.ts:1_
 
 ---
 
@@ -10250,7 +10608,7 @@ Supabase Client Pool Manages Supabase client instances for optimal connection re
 
 Maximum number of clients to pool
 
-*Source: supabase/functions/_shared/database/client-pool.ts:15*
+_Source: supabase/functions/\_shared/database/client-pool.ts:15_
 
 ---
 
@@ -10258,7 +10616,7 @@ Maximum number of clients to pool
 
 Idle timeout in milliseconds
 
-*Source: supabase/functions/_shared/database/client-pool.ts:17*
+_Source: supabase/functions/\_shared/database/client-pool.ts:17_
 
 ---
 
@@ -10266,7 +10624,7 @@ Idle timeout in milliseconds
 
 Enable health checks
 
-*Source: supabase/functions/_shared/database/client-pool.ts:19*
+_Source: supabase/functions/\_shared/database/client-pool.ts:19_
 
 ---
 
@@ -10274,7 +10632,7 @@ Enable health checks
 
 Health check interval in milliseconds
 
-*Source: supabase/functions/_shared/database/client-pool.ts:21*
+_Source: supabase/functions/\_shared/database/client-pool.ts:21_
 
 ---
 
@@ -10282,7 +10640,7 @@ Health check interval in milliseconds
 
 Initialize the pool
 
-*Source: supabase/functions/_shared/database/client-pool.ts:58*
+_Source: supabase/functions/\_shared/database/client-pool.ts:58_
 
 ---
 
@@ -10290,7 +10648,7 @@ Initialize the pool
 
 Get a client from the pool
 
-*Source: supabase/functions/_shared/database/client-pool.ts:78*
+_Source: supabase/functions/\_shared/database/client-pool.ts:78_
 
 ---
 
@@ -10298,7 +10656,7 @@ Get a client from the pool
 
 Get pool statistics
 
-*Source: supabase/functions/_shared/database/client-pool.ts:107*
+_Source: supabase/functions/\_shared/database/client-pool.ts:107_
 
 ---
 
@@ -10306,7 +10664,7 @@ Get pool statistics
 
 Cleanup idle clients
 
-*Source: supabase/functions/_shared/database/client-pool.ts:127*
+_Source: supabase/functions/\_shared/database/client-pool.ts:127_
 
 ---
 
@@ -10314,7 +10672,7 @@ Cleanup idle clients
 
 Shutdown the pool
 
-*Source: supabase/functions/_shared/database/client-pool.ts:149*
+_Source: supabase/functions/\_shared/database/client-pool.ts:149_
 
 ---
 
@@ -10322,7 +10680,7 @@ Shutdown the pool
 
 Get the client pool instance
 
-*Source: supabase/functions/_shared/database/client-pool.ts:215*
+_Source: supabase/functions/\_shared/database/client-pool.ts:215_
 
 ---
 
@@ -10330,7 +10688,7 @@ Get the client pool instance
 
 Get a Supabase client from the pool
 
-*Source: supabase/functions/_shared/database/client-pool.ts:225*
+_Source: supabase/functions/\_shared/database/client-pool.ts:225_
 
 ---
 
@@ -10338,7 +10696,7 @@ Get a Supabase client from the pool
 
 Quick access to Supabase client (creates if needed)
 
-*Source: supabase/functions/_shared/database/client-pool.ts:232*
+_Source: supabase/functions/\_shared/database/client-pool.ts:232_
 
 ---
 
@@ -10346,7 +10704,7 @@ Quick access to Supabase client (creates if needed)
 
 Query Builder Optimized query construction with common patterns
 
-*Source: supabase/functions/_shared/database/query-builder.ts:1*
+_Source: supabase/functions/\_shared/database/query-builder.ts:1_
 
 ---
 
@@ -10354,7 +10712,7 @@ Query Builder Optimized query construction with common patterns
 
 Select specific columns
 
-*Source: supabase/functions/_shared/database/query-builder.ts:52*
+_Source: supabase/functions/\_shared/database/query-builder.ts:52_
 
 ---
 
@@ -10362,7 +10720,7 @@ Select specific columns
 
 Add equality filter
 
-*Source: supabase/functions/_shared/database/query-builder.ts:60*
+_Source: supabase/functions/\_shared/database/query-builder.ts:60_
 
 ---
 
@@ -10370,7 +10728,7 @@ Add equality filter
 
 Add not equal filter
 
-*Source: supabase/functions/_shared/database/query-builder.ts:68*
+_Source: supabase/functions/\_shared/database/query-builder.ts:68_
 
 ---
 
@@ -10378,7 +10736,7 @@ Add not equal filter
 
 Add greater than filter
 
-*Source: supabase/functions/_shared/database/query-builder.ts:76*
+_Source: supabase/functions/\_shared/database/query-builder.ts:76_
 
 ---
 
@@ -10386,7 +10744,7 @@ Add greater than filter
 
 Add greater than or equal filter
 
-*Source: supabase/functions/_shared/database/query-builder.ts:84*
+_Source: supabase/functions/\_shared/database/query-builder.ts:84_
 
 ---
 
@@ -10394,7 +10752,7 @@ Add greater than or equal filter
 
 Add less than filter
 
-*Source: supabase/functions/_shared/database/query-builder.ts:92*
+_Source: supabase/functions/\_shared/database/query-builder.ts:92_
 
 ---
 
@@ -10402,7 +10760,7 @@ Add less than filter
 
 Add less than or equal filter
 
-*Source: supabase/functions/_shared/database/query-builder.ts:100*
+_Source: supabase/functions/\_shared/database/query-builder.ts:100_
 
 ---
 
@@ -10410,7 +10768,7 @@ Add less than or equal filter
 
 Add IN filter
 
-*Source: supabase/functions/_shared/database/query-builder.ts:108*
+_Source: supabase/functions/\_shared/database/query-builder.ts:108_
 
 ---
 
@@ -10418,7 +10776,7 @@ Add IN filter
 
 Add LIKE filter
 
-*Source: supabase/functions/_shared/database/query-builder.ts:116*
+_Source: supabase/functions/\_shared/database/query-builder.ts:116_
 
 ---
 
@@ -10426,7 +10784,7 @@ Add LIKE filter
 
 Add ILIKE filter (case insensitive)
 
-*Source: supabase/functions/_shared/database/query-builder.ts:124*
+_Source: supabase/functions/\_shared/database/query-builder.ts:124_
 
 ---
 
@@ -10434,7 +10792,7 @@ Add ILIKE filter (case insensitive)
 
 Add IS NULL filter
 
-*Source: supabase/functions/_shared/database/query-builder.ts:132*
+_Source: supabase/functions/\_shared/database/query-builder.ts:132_
 
 ---
 
@@ -10442,7 +10800,7 @@ Add IS NULL filter
 
 Add IS NOT NULL filter
 
-*Source: supabase/functions/_shared/database/query-builder.ts:140*
+_Source: supabase/functions/\_shared/database/query-builder.ts:140_
 
 ---
 
@@ -10450,7 +10808,7 @@ Add IS NOT NULL filter
 
 Set order by
 
-*Source: supabase/functions/_shared/database/query-builder.ts:148*
+_Source: supabase/functions/\_shared/database/query-builder.ts:148_
 
 ---
 
@@ -10458,7 +10816,7 @@ Set order by
 
 Set limit
 
-*Source: supabase/functions/_shared/database/query-builder.ts:157*
+_Source: supabase/functions/\_shared/database/query-builder.ts:157_
 
 ---
 
@@ -10466,7 +10824,7 @@ Set limit
 
 Set offset
 
-*Source: supabase/functions/_shared/database/query-builder.ts:165*
+_Source: supabase/functions/\_shared/database/query-builder.ts:165_
 
 ---
 
@@ -10474,7 +10832,7 @@ Set offset
 
 Enable count
 
-*Source: supabase/functions/_shared/database/query-builder.ts:173*
+_Source: supabase/functions/\_shared/database/query-builder.ts:173_
 
 ---
 
@@ -10482,7 +10840,7 @@ Enable count
 
 Apply pagination
 
-*Source: supabase/functions/_shared/database/query-builder.ts:181*
+_Source: supabase/functions/\_shared/database/query-builder.ts:181_
 
 ---
 
@@ -10490,7 +10848,7 @@ Apply pagination
 
 Execute query
 
-*Source: supabase/functions/_shared/database/query-builder.ts:191*
+_Source: supabase/functions/\_shared/database/query-builder.ts:191_
 
 ---
 
@@ -10498,7 +10856,7 @@ Execute query
 
 Execute and get single result
 
-*Source: supabase/functions/_shared/database/query-builder.ts:261*
+_Source: supabase/functions/\_shared/database/query-builder.ts:261_
 
 ---
 
@@ -10506,7 +10864,7 @@ Execute and get single result
 
 Create query builder for table
 
-*Source: supabase/functions/_shared/database/query-builder.ts:273*
+_Source: supabase/functions/\_shared/database/query-builder.ts:273_
 
 ---
 
@@ -10514,7 +10872,7 @@ Create query builder for table
 
 Optimized Queries Pre-built optimized queries for common operations
 
-*Source: supabase/functions/_shared/database/optimized-queries.ts:1*
+_Source: supabase/functions/\_shared/database/optimized-queries.ts:1_
 
 ---
 
@@ -10522,7 +10880,7 @@ Optimized Queries Pre-built optimized queries for common operations
 
 Get profile by ID (optimized with minimal fields)
 
-*Source: supabase/functions/_shared/database/optimized-queries.ts:15*
+_Source: supabase/functions/\_shared/database/optimized-queries.ts:15_
 
 ---
 
@@ -10530,7 +10888,7 @@ Get profile by ID (optimized with minimal fields)
 
 Get profile by phone (optimized)
 
-*Source: supabase/functions/_shared/database/optimized-queries.ts:38*
+_Source: supabase/functions/\_shared/database/optimized-queries.ts:38_
 
 ---
 
@@ -10538,7 +10896,7 @@ Get profile by phone (optimized)
 
 Find nearby drivers (optimized with spatial query hint)
 
-*Source: supabase/functions/_shared/database/optimized-queries.ts:60*
+_Source: supabase/functions/\_shared/database/optimized-queries.ts:60_
 
 ---
 
@@ -10546,7 +10904,7 @@ Find nearby drivers (optimized with spatial query hint)
 
 Fallback query without PostGIS
 
-*Source: supabase/functions/_shared/database/optimized-queries.ts:113*
+_Source: supabase/functions/\_shared/database/optimized-queries.ts:113_
 
 ---
 
@@ -10554,7 +10912,7 @@ Fallback query without PostGIS
 
 Get active trip for user
 
-*Source: supabase/functions/_shared/database/optimized-queries.ts:158*
+_Source: supabase/functions/\_shared/database/optimized-queries.ts:158_
 
 ---
 
@@ -10562,7 +10920,7 @@ Get active trip for user
 
 Get recent insurance lead
 
-*Source: supabase/functions/_shared/database/optimized-queries.ts:179*
+_Source: supabase/functions/\_shared/database/optimized-queries.ts:179_
 
 ---
 
@@ -10570,7 +10928,7 @@ Get recent insurance lead
 
 Get user claims
 
-*Source: supabase/functions/_shared/database/optimized-queries.ts:199*
+_Source: supabase/functions/\_shared/database/optimized-queries.ts:199_
 
 ---
 
@@ -10578,7 +10936,7 @@ Get user claims
 
 Get wallet balance (optimized)
 
-*Source: supabase/functions/_shared/database/optimized-queries.ts:223*
+_Source: supabase/functions/\_shared/database/optimized-queries.ts:223_
 
 ---
 
@@ -10586,7 +10944,7 @@ Get wallet balance (optimized)
 
 Get transaction history
 
-*Source: supabase/functions/_shared/database/optimized-queries.ts:238*
+_Source: supabase/functions/\_shared/database/optimized-queries.ts:238_
 
 ---
 
@@ -10594,7 +10952,7 @@ Get transaction history
 
 Calculate distance between two points (Haversine formula)
 
-*Source: supabase/functions/_shared/database/optimized-queries.ts:263*
+_Source: supabase/functions/\_shared/database/optimized-queries.ts:263_
 
 ---
 
@@ -10602,7 +10960,7 @@ Calculate distance between two points (Haversine formula)
 
 Download audio from WhatsApp Cloud API
 
-*Source: supabase/functions/_shared/voice-handler.ts:13*
+_Source: supabase/functions/\_shared/voice-handler.ts:13_
 
 ---
 
@@ -10610,7 +10968,7 @@ Download audio from WhatsApp Cloud API
 
 Transcribe audio using OpenAI Whisper
 
-*Source: supabase/functions/_shared/voice-handler.ts:56*
+_Source: supabase/functions/\_shared/voice-handler.ts:56_
 
 ---
 
@@ -10618,7 +10976,7 @@ Transcribe audio using OpenAI Whisper
 
 Generate speech from text using OpenAI TTS
 
-*Source: supabase/functions/_shared/voice-handler.ts:92*
+_Source: supabase/functions/\_shared/voice-handler.ts:92_
 
 ---
 
@@ -10626,7 +10984,7 @@ Generate speech from text using OpenAI TTS
 
 Upload media to WhatsApp Cloud API
 
-*Source: supabase/functions/_shared/voice-handler.ts:117*
+_Source: supabase/functions/\_shared/voice-handler.ts:117_
 
 ---
 
@@ -10634,15 +10992,19 @@ Upload media to WhatsApp Cloud API
 
 OpenAI LLM Provider Implementation Wraps OpenAI API with the standard LLM Provider interface
 
-*Source: supabase/functions/_shared/llm-provider-openai.ts:1*
+_Source: supabase/functions/\_shared/llm-provider-openai.ts:1_
 
 ---
 
 ### `unnamed`
 
-Marketplace Payment Module Handles USSD-based MoMo payments for marketplace transactions. Uses tap-to-dial tel: links for seamless mobile payment experience. Payment Flow: 1. Buyer expresses interest in listing 2. System creates transaction record 3. Sends USSD link to buyer (tel:*182*8*1*MERCHANT*AMOUNT#) 4. Buyer taps link → dials USSD → completes MoMo payment 5. Buyer confirms payment in chat 6. Seller confirms receipt 7. Transaction marked complete
+Marketplace Payment Module Handles USSD-based MoMo payments for marketplace transactions. Uses
+tap-to-dial tel: links for seamless mobile payment experience. Payment Flow: 1. Buyer expresses
+interest in listing 2. System creates transaction record 3. Sends USSD link to buyer
+(tel:*182*8*1*MERCHANT\*AMOUNT#) 4. Buyer taps link → dials USSD → completes MoMo payment 5. Buyer
+confirms payment in chat 6. Seller confirms receipt 7. Transaction marked complete
 
-*Source: supabase/functions/_shared/tools/marketplace-payment-core.ts:1*
+_Source: supabase/functions/\_shared/tools/marketplace-payment-core.ts:1_
 
 ---
 
@@ -10650,7 +11012,7 @@ Marketplace Payment Module Handles USSD-based MoMo payments for marketplace tran
 
 Generate USSD code for MoMo merchant payment
 
-*Source: supabase/functions/_shared/tools/marketplace-payment-core.ts:86*
+_Source: supabase/functions/\_shared/tools/marketplace-payment-core.ts:86_
 
 ---
 
@@ -10658,7 +11020,7 @@ Generate USSD code for MoMo merchant payment
 
 Create tap-to-dial tel: link Note: Keep unencoded for better Android compatibility
 
-*Source: supabase/functions/_shared/tools/marketplace-payment-core.ts:94*
+_Source: supabase/functions/\_shared/tools/marketplace-payment-core.ts:94_
 
 ---
 
@@ -10666,7 +11028,7 @@ Create tap-to-dial tel: link Note: Keep unencoded for better Android compatibili
 
 Format USSD code for display (user-friendly)
 
-*Source: supabase/functions/_shared/tools/marketplace-payment-core.ts:102*
+_Source: supabase/functions/\_shared/tools/marketplace-payment-core.ts:102_
 
 ---
 
@@ -10674,7 +11036,7 @@ Format USSD code for display (user-friendly)
 
 Initiate a payment transaction
 
-*Source: supabase/functions/_shared/tools/marketplace-payment-core.ts:113*
+_Source: supabase/functions/\_shared/tools/marketplace-payment-core.ts:113_
 
 ---
 
@@ -10682,7 +11044,7 @@ Initiate a payment transaction
 
 Buyer confirms they've completed payment
 
-*Source: supabase/functions/_shared/tools/marketplace-payment-core.ts:273*
+_Source: supabase/functions/\_shared/tools/marketplace-payment-core.ts:273_
 
 ---
 
@@ -10690,7 +11052,7 @@ Buyer confirms they've completed payment
 
 Seller confirms they've received payment
 
-*Source: supabase/functions/_shared/tools/marketplace-payment-core.ts:355*
+_Source: supabase/functions/\_shared/tools/marketplace-payment-core.ts:355_
 
 ---
 
@@ -10698,7 +11060,7 @@ Seller confirms they've received payment
 
 Cancel a transaction
 
-*Source: supabase/functions/_shared/tools/marketplace-payment-core.ts:458*
+_Source: supabase/functions/\_shared/tools/marketplace-payment-core.ts:458_
 
 ---
 
@@ -10706,15 +11068,16 @@ Cancel a transaction
 
 Get transaction details
 
-*Source: supabase/functions/_shared/tools/marketplace-payment-core.ts:522*
+_Source: supabase/functions/\_shared/tools/marketplace-payment-core.ts:522_
 
 ---
 
 ### `unnamed`
 
-Payment Handler for Marketplace Integrates payment flow with the AI agent and WhatsApp conversation. Handles text-based payment commands and transaction state management.
+Payment Handler for Marketplace Integrates payment flow with the AI agent and WhatsApp conversation.
+Handles text-based payment commands and transaction state management.
 
-*Source: supabase/functions/_shared/tools/marketplace-payment.ts:1*
+_Source: supabase/functions/\_shared/tools/marketplace-payment.ts:1_
 
 ---
 
@@ -10722,7 +11085,7 @@ Payment Handler for Marketplace Integrates payment flow with the AI agent and Wh
 
 Check if message is a payment-related command
 
-*Source: supabase/functions/_shared/tools/marketplace-payment.ts:24*
+_Source: supabase/functions/\_shared/tools/marketplace-payment.ts:24_
 
 ---
 
@@ -10730,7 +11093,7 @@ Check if message is a payment-related command
 
 Handle payment-related commands
 
-*Source: supabase/functions/_shared/tools/marketplace-payment.ts:42*
+_Source: supabase/functions/\_shared/tools/marketplace-payment.ts:42_
 
 ---
 
@@ -10738,7 +11101,7 @@ Handle payment-related commands
 
 Show user's transaction status
 
-*Source: supabase/functions/_shared/tools/marketplace-payment.ts:173*
+_Source: supabase/functions/\_shared/tools/marketplace-payment.ts:173_
 
 ---
 
@@ -10746,7 +11109,7 @@ Show user's transaction status
 
 Handle purchase intent from search results
 
-*Source: supabase/functions/_shared/tools/marketplace-payment.ts:218*
+_Source: supabase/functions/\_shared/tools/marketplace-payment.ts:218_
 
 ---
 
@@ -10754,7 +11117,7 @@ Handle purchase intent from search results
 
 Message Types WhatsApp message type definitions
 
-*Source: supabase/functions/_shared/types/messages.ts:1*
+_Source: supabase/functions/\_shared/types/messages.ts:1_
 
 ---
 
@@ -10762,7 +11125,7 @@ Message Types WhatsApp message type definitions
 
 Context Types Shared context types used across all services
 
-*Source: supabase/functions/_shared/types/context.ts:1*
+_Source: supabase/functions/\_shared/types/context.ts:1_
 
 ---
 
@@ -10770,7 +11133,7 @@ Context Types Shared context types used across all services
 
 Supabase client instance
 
-*Source: supabase/functions/_shared/types/context.ts:17*
+_Source: supabase/functions/\_shared/types/context.ts:17_
 
 ---
 
@@ -10778,7 +11141,7 @@ Supabase client instance
 
 WhatsApp user phone number (E.164 format)
 
-*Source: supabase/functions/_shared/types/context.ts:19*
+_Source: supabase/functions/\_shared/types/context.ts:19_
 
 ---
 
@@ -10786,7 +11149,7 @@ WhatsApp user phone number (E.164 format)
 
 User's profile ID (if exists)
 
-*Source: supabase/functions/_shared/types/context.ts:21*
+_Source: supabase/functions/\_shared/types/context.ts:21_
 
 ---
 
@@ -10794,7 +11157,7 @@ User's profile ID (if exists)
 
 User's preferred language
 
-*Source: supabase/functions/_shared/types/context.ts:23*
+_Source: supabase/functions/\_shared/types/context.ts:23_
 
 ---
 
@@ -10802,7 +11165,7 @@ User's preferred language
 
 Unique request ID
 
-*Source: supabase/functions/_shared/types/context.ts:31*
+_Source: supabase/functions/\_shared/types/context.ts:31_
 
 ---
 
@@ -10810,7 +11173,7 @@ Unique request ID
 
 Correlation ID for distributed tracing
 
-*Source: supabase/functions/_shared/types/context.ts:33*
+_Source: supabase/functions/\_shared/types/context.ts:33_
 
 ---
 
@@ -10818,7 +11181,7 @@ Correlation ID for distributed tracing
 
 Originating service
 
-*Source: supabase/functions/_shared/types/context.ts:35*
+_Source: supabase/functions/\_shared/types/context.ts:35_
 
 ---
 
@@ -10826,7 +11189,7 @@ Originating service
 
 Request timestamp
 
-*Source: supabase/functions/_shared/types/context.ts:37*
+_Source: supabase/functions/\_shared/types/context.ts:37_
 
 ---
 
@@ -10834,7 +11197,7 @@ Request timestamp
 
 Current user state
 
-*Source: supabase/functions/_shared/types/context.ts:45*
+_Source: supabase/functions/\_shared/types/context.ts:45_
 
 ---
 
@@ -10842,7 +11205,7 @@ Current user state
 
 State key identifier
 
-*Source: supabase/functions/_shared/types/context.ts:57*
+_Source: supabase/functions/\_shared/types/context.ts:57_
 
 ---
 
@@ -10850,7 +11213,7 @@ State key identifier
 
 State data
 
-*Source: supabase/functions/_shared/types/context.ts:59*
+_Source: supabase/functions/\_shared/types/context.ts:59_
 
 ---
 
@@ -10858,7 +11221,7 @@ State data
 
 When state was created
 
-*Source: supabase/functions/_shared/types/context.ts:61*
+_Source: supabase/functions/\_shared/types/context.ts:61_
 
 ---
 
@@ -10866,7 +11229,7 @@ When state was created
 
 When state expires
 
-*Source: supabase/functions/_shared/types/context.ts:63*
+_Source: supabase/functions/\_shared/types/context.ts:63_
 
 ---
 
@@ -10874,7 +11237,7 @@ When state expires
 
 Whether the message was handled
 
-*Source: supabase/functions/_shared/types/context.ts:91*
+_Source: supabase/functions/\_shared/types/context.ts:91_
 
 ---
 
@@ -10882,7 +11245,7 @@ Whether the message was handled
 
 Optional response to send
 
-*Source: supabase/functions/_shared/types/context.ts:93*
+_Source: supabase/functions/\_shared/types/context.ts:93_
 
 ---
 
@@ -10890,7 +11253,7 @@ Optional response to send
 
 Optional error
 
-*Source: supabase/functions/_shared/types/context.ts:95*
+_Source: supabase/functions/\_shared/types/context.ts:95_
 
 ---
 
@@ -10898,7 +11261,7 @@ Optional error
 
 Types Module Exports
 
-*Source: supabase/functions/_shared/types/index.ts:1*
+_Source: supabase/functions/\_shared/types/index.ts:1_
 
 ---
 
@@ -10906,15 +11269,16 @@ Types Module Exports
 
 Response Types API response type definitions
 
-*Source: supabase/functions/_shared/types/responses.ts:1*
+_Source: supabase/functions/\_shared/types/responses.ts:1_
 
 ---
 
 ### `unnamed`
 
-Media Upload Handler for Marketplace Handles photo uploads from WhatsApp messages for marketplace listings.
+Media Upload Handler for Marketplace Handles photo uploads from WhatsApp messages for marketplace
+listings.
 
-*Source: supabase/functions/_shared/media-upload.ts:1*
+_Source: supabase/functions/\_shared/media-upload.ts:1_
 
 ---
 
@@ -10922,7 +11286,7 @@ Media Upload Handler for Marketplace Handles photo uploads from WhatsApp message
 
 Download media from WhatsApp servers
 
-*Source: supabase/functions/_shared/media-upload.ts:23*
+_Source: supabase/functions/\_shared/media-upload.ts:23_
 
 ---
 
@@ -10930,7 +11294,7 @@ Download media from WhatsApp servers
 
 Upload image to Supabase Storage
 
-*Source: supabase/functions/_shared/media-upload.ts:76*
+_Source: supabase/functions/\_shared/media-upload.ts:76_
 
 ---
 
@@ -10938,7 +11302,7 @@ Upload image to Supabase Storage
 
 Handle media upload from WhatsApp message
 
-*Source: supabase/functions/_shared/media-upload.ts:114*
+_Source: supabase/functions/\_shared/media-upload.ts:114_
 
 ---
 
@@ -10946,7 +11310,7 @@ Handle media upload from WhatsApp message
 
 Create storage bucket if it doesn't exist
 
-*Source: supabase/functions/_shared/media-upload.ts:217*
+_Source: supabase/functions/\_shared/media-upload.ts:217_
 
 ---
 
@@ -10954,7 +11318,7 @@ Create storage bucket if it doesn't exist
 
 In-Memory Cache High-performance caching with TTL support
 
-*Source: supabase/functions/_shared/cache/memory-cache.ts:1*
+_Source: supabase/functions/\_shared/cache/memory-cache.ts:1_
 
 ---
 
@@ -10962,7 +11326,7 @@ In-Memory Cache High-performance caching with TTL support
 
 Time to live in milliseconds
 
-*Source: supabase/functions/_shared/cache/memory-cache.ts:19*
+_Source: supabase/functions/\_shared/cache/memory-cache.ts:19_
 
 ---
 
@@ -10970,7 +11334,7 @@ Time to live in milliseconds
 
 Maximum number of entries
 
-*Source: supabase/functions/_shared/cache/memory-cache.ts:21*
+_Source: supabase/functions/\_shared/cache/memory-cache.ts:21_
 
 ---
 
@@ -10978,7 +11342,7 @@ Maximum number of entries
 
 Enable LRU eviction
 
-*Source: supabase/functions/_shared/cache/memory-cache.ts:23*
+_Source: supabase/functions/\_shared/cache/memory-cache.ts:23_
 
 ---
 
@@ -10986,7 +11350,7 @@ Enable LRU eviction
 
 Clone values on get/set (prevents mutation)
 
-*Source: supabase/functions/_shared/cache/memory-cache.ts:25*
+_Source: supabase/functions/\_shared/cache/memory-cache.ts:25_
 
 ---
 
@@ -10994,7 +11358,7 @@ Clone values on get/set (prevents mutation)
 
 Get value from cache
 
-*Source: supabase/functions/_shared/cache/memory-cache.ts:67*
+_Source: supabase/functions/\_shared/cache/memory-cache.ts:67_
 
 ---
 
@@ -11002,7 +11366,7 @@ Get value from cache
 
 Set value in cache
 
-*Source: supabase/functions/_shared/cache/memory-cache.ts:97*
+_Source: supabase/functions/\_shared/cache/memory-cache.ts:97_
 
 ---
 
@@ -11010,7 +11374,7 @@ Set value in cache
 
 Check if key exists and is not expired
 
-*Source: supabase/functions/_shared/cache/memory-cache.ts:120*
+_Source: supabase/functions/\_shared/cache/memory-cache.ts:120_
 
 ---
 
@@ -11018,7 +11382,7 @@ Check if key exists and is not expired
 
 Delete key from cache
 
-*Source: supabase/functions/_shared/cache/memory-cache.ts:133*
+_Source: supabase/functions/\_shared/cache/memory-cache.ts:133_
 
 ---
 
@@ -11026,7 +11390,7 @@ Delete key from cache
 
 Clear all entries
 
-*Source: supabase/functions/_shared/cache/memory-cache.ts:142*
+_Source: supabase/functions/\_shared/cache/memory-cache.ts:142_
 
 ---
 
@@ -11034,7 +11398,7 @@ Clear all entries
 
 Get or set with factory function
 
-*Source: supabase/functions/_shared/cache/memory-cache.ts:150*
+_Source: supabase/functions/\_shared/cache/memory-cache.ts:150_
 
 ---
 
@@ -11042,7 +11406,7 @@ Get or set with factory function
 
 Get cache statistics
 
-*Source: supabase/functions/_shared/cache/memory-cache.ts:168*
+_Source: supabase/functions/\_shared/cache/memory-cache.ts:168_
 
 ---
 
@@ -11050,7 +11414,7 @@ Get cache statistics
 
 Get all keys
 
-*Source: supabase/functions/_shared/cache/memory-cache.ts:175*
+_Source: supabase/functions/\_shared/cache/memory-cache.ts:175_
 
 ---
 
@@ -11058,7 +11422,7 @@ Get all keys
 
 Cleanup expired entries
 
-*Source: supabase/functions/_shared/cache/memory-cache.ts:182*
+_Source: supabase/functions/\_shared/cache/memory-cache.ts:182_
 
 ---
 
@@ -11066,7 +11430,7 @@ Cleanup expired entries
 
 Create a new cache instance
 
-*Source: supabase/functions/_shared/cache/memory-cache.ts:270*
+_Source: supabase/functions/\_shared/cache/memory-cache.ts:270_
 
 ---
 
@@ -11074,7 +11438,7 @@ Create a new cache instance
 
 Cached Data Accessors High-level caching for common data access patterns
 
-*Source: supabase/functions/_shared/cache/cached-accessors.ts:1*
+_Source: supabase/functions/\_shared/cache/cached-accessors.ts:1_
 
 ---
 
@@ -11082,7 +11446,7 @@ Cached Data Accessors High-level caching for common data access patterns
 
 Get profile with caching
 
-*Source: supabase/functions/_shared/cache/cached-accessors.ts:14*
+_Source: supabase/functions/\_shared/cache/cached-accessors.ts:14_
 
 ---
 
@@ -11090,7 +11454,7 @@ Get profile with caching
 
 Get profile by phone with caching
 
-*Source: supabase/functions/_shared/cache/cached-accessors.ts:39*
+_Source: supabase/functions/\_shared/cache/cached-accessors.ts:39_
 
 ---
 
@@ -11098,7 +11462,7 @@ Get profile by phone with caching
 
 Invalidate profile cache
 
-*Source: supabase/functions/_shared/cache/cached-accessors.ts:64*
+_Source: supabase/functions/\_shared/cache/cached-accessors.ts:64_
 
 ---
 
@@ -11106,7 +11470,7 @@ Invalidate profile cache
 
 Get state with caching
 
-*Source: supabase/functions/_shared/cache/cached-accessors.ts:75*
+_Source: supabase/functions/\_shared/cache/cached-accessors.ts:75_
 
 ---
 
@@ -11114,7 +11478,7 @@ Get state with caching
 
 Invalidate state cache
 
-*Source: supabase/functions/_shared/cache/cached-accessors.ts:102*
+_Source: supabase/functions/\_shared/cache/cached-accessors.ts:102_
 
 ---
 
@@ -11122,7 +11486,7 @@ Invalidate state cache
 
 Get app config with caching
 
-*Source: supabase/functions/_shared/cache/cached-accessors.ts:113*
+_Source: supabase/functions/\_shared/cache/cached-accessors.ts:113_
 
 ---
 
@@ -11130,7 +11494,7 @@ Get app config with caching
 
 Invalidate config cache
 
-*Source: supabase/functions/_shared/cache/cached-accessors.ts:140*
+_Source: supabase/functions/\_shared/cache/cached-accessors.ts:140_
 
 ---
 
@@ -11138,7 +11502,7 @@ Invalidate config cache
 
 Get cached location for user
 
-*Source: supabase/functions/_shared/cache/cached-accessors.ts:151*
+_Source: supabase/functions/\_shared/cache/cached-accessors.ts:151_
 
 ---
 
@@ -11146,7 +11510,7 @@ Get cached location for user
 
 Set cached location for user
 
-*Source: supabase/functions/_shared/cache/cached-accessors.ts:162*
+_Source: supabase/functions/\_shared/cache/cached-accessors.ts:162_
 
 ---
 
@@ -11154,7 +11518,7 @@ Set cached location for user
 
 Invalidate location cache
 
-*Source: supabase/functions/_shared/cache/cached-accessors.ts:176*
+_Source: supabase/functions/\_shared/cache/cached-accessors.ts:176_
 
 ---
 
@@ -11162,7 +11526,7 @@ Invalidate location cache
 
 Get all cache statistics
 
-*Source: supabase/functions/_shared/cache/cached-accessors.ts:187*
+_Source: supabase/functions/\_shared/cache/cached-accessors.ts:187_
 
 ---
 
@@ -11170,7 +11534,7 @@ Get all cache statistics
 
 Clear all caches
 
-*Source: supabase/functions/_shared/cache/cached-accessors.ts:199*
+_Source: supabase/functions/\_shared/cache/cached-accessors.ts:199_
 
 ---
 
@@ -11178,7 +11542,7 @@ Clear all caches
 
 Cleanup expired entries in all caches
 
-*Source: supabase/functions/_shared/cache/cached-accessors.ts:209*
+_Source: supabase/functions/\_shared/cache/cached-accessors.ts:209_
 
 ---
 
@@ -11186,7 +11550,7 @@ Cleanup expired entries in all caches
 
 Cache Middleware HTTP response caching for frequently accessed endpoints
 
-*Source: supabase/functions/_shared/cache/cache-middleware.ts:1*
+_Source: supabase/functions/\_shared/cache/cache-middleware.ts:1_
 
 ---
 
@@ -11194,7 +11558,7 @@ Cache Middleware HTTP response caching for frequently accessed endpoints
 
 Cache key generator
 
-*Source: supabase/functions/_shared/cache/cache-middleware.ts:21*
+_Source: supabase/functions/\_shared/cache/cache-middleware.ts:21_
 
 ---
 
@@ -11202,7 +11566,7 @@ Cache key generator
 
 TTL in milliseconds
 
-*Source: supabase/functions/_shared/cache/cache-middleware.ts:23*
+_Source: supabase/functions/\_shared/cache/cache-middleware.ts:23_
 
 ---
 
@@ -11210,7 +11574,7 @@ TTL in milliseconds
 
 Paths to cache
 
-*Source: supabase/functions/_shared/cache/cache-middleware.ts:25*
+_Source: supabase/functions/\_shared/cache/cache-middleware.ts:25_
 
 ---
 
@@ -11218,7 +11582,7 @@ Paths to cache
 
 Paths to exclude
 
-*Source: supabase/functions/_shared/cache/cache-middleware.ts:27*
+_Source: supabase/functions/\_shared/cache/cache-middleware.ts:27_
 
 ---
 
@@ -11226,7 +11590,7 @@ Paths to exclude
 
 Methods to cache
 
-*Source: supabase/functions/_shared/cache/cache-middleware.ts:29*
+_Source: supabase/functions/\_shared/cache/cache-middleware.ts:29_
 
 ---
 
@@ -11234,7 +11598,7 @@ Methods to cache
 
 Cache condition
 
-*Source: supabase/functions/_shared/cache/cache-middleware.ts:31*
+_Source: supabase/functions/\_shared/cache/cache-middleware.ts:31_
 
 ---
 
@@ -11242,7 +11606,7 @@ Cache condition
 
 Cache middleware for HTTP responses
 
-*Source: supabase/functions/_shared/cache/cache-middleware.ts:56*
+_Source: supabase/functions/\_shared/cache/cache-middleware.ts:56_
 
 ---
 
@@ -11250,7 +11614,7 @@ Cache middleware for HTTP responses
 
 Check if request should be cached
 
-*Source: supabase/functions/_shared/cache/cache-middleware.ts:125*
+_Source: supabase/functions/\_shared/cache/cache-middleware.ts:125_
 
 ---
 
@@ -11258,7 +11622,7 @@ Check if request should be cached
 
 Clear response cache
 
-*Source: supabase/functions/_shared/cache/cache-middleware.ts:154*
+_Source: supabase/functions/\_shared/cache/cache-middleware.ts:154_
 
 ---
 
@@ -11266,7 +11630,7 @@ Clear response cache
 
 Get cache stats
 
-*Source: supabase/functions/_shared/cache/cache-middleware.ts:161*
+_Source: supabase/functions/\_shared/cache/cache-middleware.ts:161_
 
 ---
 
@@ -11274,15 +11638,16 @@ Get cache stats
 
 Cache Module Exports
 
-*Source: supabase/functions/_shared/cache/index.ts:1*
+_Source: supabase/functions/\_shared/cache/index.ts:1_
 
 ---
 
 ### `unnamed`
 
-Error Handler Module for Supabase Edge Functions Provides structured error handling, recovery mechanisms, and retry queue integration following EasyMO observability ground rules.
+Error Handler Module for Supabase Edge Functions Provides structured error handling, recovery
+mechanisms, and retry queue integration following EasyMO observability ground rules.
 
-*Source: supabase/functions/_shared/error-handler.ts:1*
+_Source: supabase/functions/\_shared/error-handler.ts:1_
 
 ---
 
@@ -11290,7 +11655,7 @@ Error Handler Module for Supabase Edge Functions Provides structured error handl
 
 Wraps an async operation with error boundary and automatic retry queue integration
 
-*Source: supabase/functions/_shared/error-handler.ts:85*
+_Source: supabase/functions/\_shared/error-handler.ts:85_
 
 ---
 
@@ -11298,7 +11663,7 @@ Wraps an async operation with error boundary and automatic retry queue integrati
 
 Queue a failed operation for retry in the webhook DLQ
 
-*Source: supabase/functions/_shared/error-handler.ts:167*
+_Source: supabase/functions/\_shared/error-handler.ts:167_
 
 ---
 
@@ -11306,7 +11671,7 @@ Queue a failed operation for retry in the webhook DLQ
 
 Schedule a message for retry in the message queue
 
-*Source: supabase/functions/_shared/error-handler.ts:213*
+_Source: supabase/functions/\_shared/error-handler.ts:213_
 
 ---
 
@@ -11314,7 +11679,7 @@ Schedule a message for retry in the message queue
 
 Safely execute an operation with timeout
 
-*Source: supabase/functions/_shared/error-handler.ts:239*
+_Source: supabase/functions/\_shared/error-handler.ts:239_
 
 ---
 
@@ -11322,7 +11687,7 @@ Safely execute an operation with timeout
 
 Create a safe handler that catches and logs errors
 
-*Source: supabase/functions/_shared/error-handler.ts:280*
+_Source: supabase/functions/\_shared/error-handler.ts:280_
 
 ---
 
@@ -11330,15 +11695,16 @@ Create a safe handler that catches and logs errors
 
 Check if an error is retryable
 
-*Source: supabase/functions/_shared/error-handler.ts:337*
+_Source: supabase/functions/\_shared/error-handler.ts:337_
 
 ---
 
 ### `unnamed`
 
-WhatsApp Webhook Configuration Centralized configuration for webhook processing including timeouts, retry policies, circuit breakers, and deduplication settings.
+WhatsApp Webhook Configuration Centralized configuration for webhook processing including timeouts,
+retry policies, circuit breakers, and deduplication settings.
 
-*Source: supabase/functions/_shared/webhook-config.ts:1*
+_Source: supabase/functions/\_shared/webhook-config.ts:1_
 
 ---
 
@@ -11346,7 +11712,7 @@ WhatsApp Webhook Configuration Centralized configuration for webhook processing 
 
 Default timeout for normal webhook operations (30 seconds)
 
-*Source: supabase/functions/_shared/webhook-config.ts:14*
+_Source: supabase/functions/\_shared/webhook-config.ts:14_
 
 ---
 
@@ -11354,7 +11720,7 @@ Default timeout for normal webhook operations (30 seconds)
 
 Timeout for AI agent operations (2 minutes)
 
-*Source: supabase/functions/_shared/webhook-config.ts:17*
+_Source: supabase/functions/\_shared/webhook-config.ts:17_
 
 ---
 
@@ -11362,7 +11728,7 @@ Timeout for AI agent operations (2 minutes)
 
 Timeout for payment operations (1 minute)
 
-*Source: supabase/functions/_shared/webhook-config.ts:20*
+_Source: supabase/functions/\_shared/webhook-config.ts:20_
 
 ---
 
@@ -11370,7 +11736,7 @@ Timeout for payment operations (1 minute)
 
 Timeout for external API calls (30 seconds)
 
-*Source: supabase/functions/_shared/webhook-config.ts:23*
+_Source: supabase/functions/\_shared/webhook-config.ts:23_
 
 ---
 
@@ -11378,7 +11744,7 @@ Timeout for external API calls (30 seconds)
 
 Timeout for database operations (10 seconds)
 
-*Source: supabase/functions/_shared/webhook-config.ts:26*
+_Source: supabase/functions/\_shared/webhook-config.ts:26_
 
 ---
 
@@ -11386,7 +11752,7 @@ Timeout for database operations (10 seconds)
 
 Timeout for media upload/download (5 minutes)
 
-*Source: supabase/functions/_shared/webhook-config.ts:29*
+_Source: supabase/functions/\_shared/webhook-config.ts:29_
 
 ---
 
@@ -11394,7 +11760,7 @@ Timeout for media upload/download (5 minutes)
 
 Maximum number of retry attempts
 
-*Source: supabase/functions/_shared/webhook-config.ts:37*
+_Source: supabase/functions/\_shared/webhook-config.ts:37_
 
 ---
 
@@ -11402,7 +11768,7 @@ Maximum number of retry attempts
 
 Backoff multiplier for exponential backoff
 
-*Source: supabase/functions/_shared/webhook-config.ts:40*
+_Source: supabase/functions/\_shared/webhook-config.ts:40_
 
 ---
 
@@ -11410,7 +11776,7 @@ Backoff multiplier for exponential backoff
 
 Initial delay in milliseconds before first retry
 
-*Source: supabase/functions/_shared/webhook-config.ts:43*
+_Source: supabase/functions/\_shared/webhook-config.ts:43_
 
 ---
 
@@ -11418,7 +11784,7 @@ Initial delay in milliseconds before first retry
 
 Maximum delay between retries
 
-*Source: supabase/functions/_shared/webhook-config.ts:46*
+_Source: supabase/functions/\_shared/webhook-config.ts:46_
 
 ---
 
@@ -11426,7 +11792,7 @@ Maximum delay between retries
 
 Jitter factor (0-1) to add randomness to backoff
 
-*Source: supabase/functions/_shared/webhook-config.ts:49*
+_Source: supabase/functions/\_shared/webhook-config.ts:49_
 
 ---
 
@@ -11434,7 +11800,7 @@ Jitter factor (0-1) to add randomness to backoff
 
 Failure threshold percentage before opening circuit (0-100)
 
-*Source: supabase/functions/_shared/webhook-config.ts:57*
+_Source: supabase/functions/\_shared/webhook-config.ts:57_
 
 ---
 
@@ -11442,7 +11808,7 @@ Failure threshold percentage before opening circuit (0-100)
 
 Time in milliseconds to wait before attempting to close circuit
 
-*Source: supabase/functions/_shared/webhook-config.ts:60*
+_Source: supabase/functions/\_shared/webhook-config.ts:60_
 
 ---
 
@@ -11450,7 +11816,7 @@ Time in milliseconds to wait before attempting to close circuit
 
 Number of requests to allow in half-open state
 
-*Source: supabase/functions/_shared/webhook-config.ts:63*
+_Source: supabase/functions/\_shared/webhook-config.ts:63_
 
 ---
 
@@ -11458,7 +11824,7 @@ Number of requests to allow in half-open state
 
 Minimum number of requests before evaluating error rate
 
-*Source: supabase/functions/_shared/webhook-config.ts:66*
+_Source: supabase/functions/\_shared/webhook-config.ts:66_
 
 ---
 
@@ -11466,7 +11832,7 @@ Minimum number of requests before evaluating error rate
 
 Request timeout in milliseconds
 
-*Source: supabase/functions/_shared/webhook-config.ts:69*
+_Source: supabase/functions/\_shared/webhook-config.ts:69_
 
 ---
 
@@ -11474,7 +11840,7 @@ Request timeout in milliseconds
 
 Time window in milliseconds for deduplication (5 minutes)
 
-*Source: supabase/functions/_shared/webhook-config.ts:88*
+_Source: supabase/functions/\_shared/webhook-config.ts:88_
 
 ---
 
@@ -11482,7 +11848,7 @@ Time window in milliseconds for deduplication (5 minutes)
 
 Storage key prefix for deduplication cache
 
-*Source: supabase/functions/_shared/webhook-config.ts:91*
+_Source: supabase/functions/\_shared/webhook-config.ts:91_
 
 ---
 
@@ -11490,7 +11856,7 @@ Storage key prefix for deduplication cache
 
 Enable deduplication by default
 
-*Source: supabase/functions/_shared/webhook-config.ts:94*
+_Source: supabase/functions/\_shared/webhook-config.ts:94_
 
 ---
 
@@ -11498,7 +11864,7 @@ Enable deduplication by default
 
 Maximum requests per user per minute
 
-*Source: supabase/functions/_shared/webhook-config.ts:102*
+_Source: supabase/functions/\_shared/webhook-config.ts:102_
 
 ---
 
@@ -11506,7 +11872,7 @@ Maximum requests per user per minute
 
 Maximum requests per IP per minute
 
-*Source: supabase/functions/_shared/webhook-config.ts:105*
+_Source: supabase/functions/\_shared/webhook-config.ts:105_
 
 ---
 
@@ -11514,7 +11880,7 @@ Maximum requests per IP per minute
 
 Maximum concurrent processing per user
 
-*Source: supabase/functions/_shared/webhook-config.ts:108*
+_Source: supabase/functions/\_shared/webhook-config.ts:108_
 
 ---
 
@@ -11522,7 +11888,7 @@ Maximum concurrent processing per user
 
 Burst allowance (extra requests allowed in short bursts)
 
-*Source: supabase/functions/_shared/webhook-config.ts:111*
+_Source: supabase/functions/\_shared/webhook-config.ts:111_
 
 ---
 
@@ -11530,7 +11896,7 @@ Burst allowance (extra requests allowed in short bursts)
 
 Order workflow timeout (15 minutes)
 
-*Source: supabase/functions/_shared/webhook-config.ts:119*
+_Source: supabase/functions/\_shared/webhook-config.ts:119_
 
 ---
 
@@ -11538,7 +11904,7 @@ Order workflow timeout (15 minutes)
 
 Payment workflow timeout (10 minutes)
 
-*Source: supabase/functions/_shared/webhook-config.ts:122*
+_Source: supabase/functions/\_shared/webhook-config.ts:122_
 
 ---
 
@@ -11546,7 +11912,7 @@ Payment workflow timeout (10 minutes)
 
 Job application workflow timeout (30 minutes)
 
-*Source: supabase/functions/_shared/webhook-config.ts:125*
+_Source: supabase/functions/\_shared/webhook-config.ts:125_
 
 ---
 
@@ -11554,7 +11920,7 @@ Job application workflow timeout (30 minutes)
 
 Property inquiry workflow timeout (1 hour)
 
-*Source: supabase/functions/_shared/webhook-config.ts:128*
+_Source: supabase/functions/\_shared/webhook-config.ts:128_
 
 ---
 
@@ -11562,7 +11928,7 @@ Property inquiry workflow timeout (1 hour)
 
 Ride request workflow timeout (5 minutes)
 
-*Source: supabase/functions/_shared/webhook-config.ts:131*
+_Source: supabase/functions/\_shared/webhook-config.ts:131_
 
 ---
 
@@ -11570,7 +11936,7 @@ Ride request workflow timeout (5 minutes)
 
 Insurance claim workflow timeout (1 hour)
 
-*Source: supabase/functions/_shared/webhook-config.ts:134*
+_Source: supabase/functions/\_shared/webhook-config.ts:134_
 
 ---
 
@@ -11578,7 +11944,7 @@ Insurance claim workflow timeout (1 hour)
 
 Default workflow timeout (30 minutes)
 
-*Source: supabase/functions/_shared/webhook-config.ts:137*
+_Source: supabase/functions/\_shared/webhook-config.ts:137_
 
 ---
 
@@ -11586,7 +11952,7 @@ Default workflow timeout (30 minutes)
 
 Maximum conversation history length to keep
 
-*Source: supabase/functions/_shared/webhook-config.ts:145*
+_Source: supabase/functions/\_shared/webhook-config.ts:145_
 
 ---
 
@@ -11594,7 +11960,7 @@ Maximum conversation history length to keep
 
 Maximum token count before truncating history
 
-*Source: supabase/functions/_shared/webhook-config.ts:148*
+_Source: supabase/functions/\_shared/webhook-config.ts:148_
 
 ---
 
@@ -11602,7 +11968,7 @@ Maximum token count before truncating history
 
 Session timeout in milliseconds (30 minutes)
 
-*Source: supabase/functions/_shared/webhook-config.ts:151*
+_Source: supabase/functions/\_shared/webhook-config.ts:151_
 
 ---
 
@@ -11610,7 +11976,7 @@ Session timeout in milliseconds (30 minutes)
 
 Maximum concurrent AI requests per user
 
-*Source: supabase/functions/_shared/webhook-config.ts:154*
+_Source: supabase/functions/\_shared/webhook-config.ts:154_
 
 ---
 
@@ -11618,7 +11984,7 @@ Maximum concurrent AI requests per user
 
 Enable context persistence
 
-*Source: supabase/functions/_shared/webhook-config.ts:157*
+_Source: supabase/functions/\_shared/webhook-config.ts:157_
 
 ---
 
@@ -11626,7 +11992,7 @@ Enable context persistence
 
 Context TTL in milliseconds (24 hours)
 
-*Source: supabase/functions/_shared/webhook-config.ts:160*
+_Source: supabase/functions/\_shared/webhook-config.ts:160_
 
 ---
 
@@ -11634,7 +12000,7 @@ Context TTL in milliseconds (24 hours)
 
 Maximum queue size before rejecting new messages
 
-*Source: supabase/functions/_shared/webhook-config.ts:168*
+_Source: supabase/functions/\_shared/webhook-config.ts:168_
 
 ---
 
@@ -11642,7 +12008,7 @@ Maximum queue size before rejecting new messages
 
 Message processing timeout (5 minutes)
 
-*Source: supabase/functions/_shared/webhook-config.ts:171*
+_Source: supabase/functions/\_shared/webhook-config.ts:171_
 
 ---
 
@@ -11650,7 +12016,7 @@ Message processing timeout (5 minutes)
 
 Batch size for processing messages
 
-*Source: supabase/functions/_shared/webhook-config.ts:174*
+_Source: supabase/functions/\_shared/webhook-config.ts:174_
 
 ---
 
@@ -11658,7 +12024,7 @@ Batch size for processing messages
 
 Polling interval in milliseconds
 
-*Source: supabase/functions/_shared/webhook-config.ts:177*
+_Source: supabase/functions/\_shared/webhook-config.ts:177_
 
 ---
 
@@ -11666,7 +12032,7 @@ Polling interval in milliseconds
 
 Enable priority processing
 
-*Source: supabase/functions/_shared/webhook-config.ts:180*
+_Source: supabase/functions/\_shared/webhook-config.ts:180_
 
 ---
 
@@ -11674,7 +12040,7 @@ Enable priority processing
 
 Retention period for completed messages (7 days)
 
-*Source: supabase/functions/_shared/webhook-config.ts:183*
+_Source: supabase/functions/\_shared/webhook-config.ts:183_
 
 ---
 
@@ -11682,7 +12048,7 @@ Retention period for completed messages (7 days)
 
 Interval for checking service health (30 seconds)
 
-*Source: supabase/functions/_shared/webhook-config.ts:191*
+_Source: supabase/functions/\_shared/webhook-config.ts:191_
 
 ---
 
@@ -11690,7 +12056,7 @@ Interval for checking service health (30 seconds)
 
 Timeout for health check requests (3 seconds)
 
-*Source: supabase/functions/_shared/webhook-config.ts:194*
+_Source: supabase/functions/\_shared/webhook-config.ts:194_
 
 ---
 
@@ -11698,7 +12064,7 @@ Timeout for health check requests (3 seconds)
 
 Number of consecutive failures before marking unhealthy
 
-*Source: supabase/functions/_shared/webhook-config.ts:197*
+_Source: supabase/functions/\_shared/webhook-config.ts:197_
 
 ---
 
@@ -11706,7 +12072,7 @@ Number of consecutive failures before marking unhealthy
 
 Enable automatic recovery checks
 
-*Source: supabase/functions/_shared/webhook-config.ts:200*
+_Source: supabase/functions/\_shared/webhook-config.ts:200_
 
 ---
 
@@ -11714,7 +12080,7 @@ Enable automatic recovery checks
 
 Enable structured logging
 
-*Source: supabase/functions/_shared/webhook-config.ts:208*
+_Source: supabase/functions/\_shared/webhook-config.ts:208_
 
 ---
 
@@ -11722,7 +12088,7 @@ Enable structured logging
 
 Enable metrics collection
 
-*Source: supabase/functions/_shared/webhook-config.ts:211*
+_Source: supabase/functions/\_shared/webhook-config.ts:211_
 
 ---
 
@@ -11730,7 +12096,7 @@ Enable metrics collection
 
 Enable distributed tracing
 
-*Source: supabase/functions/_shared/webhook-config.ts:214*
+_Source: supabase/functions/\_shared/webhook-config.ts:214_
 
 ---
 
@@ -11738,7 +12104,7 @@ Enable distributed tracing
 
 Sample rate for traces (0-1)
 
-*Source: supabase/functions/_shared/webhook-config.ts:217*
+_Source: supabase/functions/\_shared/webhook-config.ts:217_
 
 ---
 
@@ -11746,7 +12112,7 @@ Sample rate for traces (0-1)
 
 Log level for production
 
-*Source: supabase/functions/_shared/webhook-config.ts:220*
+_Source: supabase/functions/\_shared/webhook-config.ts:220_
 
 ---
 
@@ -11754,7 +12120,7 @@ Log level for production
 
 Mask PII in logs
 
-*Source: supabase/functions/_shared/webhook-config.ts:223*
+_Source: supabase/functions/\_shared/webhook-config.ts:223_
 
 ---
 
@@ -11762,7 +12128,7 @@ Mask PII in logs
 
 Get timeout for specific workflow type
 
-*Source: supabase/functions/_shared/webhook-config.ts:227*
+_Source: supabase/functions/\_shared/webhook-config.ts:227_
 
 ---
 
@@ -11770,7 +12136,7 @@ Get timeout for specific workflow type
 
 Calculate retry delay with exponential backoff and jitter
 
-*Source: supabase/functions/_shared/webhook-config.ts:239*
+_Source: supabase/functions/\_shared/webhook-config.ts:239_
 
 ---
 
@@ -11778,15 +12144,16 @@ Calculate retry delay with exponential backoff and jitter
 
 Check if a message should be deduplicated
 
-*Source: supabase/functions/_shared/webhook-config.ts:257*
+_Source: supabase/functions/\_shared/webhook-config.ts:257_
 
 ---
 
 ### `unnamed`
 
-Phone Number Utilities Common utilities for phone number handling including normalization and masking. Used across wa-webhook services for consistent phone number processing.
+Phone Number Utilities Common utilities for phone number handling including normalization and
+masking. Used across wa-webhook services for consistent phone number processing.
 
-*Source: supabase/functions/_shared/phone-utils.ts:1*
+_Source: supabase/functions/\_shared/phone-utils.ts:1_
 
 ---
 
@@ -11794,23 +12161,25 @@ Phone Number Utilities Common utilities for phone number handling including norm
 
 Normalize phone number by removing non-numeric characters except leading +
 
-*Source: supabase/functions/_shared/phone-utils.ts:8*
+_Source: supabase/functions/\_shared/phone-utils.ts:8_
 
 ---
 
 ### `maskPhone`
 
-Mask phone number for logging (privacy protection) Shows first few and last few digits with asterisks in between.
+Mask phone number for logging (privacy protection) Shows first few and last few digits with
+asterisks in between.
 
-*Source: supabase/functions/_shared/phone-utils.ts:23*
+_Source: supabase/functions/\_shared/phone-utils.ts:23_
 
 ---
 
 ### `isValidPhone`
 
-Validate if a string looks like a phone number Basic validation - starts with + and contains 10-15 digits
+Validate if a string looks like a phone number Basic validation - starts with + and contains 10-15
+digits
 
-*Source: supabase/functions/_shared/phone-utils.ts:46*
+_Source: supabase/functions/\_shared/phone-utils.ts:46_
 
 ---
 
@@ -11818,7 +12187,7 @@ Validate if a string looks like a phone number Basic validation - starts with + 
 
 Extract country code from phone number (assumes E.164 format)
 
-*Source: supabase/functions/_shared/phone-utils.ts:57*
+_Source: supabase/functions/\_shared/phone-utils.ts:57_
 
 ---
 
@@ -11826,7 +12195,7 @@ Extract country code from phone number (assumes E.164 format)
 
 Application Constants Centralized constants used across all services
 
-*Source: supabase/functions/_shared/config/constants.ts:1*
+_Source: supabase/functions/\_shared/config/constants.ts:1_
 
 ---
 
@@ -11834,7 +12203,7 @@ Application Constants Centralized constants used across all services
 
 Configuration Module Exports
 
-*Source: supabase/functions/_shared/config/index.ts:1*
+_Source: supabase/functions/\_shared/config/index.ts:1_
 
 ---
 
@@ -11842,7 +12211,7 @@ Configuration Module Exports
 
 Environment Configuration Module Centralized environment variable management with validation
 
-*Source: supabase/functions/_shared/config/env.ts:1*
+_Source: supabase/functions/\_shared/config/env.ts:1_
 
 ---
 
@@ -11850,7 +12219,7 @@ Environment Configuration Module Centralized environment variable management wit
 
 Get environment variable with fallbacks
 
-*Source: supabase/functions/_shared/config/env.ts:54*
+_Source: supabase/functions/\_shared/config/env.ts:54_
 
 ---
 
@@ -11858,7 +12227,7 @@ Get environment variable with fallbacks
 
 Get required environment variable
 
-*Source: supabase/functions/_shared/config/env.ts:69*
+_Source: supabase/functions/\_shared/config/env.ts:69_
 
 ---
 
@@ -11866,7 +12235,7 @@ Get required environment variable
 
 Get boolean environment variable
 
-*Source: supabase/functions/_shared/config/env.ts:80*
+_Source: supabase/functions/\_shared/config/env.ts:80_
 
 ---
 
@@ -11874,7 +12243,7 @@ Get boolean environment variable
 
 Get number environment variable
 
-*Source: supabase/functions/_shared/config/env.ts:89*
+_Source: supabase/functions/\_shared/config/env.ts:89_
 
 ---
 
@@ -11882,7 +12251,7 @@ Get number environment variable
 
 Load and validate all environment variables
 
-*Source: supabase/functions/_shared/config/env.ts:99*
+_Source: supabase/functions/\_shared/config/env.ts:99_
 
 ---
 
@@ -11890,7 +12259,7 @@ Load and validate all environment variables
 
 Clear cache (useful for testing)
 
-*Source: supabase/functions/_shared/config/env.ts:156*
+_Source: supabase/functions/\_shared/config/env.ts:156_
 
 ---
 
@@ -11898,7 +12267,7 @@ Clear cache (useful for testing)
 
 Get environment configuration
 
-*Source: supabase/functions/_shared/config/env.ts:167*
+_Source: supabase/functions/\_shared/config/env.ts:167_
 
 ---
 
@@ -11906,7 +12275,7 @@ Get environment configuration
 
 Validate environment and throw if invalid
 
-*Source: supabase/functions/_shared/config/env.ts:174*
+_Source: supabase/functions/\_shared/config/env.ts:174_
 
 ---
 
@@ -11914,7 +12283,7 @@ Validate environment and throw if invalid
 
 Security Middleware Layer Provides comprehensive security controls for all microservices
 
-*Source: supabase/functions/_shared/security/middleware.ts:1*
+_Source: supabase/functions/\_shared/security/middleware.ts:1_
 
 ---
 
@@ -11922,7 +12291,7 @@ Security Middleware Layer Provides comprehensive security controls for all micro
 
 Maximum request body size in bytes (default: 1MB)
 
-*Source: supabase/functions/_shared/security/middleware.ts:13*
+_Source: supabase/functions/\_shared/security/middleware.ts:13_
 
 ---
 
@@ -11930,7 +12299,7 @@ Maximum request body size in bytes (default: 1MB)
 
 Allowed content types
 
-*Source: supabase/functions/_shared/security/middleware.ts:15*
+_Source: supabase/functions/\_shared/security/middleware.ts:15_
 
 ---
 
@@ -11938,7 +12307,7 @@ Allowed content types
 
 Enable request ID tracking
 
-*Source: supabase/functions/_shared/security/middleware.ts:17*
+_Source: supabase/functions/\_shared/security/middleware.ts:17_
 
 ---
 
@@ -11946,7 +12315,7 @@ Enable request ID tracking
 
 Enable audit logging
 
-*Source: supabase/functions/_shared/security/middleware.ts:19*
+_Source: supabase/functions/\_shared/security/middleware.ts:19_
 
 ---
 
@@ -11954,7 +12323,7 @@ Enable audit logging
 
 Rate limit configuration
 
-*Source: supabase/functions/_shared/security/middleware.ts:21*
+_Source: supabase/functions/\_shared/security/middleware.ts:21_
 
 ---
 
@@ -11962,7 +12331,7 @@ Rate limit configuration
 
 Signature verification
 
-*Source: supabase/functions/_shared/security/middleware.ts:27*
+_Source: supabase/functions/\_shared/security/middleware.ts:27_
 
 ---
 
@@ -11970,7 +12339,7 @@ Signature verification
 
 Run all security checks on incoming request
 
-*Source: supabase/functions/_shared/security/middleware.ts:95*
+_Source: supabase/functions/\_shared/security/middleware.ts:95_
 
 ---
 
@@ -11978,7 +12347,7 @@ Run all security checks on incoming request
 
 Build security context from request
 
-*Source: supabase/functions/_shared/security/middleware.ts:134*
+_Source: supabase/functions/\_shared/security/middleware.ts:134_
 
 ---
 
@@ -11986,7 +12355,7 @@ Build security context from request
 
 Validate Content-Type header
 
-*Source: supabase/functions/_shared/security/middleware.ts:152*
+_Source: supabase/functions/\_shared/security/middleware.ts:152_
 
 ---
 
@@ -11994,7 +12363,7 @@ Validate Content-Type header
 
 Validate request body size
 
-*Source: supabase/functions/_shared/security/middleware.ts:196*
+_Source: supabase/functions/\_shared/security/middleware.ts:196_
 
 ---
 
@@ -12002,7 +12371,7 @@ Validate request body size
 
 Check rate limiting
 
-*Source: supabase/functions/_shared/security/middleware.ts:235*
+_Source: supabase/functions/\_shared/security/middleware.ts:235_
 
 ---
 
@@ -12010,7 +12379,7 @@ Check rate limiting
 
 Audit logging for security events
 
-*Source: supabase/functions/_shared/security/middleware.ts:266*
+_Source: supabase/functions/\_shared/security/middleware.ts:266_
 
 ---
 
@@ -12018,7 +12387,7 @@ Audit logging for security events
 
 Create response with security headers
 
-*Source: supabase/functions/_shared/security/middleware.ts:286*
+_Source: supabase/functions/\_shared/security/middleware.ts:286_
 
 ---
 
@@ -12026,15 +12395,16 @@ Create response with security headers
 
 Factory function to create security middleware
 
-*Source: supabase/functions/_shared/security/middleware.ts:307*
+_Source: supabase/functions/\_shared/security/middleware.ts:307_
 
 ---
 
 ### `unnamed`
 
-Enhanced Signature Verification Module Provides HMAC-SHA256 signature verification for WhatsApp webhooks
+Enhanced Signature Verification Module Provides HMAC-SHA256 signature verification for WhatsApp
+webhooks
 
-*Source: supabase/functions/_shared/security/signature.ts:1*
+_Source: supabase/functions/\_shared/security/signature.ts:1_
 
 ---
 
@@ -12042,7 +12412,7 @@ Enhanced Signature Verification Module Provides HMAC-SHA256 signature verificati
 
 Require valid signature (default: true)
 
-*Source: supabase/functions/_shared/security/signature.ts:27*
+_Source: supabase/functions/\_shared/security/signature.ts:27_
 
 ---
 
@@ -12050,7 +12420,7 @@ Require valid signature (default: true)
 
 Allow unsigned requests for development (default: false)
 
-*Source: supabase/functions/_shared/security/signature.ts:29*
+_Source: supabase/functions/\_shared/security/signature.ts:29_
 
 ---
 
@@ -12058,7 +12428,7 @@ Allow unsigned requests for development (default: false)
 
 Allow internal service forwarding (default: false)
 
-*Source: supabase/functions/_shared/security/signature.ts:31*
+_Source: supabase/functions/\_shared/security/signature.ts:31_
 
 ---
 
@@ -12066,7 +12436,7 @@ Allow internal service forwarding (default: false)
 
 App secret for verification
 
-*Source: supabase/functions/_shared/security/signature.ts:33*
+_Source: supabase/functions/\_shared/security/signature.ts:33_
 
 ---
 
@@ -12074,7 +12444,7 @@ App secret for verification
 
 Verify WhatsApp webhook signature
 
-*Source: supabase/functions/_shared/security/signature.ts:41*
+_Source: supabase/functions/\_shared/security/signature.ts:41_
 
 ---
 
@@ -12082,7 +12452,7 @@ Verify WhatsApp webhook signature
 
 Timing-safe string comparison to prevent timing attacks
 
-*Source: supabase/functions/_shared/security/signature.ts:80*
+_Source: supabase/functions/\_shared/security/signature.ts:80_
 
 ---
 
@@ -12090,7 +12460,7 @@ Timing-safe string comparison to prevent timing attacks
 
 Extract signature metadata for logging
 
-*Source: supabase/functions/_shared/security/signature.ts:96*
+_Source: supabase/functions/\_shared/security/signature.ts:96_
 
 ---
 
@@ -12098,7 +12468,7 @@ Extract signature metadata for logging
 
 Full signature verification with configuration
 
-*Source: supabase/functions/_shared/security/signature.ts:131*
+_Source: supabase/functions/\_shared/security/signature.ts:131_
 
 ---
 
@@ -12106,7 +12476,7 @@ Full signature verification with configuration
 
 Audit Logging System Tracks sensitive operations for security and compliance
 
-*Source: supabase/functions/_shared/security/audit-logger.ts:1*
+_Source: supabase/functions/\_shared/security/audit-logger.ts:1_
 
 ---
 
@@ -12114,7 +12484,7 @@ Audit Logging System Tracks sensitive operations for security and compliance
 
 Security Configuration for All Microservices
 
-*Source: supabase/functions/_shared/security/config.ts:1*
+_Source: supabase/functions/\_shared/security/config.ts:1_
 
 ---
 
@@ -12122,7 +12492,7 @@ Security Configuration for All Microservices
 
 Input Validation and Sanitization Module Provides comprehensive input validation for all user inputs
 
-*Source: supabase/functions/_shared/security/input-validator.ts:1*
+_Source: supabase/functions/\_shared/security/input-validator.ts:1_
 
 ---
 
@@ -12130,15 +12500,16 @@ Input Validation and Sanitization Module Provides comprehensive input validation
 
 Sanitize string input - remove dangerous characters
 
-*Source: supabase/functions/_shared/security/input-validator.ts:36*
+_Source: supabase/functions/\_shared/security/input-validator.ts:36_
 
 ---
 
 ### `sanitizeForSQL`
 
-Sanitize for SQL - escape special characters Note: Always use parameterized queries, this is defense in depth
+Sanitize for SQL - escape special characters Note: Always use parameterized queries, this is defense
+in depth
 
-*Source: supabase/functions/_shared/security/input-validator.ts:51*
+_Source: supabase/functions/\_shared/security/input-validator.ts:51_
 
 ---
 
@@ -12146,7 +12517,7 @@ Sanitize for SQL - escape special characters Note: Always use parameterized quer
 
 Sanitize for HTML - prevent XSS
 
-*Source: supabase/functions/_shared/security/input-validator.ts:67*
+_Source: supabase/functions/\_shared/security/input-validator.ts:67_
 
 ---
 
@@ -12154,7 +12525,7 @@ Sanitize for HTML - prevent XSS
 
 Sanitize phone number - keep only digits and leading +
 
-*Source: supabase/functions/_shared/security/input-validator.ts:85*
+_Source: supabase/functions/\_shared/security/input-validator.ts:85_
 
 ---
 
@@ -12162,7 +12533,7 @@ Sanitize phone number - keep only digits and leading +
 
 Mask phone number for logging
 
-*Source: supabase/functions/_shared/security/input-validator.ts:99*
+_Source: supabase/functions/\_shared/security/input-validator.ts:99_
 
 ---
 
@@ -12170,7 +12541,7 @@ Mask phone number for logging
 
 Mask email for logging
 
-*Source: supabase/functions/_shared/security/input-validator.ts:107*
+_Source: supabase/functions/\_shared/security/input-validator.ts:107_
 
 ---
 
@@ -12178,7 +12549,7 @@ Mask email for logging
 
 Validate phone number format (E.164)
 
-*Source: supabase/functions/_shared/security/input-validator.ts:123*
+_Source: supabase/functions/\_shared/security/input-validator.ts:123_
 
 ---
 
@@ -12186,7 +12557,7 @@ Validate phone number format (E.164)
 
 Validate email format
 
-*Source: supabase/functions/_shared/security/input-validator.ts:132*
+_Source: supabase/functions/\_shared/security/input-validator.ts:132_
 
 ---
 
@@ -12194,7 +12565,7 @@ Validate email format
 
 Validate UUID format
 
-*Source: supabase/functions/_shared/security/input-validator.ts:140*
+_Source: supabase/functions/\_shared/security/input-validator.ts:140_
 
 ---
 
@@ -12202,7 +12573,7 @@ Validate UUID format
 
 Check for potential SQL injection patterns
 
-*Source: supabase/functions/_shared/security/input-validator.ts:148*
+_Source: supabase/functions/\_shared/security/input-validator.ts:148_
 
 ---
 
@@ -12210,7 +12581,7 @@ Check for potential SQL injection patterns
 
 Check for potential XSS patterns
 
-*Source: supabase/functions/_shared/security/input-validator.ts:163*
+_Source: supabase/functions/\_shared/security/input-validator.ts:163_
 
 ---
 
@@ -12218,15 +12589,16 @@ Check for potential XSS patterns
 
 Validate input against schema
 
-*Source: supabase/functions/_shared/security/input-validator.ts:184*
+_Source: supabase/functions/\_shared/security/input-validator.ts:184_
 
 ---
 
 ### `unnamed`
 
-Waiter AI Tools This module provides tools for the Waiter AI agent to interact with restaurant data, manage orders, and provide recommendations.
+Waiter AI Tools This module provides tools for the Waiter AI agent to interact with restaurant data,
+manage orders, and provide recommendations.
 
-*Source: supabase/functions/_shared/waiter-tools.ts:1*
+_Source: supabase/functions/\_shared/waiter-tools.ts:1_
 
 ---
 
@@ -12234,7 +12606,7 @@ Waiter AI Tools This module provides tools for the Waiter AI agent to interact w
 
 Tool: search_menu Search menu items by name, category, dietary restrictions
 
-*Source: supabase/functions/_shared/waiter-tools.ts:25*
+_Source: supabase/functions/\_shared/waiter-tools.ts:25_
 
 ---
 
@@ -12242,7 +12614,7 @@ Tool: search_menu Search menu items by name, category, dietary restrictions
 
 Tool: get_menu_item_details Get detailed information about a specific menu item
 
-*Source: supabase/functions/_shared/waiter-tools.ts:88*
+_Source: supabase/functions/\_shared/waiter-tools.ts:88_
 
 ---
 
@@ -12250,7 +12622,7 @@ Tool: get_menu_item_details Get detailed information about a specific menu item
 
 Tool: add_to_cart Add an item to the current draft order
 
-*Source: supabase/functions/_shared/waiter-tools.ts:123*
+_Source: supabase/functions/\_shared/waiter-tools.ts:123_
 
 ---
 
@@ -12258,7 +12630,7 @@ Tool: add_to_cart Add an item to the current draft order
 
 Tool: view_cart Get current cart contents
 
-*Source: supabase/functions/_shared/waiter-tools.ts:246*
+_Source: supabase/functions/\_shared/waiter-tools.ts:246_
 
 ---
 
@@ -12266,7 +12638,7 @@ Tool: view_cart Get current cart contents
 
 Tool: update_cart_item Update quantity or remove an item from cart
 
-*Source: supabase/functions/_shared/waiter-tools.ts:295*
+_Source: supabase/functions/\_shared/waiter-tools.ts:295_
 
 ---
 
@@ -12274,7 +12646,7 @@ Tool: update_cart_item Update quantity or remove an item from cart
 
 Tool: send_order Finalize the order for payment
 
-*Source: supabase/functions/_shared/waiter-tools.ts:359*
+_Source: supabase/functions/\_shared/waiter-tools.ts:359_
 
 ---
 
@@ -12282,7 +12654,7 @@ Tool: send_order Finalize the order for payment
 
 Tool: recommend_wine Get wine recommendations for a dish
 
-*Source: supabase/functions/_shared/waiter-tools.ts:425*
+_Source: supabase/functions/\_shared/waiter-tools.ts:425_
 
 ---
 
@@ -12290,7 +12662,7 @@ Tool: recommend_wine Get wine recommendations for a dish
 
 Tool: book_table Create a table reservation
 
-*Source: supabase/functions/_shared/waiter-tools.ts:461*
+_Source: supabase/functions/\_shared/waiter-tools.ts:461_
 
 ---
 
@@ -12298,7 +12670,7 @@ Tool: book_table Create a table reservation
 
 Tool: get_order_status Check the status of an order
 
-*Source: supabase/functions/_shared/waiter-tools.ts:530*
+_Source: supabase/functions/\_shared/waiter-tools.ts:530_
 
 ---
 
@@ -12306,7 +12678,7 @@ Tool: get_order_status Check the status of an order
 
 Update order total by summing order items
 
-*Source: supabase/functions/_shared/waiter-tools.ts:576*
+_Source: supabase/functions/\_shared/waiter-tools.ts:576_
 
 ---
 
@@ -12314,7 +12686,7 @@ Update order total by summing order items
 
 Get order summary
 
-*Source: supabase/functions/_shared/waiter-tools.ts:609*
+_Source: supabase/functions/\_shared/waiter-tools.ts:609_
 
 ---
 
@@ -12322,7 +12694,7 @@ Get order summary
 
 Tool: initiate_payment Initiate a payment for an order (MoMo, Revolut, or Cash)
 
-*Source: supabase/functions/_shared/waiter-tools.ts:625*
+_Source: supabase/functions/\_shared/waiter-tools.ts:625_
 
 ---
 
@@ -12330,7 +12702,7 @@ Tool: initiate_payment Initiate a payment for an order (MoMo, Revolut, or Cash)
 
 Tool: confirm_payment User confirms they have completed the payment
 
-*Source: supabase/functions/_shared/waiter-tools.ts:785*
+_Source: supabase/functions/\_shared/waiter-tools.ts:785_
 
 ---
 
@@ -12338,7 +12710,7 @@ Tool: confirm_payment User confirms they have completed the payment
 
 Tool: cancel_payment Cancel a pending payment
 
-*Source: supabase/functions/_shared/waiter-tools.ts:868*
+_Source: supabase/functions/\_shared/waiter-tools.ts:868_
 
 ---
 
@@ -12346,7 +12718,7 @@ Tool: cancel_payment Cancel a pending payment
 
 Tool: get_payment_status Check status of a payment
 
-*Source: supabase/functions/_shared/waiter-tools.ts:932*
+_Source: supabase/functions/\_shared/waiter-tools.ts:932_
 
 ---
 
@@ -12354,7 +12726,7 @@ Tool: get_payment_status Check status of a payment
 
 Tool: save_payment_method Save a payment method for future use
 
-*Source: supabase/functions/_shared/waiter-tools.ts:981*
+_Source: supabase/functions/\_shared/waiter-tools.ts:981_
 
 ---
 
@@ -12362,7 +12734,7 @@ Tool: save_payment_method Save a payment method for future use
 
 Tool: get_saved_payment_methods Get user's saved payment methods
 
-*Source: supabase/functions/_shared/waiter-tools.ts:1032*
+_Source: supabase/functions/\_shared/waiter-tools.ts:1032_
 
 ---
 
@@ -12370,7 +12742,7 @@ Tool: get_saved_payment_methods Get user's saved payment methods
 
 Tool: initiate_payment Initiate a payment for an order (MoMo, Revolut, or Cash)
 
-*Source: supabase/functions/_shared/waiter-tools.ts:1088*
+_Source: supabase/functions/\_shared/waiter-tools.ts:1088_
 
 ---
 
@@ -12378,7 +12750,7 @@ Tool: initiate_payment Initiate a payment for an order (MoMo, Revolut, or Cash)
 
 Tool: confirm_payment User confirms they have completed the payment
 
-*Source: supabase/functions/_shared/waiter-tools.ts:1248*
+_Source: supabase/functions/\_shared/waiter-tools.ts:1248_
 
 ---
 
@@ -12386,7 +12758,7 @@ Tool: confirm_payment User confirms they have completed the payment
 
 Tool: cancel_payment Cancel a pending payment
 
-*Source: supabase/functions/_shared/waiter-tools.ts:1331*
+_Source: supabase/functions/\_shared/waiter-tools.ts:1331_
 
 ---
 
@@ -12394,7 +12766,7 @@ Tool: cancel_payment Cancel a pending payment
 
 Tool: get_payment_status Check status of a payment
 
-*Source: supabase/functions/_shared/waiter-tools.ts:1395*
+_Source: supabase/functions/\_shared/waiter-tools.ts:1395_
 
 ---
 
@@ -12402,7 +12774,7 @@ Tool: get_payment_status Check status of a payment
 
 Tool: save_payment_method Save a payment method for future use
 
-*Source: supabase/functions/_shared/waiter-tools.ts:1444*
+_Source: supabase/functions/\_shared/waiter-tools.ts:1444_
 
 ---
 
@@ -12410,23 +12782,26 @@ Tool: save_payment_method Save a payment method for future use
 
 Tool: get_saved_payment_methods Get user's saved payment methods
 
-*Source: supabase/functions/_shared/waiter-tools.ts:1495*
+_Source: supabase/functions/\_shared/waiter-tools.ts:1495_
 
 ---
 
 ### `errorHandler`
 
-Error handler middleware for webhook processing Converts errors to proper HTTP responses with structured error objects
+Error handler middleware for webhook processing Converts errors to proper HTTP responses with
+structured error objects
 
-*Source: supabase/functions/_shared/errors.ts:101*
+_Source: supabase/functions/\_shared/errors.ts:101_
 
 ---
 
 ### `unnamed`
 
-AI Agent Orchestrator for WhatsApp Webhook Processing Provides centralized AI agent management with: - Context persistence and retrieval - Token limit management and truncation - Retry logic with exponential backoff - Session tracking and metrics
+AI Agent Orchestrator for WhatsApp Webhook Processing Provides centralized AI agent management
+with: - Context persistence and retrieval - Token limit management and truncation - Retry logic with
+exponential backoff - Session tracking and metrics
 
-*Source: supabase/functions/_shared/ai-agent-orchestrator.ts:1*
+_Source: supabase/functions/\_shared/ai-agent-orchestrator.ts:1_
 
 ---
 
@@ -12434,7 +12809,7 @@ AI Agent Orchestrator for WhatsApp Webhook Processing Provides centralized AI ag
 
 Process a message through the AI agent pipeline
 
-*Source: supabase/functions/_shared/ai-agent-orchestrator.ts:47*
+_Source: supabase/functions/\_shared/ai-agent-orchestrator.ts:47_
 
 ---
 
@@ -12442,7 +12817,7 @@ Process a message through the AI agent pipeline
 
 Load conversation context from database
 
-*Source: supabase/functions/_shared/ai-agent-orchestrator.ts:129*
+_Source: supabase/functions/\_shared/ai-agent-orchestrator.ts:129_
 
 ---
 
@@ -12450,7 +12825,7 @@ Load conversation context from database
 
 Truncate context to fit within token limits Uses a sliding window approach to keep recent messages
 
-*Source: supabase/functions/_shared/ai-agent-orchestrator.ts:164*
+_Source: supabase/functions/\_shared/ai-agent-orchestrator.ts:164_
 
 ---
 
@@ -12458,7 +12833,7 @@ Truncate context to fit within token limits Uses a sliding window approach to ke
 
 Estimate token count for text Rough estimation: 1 token ≈ 4 characters
 
-*Source: supabase/functions/_shared/ai-agent-orchestrator.ts:206*
+_Source: supabase/functions/\_shared/ai-agent-orchestrator.ts:206_
 
 ---
 
@@ -12466,7 +12841,7 @@ Estimate token count for text Rough estimation: 1 token ≈ 4 characters
 
 Call AI service with retry logic and exponential backoff
 
-*Source: supabase/functions/_shared/ai-agent-orchestrator.ts:214*
+_Source: supabase/functions/\_shared/ai-agent-orchestrator.ts:214_
 
 ---
 
@@ -12474,7 +12849,7 @@ Call AI service with retry logic and exponential backoff
 
 Call AI service (placeholder - implement with actual AI provider)
 
-*Source: supabase/functions/_shared/ai-agent-orchestrator.ts:263*
+_Source: supabase/functions/\_shared/ai-agent-orchestrator.ts:263_
 
 ---
 
@@ -12482,7 +12857,7 @@ Call AI service (placeholder - implement with actual AI provider)
 
 Get agent configuration based on type
 
-*Source: supabase/functions/_shared/ai-agent-orchestrator.ts:291*
+_Source: supabase/functions/\_shared/ai-agent-orchestrator.ts:291_
 
 ---
 
@@ -12490,7 +12865,7 @@ Get agent configuration based on type
 
 Save updated context to database
 
-*Source: supabase/functions/_shared/ai-agent-orchestrator.ts:355*
+_Source: supabase/functions/\_shared/ai-agent-orchestrator.ts:355_
 
 ---
 
@@ -12498,15 +12873,16 @@ Save updated context to database
 
 Update session metrics
 
-*Source: supabase/functions/_shared/ai-agent-orchestrator.ts:403*
+_Source: supabase/functions/\_shared/ai-agent-orchestrator.ts:403_
 
 ---
 
 ### `unnamed`
 
-Dead Letter Queue (DLQ) Manager Handles storage and retrieval of failed webhook payloads for later reprocessing.
+Dead Letter Queue (DLQ) Manager Handles storage and retrieval of failed webhook payloads for later
+reprocessing.
 
-*Source: supabase/functions/_shared/dlq-manager.ts:1*
+_Source: supabase/functions/\_shared/dlq-manager.ts:1_
 
 ---
 
@@ -12514,7 +12890,7 @@ Dead Letter Queue (DLQ) Manager Handles storage and retrieval of failed webhook 
 
 Store a failed webhook in the DLQ
 
-*Source: supabase/functions/_shared/dlq-manager.ts:33*
+_Source: supabase/functions/\_shared/dlq-manager.ts:33_
 
 ---
 
@@ -12522,7 +12898,7 @@ Store a failed webhook in the DLQ
 
 Get pending DLQ entries ready for retry
 
-*Source: supabase/functions/_shared/dlq-manager.ts:73*
+_Source: supabase/functions/\_shared/dlq-manager.ts:73_
 
 ---
 
@@ -12530,7 +12906,7 @@ Get pending DLQ entries ready for retry
 
 Mark a DLQ entry as processing
 
-*Source: supabase/functions/_shared/dlq-manager.ts:101*
+_Source: supabase/functions/\_shared/dlq-manager.ts:101_
 
 ---
 
@@ -12538,7 +12914,7 @@ Mark a DLQ entry as processing
 
 Mark a DLQ entry as reprocessed
 
-*Source: supabase/functions/_shared/dlq-manager.ts:120*
+_Source: supabase/functions/\_shared/dlq-manager.ts:120_
 
 ---
 
@@ -12546,7 +12922,7 @@ Mark a DLQ entry as reprocessed
 
 Mark a DLQ entry as failed (after max retries)
 
-*Source: supabase/functions/_shared/dlq-manager.ts:142*
+_Source: supabase/functions/\_shared/dlq-manager.ts:142_
 
 ---
 
@@ -12554,7 +12930,7 @@ Mark a DLQ entry as failed (after max retries)
 
 Increment retry count and update next retry time
 
-*Source: supabase/functions/_shared/dlq-manager.ts:166*
+_Source: supabase/functions/\_shared/dlq-manager.ts:166_
 
 ---
 
@@ -12562,7 +12938,7 @@ Increment retry count and update next retry time
 
 Get DLQ statistics
 
-*Source: supabase/functions/_shared/dlq-manager.ts:191*
+_Source: supabase/functions/\_shared/dlq-manager.ts:191_
 
 ---
 
@@ -12570,15 +12946,17 @@ Get DLQ statistics
 
 Calculate next retry time with exponential backoff Max 5 retries: 5min, 15min, 1hr, 4hr, 12hr
 
-*Source: supabase/functions/_shared/dlq-manager.ts:242*
+_Source: supabase/functions/\_shared/dlq-manager.ts:242_
 
 ---
 
 ### `unnamed`
 
-Webhook Processing Utilities Provides core utilities for WhatsApp webhook processing: - Signature verification (timing-safe) - Payload validation (Zod schemas) - Webhook queue management - Rate limiting - Circuit breaker pattern - Logging and metrics
+Webhook Processing Utilities Provides core utilities for WhatsApp webhook processing: - Signature
+verification (timing-safe) - Payload validation (Zod schemas) - Webhook queue management - Rate
+limiting - Circuit breaker pattern - Logging and metrics
 
-*Source: supabase/functions/_shared/webhook-utils.ts:1*
+_Source: supabase/functions/\_shared/webhook-utils.ts:1_
 
 ---
 
@@ -12586,7 +12964,7 @@ Webhook Processing Utilities Provides core utilities for WhatsApp webhook proces
 
 Verify webhook signature using HMAC-SHA256 with timing-safe comparison
 
-*Source: supabase/functions/_shared/webhook-utils.ts:136*
+_Source: supabase/functions/\_shared/webhook-utils.ts:136_
 
 ---
 
@@ -12594,7 +12972,7 @@ Verify webhook signature using HMAC-SHA256 with timing-safe comparison
 
 Validate webhook payload structure using Zod schemas
 
-*Source: supabase/functions/_shared/webhook-utils.ts:188*
+_Source: supabase/functions/\_shared/webhook-utils.ts:188_
 
 ---
 
@@ -12602,7 +12980,7 @@ Validate webhook payload structure using Zod schemas
 
 Check if a WhatsApp message has already been processed (idempotency)
 
-*Source: supabase/functions/_shared/webhook-utils.ts:680*
+_Source: supabase/functions/\_shared/webhook-utils.ts:680_
 
 ---
 
@@ -12610,7 +12988,7 @@ Check if a WhatsApp message has already been processed (idempotency)
 
 Record that a message has been processed
 
-*Source: supabase/functions/_shared/webhook-utils.ts:723*
+_Source: supabase/functions/\_shared/webhook-utils.ts:723_
 
 ---
 
@@ -12618,7 +12996,7 @@ Record that a message has been processed
 
 Acquire a distributed lock for conversation processing
 
-*Source: supabase/functions/_shared/webhook-utils.ts:771*
+_Source: supabase/functions/\_shared/webhook-utils.ts:771_
 
 ---
 
@@ -12626,7 +13004,7 @@ Acquire a distributed lock for conversation processing
 
 Release a distributed lock for conversation processing
 
-*Source: supabase/functions/_shared/webhook-utils.ts:824*
+_Source: supabase/functions/\_shared/webhook-utils.ts:824_
 
 ---
 
@@ -12634,7 +13012,7 @@ Release a distributed lock for conversation processing
 
 Add failed message to dead letter queue
 
-*Source: supabase/functions/_shared/webhook-utils.ts:869*
+_Source: supabase/functions/\_shared/webhook-utils.ts:869_
 
 ---
 
@@ -12642,7 +13020,7 @@ Add failed message to dead letter queue
 
 Process webhook with timeout protection
 
-*Source: supabase/functions/_shared/webhook-utils.ts:933*
+_Source: supabase/functions/\_shared/webhook-utils.ts:933_
 
 ---
 
@@ -12650,7 +13028,7 @@ Process webhook with timeout protection
 
 Update conversation state with audit trail
 
-*Source: supabase/functions/_shared/webhook-utils.ts:971*
+_Source: supabase/functions/\_shared/webhook-utils.ts:971_
 
 ---
 
@@ -12658,15 +13036,18 @@ Update conversation state with audit trail
 
 Get or create webhook conversation
 
-*Source: supabase/functions/_shared/webhook-utils.ts:1039*
+_Source: supabase/functions/\_shared/webhook-utils.ts:1039_
 
 ---
 
 ### `unnamed`
 
-Circuit Breaker Pattern Implementation Prevents cascading failures by tracking service health and temporarily blocking requests to failing services. States: - CLOSED: Normal operation, requests pass through - OPEN: Service is failing, requests are blocked - HALF_OPEN: Testing if service has recovered
+Circuit Breaker Pattern Implementation Prevents cascading failures by tracking service health and
+temporarily blocking requests to failing services. States: - CLOSED: Normal operation, requests pass
+through - OPEN: Service is failing, requests are blocked - HALF_OPEN: Testing if service has
+recovered
 
-*Source: supabase/functions/_shared/circuit-breaker.ts:1*
+_Source: supabase/functions/\_shared/circuit-breaker.ts:1_
 
 ---
 
@@ -12674,7 +13055,7 @@ Circuit Breaker Pattern Implementation Prevents cascading failures by tracking s
 
 Check if the circuit breaker allows the request
 
-*Source: supabase/functions/_shared/circuit-breaker.ts:47*
+_Source: supabase/functions/\_shared/circuit-breaker.ts:47_
 
 ---
 
@@ -12682,7 +13063,7 @@ Check if the circuit breaker allows the request
 
 Record a successful execution
 
-*Source: supabase/functions/_shared/circuit-breaker.ts:65*
+_Source: supabase/functions/\_shared/circuit-breaker.ts:65_
 
 ---
 
@@ -12690,7 +13071,7 @@ Record a successful execution
 
 Record a failed execution
 
-*Source: supabase/functions/_shared/circuit-breaker.ts:80*
+_Source: supabase/functions/\_shared/circuit-breaker.ts:80_
 
 ---
 
@@ -12698,7 +13079,7 @@ Record a failed execution
 
 Get current circuit state
 
-*Source: supabase/functions/_shared/circuit-breaker.ts:102*
+_Source: supabase/functions/\_shared/circuit-breaker.ts:102_
 
 ---
 
@@ -12706,7 +13087,7 @@ Get current circuit state
 
 Get circuit breaker metrics
 
-*Source: supabase/functions/_shared/circuit-breaker.ts:109*
+_Source: supabase/functions/\_shared/circuit-breaker.ts:109_
 
 ---
 
@@ -12714,23 +13095,26 @@ Get circuit breaker metrics
 
 Manually reset the circuit breaker
 
-*Source: supabase/functions/_shared/circuit-breaker.ts:122*
+_Source: supabase/functions/\_shared/circuit-breaker.ts:122_
 
 ---
 
 ### `unnamed`
 
-Service Resilience Module Provides circuit breaker and rate limiting patterns for microservices routing. Implements resilience patterns as recommended in WA_WEBHOOK_CORE architecture.
+Service Resilience Module Provides circuit breaker and rate limiting patterns for microservices
+routing. Implements resilience patterns as recommended in WA_WEBHOOK_CORE architecture.
 
-*Source: supabase/functions/_shared/service-resilience.ts:1*
+_Source: supabase/functions/\_shared/service-resilience.ts:1_
 
 ---
 
 ### `isServiceCircuitOpen`
 
-Circuit Breaker: Check if circuit is open for a service Circuit states: - closed: Normal operation, requests pass through - open: Circuit tripped, requests are rejected immediately - half-open: Testing if service has recovered, limited requests allowed
+Circuit Breaker: Check if circuit is open for a service Circuit states: - closed: Normal operation,
+requests pass through - open: Circuit tripped, requests are rejected immediately - half-open:
+Testing if service has recovered, limited requests allowed
 
-*Source: supabase/functions/_shared/service-resilience.ts:78*
+_Source: supabase/functions/\_shared/service-resilience.ts:78_
 
 ---
 
@@ -12738,7 +13122,7 @@ Circuit Breaker: Check if circuit is open for a service Circuit states: - closed
 
 Record a successful request to a service Closes the circuit if in half-open state
 
-*Source: supabase/functions/_shared/service-resilience.ts:118*
+_Source: supabase/functions/\_shared/service-resilience.ts:118_
 
 ---
 
@@ -12746,7 +13130,7 @@ Record a successful request to a service Closes the circuit if in half-open stat
 
 Record a failed request to a service Opens the circuit if failures exceed threshold
 
-*Source: supabase/functions/_shared/service-resilience.ts:140*
+_Source: supabase/functions/\_shared/service-resilience.ts:140_
 
 ---
 
@@ -12754,23 +13138,25 @@ Record a failed request to a service Opens the circuit if failures exceed thresh
 
 Get current circuit state for a service (for monitoring/health checks)
 
-*Source: supabase/functions/_shared/service-resilience.ts:202*
+_Source: supabase/functions/\_shared/service-resilience.ts:202_
 
 ---
 
 ### `checkRateLimit`
 
-Rate Limiter: Check if a phone number has exceeded rate limit Returns { allowed: boolean, remaining: number, resetAt: number }
+Rate Limiter: Check if a phone number has exceeded rate limit Returns { allowed: boolean, remaining:
+number, resetAt: number }
 
-*Source: supabase/functions/_shared/service-resilience.ts:221*
+_Source: supabase/functions/\_shared/service-resilience.ts:221_
 
 ---
 
 ### `fetchWithRetry`
 
-Retry with exponential backoff Implements retry for transient failures (configurable via WA_RETRIABLE_STATUS_CODES)
+Retry with exponential backoff Implements retry for transient failures (configurable via
+WA_RETRIABLE_STATUS_CODES)
 
-*Source: supabase/functions/_shared/service-resilience.ts:261*
+_Source: supabase/functions/\_shared/service-resilience.ts:261_
 
 ---
 
@@ -12778,7 +13164,7 @@ Retry with exponential backoff Implements retry for transient failures (configur
 
 Sleep helper for retry delays
 
-*Source: supabase/functions/_shared/service-resilience.ts:348*
+_Source: supabase/functions/\_shared/service-resilience.ts:348_
 
 ---
 
@@ -12786,15 +13172,16 @@ Sleep helper for retry delays
 
 Get all services' circuit states (for health check aggregation)
 
-*Source: supabase/functions/_shared/service-resilience.ts:355*
+_Source: supabase/functions/\_shared/service-resilience.ts:355_
 
 ---
 
 ### `cleanupRateLimitState`
 
-Clean up expired rate limit entries (memory management) Call periodically to prevent memory leaks in long-running instances
+Clean up expired rate limit entries (memory management) Call periodically to prevent memory leaks in
+long-running instances
 
-*Source: supabase/functions/_shared/service-resilience.ts:366*
+_Source: supabase/functions/\_shared/service-resilience.ts:366_
 
 ---
 
@@ -12802,7 +13189,7 @@ Clean up expired rate limit entries (memory management) Call periodically to pre
 
 Performance Middleware Tracks request performance and reports metrics
 
-*Source: supabase/functions/_shared/observability/performance-middleware.ts:1*
+_Source: supabase/functions/\_shared/observability/performance-middleware.ts:1_
 
 ---
 
@@ -12810,7 +13197,7 @@ Performance Middleware Tracks request performance and reports metrics
 
 Performance Dashboard Endpoint Exposes metrics and performance data
 
-*Source: supabase/functions/_shared/observability/performance-endpoint.ts:1*
+_Source: supabase/functions/\_shared/observability/performance-endpoint.ts:1_
 
 ---
 
@@ -12818,7 +13205,7 @@ Performance Dashboard Endpoint Exposes metrics and performance data
 
 Metrics Collector Performance metrics collection and reporting
 
-*Source: supabase/functions/_shared/observability/metrics.ts:1*
+_Source: supabase/functions/\_shared/observability/metrics.ts:1_
 
 ---
 
@@ -12826,7 +13213,7 @@ Metrics Collector Performance metrics collection and reporting
 
 Typed State Machine Provides type-safe state transitions with validation
 
-*Source: supabase/functions/_shared/state/state-machine.ts:1*
+_Source: supabase/functions/\_shared/state/state-machine.ts:1_
 
 ---
 
@@ -12834,7 +13221,7 @@ Typed State Machine Provides type-safe state transitions with validation
 
 Default TTL for states
 
-*Source: supabase/functions/_shared/state/state-machine.ts:38*
+_Source: supabase/functions/\_shared/state/state-machine.ts:38_
 
 ---
 
@@ -12842,7 +13229,7 @@ Default TTL for states
 
 Whether to validate transitions
 
-*Source: supabase/functions/_shared/state/state-machine.ts:40*
+_Source: supabase/functions/\_shared/state/state-machine.ts:40_
 
 ---
 
@@ -12850,7 +13237,7 @@ Whether to validate transitions
 
 Whether to log transitions
 
-*Source: supabase/functions/_shared/state/state-machine.ts:42*
+_Source: supabase/functions/\_shared/state/state-machine.ts:42_
 
 ---
 
@@ -12858,7 +13245,7 @@ Whether to log transitions
 
 Get current state for user
 
-*Source: supabase/functions/_shared/state/state-machine.ts:113*
+_Source: supabase/functions/\_shared/state/state-machine.ts:113_
 
 ---
 
@@ -12866,7 +13253,7 @@ Get current state for user
 
 Transition to new state
 
-*Source: supabase/functions/_shared/state/state-machine.ts:140*
+_Source: supabase/functions/\_shared/state/state-machine.ts:140_
 
 ---
 
@@ -12874,7 +13261,7 @@ Transition to new state
 
 Clear user state (return to home)
 
-*Source: supabase/functions/_shared/state/state-machine.ts:218*
+_Source: supabase/functions/\_shared/state/state-machine.ts:218_
 
 ---
 
@@ -12882,7 +13269,7 @@ Clear user state (return to home)
 
 Check if transition is allowed
 
-*Source: supabase/functions/_shared/state/state-machine.ts:232*
+_Source: supabase/functions/\_shared/state/state-machine.ts:232_
 
 ---
 
@@ -12890,7 +13277,7 @@ Check if transition is allowed
 
 Get allowed transitions for a state
 
-*Source: supabase/functions/_shared/state/state-machine.ts:241*
+_Source: supabase/functions/\_shared/state/state-machine.ts:241_
 
 ---
 
@@ -12898,7 +13285,7 @@ Get allowed transitions for a state
 
 Create state machine instance
 
-*Source: supabase/functions/_shared/state/state-machine.ts:249*
+_Source: supabase/functions/\_shared/state/state-machine.ts:249_
 
 ---
 
@@ -12906,7 +13293,7 @@ Create state machine instance
 
 State Module Exports
 
-*Source: supabase/functions/_shared/state/index.ts:1*
+_Source: supabase/functions/\_shared/state/index.ts:1_
 
 ---
 
@@ -12914,7 +13301,7 @@ State Module Exports
 
 State Store Simple state storage and retrieval
 
-*Source: supabase/functions/_shared/state/store.ts:1*
+_Source: supabase/functions/\_shared/state/store.ts:1_
 
 ---
 
@@ -12922,7 +13309,7 @@ State Store Simple state storage and retrieval
 
 Get user state
 
-*Source: supabase/functions/_shared/state/store.ts:15*
+_Source: supabase/functions/\_shared/state/store.ts:15_
 
 ---
 
@@ -12930,7 +13317,7 @@ Get user state
 
 Set user state
 
-*Source: supabase/functions/_shared/state/store.ts:54*
+_Source: supabase/functions/\_shared/state/store.ts:54_
 
 ---
 
@@ -12938,7 +13325,7 @@ Set user state
 
 Clear user state
 
-*Source: supabase/functions/_shared/state/store.ts:96*
+_Source: supabase/functions/\_shared/state/store.ts:96_
 
 ---
 
@@ -12946,7 +13333,7 @@ Clear user state
 
 Update state data without changing key
 
-*Source: supabase/functions/_shared/state/store.ts:127*
+_Source: supabase/functions/\_shared/state/store.ts:127_
 
 ---
 
@@ -12954,7 +13341,7 @@ Update state data without changing key
 
 Ensure user profile exists
 
-*Source: supabase/functions/_shared/state/store.ts:149*
+_Source: supabase/functions/\_shared/state/store.ts:149_
 
 ---
 
@@ -12962,7 +13349,7 @@ Ensure user profile exists
 
 Keywords for natural language matching
 
-*Source: supabase/functions/_shared/route-config.ts:21*
+_Source: supabase/functions/\_shared/route-config.ts:21_
 
 ---
 
@@ -12970,7 +13357,7 @@ Keywords for natural language matching
 
 Menu selection keys (exact match)
 
-*Source: supabase/functions/_shared/route-config.ts:23*
+_Source: supabase/functions/\_shared/route-config.ts:23_
 
 ---
 
@@ -12978,15 +13365,16 @@ Menu selection keys (exact match)
 
 Priority for conflict resolution (lower = higher priority)
 
-*Source: supabase/functions/_shared/route-config.ts:25*
+_Source: supabase/functions/\_shared/route-config.ts:25_
 
 ---
 
 ### `unnamed`
 
-If true, this service is deprecated and traffic should be routed to wa-webhook-unified when FEATURE_AGENT_UNIFIED_WEBHOOK is enabled.
+If true, this service is deprecated and traffic should be routed to wa-webhook-unified when
+FEATURE_AGENT_UNIFIED_WEBHOOK is enabled.
 
-*Source: supabase/functions/_shared/route-config.ts:27*
+_Source: supabase/functions/\_shared/route-config.ts:27_
 
 ---
 
@@ -12994,7 +13382,7 @@ If true, this service is deprecated and traffic should be routed to wa-webhook-u
 
 The service to redirect to when deprecated
 
-*Source: supabase/functions/_shared/route-config.ts:32*
+_Source: supabase/functions/\_shared/route-config.ts:32_
 
 ---
 
@@ -13002,7 +13390,7 @@ The service to redirect to when deprecated
 
 Build a lookup map from menu keys to services
 
-*Source: supabase/functions/_shared/route-config.ts:134*
+_Source: supabase/functions/\_shared/route-config.ts:134_
 
 ---
 
@@ -13010,15 +13398,16 @@ Build a lookup map from menu keys to services
 
 Get service from chat state
 
-*Source: supabase/functions/_shared/route-config.ts:160*
+_Source: supabase/functions/\_shared/route-config.ts:160_
 
 ---
 
 ### `matchKeywordsToService`
 
-Match message text to service based on keywords Returns the best matching service or null if no match
+Match message text to service based on keywords Returns the best matching service or null if no
+match
 
-*Source: supabase/functions/_shared/route-config.ts:175*
+_Source: supabase/functions/\_shared/route-config.ts:175_
 
 ---
 
@@ -13026,23 +13415,27 @@ Match message text to service based on keywords Returns the best matching servic
 
 Check if a service is deprecated
 
-*Source: supabase/functions/_shared/route-config.ts:201*
+_Source: supabase/functions/\_shared/route-config.ts:201_
 
 ---
 
 ### `getServiceRedirect`
 
-Get the redirect target for a deprecated service Returns the original service if not deprecated or no redirect configured
+Get the redirect target for a deprecated service Returns the original service if not deprecated or
+no redirect configured
 
-*Source: supabase/functions/_shared/route-config.ts:209*
+_Source: supabase/functions/\_shared/route-config.ts:209_
 
 ---
 
 ### `resolveServiceWithMigration`
 
-Resolve the final service to route to, taking into account deprecation and the FEATURE_UNIFIED_AGENTS feature flag. When useUnified is true and the service is deprecated, returns the redirect target. When useUnified is false, always returns the original service (even if deprecated). When the service is not deprecated, always returns the original service.
+Resolve the final service to route to, taking into account deprecation and the
+FEATURE_UNIFIED_AGENTS feature flag. When useUnified is true and the service is deprecated, returns
+the redirect target. When useUnified is false, always returns the original service (even if
+deprecated). When the service is not deprecated, always returns the original service.
 
-*Source: supabase/functions/_shared/route-config.ts:221*
+_Source: supabase/functions/\_shared/route-config.ts:221_
 
 ---
 
@@ -13050,7 +13443,7 @@ Resolve the final service to route to, taking into account deprecation and the F
 
 Test Fixtures Pre-defined test data for consistent testing
 
-*Source: supabase/functions/_shared/testing/fixtures.ts:1*
+_Source: supabase/functions/\_shared/testing/fixtures.ts:1_
 
 ---
 
@@ -13058,7 +13451,7 @@ Test Fixtures Pre-defined test data for consistent testing
 
 Test Utilities and Helpers Shared testing infrastructure for all microservices
 
-*Source: supabase/functions/_shared/testing/test-utils.ts:1*
+_Source: supabase/functions/\_shared/testing/test-utils.ts:1_
 
 ---
 
@@ -13066,7 +13459,7 @@ Test Utilities and Helpers Shared testing infrastructure for all microservices
 
 Create a mock Supabase client
 
-*Source: supabase/functions/_shared/testing/test-utils.ts:63*
+_Source: supabase/functions/\_shared/testing/test-utils.ts:63_
 
 ---
 
@@ -13074,7 +13467,7 @@ Create a mock Supabase client
 
 Create a mock router context
 
-*Source: supabase/functions/_shared/testing/test-utils.ts:130*
+_Source: supabase/functions/\_shared/testing/test-utils.ts:130_
 
 ---
 
@@ -13082,7 +13475,7 @@ Create a mock router context
 
 Create a mock WhatsApp webhook payload
 
-*Source: supabase/functions/_shared/testing/test-utils.ts:143*
+_Source: supabase/functions/\_shared/testing/test-utils.ts:143_
 
 ---
 
@@ -13090,7 +13483,7 @@ Create a mock WhatsApp webhook payload
 
 Create a mock HTTP request
 
-*Source: supabase/functions/_shared/testing/test-utils.ts:234*
+_Source: supabase/functions/\_shared/testing/test-utils.ts:234_
 
 ---
 
@@ -13098,7 +13491,7 @@ Create a mock HTTP request
 
 Assert response status and body
 
-*Source: supabase/functions/_shared/testing/test-utils.ts:264*
+_Source: supabase/functions/\_shared/testing/test-utils.ts:264_
 
 ---
 
@@ -13106,7 +13499,7 @@ Assert response status and body
 
 Assert that a response is successful
 
-*Source: supabase/functions/_shared/testing/test-utils.ts:280*
+_Source: supabase/functions/\_shared/testing/test-utils.ts:280_
 
 ---
 
@@ -13114,7 +13507,7 @@ Assert that a response is successful
 
 Assert that a response is an error
 
-*Source: supabase/functions/_shared/testing/test-utils.ts:288*
+_Source: supabase/functions/\_shared/testing/test-utils.ts:288_
 
 ---
 
@@ -13122,7 +13515,7 @@ Assert that a response is an error
 
 Create a mock WhatsApp API
 
-*Source: supabase/functions/_shared/testing/test-utils.ts:320*
+_Source: supabase/functions/\_shared/testing/test-utils.ts:320_
 
 ---
 
@@ -13130,7 +13523,7 @@ Create a mock WhatsApp API
 
 Create test profile data
 
-*Source: supabase/functions/_shared/testing/test-utils.ts:386*
+_Source: supabase/functions/\_shared/testing/test-utils.ts:386_
 
 ---
 
@@ -13138,7 +13531,7 @@ Create test profile data
 
 Create test trip data
 
-*Source: supabase/functions/_shared/testing/test-utils.ts:401*
+_Source: supabase/functions/\_shared/testing/test-utils.ts:401_
 
 ---
 
@@ -13146,7 +13539,7 @@ Create test trip data
 
 Create test insurance lead data
 
-*Source: supabase/functions/_shared/testing/test-utils.ts:418*
+_Source: supabase/functions/\_shared/testing/test-utils.ts:418_
 
 ---
 
@@ -13154,7 +13547,7 @@ Create test insurance lead data
 
 Create test claim data
 
-*Source: supabase/functions/_shared/testing/test-utils.ts:432*
+_Source: supabase/functions/\_shared/testing/test-utils.ts:432_
 
 ---
 
@@ -13162,7 +13555,7 @@ Create test claim data
 
 Setup and teardown helpers
 
-*Source: supabase/functions/_shared/testing/test-utils.ts:453*
+_Source: supabase/functions/\_shared/testing/test-utils.ts:453_
 
 ---
 
@@ -13170,15 +13563,16 @@ Setup and teardown helpers
 
 Log a structured event with consistent formatting
 
-*Source: supabase/functions/_shared/observability.ts:13*
+_Source: supabase/functions/\_shared/observability.ts:13_
 
 ---
 
 ### `logError`
 
-Log an error with context Stack traces are only included in development environment to prevent information leakage in production.
+Log an error with context Stack traces are only included in development environment to prevent
+information leakage in production.
 
-*Source: supabase/functions/_shared/observability.ts:55*
+_Source: supabase/functions/\_shared/observability.ts:55_
 
 ---
 
@@ -13186,7 +13580,7 @@ Log an error with context Stack traces are only included in development environm
 
 Normalize metric dimensions to string values
 
-*Source: supabase/functions/_shared/observability.ts:95*
+_Source: supabase/functions/\_shared/observability.ts:95_
 
 ---
 
@@ -13194,7 +13588,7 @@ Normalize metric dimensions to string values
 
 Record a metric/counter
 
-*Source: supabase/functions/_shared/observability.ts:105*
+_Source: supabase/functions/\_shared/observability.ts:105_
 
 ---
 
@@ -13202,7 +13596,7 @@ Record a metric/counter
 
 Record a duration metric
 
-*Source: supabase/functions/_shared/observability.ts:135*
+_Source: supabase/functions/\_shared/observability.ts:135_
 
 ---
 
@@ -13210,7 +13604,7 @@ Record a duration metric
 
 Record a gauge metric (current value snapshot)
 
-*Source: supabase/functions/_shared/observability.ts:159*
+_Source: supabase/functions/\_shared/observability.ts:159_
 
 ---
 
@@ -13218,7 +13612,7 @@ Record a gauge metric (current value snapshot)
 
 Mask sensitive data for logging
 
-*Source: supabase/functions/_shared/observability.ts:179*
+_Source: supabase/functions/\_shared/observability.ts:179_
 
 ---
 
@@ -13226,7 +13620,7 @@ Mask sensitive data for logging
 
 Create a correlation ID for request tracing
 
-*Source: supabase/functions/_shared/observability.ts:203*
+_Source: supabase/functions/\_shared/observability.ts:203_
 
 ---
 
@@ -13234,7 +13628,7 @@ Create a correlation ID for request tracing
 
 Extract correlation ID from request headers
 
-*Source: supabase/functions/_shared/observability.ts:210*
+_Source: supabase/functions/\_shared/observability.ts:210_
 
 ---
 
@@ -13242,7 +13636,7 @@ Extract correlation ID from request headers
 
 Log request with correlation tracking
 
-*Source: supabase/functions/_shared/observability.ts:219*
+_Source: supabase/functions/\_shared/observability.ts:219_
 
 ---
 
@@ -13250,23 +13644,28 @@ Log request with correlation tracking
 
 Log response with correlation tracking
 
-*Source: supabase/functions/_shared/observability.ts:251*
+_Source: supabase/functions/\_shared/observability.ts:251_
 
 ---
 
 ### `withRequestInstrumentation`
 
-Wraps a Supabase Edge Function handler with request tracing and structured logging. This function instruments the handler to: - Automatically propagate and inject a request/correlation ID into all outgoing fetch requests. - Log structured request and response events with timing and status. - Intercept and restore the global fetch function for the duration of the handler.
+Wraps a Supabase Edge Function handler with request tracing and structured logging. This function
+instruments the handler to: - Automatically propagate and inject a request/correlation ID into all
+outgoing fetch requests. - Log structured request and response events with timing and status. -
+Intercept and restore the global fetch function for the duration of the handler.
 
-*Source: supabase/functions/_shared/observability.ts:320*
+_Source: supabase/functions/\_shared/observability.ts:320_
 
 ---
 
 ### `unnamed`
 
-Webhook Error Boundary Module Comprehensive error handling for all webhook services with: - Standardized error responses - User-friendly messages - Automatic retry logic - Circuit breaker integration - DLQ support
+Webhook Error Boundary Module Comprehensive error handling for all webhook services with: -
+Standardized error responses - User-friendly messages - Automatic retry logic - Circuit breaker
+integration - DLQ support
 
-*Source: supabase/functions/_shared/webhook-error-boundary.ts:1*
+_Source: supabase/functions/\_shared/webhook-error-boundary.ts:1_
 
 ---
 
@@ -13274,7 +13673,7 @@ Webhook Error Boundary Module Comprehensive error handling for all webhook servi
 
 Wrap a webhook handler with comprehensive error boundary
 
-*Source: supabase/functions/_shared/webhook-error-boundary.ts:84*
+_Source: supabase/functions/\_shared/webhook-error-boundary.ts:84_
 
 ---
 
@@ -13282,7 +13681,7 @@ Wrap a webhook handler with comprehensive error boundary
 
 Handle webhook errors with recovery mechanisms
 
-*Source: supabase/functions/_shared/webhook-error-boundary.ts:179*
+_Source: supabase/functions/\_shared/webhook-error-boundary.ts:179_
 
 ---
 
@@ -13290,7 +13689,7 @@ Handle webhook errors with recovery mechanisms
 
 Extract error details from various error types
 
-*Source: supabase/functions/_shared/webhook-error-boundary.ts:287*
+_Source: supabase/functions/\_shared/webhook-error-boundary.ts:287_
 
 ---
 
@@ -13298,7 +13697,7 @@ Extract error details from various error types
 
 Get user-friendly error message
 
-*Source: supabase/functions/_shared/webhook-error-boundary.ts:337*
+_Source: supabase/functions/\_shared/webhook-error-boundary.ts:337_
 
 ---
 
@@ -13306,7 +13705,7 @@ Get user-friendly error message
 
 Create a safe async operation wrapper with timeout
 
-*Source: supabase/functions/_shared/webhook-error-boundary.ts:344*
+_Source: supabase/functions/\_shared/webhook-error-boundary.ts:344_
 
 ---
 
@@ -13314,7 +13713,7 @@ Create a safe async operation wrapper with timeout
 
 Validate webhook payload with structured errors
 
-*Source: supabase/functions/_shared/webhook-error-boundary.ts:377*
+_Source: supabase/functions/\_shared/webhook-error-boundary.ts:377_
 
 ---
 
@@ -13322,7 +13721,7 @@ Validate webhook payload with structured errors
 
 Type guard for WhatsApp webhook payload
 
-*Source: supabase/functions/_shared/webhook-error-boundary.ts:394*
+_Source: supabase/functions/\_shared/webhook-error-boundary.ts:394_
 
 ---
 
@@ -13330,7 +13729,7 @@ Type guard for WhatsApp webhook payload
 
 Retry an operation with exponential backoff
 
-*Source: supabase/functions/_shared/webhook-error-boundary.ts:414*
+_Source: supabase/functions/\_shared/webhook-error-boundary.ts:414_
 
 ---
 
@@ -13338,7 +13737,7 @@ Retry an operation with exponential backoff
 
 Export error classes for use in services
 
-*Source: supabase/functions/_shared/webhook-error-boundary.ts:464*
+_Source: supabase/functions/\_shared/webhook-error-boundary.ts:464_
 
 ---
 
@@ -13346,7 +13745,7 @@ Export error classes for use in services
 
 Add failed message to dead letter queue
 
-*Source: supabase/functions/_shared/dead-letter-queue.ts:13*
+_Source: supabase/functions/\_shared/dead-letter-queue.ts:13_
 
 ---
 
@@ -13354,7 +13753,7 @@ Add failed message to dead letter queue
 
 Get messages ready for retry
 
-*Source: supabase/functions/_shared/dead-letter-queue.ts:67*
+_Source: supabase/functions/\_shared/dead-letter-queue.ts:67_
 
 ---
 
@@ -13362,7 +13761,7 @@ Get messages ready for retry
 
 Mark message as processed
 
-*Source: supabase/functions/_shared/dead-letter-queue.ts:91*
+_Source: supabase/functions/\_shared/dead-letter-queue.ts:91_
 
 ---
 
@@ -13370,7 +13769,7 @@ Mark message as processed
 
 Check if a request is allowed for the given key (e.g., phone number)
 
-*Source: supabase/functions/_shared/rate-limiter.ts:29*
+_Source: supabase/functions/\_shared/rate-limiter.ts:29_
 
 ---
 
@@ -13378,7 +13777,7 @@ Check if a request is allowed for the given key (e.g., phone number)
 
 Get current usage for a key
 
-*Source: supabase/functions/_shared/rate-limiter.ts:60*
+_Source: supabase/functions/\_shared/rate-limiter.ts:60_
 
 ---
 
@@ -13386,7 +13785,7 @@ Get current usage for a key
 
 Reset rate limit for a specific key
 
-*Source: supabase/functions/_shared/rate-limiter.ts:80*
+_Source: supabase/functions/\_shared/rate-limiter.ts:80_
 
 ---
 
@@ -13394,7 +13793,7 @@ Reset rate limit for a specific key
 
 Clear all rate limit data
 
-*Source: supabase/functions/_shared/rate-limiter.ts:87*
+_Source: supabase/functions/\_shared/rate-limiter.ts:87_
 
 ---
 
@@ -13402,7 +13801,7 @@ Clear all rate limit data
 
 Cleanup old entries (call periodically)
 
-*Source: supabase/functions/_shared/rate-limiter.ts:94*
+_Source: supabase/functions/\_shared/rate-limiter.ts:94_
 
 ---
 
@@ -13410,7 +13809,7 @@ Cleanup old entries (call periodically)
 
 Embedding Generator Service Generates vector embeddings for semantic search using OpenAI or Gemini
 
-*Source: supabase/functions/_shared/embedding-service.ts:1*
+_Source: supabase/functions/\_shared/embedding-service.ts:1_
 
 ---
 
@@ -13418,15 +13817,16 @@ Embedding Generator Service Generates vector embeddings for semantic search usin
 
 Generate embeddings using OpenAI text-embedding-3-small (1536 dimensions)
 
-*Source: supabase/functions/_shared/embedding-service.ts:17*
+_Source: supabase/functions/\_shared/embedding-service.ts:17_
 
 ---
 
 ### `generateEmbeddingGemini`
 
-Generate embeddings using Google Gemini (embedding-001) Note: Gemini embeddings are 768 dimensions, we'll need to pad to 1536
+Generate embeddings using Google Gemini (embedding-001) Note: Gemini embeddings are 768 dimensions,
+we'll need to pad to 1536
 
-*Source: supabase/functions/_shared/embedding-service.ts:54*
+_Source: supabase/functions/\_shared/embedding-service.ts:54_
 
 ---
 
@@ -13434,7 +13834,7 @@ Generate embeddings using Google Gemini (embedding-001) Note: Gemini embeddings 
 
 Generate embedding with automatic fallback
 
-*Source: supabase/functions/_shared/embedding-service.ts:100*
+_Source: supabase/functions/\_shared/embedding-service.ts:100_
 
 ---
 
@@ -13442,15 +13842,16 @@ Generate embedding with automatic fallback
 
 Hybrid search (vector + full-text)
 
-*Source: supabase/functions/_shared/embedding-service.ts:224*
+_Source: supabase/functions/\_shared/embedding-service.ts:224_
 
 ---
 
 ### `unnamed`
 
-Agent Observability Utilities Specialized logging and metrics for AI agent operations. Extends the base observability utilities with agent-specific events.
+Agent Observability Utilities Specialized logging and metrics for AI agent operations. Extends the
+base observability utilities with agent-specific events.
 
-*Source: supabase/functions/_shared/agent-observability.ts:1*
+_Source: supabase/functions/\_shared/agent-observability.ts:1_
 
 ---
 
@@ -13458,7 +13859,7 @@ Agent Observability Utilities Specialized logging and metrics for AI agent opera
 
 Log an agent event with structured data
 
-*Source: supabase/functions/_shared/agent-observability.ts:49*
+_Source: supabase/functions/\_shared/agent-observability.ts:49_
 
 ---
 
@@ -13466,7 +13867,7 @@ Log an agent event with structured data
 
 Log agent negotiation start
 
-*Source: supabase/functions/_shared/agent-observability.ts:73*
+_Source: supabase/functions/\_shared/agent-observability.ts:73_
 
 ---
 
@@ -13474,7 +13875,7 @@ Log agent negotiation start
 
 Log quote collection event
 
-*Source: supabase/functions/_shared/agent-observability.ts:96*
+_Source: supabase/functions/\_shared/agent-observability.ts:96_
 
 ---
 
@@ -13482,7 +13883,7 @@ Log quote collection event
 
 Log negotiation completion
 
-*Source: supabase/functions/_shared/agent-observability.ts:121*
+_Source: supabase/functions/\_shared/agent-observability.ts:121_
 
 ---
 
@@ -13490,7 +13891,7 @@ Log negotiation completion
 
 Log session timeout
 
-*Source: supabase/functions/_shared/agent-observability.ts:144*
+_Source: supabase/functions/\_shared/agent-observability.ts:144_
 
 ---
 
@@ -13498,7 +13899,7 @@ Log session timeout
 
 Log vendor contact attempt
 
-*Source: supabase/functions/_shared/agent-observability.ts:163*
+_Source: supabase/functions/\_shared/agent-observability.ts:163_
 
 ---
 
@@ -13506,7 +13907,7 @@ Log vendor contact attempt
 
 Log agent error with context
 
-*Source: supabase/functions/_shared/agent-observability.ts:185*
+_Source: supabase/functions/\_shared/agent-observability.ts:185_
 
 ---
 
@@ -13514,7 +13915,7 @@ Log agent error with context
 
 Mask identifier for PII protection Shows first 4 and last 4 characters, masks the middle
 
-*Source: supabase/functions/_shared/agent-observability.ts:203*
+_Source: supabase/functions/\_shared/agent-observability.ts:203_
 
 ---
 
@@ -13522,23 +13923,26 @@ Mask identifier for PII protection Shows first 4 and last 4 characters, masks th
 
 Mask phone number for PII protection Shows country code and last 3 digits
 
-*Source: supabase/functions/_shared/agent-observability.ts:220*
+_Source: supabase/functions/\_shared/agent-observability.ts:220_
 
 ---
 
 ### `recordAgentMetric`
 
-Record agent session metrics Helper to record common agent metrics with consistent dimensions. NOTE: This function is a placeholder for future implementation. The recordMetric function needs to be implemented in observability.ts first.
+Record agent session metrics Helper to record common agent metrics with consistent dimensions. NOTE:
+This function is a placeholder for future implementation. The recordMetric function needs to be
+implemented in observability.ts first.
 
-*Source: supabase/functions/_shared/agent-observability.ts:246*
+_Source: supabase/functions/\_shared/agent-observability.ts:246_
 
 ---
 
 ### `unnamed`
 
-Security utilities for Supabase Edge Functions Provides signature verification, secret management helpers, and security best practices enforcement.
+Security utilities for Supabase Edge Functions Provides signature verification, secret management
+helpers, and security best practices enforcement.
 
-*Source: supabase/functions/_shared/security.ts:1*
+_Source: supabase/functions/\_shared/security.ts:1_
 
 ---
 
@@ -13546,7 +13950,7 @@ Security utilities for Supabase Edge Functions Provides signature verification, 
 
 Verify WhatsApp webhook signature using HMAC SHA-256
 
-*Source: supabase/functions/_shared/security.ts:12*
+_Source: supabase/functions/\_shared/security.ts:12_
 
 ---
 
@@ -13554,7 +13958,7 @@ Verify WhatsApp webhook signature using HMAC SHA-256
 
 Verify generic webhook HMAC signature
 
-*Source: supabase/functions/_shared/security.ts:82*
+_Source: supabase/functions/\_shared/security.ts:82_
 
 ---
 
@@ -13562,7 +13966,7 @@ Verify generic webhook HMAC signature
 
 Constant-time string comparison to prevent timing attacks
 
-*Source: supabase/functions/_shared/security.ts:126*
+_Source: supabase/functions/\_shared/security.ts:126_
 
 ---
 
@@ -13570,7 +13974,7 @@ Constant-time string comparison to prevent timing attacks
 
 Validate that required environment variables are set
 
-*Source: supabase/functions/_shared/security.ts:146*
+_Source: supabase/functions/\_shared/security.ts:146_
 
 ---
 
@@ -13578,7 +13982,7 @@ Validate that required environment variables are set
 
 Check if an environment variable contains a placeholder value
 
-*Source: supabase/functions/_shared/security.ts:176*
+_Source: supabase/functions/\_shared/security.ts:176_
 
 ---
 
@@ -13586,7 +13990,7 @@ Check if an environment variable contains a placeholder value
 
 Sanitize error messages to prevent information leakage
 
-*Source: supabase/functions/_shared/security.ts:202*
+_Source: supabase/functions/\_shared/security.ts:202_
 
 ---
 
@@ -13594,23 +13998,25 @@ Sanitize error messages to prevent information leakage
 
 Clean up expired rate limit entries Call periodically to prevent memory leaks
 
-*Source: supabase/functions/_shared/security.ts:265*
+_Source: supabase/functions/\_shared/security.ts:265_
 
 ---
 
 ### `isValidJwtStructure`
 
-Validate JWT token structure (without verification) Useful for basic validation before costly verification
+Validate JWT token structure (without verification) Useful for basic validation before costly
+verification
 
-*Source: supabase/functions/_shared/security.ts:278*
+_Source: supabase/functions/\_shared/security.ts:278_
 
 ---
 
 ### `unnamed`
 
-Logging utilities with correlation ID support Ensures all logs include correlation ID for distributed tracing. Part of CORE-002 fix for consistent correlation ID propagation.
+Logging utilities with correlation ID support Ensures all logs include correlation ID for
+distributed tracing. Part of CORE-002 fix for consistent correlation ID propagation.
 
-*Source: supabase/functions/_shared/correlation-logging.ts:1*
+_Source: supabase/functions/\_shared/correlation-logging.ts:1_
 
 ---
 
@@ -13618,7 +14024,7 @@ Logging utilities with correlation ID support Ensures all logs include correlati
 
 Create a logging function with correlation context
 
-*Source: supabase/functions/_shared/correlation-logging.ts:19*
+_Source: supabase/functions/\_shared/correlation-logging.ts:19_
 
 ---
 
@@ -13626,7 +14032,7 @@ Create a logging function with correlation context
 
 Enhanced console.error with correlation ID Use this instead of raw console.error
 
-*Source: supabase/functions/_shared/correlation-logging.ts:43*
+_Source: supabase/functions/\_shared/correlation-logging.ts:43_
 
 ---
 
@@ -13634,7 +14040,7 @@ Enhanced console.error with correlation ID Use this instead of raw console.error
 
 Enhanced console.warn with correlation ID Use this instead of raw console.warn
 
-*Source: supabase/functions/_shared/correlation-logging.ts:64*
+_Source: supabase/functions/\_shared/correlation-logging.ts:64_
 
 ---
 
@@ -13642,15 +14048,16 @@ Enhanced console.warn with correlation ID Use this instead of raw console.warn
 
 Enhanced console.log with correlation ID Use this instead of raw console.log for structured events
 
-*Source: supabase/functions/_shared/correlation-logging.ts:81*
+_Source: supabase/functions/\_shared/correlation-logging.ts:81_
 
 ---
 
 ### `unnamed`
 
-WhatsApp API Client with Circuit Breaker Protection Wraps all WhatsApp Graph API calls with circuit breaker pattern to prevent cascading failures when WhatsApp API is down.
+WhatsApp API Client with Circuit Breaker Protection Wraps all WhatsApp Graph API calls with circuit
+breaker pattern to prevent cascading failures when WhatsApp API is down.
 
-*Source: supabase/functions/_shared/whatsapp-client.ts:1*
+_Source: supabase/functions/\_shared/whatsapp-client.ts:1_
 
 ---
 
@@ -13658,7 +14065,7 @@ WhatsApp API Client with Circuit Breaker Protection Wraps all WhatsApp Graph API
 
 Send a WhatsApp message with circuit breaker protection
 
-*Source: supabase/functions/_shared/whatsapp-client.ts:45*
+_Source: supabase/functions/\_shared/whatsapp-client.ts:45_
 
 ---
 
@@ -13666,7 +14073,7 @@ Send a WhatsApp message with circuit breaker protection
 
 Get WhatsApp API circuit breaker status
 
-*Source: supabase/functions/_shared/whatsapp-client.ts:138*
+_Source: supabase/functions/\_shared/whatsapp-client.ts:138_
 
 ---
 
@@ -13674,7 +14081,7 @@ Get WhatsApp API circuit breaker status
 
 Reset WhatsApp API circuit breaker (manual intervention)
 
-*Source: supabase/functions/_shared/whatsapp-client.ts:148*
+_Source: supabase/functions/\_shared/whatsapp-client.ts:148_
 
 ---
 
@@ -13682,15 +14089,16 @@ Reset WhatsApp API circuit breaker (manual intervention)
 
 Mask phone number for logging (PII protection)
 
-*Source: supabase/functions/_shared/whatsapp-client.ts:158*
+_Source: supabase/functions/\_shared/whatsapp-client.ts:158_
 
 ---
 
 ### `getMomoProvider`
 
-Get MoMo provider configuration for a phone number Returns null if no provider-specific configuration exists Falls back to default USSD codes in qr.ts
+Get MoMo provider configuration for a phone number Returns null if no provider-specific
+configuration exists Falls back to default USSD codes in qr.ts
 
-*Source: supabase/functions/_shared/wa-webhook-shared/domains/exchange/country_support.ts:97*
+_Source: supabase/functions/\_shared/wa-webhook-shared/domains/exchange/country_support.ts:97_
 
 ---
 
@@ -13698,15 +14106,16 @@ Get MoMo provider configuration for a phone number Returns null if no provider-s
 
 Get localized menu item name for a specific country
 
-*Source: supabase/functions/_shared/wa-webhook-shared/domains/menu/dynamic_home_menu.ts:58*
+_Source: supabase/functions/\_shared/wa-webhook-shared/domains/menu/dynamic_home_menu.ts:58_
 
 ---
 
 ### `fetchActiveMenuItems`
 
-Fetch active menu items from database filtered by country Returns items with country-specific names applied
+Fetch active menu items from database filtered by country Returns items with country-specific names
+applied
 
-*Source: supabase/functions/_shared/wa-webhook-shared/domains/menu/dynamic_home_menu.ts:71*
+_Source: supabase/functions/\_shared/wa-webhook-shared/domains/menu/dynamic_home_menu.ts:71_
 
 ---
 
@@ -13714,7 +14123,7 @@ Fetch active menu items from database filtered by country Returns items with cou
 
 Normalize a menu key (legacy or canonical) to its canonical agent key.
 
-*Source: supabase/functions/_shared/wa-webhook-shared/domains/menu/dynamic_home_menu.ts:150*
+_Source: supabase/functions/\_shared/wa-webhook-shared/domains/menu/dynamic_home_menu.ts:150_
 
 ---
 
@@ -13722,7 +14131,7 @@ Normalize a menu key (legacy or canonical) to its canonical agent key.
 
 Map menu item keys to IDS constants
 
-*Source: supabase/functions/_shared/wa-webhook-shared/domains/menu/dynamic_home_menu.ts:159*
+_Source: supabase/functions/\_shared/wa-webhook-shared/domains/menu/dynamic_home_menu.ts:159_
 
 ---
 
@@ -13730,15 +14139,16 @@ Map menu item keys to IDS constants
 
 Get translation key for menu item
 
-*Source: supabase/functions/_shared/wa-webhook-shared/domains/menu/dynamic_home_menu.ts:170*
+_Source: supabase/functions/\_shared/wa-webhook-shared/domains/menu/dynamic_home_menu.ts:170_
 
 ---
 
 ### `getAllowedCountries`
 
-Get allowed countries for insurance feature. Tries to load from app_config table, falls back to default if not configured.
+Get allowed countries for insurance feature. Tries to load from app_config table, falls back to
+default if not configured.
 
-*Source: supabase/functions/_shared/wa-webhook-shared/domains/insurance/gate.ts:25*
+_Source: supabase/functions/\_shared/wa-webhook-shared/domains/insurance/gate.ts:25_
 
 ---
 
@@ -13746,7 +14156,7 @@ Get allowed countries for insurance feature. Tries to load from app_config table
 
 Save user intent to mobility_intents table for better querying and recommendations
 
-*Source: supabase/functions/_shared/wa-webhook-shared/domains/intent_storage.ts:20*
+_Source: supabase/functions/\_shared/wa-webhook-shared/domains/intent_storage.ts:20_
 
 ---
 
@@ -13754,7 +14164,7 @@ Save user intent to mobility_intents table for better querying and recommendatio
 
 Get recent intents for a user
 
-*Source: supabase/functions/_shared/wa-webhook-shared/domains/intent_storage.ts:51*
+_Source: supabase/functions/\_shared/wa-webhook-shared/domains/intent_storage.ts:51_
 
 ---
 
@@ -13762,23 +14172,26 @@ Get recent intents for a user
 
 Clean up expired intents (can be called periodically or via cron)
 
-*Source: supabase/functions/_shared/wa-webhook-shared/domains/intent_storage.ts:76*
+_Source: supabase/functions/\_shared/wa-webhook-shared/domains/intent_storage.ts:76_
 
 ---
 
 ### `unnamed`
 
-AI Agent Location Integration Helper Standardized location resolution before agent execution All AI agents MUST use this before processing user requests
+AI Agent Location Integration Helper Standardized location resolution before agent execution All AI
+agents MUST use this before processing user requests
 
-*Source: supabase/functions/_shared/wa-webhook-shared/ai-agents/location-integration.ts:1*
+_Source: supabase/functions/\_shared/wa-webhook-shared/ai-agents/location-integration.ts:1_
 
 ---
 
 ### `prepareAgentLocation`
 
-Prepare agent context with location This MUST be called before any agent processes a user request Flow: 1. If user just shared location → save to cache and use it 2. Check 30-minute cache 3. Check saved locations (home/work based on agent type) 4. Prompt user to share location
+Prepare agent context with location This MUST be called before any agent processes a user request
+Flow: 1. If user just shared location → save to cache and use it 2. Check 30-minute cache 3. Check
+saved locations (home/work based on agent type) 4. Prompt user to share location
 
-*Source: supabase/functions/_shared/wa-webhook-shared/ai-agents/location-integration.ts:33*
+_Source: supabase/functions/\_shared/wa-webhook-shared/ai-agents/location-integration.ts:33_
 
 ---
 
@@ -13786,7 +14199,7 @@ Prepare agent context with location This MUST be called before any agent process
 
 Format location for display in agent responses
 
-*Source: supabase/functions/_shared/wa-webhook-shared/ai-agents/location-integration.ts:138*
+_Source: supabase/functions/\_shared/wa-webhook-shared/ai-agents/location-integration.ts:138_
 
 ---
 
@@ -13794,15 +14207,17 @@ Format location for display in agent responses
 
 Standard intent extraction from user message Agents should use this to identify what user wants
 
-*Source: supabase/functions/_shared/wa-webhook-shared/ai-agents/location-integration.ts:173*
+_Source: supabase/functions/\_shared/wa-webhook-shared/ai-agents/location-integration.ts:173_
 
 ---
 
 ### `unnamed`
 
-Enhanced Middleware Integration for wa-webhook Provides middleware functions that integrate rate limiting, caching, error handling, and metrics without modifying existing code. These can be optionally integrated into the existing pipeline.
+Enhanced Middleware Integration for wa-webhook Provides middleware functions that integrate rate
+limiting, caching, error handling, and metrics without modifying existing code. These can be
+optionally integrated into the existing pipeline.
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/middleware.ts:1*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/middleware.ts:1_
 
 ---
 
@@ -13810,7 +14225,7 @@ Enhanced Middleware Integration for wa-webhook Provides middleware functions tha
 
 Apply rate limiting middleware Can be called from existing pipeline to add rate limiting
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/middleware.ts:21*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/middleware.ts:21_
 
 ---
 
@@ -13818,7 +14233,7 @@ Apply rate limiting middleware Can be called from existing pipeline to add rate 
 
 Track webhook metrics
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/middleware.ts:68*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/middleware.ts:68_
 
 ---
 
@@ -13826,15 +14241,16 @@ Track webhook metrics
 
 Cache user context with automatic expiration Can be used in message_context.ts to cache user lookups
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/middleware.ts:92*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/middleware.ts:92_
 
 ---
 
 ### `wrapError`
 
-Wrap error with enhanced error handling Can be used in existing try-catch blocks to enhance error responses
+Wrap error with enhanced error handling Can be used in existing try-catch blocks to enhance error
+responses
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/middleware.ts:109*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/middleware.ts:109_
 
 ---
 
@@ -13842,15 +14258,16 @@ Wrap error with enhanced error handling Can be used in existing try-catch blocks
 
 Add rate limit headers to response
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/middleware.ts:135*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/middleware.ts:135_
 
 ---
 
 ### `enhanceWebhookRequest`
 
-Middleware function to enhance PreparedWebhook This can be called after processWebhookRequest to add enhancements
+Middleware function to enhance PreparedWebhook This can be called after processWebhookRequest to add
+enhancements
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/middleware.ts:160*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/middleware.ts:160_
 
 ---
 
@@ -13858,15 +14275,16 @@ Middleware function to enhance PreparedWebhook This can be called after processW
 
 Log webhook processing completion
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/middleware.ts:197*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/middleware.ts:197_
 
 ---
 
 ### `processMessageWithEnhancements`
 
-Example: Enhanced message processor wrapper This shows how to wrap existing handleMessage calls with enhancements
+Example: Enhanced message processor wrapper This shows how to wrap existing handleMessage calls with
+enhancements
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/middleware.ts:225*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/middleware.ts:225_
 
 ---
 
@@ -13874,7 +14292,7 @@ Example: Enhanced message processor wrapper This shows how to wrap existing hand
 
 Utility to check if enhancements are enabled
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/middleware.ts:288*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/middleware.ts:288_
 
 ---
 
@@ -13882,15 +14300,16 @@ Utility to check if enhancements are enabled
 
 Get enhancement configuration
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/middleware.ts:297*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/middleware.ts:297_
 
 ---
 
 ### `unnamed`
 
-Message Deduplication and Queue Integration Provides deduplication checking against the database and queue integration for reliable message processing.
+Message Deduplication and Queue Integration Provides deduplication checking against the database and
+queue integration for reliable message processing.
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/message-deduplication.ts:1*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/message-deduplication.ts:1_
 
 ---
 
@@ -13898,7 +14317,7 @@ Message Deduplication and Queue Integration Provides deduplication checking agai
 
 Check if a message has already been processed (database-backed deduplication)
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/message-deduplication.ts:14*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/message-deduplication.ts:14_
 
 ---
 
@@ -13906,7 +14325,7 @@ Check if a message has already been processed (database-backed deduplication)
 
 Mark a message as processed
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/message-deduplication.ts:67*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/message-deduplication.ts:67_
 
 ---
 
@@ -13914,7 +14333,7 @@ Mark a message as processed
 
 Add message to processing queue
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/message-deduplication.ts:115*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/message-deduplication.ts:115_
 
 ---
 
@@ -13922,7 +14341,7 @@ Add message to processing queue
 
 Get or create AI conversation memory
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/message-deduplication.ts:175*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/message-deduplication.ts:175_
 
 ---
 
@@ -13930,7 +14349,7 @@ Get or create AI conversation memory
 
 Update AI conversation memory
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/message-deduplication.ts:272*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/message-deduplication.ts:272_
 
 ---
 
@@ -13938,15 +14357,16 @@ Update AI conversation memory
 
 Cleanup old conversation memories (older than 7 days with no activity)
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/message-deduplication.ts:346*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/message-deduplication.ts:346_
 
 ---
 
 ### `unnamed`
 
-Enhanced Error Handling for wa-webhook Provides structured error handling with classification, user notifications, and retry logic. Complements existing error handling.
+Enhanced Error Handling for wa-webhook Provides structured error handling with classification, user
+notifications, and retry logic. Complements existing error handling.
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/error_handler.ts:1*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/error_handler.ts:1_
 
 ---
 
@@ -13954,7 +14374,7 @@ Enhanced Error Handling for wa-webhook Provides structured error handling with c
 
 Normalize any error to WebhookError
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/error_handler.ts:83*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/error_handler.ts:83_
 
 ---
 
@@ -13962,7 +14382,7 @@ Normalize any error to WebhookError
 
 Handle webhook error with logging and optional user notification
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/error_handler.ts:167*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/error_handler.ts:167_
 
 ---
 
@@ -13970,7 +14390,7 @@ Handle webhook error with logging and optional user notification
 
 Send error notification to user
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/error_handler.ts:199*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/error_handler.ts:199_
 
 ---
 
@@ -13978,7 +14398,7 @@ Send error notification to user
 
 Create error response
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/error_handler.ts:228*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/error_handler.ts:228_
 
 ---
 
@@ -13986,7 +14406,7 @@ Create error response
 
 Mask phone number for logging (PII protection)
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/error_handler.ts:276*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/error_handler.ts:276_
 
 ---
 
@@ -13994,7 +14414,7 @@ Mask phone number for logging (PII protection)
 
 Check if error is retryable
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/error_handler.ts:284*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/error_handler.ts:284_
 
 ---
 
@@ -14002,15 +14422,16 @@ Check if error is retryable
 
 Get retry delay based on attempt number
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/error_handler.ts:300*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/error_handler.ts:300_
 
 ---
 
 ### `unnamed`
 
-Enhanced Health Check for wa-webhook Provides comprehensive health monitoring including rate limiter, cache, and database connectivity.
+Enhanced Health Check for wa-webhook Provides comprehensive health monitoring including rate
+limiter, cache, and database connectivity.
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/health_check.ts:1*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/health_check.ts:1_
 
 ---
 
@@ -14018,7 +14439,7 @@ Enhanced Health Check for wa-webhook Provides comprehensive health monitoring in
 
 Check database health
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/health_check.ts:39*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/health_check.ts:39_
 
 ---
 
@@ -14026,7 +14447,7 @@ Check database health
 
 Check rate limiter health
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/health_check.ts:78*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/health_check.ts:78_
 
 ---
 
@@ -14034,7 +14455,7 @@ Check rate limiter health
 
 Check cache health
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/health_check.ts:100*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/health_check.ts:100_
 
 ---
 
@@ -14042,7 +14463,7 @@ Check cache health
 
 Check metrics collector health
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/health_check.ts:122*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/health_check.ts:122_
 
 ---
 
@@ -14050,7 +14471,7 @@ Check metrics collector health
 
 Perform comprehensive health check
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/health_check.ts:143*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/health_check.ts:143_
 
 ---
 
@@ -14058,7 +14479,7 @@ Perform comprehensive health check
 
 Create health check response
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/health_check.ts:180*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/health_check.ts:180_
 
 ---
 
@@ -14066,7 +14487,7 @@ Create health check response
 
 Simple liveness probe (for Kubernetes, etc.)
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/health_check.ts:201*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/health_check.ts:201_
 
 ---
 
@@ -14074,7 +14495,7 @@ Simple liveness probe (for Kubernetes, etc.)
 
 Readiness probe (checks critical dependencies)
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/health_check.ts:211*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/health_check.ts:211_
 
 ---
 
@@ -14082,7 +14503,7 @@ Readiness probe (checks critical dependencies)
 
 What to prioritize in sorting. Defaults to 'distance' for nearby flows, 'time' for scheduled flows.
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/sortMatches.ts:11*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/sortMatches.ts:11_
 
 ---
 
@@ -14090,7 +14511,7 @@ What to prioritize in sorting. Defaults to 'distance' for nearby flows, 'time' f
 
 Get the timestamp from a match result, preferring matched_at over created_at.
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/sortMatches.ts:18*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/sortMatches.ts:18_
 
 ---
 
@@ -14098,7 +14519,7 @@ Get the timestamp from a match result, preferring matched_at over created_at.
 
 Convert a match's timestamp to milliseconds for comparison.
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/sortMatches.ts:25*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/sortMatches.ts:25_
 
 ---
 
@@ -14106,7 +14527,7 @@ Convert a match's timestamp to milliseconds for comparison.
 
 Get the distance from a match, returning MAX_SAFE_INTEGER if not available.
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/sortMatches.ts:33*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/sortMatches.ts:33_
 
 ---
 
@@ -14114,7 +14535,7 @@ Get the distance from a match, returning MAX_SAFE_INTEGER if not available.
 
 Shared sorting function for match results. Provides consistent sorting across all mobility flows.
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/sortMatches.ts:42*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/sortMatches.ts:42_
 
 ---
 
@@ -14122,7 +14543,7 @@ Shared sorting function for match results. Provides consistent sorting across al
 
 Comparator function for sorting by distance first. Can be used directly with Array.sort().
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/sortMatches.ts:91*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/sortMatches.ts:91_
 
 ---
 
@@ -14130,15 +14551,16 @@ Comparator function for sorting by distance first. Can be used directly with Arr
 
 Comparator function for sorting by time first. Can be used directly with Array.sort().
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/sortMatches.ts:107*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/sortMatches.ts:107_
 
 ---
 
 ### `unnamed`
 
-Dynamic Submenu Helper Provides reusable functions to fetch and display dynamic submenus from database Eliminates hardcoded menu lists
+Dynamic Submenu Helper Provides reusable functions to fetch and display dynamic submenus from
+database Eliminates hardcoded menu lists
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/dynamic_submenu.ts:1*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/dynamic_submenu.ts:1_
 
 ---
 
@@ -14146,7 +14568,7 @@ Dynamic Submenu Helper Provides reusable functions to fetch and display dynamic 
 
 Fetch submenu items for a parent menu from database
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/dynamic_submenu.ts:21*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/dynamic_submenu.ts:21_
 
 ---
 
@@ -14154,7 +14576,7 @@ Fetch submenu items for a parent menu from database
 
 Fetch profile menu items from database
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/dynamic_submenu.ts:51*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/dynamic_submenu.ts:51_
 
 ---
 
@@ -14162,15 +14584,16 @@ Fetch profile menu items from database
 
 Convert submenu items to WhatsApp list row format
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/dynamic_submenu.ts:85*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/dynamic_submenu.ts:85_
 
 ---
 
 ### `getSubmenuRows`
 
-Get submenu items as WhatsApp rows with back button Convenience function that combines fetch + convert + add back button
+Get submenu items as WhatsApp rows with back button Convenience function that combines fetch +
+convert + add back button
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/dynamic_submenu.ts:106*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/dynamic_submenu.ts:106_
 
 ---
 
@@ -14178,7 +14601,7 @@ Get submenu items as WhatsApp rows with back button Convenience function that co
 
 Check if a submenu exists and has items
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/dynamic_submenu.ts:143*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/dynamic_submenu.ts:143_
 
 ---
 
@@ -14186,7 +14609,7 @@ Check if a submenu exists and has items
 
 Get the default action for a submenu item Used for routing based on action_type
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/dynamic_submenu.ts:159*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/dynamic_submenu.ts:159_
 
 ---
 
@@ -14194,7 +14617,7 @@ Get the default action for a submenu item Used for routing based on action_type
 
 Increment a counter
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/metrics_collector.ts:36*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/metrics_collector.ts:36_
 
 ---
 
@@ -14202,7 +14625,7 @@ Increment a counter
 
 Set a gauge value
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/metrics_collector.ts:50*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/metrics_collector.ts:50_
 
 ---
 
@@ -14210,7 +14633,7 @@ Set a gauge value
 
 Record a histogram value (for durations, sizes, etc.)
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/metrics_collector.ts:63*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/metrics_collector.ts:63_
 
 ---
 
@@ -14218,7 +14641,7 @@ Record a histogram value (for durations, sizes, etc.)
 
 Get dimension key for grouping
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/metrics_collector.ts:81*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/metrics_collector.ts:81_
 
 ---
 
@@ -14226,7 +14649,7 @@ Get dimension key for grouping
 
 Parse dimension key back to object
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/metrics_collector.ts:95*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/metrics_collector.ts:95_
 
 ---
 
@@ -14234,7 +14657,7 @@ Parse dimension key back to object
 
 Calculate histogram statistics
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/metrics_collector.ts:110*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/metrics_collector.ts:110_
 
 ---
 
@@ -14242,7 +14665,7 @@ Calculate histogram statistics
 
 Flush metrics to logs
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/metrics_collector.ts:151*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/metrics_collector.ts:151_
 
 ---
 
@@ -14250,7 +14673,7 @@ Flush metrics to logs
 
 Get metrics in Prometheus format (for /metrics endpoint)
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/metrics_collector.ts:206*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/metrics_collector.ts:206_
 
 ---
 
@@ -14258,7 +14681,7 @@ Get metrics in Prometheus format (for /metrics endpoint)
 
 Get summary statistics
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/metrics_collector.ts:260*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/metrics_collector.ts:260_
 
 ---
 
@@ -14266,7 +14689,7 @@ Get summary statistics
 
 Start periodic flushing
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/metrics_collector.ts:271*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/metrics_collector.ts:271_
 
 ---
 
@@ -14274,7 +14697,7 @@ Start periodic flushing
 
 Stop flushing and cleanup
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/metrics_collector.ts:282*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/metrics_collector.ts:282_
 
 ---
 
@@ -14282,7 +14705,7 @@ Stop flushing and cleanup
 
 Get value from cache
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/cache.ts:48*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/cache.ts:48_
 
 ---
 
@@ -14290,7 +14713,7 @@ Get value from cache
 
 Set value in cache
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/cache.ts:71*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/cache.ts:71_
 
 ---
 
@@ -14298,7 +14721,7 @@ Set value in cache
 
 Get or set value using factory function
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/cache.ts:94*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/cache.ts:94_
 
 ---
 
@@ -14306,7 +14729,7 @@ Get or set value using factory function
 
 Delete from cache
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/cache.ts:112*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/cache.ts:112_
 
 ---
 
@@ -14314,7 +14737,7 @@ Delete from cache
 
 Clear all cache
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/cache.ts:123*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/cache.ts:123_
 
 ---
 
@@ -14322,7 +14745,7 @@ Clear all cache
 
 Check if cache contains key
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/cache.ts:135*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/cache.ts:135_
 
 ---
 
@@ -14330,7 +14753,7 @@ Check if cache contains key
 
 Evict least recently used entry
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/cache.ts:148*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/cache.ts:148_
 
 ---
 
@@ -14338,7 +14761,7 @@ Evict least recently used entry
 
 Clean up expired entries
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/cache.ts:172*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/cache.ts:172_
 
 ---
 
@@ -14346,7 +14769,7 @@ Clean up expired entries
 
 Get cache statistics
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/cache.ts:195*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/cache.ts:195_
 
 ---
 
@@ -14354,7 +14777,7 @@ Get cache statistics
 
 Check if cache is healthy
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/cache.ts:212*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/cache.ts:212_
 
 ---
 
@@ -14362,7 +14785,7 @@ Check if cache is healthy
 
 Start periodic cleanup
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/cache.ts:219*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/cache.ts:219_
 
 ---
 
@@ -14370,7 +14793,7 @@ Start periodic cleanup
 
 Cleanup resources
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/cache.ts:231*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/cache.ts:231_
 
 ---
 
@@ -14378,7 +14801,7 @@ Cleanup resources
 
 Check if identifier should be rate limited
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/rate_limiter.ts:48*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/rate_limiter.ts:48_
 
 ---
 
@@ -14386,7 +14809,7 @@ Check if identifier should be rate limited
 
 Manually unblock an identifier
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/rate_limiter.ts:120*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/rate_limiter.ts:120_
 
 ---
 
@@ -14394,7 +14817,7 @@ Manually unblock an identifier
 
 Get statistics for monitoring
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/rate_limiter.ts:128*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/rate_limiter.ts:128_
 
 ---
 
@@ -14402,7 +14825,7 @@ Get statistics for monitoring
 
 Mask identifier for logging (PII protection)
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/rate_limiter.ts:143*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/rate_limiter.ts:143_
 
 ---
 
@@ -14410,7 +14833,7 @@ Mask identifier for logging (PII protection)
 
 Cleanup expired buckets
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/rate_limiter.ts:151*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/rate_limiter.ts:151_
 
 ---
 
@@ -14418,7 +14841,7 @@ Cleanup expired buckets
 
 Start periodic cleanup
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/rate_limiter.ts:174*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/rate_limiter.ts:174_
 
 ---
 
@@ -14426,15 +14849,16 @@ Start periodic cleanup
 
 Stop cleanup (for testing/shutdown)
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/rate_limiter.ts:183*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/rate_limiter.ts:183_
 
 ---
 
 ### `unnamed`
 
-Standardized Location Resolution for AI Agents Critical component for all AI agents to obtain user location Priority: 30-min cache → Saved locations → Prompt user
+Standardized Location Resolution for AI Agents Critical component for all AI agents to obtain user
+location Priority: 30-min cache → Saved locations → Prompt user
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/location-resolver.ts:1*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/location-resolver.ts:1_
 
 ---
 
@@ -14442,7 +14866,7 @@ Standardized Location Resolution for AI Agents Critical component for all AI age
 
 Resolve user location with standard priority logic
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/location-resolver.ts:64*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/location-resolver.ts:64_
 
 ---
 
@@ -14450,7 +14874,7 @@ Resolve user location with standard priority logic
 
 Build context-aware location prompt message
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/location-resolver.ts:180*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/location-resolver.ts:180_
 
 ---
 
@@ -14458,7 +14882,7 @@ Build context-aware location prompt message
 
 Save location to cache after user shares Call this when user shares a fresh location
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/location-resolver.ts:202*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/location-resolver.ts:202_
 
 ---
 
@@ -14466,7 +14890,7 @@ Save location to cache after user shares Call this when user shares a fresh loca
 
 Get all saved locations for a user Useful for showing user their saved locations to choose from
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/location-resolver.ts:231*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/location-resolver.ts:231_
 
 ---
 
@@ -14474,15 +14898,16 @@ Get all saved locations for a user Useful for showing user their saved locations
 
 Check if location cache is still valid Useful for conditional prompts
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/location-resolver.ts:262*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/location-resolver.ts:262_
 
 ---
 
 ### `ensureProfile`
 
-Thin wrapper around the shared ensureProfile() helper so every webhook surface reuses the same normalization and user-id mapping logic.
+Thin wrapper around the shared ensureProfile() helper so every webhook surface reuses the same
+normalization and user-id mapping logic.
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/profile.ts:9*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/profile.ts:9_
 
 ---
 
@@ -14490,7 +14915,7 @@ Thin wrapper around the shared ensureProfile() helper so every webhook surface r
 
 Validate and load configuration
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/config_validator.ts:54*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/config_validator.ts:54_
 
 ---
 
@@ -14498,7 +14923,7 @@ Validate and load configuration
 
 Get environment variable with fallback to multiple keys
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/config_validator.ts:116*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/config_validator.ts:116_
 
 ---
 
@@ -14506,7 +14931,7 @@ Get environment variable with fallback to multiple keys
 
 Load configuration with defaults
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/config_validator.ts:127*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/config_validator.ts:127_
 
 ---
 
@@ -14514,7 +14939,7 @@ Load configuration with defaults
 
 Print configuration status
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/config_validator.ts:174*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/config_validator.ts:174_
 
 ---
 
@@ -14522,23 +14947,27 @@ Print configuration status
 
 Assert configuration is valid (throws if not)
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/config_validator.ts:202*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/config_validator.ts:202_
 
 ---
 
 ### `encodeTelUriForQr`
 
-Encodes a USSD string as a tel: URI for QR codes. Android QR scanner apps often fail to decode percent-encoded characters before passing the URI to the dialer. This function leaves * and # unencoded for better Android compatibility while maintaining iOS support.
+Encodes a USSD string as a tel: URI for QR codes. Android QR scanner apps often fail to decode
+percent-encoded characters before passing the URI to the dialer. This function leaves \* and #
+unencoded for better Android compatibility while maintaining iOS support.
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/ussd.ts:14*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/ussd.ts:14_
 
 ---
 
 ### `unnamed`
 
-AI Agent Chat Interface Utilities Provides consistent, emoji-rich, button-enabled chat interfaces for all AI agents. All agents MUST use natural language chat with: - Emoji-numbered listings (1️⃣, 2️⃣, 3️⃣) - Action buttons for quick responses - Concise messages with emojis
+AI Agent Chat Interface Utilities Provides consistent, emoji-rich, button-enabled chat interfaces
+for all AI agents. All agents MUST use natural language chat with: - Emoji-numbered listings (1️⃣,
+2️⃣, 3️⃣) - Action buttons for quick responses - Concise messages with emojis
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/ai-chat-interface.ts:1*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/ai-chat-interface.ts:1_
 
 ---
 
@@ -14546,7 +14975,7 @@ AI Agent Chat Interface Utilities Provides consistent, emoji-rich, button-enable
 
 Format options/items as emoji-numbered list
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/ai-chat-interface.ts:20*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/ai-chat-interface.ts:20_
 
 ---
 
@@ -14554,7 +14983,7 @@ Format options/items as emoji-numbered list
 
 Create action buttons for agent responses
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/ai-chat-interface.ts:62*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/ai-chat-interface.ts:62_
 
 ---
 
@@ -14562,7 +14991,7 @@ Create action buttons for agent responses
 
 Send agent message with emoji-numbered list and action buttons
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/ai-chat-interface.ts:90*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/ai-chat-interface.ts:90_
 
 ---
 
@@ -14570,7 +14999,7 @@ Send agent message with emoji-numbered list and action buttons
 
 Send concise agent message with action buttons
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/ai-chat-interface.ts:136*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/ai-chat-interface.ts:136_
 
 ---
 
@@ -14578,7 +15007,7 @@ Send concise agent message with action buttons
 
 Send simple agent text message with emoji
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/ai-chat-interface.ts:163*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/ai-chat-interface.ts:163_
 
 ---
 
@@ -14586,7 +15015,7 @@ Send simple agent text message with emoji
 
 Format error message for agent responses
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/ai-chat-interface.ts:178*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/ai-chat-interface.ts:178_
 
 ---
 
@@ -14594,7 +15023,7 @@ Format error message for agent responses
 
 Format success message for agent responses
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/ai-chat-interface.ts:186*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/ai-chat-interface.ts:186_
 
 ---
 
@@ -14602,7 +15031,7 @@ Format success message for agent responses
 
 Create quick reply instruction text
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/ai-chat-interface.ts:193*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/ai-chat-interface.ts:193_
 
 ---
 
@@ -14610,15 +15039,16 @@ Create quick reply instruction text
 
 Parse emoji number from user input Supports both emoji (1️⃣) and plain numbers (1)
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/ai-chat-interface.ts:210*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/ai-chat-interface.ts:210_
 
 ---
 
 ### `buildMomoUssdForQr`
 
-Builds MOMO USSD code with tel URI optimized for QR codes. Uses unencoded * and # for better Android QR scanner compatibility.
+Builds MOMO USSD code with tel URI optimized for QR codes. Uses unencoded \* and # for better
+Android QR scanner compatibility.
 
-*Source: supabase/functions/_shared/wa-webhook-shared/utils/momo.ts:16*
+_Source: supabase/functions/\_shared/wa-webhook-shared/utils/momo.ts:16_
 
 ---
 
@@ -14626,31 +15056,34 @@ Builds MOMO USSD code with tel URI optimized for QR codes. Uses unencoded * and 
 
 Phase 3.1: Post-Trip Save Prompts Prompt users to save trip destinations as saved locations
 
-*Source: supabase/functions/_shared/wa-webhook-shared/locations/trip-completion.ts:1*
+_Source: supabase/functions/\_shared/wa-webhook-shared/locations/trip-completion.ts:1_
 
 ---
 
 ### `parseSaveLocationAction`
 
-Handle SAVE_LOC_* button clicks from post-trip prompts
+Handle SAVE*LOC*\* button clicks from post-trip prompts
 
-*Source: supabase/functions/_shared/wa-webhook-shared/locations/trip-completion.ts:69*
+_Source: supabase/functions/\_shared/wa-webhook-shared/locations/trip-completion.ts:69_
 
 ---
 
 ### `getEmptyLocationsMessage`
 
-Standardized location-related messages Phase 2.3: Update empty state messages with sharing instructions
+Standardized location-related messages Phase 2.3: Update empty state messages with sharing
+instructions
 
-*Source: supabase/functions/_shared/wa-webhook-shared/locations/messages.ts:1*
+_Source: supabase/functions/\_shared/wa-webhook-shared/locations/messages.ts:1_
 
 ---
 
 ### `reverseGeocode`
 
-Reverse geocode coordinates to human-readable address Uses OpenStreetMap Nominatim API (free, no API key required) Rate limit: 1 request per second Usage Policy: https://operations.osmfoundation.org/policies/nominatim/
+Reverse geocode coordinates to human-readable address Uses OpenStreetMap Nominatim API (free, no API
+key required) Rate limit: 1 request per second Usage Policy:
+https://operations.osmfoundation.org/policies/nominatim/
 
-*Source: supabase/functions/_shared/wa-webhook-shared/locations/geocoding.ts:21*
+_Source: supabase/functions/\_shared/wa-webhook-shared/locations/geocoding.ts:21_
 
 ---
 
@@ -14658,7 +15091,7 @@ Reverse geocode coordinates to human-readable address Uses OpenStreetMap Nominat
 
 Format Nominatim address into concise human-readable format
 
-*Source: supabase/functions/_shared/wa-webhook-shared/locations/geocoding.ts:106*
+_Source: supabase/functions/\_shared/wa-webhook-shared/locations/geocoding.ts:106_
 
 ---
 
@@ -14666,7 +15099,7 @@ Format Nominatim address into concise human-readable format
 
 Get formatted address or fallback to coordinates
 
-*Source: supabase/functions/_shared/wa-webhook-shared/locations/geocoding.ts:137*
+_Source: supabase/functions/\_shared/wa-webhook-shared/locations/geocoding.ts:137_
 
 ---
 
@@ -14674,7 +15107,7 @@ Get formatted address or fallback to coordinates
 
 Clear geocoding cache (useful for testing)
 
-*Source: supabase/functions/_shared/wa-webhook-shared/locations/geocoding.ts:154*
+_Source: supabase/functions/\_shared/wa-webhook-shared/locations/geocoding.ts:154_
 
 ---
 
@@ -14682,15 +15115,16 @@ Clear geocoding cache (useful for testing)
 
 Get cache stats (for monitoring)
 
-*Source: supabase/functions/_shared/wa-webhook-shared/locations/geocoding.ts:161*
+_Source: supabase/functions/\_shared/wa-webhook-shared/locations/geocoding.ts:161_
 
 ---
 
 ### `findNearbyLocations`
 
-Check if a location already exists within a specified radius Uses Haversine formula to calculate distance between coordinates
+Check if a location already exists within a specified radius Uses Haversine formula to calculate
+distance between coordinates
 
-*Source: supabase/functions/_shared/wa-webhook-shared/locations/deduplication.ts:3*
+_Source: supabase/functions/\_shared/wa-webhook-shared/locations/deduplication.ts:3_
 
 ---
 
@@ -14698,7 +15132,7 @@ Check if a location already exists within a specified radius Uses Haversine form
 
 Calculate distance between two coordinates using Haversine formula Returns distance in meters
 
-*Source: supabase/functions/_shared/wa-webhook-shared/locations/deduplication.ts:50*
+_Source: supabase/functions/\_shared/wa-webhook-shared/locations/deduplication.ts:50_
 
 ---
 
@@ -14706,7 +15140,7 @@ Calculate distance between two coordinates using Haversine formula Returns dista
 
 Check if location is duplicate and return appropriate message
 
-*Source: supabase/functions/_shared/wa-webhook-shared/locations/deduplication.ts:74*
+_Source: supabase/functions/\_shared/wa-webhook-shared/locations/deduplication.ts:74_
 
 ---
 
@@ -14714,7 +15148,7 @@ Check if location is duplicate and return appropriate message
 
 Phase 3.3 & 3.4: Smart Location Suggestions Time-based and usage-based location recommendations
 
-*Source: supabase/functions/_shared/wa-webhook-shared/locations/suggestions.ts:1*
+_Source: supabase/functions/\_shared/wa-webhook-shared/locations/suggestions.ts:1_
 
 ---
 
@@ -14722,7 +15156,7 @@ Phase 3.3 & 3.4: Smart Location Suggestions Time-based and usage-based location 
 
 Get smart location suggestion based on time of day and usage patterns
 
-*Source: supabase/functions/_shared/wa-webhook-shared/locations/suggestions.ts:18*
+_Source: supabase/functions/\_shared/wa-webhook-shared/locations/suggestions.ts:18_
 
 ---
 
@@ -14730,7 +15164,7 @@ Get smart location suggestion based on time of day and usage patterns
 
 Get greeting message with smart suggestion
 
-*Source: supabase/functions/_shared/wa-webhook-shared/locations/suggestions.ts:79*
+_Source: supabase/functions/\_shared/wa-webhook-shared/locations/suggestions.ts:79_
 
 ---
 
@@ -14738,7 +15172,7 @@ Get greeting message with smart suggestion
 
 Increment usage counter when location is used
 
-*Source: supabase/functions/_shared/wa-webhook-shared/locations/suggestions.ts:108*
+_Source: supabase/functions/\_shared/wa-webhook-shared/locations/suggestions.ts:108_
 
 ---
 
@@ -14746,7 +15180,7 @@ Increment usage counter when location is used
 
 Admin allocates tokens to a user
 
-*Source: supabase/functions/_shared/wa-webhook-shared/wallet/allocate.ts:12*
+_Source: supabase/functions/\_shared/wa-webhook-shared/wallet/allocate.ts:12_
 
 ---
 
@@ -14754,7 +15188,7 @@ Admin allocates tokens to a user
 
 Allocate insurance bonus tokens
 
-*Source: supabase/functions/_shared/wa-webhook-shared/wallet/allocate.ts:141*
+_Source: supabase/functions/\_shared/wa-webhook-shared/wallet/allocate.ts:141_
 
 ---
 
@@ -14762,23 +15196,27 @@ Allocate insurance bonus tokens
 
 Allocate referral bonus tokens
 
-*Source: supabase/functions/_shared/wa-webhook-shared/wallet/allocate.ts:228*
+_Source: supabase/functions/\_shared/wa-webhook-shared/wallet/allocate.ts:228_
 
 ---
 
 ### `sendProfileMenu`
 
-Display the Profile menu with options for managing businesses, vehicles, and tokens Delegates to the comprehensive Profile hub implementation
+Display the Profile menu with options for managing businesses, vehicles, and tokens Delegates to the
+comprehensive Profile hub implementation
 
-*Source: supabase/functions/_shared/wa-webhook-shared/flows/profile.ts:6*
+_Source: supabase/functions/\_shared/wa-webhook-shared/flows/profile.ts:6_
 
 ---
 
 ### `unnamed`
 
-Gemini-Backed Tools for EasyMO Agents Specialized tools leveraging Gemini's Google ecosystem integration: - Maps & Places API integration - Document parsing and OCR - Data normalization and enrichment - Cross-checking and validation All tools remain grounded in EasyMO data - Gemini is a processing engine, not a data source.
+Gemini-Backed Tools for EasyMO Agents Specialized tools leveraging Gemini's Google ecosystem
+integration: - Maps & Places API integration - Document parsing and OCR - Data normalization and
+enrichment - Cross-checking and validation All tools remain grounded in EasyMO data - Gemini is a
+processing engine, not a data source.
 
-*Source: supabase/functions/_shared/gemini-tools.ts:1*
+_Source: supabase/functions/\_shared/gemini-tools.ts:1_
 
 ---
 
@@ -14786,15 +15224,16 @@ Gemini-Backed Tools for EasyMO Agents Specialized tools leveraging Gemini's Goog
 
 Normalize vendor payload using Gemini Extracts structured data from messy text/images
 
-*Source: supabase/functions/_shared/gemini-tools.ts:48*
+_Source: supabase/functions/\_shared/gemini-tools.ts:48_
 
 ---
 
 ### `geocodeAddress`
 
-Geocode an address using Gemini (can integrate with Google Maps) For now, returns null - integrate with actual geocoding API
+Geocode an address using Gemini (can integrate with Google Maps) For now, returns null - integrate
+with actual geocoding API
 
-*Source: supabase/functions/_shared/gemini-tools.ts:179*
+_Source: supabase/functions/\_shared/gemini-tools.ts:179_
 
 ---
 
@@ -14802,7 +15241,7 @@ Geocode an address using Gemini (can integrate with Google Maps) For now, return
 
 Find vendors nearby using Google Maps/Places Filters results to only EasyMO-registered vendors
 
-*Source: supabase/functions/_shared/gemini-tools.ts:197*
+_Source: supabase/functions/\_shared/gemini-tools.ts:197_
 
 ---
 
@@ -14810,15 +15249,16 @@ Find vendors nearby using Google Maps/Places Filters results to only EasyMO-regi
 
 Parse and structure document/image (menus, property listings, job postings, etc.)
 
-*Source: supabase/functions/_shared/gemini-tools.ts:266*
+_Source: supabase/functions/\_shared/gemini-tools.ts:266_
 
 ---
 
 ### `crossCheckResponse`
 
-Cross-check and validate critical information Used for insurance quotes, legal summaries, compliance checks
+Cross-check and validate critical information Used for insurance quotes, legal summaries, compliance
+checks
 
-*Source: supabase/functions/_shared/gemini-tools.ts:380*
+_Source: supabase/functions/\_shared/gemini-tools.ts:380_
 
 ---
 
@@ -14826,7 +15266,7 @@ Cross-check and validate critical information Used for insurance quotes, legal s
 
 Send a chat completion request
 
-*Source: supabase/functions/_shared/llm-provider-interface.ts:62*
+_Source: supabase/functions/\_shared/llm-provider-interface.ts:62_
 
 ---
 
@@ -14834,7 +15274,7 @@ Send a chat completion request
 
 Generate embeddings for semantic search
 
-*Source: supabase/functions/_shared/llm-provider-interface.ts:67*
+_Source: supabase/functions/\_shared/llm-provider-interface.ts:67_
 
 ---
 
@@ -14842,7 +15282,7 @@ Generate embeddings for semantic search
 
 Analyze an image with vision capabilities
 
-*Source: supabase/functions/_shared/llm-provider-interface.ts:72*
+_Source: supabase/functions/\_shared/llm-provider-interface.ts:72_
 
 ---
 
@@ -14850,15 +15290,16 @@ Analyze an image with vision capabilities
 
 Check if provider is healthy
 
-*Source: supabase/functions/_shared/llm-provider-interface.ts:77*
+_Source: supabase/functions/\_shared/llm-provider-interface.ts:77_
 
 ---
 
 ### `unnamed`
 
-Enhanced Error Handler with i18n Support Provides user-friendly error messages with multi-language support
+Enhanced Error Handler with i18n Support Provides user-friendly error messages with multi-language
+support
 
-*Source: supabase/functions/_shared/errors/error-handler.ts:1*
+_Source: supabase/functions/\_shared/errors/error-handler.ts:1_
 
 ---
 
@@ -14866,7 +15307,7 @@ Enhanced Error Handler with i18n Support Provides user-friendly error messages w
 
 Marketplace Utility Functions Location parsing, formatting, and notification utilities.
 
-*Source: supabase/functions/_shared/marketplace-utils.ts:1*
+_Source: supabase/functions/\_shared/marketplace-utils.ts:1_
 
 ---
 
@@ -14874,7 +15315,7 @@ Marketplace Utility Functions Location parsing, formatting, and notification uti
 
 Parse location from WhatsApp location message
 
-*Source: supabase/functions/_shared/marketplace-utils.ts:36*
+_Source: supabase/functions/\_shared/marketplace-utils.ts:36_
 
 ---
 
@@ -14882,7 +15323,7 @@ Parse location from WhatsApp location message
 
 Parse location from text (city/area names in Rwanda)
 
-*Source: supabase/functions/_shared/marketplace-utils.ts:55*
+_Source: supabase/functions/\_shared/marketplace-utils.ts:55_
 
 ---
 
@@ -14890,7 +15331,7 @@ Parse location from text (city/area names in Rwanda)
 
 Calculate distance between two points (Haversine formula)
 
-*Source: supabase/functions/_shared/marketplace-utils.ts:112*
+_Source: supabase/functions/\_shared/marketplace-utils.ts:112_
 
 ---
 
@@ -14898,7 +15339,7 @@ Calculate distance between two points (Haversine formula)
 
 Format price with currency
 
-*Source: supabase/functions/_shared/marketplace-utils.ts:138*
+_Source: supabase/functions/\_shared/marketplace-utils.ts:138_
 
 ---
 
@@ -14906,7 +15347,7 @@ Format price with currency
 
 Format distance
 
-*Source: supabase/functions/_shared/marketplace-utils.ts:151*
+_Source: supabase/functions/\_shared/marketplace-utils.ts:151_
 
 ---
 
@@ -14914,7 +15355,7 @@ Format distance
 
 Format rating as stars
 
-*Source: supabase/functions/_shared/marketplace-utils.ts:161*
+_Source: supabase/functions/\_shared/marketplace-utils.ts:161_
 
 ---
 
@@ -14922,7 +15363,7 @@ Format rating as stars
 
 Format listing for WhatsApp message
 
-*Source: supabase/functions/_shared/marketplace-utils.ts:170*
+_Source: supabase/functions/\_shared/marketplace-utils.ts:170_
 
 ---
 
@@ -14930,7 +15371,7 @@ Format listing for WhatsApp message
 
 Format business for WhatsApp message
 
-*Source: supabase/functions/_shared/marketplace-utils.ts:204*
+_Source: supabase/functions/\_shared/marketplace-utils.ts:204_
 
 ---
 
@@ -14938,7 +15379,7 @@ Format business for WhatsApp message
 
 Extract WhatsApp message from webhook payload
 
-*Source: supabase/functions/_shared/marketplace-utils.ts:242*
+_Source: supabase/functions/\_shared/marketplace-utils.ts:242_
 
 ---
 
@@ -14946,7 +15387,7 @@ Extract WhatsApp message from webhook payload
 
 Build notification message for matching buyers
 
-*Source: supabase/functions/_shared/marketplace-utils.ts:297*
+_Source: supabase/functions/\_shared/marketplace-utils.ts:297_
 
 ---
 
@@ -14954,7 +15395,7 @@ Build notification message for matching buyers
 
 Build notification message for sellers
 
-*Source: supabase/functions/_shared/marketplace-utils.ts:314*
+_Source: supabase/functions/\_shared/marketplace-utils.ts:314_
 
 ---
 
@@ -14962,7 +15403,7 @@ Build notification message for sellers
 
 Parse price from text
 
-*Source: supabase/functions/_shared/marketplace-utils.ts:334*
+_Source: supabase/functions/\_shared/marketplace-utils.ts:334_
 
 ---
 
@@ -14970,7 +15411,7 @@ Parse price from text
 
 Validate phone number format
 
-*Source: supabase/functions/_shared/marketplace-utils.ts:354*
+_Source: supabase/functions/\_shared/marketplace-utils.ts:354_
 
 ---
 
@@ -14978,7 +15419,7 @@ Validate phone number format
 
 Normalize phone number to international format
 
-*Source: supabase/functions/_shared/marketplace-utils.ts:363*
+_Source: supabase/functions/\_shared/marketplace-utils.ts:363_
 
 ---
 
@@ -14986,7 +15427,7 @@ Normalize phone number to international format
 
 Mask phone number for logging (PII protection)
 
-*Source: supabase/functions/_shared/marketplace-utils.ts:381*
+_Source: supabase/functions/\_shared/marketplace-utils.ts:381_
 
 ---
 
@@ -14994,15 +15435,19 @@ Mask phone number for logging (PII protection)
 
 Log marketplace event with masked PII
 
-*Source: supabase/functions/_shared/marketplace-utils.ts:389*
+_Source: supabase/functions/\_shared/marketplace-utils.ts:389_
 
 ---
 
 ### `unnamed`
 
-AI Agent Orchestrator - Core Logic Manages WhatsApp message routing to appropriate AI agents, intent parsing, and domain action execution. NOW WITH DATABASE-DRIVEN CONFIGURATION & TOOL EXECUTION: - Loads personas, system instructions, tools, tasks, KBs from database - Caches configs for 5 minutes to reduce DB load - Falls back to hardcoded configs if DB fails - Executes tools with validation and logging
+AI Agent Orchestrator - Core Logic Manages WhatsApp message routing to appropriate AI agents, intent
+parsing, and domain action execution. NOW WITH DATABASE-DRIVEN CONFIGURATION & TOOL EXECUTION: -
+Loads personas, system instructions, tools, tasks, KBs from database - Caches configs for 5 minutes
+to reduce DB load - Falls back to hardcoded configs if DB fails - Executes tools with validation and
+logging
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:1*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:1_
 
 ---
 
@@ -15010,7 +15455,7 @@ AI Agent Orchestrator - Core Logic Manages WhatsApp message routing to appropria
 
 Main entry point: Process incoming WhatsApp message
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:53*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:53_
 
 ---
 
@@ -15018,7 +15463,7 @@ Main entry point: Process incoming WhatsApp message
 
 Get or create a chat session for session persistence
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:128*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:128_
 
 ---
 
@@ -15026,7 +15471,7 @@ Get or create a chat session for session persistence
 
 Fallback method to get or create session without RPC
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:158*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:158_
 
 ---
 
@@ -15034,7 +15479,7 @@ Fallback method to get or create session without RPC
 
 Add message to session history
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:200*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:200_
 
 ---
 
@@ -15042,7 +15487,7 @@ Add message to session history
 
 Get session conversation history
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:243*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:243_
 
 ---
 
@@ -15050,7 +15495,7 @@ Get session conversation history
 
 Get or create WhatsApp user by phone number
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:270*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:270_
 
 ---
 
@@ -15058,15 +15503,16 @@ Get or create WhatsApp user by phone number
 
 Save user's location to cache (30-minute TTL) Used when user shares GPS coordinates
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:298*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:298_
 
 ---
 
 ### `unnamed`
 
-Determine which agent should handle this message Can be based on: - User's last active conversation - Keywords in message - User context/roles
+Determine which agent should handle this message Can be based on: - User's last active
+conversation - Keywords in message - User context/roles
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:330*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:330_
 
 ---
 
@@ -15074,7 +15520,7 @@ Determine which agent should handle this message Can be based on: - User's last 
 
 Get or create conversation for user × agent
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:408*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:408_
 
 ---
 
@@ -15082,7 +15528,7 @@ Get or create conversation for user × agent
 
 Store WhatsApp message in database
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:475*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:475_
 
 ---
 
@@ -15090,15 +15536,16 @@ Store WhatsApp message in database
 
 Parse intent from user message using LLM NOW LOADS SYSTEM INSTRUCTIONS FROM DATABASE
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:499*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:499_
 
 ---
 
 ### `unnamed`
 
-Simple intent parsing (placeholder for LLM integration) NOW RECEIVES AGENT CONFIG WITH TOOLS AND TASKS
+Simple intent parsing (placeholder for LLM integration) NOW RECEIVES AGENT CONFIG WITH TOOLS AND
+TASKS
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:537*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:537_
 
 ---
 
@@ -15106,7 +15553,7 @@ Simple intent parsing (placeholder for LLM integration) NOW RECEIVES AGENT CONFI
 
 Extract job search parameters from message
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:709*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:709_
 
 ---
 
@@ -15114,7 +15561,7 @@ Extract job search parameters from message
 
 Extract property search parameters from message
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:738*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:738_
 
 ---
 
@@ -15122,7 +15569,7 @@ Extract property search parameters from message
 
 Extract ride parameters from message
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:765*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:765_
 
 ---
 
@@ -15130,7 +15577,7 @@ Extract ride parameters from message
 
 Extract insurance parameters from message
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:803*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:803_
 
 ---
 
@@ -15138,7 +15585,7 @@ Extract insurance parameters from message
 
 Store parsed intent in database
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:835*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:835_
 
 ---
 
@@ -15146,7 +15593,7 @@ Store parsed intent in database
 
 Execute agent-specific action based on intent NOW WITH TOOL EXECUTION FROM DATABASE
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:864*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:864_
 
 ---
 
@@ -15154,7 +15601,7 @@ Execute agent-specific action based on intent NOW WITH TOOL EXECUTION FROM DATAB
 
 Legacy action handlers (fallback when no tool matches)
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:944*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:944_
 
 ---
 
@@ -15162,7 +15609,7 @@ Legacy action handlers (fallback when no tool matches)
 
 Jobs agent actions
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:984*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:984_
 
 ---
 
@@ -15170,7 +15617,7 @@ Jobs agent actions
 
 Real estate agent actions
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:1004*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:1004_
 
 ---
 
@@ -15178,7 +15625,7 @@ Real estate agent actions
 
 Waiter agent actions
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:1022*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:1022_
 
 ---
 
@@ -15186,7 +15633,7 @@ Waiter agent actions
 
 Farmer agent actions
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:1042*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:1042_
 
 ---
 
@@ -15194,7 +15641,7 @@ Farmer agent actions
 
 Business broker agent actions
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:1056*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:1056_
 
 ---
 
@@ -15202,7 +15649,7 @@ Business broker agent actions
 
 Rides agent actions
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:1070*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:1070_
 
 ---
 
@@ -15210,7 +15657,7 @@ Rides agent actions
 
 Insurance agent actions
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:1101*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:1101_
 
 ---
 
@@ -15218,7 +15665,7 @@ Insurance agent actions
 
 Send response back to user via WhatsApp Returns the response text for session history
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:1130*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:1130_
 
 ---
 
@@ -15226,15 +15673,16 @@ Send response back to user via WhatsApp Returns the response text for session hi
 
 Generate response text based on intent and persona
 
-*Source: supabase/functions/_shared/agent-orchestrator.ts:1172*
+_Source: supabase/functions/\_shared/agent-orchestrator.ts:1172_
 
 ---
 
 ### `unnamed`
 
-Standardized Health Check Implementation Used across all microservices for consistent health reporting
+Standardized Health Check Implementation Used across all microservices for consistent health
+reporting
 
-*Source: supabase/functions/_shared/health-check.ts:1*
+_Source: supabase/functions/\_shared/health-check.ts:1_
 
 ---
 
@@ -15242,7 +15690,7 @@ Standardized Health Check Implementation Used across all microservices for consi
 
 Create health check response
 
-*Source: supabase/functions/_shared/health-check.ts:110*
+_Source: supabase/functions/\_shared/health-check.ts:110_
 
 ---
 
@@ -15250,7 +15698,7 @@ Create health check response
 
 Performance Module Exports
 
-*Source: supabase/functions/_shared/performance/index.ts:1*
+_Source: supabase/functions/\_shared/performance/index.ts:1_
 
 ---
 
@@ -15258,7 +15706,7 @@ Performance Module Exports
 
 Kinyarwanda Translations
 
-*Source: supabase/functions/_shared/i18n/locales/rw.ts:1*
+_Source: supabase/functions/\_shared/i18n/locales/rw.ts:1_
 
 ---
 
@@ -15266,7 +15714,7 @@ Kinyarwanda Translations
 
 English Translations
 
-*Source: supabase/functions/_shared/i18n/locales/en.ts:1*
+_Source: supabase/functions/\_shared/i18n/locales/en.ts:1_
 
 ---
 
@@ -15274,7 +15722,7 @@ English Translations
 
 French Translations
 
-*Source: supabase/functions/_shared/i18n/locales/fr.ts:1*
+_Source: supabase/functions/\_shared/i18n/locales/fr.ts:1_
 
 ---
 
@@ -15282,7 +15730,7 @@ French Translations
 
 Translator Simple translation function with fallback support
 
-*Source: supabase/functions/_shared/i18n/translator.ts:1*
+_Source: supabase/functions/\_shared/i18n/translator.ts:1_
 
 ---
 
@@ -15290,7 +15738,7 @@ Translator Simple translation function with fallback support
 
 Translate a key to the given language
 
-*Source: supabase/functions/_shared/i18n/translator.ts:35*
+_Source: supabase/functions/\_shared/i18n/translator.ts:35_
 
 ---
 
@@ -15298,7 +15746,7 @@ Translate a key to the given language
 
 Get all translations for a locale
 
-*Source: supabase/functions/_shared/i18n/translator.ts:57*
+_Source: supabase/functions/\_shared/i18n/translator.ts:57_
 
 ---
 
@@ -15306,7 +15754,7 @@ Get all translations for a locale
 
 Check if a translation key exists
 
-*Source: supabase/functions/_shared/i18n/translator.ts:64*
+_Source: supabase/functions/\_shared/i18n/translator.ts:64_
 
 ---
 
@@ -15314,7 +15762,7 @@ Check if a translation key exists
 
 I18n Module Exports
 
-*Source: supabase/functions/_shared/i18n/index.ts:1*
+_Source: supabase/functions/\_shared/i18n/index.ts:1_
 
 ---
 
@@ -15322,7 +15770,7 @@ I18n Module Exports
 
 Check rate limit using sliding window algorithm
 
-*Source: supabase/functions/_shared/rate-limit.ts:18*
+_Source: supabase/functions/\_shared/rate-limit.ts:18_
 
 ---
 
@@ -15330,23 +15778,26 @@ Check rate limit using sliding window algorithm
 
 Create a 429 Too Many Requests response
 
-*Source: supabase/functions/_shared/rate-limit.ts:91*
+_Source: supabase/functions/\_shared/rate-limit.ts:91_
 
 ---
 
 ### `getClientIdentifier`
 
-Extract client identifier for rate limiting Tries multiple sources: custom header, forwarded IP, or fallback
+Extract client identifier for rate limiting Tries multiple sources: custom header, forwarded IP, or
+fallback
 
-*Source: supabase/functions/_shared/rate-limit.ts:120*
+_Source: supabase/functions/\_shared/rate-limit.ts:120_
 
 ---
 
 ### `unnamed`
 
-Message Deduplicator Centralized service for detecting and preventing duplicate message processing Uses wa_events table as source of truth for message tracking Created: 2025-12-01 Part of: Platform cleanup - standardize deduplication across webhooks
+Message Deduplicator Centralized service for detecting and preventing duplicate message processing
+Uses wa_events table as source of truth for message tracking Created: 2025-12-01 Part of: Platform
+cleanup - standardize deduplication across webhooks
 
-*Source: supabase/functions/_shared/message-deduplicator.ts:1*
+_Source: supabase/functions/\_shared/message-deduplicator.ts:1_
 
 ---
 
@@ -15354,7 +15805,7 @@ Message Deduplicator Centralized service for detecting and preventing duplicate 
 
 Check if a message has already been processed Returns true if message exists in wa_events table
 
-*Source: supabase/functions/_shared/message-deduplicator.ts:36*
+_Source: supabase/functions/\_shared/message-deduplicator.ts:36_
 
 ---
 
@@ -15362,7 +15813,7 @@ Check if a message has already been processed Returns true if message exists in 
 
 Check and get full deduplication info
 
-*Source: supabase/functions/_shared/message-deduplicator.ts:60*
+_Source: supabase/functions/\_shared/message-deduplicator.ts:60_
 
 ---
 
@@ -15370,7 +15821,7 @@ Check and get full deduplication info
 
 Record a message as processed Stores in wa_events table for future deduplication checks
 
-*Source: supabase/functions/_shared/message-deduplicator.ts:93*
+_Source: supabase/functions/\_shared/message-deduplicator.ts:93_
 
 ---
 
@@ -15378,7 +15829,7 @@ Record a message as processed Stores in wa_events table for future deduplication
 
 Check and record in a single operation Returns true if message should be processed (not a duplicate)
 
-*Source: supabase/functions/_shared/message-deduplicator.ts:136*
+_Source: supabase/functions/\_shared/message-deduplicator.ts:136_
 
 ---
 
@@ -15386,7 +15837,7 @@ Check and record in a single operation Returns true if message should be process
 
 Clean up old deduplication records Call this periodically to prevent table bloat
 
-*Source: supabase/functions/_shared/message-deduplicator.ts:159*
+_Source: supabase/functions/\_shared/message-deduplicator.ts:159_
 
 ---
 
@@ -15394,7 +15845,7 @@ Clean up old deduplication records Call this periodically to prevent table bloat
 
 Convenience function for quick duplicate checks
 
-*Source: supabase/functions/_shared/message-deduplicator.ts:194*
+_Source: supabase/functions/\_shared/message-deduplicator.ts:194_
 
 ---
 
@@ -15402,7 +15853,7 @@ Convenience function for quick duplicate checks
 
 Convenience function for check + record pattern
 
-*Source: supabase/functions/_shared/message-deduplicator.ts:205*
+_Source: supabase/functions/\_shared/message-deduplicator.ts:205_
 
 ---
 
@@ -15410,15 +15861,17 @@ Convenience function for check + record pattern
 
 Validate and throw if critical errors
 
-*Source: supabase/functions/_shared/env-validator.ts:119*
+_Source: supabase/functions/\_shared/env-validator.ts:119_
 
 ---
 
 ### `unnamed`
 
-LLM Router - Intelligent routing between OpenAI and Gemini Provides: - Transparent provider switching - Failover and retry logic - Provider-specific tool routing - Load balancing and cost optimization
+LLM Router - Intelligent routing between OpenAI and Gemini Provides: - Transparent provider
+switching - Failover and retry logic - Provider-specific tool routing - Load balancing and cost
+optimization
 
-*Source: supabase/functions/_shared/llm-router.ts:1*
+_Source: supabase/functions/\_shared/llm-router.ts:1_
 
 ---
 
@@ -15426,7 +15879,7 @@ LLM Router - Intelligent routing between OpenAI and Gemini Provides: - Transpare
 
 Execute an LLM request with intelligent routing
 
-*Source: supabase/functions/_shared/llm-router.ts:85*
+_Source: supabase/functions/\_shared/llm-router.ts:85_
 
 ---
 
@@ -15434,7 +15887,7 @@ Execute an LLM request with intelligent routing
 
 Execute a tool call with provider-specific routing
 
-*Source: supabase/functions/_shared/llm-router.ts:160*
+_Source: supabase/functions/\_shared/llm-router.ts:160_
 
 ---
 
@@ -15442,7 +15895,7 @@ Execute a tool call with provider-specific routing
 
 Execute failover to backup provider
 
-*Source: supabase/functions/_shared/llm-router.ts:208*
+_Source: supabase/functions/\_shared/llm-router.ts:208_
 
 ---
 
@@ -15450,7 +15903,7 @@ Execute failover to backup provider
 
 Select the appropriate provider based on rules and context
 
-*Source: supabase/functions/_shared/llm-router.ts:252*
+_Source: supabase/functions/\_shared/llm-router.ts:252_
 
 ---
 
@@ -15458,7 +15911,7 @@ Select the appropriate provider based on rules and context
 
 Load agent provider rules from database
 
-*Source: supabase/functions/_shared/llm-router.ts:275*
+_Source: supabase/functions/\_shared/llm-router.ts:275_
 
 ---
 
@@ -15466,7 +15919,7 @@ Load agent provider rules from database
 
 Get default provider rules for an agent
 
-*Source: supabase/functions/_shared/llm-router.ts:340*
+_Source: supabase/functions/\_shared/llm-router.ts:340_
 
 ---
 
@@ -15474,7 +15927,7 @@ Get default provider rules for an agent
 
 Health check all providers
 
-*Source: supabase/functions/_shared/llm-router.ts:385*
+_Source: supabase/functions/\_shared/llm-router.ts:385_
 
 ---
 
@@ -15482,7 +15935,7 @@ Health check all providers
 
 Message Builder Fluent API for building WhatsApp messages
 
-*Source: supabase/functions/_shared/messaging/builder.ts:1*
+_Source: supabase/functions/\_shared/messaging/builder.ts:1_
 
 ---
 
@@ -15490,7 +15943,7 @@ Message Builder Fluent API for building WhatsApp messages
 
 Add text content
 
-*Source: supabase/functions/_shared/messaging/builder.ts:17*
+_Source: supabase/functions/\_shared/messaging/builder.ts:17_
 
 ---
 
@@ -15498,7 +15951,7 @@ Add text content
 
 Add bold text
 
-*Source: supabase/functions/_shared/messaging/builder.ts:25*
+_Source: supabase/functions/\_shared/messaging/builder.ts:25_
 
 ---
 
@@ -15506,7 +15959,7 @@ Add bold text
 
 Add italic text
 
-*Source: supabase/functions/_shared/messaging/builder.ts:33*
+_Source: supabase/functions/\_shared/messaging/builder.ts:33_
 
 ---
 
@@ -15514,7 +15967,7 @@ Add italic text
 
 Add line break
 
-*Source: supabase/functions/_shared/messaging/builder.ts:41*
+_Source: supabase/functions/\_shared/messaging/builder.ts:41_
 
 ---
 
@@ -15522,7 +15975,7 @@ Add line break
 
 Add double line break
 
-*Source: supabase/functions/_shared/messaging/builder.ts:49*
+_Source: supabase/functions/\_shared/messaging/builder.ts:49_
 
 ---
 
@@ -15530,7 +15983,7 @@ Add double line break
 
 Add bullet point
 
-*Source: supabase/functions/_shared/messaging/builder.ts:57*
+_Source: supabase/functions/\_shared/messaging/builder.ts:57_
 
 ---
 
@@ -15538,7 +15991,7 @@ Add bullet point
 
 Add numbered item
 
-*Source: supabase/functions/_shared/messaging/builder.ts:65*
+_Source: supabase/functions/\_shared/messaging/builder.ts:65_
 
 ---
 
@@ -15546,7 +15999,7 @@ Add numbered item
 
 Add emoji prefix
 
-*Source: supabase/functions/_shared/messaging/builder.ts:73*
+_Source: supabase/functions/\_shared/messaging/builder.ts:73_
 
 ---
 
@@ -15554,7 +16007,7 @@ Add emoji prefix
 
 Build final message
 
-*Source: supabase/functions/_shared/messaging/builder.ts:81*
+_Source: supabase/functions/\_shared/messaging/builder.ts:81_
 
 ---
 
@@ -15562,7 +16015,7 @@ Build final message
 
 Set message body
 
-*Source: supabase/functions/_shared/messaging/builder.ts:103*
+_Source: supabase/functions/\_shared/messaging/builder.ts:103_
 
 ---
 
@@ -15570,7 +16023,7 @@ Set message body
 
 Set header text
 
-*Source: supabase/functions/_shared/messaging/builder.ts:111*
+_Source: supabase/functions/\_shared/messaging/builder.ts:111_
 
 ---
 
@@ -15578,7 +16031,7 @@ Set header text
 
 Set footer text
 
-*Source: supabase/functions/_shared/messaging/builder.ts:119*
+_Source: supabase/functions/\_shared/messaging/builder.ts:119_
 
 ---
 
@@ -15586,7 +16039,7 @@ Set footer text
 
 Add a button
 
-*Source: supabase/functions/_shared/messaging/builder.ts:127*
+_Source: supabase/functions/\_shared/messaging/builder.ts:127_
 
 ---
 
@@ -15594,7 +16047,7 @@ Add a button
 
 Add back button
 
-*Source: supabase/functions/_shared/messaging/builder.ts:141*
+_Source: supabase/functions/\_shared/messaging/builder.ts:141_
 
 ---
 
@@ -15602,7 +16055,7 @@ Add back button
 
 Add cancel button
 
-*Source: supabase/functions/_shared/messaging/builder.ts:148*
+_Source: supabase/functions/\_shared/messaging/builder.ts:148_
 
 ---
 
@@ -15610,7 +16063,7 @@ Add cancel button
 
 Build button message payload
 
-*Source: supabase/functions/_shared/messaging/builder.ts:155*
+_Source: supabase/functions/\_shared/messaging/builder.ts:155_
 
 ---
 
@@ -15618,7 +16071,7 @@ Build button message payload
 
 Set list title
 
-*Source: supabase/functions/_shared/messaging/builder.ts:179*
+_Source: supabase/functions/\_shared/messaging/builder.ts:179_
 
 ---
 
@@ -15626,7 +16079,7 @@ Set list title
 
 Set message body
 
-*Source: supabase/functions/_shared/messaging/builder.ts:187*
+_Source: supabase/functions/\_shared/messaging/builder.ts:187_
 
 ---
 
@@ -15634,7 +16087,7 @@ Set message body
 
 Set button text
 
-*Source: supabase/functions/_shared/messaging/builder.ts:195*
+_Source: supabase/functions/\_shared/messaging/builder.ts:195_
 
 ---
 
@@ -15642,7 +16095,7 @@ Set button text
 
 Set section title
 
-*Source: supabase/functions/_shared/messaging/builder.ts:203*
+_Source: supabase/functions/\_shared/messaging/builder.ts:203_
 
 ---
 
@@ -15650,7 +16103,7 @@ Set section title
 
 Add a row
 
-*Source: supabase/functions/_shared/messaging/builder.ts:211*
+_Source: supabase/functions/\_shared/messaging/builder.ts:211_
 
 ---
 
@@ -15658,7 +16111,7 @@ Add a row
 
 Add back row
 
-*Source: supabase/functions/_shared/messaging/builder.ts:225*
+_Source: supabase/functions/\_shared/messaging/builder.ts:225_
 
 ---
 
@@ -15666,7 +16119,7 @@ Add back row
 
 Build list message options
 
-*Source: supabase/functions/_shared/messaging/builder.ts:232*
+_Source: supabase/functions/\_shared/messaging/builder.ts:232_
 
 ---
 
@@ -15674,7 +16127,7 @@ Build list message options
 
 Create text message builder
 
-*Source: supabase/functions/_shared/messaging/builder.ts:250*
+_Source: supabase/functions/\_shared/messaging/builder.ts:250_
 
 ---
 
@@ -15682,7 +16135,7 @@ Create text message builder
 
 Create button message builder
 
-*Source: supabase/functions/_shared/messaging/builder.ts:257*
+_Source: supabase/functions/\_shared/messaging/builder.ts:257_
 
 ---
 
@@ -15690,7 +16143,7 @@ Create button message builder
 
 Create list message builder
 
-*Source: supabase/functions/_shared/messaging/builder.ts:264*
+_Source: supabase/functions/\_shared/messaging/builder.ts:264_
 
 ---
 
@@ -15698,7 +16151,7 @@ Create list message builder
 
 Reusable UI Components Pre-built message components for common patterns
 
-*Source: supabase/functions/_shared/messaging/components/index.ts:1*
+_Source: supabase/functions/\_shared/messaging/components/index.ts:1_
 
 ---
 
@@ -15706,7 +16159,7 @@ Reusable UI Components Pre-built message components for common patterns
 
 Success confirmation message
 
-*Source: supabase/functions/_shared/messaging/components/index.ts:16*
+_Source: supabase/functions/\_shared/messaging/components/index.ts:16_
 
 ---
 
@@ -15714,7 +16167,7 @@ Success confirmation message
 
 Error message
 
-*Source: supabase/functions/_shared/messaging/components/index.ts:36*
+_Source: supabase/functions/\_shared/messaging/components/index.ts:36_
 
 ---
 
@@ -15722,7 +16175,7 @@ Error message
 
 Warning message
 
-*Source: supabase/functions/_shared/messaging/components/index.ts:55*
+_Source: supabase/functions/\_shared/messaging/components/index.ts:55_
 
 ---
 
@@ -15730,7 +16183,7 @@ Warning message
 
 Info message
 
-*Source: supabase/functions/_shared/messaging/components/index.ts:68*
+_Source: supabase/functions/\_shared/messaging/components/index.ts:68_
 
 ---
 
@@ -15738,7 +16191,7 @@ Info message
 
 Confirmation dialog with yes/no buttons
 
-*Source: supabase/functions/_shared/messaging/components/index.ts:85*
+_Source: supabase/functions/\_shared/messaging/components/index.ts:85_
 
 ---
 
@@ -15746,7 +16199,7 @@ Confirmation dialog with yes/no buttons
 
 Action confirmation with custom buttons
 
-*Source: supabase/functions/_shared/messaging/components/index.ts:101*
+_Source: supabase/functions/\_shared/messaging/components/index.ts:101_
 
 ---
 
@@ -15754,7 +16207,7 @@ Action confirmation with custom buttons
 
 Home menu list
 
-*Source: supabase/functions/_shared/messaging/components/index.ts:122*
+_Source: supabase/functions/\_shared/messaging/components/index.ts:122_
 
 ---
 
@@ -15762,7 +16215,7 @@ Home menu list
 
 Back to home button only
 
-*Source: supabase/functions/_shared/messaging/components/index.ts:140*
+_Source: supabase/functions/\_shared/messaging/components/index.ts:140_
 
 ---
 
@@ -15770,7 +16223,7 @@ Back to home button only
 
 Back and home buttons
 
-*Source: supabase/functions/_shared/messaging/components/index.ts:147*
+_Source: supabase/functions/\_shared/messaging/components/index.ts:147_
 
 ---
 
@@ -15778,7 +16231,7 @@ Back and home buttons
 
 Mobility menu list
 
-*Source: supabase/functions/_shared/messaging/components/index.ts:161*
+_Source: supabase/functions/\_shared/messaging/components/index.ts:161_
 
 ---
 
@@ -15786,7 +16239,7 @@ Mobility menu list
 
 Vehicle selection list
 
-*Source: supabase/functions/_shared/messaging/components/index.ts:178*
+_Source: supabase/functions/\_shared/messaging/components/index.ts:178_
 
 ---
 
@@ -15794,7 +16247,7 @@ Vehicle selection list
 
 Share location prompt
 
-*Source: supabase/functions/_shared/messaging/components/index.ts:196*
+_Source: supabase/functions/\_shared/messaging/components/index.ts:196_
 
 ---
 
@@ -15802,7 +16255,7 @@ Share location prompt
 
 Insurance menu list
 
-*Source: supabase/functions/_shared/messaging/components/index.ts:219*
+_Source: supabase/functions/\_shared/messaging/components/index.ts:219_
 
 ---
 
@@ -15810,7 +16263,7 @@ Insurance menu list
 
 Claim type selection list
 
-*Source: supabase/functions/_shared/messaging/components/index.ts:234*
+_Source: supabase/functions/\_shared/messaging/components/index.ts:234_
 
 ---
 
@@ -15818,7 +16271,7 @@ Claim type selection list
 
 Wallet menu list
 
-*Source: supabase/functions/_shared/messaging/components/index.ts:255*
+_Source: supabase/functions/\_shared/messaging/components/index.ts:255_
 
 ---
 
@@ -15826,7 +16279,7 @@ Wallet menu list
 
 Transfer confirmation
 
-*Source: supabase/functions/_shared/messaging/components/index.ts:271*
+_Source: supabase/functions/\_shared/messaging/components/index.ts:271_
 
 ---
 
@@ -15834,7 +16287,7 @@ Transfer confirmation
 
 Trip status message
 
-*Source: supabase/functions/_shared/messaging/components/index.ts:293*
+_Source: supabase/functions/\_shared/messaging/components/index.ts:293_
 
 ---
 
@@ -15842,7 +16295,7 @@ Trip status message
 
 Trip action buttons based on status
 
-*Source: supabase/functions/_shared/messaging/components/index.ts:323*
+_Source: supabase/functions/\_shared/messaging/components/index.ts:323_
 
 ---
 
@@ -15850,7 +16303,7 @@ Trip action buttons based on status
 
 Processing message
 
-*Source: supabase/functions/_shared/messaging/components/index.ts:363*
+_Source: supabase/functions/\_shared/messaging/components/index.ts:363_
 
 ---
 
@@ -15858,7 +16311,7 @@ Processing message
 
 Searching message
 
-*Source: supabase/functions/_shared/messaging/components/index.ts:373*
+_Source: supabase/functions/\_shared/messaging/components/index.ts:373_
 
 ---
 
@@ -15866,7 +16319,7 @@ Searching message
 
 WhatsApp Client Wrapper Unified interface for sending WhatsApp messages
 
-*Source: supabase/functions/_shared/messaging/client.ts:1*
+_Source: supabase/functions/\_shared/messaging/client.ts:1_
 
 ---
 
@@ -15874,7 +16327,7 @@ WhatsApp Client Wrapper Unified interface for sending WhatsApp messages
 
 Send API request
 
-*Source: supabase/functions/_shared/messaging/client.ts:38*
+_Source: supabase/functions/\_shared/messaging/client.ts:38_
 
 ---
 
@@ -15882,7 +16335,7 @@ Send API request
 
 Send text message
 
-*Source: supabase/functions/_shared/messaging/client.ts:86*
+_Source: supabase/functions/\_shared/messaging/client.ts:86_
 
 ---
 
@@ -15890,7 +16343,7 @@ Send text message
 
 Send button message
 
-*Source: supabase/functions/_shared/messaging/client.ts:99*
+_Source: supabase/functions/\_shared/messaging/client.ts:99_
 
 ---
 
@@ -15898,7 +16351,7 @@ Send button message
 
 Send list message
 
-*Source: supabase/functions/_shared/messaging/client.ts:135*
+_Source: supabase/functions/\_shared/messaging/client.ts:135_
 
 ---
 
@@ -15906,7 +16359,7 @@ Send list message
 
 Send location message
 
-*Source: supabase/functions/_shared/messaging/client.ts:165*
+_Source: supabase/functions/\_shared/messaging/client.ts:165_
 
 ---
 
@@ -15914,7 +16367,7 @@ Send location message
 
 Send template message
 
-*Source: supabase/functions/_shared/messaging/client.ts:183*
+_Source: supabase/functions/\_shared/messaging/client.ts:183_
 
 ---
 
@@ -15922,7 +16375,7 @@ Send template message
 
 Get media URL
 
-*Source: supabase/functions/_shared/messaging/client.ts:209*
+_Source: supabase/functions/\_shared/messaging/client.ts:209_
 
 ---
 
@@ -15930,7 +16383,7 @@ Get media URL
 
 Download media
 
-*Source: supabase/functions/_shared/messaging/client.ts:227*
+_Source: supabase/functions/\_shared/messaging/client.ts:227_
 
 ---
 
@@ -15938,7 +16391,7 @@ Download media
 
 Get WhatsApp client instance
 
-*Source: supabase/functions/_shared/messaging/client.ts:251*
+_Source: supabase/functions/\_shared/messaging/client.ts:251_
 
 ---
 
@@ -15946,7 +16399,7 @@ Get WhatsApp client instance
 
 Send text message using context
 
-*Source: supabase/functions/_shared/messaging/client.ts:265*
+_Source: supabase/functions/\_shared/messaging/client.ts:265_
 
 ---
 
@@ -15954,7 +16407,7 @@ Send text message using context
 
 Send buttons message using context
 
-*Source: supabase/functions/_shared/messaging/client.ts:279*
+_Source: supabase/functions/\_shared/messaging/client.ts:279_
 
 ---
 
@@ -15962,7 +16415,7 @@ Send buttons message using context
 
 Send list message using context
 
-*Source: supabase/functions/_shared/messaging/client.ts:298*
+_Source: supabase/functions/\_shared/messaging/client.ts:298_
 
 ---
 
@@ -15970,7 +16423,7 @@ Send list message using context
 
 Send location message using context
 
-*Source: supabase/functions/_shared/messaging/client.ts:315*
+_Source: supabase/functions/\_shared/messaging/client.ts:315_
 
 ---
 
@@ -15978,15 +16431,16 @@ Send location message using context
 
 Messaging Module Exports
 
-*Source: supabase/functions/_shared/messaging/index.ts:1*
+_Source: supabase/functions/\_shared/messaging/index.ts:1_
 
 ---
 
 ### `unnamed`
 
-Google Gemini LLM Provider Implementation Wraps Google Gemini API with the standard LLM Provider interface Provides access to Gemini's Google-connected tools (Maps, Search, etc.)
+Google Gemini LLM Provider Implementation Wraps Google Gemini API with the standard LLM Provider
+interface Provides access to Gemini's Google-connected tools (Maps, Search, etc.)
 
-*Source: supabase/functions/_shared/llm-provider-gemini.ts:1*
+_Source: supabase/functions/\_shared/llm-provider-gemini.ts:1_
 
 ---
 
@@ -15994,7 +16448,7 @@ Google Gemini LLM Provider Implementation Wraps Google Gemini API with the stand
 
 Convert OpenAI-style JSON schema to Gemini format
 
-*Source: supabase/functions/_shared/llm-provider-gemini.ts:262*
+_Source: supabase/functions/\_shared/llm-provider-gemini.ts:262_
 
 ---
 
@@ -16002,7 +16456,7 @@ Convert OpenAI-style JSON schema to Gemini format
 
 WhatsApp API wrapper Provides a unified interface for sending WhatsApp messages
 
-*Source: supabase/functions/_shared/whatsapp-api.ts:1*
+_Source: supabase/functions/\_shared/whatsapp-api.ts:1_
 
 ---
 
@@ -16010,7 +16464,7 @@ WhatsApp API wrapper Provides a unified interface for sending WhatsApp messages
 
 Send a WhatsApp message (text, list, or buttons)
 
-*Source: supabase/functions/_shared/whatsapp-api.ts:14*
+_Source: supabase/functions/\_shared/whatsapp-api.ts:14_
 
 ---
 
@@ -16018,7 +16472,7 @@ Send a WhatsApp message (text, list, or buttons)
 
 Lazy Handler Loader Deferred loading of handlers to optimize cold starts
 
-*Source: supabase/functions/_shared/handlers/lazy-loader.ts:1*
+_Source: supabase/functions/\_shared/handlers/lazy-loader.ts:1_
 
 ---
 
@@ -16026,7 +16480,7 @@ Lazy Handler Loader Deferred loading of handlers to optimize cold starts
 
 Check if module is loaded
 
-*Source: supabase/functions/_shared/handlers/lazy-loader.ts:34*
+_Source: supabase/functions/\_shared/handlers/lazy-loader.ts:34_
 
 ---
 
@@ -16034,7 +16488,7 @@ Check if module is loaded
 
 Get loaded module (null if not loaded)
 
-*Source: supabase/functions/_shared/handlers/lazy-loader.ts:41*
+_Source: supabase/functions/\_shared/handlers/lazy-loader.ts:41_
 
 ---
 
@@ -16042,7 +16496,7 @@ Get loaded module (null if not loaded)
 
 Get load time in ms
 
-*Source: supabase/functions/_shared/handlers/lazy-loader.ts:48*
+_Source: supabase/functions/\_shared/handlers/lazy-loader.ts:48_
 
 ---
 
@@ -16050,7 +16504,7 @@ Get load time in ms
 
 Load the module
 
-*Source: supabase/functions/_shared/handlers/lazy-loader.ts:55*
+_Source: supabase/functions/\_shared/handlers/lazy-loader.ts:55_
 
 ---
 
@@ -16058,7 +16512,7 @@ Load the module
 
 Preload the module (fire and forget)
 
-*Source: supabase/functions/_shared/handlers/lazy-loader.ts:85*
+_Source: supabase/functions/\_shared/handlers/lazy-loader.ts:85_
 
 ---
 
@@ -16066,7 +16520,7 @@ Preload the module (fire and forget)
 
 Register a lazy handler
 
-*Source: supabase/functions/_shared/handlers/lazy-loader.ts:106*
+_Source: supabase/functions/\_shared/handlers/lazy-loader.ts:106_
 
 ---
 
@@ -16074,7 +16528,7 @@ Register a lazy handler
 
 Get a lazy handler
 
-*Source: supabase/functions/_shared/handlers/lazy-loader.ts:116*
+_Source: supabase/functions/\_shared/handlers/lazy-loader.ts:116_
 
 ---
 
@@ -16082,7 +16536,7 @@ Get a lazy handler
 
 Check if handler is loaded
 
-*Source: supabase/functions/_shared/handlers/lazy-loader.ts:128*
+_Source: supabase/functions/\_shared/handlers/lazy-loader.ts:128_
 
 ---
 
@@ -16090,7 +16544,7 @@ Check if handler is loaded
 
 Preload handlers
 
-*Source: supabase/functions/_shared/handlers/lazy-loader.ts:135*
+_Source: supabase/functions/\_shared/handlers/lazy-loader.ts:135_
 
 ---
 
@@ -16098,7 +16552,7 @@ Preload handlers
 
 Get handler loading stats
 
-*Source: supabase/functions/_shared/handlers/lazy-loader.ts:145*
+_Source: supabase/functions/\_shared/handlers/lazy-loader.ts:145_
 
 ---
 
@@ -16106,7 +16560,7 @@ Get handler loading stats
 
 Create a lazy handler function
 
-*Source: supabase/functions/_shared/handlers/lazy-loader.ts:165*
+_Source: supabase/functions/\_shared/handlers/lazy-loader.ts:165_
 
 ---
 
@@ -16114,7 +16568,7 @@ Create a lazy handler function
 
 Execute a handler function lazily
 
-*Source: supabase/functions/_shared/handlers/lazy-loader.ts:182*
+_Source: supabase/functions/\_shared/handlers/lazy-loader.ts:182_
 
 ---
 
@@ -16122,7 +16576,7 @@ Execute a handler function lazily
 
 Warm-up Module Optimizes cold start times through preloading
 
-*Source: supabase/functions/_shared/warmup/index.ts:1*
+_Source: supabase/functions/\_shared/warmup/index.ts:1_
 
 ---
 
@@ -16130,7 +16584,7 @@ Warm-up Module Optimizes cold start times through preloading
 
 Preload database connection
 
-*Source: supabase/functions/_shared/warmup/index.ts:16*
+_Source: supabase/functions/\_shared/warmup/index.ts:16_
 
 ---
 
@@ -16138,7 +16592,7 @@ Preload database connection
 
 Preload app configuration
 
-*Source: supabase/functions/_shared/warmup/index.ts:18*
+_Source: supabase/functions/\_shared/warmup/index.ts:18_
 
 ---
 
@@ -16146,7 +16600,7 @@ Preload app configuration
 
 Handler names to preload
 
-*Source: supabase/functions/_shared/warmup/index.ts:20*
+_Source: supabase/functions/\_shared/warmup/index.ts:20_
 
 ---
 
@@ -16154,7 +16608,7 @@ Handler names to preload
 
 Timeout for warmup in ms
 
-*Source: supabase/functions/_shared/warmup/index.ts:22*
+_Source: supabase/functions/\_shared/warmup/index.ts:22_
 
 ---
 
@@ -16162,7 +16616,7 @@ Timeout for warmup in ms
 
 Run warmup sequence
 
-*Source: supabase/functions/_shared/warmup/index.ts:52*
+_Source: supabase/functions/\_shared/warmup/index.ts:52_
 
 ---
 
@@ -16170,7 +16624,7 @@ Run warmup sequence
 
 Background warmup (fire and forget)
 
-*Source: supabase/functions/_shared/warmup/index.ts:139*
+_Source: supabase/functions/\_shared/warmup/index.ts:139_
 
 ---
 
@@ -16178,7 +16632,7 @@ Background warmup (fire and forget)
 
 Warmup on first request
 
-*Source: supabase/functions/_shared/warmup/index.ts:151*
+_Source: supabase/functions/\_shared/warmup/index.ts:151_
 
 ---
 
@@ -16186,15 +16640,16 @@ Warmup on first request
 
 Check if warmup has completed
 
-*Source: supabase/functions/_shared/warmup/index.ts:163*
+_Source: supabase/functions/\_shared/warmup/index.ts:163_
 
 ---
 
 ### `unnamed`
 
-Rate Limiting Module for Supabase Edge Functions Uses Redis (Upstash) with sliding window algorithm Implements best practices from GROUND_RULES.md
+Rate Limiting Module for Supabase Edge Functions Uses Redis (Upstash) with sliding window algorithm
+Implements best practices from GROUND_RULES.md
 
-*Source: supabase/functions/_shared/rate-limit/index.ts:1*
+_Source: supabase/functions/\_shared/rate-limit/index.ts:1_
 
 ---
 
@@ -16202,7 +16657,7 @@ Rate Limiting Module for Supabase Edge Functions Uses Redis (Upstash) with slidi
 
 Unique identifier for rate limit (e.g., "wa-webhook:user-id" or IP)
 
-*Source: supabase/functions/_shared/rate-limit/index.ts:11*
+_Source: supabase/functions/\_shared/rate-limit/index.ts:11_
 
 ---
 
@@ -16210,7 +16665,7 @@ Unique identifier for rate limit (e.g., "wa-webhook:user-id" or IP)
 
 Maximum number of requests allowed in the window
 
-*Source: supabase/functions/_shared/rate-limit/index.ts:13*
+_Source: supabase/functions/\_shared/rate-limit/index.ts:13_
 
 ---
 
@@ -16218,7 +16673,7 @@ Maximum number of requests allowed in the window
 
 Time window in seconds
 
-*Source: supabase/functions/_shared/rate-limit/index.ts:15*
+_Source: supabase/functions/\_shared/rate-limit/index.ts:15_
 
 ---
 
@@ -16226,7 +16681,7 @@ Time window in seconds
 
 Whether the request is allowed
 
-*Source: supabase/functions/_shared/rate-limit/index.ts:20*
+_Source: supabase/functions/\_shared/rate-limit/index.ts:20_
 
 ---
 
@@ -16234,7 +16689,7 @@ Whether the request is allowed
 
 Number of requests remaining in current window
 
-*Source: supabase/functions/_shared/rate-limit/index.ts:22*
+_Source: supabase/functions/\_shared/rate-limit/index.ts:22_
 
 ---
 
@@ -16242,7 +16697,7 @@ Number of requests remaining in current window
 
 Timestamp when the rate limit resets
 
-*Source: supabase/functions/_shared/rate-limit/index.ts:24*
+_Source: supabase/functions/\_shared/rate-limit/index.ts:24_
 
 ---
 
@@ -16250,7 +16705,7 @@ Timestamp when the rate limit resets
 
 Current request count in window
 
-*Source: supabase/functions/_shared/rate-limit/index.ts:26*
+_Source: supabase/functions/\_shared/rate-limit/index.ts:26_
 
 ---
 
@@ -16258,7 +16713,7 @@ Current request count in window
 
 Check if a request should be rate limited
 
-*Source: supabase/functions/_shared/rate-limit/index.ts:30*
+_Source: supabase/functions/\_shared/rate-limit/index.ts:30_
 
 ---
 
@@ -16266,7 +16721,7 @@ Check if a request should be rate limited
 
 Create a 429 Rate Limit Exceeded response
 
-*Source: supabase/functions/_shared/rate-limit/index.ts:90*
+_Source: supabase/functions/\_shared/rate-limit/index.ts:90_
 
 ---
 
@@ -16274,7 +16729,7 @@ Create a 429 Rate Limit Exceeded response
 
 Extract client identifier from request
 
-*Source: supabase/functions/_shared/rate-limit/index.ts:118*
+_Source: supabase/functions/\_shared/rate-limit/index.ts:118_
 
 ---
 
@@ -16282,15 +16737,17 @@ Extract client identifier from request
 
 Rate limit middleware for edge functions
 
-*Source: supabase/functions/_shared/rate-limit/index.ts:135*
+_Source: supabase/functions/\_shared/rate-limit/index.ts:135_
 
 ---
 
 ### `unnamed`
 
-WhatsApp Business API Sender Provides utilities for sending messages via WhatsApp Business API - Text messages - Media messages (image, document) - Template messages - Interactive messages (buttons, lists) - Automatic retry with exponential backoff
+WhatsApp Business API Sender Provides utilities for sending messages via WhatsApp Business API -
+Text messages - Media messages (image, document) - Template messages - Interactive messages
+(buttons, lists) - Automatic retry with exponential backoff
 
-*Source: supabase/functions/_shared/whatsapp-sender.ts:1*
+_Source: supabase/functions/\_shared/whatsapp-sender.ts:1_
 
 ---
 
@@ -16298,7 +16755,7 @@ WhatsApp Business API Sender Provides utilities for sending messages via WhatsAp
 
 Send message with automatic retry and exponential backoff
 
-*Source: supabase/functions/_shared/whatsapp-sender.ts:373*
+_Source: supabase/functions/\_shared/whatsapp-sender.ts:373_
 
 ---
 
@@ -16306,15 +16763,17 @@ Send message with automatic retry and exponential backoff
 
 Create a WhatsAppSender instance from environment variables
 
-*Source: supabase/functions/_shared/whatsapp-sender.ts:417*
+_Source: supabase/functions/\_shared/whatsapp-sender.ts:417_
 
 ---
 
 ### `unnamed`
 
-AI Agent Tool Executor Executes tools loaded from database configurations Supports multiple tool types: db, http, external, momo, etc. Validates inputs against JSON schemas Logs all executions for monitoring
+AI Agent Tool Executor Executes tools loaded from database configurations Supports multiple tool
+types: db, http, external, momo, etc. Validates inputs against JSON schemas Logs all executions for
+monitoring
 
-*Source: supabase/functions/_shared/tool-executor.ts:1*
+_Source: supabase/functions/\_shared/tool-executor.ts:1_
 
 ---
 
@@ -16322,7 +16781,7 @@ AI Agent Tool Executor Executes tools loaded from database configurations Suppor
 
 Execute a tool with given inputs
 
-*Source: supabase/functions/_shared/tool-executor.ts:44*
+_Source: supabase/functions/\_shared/tool-executor.ts:44_
 
 ---
 
@@ -16330,7 +16789,7 @@ Execute a tool with given inputs
 
 Validate inputs against JSON schema
 
-*Source: supabase/functions/_shared/tool-executor.ts:156*
+_Source: supabase/functions/\_shared/tool-executor.ts:156_
 
 ---
 
@@ -16338,7 +16797,7 @@ Validate inputs against JSON schema
 
 Execute database tool (search, query, etc.)
 
-*Source: supabase/functions/_shared/tool-executor.ts:199*
+_Source: supabase/functions/\_shared/tool-executor.ts:199_
 
 ---
 
@@ -16346,7 +16805,7 @@ Execute database tool (search, query, etc.)
 
 Search marketplace listings
 
-*Source: supabase/functions/_shared/tool-executor.ts:294*
+_Source: supabase/functions/\_shared/tool-executor.ts:294_
 
 ---
 
@@ -16354,7 +16813,7 @@ Search marketplace listings
 
 Sanitize search query to prevent SQL injection in LIKE patterns
 
-*Source: supabase/functions/_shared/tool-executor.ts:364*
+_Source: supabase/functions/\_shared/tool-executor.ts:364_
 
 ---
 
@@ -16362,7 +16821,7 @@ Sanitize search query to prevent SQL injection in LIKE patterns
 
 Format phone number for WhatsApp URL (remove non-digit characters except leading +)
 
-*Source: supabase/functions/_shared/tool-executor.ts:377*
+_Source: supabase/functions/\_shared/tool-executor.ts:377_
 
 ---
 
@@ -16370,7 +16829,7 @@ Format phone number for WhatsApp URL (remove non-digit characters except leading
 
 Create a new marketplace listing
 
-*Source: supabase/functions/_shared/tool-executor.ts:386*
+_Source: supabase/functions/\_shared/tool-executor.ts:386_
 
 ---
 
@@ -16378,7 +16837,7 @@ Create a new marketplace listing
 
 Get nearby listings based on user's cached location
 
-*Source: supabase/functions/_shared/tool-executor.ts:439*
+_Source: supabase/functions/\_shared/tool-executor.ts:439_
 
 ---
 
@@ -16386,7 +16845,7 @@ Get nearby listings based on user's cached location
 
 Get user information from whatsapp_users table
 
-*Source: supabase/functions/_shared/tool-executor.ts:505*
+_Source: supabase/functions/\_shared/tool-executor.ts:505_
 
 ---
 
@@ -16394,7 +16853,7 @@ Get user information from whatsapp_users table
 
 Mask phone number for privacy (show last 4 digits)
 
-*Source: supabase/functions/_shared/tool-executor.ts:557*
+_Source: supabase/functions/\_shared/tool-executor.ts:557_
 
 ---
 
@@ -16402,7 +16861,7 @@ Mask phone number for privacy (show last 4 digits)
 
 Create a support ticket for complex issues
 
-*Source: supabase/functions/_shared/tool-executor.ts:565*
+_Source: supabase/functions/\_shared/tool-executor.ts:565_
 
 ---
 
@@ -16410,7 +16869,7 @@ Create a support ticket for complex issues
 
 Search jobs database
 
-*Source: supabase/functions/_shared/tool-executor.ts:700*
+_Source: supabase/functions/\_shared/tool-executor.ts:700_
 
 ---
 
@@ -16418,7 +16877,7 @@ Search jobs database
 
 Search properties database
 
-*Source: supabase/functions/_shared/tool-executor.ts:732*
+_Source: supabase/functions/\_shared/tool-executor.ts:732_
 
 ---
 
@@ -16426,7 +16885,7 @@ Search properties database
 
 Search menu items
 
-*Source: supabase/functions/_shared/tool-executor.ts:769*
+_Source: supabase/functions/\_shared/tool-executor.ts:769_
 
 ---
 
@@ -16434,7 +16893,7 @@ Search menu items
 
 Search business directory
 
-*Source: supabase/functions/_shared/tool-executor.ts:805*
+_Source: supabase/functions/\_shared/tool-executor.ts:805_
 
 ---
 
@@ -16442,7 +16901,7 @@ Search business directory
 
 Search produce listings
 
-*Source: supabase/functions/_shared/tool-executor.ts:837*
+_Source: supabase/functions/\_shared/tool-executor.ts:837_
 
 ---
 
@@ -16450,7 +16909,7 @@ Search produce listings
 
 Lookup loyalty points
 
-*Source: supabase/functions/_shared/tool-executor.ts:864*
+_Source: supabase/functions/\_shared/tool-executor.ts:864_
 
 ---
 
@@ -16458,7 +16917,7 @@ Lookup loyalty points
 
 Generic table query
 
-*Source: supabase/functions/_shared/tool-executor.ts:880*
+_Source: supabase/functions/\_shared/tool-executor.ts:880_
 
 ---
 
@@ -16466,7 +16925,7 @@ Generic table query
 
 Execute HTTP tool (API calls)
 
-*Source: supabase/functions/_shared/tool-executor.ts:896*
+_Source: supabase/functions/\_shared/tool-executor.ts:896_
 
 ---
 
@@ -16474,7 +16933,7 @@ Execute HTTP tool (API calls)
 
 Execute deep search tool (semantic vector search + web search fallback)
 
-*Source: supabase/functions/_shared/tool-executor.ts:927*
+_Source: supabase/functions/\_shared/tool-executor.ts:927_
 
 ---
 
@@ -16482,7 +16941,7 @@ Execute deep search tool (semantic vector search + web search fallback)
 
 Execute MoMo payment tool
 
-*Source: supabase/functions/_shared/tool-executor.ts:1034*
+_Source: supabase/functions/\_shared/tool-executor.ts:1034_
 
 ---
 
@@ -16490,7 +16949,7 @@ Execute MoMo payment tool
 
 Execute location tool
 
-*Source: supabase/functions/_shared/tool-executor.ts:1176*
+_Source: supabase/functions/\_shared/tool-executor.ts:1176_
 
 ---
 
@@ -16498,7 +16957,7 @@ Execute location tool
 
 Execute external tool (Sora, etc.)
 
-*Source: supabase/functions/_shared/tool-executor.ts:1197*
+_Source: supabase/functions/\_shared/tool-executor.ts:1197_
 
 ---
 
@@ -16506,7 +16965,7 @@ Execute external tool (Sora, etc.)
 
 Execute WhatsApp tool (contact_seller, etc.)
 
-*Source: supabase/functions/_shared/tool-executor.ts:1213*
+_Source: supabase/functions/\_shared/tool-executor.ts:1213_
 
 ---
 
@@ -16514,7 +16973,7 @@ Execute WhatsApp tool (contact_seller, etc.)
 
 Generate WhatsApp link to contact a seller
 
-*Source: supabase/functions/_shared/tool-executor.ts:1232*
+_Source: supabase/functions/\_shared/tool-executor.ts:1232_
 
 ---
 
@@ -16522,7 +16981,7 @@ Generate WhatsApp link to contact a seller
 
 Get user account information
 
-*Source: supabase/functions/_shared/tool-executor.ts:1289*
+_Source: supabase/functions/\_shared/tool-executor.ts:1289_
 
 ---
 
@@ -16530,7 +16989,7 @@ Get user account information
 
 Check user wallet balance
 
-*Source: supabase/functions/_shared/tool-executor.ts:1327*
+_Source: supabase/functions/\_shared/tool-executor.ts:1327_
 
 ---
 
@@ -16538,7 +16997,7 @@ Check user wallet balance
 
 Create a support ticket for complex issues
 
-*Source: supabase/functions/_shared/tool-executor.ts:1376*
+_Source: supabase/functions/\_shared/tool-executor.ts:1376_
 
 ---
 
@@ -16546,7 +17005,7 @@ Create a support ticket for complex issues
 
 Search FAQ/knowledge base for answers
 
-*Source: supabase/functions/_shared/tool-executor.ts:1433*
+_Source: supabase/functions/\_shared/tool-executor.ts:1433_
 
 ---
 
@@ -16554,7 +17013,7 @@ Search FAQ/knowledge base for answers
 
 Find nearby available drivers
 
-*Source: supabase/functions/_shared/tool-executor.ts:1476*
+_Source: supabase/functions/\_shared/tool-executor.ts:1476_
 
 ---
 
@@ -16562,7 +17021,7 @@ Find nearby available drivers
 
 Request a ride
 
-*Source: supabase/functions/_shared/tool-executor.ts:1576*
+_Source: supabase/functions/\_shared/tool-executor.ts:1576_
 
 ---
 
@@ -16570,7 +17029,7 @@ Request a ride
 
 Get fare estimate for a trip
 
-*Source: supabase/functions/_shared/tool-executor.ts:1643*
+_Source: supabase/functions/\_shared/tool-executor.ts:1643_
 
 ---
 
@@ -16578,7 +17037,7 @@ Get fare estimate for a trip
 
 Track ride status
 
-*Source: supabase/functions/_shared/tool-executor.ts:1667*
+_Source: supabase/functions/\_shared/tool-executor.ts:1667_
 
 ---
 
@@ -16586,7 +17045,7 @@ Track ride status
 
 Calculate insurance quote
 
-*Source: supabase/functions/_shared/tool-executor.ts:1708*
+_Source: supabase/functions/\_shared/tool-executor.ts:1708_
 
 ---
 
@@ -16594,7 +17053,7 @@ Calculate insurance quote
 
 Check insurance policy status
 
-*Source: supabase/functions/_shared/tool-executor.ts:1778*
+_Source: supabase/functions/\_shared/tool-executor.ts:1778_
 
 ---
 
@@ -16602,7 +17061,7 @@ Check insurance policy status
 
 Submit an insurance claim
 
-*Source: supabase/functions/_shared/tool-executor.ts:1822*
+_Source: supabase/functions/\_shared/tool-executor.ts:1822_
 
 ---
 
@@ -16610,7 +17069,7 @@ Submit an insurance claim
 
 Log tool execution to database
 
-*Source: supabase/functions/_shared/tool-executor.ts:1884*
+_Source: supabase/functions/\_shared/tool-executor.ts:1884_
 
 ---
 
@@ -16618,7 +17077,7 @@ Log tool execution to database
 
 Execute weather tool (OpenWeather API)
 
-*Source: supabase/functions/_shared/tool-executor.ts:1919*
+_Source: supabase/functions/\_shared/tool-executor.ts:1919_
 
 ---
 
@@ -16626,7 +17085,7 @@ Execute weather tool (OpenWeather API)
 
 Execute translation tool (Google Translate API)
 
-*Source: supabase/functions/_shared/tool-executor.ts:1971*
+_Source: supabase/functions/\_shared/tool-executor.ts:1971_
 
 ---
 
@@ -16634,7 +17093,7 @@ Execute translation tool (Google Translate API)
 
 Execute geocoding tool (Google Maps API)
 
-*Source: supabase/functions/_shared/tool-executor.ts:2033*
+_Source: supabase/functions/\_shared/tool-executor.ts:2033_
 
 ---
 
@@ -16642,15 +17101,16 @@ Execute geocoding tool (Google Maps API)
 
 Execute scheduling tool
 
-*Source: supabase/functions/_shared/tool-executor.ts:2095*
+_Source: supabase/functions/\_shared/tool-executor.ts:2095_
 
 ---
 
 ### `unnamed`
 
-Centralized Message Library for AI Agents All user-facing messages should be defined here for consistency. This ensures uniform tone, voice, and easier i18n integration.
+Centralized Message Library for AI Agents All user-facing messages should be defined here for
+consistency. This ensures uniform tone, voice, and easier i18n integration.
 
-*Source: supabase/functions/_shared/agent-messages.ts:1*
+_Source: supabase/functions/\_shared/agent-messages.ts:1_
 
 ---
 
@@ -16658,7 +17118,7 @@ Centralized Message Library for AI Agents All user-facing messages should be def
 
 Loading/Progress Messages Used while system is processing requests
 
-*Source: supabase/functions/_shared/agent-messages.ts:23*
+_Source: supabase/functions/\_shared/agent-messages.ts:23_
 
 ---
 
@@ -16666,7 +17126,7 @@ Loading/Progress Messages Used while system is processing requests
 
 Success Messages Confirming successful actions
 
-*Source: supabase/functions/_shared/agent-messages.ts:36*
+_Source: supabase/functions/\_shared/agent-messages.ts:36_
 
 ---
 
@@ -16674,7 +17134,7 @@ Success Messages Confirming successful actions
 
 No Results Messages When searches return empty results
 
-*Source: supabase/functions/_shared/agent-messages.ts:52*
+_Source: supabase/functions/\_shared/agent-messages.ts:52_
 
 ---
 
@@ -16682,7 +17142,7 @@ No Results Messages When searches return empty results
 
 Error Messages When things go wrong, with recovery steps
 
-*Source: supabase/functions/_shared/agent-messages.ts:79*
+_Source: supabase/functions/\_shared/agent-messages.ts:79_
 
 ---
 
@@ -16690,7 +17150,7 @@ Error Messages When things go wrong, with recovery steps
 
 Instructions Guiding users on what to do
 
-*Source: supabase/functions/_shared/agent-messages.ts:130*
+_Source: supabase/functions/\_shared/agent-messages.ts:130_
 
 ---
 
@@ -16698,7 +17158,7 @@ Instructions Guiding users on what to do
 
 Headers Section headers in messages
 
-*Source: supabase/functions/_shared/agent-messages.ts:141*
+_Source: supabase/functions/\_shared/agent-messages.ts:141_
 
 ---
 
@@ -16706,7 +17166,7 @@ Headers Section headers in messages
 
 Helper function to format fallback messages consistently
 
-*Source: supabase/functions/_shared/agent-messages.ts:154*
+_Source: supabase/functions/\_shared/agent-messages.ts:154_
 
 ---
 
@@ -16714,7 +17174,7 @@ Helper function to format fallback messages consistently
 
 Get appropriate emoji for agent type
 
-*Source: supabase/functions/_shared/agent-messages.ts:174*
+_Source: supabase/functions/\_shared/agent-messages.ts:174_
 
 ---
 
@@ -16722,15 +17182,16 @@ Get appropriate emoji for agent type
 
 Build a consistent error message with recovery options
 
-*Source: supabase/functions/_shared/agent-messages.ts:194*
+_Source: supabase/functions/\_shared/agent-messages.ts:194_
 
 ---
 
 ### `unnamed`
 
-AI Agent Database Loader Loads agent configurations (personas, instructions, tools, tasks, KBs) from database Provides caching and fallback to hardcoded configs
+AI Agent Database Loader Loads agent configurations (personas, instructions, tools, tasks, KBs) from
+database Provides caching and fallback to hardcoded configs
 
-*Source: supabase/functions/_shared/agent-config-loader.ts:1*
+_Source: supabase/functions/\_shared/agent-config-loader.ts:1_
 
 ---
 
@@ -16738,7 +17199,7 @@ AI Agent Database Loader Loads agent configurations (personas, instructions, too
 
 Load complete agent configuration from database
 
-*Source: supabase/functions/_shared/agent-config-loader.ts:106*
+_Source: supabase/functions/\_shared/agent-config-loader.ts:106_
 
 ---
 
@@ -16746,7 +17207,7 @@ Load complete agent configuration from database
 
 Invalidate cache for a specific agent (used by webhooks)
 
-*Source: supabase/functions/_shared/agent-config-loader.ts:237*
+_Source: supabase/functions/\_shared/agent-config-loader.ts:237_
 
 ---
 
@@ -16754,7 +17215,7 @@ Invalidate cache for a specific agent (used by webhooks)
 
 Load default persona for an agent
 
-*Source: supabase/functions/_shared/agent-config-loader.ts:266*
+_Source: supabase/functions/\_shared/agent-config-loader.ts:266_
 
 ---
 
@@ -16762,7 +17223,7 @@ Load default persona for an agent
 
 Load active system instructions
 
-*Source: supabase/functions/_shared/agent-config-loader.ts:280*
+_Source: supabase/functions/\_shared/agent-config-loader.ts:280_
 
 ---
 
@@ -16770,7 +17231,7 @@ Load active system instructions
 
 Load active tools
 
-*Source: supabase/functions/_shared/agent-config-loader.ts:295*
+_Source: supabase/functions/\_shared/agent-config-loader.ts:295_
 
 ---
 
@@ -16778,7 +17239,7 @@ Load active tools
 
 Load tasks
 
-*Source: supabase/functions/_shared/agent-config-loader.ts:309*
+_Source: supabase/functions/\_shared/agent-config-loader.ts:309_
 
 ---
 
@@ -16786,7 +17247,7 @@ Load tasks
 
 Load knowledge bases
 
-*Source: supabase/functions/_shared/agent-config-loader.ts:322*
+_Source: supabase/functions/\_shared/agent-config-loader.ts:322_
 
 ---
 
@@ -16794,7 +17255,7 @@ Load knowledge bases
 
 Create fallback config when database loading fails
 
-*Source: supabase/functions/_shared/agent-config-loader.ts:335*
+_Source: supabase/functions/\_shared/agent-config-loader.ts:335_
 
 ---
 
@@ -16802,7 +17263,7 @@ Create fallback config when database loading fails
 
 Clear cache for an agent (useful for testing or forced reload)
 
-*Source: supabase/functions/_shared/agent-config-loader.ts:356*
+_Source: supabase/functions/\_shared/agent-config-loader.ts:356_
 
 ---
 
@@ -16810,7 +17271,7 @@ Clear cache for an agent (useful for testing or forced reload)
 
 Get cache statistics
 
-*Source: supabase/functions/_shared/agent-config-loader.ts:367*
+_Source: supabase/functions/\_shared/agent-config-loader.ts:367_
 
 ---
 
@@ -16818,7 +17279,7 @@ Get cache statistics
 
 Mock response generator TODO: Replace with actual agent execution
 
-*Source: supabase/functions/agent-runner/index.ts:141*
+_Source: supabase/functions/agent-runner/index.ts:141_
 
 ---
 
@@ -16826,14 +17287,15 @@ Mock response generator TODO: Replace with actual agent execution
 
 Mock tools list TODO: Replace with actual tools invoked
 
-*Source: supabase/functions/agent-runner/index.ts:182*
+_Source: supabase/functions/agent-runner/index.ts:182_
 
 ---
 
 ### `unnamed`
 
-Agent Config Cache Invalidator Edge Function that invalidates agent config caches when database changes occur Triggered by database triggers on config table changes
+Agent Config Cache Invalidator Edge Function that invalidates agent config caches when database
+changes occur Triggered by database triggers on config table changes
 
-*Source: supabase/functions/agent-config-invalidator/index.ts:1*
+_Source: supabase/functions/agent-config-invalidator/index.ts:1_
 
 ---

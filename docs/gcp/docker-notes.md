@@ -1,6 +1,7 @@
 # Docker Notes – easyMO on Google Cloud Run
 
 ## Overview
+
 All Cloud Run services use **multi-stage Docker builds** for minimal image sizes and security.
 
 ---
@@ -8,6 +9,7 @@ All Cloud Run services use **multi-stage Docker builds** for minimal image sizes
 ## General Requirements
 
 All Dockerfiles MUST:
+
 1. Listen on `process.env.PORT || 8080` (Cloud Run requirement)
 2. Use multi-stage builds (builder → runner)
 3. Run as non-root user when possible
@@ -20,6 +22,7 @@ All Dockerfiles MUST:
 ## Next.js PWAs (Admin, Vendor, Client)
 
 ### Pattern
+
 ```dockerfile
 FROM node:20-alpine AS base
 
@@ -62,15 +65,18 @@ CMD ["node", "server.js"]
 ```
 
 ### next.config.js requirement
+
 For standalone output, add to `next.config.js`:
+
 ```javascript
 module.exports = {
-  output: 'standalone',
+  output: "standalone",
   // ... rest of config
-}
+};
 ```
 
 ### Files
+
 - ✅ `/admin-app/Dockerfile` - Already exists, but PORT hardcoded to 3000. **Fix needed.**
 - ⚠️ `/waiter-pwa/Dockerfile` - **To create**
 - ⚠️ `/client-pwa/Dockerfile` - **To create**
@@ -80,6 +86,7 @@ module.exports = {
 ## Node.js Microservices (pnpm monorepo)
 
 ### Pattern for services using workspace packages
+
 ```dockerfile
 FROM node:20-alpine AS builder
 
@@ -136,11 +143,13 @@ CMD ["pnpm", "start"]
 ```
 
 ### Voice Bridge (`/services/voice-bridge`)
+
 - ⚠️ Dockerfile exists but may need PORT update
 - Entry: `dist/server.js`
 - Deps: `@easymo/commons`, `@easymo/circuit-breaker`
 
 ### WhatsApp Webhook Worker (`/services/whatsapp-webhook-worker`)
+
 - ✅ Dockerfile exists
 - Entry: `dist/index.js`
 - Current port: 4900 (needs PORT env var support)
@@ -151,6 +160,7 @@ CMD ["pnpm", "start"]
 ## NestJS Services (Agent Core)
 
 ### Pattern
+
 ```dockerfile
 FROM node:20-alpine AS builder
 
@@ -196,6 +206,7 @@ CMD ["node", "dist/main.js"]
 ```
 
 ### Agent Core (`/services/agent-core`)
+
 - ⚠️ Dockerfile **to create**
 - Entry: `dist/main.js`
 - Deps: `@easymo/db`, `@easymo/commons`, Prisma
@@ -206,6 +217,7 @@ CMD ["node", "dist/main.js"]
 ## .dockerignore Template
 
 Create `.dockerignore` in each service/app:
+
 ```
 node_modules
 npm-debug.log
@@ -233,15 +245,18 @@ Dockerfile
 Services must read from `process.env.PORT`:
 
 ### Express/Node
+
 ```typescript
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server listening on port ${PORT}`);
 });
 ```
 
 ### Next.js
+
 Set in Dockerfile:
+
 ```dockerfile
 ENV PORT=8080
 ENV HOSTNAME="0.0.0.0"
@@ -250,34 +265,36 @@ ENV HOSTNAME="0.0.0.0"
 Next.js standalone output respects these automatically.
 
 ### NestJS
+
 ```typescript
 // main.ts
 const port = process.env.PORT || 8080;
-await app.listen(port, '0.0.0.0');
+await app.listen(port, "0.0.0.0");
 ```
 
 ---
 
 ## Existing Dockerfiles Status
 
-| Service | Path | Status | Notes |
-|---------|------|--------|-------|
-| Admin PWA | `/admin-app/Dockerfile` | ⚠️ Fix PORT | Hardcoded to 3000, change to 8080 |
-| Vendor Portal | `/waiter-pwa/Dockerfile` | ❌ Create | Copy from admin-app pattern |
-| Client PWA | `/client-pwa/Dockerfile` | ❌ Create | Copy from admin-app pattern |
-| Voice Bridge | `/services/voice-bridge/Dockerfile` | ⚠️ Review | Check PORT env var |
-| WA Router | `/services/whatsapp-webhook-worker/Dockerfile` | ⚠️ Fix PORT | Hardcoded to 4900 |
-| Agent Core | `/services/agent-core/Dockerfile` | ❌ Create | NestJS pattern |
-| Voice Media Server | `/services/voice-media-server/Dockerfile` | ✅ | Review PORT |
-| Mobility Orchestrator | `/services/mobility-orchestrator/Dockerfile` | ✅ | Review PORT |
-| Ranking Service | `/services/ranking-service/Dockerfile` | ✅ | Review PORT |
-| Wallet Service | `/services/wallet-service/Dockerfile` | ✅ | Review PORT |
+| Service               | Path                                           | Status      | Notes                             |
+| --------------------- | ---------------------------------------------- | ----------- | --------------------------------- |
+| Admin PWA             | `/admin-app/Dockerfile`                        | ⚠️ Fix PORT | Hardcoded to 3000, change to 8080 |
+| Vendor Portal         | `/waiter-pwa/Dockerfile`                       | ❌ Create   | Copy from admin-app pattern       |
+| Client PWA            | `/client-pwa/Dockerfile`                       | ❌ Create   | Copy from admin-app pattern       |
+| Voice Bridge          | `/services/voice-bridge/Dockerfile`            | ⚠️ Review   | Check PORT env var                |
+| WA Router             | `/services/whatsapp-webhook-worker/Dockerfile` | ⚠️ Fix PORT | Hardcoded to 4900                 |
+| Agent Core            | `/services/agent-core/Dockerfile`              | ❌ Create   | NestJS pattern                    |
+| Voice Media Server    | `/services/voice-media-server/Dockerfile`      | ✅          | Review PORT                       |
+| Mobility Orchestrator | `/services/mobility-orchestrator/Dockerfile`   | ✅          | Review PORT                       |
+| Ranking Service       | `/services/ranking-service/Dockerfile`         | ✅          | Review PORT                       |
+| Wallet Service        | `/services/wallet-service/Dockerfile`          | ✅          | Review PORT                       |
 
 ---
 
 ## Build Context
 
 For monorepo services, **build from repo root**:
+
 ```bash
 docker build -f services/agent-core/Dockerfile -t easymo-agent-core .
 ```
@@ -289,8 +306,9 @@ NOT from service directory (needs access to `packages/`).
 ## Health Checks
 
 All services should expose `/health` or `/healthz`:
+
 ```typescript
-app.get('/health', (req, res) => res.json({ status: 'ok' }));
+app.get("/health", (req, res) => res.json({ status: "ok" }));
 ```
 
 Cloud Run uses this for readiness/liveness probes.
@@ -306,5 +324,6 @@ Cloud Run uses this for readiness/liveness probes.
 5. Push to Artifact Registry
 
 See:
+
 - [artifact-registry.md](./artifact-registry.md) - Push commands
 - [cloud-run-services.md](./cloud-run-services.md) - Deploy commands

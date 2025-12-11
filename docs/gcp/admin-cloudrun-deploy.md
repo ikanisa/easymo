@@ -16,11 +16,13 @@ export SUPABASE_ANON_KEY="your-anon-key"
 ## Prerequisites
 
 ### 1. GCP Setup
+
 - **Project**: `easymoai`
 - **Region**: `europe-west1`
 - **Artifact Registry**: `easymo-repo` (already exists)
 
 ### 2. Required APIs (auto-enabled by script)
+
 - Cloud Build API
 - Cloud Run API
 - Artifact Registry API
@@ -71,6 +73,7 @@ export SUPABASE_ANON_KEY="your-anon-key"
 ```
 
 **What it does**:
+
 1. ✅ Validates prerequisites (gcloud, project, auth)
 2. ✅ Checks required APIs are enabled
 3. ✅ Verifies Secret Manager secrets exist
@@ -128,13 +131,13 @@ gcloud run deploy easymo-admin-app \
 
 ### Environment Variables
 
-| Variable | Type | Example | Notes |
-|----------|------|---------|-------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Public | `https://xxx.supabase.co` | Client-safe |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public | `eyJhbG...` | Client-safe |
-| `SUPABASE_SERVICE_ROLE_KEY` | Secret | `eyJhbG...` | ⚠️ Secret Manager only |
-| `EASYMO_ADMIN_TOKEN` | Secret | `your-token` | ⚠️ Secret Manager only |
-| `ADMIN_SESSION_SECRET` | Secret | `min-32-chars` | ⚠️ Secret Manager only |
+| Variable                        | Type   | Example                   | Notes                  |
+| ------------------------------- | ------ | ------------------------- | ---------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Public | `https://xxx.supabase.co` | Client-safe            |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public | `eyJhbG...`               | Client-safe            |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Secret | `eyJhbG...`               | ⚠️ Secret Manager only |
+| `EASYMO_ADMIN_TOKEN`            | Secret | `your-token`              | ⚠️ Secret Manager only |
+| `ADMIN_SESSION_SECRET`          | Secret | `min-32-chars`            | ⚠️ Secret Manager only |
 
 ### Cloud Run Service Configuration
 
@@ -157,6 +160,7 @@ gcloud run deploy easymo-admin-app \
 Service is deployed with `--no-allow-unauthenticated`. Only authenticated requests allowed.
 
 **Test access** (will return 403 if not authorized):
+
 ```bash
 curl https://easymo-admin-app-xxxxx-ew.a.run.app
 ```
@@ -172,6 +176,7 @@ For team-based access control:
 5. Assign role: **IAP-secured Web App User**
 
 **Grant access to user**:
+
 ```bash
 gcloud run services add-iam-policy-binding easymo-admin-app \
   --region=europe-west1 \
@@ -223,6 +228,7 @@ gcloud run services proxy easymo-admin-app --region=europe-west1
 **Problem**: `ERR_PNPM_BROKEN_LOCKFILE`
 
 **Solution**: Lockfile already fixed. If issue persists:
+
 ```bash
 rm pnpm-lock.yaml
 pnpm install --ignore-scripts
@@ -232,6 +238,7 @@ git add pnpm-lock.yaml
 **Problem**: Workspace package not found
 
 **Solution**: Ensure shared packages are built in Dockerfile:
+
 ```dockerfile
 RUN pnpm --filter @va/shared build
 RUN pnpm --filter @easymo/commons build
@@ -244,6 +251,7 @@ RUN pnpm --filter @easymo/video-agent-schema build
 **Problem**: Secrets not found
 
 **Solution**: Verify secrets exist:
+
 ```bash
 gcloud secrets list --project=easymoai
 ```
@@ -251,6 +259,7 @@ gcloud secrets list --project=easymoai
 **Problem**: 403 Forbidden
 
 **Solution**: Grant yourself invoker role:
+
 ```bash
 gcloud run services add-iam-policy-binding easymo-admin-app \
   --region=europe-west1 \
@@ -268,6 +277,7 @@ gcloud run services add-iam-policy-binding easymo-admin-app \
 - **.gcloudignore** → Reduces build context, faster uploads
 
 **Estimated costs** (light usage):
+
 - Cloud Run: ~$0-5/month (scales to zero)
 - Cloud Build: ~$0.003/build-minute
 - Artifact Registry: ~$0.10/GB/month storage
@@ -286,6 +296,7 @@ gcloud run services add-iam-policy-binding easymo-admin-app \
 ## Files
 
 ### Deployment Infrastructure
+
 - `Dockerfile.admin` - Multi-stage Docker build
 - `cloudbuild.admin.yaml` - Image build only
 - `cloudbuild.admin.deploy.yaml` - Build + deploy pipeline
@@ -293,6 +304,7 @@ gcloud run services add-iam-policy-binding easymo-admin-app \
 - `.gcloudignore` - Build context optimization
 
 ### Documentation
+
 - `CLOUD_RUN_DEPLOYMENT.md` - General Cloud Run guide
 - `docs/gcp/admin-cloudrun-deploy.md` - This file (admin-specific)
 - `GCP_DEPLOYMENT_SUMMARY.md` - Overall GCP architecture

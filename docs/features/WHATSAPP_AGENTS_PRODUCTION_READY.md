@@ -11,9 +11,11 @@
 ### What Was Done:
 
 #### 1. ✅ Updated Routing Configuration
+
 **File**: `supabase/functions/_shared/route-config.ts`
 
 **Added**:
+
 - `agent-property-rental` to `ROUTE_CONFIGS`
 - `agent-property-rental` to `ROUTED_SERVICES` list
 - State patterns for `property_agent_` and `rental_agent_`
@@ -26,12 +28,14 @@
 #### 2. ✅ Strict Separation: Workflows vs AI Agents
 
 **WhatsApp Workflows** (Menu-driven):
+
 - `wa-webhook-buy-sell` - Buy/Sell structured workflow
 - `wa-webhook-property` - Property search/listing workflow
 - `wa-webhook-jobs` - Job search/posting workflow
 - `wa-webhook-waiter` - Restaurant/Bar ordering workflow
 
 **AI Agents** (Conversational):
+
 - `agent-property-rental` - Property rental AI assistant
 - `wa-agent-waiter` - Waiter/Restaurant AI assistant
 - `wa-agent-farmer` - Agriculture AI assistant
@@ -39,6 +43,7 @@
 - `wa-agent-call-center` - Universal AI agent
 
 **Routing Logic**:
+
 ```
 User Message → wa-webhook-core (router)
              ↓
@@ -55,9 +60,11 @@ User Message → wa-webhook-core (router)
 ```
 
 #### 3. ✅ Created Deployment Script
+
 **File**: `deploy-whatsapp-agents.sh`
 
 Deploys in order:
+
 1. Core router: `wa-webhook-core`
 2. Workflows: 4 webhook microservices
 3. Agents: 5 AI agents
@@ -104,11 +111,13 @@ supabase functions deploy wa-agent-call-center --no-verify-jwt
 ## 📊 Production URLs
 
 ### Core Router
+
 ```
 https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook-core
 ```
 
 ### WhatsApp Workflows
+
 ```
 https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook-buy-sell
 https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook-property
@@ -117,6 +126,7 @@ https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook-waiter
 ```
 
 ### AI Agents
+
 ```
 https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/agent-property-rental
 https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-agent-waiter
@@ -136,6 +146,7 @@ curl https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook-core/healt
 ```
 
 **Expected Response**:
+
 ```json
 {
   "status": "healthy",
@@ -203,6 +214,7 @@ Expected: Routes to `agent-property-rental`
 Configure your WhatsApp Business Platform webhook:
 
 **Webhook URL**:
+
 ```
 https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook-core
 ```
@@ -210,6 +222,7 @@ https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook-core
 **Verify Token**: (Set in your Supabase function environment)
 
 **Subscribed Fields**:
+
 - `messages`
 - `message_status`
 
@@ -217,36 +230,41 @@ https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook-core
 
 ## 📋 Routing Matrix
 
-| User Input | Keywords | Routes To | Type |
-|------------|----------|-----------|------|
-| "I need a house to rent" | rental, house | `agent-property-rental` | AI Agent |
-| "Property for rent" | property, rent | `agent-property-rental` | AI Agent |
-| "Browse properties" | menu selection | `wa-webhook-property` | Workflow |
-| "Restaurant menu" | restaurant, menu | `wa-agent-waiter` | AI Agent |
-| "Order food" | order | `wa-webhook-waiter` | Workflow |
-| "Buy something" | buy | `wa-webhook-buy-sell` | Workflow |
-| "Find a job" | job | `wa-webhook-jobs` | Workflow |
-| "Customer support" | support, help | `wa-agent-support` | AI Agent |
+| User Input               | Keywords         | Routes To               | Type     |
+| ------------------------ | ---------------- | ----------------------- | -------- |
+| "I need a house to rent" | rental, house    | `agent-property-rental` | AI Agent |
+| "Property for rent"      | property, rent   | `agent-property-rental` | AI Agent |
+| "Browse properties"      | menu selection   | `wa-webhook-property`   | Workflow |
+| "Restaurant menu"        | restaurant, menu | `wa-agent-waiter`       | AI Agent |
+| "Order food"             | order            | `wa-webhook-waiter`     | Workflow |
+| "Buy something"          | buy              | `wa-webhook-buy-sell`   | Workflow |
+| "Find a job"             | job              | `wa-webhook-jobs`       | Workflow |
+| "Customer support"       | support, help    | `wa-agent-support`      | AI Agent |
 
 ---
 
 ## 🛡️ GROUND_RULES Compliance
 
 ### ✅ Observability
+
 All agents must have (requires implementation):
+
 - [ ] Structured logging with correlation IDs
 - [ ] Event metrics for key actions
 - [ ] PII masking in logs
 - [ ] Health check endpoints
 
 ### ✅ Security
+
 - [x] Webhook signature verification (in wa-webhook-core)
 - [ ] Rate limiting per user
 - [ ] Input validation
 - [ ] SQL injection prevention
 
 ### ✅ Feature Flags
+
 All agents support feature flags:
+
 ```bash
 FEATURE_AGENT_PROPERTY_RENTAL=true
 FEATURE_AGENT_WAITER=true
@@ -273,6 +291,7 @@ supabase functions logs agent-property-rental --tail
 ### Metrics
 
 Track in Supabase dashboard:
+
 - Request count per agent
 - Response times
 - Error rates
@@ -283,18 +302,23 @@ Track in Supabase dashboard:
 ## ⚠️ Known Issues & Notes
 
 ### 1. Buy/Sell Hybrid
+
 **Issue**: `wa-webhook-buy-sell` currently contains both workflow AND AI logic  
 **Status**: Working, but mixing concerns  
 **Recommendation**: Create separate `agent-buy-sell` function (future enhancement)
 
 ### 2. Waiter Agent vs Workflow
+
 **Clarification**:
+
 - `wa-webhook-waiter` = Menu-driven ordering workflow
 - `wa-agent-waiter` = Conversational restaurant assistant
 - Both valid, routed based on user interaction
 
 ### 3. Property Agent vs Workflow
+
 **Clarification**:
+
 - `wa-webhook-property` = Structured property search
 - `agent-property-rental` = AI-powered rental assistant
 - Clear separation maintained

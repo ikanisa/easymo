@@ -8,18 +8,19 @@
 
 ## 🎯 Executive Summary
 
-easyMO is migrating critical services from Supabase Edge Functions to Fly.io for better control, performance, and scaling. This guide covers the complete deployment process.
+easyMO is migrating critical services from Supabase Edge Functions to Fly.io for better control,
+performance, and scaling. This guide covers the complete deployment process.
 
 ### Services Deploying to Fly.io
 
-| Service | Fly App Name | Priority | Status |
-|---------|--------------|----------|--------|
-| Admin PWA | `easymo-admin` | HIGH | ✅ Dockerfile ready |
-| Vendor Portal | `easymo-vendor` | HIGH | ⏳ Needs creation |
-| Voice Bridge | `easymo-voice-bridge` | CRITICAL | ✅ Deployed |
-| WhatsApp Router | `easymo-wa-router` | CRITICAL | ⏳ Migration needed |
-| Call Center AGI | `easymo-agents` | CRITICAL | ⏳ Extraction needed |
-| Agent Core | `easymo-agent-core` | MEDIUM | ⏳ Needs fly.toml |
+| Service         | Fly App Name          | Priority | Status               |
+| --------------- | --------------------- | -------- | -------------------- |
+| Admin PWA       | `easymo-admin`        | HIGH     | ✅ Dockerfile ready  |
+| Vendor Portal   | `easymo-vendor`       | HIGH     | ⏳ Needs creation    |
+| Voice Bridge    | `easymo-voice-bridge` | CRITICAL | ✅ Deployed          |
+| WhatsApp Router | `easymo-wa-router`    | CRITICAL | ⏳ Migration needed  |
+| Call Center AGI | `easymo-agents`       | CRITICAL | ⏳ Extraction needed |
+| Agent Core      | `easymo-agent-core`   | MEDIUM   | ⏳ Needs fly.toml    |
 
 ---
 
@@ -38,6 +39,7 @@ All Fly.io documentation is in `docs/flyio/`:
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 ```bash
 # Install Fly.io CLI
 curl -L https://fly.io/install.sh | sh
@@ -50,6 +52,7 @@ fly version
 ```
 
 ### Deploy Admin PWA (First Service)
+
 ```bash
 cd admin-app
 
@@ -81,6 +84,7 @@ fly logs --app easymo-admin
 ### 1. Admin PWA (`easymo-admin`)
 
 **fly.toml** (create in `admin-app/fly.toml`):
+
 ```toml
 app = 'easymo-admin'
 primary_region = 'ams'
@@ -113,6 +117,7 @@ primary_region = 'ams'
 ```
 
 **Secrets to set:**
+
 ```bash
 fly secrets set \
   NEXT_PUBLIC_SUPABASE_URL=https://lhbowpbcpwoiparwnwgt.supabase.co \
@@ -122,6 +127,7 @@ fly secrets set \
 ```
 
 **Access:**
+
 ```bash
 # Get URL
 fly info --app easymo-admin
@@ -135,6 +141,7 @@ fly certs add admin.easymo.rw --app easymo-admin
 ### 2. Vendor Portal (`easymo-vendor`)
 
 **fly.toml** (create in `client-pwa/fly.toml` or vendor-specific directory):
+
 ```toml
 app = 'easymo-vendor'
 primary_region = 'ams'
@@ -175,6 +182,7 @@ primary_region = 'ams'
 **fly.toml** (already exists at `services/whatsapp-voice-bridge/fly.toml`):
 
 **Update it to:**
+
 ```toml
 app = 'easymo-voice-bridge'
 primary_region = 'ams'
@@ -211,6 +219,7 @@ primary_region = 'ams'
 ```
 
 **Secrets:**
+
 ```bash
 fly secrets set \
   OPENAI_API_KEY=sk-proj-... \
@@ -219,6 +228,7 @@ fly secrets set \
 ```
 
 **Special Notes:**
+
 - Needs UDP for WebRTC
 - Higher memory for audio processing
 - Auto-stop when idle to save costs
@@ -228,6 +238,7 @@ fly secrets set \
 ### 4. WhatsApp Router (`easymo-wa-router`)
 
 **fly.toml** (create in `services/wa-router/fly.toml` if migrating):
+
 ```toml
 app = 'easymo-wa-router'
 primary_region = 'ams'
@@ -268,6 +279,7 @@ primary_region = 'ams'
 ```
 
 **Secrets:**
+
 ```bash
 fly secrets set \
   WHATSAPP_PHONE_ID=your-phone-id \
@@ -278,9 +290,11 @@ fly secrets set \
 ```
 
 **Webhook URL:**
+
 ```
 https://easymo-wa-router.fly.dev/webhook
 ```
+
 Configure this in Meta WhatsApp Business dashboard.
 
 **IMPORTANT:** Uses **Meta WhatsApp Cloud API**, NOT Twilio
@@ -290,6 +304,7 @@ Configure this in Meta WhatsApp Business dashboard.
 ### 5. Call Center AGI (`easymo-agents`)
 
 **fly.toml** (create in `services/agents/fly.toml`):
+
 ```toml
 app = 'easymo-agents'
 primary_region = 'ams'
@@ -333,6 +348,7 @@ primary_region = 'ams'
 ```
 
 **Secrets:**
+
 ```bash
 fly secrets set \
   OPENAI_API_KEY=sk-proj-... \
@@ -342,6 +358,7 @@ fly secrets set \
 ```
 
 **Special Notes:**
+
 - High memory for AI processing
 - Persistent connections to OpenAI
 - Always-on (min_machines_running = 1)
@@ -351,18 +368,21 @@ fly secrets set \
 ## 🔧 Common Operations
 
 ### Deploy Updates
+
 ```bash
 cd <service-directory>
 fly deploy --app <app-name>
 ```
 
 ### View Logs
+
 ```bash
 fly logs --app <app-name>           # Real-time
 fly logs --app <app-name> -n 1000    # Last 1000 lines
 ```
 
 ### Scale Resources
+
 ```bash
 # Scale memory
 fly scale memory 1024 --app easymo-agents
@@ -375,11 +395,13 @@ fly scale vm shared-cpu-2x --app easymo-voice-bridge
 ```
 
 ### SSH into Machine
+
 ```bash
 fly ssh console --app <app-name>
 ```
 
 ### Restart App
+
 ```bash
 fly apps restart <app-name>
 ```
@@ -389,6 +411,7 @@ fly apps restart <app-name>
 ## 🔐 Security
 
 ### Secrets Management
+
 ```bash
 # List secrets
 fly secrets list --app <app-name>
@@ -401,6 +424,7 @@ fly secrets unset KEY --app <app-name>
 ```
 
 ### Access Control
+
 ```bash
 # List team members
 fly orgs show easymo
@@ -417,14 +441,17 @@ fly orgs remove member@example.com --org easymo
 ## 📊 Monitoring
 
 ### Health Checks
+
 All services implement `/health` endpoint:
+
 ```typescript
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', service: 'service-name', timestamp: Date.now() });
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", service: "service-name", timestamp: Date.now() });
 });
 ```
 
 ### Metrics
+
 ```bash
 # View metrics
 fly dashboard <app-name>
@@ -438,6 +465,7 @@ fly status --app <app-name>
 ## 💰 Cost Optimization
 
 ### Auto-Scaling Configuration
+
 ```toml
 [http_service]
   auto_stop_machines = 'stop'      # Stop when idle
@@ -446,16 +474,20 @@ fly status --app <app-name>
 ```
 
 **Use for:**
+
 - Development/staging environments
 - Low-traffic services
 - Background workers
 
 **Don't use for:**
+
 - Critical user-facing services (easymo-wa-router, easymo-admin)
 - Services with persistent connections (easymo-agents)
 
 ### Resource Sizing
+
 Start small, scale up as needed:
+
 - **Development:** `shared-cpu-1x`, 256MB
 - **Production:** `shared-cpu-1x`, 512MB minimum
 - **High-traffic:** `shared-cpu-2x`, 1GB+
@@ -465,6 +497,7 @@ Start small, scale up as needed:
 ## 🚨 Troubleshooting
 
 ### Deployment Fails
+
 ```bash
 # Check build logs
 fly logs --app <app-name>
@@ -477,6 +510,7 @@ fly secrets list --app <app-name>
 ```
 
 ### App Won't Start
+
 ```bash
 # Check logs
 fly logs --app <app-name>
@@ -488,6 +522,7 @@ fly logs --app <app-name>
 ```
 
 ### Slow Response
+
 ```bash
 # Check metrics
 fly status --app <app-name>

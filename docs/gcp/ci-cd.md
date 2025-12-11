@@ -1,6 +1,7 @@
 # CI/CD with GitHub Actions – easyMO on Google Cloud
 
 ## Overview
+
 Automate build, push to Artifact Registry, and deploy to Cloud Run using GitHub Actions.
 
 ---
@@ -74,20 +75,21 @@ rm github-actions-key.json
 
 ## GitHub Secrets Setup
 
-Go to GitHub repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
+Go to GitHub repo → **Settings** → **Secrets and variables** → **Actions** → **New repository
+secret**
 
 Add these secrets:
 
-| Secret Name | Value | Description |
-|-------------|-------|-------------|
-| `GCP_PROJECT_ID` | `easymoai` | GCP project ID |
-| `GCP_SA_KEY` | `{...}` | Service account JSON key (entire file content) |
-| `GCP_REGION` | `europe-west1` | Deployment region |
-| `GCP_ARTIFACT_REGISTRY` | `europe-west1-docker.pkg.dev/easymoai/easymo-repo` | Registry URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | `eyJhbGciOi...` | Supabase service role key |
-| `OPENAI_API_KEY` | `sk-proj-...` | OpenAI API key |
-| `WHATSAPP_ACCESS_TOKEN` | `EAAJ...` | Meta WhatsApp token |
-| `DATABASE_URL` | `postgresql://...` | Agent Core DB URL |
+| Secret Name                 | Value                                              | Description                                    |
+| --------------------------- | -------------------------------------------------- | ---------------------------------------------- |
+| `GCP_PROJECT_ID`            | `easymoai`                                         | GCP project ID                                 |
+| `GCP_SA_KEY`                | `{...}`                                            | Service account JSON key (entire file content) |
+| `GCP_REGION`                | `europe-west1`                                     | Deployment region                              |
+| `GCP_ARTIFACT_REGISTRY`     | `europe-west1-docker.pkg.dev/easymoai/easymo-repo` | Registry URL                                   |
+| `SUPABASE_SERVICE_ROLE_KEY` | `eyJhbGciOi...`                                    | Supabase service role key                      |
+| `OPENAI_API_KEY`            | `sk-proj-...`                                      | OpenAI API key                                 |
+| `WHATSAPP_ACCESS_TOKEN`     | `EAAJ...`                                          | Meta WhatsApp token                            |
+| `DATABASE_URL`              | `postgresql://...`                                 | Agent Core DB URL                              |
 
 ---
 
@@ -96,6 +98,7 @@ Add these secrets:
 ### Workflow 1: Deploy Admin PWA
 
 **`.github/workflows/deploy-admin.yml`**:
+
 ```yaml
 name: Deploy Admin PWA to Cloud Run
 
@@ -104,16 +107,16 @@ on:
     branches:
       - main
     paths:
-      - 'admin-app/**'
-      - 'packages/commons/**'
-      - 'packages/ui/**'
-      - '.github/workflows/deploy-admin.yml'
+      - "admin-app/**"
+      - "packages/commons/**"
+      - "packages/ui/**"
+      - ".github/workflows/deploy-admin.yml"
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     permissions:
       contents: read
       id-token: write
@@ -140,13 +143,13 @@ jobs:
         run: |
           IMAGE="${{ secrets.GCP_ARTIFACT_REGISTRY }}/admin:${{ github.sha }}"
           IMAGE_LATEST="${{ secrets.GCP_ARTIFACT_REGISTRY }}/admin:latest"
-          
+
           docker build \
             -f admin-app/Dockerfile \
             -t $IMAGE \
             -t $IMAGE_LATEST \
             .
-          
+
           docker push $IMAGE
           docker push $IMAGE_LATEST
 
@@ -180,6 +183,7 @@ jobs:
 ### Workflow 2: Deploy WhatsApp Router
 
 **`.github/workflows/deploy-wa-router.yml`**:
+
 ```yaml
 name: Deploy WhatsApp Router to Cloud Run
 
@@ -188,15 +192,15 @@ on:
     branches:
       - main
     paths:
-      - 'services/whatsapp-webhook-worker/**'
-      - 'packages/**'
-      - '.github/workflows/deploy-wa-router.yml'
+      - "services/whatsapp-webhook-worker/**"
+      - "packages/**"
+      - ".github/workflows/deploy-wa-router.yml"
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     permissions:
       contents: read
       id-token: write
@@ -223,13 +227,13 @@ jobs:
         run: |
           IMAGE="${{ secrets.GCP_ARTIFACT_REGISTRY }}/wa-router:${{ github.sha }}"
           IMAGE_LATEST="${{ secrets.GCP_ARTIFACT_REGISTRY }}/wa-router:latest"
-          
+
           docker build \
             -f services/whatsapp-webhook-worker/Dockerfile \
             -t $IMAGE \
             -t $IMAGE_LATEST \
             .
-          
+
           docker push $IMAGE
           docker push $IMAGE_LATEST
 
@@ -257,6 +261,7 @@ jobs:
 ### Workflow 3: Deploy Agent Core
 
 **`.github/workflows/deploy-agent-core.yml`**:
+
 ```yaml
 name: Deploy Agent Core to Cloud Run
 
@@ -265,16 +270,16 @@ on:
     branches:
       - main
     paths:
-      - 'services/agent-core/**'
-      - 'packages/db/**'
-      - 'packages/commons/**'
-      - '.github/workflows/deploy-agent-core.yml'
+      - "services/agent-core/**"
+      - "packages/db/**"
+      - "packages/commons/**"
+      - ".github/workflows/deploy-agent-core.yml"
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     permissions:
       contents: read
       id-token: write
@@ -301,13 +306,13 @@ jobs:
         run: |
           IMAGE="${{ secrets.GCP_ARTIFACT_REGISTRY }}/agent-core:${{ github.sha }}"
           IMAGE_LATEST="${{ secrets.GCP_ARTIFACT_REGISTRY }}/agent-core:latest"
-          
+
           docker build \
             -f services/agent-core/Dockerfile \
             -t $IMAGE \
             -t $IMAGE_LATEST \
             .
-          
+
           docker push $IMAGE
           docker push $IMAGE_LATEST
 
@@ -336,6 +341,7 @@ jobs:
 ### Workflow 4: Deploy All Services
 
 **`.github/workflows/deploy-all.yml`**:
+
 ```yaml
 name: Deploy All Services to Cloud Run
 
@@ -345,26 +351,34 @@ on:
       services:
         description: 'Services to deploy (comma-separated or "all")'
         required: true
-        default: 'all'
+        default: "all"
 
 jobs:
   deploy-admin:
-    if: contains(github.event.inputs.services, 'all') || contains(github.event.inputs.services, 'admin')
+    if:
+      contains(github.event.inputs.services, 'all') || contains(github.event.inputs.services,
+      'admin')
     uses: ./.github/workflows/deploy-admin.yml
     secrets: inherit
 
   deploy-vendor:
-    if: contains(github.event.inputs.services, 'all') || contains(github.event.inputs.services, 'vendor')
+    if:
+      contains(github.event.inputs.services, 'all') || contains(github.event.inputs.services,
+      'vendor')
     uses: ./.github/workflows/deploy-vendor.yml
     secrets: inherit
 
   deploy-wa-router:
-    if: contains(github.event.inputs.services, 'all') || contains(github.event.inputs.services, 'wa-router')
+    if:
+      contains(github.event.inputs.services, 'all') || contains(github.event.inputs.services,
+      'wa-router')
     uses: ./.github/workflows/deploy-wa-router.yml
     secrets: inherit
 
   deploy-agent-core:
-    if: contains(github.event.inputs.services, 'all') || contains(github.event.inputs.services, 'agent-core')
+    if:
+      contains(github.event.inputs.services, 'all') || contains(github.event.inputs.services,
+      'agent-core')
     uses: ./.github/workflows/deploy-agent-core.yml
     secrets: inherit
 ```
@@ -376,21 +390,23 @@ jobs:
 **Option**: Use `gcloud builds submit` instead of local Docker build for faster builds.
 
 Replace build step:
+
 ```yaml
-      - name: Build and push with Cloud Build
-        run: |
-          gcloud builds submit \
-            --tag ${{ secrets.GCP_ARTIFACT_REGISTRY }}/admin:${{ github.sha }} \
-            --dockerfile admin-app/Dockerfile \
-            .
-          
-          # Tag as latest
-          gcloud artifacts docker tags add \
-            ${{ secrets.GCP_ARTIFACT_REGISTRY }}/admin:${{ github.sha }} \
-            ${{ secrets.GCP_ARTIFACT_REGISTRY }}/admin:latest
+- name: Build and push with Cloud Build
+  run: |
+    gcloud builds submit \
+      --tag ${{ secrets.GCP_ARTIFACT_REGISTRY }}/admin:${{ github.sha }} \
+      --dockerfile admin-app/Dockerfile \
+      .
+
+    # Tag as latest
+    gcloud artifacts docker tags add \
+      ${{ secrets.GCP_ARTIFACT_REGISTRY }}/admin:${{ github.sha }} \
+      ${{ secrets.GCP_ARTIFACT_REGISTRY }}/admin:latest
 ```
 
 **Benefits**:
+
 - Faster (no upload time from GitHub to GCP)
 - Caching in Cloud Build
 - Build logs in Cloud Logging
@@ -400,6 +416,7 @@ Replace build step:
 ## Manual Trigger
 
 Trigger deployment manually from GitHub:
+
 1. Go to **Actions** tab
 2. Select workflow (e.g., "Deploy Admin PWA")
 3. Click **Run workflow**
@@ -410,6 +427,7 @@ Trigger deployment manually from GitHub:
 ## Rollback Strategy
 
 ### Option 1: Re-deploy previous commit
+
 ```bash
 # In GitHub Actions, checkout specific commit
 git checkout abc123
@@ -417,6 +435,7 @@ git checkout abc123
 ```
 
 ### Option 2: Traffic splitting
+
 ```yaml
 # Deploy new version without traffic
 - name: Deploy new revision (no traffic)
@@ -450,44 +469,45 @@ git checkout abc123
 ### Slack notifications
 
 Add to workflow:
-```yaml
-      - name: Notify Slack on success
-        if: success()
-        uses: slackapi/slack-github-action@v1
-        with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          payload: |
-            {
-              "text": "✅ easymo-admin deployed successfully!",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*easymo-admin* deployed to Cloud Run\nCommit: ${{ github.sha }}"
-                  }
-                }
-              ]
-            }
 
-      - name: Notify Slack on failure
-        if: failure()
-        uses: slackapi/slack-github-action@v1
-        with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          payload: |
-            {
-              "text": "❌ easymo-admin deployment failed!",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*easymo-admin* deployment failed\nCommit: ${{ github.sha }}\nCheck logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                  }
-                }
-              ]
+```yaml
+- name: Notify Slack on success
+  if: success()
+  uses: slackapi/slack-github-action@v1
+  with:
+    webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+    payload: |
+      {
+        "text": "✅ easymo-admin deployed successfully!",
+        "blocks": [
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "*easymo-admin* deployed to Cloud Run\nCommit: ${{ github.sha }}"
             }
+          }
+        ]
+      }
+
+- name: Notify Slack on failure
+  if: failure()
+  uses: slackapi/slack-github-action@v1
+  with:
+    webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+    payload: |
+      {
+        "text": "❌ easymo-admin deployment failed!",
+        "blocks": [
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "*easymo-admin* deployment failed\nCommit: ${{ github.sha }}\nCheck logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }
+          }
+        ]
+      }
 ```
 
 ---
@@ -497,16 +517,18 @@ Add to workflow:
 ### Staging vs Production
 
 **Option 1**: Separate workflows
+
 - `deploy-admin-staging.yml` (deploys `easymo-admin-staging`)
 - `deploy-admin-prod.yml` (deploys `easymo-admin`)
 
 **Option 2**: Single workflow with input
+
 ```yaml
 on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to deploy'
+        description: "Environment to deploy"
         required: true
         type: choice
         options:
@@ -518,7 +540,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # ... auth steps ...
-      
+
       - name: Deploy to Cloud Run
         run: |
           SERVICE_NAME="easymo-admin-${{ github.event.inputs.environment }}"
@@ -544,12 +566,15 @@ jobs:
 ## Troubleshooting
 
 ### Issue: "Permission denied" in GitHub Actions
+
 **Solution**: Verify service account has correct roles (see "Service Account Setup")
 
 ### Issue: "Image not found in Artifact Registry"
+
 **Solution**: Ensure `gcloud auth configure-docker` ran successfully
 
 ### Issue: "Deployment timeout"
+
 **Solution**: Increase timeout in deploy step or check service logs
 
 ---
@@ -557,6 +582,7 @@ jobs:
 ## Complete Example Workflow
 
 **`.github/workflows/deploy-easymo.yml`** (all Phase 1 services):
+
 ```yaml
 name: Deploy easyMO to Google Cloud Run
 
@@ -623,6 +649,7 @@ jobs:
 6. Set up notifications
 
 See:
+
 - [artifact-registry.md](./artifact-registry.md) - Registry setup
 - [cloud-run-services.md](./cloud-run-services.md) - Deployment commands
 - [env-vars.md](./env-vars.md) - Secrets management

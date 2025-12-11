@@ -17,14 +17,15 @@ Complete guide for deploying EasyMO services to Google Cloud Run.
 
 EasyMO deploys multiple services to Google Cloud Run:
 
-| Service | Type | IAP | Image |
-|---------|------|-----|-------|
-| **easymo-admin** | Next.js PWA | ✅ Yes | `admin:latest` |
-| **easymo-voice-bridge** | Node.js API | ❌ No | `voice-bridge:latest` |
-| **easymo-voice-gateway** | Node.js API | ❌ No | `voice-gateway:latest` |
-| **easymo-vendor-service** | Express API | ❌ No | `vendor-service:latest` |
+| Service                   | Type        | IAP    | Image                   |
+| ------------------------- | ----------- | ------ | ----------------------- |
+| **easymo-admin**          | Next.js PWA | ✅ Yes | `admin:latest`          |
+| **easymo-voice-bridge**   | Node.js API | ❌ No  | `voice-bridge:latest`   |
+| **easymo-voice-gateway**  | Node.js API | ❌ No  | `voice-gateway:latest`  |
+| **easymo-vendor-service** | Express API | ❌ No  | `vendor-service:latest` |
 
 **Architecture**: Hybrid approach
+
 - **Supabase Edge Functions**: WhatsApp webhooks (low latency)
 - **Google Cloud Run**: Admin tools, Voice services (scalability)
 - **Shared Database**: Supabase PostgreSQL
@@ -53,13 +54,13 @@ git --version
 
 ### Required Secrets
 
-| Secret | Purpose | Where to Get |
-|--------|---------|--------------|
-| `GCP_SA_KEY` | Service account JSON | Google Cloud Console → IAM |
-| `SUPABASE_URL` | Database URL | Supabase Dashboard |
-| `SUPABASE_ANON_KEY` | Public API key | Supabase Dashboard → Settings |
-| `SUPABASE_SERVICE_ROLE_KEY` | Admin API key | Supabase Dashboard → Settings |
-| `OPENAI_API_KEY` | OpenAI API | OpenAI Dashboard |
+| Secret                      | Purpose              | Where to Get                  |
+| --------------------------- | -------------------- | ----------------------------- |
+| `GCP_SA_KEY`                | Service account JSON | Google Cloud Console → IAM    |
+| `SUPABASE_URL`              | Database URL         | Supabase Dashboard            |
+| `SUPABASE_ANON_KEY`         | Public API key       | Supabase Dashboard → Settings |
+| `SUPABASE_SERVICE_ROLE_KEY` | Admin API key        | Supabase Dashboard → Settings |
+| `OPENAI_API_KEY`            | OpenAI API           | OpenAI Dashboard              |
 
 ## Quick Start
 
@@ -157,7 +158,7 @@ gcloud run services update easymo-voice-bridge \
   --update-secrets OPENAI_API_KEY=openai-api-key:latest,SUPABASE_SERVICE_ROLE_KEY=supabase-service-role-key:latest \
   --region $REGION
 
-# Voice Gateway  
+# Voice Gateway
 gcloud run services update easymo-voice-gateway \
   --update-secrets OPENAI_API_KEY=openai-api-key:latest,SUPABASE_SERVICE_ROLE_KEY=supabase-service-role-key:latest \
   --region $REGION
@@ -247,6 +248,7 @@ cat github-actions-key.json | base64
 Go to GitHub repository → Settings → Secrets and variables → Actions → New repository secret
 
 Add these secrets:
+
 - `GCP_SA_KEY` - Base64-encoded service account JSON
 - `GCP_PROJECT_ID` - `easymoai`
 - `GCP_REGION` - `europe-west1`
@@ -289,9 +291,11 @@ gcloud run services logs read easymo-admin \
 ### Metrics
 
 View in Google Cloud Console:
+
 - https://console.cloud.google.com/run?project=easymoai
 
 Key metrics:
+
 - Request count
 - Request latency (p50, p95, p99)
 - Error rate

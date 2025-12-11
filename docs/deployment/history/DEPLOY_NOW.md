@@ -10,6 +10,7 @@ cd /Users/jeanbosco/workspace/easymo-
 ```
 
 This will:
+
 - Deploy all database migrations
 - Create DLQ tables and cron jobs
 - Deploy all edge functions
@@ -20,6 +21,7 @@ This will:
 ## 🔧 **Option 2: Manual Step-by-Step**
 
 ### **Prerequisites**
+
 ```bash
 # Ensure you're in the project directory
 cd /Users/jeanbosco/workspace/easymo-
@@ -31,30 +33,33 @@ export SUPABASE_PROJECT_REF="lhbowpbcpwoiparwnwgt"
 ```
 
 ### **Step 1: Deploy Database Migrations**
+
 ```bash
 supabase db push --db-url "$DATABASE_URL"
 ```
 
 **What this deploys:**
+
 - `20251127135924_setup_dlq_cron.sql` - DLQ cron job
 - `20251127135925_create_webhook_dlq_table.sql` - DLQ tables
 - `20251127140913_optimize_autovacuum.sql` - Vacuum optimization
 - `20251127141350_partition_wa_events.sql` - Table partitioning
 
 ### **Step 2: Verify Database Deployment**
+
 ```bash
 # Check DLQ tables created
 psql "$DATABASE_URL" -c "
-SELECT tablename 
-FROM pg_tables 
-WHERE tablename IN ('webhook_dlq', 'dlq_processing_log') 
+SELECT tablename
+FROM pg_tables
+WHERE tablename IN ('webhook_dlq', 'dlq_processing_log')
 AND schemaname = 'public';
 "
 
 # Check cron jobs scheduled
 psql "$DATABASE_URL" -c "
-SELECT jobname, schedule, active 
-FROM cron.job 
+SELECT jobname, schedule, active
+FROM cron.job
 WHERE jobname IN ('process-dlq-entries', 'create-wa-events-partitions');
 "
 
@@ -66,11 +71,13 @@ WHERE jobname IN ('process-dlq-entries', 'create-wa-events-partitions');
 ```
 
 ### **Step 3: Link Supabase Project**
+
 ```bash
 supabase link --project-ref "$SUPABASE_PROJECT_REF"
 ```
 
 ### **Step 4: Deploy Edge Functions**
+
 ```bash
 # Deploy all webhook functions
 supabase functions deploy wa-webhook --project-ref "$SUPABASE_PROJECT_REF"
@@ -80,6 +87,7 @@ supabase functions deploy dlq-processor --project-ref "$SUPABASE_PROJECT_REF"
 ```
 
 ### **Step 5: Verify Function Deployment**
+
 ```bash
 # Test health endpoints
 curl https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/dlq-processor/health
@@ -93,19 +101,21 @@ curl https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook-core/healt
 ## ✅ **Post-Deployment Verification**
 
 ### **Check DLQ Processing**
+
 ```bash
 # Check if DLQ processor is running
 psql "$DATABASE_URL" -c "
-SELECT * FROM dlq_processing_log 
-ORDER BY processed_at DESC 
+SELECT * FROM dlq_processing_log
+ORDER BY processed_at DESC
 LIMIT 5;
 "
 ```
 
 ### **Check Webhook Success Rate**
+
 ```bash
 psql "$DATABASE_URL" -c "
-SELECT 
+SELECT
     COUNT(*) as total,
     SUM(CASE WHEN processed THEN 1 ELSE 0 END) as successful,
     ROUND(100.0 * SUM(CASE WHEN processed THEN 1 ELSE 0 END) / COUNT(*), 2) as success_rate
@@ -115,9 +125,10 @@ WHERE created_at > NOW() - INTERVAL '1 hour';
 ```
 
 ### **Check Auto-Vacuum Settings**
+
 ```bash
 psql "$DATABASE_URL" -c "
-SELECT 
+SELECT
     tablename,
     reloptions
 FROM pg_tables t
@@ -128,9 +139,10 @@ AND schemaname = 'public';
 ```
 
 ### **Monitor DLQ Status**
+
 ```bash
 psql "$DATABASE_URL" -c "
-SELECT 
+SELECT
     status,
     COUNT(*) as count,
     ROUND(AVG(retry_count), 2) as avg_retries
@@ -144,6 +156,7 @@ GROUP BY status;
 ## 📊 **Expected Results**
 
 ### **After Database Migration**
+
 - ✅ `webhook_dlq` table exists
 - ✅ `dlq_processing_log` table exists
 - ✅ Cron job `process-dlq-entries` runs every 5 minutes
@@ -151,6 +164,7 @@ GROUP BY status;
 - ✅ Auto-vacuum settings applied to high-traffic tables
 
 ### **After Function Deployment**
+
 - ✅ All webhook handlers deployed
 - ✅ Health endpoints responding
 - ✅ 100% signature verification active
@@ -161,6 +175,7 @@ GROUP BY status;
 ## 🚨 **Troubleshooting**
 
 ### **Migration Fails**
+
 ```bash
 # Check migration status
 psql "$DATABASE_URL" -c "SELECT * FROM supabase_migrations.schema_migrations ORDER BY version DESC LIMIT 10;"
@@ -170,6 +185,7 @@ psql "$DATABASE_URL" -f supabase/migrations/YYYYMMDDHHMMSS_migration_name.sql
 ```
 
 ### **Function Deployment Fails**
+
 ```bash
 # Check function exists
 ls -la supabase/functions/
@@ -179,15 +195,16 @@ supabase functions deploy FUNCTION_NAME --project-ref "$SUPABASE_PROJECT_REF" --
 ```
 
 ### **Cron Job Not Running**
+
 ```bash
 # Check pg_cron extension enabled
 psql "$DATABASE_URL" -c "SELECT * FROM pg_extension WHERE extname = 'pg_cron';"
 
 # Check cron job status
 psql "$DATABASE_URL" -c "
-SELECT * FROM cron.job_run_details 
+SELECT * FROM cron.job_run_details
 WHERE jobid = (SELECT jobid FROM cron.job WHERE jobname = 'process-dlq-entries')
-ORDER BY start_time DESC 
+ORDER BY start_time DESC
 LIMIT 5;
 "
 ```
@@ -214,6 +231,7 @@ LIMIT 5;
 ## 🎯 **Success Criteria**
 
 Deployment is successful when:
+
 - [x] All 4 migrations applied
 - [x] DLQ tables exist with RLS policies
 - [x] Cron jobs scheduled and active
@@ -242,6 +260,7 @@ supabase functions logs dlq-processor --project-ref "$SUPABASE_PROJECT_REF"
 ## ✅ **Deployment Complete!**
 
 Your EasyMO platform is now deployed with:
+
 - ✅ Dead Letter Queue with auto-retry
 - ✅ 100% webhook signature verification
 - ✅ Database optimizations (vacuum + partitioning)

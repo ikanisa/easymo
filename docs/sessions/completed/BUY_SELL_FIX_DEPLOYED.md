@@ -9,21 +9,26 @@
 ## What Was Fixed
 
 ### Issue #1: Infinite AI Loop ✅ FIXED
+
 **Before**: Tapping ANY button while in AI mode forwarded to AI agent → generic spam  
 **After**: Buttons handled locally, never sent to AI
 
 ### Issue #2: Missing Share Button Handler ✅ FIXED
+
 **Before**: Tap "Share easyMO" → AI spam  
 **After**: Tap "Share easyMO" → Receive referral message with code
 
 ### Issue #3: No Escape from AI Mode ✅ FIXED
+
 **Before**: Once in AI mode, stuck forever  
 **After**: Multiple exit paths:
+
 - Tap "← Back to Categories" button
 - Type "menu", "home", "stop", or "exit"
 - Auto-exit after 30 minutes of inactivity
 
 ### Issue #4: Button Taps Forwarded to AI ✅ FIXED
+
 **Before**: ALL messages forwarded to AI if state active  
 **After**: ONLY text messages forwarded, buttons/locations/media handled locally
 
@@ -101,9 +106,7 @@ const welcomeMessage = `🤖 *AI Chat Mode*
 💡 Type 'menu' anytime to exit AI mode
 ...`;
 
-await sendButtons(userPhone, welcomeMessage, [
-  { id: "exit_ai", title: "← Back to Categories" },
-]);
+await sendButtons(userPhone, welcomeMessage, [{ id: "exit_ai", title: "← Back to Categories" }]);
 ```
 
 ---
@@ -129,12 +132,14 @@ BUY_SELL_NON_TEXT_IN_AI_MODE { userId, messageType: "interactive" }
 ## Testing Scenarios
 
 ### Scenario 1: Share Button in Buy-Sell Flow
+
 1. ✅ Start buy-sell flow
 2. ✅ Tap "🔗 Share easyMO" button
 3. ✅ EXPECTED: Receive referral message with wa.me link + code
 4. ❌ BEFORE: "What are you looking for today?" (AI spam)
 
 ### Scenario 2: Exit AI Mode via Button
+
 1. ✅ Select "Chat with Agent"
 2. ✅ See AI welcome with "← Back to Categories" button
 3. ✅ Tap the button
@@ -142,18 +147,21 @@ BUY_SELL_NON_TEXT_IN_AI_MODE { userId, messageType: "interactive" }
 5. ❌ BEFORE: No escape, stuck forever
 
 ### Scenario 3: Exit AI Mode via Keyword
+
 1. ✅ Enter AI chat mode
 2. ✅ Type "menu" (or "home", "stop", "exit")
 3. ✅ EXPECTED: AI state cleared, categories shown
 4. ❌ BEFORE: Keyword forwarded to AI
 
 ### Scenario 4: Button Tap in AI Mode
+
 1. ✅ Enter AI chat mode
 2. ✅ Tap ANY button (e.g., pagination, back, share)
 3. ✅ EXPECTED: Button handled correctly, not sent to AI
 4. ❌ BEFORE: Button forwarded to AI as text
 
 ### Scenario 5: Session Timeout
+
 1. ✅ Enter AI chat mode
 2. ✅ Wait 30 minutes (no activity)
 3. ✅ Send any message
@@ -161,9 +169,11 @@ BUY_SELL_NON_TEXT_IN_AI_MODE { userId, messageType: "interactive" }
 5. ❌ BEFORE: No timeout, stuck forever
 
 ### Scenario 6: Non-Text in AI Mode
+
 1. ✅ Enter AI chat mode
 2. ✅ Send location pin or media
-3. ✅ EXPECTED: Helpful message: "I can only understand text messages in AI mode. Type 'menu' to exit."
+3. ✅ EXPECTED: Helpful message: "I can only understand text messages in AI mode. Type 'menu' to
+   exit."
 4. ❌ BEFORE: Forwarded to AI, generic response
 
 ---
@@ -202,6 +212,7 @@ supabase functions logs wa-webhook-buy-sell | grep "SHARE_EASYMO_TAP"
 ```
 
 **Expected Impact**:
+
 - ✅ 95%+ reduction in "button tap in AI mode" errors
 - ✅ 100% reduction in infinite loop complaints
 - ✅ Share button success rate: 0% → 95%+
@@ -212,11 +223,13 @@ supabase functions logs wa-webhook-buy-sell | grep "SHARE_EASYMO_TAP"
 ## User Experience Flow (After Fix)
 
 ### Flow A: Category Browse (No Changes)
+
 ```
 User → Tap category → Share location → See businesses → Done
 ```
 
 ### Flow B: AI Chat (NOW FIXED)
+
 ```
 User → Select "Chat with Agent"
      → See AI welcome with EXIT button
@@ -227,6 +240,7 @@ User → Select "Chat with Agent"
 ```
 
 ### Flow C: Share Button (NOW WORKS)
+
 ```
 User → Any screen with <3 buttons
      → See auto-appended "🔗 Share easyMO" button
@@ -242,7 +256,7 @@ User → Any screen with <3 buttons
 **Deployed**: 2025-12-10 08:33 UTC  
 **Size**: 778.6kB  
 **Project**: lhbowpbcpwoiparwnwgt  
-**Status**: ✅ Live  
+**Status**: ✅ Live
 
 **Dashboard**: https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions
 
@@ -266,6 +280,7 @@ User → Any screen with <3 buttons
 If issues arise, previous deployment is still available in Supabase dashboard.
 
 To rollback:
+
 1. Go to https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions
 2. Select wa-webhook-buy-sell
 3. View deployment history

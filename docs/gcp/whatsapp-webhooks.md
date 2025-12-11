@@ -1,13 +1,17 @@
 # WhatsApp Webhooks Architecture – Why Keep on Supabase?
 
 ## Overview
-WhatsApp webhooks remain on **Supabase Edge Functions** (Deno runtime) rather than migrating to Google Cloud Run. This document explains the decision and provides a migration path if needed in the future.
+
+WhatsApp webhooks remain on **Supabase Edge Functions** (Deno runtime) rather than migrating to
+Google Cloud Run. This document explains the decision and provides a migration path if needed in the
+future.
 
 ---
 
 ## Current Architecture
 
 ### WhatsApp Webhook Flow
+
 ```
 Meta WhatsApp Cloud API
         ↓
@@ -29,6 +33,7 @@ AI Agent Processing
 ```
 
 ### Edge Functions on Supabase
+
 - **Path**: `/supabase/functions/wa-webhook-*`
 - **Runtime**: Deno 2.x
 - **Deployment**: `supabase functions deploy`
@@ -44,13 +49,16 @@ AI Agent Processing
 ## Why NOT Migrate to Cloud Run
 
 ### 1. Performance
+
 **Supabase Edge Functions**:
+
 - Deployed on same infrastructure as database
 - Direct database connection (no network hop)
 - Sub-10ms query latency
 - Always warm (no cold starts)
 
 **Cloud Run**:
+
 - Separate infrastructure from Supabase
 - Network latency to Supabase DB (~20-50ms)
 - Cold starts possible (0-2 seconds)
@@ -61,13 +69,16 @@ AI Agent Processing
 ---
 
 ### 2. Database Access
+
 **Supabase Edge Functions**:
+
 - Native Supabase client with RLS
 - Automatic auth context
 - Direct access to `auth.users()`, storage, realtime
 - No connection pool management
 
 **Cloud Run**:
+
 - Generic PostgreSQL client
 - Manual RLS policy enforcement
 - Must manage connection pooling
@@ -78,7 +89,9 @@ AI Agent Processing
 ---
 
 ### 3. Development Experience
+
 **Supabase Edge Functions**:
+
 - Local testing: `supabase functions serve`
 - Integrated with Supabase CLI
 - TypeScript type generation from DB schema
@@ -86,6 +99,7 @@ AI Agent Processing
 - Same runtime as production
 
 **Cloud Run**:
+
 - Requires Docker for local testing
 - Separate deployment pipeline
 - Manual type generation
@@ -96,19 +110,23 @@ AI Agent Processing
 ---
 
 ### 4. Cost
+
 **Supabase Edge Functions**:
+
 - Included in Supabase plan
 - 500K invocations/month (Pro plan)
 - $2/million requests beyond quota
 - No separate infrastructure costs
 
 **Cloud Run**:
+
 - Pay per request + compute time
 - ~$0.40 per million requests
 - Additional costs for always-warm instances
 - Network egress charges to Supabase
 
 **Estimate**: 1M WhatsApp messages/month
+
 - **Edge Functions**: Free (within quota) or $2
 - **Cloud Run**: ~$10-20 (requests + compute + egress)
 
@@ -117,7 +135,9 @@ AI Agent Processing
 ---
 
 ### 5. Operational Complexity
+
 **Supabase Edge Functions**:
+
 - Single deployment command
 - Managed infrastructure
 - Built-in monitoring
@@ -125,6 +145,7 @@ AI Agent Processing
 - No container management
 
 **Cloud Run**:
+
 - Docker builds required
 - Artifact Registry management
 - Manual scaling configuration
@@ -138,6 +159,7 @@ AI Agent Processing
 ## When to Migrate to Cloud Run
 
 Consider migration if:
+
 1. **High volume**: >10M messages/day (exceeds Edge Function limits)
 2. **Complex compute**: CPU-intensive processing (image/video analysis)
 3. **Long-running**: Operations >60 seconds (Edge Function timeout)
@@ -151,6 +173,7 @@ Consider migration if:
 ## Hybrid Architecture (Recommended)
 
 ### Services on Cloud Run
+
 1. **Admin PWA** (`easymo-admin`) - Internal staff dashboard
 2. **Vendor Portal** (`easymo-vendor`) - Onboarded vendor management
 3. **Voice Bridge** (`easymo-voice-bridge`) - WebRTC/SIP voice calls
@@ -159,6 +182,7 @@ Consider migration if:
 6. **Agent Core** - Multi-agent orchestration (if needed)
 
 ### Services on Supabase Edge Functions
+
 1. **wa-webhook-core** - Main WhatsApp message router
 2. **wa-webhook-mobility** - Mobility/ride-sharing messages
 3. **wa-webhook-commerce** - Marketplace messages
@@ -170,6 +194,7 @@ Consider migration if:
 9. **Lookup functions** - Data enrichment
 
 **Why this split?**
+
 - WhatsApp webhooks → Database-heavy → Edge Functions
 - Admin/Vendor PWAs → UI apps → Cloud Run
 - Voice services → External APIs → Cloud Run
@@ -182,6 +207,7 @@ Consider migration if:
 If you must migrate WhatsApp webhooks to Cloud Run:
 
 ### Step 1: Create Cloud Run Service
+
 ```bash
 # Build container
 gcloud builds submit \
@@ -205,6 +231,7 @@ gcloud run deploy easymo-wa-webhook \
 ```
 
 ### Step 2: Update Meta WhatsApp Webhook URL
+
 ```bash
 # Old: https://PROJECT.supabase.co/functions/v1/wa-webhook-core
 # New: https://easymo-wa-webhook-xxx.a.run.app/webhook
@@ -214,24 +241,18 @@ gcloud run deploy easymo-wa-webhook \
 ```
 
 ### Step 3: Implement Signature Verification
+
 ```typescript
 // Must verify Meta webhook signatures in Cloud Run
-import crypto from 'crypto';
+import crypto from "crypto";
 
-function verifyWebhookSignature(
-  payload: string,
-  signature: string,
-  secret: string
-): boolean {
-  const expectedSignature = crypto
-    .createHmac('sha256', secret)
-    .update(payload)
-    .digest('hex');
+function verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
+  const expectedSignature = crypto.createHmac("sha256", secret).update(payload).digest("hex");
   return `sha256=${expectedSignature}` === signature;
 }
 
 // In handler
-const signature = req.headers['x-hub-signature-256'];
+const signature = req.headers["x-hub-signature-256"];
 const isValid = verifyWebhookSignature(
   JSON.stringify(req.body),
   signature,
@@ -240,23 +261,21 @@ const isValid = verifyWebhookSignature(
 ```
 
 ### Step 4: Database Connection Pooling
+
 ```typescript
 // Use Supabase connection pooler for Cloud Run
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  {
-    db: {
-      schema: 'public',
-      // Use transaction pooler for serverless
-      host: 'aws-0-us-west-1.pooler.supabase.com',
-      port: 6543,
-    },
-  }
-);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+  db: {
+    schema: "public",
+    // Use transaction pooler for serverless
+    host: "aws-0-us-west-1.pooler.supabase.com",
+    port: 6543,
+  },
+});
 ```
 
 ### Step 5: Performance Testing
+
 ```bash
 # Load test both endpoints
 ab -n 10000 -c 100 \
@@ -317,6 +336,7 @@ ab -n 10000 -c 100 \
 ```
 
 **Legend**:
+
 - 🔒 = IAP protected
 - Blue = Cloud Run (public/authenticated)
 - Green = Supabase Edge Functions (webhook endpoints)
@@ -327,6 +347,7 @@ ab -n 10000 -c 100 \
 ## Monitoring Both Platforms
 
 ### Supabase Edge Functions
+
 ```bash
 # View logs
 supabase functions logs wa-webhook-core
@@ -336,6 +357,7 @@ supabase functions logs wa-webhook-core
 ```
 
 ### Cloud Run Services
+
 ```bash
 # View logs
 gcloud run services logs tail easymo-voice-bridge --region europe-west1
@@ -348,18 +370,19 @@ gcloud run services logs tail easymo-voice-bridge --region europe-west1
 
 ## Decision Summary
 
-| Factor | Edge Functions | Cloud Run | Winner |
-|--------|---------------|-----------|--------|
-| Database Latency | <10ms | 20-50ms | 🏆 Edge |
-| Supabase Integration | Native | Manual | 🏆 Edge |
-| Development Speed | Fast | Slower | 🏆 Edge |
-| Cost (1M msg/mo) | $0-2 | $10-20 | 🏆 Edge |
-| Operational Complexity | Low | Medium | 🏆 Edge |
-| Max Throughput | 10M/day | 100M+/day | 🏆 Cloud Run |
-| CPU-Intensive Tasks | Limited | Excellent | 🏆 Cloud Run |
-| Custom Runtime | Deno only | Any | 🏆 Cloud Run |
+| Factor                 | Edge Functions | Cloud Run | Winner       |
+| ---------------------- | -------------- | --------- | ------------ |
+| Database Latency       | <10ms          | 20-50ms   | 🏆 Edge      |
+| Supabase Integration   | Native         | Manual    | 🏆 Edge      |
+| Development Speed      | Fast           | Slower    | 🏆 Edge      |
+| Cost (1M msg/mo)       | $0-2           | $10-20    | 🏆 Edge      |
+| Operational Complexity | Low            | Medium    | 🏆 Edge      |
+| Max Throughput         | 10M/day        | 100M+/day | 🏆 Cloud Run |
+| CPU-Intensive Tasks    | Limited        | Excellent | 🏆 Cloud Run |
+| Custom Runtime         | Deno only      | Any       | 🏆 Cloud Run |
 
-**Recommendation**: Keep WhatsApp webhooks on Supabase Edge Functions unless scale or compute requirements change.
+**Recommendation**: Keep WhatsApp webhooks on Supabase Edge Functions unless scale or compute
+requirements change.
 
 ---
 
@@ -373,4 +396,5 @@ gcloud run services logs tail easymo-voice-bridge --region europe-west1
 ---
 
 **Decision**: Keep webhooks on Supabase  
-**Review Trigger**: When traffic exceeds 5M messages/day or compute requirements change significantly
+**Review Trigger**: When traffic exceeds 5M messages/day or compute requirements change
+significantly

@@ -10,6 +10,7 @@
 ## 🎉 What's DONE
 
 ### 1. ✅ Complete Code Migration
+
 - **Vendor Portal** → `/vendor-portal` (2000+ files)
 - **Admin Routes** → `/admin-app/app/ibimina-admin` (12 routes)
 - **Shared Packages** → 7 packages in `/packages/ibimina-*`
@@ -17,6 +18,7 @@
 - **Migrations** → 119 migrations merged (609KB file)
 
 ### 2. ✅ Project Structure
+
 ```
 easymo/
 ├── admin-app/app/ibimina-admin/     ✅ Admin routes added
@@ -37,11 +39,12 @@ easymo/
 ```
 
 ### 3. ✅ Supabase Integration
+
 - ✅ Project linked: `lhbowpbcpwoiparwnwgt`
 - ✅ Database URL configured
 - ✅ Access token set
 - ✅ Environment files created
-- ⚠️  Migration has table conflicts (needs manual review)
+- ⚠️ Migration has table conflicts (needs manual review)
 
 ---
 
@@ -62,6 +65,7 @@ pnpm --filter @easymo/admin-app dev
 ```
 
 ### Vendor Portal Features Available:
+
 - `/staff` - Staff dashboard
 - `/staff/onboarding` - Member onboarding
 - `/member` - Member self-service
@@ -70,6 +74,7 @@ pnpm --filter @easymo/admin-app dev
 - Multi-language support (Kinyarwanda, French, English)
 
 ### Admin Routes Available:
+
 - `/ibimina-admin` - Dashboard
 - `/ibimina-admin/countries` - Country management
 - `/ibimina-admin/partners` - Partner organizations
@@ -81,26 +86,31 @@ pnpm --filter @easymo/admin-app dev
 ## ⚠️ Database Migration Status
 
 ### Issue:
+
 The merged ibimina migration (609KB) has conflicts with existing easymo tables:
+
 - `audit_logs` already exists
 - Some RLS policies reference non-existent columns
 
 ### Resolution Options:
 
 **Option A: Use Existing Tables** (Recommended for testing)
+
 - Run applications with current database
 - Add only non-conflicting ibimina tables manually
 - Test functionality before full migration
 
 **Option B: Manual Migration Review**
+
 - Review `supabase/migrations/ibimina/` folder
 - Extract ibimina-specific tables
 - Create incremental migrations
 - Apply in stages
 
 **Option C: Fresh Database**
+
 - Export current data
-- Create new Supabase project  
+- Create new Supabase project
 - Apply both schemas cleanly
 - Import data
 
@@ -113,6 +123,7 @@ The merged ibimina migration (609KB) has conflicts with existing easymo tables:
 40 functions available in `supabase/functions/`:
 
 **Critical Functions:**
+
 ```bash
 export SUPABASE_ACCESS_TOKEN="sbp_500607f0d078e919aa24f179473291544003a035"
 
@@ -139,6 +150,7 @@ supabase functions deploy wallet-transfer
 ## 🔐 Environment Configuration
 
 ### Vendor Portal (`.env` created)
+
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=https://lhbowpbcpwoiparwnwgt.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...
@@ -146,7 +158,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...
 ```
 
 ### Admin App
+
 Add to `.env` or `.env.local`:
+
 ```bash
 FEATURE_IBIMINA_ADMIN=true
 ```
@@ -155,15 +169,15 @@ FEATURE_IBIMINA_ADMIN=true
 
 ## 📊 Migration Statistics
 
-| Item | Count | Status |
-|------|-------|--------|
-| Files migrated | ~2,600 | ✅ Complete |
-| Admin routes | 12 | ✅ Complete |
-| Vendor portal pages | 20+ | ✅ Complete |
-| Packages | 7 | ✅ Complete |
-| Edge functions | 40 | ✅ Ready to deploy |
-| SQL migrations | 119 | ⚠️ Conflicts detected |
-| Tables (ibimina) | 80+ | ⚠️ Needs review |
+| Item                | Count  | Status                |
+| ------------------- | ------ | --------------------- |
+| Files migrated      | ~2,600 | ✅ Complete           |
+| Admin routes        | 12     | ✅ Complete           |
+| Vendor portal pages | 20+    | ✅ Complete           |
+| Packages            | 7      | ✅ Complete           |
+| Edge functions      | 40     | ✅ Ready to deploy    |
+| SQL migrations      | 119    | ⚠️ Conflicts detected |
+| Tables (ibimina)    | 80+    | ⚠️ Needs review       |
 
 ---
 
@@ -207,6 +221,7 @@ FEATURE_IBIMINA_ADMIN=true
 ## 🎯 NEXT STEPS FOR YOU
 
 ### Immediate (< 5 minutes):
+
 1. ✅ Read `IBIMINA_DEPLOYMENT_MANUAL_STEPS.md`
 2. ✅ Start applications:
    ```bash
@@ -216,12 +231,14 @@ FEATURE_IBIMINA_ADMIN=true
 3. ✅ Test the UI and routes
 
 ### Short-term (< 1 hour):
+
 4. Get `SUPABASE_SERVICE_ROLE_KEY` from Supabase dashboard
 5. Add to `vendor-portal/.env`
 6. Review migration conflicts
 7. Deploy 1-2 edge functions for testing
 
 ### Medium-term (< 1 day):
+
 8. Decide on migration strategy
 9. Create incremental migrations for non-conflicting tables
 10. Test with real SACCO data
@@ -232,14 +249,17 @@ FEATURE_IBIMINA_ADMIN=true
 ## 🔥 Critical Files
 
 **Start Development:**
+
 - `vendor-portal/.env` - Configure with SERVICE_ROLE_KEY
 - `admin-app/.env` - Add FEATURE_IBIMINA_ADMIN=true
 
 **Review Migration:**
+
 - `supabase/migrations/20251210000001_ibimina_integration_fixed.sql`
 - `supabase/migrations/ibimina/` - Original 119 migrations
 
 **Deploy Functions:**
+
 - `supabase/functions/` - All 40 functions ready
 
 ---

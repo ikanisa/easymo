@@ -9,21 +9,25 @@
 **Get easyMO running on GCP in 6 steps:**
 
 1. **Enable APIs** (2 min)
+
    ```bash
    gcloud services enable artifactregistry.googleapis.com cloudbuild.googleapis.com run.googleapis.com iap.googleapis.com secretmanager.googleapis.com
    ```
 
 2. **Create Artifact Registry** (1 min)
+
    ```bash
    gcloud artifacts repositories create easymo-repo --repository-format=docker --location=europe-west1
    ```
 
 3. **Build & Push Admin Image** (5 min)
+
    ```bash
    gcloud builds submit --tag europe-west1-docker.pkg.dev/easymoai/easymo-repo/admin:latest --dockerfile admin-app/Dockerfile .
    ```
 
 4. **Deploy to Cloud Run** (2 min)
+
    ```bash
    gcloud run deploy easymo-admin --image europe-west1-docker.pkg.dev/easymoai/easymo-repo/admin:latest --region europe-west1 --allow-unauthenticated=false
    ```
@@ -102,16 +106,18 @@
 ## 🎯 Deployment Phases
 
 ### Phase 1: Core Services (Week 1)
+
 **Goal**: Get internal tools + WhatsApp working
 
-| Service | Dockerfile | Deploy Priority | IAP Required |
-|---------|------------|----------------|--------------|
-| Admin PWA | ✅ Exists (fix PORT) | 🔴 P0 | ✅ Yes |
-| Vendor Portal | ⚠️ Create | 🟠 P1 | ✅ Yes |
-| WhatsApp Router | ✅ Exists (fix PORT) | 🔴 P0 | ❌ No (public API) |
-| Agent Core | ⚠️ Create | 🟠 P1 | ❌ No (service-to-service) |
+| Service         | Dockerfile           | Deploy Priority | IAP Required               |
+| --------------- | -------------------- | --------------- | -------------------------- |
+| Admin PWA       | ✅ Exists (fix PORT) | 🔴 P0           | ✅ Yes                     |
+| Vendor Portal   | ⚠️ Create            | 🟠 P1           | ✅ Yes                     |
+| WhatsApp Router | ✅ Exists (fix PORT) | 🔴 P0           | ❌ No (public API)         |
+| Agent Core      | ⚠️ Create            | 🟠 P1           | ❌ No (service-to-service) |
 
 **Phase 1 Checklist**:
+
 - [ ] Fix PORT in `admin-app/Dockerfile` (3000 → 8080)
 - [ ] Create `waiter-pwa/Dockerfile` (copy from admin-app)
 - [ ] Fix PORT in `services/whatsapp-webhook-worker/Dockerfile` (4900 → 8080)
@@ -123,18 +129,20 @@
 ---
 
 ### Phase 2: Voice & Mobility (Week 2)
+
 **Goal**: Enable voice calls and mobility services
 
-| Service | Status | Priority |
-|---------|--------|----------|
-| Voice Bridge | ✅ Dockerfile exists | 🟠 P1 |
-| Client PWA | ⚠️ Create Dockerfile | 🟠 P1 |
-| Voice Media Server | ✅ Ready | 🟡 P2 |
-| Voice Media Bridge | ✅ Ready | 🟡 P2 |
-| WhatsApp Voice | ✅ Ready | 🟡 P2 |
-| Mobility Orchestrator | ✅ Ready | 🟡 P2 |
+| Service               | Status               | Priority |
+| --------------------- | -------------------- | -------- |
+| Voice Bridge          | ✅ Dockerfile exists | 🟠 P1    |
+| Client PWA            | ⚠️ Create Dockerfile | 🟠 P1    |
+| Voice Media Server    | ✅ Ready             | 🟡 P2    |
+| Voice Media Bridge    | ✅ Ready             | 🟡 P2    |
+| WhatsApp Voice        | ✅ Ready             | 🟡 P2    |
+| Mobility Orchestrator | ✅ Ready             | 🟡 P2    |
 
 **Phase 2 Checklist**:
+
 - [ ] Create `client-pwa/Dockerfile`
 - [ ] Review PORT in all voice service Dockerfiles
 - [ ] Deploy Voice Bridge
@@ -145,15 +153,16 @@
 ---
 
 ### Phase 3: Supporting Services (Week 3+)
+
 **Goal**: Deploy remaining microservices and workers
 
-| Service | Status | Priority |
-|---------|--------|----------|
-| Ranking Service | ✅ Ready | 🟢 P3 |
-| Wallet Service | ✅ Ready | 🟢 P3 |
-| Video Orchestrator | ✅ Ready | 🟢 P3 |
-| Buyer/Vendor/Profile | ✅ Ready | 🟢 P3 |
-| Background Workers | Plan Cloud Run Jobs | 🟢 P3 |
+| Service              | Status              | Priority |
+| -------------------- | ------------------- | -------- |
+| Ranking Service      | ✅ Ready            | 🟢 P3    |
+| Wallet Service       | ✅ Ready            | 🟢 P3    |
+| Video Orchestrator   | ✅ Ready            | 🟢 P3    |
+| Buyer/Vendor/Profile | ✅ Ready            | 🟢 P3    |
+| Background Workers   | Plan Cloud Run Jobs | 🟢 P3    |
 
 ---
 
@@ -181,6 +190,7 @@ Use the automated deployment script for complete phased deployment:
 ```
 
 **Features**:
+
 - Automated preflight checks
 - API enablement
 - Artifact Registry setup
@@ -257,6 +267,7 @@ gcloud run services update-traffic easymo-admin \
 Before deploying any service:
 
 ### Dockerfile
+
 - [ ] Multi-stage build (builder → runner)
 - [ ] Listens on `process.env.PORT || 8080`
 - [ ] `NODE_ENV=production` set
@@ -264,12 +275,14 @@ Before deploying any service:
 - [ ] `.dockerignore` exists
 
 ### Environment Variables
+
 - [ ] No secrets in `NEXT_PUBLIC_*` or `VITE_*` vars
 - [ ] Secrets stored in Secret Manager
 - [ ] `.env.gcp.example` created (dummy values)
 - [ ] Cloud Run granted access to secrets
 
 ### Service Configuration
+
 - [ ] Memory/CPU appropriate for workload
 - [ ] Min/max instances set correctly
 - [ ] Timeout configured (default 300s)
@@ -277,6 +290,7 @@ Before deploying any service:
 - [ ] Health endpoint exists (`/health` or `/healthz`)
 
 ### Security
+
 - [ ] `--allow-unauthenticated=false` for internal apps
 - [ ] IAP enabled for Admin + Vendor
 - [ ] Webhook signatures verified (WhatsApp, etc.)
@@ -287,6 +301,7 @@ Before deploying any service:
 ## 🚨 Troubleshooting
 
 ### "Permission denied" errors
+
 ```bash
 # Grant yourself permissions
 gcloud projects add-iam-policy-binding easymoai \
@@ -295,12 +310,14 @@ gcloud projects add-iam-policy-binding easymoai \
 ```
 
 ### "API not enabled"
+
 ```bash
 # Enable missing API
 gcloud services enable API_NAME
 ```
 
 ### "Image not found"
+
 ```bash
 # Authenticate Docker
 gcloud auth configure-docker europe-west1-docker.pkg.dev
@@ -310,6 +327,7 @@ gcloud artifacts docker images list europe-west1-docker.pkg.dev/easymoai/easymo-
 ```
 
 ### Service won't start
+
 ```bash
 # Check logs
 gcloud run services logs tail SERVICE_NAME --region europe-west1
@@ -326,18 +344,21 @@ gcloud run services logs tail SERVICE_NAME --region europe-west1
 ## 💰 Cost Estimates
 
 **Phase 1 (4 services, low traffic)**:
+
 - Cloud Run: ~$10-20/month
 - Artifact Registry: ~$1/month (10 GB)
 - Secret Manager: ~$0.50/month
 - **Total: ~$12-22/month**
 
 **Phase 2+3 (12+ services, medium traffic)**:
+
 - Cloud Run: ~$30-60/month
 - Artifact Registry: ~$2/month
 - Secret Manager: ~$1/month
 - **Total: ~$33-63/month**
 
 **Free tier**:
+
 - 2 million requests/month free
 - 360,000 GB-seconds free
 - 180,000 vCPU-seconds free
@@ -351,6 +372,7 @@ Low traffic services will likely stay in free tier!
 **GCP Console**: https://console.cloud.google.com/?project=easymoai
 
 **Quick Links**:
+
 - Cloud Run: https://console.cloud.google.com/run?project=easymoai
 - Artifact Registry: https://console.cloud.google.com/artifacts?project=easymoai
 - IAP: https://console.cloud.google.com/security/iap?project=easymoai
@@ -358,6 +380,7 @@ Low traffic services will likely stay in free tier!
 - Logs: https://console.cloud.google.com/logs?project=easymoai
 
 **Documentation**:
+
 - Cloud Run: https://cloud.google.com/run/docs
 - IAP: https://cloud.google.com/iap/docs
 
@@ -382,6 +405,7 @@ Low traffic services will likely stay in free tier!
 ## 🎯 Success Criteria
 
 ### Phase 1 Complete When:
+
 - ✅ Admin PWA accessible at https://easymo-admin-xxx.a.run.app
 - ✅ Only authorized users can access (IAP working)
 - ✅ Vendor Portal accessible to onboarded vendors
@@ -390,11 +414,13 @@ Low traffic services will likely stay in free tier!
 - ✅ All services logging to Cloud Logging
 
 ### Phase 2 Complete When:
+
 - ✅ Voice calls working end-to-end
 - ✅ Client PWA accessible publicly
 - ✅ Mobility services operational
 
 ### Phase 3 Complete When:
+
 - ✅ All microservices deployed
 - ✅ Background workers migrated to Cloud Run Jobs
 - ✅ Monitoring & alerts configured
@@ -413,6 +439,7 @@ Low traffic services will likely stay in free tier!
 5. Test end-to-end
 
 **Questions? Check**:
+
 - Individual doc files for deep dives
 - Troubleshooting section above
 - GCP Console for service status

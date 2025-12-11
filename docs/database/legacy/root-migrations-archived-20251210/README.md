@@ -17,11 +17,13 @@
 ## Applying Migrations
 
 ### Supabase Migrations
+
 ```bash
 supabase db push
 ```
 
 ### Manual SQL Scripts
+
 ```bash
 psql -f migrations/manual/script.sql
 ```

@@ -1,4 +1,5 @@
 # 🍽️ Complete Waiter AI System Analysis
+
 **Generated:** 2025-12-10  
 **Status:** Comprehensive Code & Database Audit
 
@@ -6,17 +7,19 @@
 
 ## 📊 EXECUTIVE SUMMARY
 
-| Component | Status | LOC | Issues | Priority |
-|-----------|--------|-----|--------|----------|
-| **Edge Functions** | ✅ Well Structured | 2,358 | 4 implementations | P1 - Consolidate |
-| **Agent Implementations** | 🟡 Multiple | 2,358 | Different prompts/tools | P1 - Unify |
-| **Database Schema** | ✅ Comprehensive | ~1,500+ | Table naming inconsistency | P2 - Standardize |
-| **Shared Tools** | ✅ Excellent | 1,547 | Payment tools duplicated | P2 - Dedupe |
-| **Documentation** | ✅ Extensive | 8 files | Scattered locations | P3 - Consolidate |
-| **Bar Manager App** | 🟡 Partial | ~500 | CSS build issues | P1 - Complete |
+| Component                 | Status             | LOC     | Issues                     | Priority         |
+| ------------------------- | ------------------ | ------- | -------------------------- | ---------------- |
+| **Edge Functions**        | ✅ Well Structured | 2,358   | 4 implementations          | P1 - Consolidate |
+| **Agent Implementations** | 🟡 Multiple        | 2,358   | Different prompts/tools    | P1 - Unify       |
+| **Database Schema**       | ✅ Comprehensive   | ~1,500+ | Table naming inconsistency | P2 - Standardize |
+| **Shared Tools**          | ✅ Excellent       | 1,547   | Payment tools duplicated   | P2 - Dedupe      |
+| **Documentation**         | ✅ Extensive       | 8 files | Scattered locations        | P3 - Consolidate |
+| **Bar Manager App**       | 🟡 Partial         | ~500    | CSS build issues           | P1 - Complete    |
 
 ### Key Findings
-✅ **POSITIVE:** Real database queries (not mocks!), comprehensive tool set, multi-language support  
+
+✅ **POSITIVE:** Real database queries (not mocks!), comprehensive tool set, multi-language
+support  
 ⚠️ **CONCERN:** 4 different agent implementations, inconsistent table references  
 🔴 **BLOCKER:** Bar Manager desktop app incomplete (CSS build configuration issue)
 
@@ -27,6 +30,7 @@
 ### 1. Edge Functions (Supabase Deno)
 
 #### **wa-webhook-waiter/** (Primary WhatsApp Handler)
+
 ```
 supabase/functions/wa-webhook-waiter/
 ├── index.ts           (2.7KB)   - Main webhook entry
@@ -39,6 +43,7 @@ supabase/functions/wa-webhook-waiter/
 ```
 
 **Features:**
+
 - State machine for session management
 - QR code table discovery
 - Location-based venue search
@@ -47,6 +52,7 @@ supabase/functions/wa-webhook-waiter/
 - Observability logging
 
 #### **wa-agent-waiter/** (Unified Architecture Version)
+
 ```
 supabase/functions/wa-agent-waiter/
 ├── index.ts                     - Entry point
@@ -61,32 +67,39 @@ supabase/functions/wa-agent-waiter/
 ```
 
 **Features:**
+
 - Database-driven system prompts (ai_agent_system_instructions table)
 - Database-driven tools (ai_agent_tools table)
 - Discovery flow (location → bar selection → ordering)
 - Unified agent registry
 
-#### **_shared/waiter-tools.ts** (1,547 lines)
+#### **\_shared/waiter-tools.ts** (1,547 lines)
+
 Comprehensive tool library for ALL waiter implementations:
 
 **Menu Tools:**
+
 - `search_menu` - Search with dietary filters
 - `get_menu_item_details` - Item details
 
 **Cart Tools:**
+
 - `add_to_cart` - Add items with quantity
 - `view_cart` - Get current cart
 - `update_cart_item` - Modify/remove items
 
 **Order Tools:**
+
 - `send_order` - Finalize order
 - `get_order_status` - Track order
 
 **Reservation Tools:**
+
 - `book_table` - Create reservation
 - `recommend_wine` - Wine pairings
 
 **Payment Tools (9 tools!):**
+
 - `initiate_payment` - Start MoMo/Revolut/Cash payment
 - `confirm_payment` - User confirms payment
 - `cancel_payment` - Cancel pending payment
@@ -99,14 +112,15 @@ Comprehensive tool library for ALL waiter implementations:
 ### 2. Package Implementations (Node.js/TypeScript)
 
 #### **packages/agents/src/agents/waiter/waiter.agent.ts** (531 lines)
+
 ```typescript
 export class WaiterAgent extends BaseAgent {
-  name = 'waiter_agent';
-  model = 'gemini-1.5-flash';
-  
+  name = "waiter_agent";
+  model = "gemini-1.5-flash";
+
   // System prompt embedded in code
   instructions = `You are a virtual restaurant waiter on WhatsApp...`;
-  
+
   // 8 tools defined inline
   tools: Tool[] = [
     search_menu_supabase,
@@ -116,46 +130,49 @@ export class WaiterAgent extends BaseAgent {
     send_order,
     lookup_loyalty,
     book_table,
-    get_order_status
+    get_order_status,
   ];
 }
 ```
 
 **Database Queries (REAL, NOT MOCK!):**
+
 ```typescript
 // Example: Real Supabase query
 const { data, error } = await this.supabase
-  .from('menu_items')
-  .select('id, name, description, price, category, tags, available, image_url')
-  .eq('restaurant_id', restaurant_id)
-  .eq('available', true)
+  .from("menu_items")
+  .select("id, name, description, price, category, tags, available, image_url")
+  .eq("restaurant_id", restaurant_id)
+  .eq("available", true)
   .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
-  .contains('tags', ['vegan'])  // Dietary filters
+  .contains("tags", ["vegan"]) // Dietary filters
   .limit(10);
 ```
 
 **Fallback Data (Acceptable for Demo):**
+
 ```typescript
 if (error) {
   // Graceful degradation with warning
   return {
     items: [
-      { id: '1', name: 'Grilled Tilapia', price: 5000, tags: ['halal'] },
-      { id: '2', name: 'Matoke Stew', price: 3000, tags: ['vegan'] }
+      { id: "1", name: "Grilled Tilapia", price: 5000, tags: ["halal"] },
+      { id: "2", name: "Matoke Stew", price: 3000, tags: ["vegan"] },
     ],
-    source: 'fallback'  // Clearly marked!
+    source: "fallback", // Clearly marked!
   };
 }
 ```
 
 #### **services/agent-core/src/agents/waiter-broker.ts** (356 lines)
+
 NestJS service broker with intent-based routing:
 
 ```typescript
-export type WaiterBrokerIntent = 
-  | "order_food" 
-  | "get_recommendations" 
-  | "ask_question" 
+export type WaiterBrokerIntent =
+  | "order_food"
+  | "get_recommendations"
+  | "ask_question"
   | "manage_order";
 
 // Different system prompts per intent
@@ -168,7 +185,7 @@ export function buildWaiterBrokerMessages(input: WaiterBrokerInput) {
     describeBar(input.bar),
     describeMenu(input.menu),
     describeOrderContext(input.orderContext),
-    describeUserProfile(input.profile)
+    describeUserProfile(input.profile),
   ];
   // ...
 }
@@ -180,29 +197,30 @@ export function buildWaiterBrokerMessages(input: WaiterBrokerInput) {
 
 #### Tables Referenced in Code
 
-| Table Name | Usage | Implementation | Notes |
-|------------|-------|----------------|-------|
-| `menu_items` | packages/agents | ✅ Primary | Real queries |
-| `restaurant_menu_items` | wa-webhook-waiter | ⚠️ Different table! | Inconsistency |
-| `menu_categories` | _shared/waiter-tools | ✅ Used | Category management |
-| `orders` | All implementations | ✅ Primary | Order management |
-| `draft_orders` | Mentioned in docs | ❓ Not found in code | Legacy? |
-| `order_items` | _shared/waiter-tools | ✅ Used | Line items |
-| `kitchen_orders` | packages/agents | ✅ Used | Kitchen tickets |
-| `bar_orders` | Documentation | ❓ View? | Not in migrations |
-| `bars` | All implementations | ✅ Used | Restaurant/bar data |
-| `reservations` | _shared/waiter-tools | ✅ Used | Table bookings |
-| `waiter_conversations` | wa-webhook-waiter | ✅ Used | Chat history |
-| `waiter_messages` | Documentation | ✅ Likely | Message log |
-| `waiter_settings` | Documentation | ❓ Not found | Config table? |
-| `payments` | _shared/waiter-tools | ✅ Used | Payment records |
-| `payment_transactions` | packages/agents | ⚠️ Different name | Inconsistency |
-| `payment_events` | _shared/waiter-tools | ✅ Used | Payment audit log |
-| `user_payment_methods` | _shared/waiter-tools | ✅ Used | Saved payment info |
-| `loyalty_programs` | packages/agents | ✅ Used | Customer loyalty |
-| `wine_pairings` | _shared/waiter-tools | ✅ Used | Wine recommendations |
+| Table Name              | Usage                 | Implementation       | Notes                |
+| ----------------------- | --------------------- | -------------------- | -------------------- |
+| `menu_items`            | packages/agents       | ✅ Primary           | Real queries         |
+| `restaurant_menu_items` | wa-webhook-waiter     | ⚠️ Different table!  | Inconsistency        |
+| `menu_categories`       | \_shared/waiter-tools | ✅ Used              | Category management  |
+| `orders`                | All implementations   | ✅ Primary           | Order management     |
+| `draft_orders`          | Mentioned in docs     | ❓ Not found in code | Legacy?              |
+| `order_items`           | \_shared/waiter-tools | ✅ Used              | Line items           |
+| `kitchen_orders`        | packages/agents       | ✅ Used              | Kitchen tickets      |
+| `bar_orders`            | Documentation         | ❓ View?             | Not in migrations    |
+| `bars`                  | All implementations   | ✅ Used              | Restaurant/bar data  |
+| `reservations`          | \_shared/waiter-tools | ✅ Used              | Table bookings       |
+| `waiter_conversations`  | wa-webhook-waiter     | ✅ Used              | Chat history         |
+| `waiter_messages`       | Documentation         | ✅ Likely            | Message log          |
+| `waiter_settings`       | Documentation         | ❓ Not found         | Config table?        |
+| `payments`              | \_shared/waiter-tools | ✅ Used              | Payment records      |
+| `payment_transactions`  | packages/agents       | ⚠️ Different name    | Inconsistency        |
+| `payment_events`        | \_shared/waiter-tools | ✅ Used              | Payment audit log    |
+| `user_payment_methods`  | \_shared/waiter-tools | ✅ Used              | Saved payment info   |
+| `loyalty_programs`      | packages/agents       | ✅ Used              | Customer loyalty     |
+| `wine_pairings`         | \_shared/waiter-tools | ✅ Used              | Wine recommendations |
 
 **⚠️ ISSUE: Table Naming Inconsistency**
+
 - Code references both `menu_items` AND `restaurant_menu_items`
 - Code references both `payments` AND `payment_transactions`
 - Need to standardize or create compatibility views
@@ -212,6 +230,7 @@ export function buildWaiterBrokerMessages(input: WaiterBrokerInput) {
 ### 4. System Prompts Analysis
 
 #### **Implementation A: packages/agents/waiter.agent.ts**
+
 ```typescript
 instructions = `You are a virtual restaurant waiter on WhatsApp. 
 Handle menu questions, orders, table bookings, upsell politely, 
@@ -231,6 +250,7 @@ GUARDRAILS & POLICIES:
 ```
 
 #### **Implementation B: services/agent-core/waiter-broker.ts**
+
 ```typescript
 const WAITER_SYSTEM_PROMPT = `You are an expert digital waiter for EasyMO 
 restaurants and bars. Your goal is to provide world-class hospitality via WhatsApp.
@@ -261,6 +281,7 @@ ORDER TAKING FLOW:
 ```
 
 #### **Implementation C: wa-agent-waiter (Database-Driven)**
+
 Loads system prompt from `ai_agent_system_instructions` table dynamically!
 
 **🌟 This is the FUTURE direction - database-driven configuration**
@@ -269,18 +290,18 @@ Loads system prompt from `ai_agent_system_instructions` table dynamically!
 
 ### 5. AI Tools Comparison
 
-| Tool | packages/agents | _shared/waiter-tools | wa-webhook-waiter | Notes |
-|------|----------------|---------------------|-------------------|-------|
-| search_menu | ✅ search_menu_supabase | ✅ search_menu | ✅ Inline | Different names! |
-| get_popular_items | ✅ | ❌ | ✅ | Only in 2 impls |
-| add_to_cart | ✅ | ✅ | ✅ | Consistent |
-| momo_charge | ✅ | ✅ initiate_payment | ✅ | Different names |
-| send_order | ✅ | ✅ | ✅ | Consistent |
-| lookup_loyalty | ✅ | ❌ | ❌ | Only packages/agents |
-| book_table | ✅ | ✅ | ✅ | Consistent |
-| get_order_status | ✅ | ✅ | ✅ | Consistent |
-| recommend_wine | ❌ | ✅ | ❌ | Only _shared |
-| Payment tools (6) | ❌ | ✅ Full suite | ⚠️ Partial | _shared has most complete |
+| Tool              | packages/agents         | \_shared/waiter-tools | wa-webhook-waiter | Notes                      |
+| ----------------- | ----------------------- | --------------------- | ----------------- | -------------------------- |
+| search_menu       | ✅ search_menu_supabase | ✅ search_menu        | ✅ Inline         | Different names!           |
+| get_popular_items | ✅                      | ❌                    | ✅                | Only in 2 impls            |
+| add_to_cart       | ✅                      | ✅                    | ✅                | Consistent                 |
+| momo_charge       | ✅                      | ✅ initiate_payment   | ✅                | Different names            |
+| send_order        | ✅                      | ✅                    | ✅                | Consistent                 |
+| lookup_loyalty    | ✅                      | ❌                    | ❌                | Only packages/agents       |
+| book_table        | ✅                      | ✅                    | ✅                | Consistent                 |
+| get_order_status  | ✅                      | ✅                    | ✅                | Consistent                 |
+| recommend_wine    | ❌                      | ✅                    | ❌                | Only \_shared              |
+| Payment tools (6) | ❌                      | ✅ Full suite         | ⚠️ Partial        | \_shared has most complete |
 
 **🔍 FINDING:** `_shared/waiter-tools.ts` has the MOST comprehensive tool set!
 
@@ -289,7 +310,9 @@ Loads system prompt from `ai_agent_system_instructions` table dynamically!
 ### 6. Frontend Components
 
 #### **Bar Manager App** (admin-app/)
+
 Current state:
+
 ```
 admin-app/
 ├── lib/
@@ -309,13 +332,16 @@ admin-app/
 ```
 
 **⚠️ STATUS:** Partial implementation exists, but:
+
 - No dedicated order queue dashboard
 - No real-time order updates UI
 - CSS build configuration issues (Next.js 14 App Router)
 - Documented in `BAR_MANAGER_COMPLETE_SUMMARY.md` as "CODE COMPLETE but CSS issue"
 
 #### **Waiter PWA** (waiter-pwa/)
+
 Status: **PLANNED** (Phase 3)
+
 - Customer-facing PWA for direct ordering
 - Not yet implemented
 - Documented in `WAITER_AI_PHASE3_PLAN.md`
@@ -362,21 +388,23 @@ docs/
 ### ✅ POSITIVE FINDINGS
 
 #### 1. Real Database Integration (NOT Mocks!)
+
 Unlike some agents, Waiter has genuine database queries:
 
 ```typescript
 // packages/agents/src/agents/waiter/waiter.agent.ts line 90
 const { data, error } = await this.supabase
-  .from('menu_items')
-  .select('id, name, description, price, category, tags, available, image_url')
-  .eq('restaurant_id', restaurant_id)
-  .eq('available', true)
+  .from("menu_items")
+  .select("id, name, description, price, category, tags, available, image_url")
+  .eq("restaurant_id", restaurant_id)
+  .eq("available", true)
   .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
-  .contains('tags', ['vegan'])
+  .contains("tags", ["vegan"])
   .limit(10);
 ```
 
 **Evidence of Real Functionality:**
+
 - ✅ Dynamic dietary filtering (vegan, halal, spicy)
 - ✅ Full-text search on name and description
 - ✅ Category-based filtering
@@ -384,15 +412,18 @@ const { data, error } = await this.supabase
 - ✅ Restaurant-scoped queries
 
 #### 2. Comprehensive Tool Suite
+
 The `_shared/waiter-tools.ts` file provides 16+ tools:
 
 **Cart Management:**
+
 - Add items with quantity validation
 - Update quantities or remove items
 - View cart with item count and totals
 - Automatic order total calculation with tax
 
 **Payment Processing:**
+
 - Multi-provider support (MTN MoMo, Airtel Money, Revolut, Cash)
 - USSD code generation for mobile money
 - Payment confirmation flow
@@ -401,13 +432,16 @@ The `_shared/waiter-tools.ts` file provides 16+ tools:
 - Payment event auditing
 
 **Table Reservations:**
+
 - Date/time validation
 - Party size specification
 - Special requests handling
 - Multi-language reservation confirmations
 
 #### 3. Multi-Language Support
+
 From `waiter-broker.ts`:
+
 ```typescript
 LANGUAGE RULES:
 - Detect language from user profile: en, fr, rw, sw
@@ -421,7 +455,9 @@ LANGUAGE RULES:
 Plus documentation mentions: EN, FR, ES, PT, DE (7 languages total!)
 
 #### 4. Dual AI Provider Architecture
+
 Both webhook implementations use fallback:
+
 ```typescript
 // supabase/functions/wa-webhook-waiter/providers/dual-ai-provider.ts
 export class DualAIProvider {
@@ -438,27 +474,26 @@ export class DualAIProvider {
 ```
 
 **Benefits:**
+
 - High availability (automatic failover)
 - Cost optimization (use cheaper model as fallback)
 - Performance optimization (use faster model first)
 
 #### 5. State Machine for Session Management
+
 `wa-webhook-waiter` uses proper session states:
 
 ```typescript
 export const WAITER_STATE_KEYS = {
-  INIT: 'waiter_init',
-  AWAITING_LOCATION: 'waiter_awaiting_location',
-  AWAITING_BAR_SELECTION: 'waiter_awaiting_bar_selection',
-  READY_FOR_ORDERS: 'waiter_ready',
-  IN_CONVERSATION: 'waiter_chat',
-  AWAITING_PAYMENT: 'waiter_payment'
+  INIT: "waiter_init",
+  AWAITING_LOCATION: "waiter_awaiting_location",
+  AWAITING_BAR_SELECTION: "waiter_awaiting_bar_selection",
+  READY_FOR_ORDERS: "waiter_ready",
+  IN_CONVERSATION: "waiter_chat",
+  AWAITING_PAYMENT: "waiter_payment",
 };
 
-function transitionWaiterState(
-  currentState: WaiterState, 
-  event: string
-): WaiterState {
+function transitionWaiterState(currentState: WaiterState, event: string): WaiterState {
   // State transition logic
 }
 ```
@@ -466,6 +501,7 @@ function transitionWaiterState(
 This prevents conversation confusion and ensures proper flow.
 
 #### 6. QR Code Table Discovery
+
 Smart feature for dine-in customers:
 
 ```typescript
@@ -475,24 +511,27 @@ const qrMatch = messageText.match(/TABLE-([A-Z0-9]+)-BAR-([a-f0-9-]+)/i);
 if (qrMatch) {
   const tableNumber = qrMatch[1];
   const barId = qrMatch[2];
-  
+
   // Directly set venue and table, skip discovery
   await setWaiterVenue(session, barId);
   await setWaiterTableNumber(session, tableNumber);
-  
-  return sendTextMessage(from, 
+
+  return sendTextMessage(
+    from,
     `Welcome to table ${tableNumber}! I'm your AI waiter. What can I get you?`
   );
 }
 ```
 
 **Customer Experience:**
+
 1. Scan QR code on table
 2. Instantly connected to venue + table
 3. No manual venue selection needed
 4. Seamless ordering flow
 
 #### 7. Observability & Logging
+
 All implementations use structured logging:
 
 ```typescript
@@ -500,14 +539,14 @@ import { logStructuredEvent, recordMetric, maskPII } from "../_shared/observabil
 
 await logStructuredEvent("WAITER_MESSAGE_RECEIVED", {
   requestId: ctx.requestId,
-  phone: maskPII(ctx.from),  // PII protection!
+  phone: maskPII(ctx.from), // PII protection!
   messageType: ctx.messageType,
   hasProfile: Boolean(profile),
 });
 
 await recordMetric("waiter.order.created", 1, {
   venue: barId,
-  paymentMethod: payment_method
+  paymentMethod: payment_method,
 });
 ```
 
@@ -520,6 +559,7 @@ await recordMetric("waiter.order.created", 1, {
 #### Issue #1: FOUR Different Agent Implementations
 
 **A. packages/agents/waiter.agent.ts (531 lines)**
+
 - Purpose: Core agent class for Node.js services
 - Model: Gemini 1.5 Flash
 - Tools: 8 tools (hardcoded in constructor)
@@ -527,6 +567,7 @@ await recordMetric("waiter.order.created", 1, {
 - DB: Direct Supabase queries
 
 **B. supabase/functions/wa-webhook-waiter/agent.ts (800+ lines)**
+
 - Purpose: Main WhatsApp webhook handler
 - Model: Dual (GPT-4 + Gemini fallback)
 - Tools: Inline function calls
@@ -534,6 +575,7 @@ await recordMetric("waiter.order.created", 1, {
 - DB: Session-based cart management
 
 **C. supabase/functions/wa-agent-waiter/core/waiter-agent.ts (483 lines)**
+
 - Purpose: Unified architecture version
 - Model: Database-driven
 - Tools: Loaded from ai_agent_tools table
@@ -541,6 +583,7 @@ await recordMetric("waiter.order.created", 1, {
 - DB: Configuration-driven
 
 **D. services/agent-core/src/agents/waiter-broker.ts (356 lines)**
+
 - Purpose: NestJS broker for agent-core microservice
 - Model: External (passed to AI provider)
 - Tools: None (just builds prompts)
@@ -550,6 +593,7 @@ await recordMetric("waiter.order.created", 1, {
 **🚨 PROBLEM:** Maintaining 4 implementations is unsustainable!
 
 **Recommendation:**
+
 1. **Keep:** `packages/agents/waiter.agent.ts` as single source of truth
 2. **Refactor:** `wa-webhook-waiter/agent.ts` to use packages/agents class
 3. **Migrate:** To database-driven config like `wa-agent-waiter` (future)
@@ -562,6 +606,7 @@ await recordMetric("waiter.order.created", 1, {
 Code references different table names:
 
 **Menu Tables:**
+
 ```typescript
 // packages/agents/waiter.agent.ts
 .from('menu_items')  // Primary table
@@ -571,6 +616,7 @@ Code references different table names:
 ```
 
 **Order Tables:**
+
 ```typescript
 // Most implementations
 .from('orders')
@@ -582,6 +628,7 @@ Code references different table names:
 ```
 
 **Payment Tables:**
+
 ```typescript
 // _shared/waiter-tools.ts
 .from('payments')
@@ -595,27 +642,28 @@ Code references different table names:
 **🚨 PROBLEM:** Queries will fail if tables don't exist or have different schemas!
 
 **Solution:**
+
 ```sql
 -- Create compatibility views
-CREATE OR REPLACE VIEW restaurant_menu_items AS 
-SELECT 
-  id, 
-  restaurant_id as bar_id, 
-  name, 
-  description, 
-  price, 
-  category, 
-  tags, 
+CREATE OR REPLACE VIEW restaurant_menu_items AS
+SELECT
+  id,
+  restaurant_id as bar_id,
+  name,
+  description,
+  price,
+  category,
+  tags,
   available as is_available,
-  image_url, 
-  created_at, 
+  image_url,
+  created_at,
   updated_at
 FROM menu_items;
 
-CREATE OR REPLACE VIEW bar_orders AS 
+CREATE OR REPLACE VIEW bar_orders AS
 SELECT * FROM orders WHERE order_type = 'dine_in';
 
-CREATE OR REPLACE VIEW payment_transactions AS 
+CREATE OR REPLACE VIEW payment_transactions AS
 SELECT * FROM payments;
 ```
 
@@ -625,7 +673,8 @@ SELECT * FROM payments;
 
 Payment tools defined twice:
 
-**Location 1: _shared/waiter-tools.ts (lines 627-783, 1092-1246)**
+**Location 1: \_shared/waiter-tools.ts (lines 627-783, 1092-1246)**
+
 ```typescript
 // Defined TWICE in same file!
 export async function initiate_payment(...) { /* 157 lines */ }
@@ -636,7 +685,8 @@ export async function save_payment_method(...) { /* 37 lines */ }
 export async function get_saved_payment_methods(...) { /* 25 lines */ }
 ```
 
-**🚨 PROBLEM:** 400+ lines of duplicated code! Risk of bugs if one copy is updated but not the other.
+**🚨 PROBLEM:** 400+ lines of duplicated code! Risk of bugs if one copy is updated but not the
+other.
 
 **Solution:** Remove duplicate definitions (lines 1092-1527), keep only first set.
 
@@ -646,9 +696,11 @@ export async function get_saved_payment_methods(...) { /* 25 lines */ }
 
 Each implementation has different personality:
 
-**packages/agents:** "Virtual restaurant waiter on WhatsApp. Handle menu questions, orders, table bookings, upsell politely..."
+**packages/agents:** "Virtual restaurant waiter on WhatsApp. Handle menu questions, orders, table
+bookings, upsell politely..."
 
-**waiter-broker:** "Expert digital waiter for EasyMO restaurants and bars. World-class hospitality via WhatsApp."
+**waiter-broker:** "Expert digital waiter for EasyMO restaurants and bars. World-class hospitality
+via WhatsApp."
 
 **wa-webhook-waiter:** Built dynamically from session state, no fixed prompt.
 
@@ -656,7 +708,8 @@ Each implementation has different personality:
 
 **🚨 PROBLEM:** Inconsistent user experience across different entry points!
 
-**Solution:** 
+**Solution:**
+
 1. Define ONE canonical system prompt
 2. Store in database (ai_agent_system_instructions table)
 3. All implementations load from same source
@@ -672,15 +725,16 @@ From `BAR_MANAGER_COMPLETE_SUMMARY.md`:
 ## ⚠️ THE CSS BUILD ISSUE
 
 ### What's Happening
-Next.js 14's App Router uses a special CSS loader (`next-flight-css-loader`) 
-that doesn't process CSS files in the standard way.
 
-Error: Module parse failed
-File was processed with: next-flight-css-loader.js
-Problem: CSS (both Tailwind directives and plain CSS) not being parsed
+Next.js 14's App Router uses a special CSS loader (`next-flight-css-loader`) that doesn't process
+CSS files in the standard way.
+
+Error: Module parse failed File was processed with: next-flight-css-loader.js Problem: CSS (both
+Tailwind directives and plain CSS) not being parsed
 ```
 
 **Current State:**
+
 - ✅ All business logic complete
 - ✅ All components written
 - ✅ TypeScript compiles
@@ -690,14 +744,15 @@ Problem: CSS (both Tailwind directives and plain CSS) not being parsed
 
 **🚨 PROBLEM:** Bar managers cannot use the app to manage orders!
 
-**Solution (from docs):**
-Use `create-next-app@14` template which sets up CSS correctly, then copy all code over.
+**Solution (from docs):** Use `create-next-app@14` template which sets up CSS correctly, then copy
+all code over.
 
 ---
 
 #### Issue #6: Documentation Scattered
 
 17 documentation files across 3 directories:
+
 - `docs/apps/waiter-ai/` (8 files)
 - `docs/apps/bar-manager/` (2 files)
 - `docs/sessions/` (7 files)
@@ -705,6 +760,7 @@ Use `create-next-app@14` template which sets up CSS correctly, then copy all cod
 **🚨 PROBLEM:** Hard to find information, duplicate content.
 
 **Solution:** Consolidate to single location:
+
 ```
 docs/features/waiter/
 ├── README.md                    - Main overview
@@ -723,6 +779,7 @@ docs/features/waiter/
 ### Phase 1: Consolidate Agent Implementations (Priority: P1, Duration: 2-3 days)
 
 #### Step 1: Unified Agent Class
+
 ```typescript
 // packages/agents/src/agents/waiter/
 ├── index.ts              // Re-exports
@@ -739,6 +796,7 @@ docs/features/waiter/
 ```
 
 #### Step 2: Unified System Prompt
+
 ```typescript
 // packages/agents/src/agents/waiter/prompts/system-prompt.ts
 export const WAITER_SYSTEM_PROMPT = `You are a virtual restaurant waiter on WhatsApp for EasyMO.
@@ -784,9 +842,10 @@ export const WAITER_SYSTEM_PROMPT = `You are a virtual restaurant waiter on What
 ```
 
 #### Step 3: Update Webhook to Use Unified Agent
+
 ```typescript
 // supabase/functions/wa-webhook-waiter/agent.ts
-import { WaiterAgent } from '@easymo/agents/waiter';
+import { WaiterAgent } from "@easymo/agents/waiter";
 
 // Replace 800+ lines of inline agent logic with:
 const waiterAgent = new WaiterAgent();
@@ -798,10 +857,10 @@ export async function handleWaiterMessage(ctx: WaiterContext) {
       userId: ctx.from,
       restaurantId: session.bar_id,
       sessionId: session.id,
-      language: ctx.locale
-    }
+      language: ctx.locale,
+    },
   });
-  
+
   return sendTextMessage(ctx.from, result.message);
 }
 ```
@@ -814,42 +873,43 @@ export async function handleWaiterMessage(ctx: WaiterContext) {
 ### Phase 2: Standardize Database Tables (Priority: P2, Duration: 1 day)
 
 #### Migration: standardize_waiter_tables.sql
+
 ```sql
 BEGIN;
 
 -- Ensure menu_items is the primary table
 -- Create view for backward compatibility
-CREATE OR REPLACE VIEW restaurant_menu_items AS 
-SELECT 
-  id, 
-  restaurant_id as bar_id, 
-  name, 
-  description, 
-  price, 
-  category, 
-  tags, 
+CREATE OR REPLACE VIEW restaurant_menu_items AS
+SELECT
+  id,
+  restaurant_id as bar_id,
+  name,
+  description,
+  price,
+  category,
+  tags,
   available as is_available,
-  image_url, 
-  created_at, 
+  image_url,
+  created_at,
   updated_at
 FROM menu_items;
 
 -- Standardize order tables
-CREATE OR REPLACE VIEW bar_orders AS 
+CREATE OR REPLACE VIEW bar_orders AS
 SELECT * FROM orders WHERE order_type = 'dine_in';
 
-CREATE OR REPLACE VIEW draft_orders AS 
+CREATE OR REPLACE VIEW draft_orders AS
 SELECT * FROM orders WHERE status = 'draft';
 
 -- Standardize payment tables
-CREATE OR REPLACE VIEW payment_transactions AS 
+CREATE OR REPLACE VIEW payment_transactions AS
 SELECT * FROM payments;
 
 -- Add helpful comments
-COMMENT ON VIEW restaurant_menu_items IS 
+COMMENT ON VIEW restaurant_menu_items IS
   'Compatibility view for legacy code. Use menu_items table in new code.';
-  
-COMMENT ON VIEW bar_orders IS 
+
+COMMENT ON VIEW bar_orders IS
   'Dine-in orders only. Use orders table with WHERE order_type = ''dine_in'' in new code.';
 
 COMMIT;
@@ -976,21 +1036,22 @@ export const waiterTools = {
 
 ## 📊 METRICS AFTER REFACTORING
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Agent implementations | 4 | 1 primary + 1 wrapper | -75% |
-| Lines of code | 2,358 | ~800 | -66% |
-| System prompts | 4 different | 1 unified | Consistency |
-| Duplicate code | 400+ lines | 0 | -100% |
-| Documentation files | 17 scattered | 6 organized | -65% |
-| Table references | Mixed | Standardized | Reliability |
-| Bar Manager | Non-functional | Production-ready | ✅ Complete |
+| Metric                | Before         | After                 | Improvement |
+| --------------------- | -------------- | --------------------- | ----------- |
+| Agent implementations | 4              | 1 primary + 1 wrapper | -75%        |
+| Lines of code         | 2,358          | ~800                  | -66%        |
+| System prompts        | 4 different    | 1 unified             | Consistency |
+| Duplicate code        | 400+ lines     | 0                     | -100%       |
+| Documentation files   | 17 scattered   | 6 organized           | -65%        |
+| Table references      | Mixed          | Standardized          | Reliability |
+| Bar Manager           | Non-functional | Production-ready      | ✅ Complete |
 
 ---
 
 ## ✅ ACTION ITEMS SUMMARY
 
 ### Critical (Do First)
+
 - [ ] **P0:** Fix Bar Manager CSS build (1 day)
   - Use create-next-app template
   - Copy all code over
@@ -1007,6 +1068,7 @@ export const waiterTools = {
   - Update all queries
 
 ### Important (Do Soon)
+
 - [ ] **P2:** Remove duplicate payment tools (1 hour)
   - Delete lines 1092-1527 from waiter-tools.ts
   - Verify no broken imports
@@ -1017,6 +1079,7 @@ export const waiterTools = {
   - Update README links
 
 ### Nice to Have (Future)
+
 - [ ] **P3:** Migrate to database-driven config (1 week)
   - Follow wa-agent-waiter pattern
   - Store prompts in ai_agent_system_instructions
@@ -1033,6 +1096,7 @@ export const waiterTools = {
 ## 🎯 TARGET STATE
 
 ### Single Source of Truth
+
 ```
 packages/agents/src/agents/waiter/
 ├── index.ts                      // Re-exports
@@ -1051,9 +1115,10 @@ packages/agents/src/agents/waiter/
 ```
 
 ### Webhook Wrappers
+
 ```typescript
 // supabase/functions/wa-webhook-waiter/agent.ts
-import { WaiterAgent } from '@easymo/agents/waiter';
+import { WaiterAgent } from "@easymo/agents/waiter";
 
 const agent = new WaiterAgent();
 
@@ -1065,6 +1130,7 @@ export async function handleWaiterMessage(ctx) {
 ```
 
 ### Database Schema
+
 ```sql
 -- Primary tables
 menu_items               -- Authoritative menu data
@@ -1081,6 +1147,7 @@ payment_transactions     -- VIEW → payments
 ```
 
 ### Documentation
+
 ```
 docs/features/waiter/
 ├── README.md            -- Overview & getting started
@@ -1099,24 +1166,28 @@ docs/features/waiter/
 After refactoring:
 
 ✅ **Code Quality:**
+
 - Single WaiterAgent implementation used everywhere
 - No duplicate code (payment tools)
 - Unified system prompt
 - Clear separation of concerns
 
 ✅ **Reliability:**
+
 - Standardized database table names
 - Compatibility views for legacy code
 - Consistent error handling
 - Proper observability logging
 
 ✅ **User Experience:**
+
 - Consistent AI personality across all channels
 - Bar Manager app functional and production-ready
 - Real-time order updates
 - Multi-language support
 
 ✅ **Maintainability:**
+
 - Centralized documentation
 - Clear code structure
 - Easy to add new tools
@@ -1127,6 +1198,7 @@ After refactoring:
 ## 📚 REFERENCES
 
 ### Code Files
+
 - `packages/agents/src/agents/waiter/waiter.agent.ts` (531 LOC)
 - `supabase/functions/wa-webhook-waiter/agent.ts` (800+ LOC)
 - `supabase/functions/wa-agent-waiter/core/waiter-agent.ts` (483 LOC)
@@ -1134,12 +1206,14 @@ After refactoring:
 - `supabase/functions/_shared/waiter-tools.ts` (1,547 LOC)
 
 ### Documentation
+
 - `docs/sessions/WAITER_AI_COMPLETE_SYSTEM_ARCHITECTURE.md`
 - `docs/sessions/BAR_MANAGER_COMPLETE_SUMMARY.md`
 - `docs/apps/waiter-ai/WAITER_AI_QUICK_REFERENCE.md`
 - `docs/GROUND_RULES.md` (Observability requirements)
 
 ### Database
+
 - Active migrations in `supabase/migrations/ibimina/`
 - Table definitions referenced in code
 - RLS policies

@@ -1,42 +1,46 @@
 # Ibimina → EasyMO Merger Plan
 
-This document outlines the plan for merging the Ibimina repository into EasyMO to create a unified platform.
+This document outlines the plan for merging the Ibimina repository into EasyMO to create a unified
+platform.
 
 ## Overview
 
 **Target Architecture**: Single unified EasyMO platform with:
+
 - admin-app: Single unified admin panel
 - vendor-portal: Full SACCO/MFI vendor management (from Ibimina)
 - client-pwa: End user PWA
 - bar-manager-production: Bar/restaurant management
-- services/*: 12+ microservices
-- packages/*: Shared packages
+- services/\*: 12+ microservices
+- packages/\*: Shared packages
 
 ## Current State
 
 ### EasyMO (This Repository)
-| Component | Status |
-|-----------|--------|
-| admin-app/ | ✅ Production |
-| vendor-portal/ | 🔴 Skeleton - needs Ibimina merge |
-| client-pwa/ | ✅ In workspace |
-| bar-manager-production/ | ✅ Production (standalone) |
-| services/* | ✅ 12+ microservices |
-| packages/* | ✅ Shared packages |
+
+| Component               | Status                            |
+| ----------------------- | --------------------------------- |
+| admin-app/              | ✅ Production                     |
+| vendor-portal/          | 🔴 Skeleton - needs Ibimina merge |
+| client-pwa/             | ✅ In workspace                   |
+| bar-manager-production/ | ✅ Production (standalone)        |
+| services/\*             | ✅ 12+ microservices              |
+| packages/\*             | ✅ Shared packages                |
 
 ### Ibimina (To Be Merged)
-| Component | What It Has |
-|-----------|-------------|
-| apps/pwa/staff-admin/ | Full SACCO admin console (Next.js 15, React 19) |
-| apps/desktop/staff-admin/ | Desktop version (Tauri) |
-| packages/admin-core/ | Core admin logic |
-| packages/ui/ | UI components |
-| packages/lib/ | Shared utilities |
-| packages/locales/ | i18n (Kinyarwanda, French, English) |
-| packages/supabase-schemas/ | Database schemas |
-| packages/config/ | Configuration |
-| packages/flags/ | Feature flags |
-| supabase/ | Migrations & Edge Functions |
+
+| Component                  | What It Has                                     |
+| -------------------------- | ----------------------------------------------- |
+| apps/pwa/staff-admin/      | Full SACCO admin console (Next.js 15, React 19) |
+| apps/desktop/staff-admin/  | Desktop version (Tauri)                         |
+| packages/admin-core/       | Core admin logic                                |
+| packages/ui/               | UI components                                   |
+| packages/lib/              | Shared utilities                                |
+| packages/locales/          | i18n (Kinyarwanda, French, English)             |
+| packages/supabase-schemas/ | Database schemas                                |
+| packages/config/           | Configuration                                   |
+| packages/flags/            | Feature flags                                   |
+| supabase/                  | Migrations & Edge Functions                     |
 
 ## Merger Phases
 
@@ -135,7 +139,7 @@ packages:
   - admin-app
   - ai
   - client-pwa
-  - vendor-portal          # SACCO/MFI vendor management
+  - vendor-portal # SACCO/MFI vendor management
   # - vendor-desktop       # Uncomment after Phase 3
 ```
 
@@ -143,14 +147,15 @@ packages:
 
 After merger, admin-app needs these new modules:
 
-| Module | Purpose | Source |
-|--------|---------|--------|
-| Vendor/SACCO Admin | Member mgmt, groups, reconciliation | Ibimina |
-| MomoTerminal Admin | Device mgmt, SMS webhooks, health | To Build |
+| Module             | Purpose                             | Source   |
+| ------------------ | ----------------------------------- | -------- |
+| Vendor/SACCO Admin | Member mgmt, groups, reconciliation | Ibimina  |
+| MomoTerminal Admin | Device mgmt, SMS webhooks, health   | To Build |
 
 ### MomoTerminal Admin Module
 
 Create new admin module at `admin-app/app/(dashboard)/momo-terminal/`:
+
 - Device management
 - SMS webhook configuration
 - Device health monitoring

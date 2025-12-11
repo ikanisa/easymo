@@ -9,6 +9,7 @@
 ## 🎯 What Was Accomplished
 
 ### Phase 1: Schema Reconciliation ✅
+
 - **Migration**: `20251210000000_location_schema_reconciliation.sql`
 - Created canonical tables:
   - `app.saved_locations` - Persistent favorites (home, work, school)
@@ -18,12 +19,14 @@
 - Enabled RLS policies
 
 ### Phase 2: Data Migration ✅
+
 - **Migration**: `20251210000001_migrate_legacy_location_data.sql`
 - Migrated `whatsapp_users.location_cache` → `recent_locations`
 - Preserved all existing location data
 - Added logging for migration tracking
 
 ### Phase 3: Code Unification ✅
+
 - **New Module**: `supabase/functions/_shared/location-service/`
 - Unified API for all location operations:
   - `saveFavoriteLocation()` - Save persistent favorites
@@ -34,6 +37,7 @@
 - Added observability logs for all operations
 
 ### Phase 4: Verification ✅
+
 - Created `scripts/verify-location-consolidation.sh`
 - Checks schema, RPCs, service integration, and consumers
 
@@ -41,24 +45,26 @@
 
 ## 📊 Before vs After
 
-| Aspect | Before (Fragmented) | After (Unified) |
-|--------|---------------------|-----------------|
-| **Location stores** | 4+ competing tables | 2 canonical tables |
-| **Access pattern** | Direct SQL queries | Typed service layer |
-| **Cache strategy** | JSON column in users | Proper TTL table |
-| **Geospatial queries** | Manual calculations | PostGIS indexes |
-| **Observability** | None | Full event logging |
-| **Type safety** | Any | Full TypeScript types |
+| Aspect                 | Before (Fragmented)  | After (Unified)       |
+| ---------------------- | -------------------- | --------------------- |
+| **Location stores**    | 4+ competing tables  | 2 canonical tables    |
+| **Access pattern**     | Direct SQL queries   | Typed service layer   |
+| **Cache strategy**     | JSON column in users | Proper TTL table      |
+| **Geospatial queries** | Manual calculations  | PostGIS indexes       |
+| **Observability**      | None                 | Full event logging    |
+| **Type safety**        | Any                  | Full TypeScript types |
 
 ---
 
 ## 🚀 Deployment Instructions
 
 ### Prerequisites
+
 - Supabase CLI authenticated
 - Local dev environment running
 
 ### Deploy to Production
+
 ```bash
 # 1. Apply schema reconciliation
 supabase db push
@@ -74,9 +80,10 @@ supabase functions deploy wa-webhook-mobility
 ```
 
 ### Rollback (if needed)
+
 ```sql
 -- Rollback data migration (keeps tables)
-DELETE FROM app.recent_locations 
+DELETE FROM app.recent_locations
 WHERE source = 'migrated_from_whatsapp_users';
 
 -- Rollback schema (nuclear option)
@@ -90,22 +97,26 @@ DROP FUNCTION IF EXISTS app.save_recent_location CASCADE;
 ## 📁 Files Changed
 
 ### Database Migrations (2)
+
 - `supabase/migrations/20251210000000_location_schema_reconciliation.sql` (253 lines)
 - `supabase/migrations/20251210000001_migrate_legacy_location_data.sql` (29 lines)
 
 ### Shared Services (1)
+
 - `supabase/functions/_shared/location-service/index.ts` (341 lines)
   - 10 exported functions
   - Full TypeScript types
   - Deprecation bridge for legacy code
 
 ### Updated Consumers (1)
+
 - `supabase/functions/wa-webhook-mobility/handlers/locations.ts` (93 lines)
   - Migrated from direct table access
   - Added observability
   - Smart location resolution
 
 ### Documentation (3)
+
 - `LOCATION_CONSOLIDATION_STATUS.md` (this file)
 - `LOCATION_CONSOLIDATION_GUARDRAILS.md` (critical rules)
 - `scripts/verify-location-consolidation.sh` (verification)
@@ -115,6 +126,7 @@ DROP FUNCTION IF EXISTS app.save_recent_location CASCADE;
 ## 🔍 Usage Examples
 
 ### Save Favorite Location
+
 ```typescript
 import { saveFavoriteLocation } from "../_shared/location-service";
 
@@ -128,6 +140,7 @@ await saveFavoriteLocation(
 ```
 
 ### Smart Location Resolution
+
 ```typescript
 import { resolveUserLocation } from "../_shared/location-service";
 
@@ -139,6 +152,7 @@ if (resolved) {
 ```
 
 ### Cache Recent Location
+
 ```typescript
 import { cacheLocation } from "../_shared/location-service";
 
@@ -157,16 +171,19 @@ await cacheLocation(
 ## 🎯 Next Steps (Future Phases)
 
 ### Phase 5: Consumer Migration (Week of 2025-12-16)
+
 - [ ] Update `wa-webhook-insurance` to use location-service
 - [ ] Update `wa-webhook-buy-sell` to use location-service
 - [ ] Update any admin panel location logic
 
 ### Phase 6: Deprecation (Week of 2025-12-23)
+
 - [ ] Remove `whatsapp_users.location_cache` column
 - [ ] Archive legacy `user_favorites` table
 - [ ] Remove deprecation bridge code
 
 ### Phase 7: Enhancements (2026 Q1)
+
 - [ ] Add location sharing between users
 - [ ] Add location history timeline
 - [ ] Add privacy controls (who can see my locations)

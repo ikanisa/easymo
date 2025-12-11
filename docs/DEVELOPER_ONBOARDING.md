@@ -51,17 +51,20 @@ pnpm dev
 ### Required Software
 
 1. **Node.js** 20.x or higher
+
    ```bash
    node --version  # Should be v20.x.x
    ```
 
 2. **pnpm** 10.18.3 or higher (NOT npm!)
+
    ```bash
    npm install -g pnpm@10.18.3
    pnpm --version
    ```
 
 3. **Git** 2.x or higher
+
    ```bash
    git --version
    ```
@@ -125,6 +128,7 @@ code .env.local  # or vim, nano, etc.
 ```
 
 **Required Variables**:
+
 ```env
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
@@ -216,6 +220,7 @@ git push origin feature/your-feature-name
 ### Pre-commit Hooks
 
 Pre-commit hooks automatically run on every commit:
+
 - ✅ ESLint checking
 - ✅ TypeScript type checking
 
@@ -344,6 +349,7 @@ easymo-/
 ### "Cannot find module '@easymo/commons'"
 
 **Solution**: Build shared packages first
+
 ```bash
 pnpm --filter @va/shared build
 pnpm --filter @easymo/commons build
@@ -353,18 +359,21 @@ pnpm --filter @easymo/commons build
 
 **Problem**: Server secrets in client-side environment variables
 
-**Solution**: Remove `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_TOKEN`, etc. from `VITE_*` or `NEXT_PUBLIC_*` variables. These should only be in server-side env vars.
+**Solution**: Remove `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_TOKEN`, etc. from `VITE_*` or
+`NEXT_PUBLIC_*` variables. These should only be in server-side env vars.
 
 ### ESLint Errors on Commit
 
 **Solution**: Fix the errors or run:
+
 ```bash
 pnpm lint --fix
 ```
 
 ### TypeScript Errors
 
-**Solution**: 
+**Solution**:
+
 1. Rebuild shared packages
 2. Restart TypeScript server in VS Code
 3. Check `tsconfig.json` paths
@@ -372,6 +381,7 @@ pnpm lint --fix
 ### Port Already in Use
 
 **Solution**:
+
 ```bash
 # Find process using port
 lsof -i :8080
@@ -383,6 +393,7 @@ kill -9 <PID>
 ### Supabase Connection Issues
 
 **Solution**:
+
 ```bash
 # Restart Supabase
 supabase stop
@@ -399,32 +410,35 @@ supabase status
 ### Code Quality
 
 1. **Always use structured logging** (no `console.log`)
+
    ```typescript
-   import { childLogger } from '@easymo/commons';
-   const log = childLogger({ service: 'my-service' });
-   
-   log.info({ userId, action }, 'User action performed');
+   import { childLogger } from "@easymo/commons";
+   const log = childLogger({ service: "my-service" });
+
+   log.info({ userId, action }, "User action performed");
    ```
 
 2. **Use TypeScript strictly** (no `any` types)
+
    ```typescript
    // Bad
-   function process(data: any) { }
-   
+   function process(data: any) {}
+
    // Good
    interface UserData {
      id: string;
      name: string;
    }
-   function process(data: UserData) { }
+   function process(data: UserData) {}
    ```
 
 3. **Write tests for new features**
+
    ```typescript
-   import { describe, it, expect } from 'vitest';
-   
-   describe('MyFeature', () => {
-     it('should work correctly', () => {
+   import { describe, it, expect } from "vitest";
+
+   describe("MyFeature", () => {
+     it("should work correctly", () => {
        expect(myFunction()).toBe(expected);
      });
    });
@@ -433,11 +447,12 @@ supabase status
 ### Git Workflow
 
 1. **Write clear commit messages**
+
    ```bash
    # Good
    git commit -m "feat: add user profile API endpoint"
    git commit -m "fix: resolve wallet balance calculation error"
-   
+
    # Bad
    git commit -m "updates"
    git commit -m "fix stuff"
@@ -537,6 +552,7 @@ After completing onboarding:
 ## Welcome Aboard! 🚀
 
 You're now ready to contribute to EasyMO. Remember:
+
 - Build shared packages first
 - Use pnpm (not npm)
 - Follow ground rules

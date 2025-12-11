@@ -2,13 +2,13 @@
 
 ## ✅ What's Done (Infrastructure)
 
-| Component | File | Lines | Status |
-|-----------|------|-------|--------|
-| Test Utils | `_shared/testing/test-utils.ts` | 650 | ✅ |
-| Fixtures | `_shared/testing/fixtures.ts` | 200 | ✅ |
-| Test Runner | `scripts/run-tests-with-coverage.sh` | 100 | ✅ |
-| Deno Config | `supabase/functions/deno.test.json` | 20 | ✅ |
-| Docs | `docs/TEST_*.md` | 140 | ✅ |
+| Component   | File                                 | Lines | Status |
+| ----------- | ------------------------------------ | ----- | ------ |
+| Test Utils  | `_shared/testing/test-utils.ts`      | 650   | ✅     |
+| Fixtures    | `_shared/testing/fixtures.ts`        | 200   | ✅     |
+| Test Runner | `scripts/run-tests-with-coverage.sh` | 100   | ✅     |
+| Deno Config | `supabase/functions/deno.test.json`  | 20    | ✅     |
+| Docs        | `docs/TEST_*.md`                     | 140   | ✅     |
 
 ## 🚀 Quick Commands
 
@@ -40,7 +40,7 @@ suite.test("my test case", async () => {
   const supabase = createMockSupabase({
     data: { profiles: TEST_USERS.passenger },
   });
-  
+
   const { data } = await supabase.from("profiles").select("*").single();
   assertEquals(data.user_id, TEST_USERS.passenger.user_id);
 });
@@ -48,12 +48,12 @@ suite.test("my test case", async () => {
 
 ## 📦 Available Mocks
 
-| Mock | Usage |
-|------|-------|
-| Supabase | `createMockSupabase({ data: {...}, error: null })` |
-| WhatsApp | `createMockWhatsAppAPI()` |
-| Webhook | `createMockWebhookPayload({ messageType: "text", text: "hi" })` |
-| HTTP | `createMockRequest({ method: "POST", body: {...} })` |
+| Mock     | Usage                                                           |
+| -------- | --------------------------------------------------------------- |
+| Supabase | `createMockSupabase({ data: {...}, error: null })`              |
+| WhatsApp | `createMockWhatsAppAPI()`                                       |
+| Webhook  | `createMockWebhookPayload({ messageType: "text", text: "hi" })` |
+| HTTP     | `createMockRequest({ method: "POST", body: {...} })`            |
 
 ## 📊 Next Steps (In Order)
 

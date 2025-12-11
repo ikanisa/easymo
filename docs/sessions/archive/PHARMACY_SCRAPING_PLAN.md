@@ -18,6 +18,7 @@
 ## B) Your Pharmacy Links
 
 1. **Kigali General Area**:
+
    ```
    https://www.google.com/maps/search/pharmacy/@-2.1664214,30.1197577,12.64z
    ```
@@ -44,6 +45,7 @@ pip3 install -r scripts/requirements-scraper.txt
 ```
 
 **Expected output:**
+
 ```
 selenium          4.15.0
 supabase          2.0.0
@@ -78,6 +80,7 @@ python3 gmaps_scraper_v2.py \
 ```
 
 **This will**:
+
 - Scrape 5 pharmacies
 - Show you the data
 - NOT insert to database
@@ -99,6 +102,7 @@ python3 gmaps_scraper_v2.py \
 ```
 
 **Features**:
+
 - ✅ Deduplicates automatically (checks existing businesses by name/phone)
 - ✅ Only inserts businesses with phone numbers
 - ✅ Adds to `businesses` table
@@ -201,10 +205,11 @@ The scraper automatically prevents duplicates using:
 3. **Location matching**: Same coordinates (within 100m)
 
 **Duplicate Detection Query**:
+
 ```sql
-SELECT * FROM businesses 
-WHERE LOWER(name) = LOWER($1) 
-   OR phone_number = $2 
+SELECT * FROM businesses
+WHERE LOWER(name) = LOWER($1)
+   OR phone_number = $2
    OR ST_DWithin(geog::geography, ST_Point($3, $4)::geography, 100)
 ```
 
@@ -213,6 +218,7 @@ WHERE LOWER(name) = LOWER($1)
 ## H) Phone Number Requirements
 
 ✅ **Accepted Formats**:
+
 ```
 +250788123456
 0788 123 456
@@ -223,6 +229,7 @@ WHERE LOWER(name) = LOWER($1)
 ✅ **Auto-formatted to**: `+250788123456`
 
 ❌ **Rejected** (no phone number):
+
 - Businesses without phone listed on Google Maps
 - Invalid phone formats
 - Non-Rwanda numbers (not starting with +250)
@@ -274,22 +281,26 @@ python3 gmaps_scraper_v2.py \
 ## L) Troubleshooting
 
 **Error: "ModuleNotFoundError: No module named 'selenium'"**
+
 ```bash
 pip3 install -r scripts/requirements-scraper.txt
 ```
 
 **Error: "SUPABASE_URL not set"**
+
 ```bash
 export SUPABASE_URL="https://lhbowpbcpwoiparwnwgt.supabase.co"
 export SUPABASE_SERVICE_ROLE_KEY="eyJh..."
 ```
 
 **Error: "ChromeDriver not found"**
+
 ```
 # webdriver-manager auto-installs ChromeDriver - just run the script again
 ```
 
 **No businesses scraped**
+
 ```
 # Remove --headless flag to see browser window:
 python3 gmaps_scraper_v2.py "URL" --limit 10
@@ -312,10 +323,10 @@ python3 gmaps_scraper_v2.py "URL" --limit 10
 
 3. **Monitor for duplicates**
    ```sql
-   SELECT name, phone_number, COUNT(*) 
-   FROM businesses 
+   SELECT name, phone_number, COUNT(*)
+   FROM businesses
    WHERE category = 'pharmacy'
-   GROUP BY name, phone_number 
+   GROUP BY name, phone_number
    HAVING COUNT(*) > 1;
    ```
 
@@ -327,4 +338,5 @@ python3 gmaps_scraper_v2.py "URL" --limit 10
 
 ---
 
-**START HERE**: Run Step 1 (verify dependencies), then choose Option 1 (test) or Option 4 (full scrape).
+**START HERE**: Run Step 1 (verify dependencies), then choose Option 1 (test) or Option 4 (full
+scrape).

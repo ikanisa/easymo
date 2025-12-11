@@ -23,7 +23,8 @@
 
 ## Overview
 
-The Jobs & Gigs feature connects job seekers with employers across 7 countries (Rwanda, Burundi, Tanzania, DRC, Zambia, Togo, Malta) via WhatsApp, supporting both formal employment and gig work.
+The Jobs & Gigs feature connects job seekers with employers across 7 countries (Rwanda, Burundi,
+Tanzania, DRC, Zambia, Togo, Malta) via WhatsApp, supporting both formal employment and gig work.
 
 ### Key Features
 
@@ -231,6 +232,7 @@ CREATE VIEW job_applications AS SELECT * FROM job_matches;
 **AI Model:** Gemini 2.5 Pro
 
 **Tools:**
+
 - `search_jobs` - Find jobs by role, location, salary
 - `create_worker_profile` - Build/update worker profile
 - `apply_to_job` - Submit application
@@ -248,6 +250,7 @@ CREATE VIEW job_applications AS SELECT * FROM job_matches;
 **AI Model:** OpenAI GPT-4
 
 **Tools:**
+
 - `search_jobs` - Semantic search with embeddings
 - `create_worker_profile` - Profile management
 - `verify_employer` - Trust score checking
@@ -261,6 +264,7 @@ CREATE VIEW job_applications AS SELECT * FROM job_matches;
 **Location:** `supabase/functions/_shared/wa-webhook-shared/tools/jobs-matcher.ts`
 
 **Features:**
+
 - Hybrid search (semantic + traditional)
 - Match scoring algorithm
 - Location-based filtering
@@ -277,6 +281,7 @@ CREATE VIEW job_applications AS SELECT * FROM job_matches;
 **Purpose:** Find job listings matching criteria
 
 **Parameters:**
+
 ```typescript
 {
   role: string;           // Job title/role
@@ -289,6 +294,7 @@ CREATE VIEW job_applications AS SELECT * FROM job_matches;
 ```
 
 **Returns:**
+
 ```typescript
 {
   jobs: Array<{
@@ -311,6 +317,7 @@ CREATE VIEW job_applications AS SELECT * FROM job_matches;
 **Purpose:** Create or update job seeker profile
 
 **Parameters:**
+
 ```typescript
 {
   user_id: string;
@@ -326,6 +333,7 @@ CREATE VIEW job_applications AS SELECT * FROM job_matches;
 **Purpose:** Submit job application
 
 **Parameters:**
+
 ```typescript
 {
   job_id: string;
@@ -334,10 +342,11 @@ CREATE VIEW job_applications AS SELECT * FROM job_matches;
 ```
 
 **Returns:**
+
 ```typescript
 {
   application_id: string;
-  status: 'applied' | 'duplicate';
+  status: "applied" | "duplicate";
   message: string;
 }
 ```
@@ -468,19 +477,20 @@ Search jobs now? Reply 'find work'"
 
 ### Supported Countries
 
-| Country | Code | Currency | Status |
-|---------|------|----------|--------|
-| Rwanda | RW | RWF | ✅ Active |
-| Burundi | BI | BIF | ✅ Active |
-| Tanzania | TZ | TZS | ✅ Active |
-| DR Congo | CD | CDF | ✅ Active |
-| Zambia | ZM | ZMW | ✅ Active |
-| Togo | TG | XOF | ✅ Active |
-| Malta | MT | EUR | ✅ Active |
+| Country  | Code | Currency | Status    |
+| -------- | ---- | -------- | --------- |
+| Rwanda   | RW   | RWF      | ✅ Active |
+| Burundi  | BI   | BIF      | ✅ Active |
+| Tanzania | TZ   | TZS      | ✅ Active |
+| DR Congo | CD   | CDF      | ✅ Active |
+| Zambia   | ZM   | ZMW      | ✅ Active |
+| Togo     | TG   | XOF      | ✅ Active |
+| Malta    | MT   | EUR      | ✅ Active |
 
 ### External Job Sources
 
 Configured in `job_sources` table:
+
 - JobInRwanda (RW)
 - Umurava (RW)
 - RDB Careers (RW)
@@ -588,11 +598,13 @@ SELECT * FROM job_posts WHERE status = 'active';
 #### Issue: Search returns 0 results
 
 **Causes:**
+
 - No active jobs in database
 - Wrong table reference (use `job_listings`, not `job_posts`)
 - Filters too restrictive
 
 **Solution:**
+
 ```sql
 -- Check active jobs
 SELECT COUNT(*) FROM job_listings WHERE status = 'active';
@@ -604,22 +616,26 @@ grep -r "job_posts" supabase/functions/
 #### Issue: Profile creation fails
 
 **Causes:**
+
 - Wrong table name (`worker_profiles` instead of `job_seekers`)
 - Missing user_id
 - Invalid data types
 
 **Solution:**
+
 - Ensure code uses `job_seekers` table
 - Verify user_id exists in profiles table
 
 #### Issue: Applications not tracked
 
 **Causes:**
+
 - Wrong table (`job_applications` instead of `job_matches`)
 - Duplicate key error
 - Missing foreign keys
 
 **Solution:**
+
 - Use `job_matches` table
 - Check for existing applications before inserting
 - Handle error code '23505' for duplicates
@@ -628,21 +644,21 @@ grep -r "job_posts" supabase/functions/
 
 ```sql
 -- Check recent jobs
-SELECT id, title, location, status, created_at 
-FROM job_listings 
-ORDER BY created_at DESC 
+SELECT id, title, location, status, created_at
+FROM job_listings
+ORDER BY created_at DESC
 LIMIT 10;
 
 -- Check applications
-SELECT jm.*, jl.title, js.name 
+SELECT jm.*, jl.title, js.name
 FROM job_matches jm
 JOIN job_listings jl ON jm.job_id = jl.id
 JOIN job_seekers js ON jm.seeker_id = js.user_id
 ORDER BY jm.created_at DESC;
 
 -- Check profile count
-SELECT country_code, COUNT(*) 
-FROM job_seekers 
+SELECT country_code, COUNT(*)
+FROM job_seekers
 GROUP BY country_code;
 ```
 

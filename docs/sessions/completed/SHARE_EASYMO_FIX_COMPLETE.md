@@ -8,21 +8,27 @@
 
 ## Problem Statement
 
-The "Share easyMO" button appeared throughout the WhatsApp bot interface but **did not work**. When users tapped it, they received no response or error messages. This prevented users from inviting friends and earning referral tokens.
+The "Share easyMO" button appeared throughout the WhatsApp bot interface but **did not work**. When
+users tapped it, they received no response or error messages. This prevented users from inviting
+friends and earning referral tokens.
 
 ---
 
 ## Root Cause Analysis
 
 ### 1. **Missing Database Table** (Critical)
+
 The `referral_links` table did not exist in any migration file. The code attempted to:
+
 - Query `SELECT * FROM referral_links WHERE user_id = ?`
 - Insert new referral codes with `INSERT INTO referral_links ...`
 
 Both operations failed silently because the table didn't exist.
 
 ### 2. **Code Duplication** (Medium)
+
 Three separate implementations of `share.ts` existed:
+
 - `supabase/functions/wa-webhook/utils/share.ts`
 - `supabase/functions/wa-webhook-mobility/utils/share.ts`
 - `supabase/functions/_shared/wa-webhook-shared/utils/share.ts` ✅ (most robust)
@@ -30,7 +36,9 @@ Three separate implementations of `share.ts` existed:
 Each had slightly different error handling and fallback logic, causing inconsistent behavior.
 
 ### 3. **Insufficient Observability** (Low)
+
 Error logs lacked context:
+
 - No referral code logged on success
 - No stack trace on errors
 - Made debugging difficult
@@ -69,6 +77,7 @@ CREATE INDEX idx_referral_links_code ON referral_links(code) WHERE active = true
 **Canonical Source**: `supabase/functions/_shared/wa-webhook-shared/utils/share.ts`
 
 **Updated Files**:
+
 1. `wa-webhook/router/interactive_button.ts` - Changed import to shared version
 2. `wa-webhook/domains/wallet/earn.ts` - Changed import to shared version
 3. `wa-webhook/domains/business/deeplink.ts` - Changed import to shared version
@@ -76,6 +85,7 @@ CREATE INDEX idx_referral_links_code ON referral_links(code) WHERE active = true
 5. `wa-webhook-mobility/flows/momo/qr.ts` - Changed import to shared version
 
 **Removed Files**:
+
 - ❌ `wa-webhook/utils/share.ts` (duplicate removed)
 - ❌ `wa-webhook-mobility/utils/share.ts` (duplicate removed)
 
@@ -84,27 +94,29 @@ CREATE INDEX idx_referral_links_code ON referral_links(code) WHERE active = true
 **Updated**: `wa-webhook/router/interactive_button.ts` (lines 193-223)
 
 **Before**:
+
 ```typescript
-await logStructuredEvent("SHARE_EASYMO_TAP", { 
-  profileId: ctx.profileId, 
-  from: ctx.from 
+await logStructuredEvent("SHARE_EASYMO_TAP", {
+  profileId: ctx.profileId,
+  from: ctx.from,
 });
 ```
 
 **After**:
+
 ```typescript
-await logStructuredEvent("SHARE_EASYMO_TAP", { 
-  profileId: ctx.profileId, 
+await logStructuredEvent("SHARE_EASYMO_TAP", {
+  profileId: ctx.profileId,
   from: ctx.from,
-  code: link.code,        // ✅ Now logs referral code
-  waLink: link.waLink     // ✅ Now logs wa.me link
+  code: link.code, // ✅ Now logs referral code
+  waLink: link.waLink, // ✅ Now logs wa.me link
 });
 
-await logStructuredEvent("SHARE_EASYMO_ERROR", { 
-  profileId: ctx.profileId, 
+await logStructuredEvent("SHARE_EASYMO_ERROR", {
+  profileId: ctx.profileId,
   from: ctx.from,
   error: (e as Error)?.message,
-  stack: (e as Error)?.stack  // ✅ Now logs stack trace
+  stack: (e as Error)?.stack, // ✅ Now logs stack trace
 });
 ```
 
@@ -113,16 +125,19 @@ await logStructuredEvent("SHARE_EASYMO_ERROR", {
 ## User Experience Flow (Fixed)
 
 ### Before (Broken):
+
 1. User taps "🔗 Share easyMO" button
 2. **Nothing happens** (database query fails silently)
 3. User frustrated, cannot share
 
 ### After (Working):
+
 1. User taps "🔗 Share easyMO" button
 2. System checks `referral_links` table for existing code
 3. If missing: generates unique 8-char code (e.g., `A3K7MNPQ`)
 4. Inserts row: `{ user_id, code, short_url, active: true }`
 5. Sends WhatsApp message with:
+
    ```
    Long press this message, tap Forward, and send it to up to five contacts.
 
@@ -134,6 +149,7 @@ await logStructuredEvent("SHARE_EASYMO_ERROR", {
 
    Important: Ask them not to delete the REF code when they message easyMO so you earn the tokens.
    ```
+
 6. User can forward to contacts
 7. New users message bot with `REF:A3K7MNPQ` → original user earns tokens
 
@@ -142,9 +158,11 @@ await logStructuredEvent("SHARE_EASYMO_ERROR", {
 ## Technical Details
 
 ### Button Injection Logic
+
 **File**: `supabase/functions/wa-webhook/utils/reply.ts` (lines 46-68)
 
 The Share button is **auto-appended** to most screens if:
+
 - User has `profileId` (authenticated)
 - Less than 3 buttons already present
 - Not an admin screen
@@ -171,9 +189,11 @@ if (canAutoShare) {
 ## Files Changed
 
 ### Created:
+
 - ✅ `supabase/migrations/20251210064023_create_referral_links.sql`
 
 ### Modified:
+
 - ✅ `supabase/functions/wa-webhook/router/interactive_button.ts`
 - ✅ `supabase/functions/wa-webhook/domains/wallet/earn.ts`
 - ✅ `supabase/functions/wa-webhook/domains/business/deeplink.ts`
@@ -182,6 +202,7 @@ if (canAutoShare) {
 - ✅ `scripts/deploy/deploy-share-easymo-fix.sh`
 
 ### Removed:
+
 - ❌ `supabase/functions/wa-webhook/utils/share.ts`
 - ❌ `supabase/functions/wa-webhook-mobility/utils/share.ts`
 
@@ -190,16 +211,19 @@ if (canAutoShare) {
 ## Deployment
 
 ### Command:
+
 ```bash
 ./scripts/deploy/deploy-share-easymo-fix.sh
 ```
 
 ### Steps:
+
 1. Apply `referral_links` migration via `supabase db push`
 2. Deploy `wa-webhook` edge function
 3. Deploy `wa-webhook-mobility` edge function
 
 ### Environment Requirements:
+
 - `SUPABASE_URL` must be set
 - `SUPABASE_SERVICE_ROLE_KEY` must be set
 
@@ -208,6 +232,7 @@ if (canAutoShare) {
 ## Testing Checklist
 
 ### Manual Test (Quick Path):
+
 - [x] Send any message to WhatsApp bot (+228 93 00 27 51)
 - [x] Look for "🔗 Share easyMO" button (appears on most screens with <3 buttons)
 - [x] Tap the button
@@ -218,12 +243,14 @@ if (canAutoShare) {
   - Code preservation note
 
 ### Manual Test (Wallet Path):
+
 - [x] Send "wallet" or tap "💎 Wallet" button
 - [x] Select "Earn tokens"
 - [x] Choose "Share on WhatsApp" or "Show QR"
 - [x] Verify rich sharing UI works
 
 ### Database Verification:
+
 ```sql
 -- Check table exists
 SELECT * FROM information_schema.tables WHERE table_name = 'referral_links';
@@ -236,6 +263,7 @@ SELECT user_id, code, short_url, active, created_at FROM referral_links LIMIT 5;
 ```
 
 ### Log Verification:
+
 ```bash
 # Check structured logs contain new fields
 supabase functions logs wa-webhook | grep SHARE_EASYMO_TAP
@@ -249,6 +277,7 @@ supabase functions logs wa-webhook | grep SHARE_EASYMO_TAP
 ## Observability Events
 
 ### Success Event:
+
 ```json
 {
   "event": "SHARE_EASYMO_TAP",
@@ -260,6 +289,7 @@ supabase functions logs wa-webhook | grep SHARE_EASYMO_TAP
 ```
 
 ### Error Event:
+
 ```json
 {
   "event": "SHARE_EASYMO_ERROR",
@@ -291,6 +321,7 @@ supabase functions logs wa-webhook | grep SHARE_EASYMO_TAP
 ## Backward Compatibility
 
 ✅ **Fully backward compatible**:
+
 - Old users without `referral_code` in `profiles` table: New code generated
 - Existing referral codes in `profiles.referral_code`: Migrated to `referral_links` on first share
 - No breaking changes to existing APIs
@@ -300,6 +331,7 @@ supabase functions logs wa-webhook | grep SHARE_EASYMO_TAP
 ## Performance Impact
 
 **Negligible**:
+
 - Single SELECT query per button tap (indexed lookup)
 - Single INSERT if code doesn't exist (rare after first tap)
 - No impact on other flows
@@ -309,11 +341,13 @@ supabase functions logs wa-webhook | grep SHARE_EASYMO_TAP
 ## Security Considerations
 
 ✅ **RLS policies enforced**:
+
 - Users can only view/create/update their own referral links
 - Service role can read all (for analytics dashboards)
 - `CASCADE DELETE` when user deleted (GDPR compliance)
 
 ✅ **Referral code validation**:
+
 - 8-character codes from safe alphabet (no SQL injection risk)
 - Uniqueness enforced at database level
 - No sensitive data in codes
@@ -344,11 +378,13 @@ supabase functions logs wa-webhook | grep SHARE_EASYMO_TAP
 ## Success Metrics
 
 **Before Fix**:
+
 - 0 referral codes generated (table didn't exist)
 - 100% button tap failure rate
 - 0 successful referrals
 
 **After Fix** (Expected):
+
 - ~50 referral codes generated per day
 - 95%+ button tap success rate
 - 10-15 successful referrals per week
@@ -371,7 +407,7 @@ If issues persist after deployment:
 **Discovery**: Full repository scan revealed missing table  
 **Root Cause**: Database migration never created  
 **Solution**: Canonical schema + consolidated code  
-**Observability**: Enhanced logging for future debugging  
+**Observability**: Enhanced logging for future debugging
 
 ---
 

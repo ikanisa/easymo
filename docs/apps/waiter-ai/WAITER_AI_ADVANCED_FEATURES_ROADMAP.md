@@ -21,6 +21,7 @@ This roadmap outlines how to add world-class features to your already-complete W
 #### Implementation Steps
 
 **Step 1: Install Dependencies (5 min)**
+
 ```bash
 cd waiter-pwa
 pnpm add openai
@@ -31,7 +32,7 @@ pnpm add openai
 Create `waiter-pwa/lib/voice-ordering.ts`:
 
 ```typescript
-import OpenAI from 'openai';
+import OpenAI from "openai";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
@@ -44,12 +45,12 @@ export class VoiceOrderingService {
    */
   async transcribeAudio(audioFile: File): Promise<string> {
     const formData = new FormData();
-    formData.append('file', audioFile);
-    formData.append('model', 'whisper-1');
-    formData.append('language', 'en'); // Auto-detect or specify
+    formData.append("file", audioFile);
+    formData.append("model", "whisper-1");
+    formData.append("language", "en"); // Auto-detect or specify
 
-    const response = await fetch('/api/voice/transcribe', {
-      method: 'POST',
+    const response = await fetch("/api/voice/transcribe", {
+      method: "POST",
       body: formData,
     });
 
@@ -60,10 +61,13 @@ export class VoiceOrderingService {
   /**
    * Convert text to speech using OpenAI TTS
    */
-  async generateSpeech(text: string, voice: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer' = 'nova'): Promise<Blob> {
-    const response = await fetch('/api/voice/speak', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+  async generateSpeech(
+    text: string,
+    voice: "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer" = "nova"
+  ): Promise<Blob> {
+    const response = await fetch("/api/voice/speak", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, voice }),
     });
 
@@ -80,7 +84,7 @@ export class VoiceOrderingService {
     // Download audio from WhatsApp
     const audioResponse = await fetch(audioUrl);
     const audioBlob = await audioResponse.blob();
-    const audioFile = new File([audioBlob], 'voice-note.ogg', { type: 'audio/ogg' });
+    const audioFile = new File([audioBlob], "voice-note.ogg", { type: "audio/ogg" });
 
     const transcription = await this.transcribeAudio(audioFile);
 
@@ -97,8 +101,8 @@ export class VoiceOrderingService {
 Create `waiter-pwa/app/api/voice/transcribe/route.ts`:
 
 ```typescript
-import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { NextRequest, NextResponse } from "next/server";
+import OpenAI from "openai";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
@@ -107,22 +111,22 @@ const openai = new OpenAI({
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const file = formData.get('file') as File;
+    const file = formData.get("file") as File;
 
     if (!file) {
-      return NextResponse.json({ error: 'No audio file provided' }, { status: 400 });
+      return NextResponse.json({ error: "No audio file provided" }, { status: 400 });
     }
 
     const transcription = await openai.audio.transcriptions.create({
       file: file,
-      model: 'whisper-1',
-      language: formData.get('language') as string || undefined,
+      model: "whisper-1",
+      language: (formData.get("language") as string) || undefined,
     });
 
     return NextResponse.json({ text: transcription.text });
   } catch (error) {
-    console.error('Transcription error:', error);
-    return NextResponse.json({ error: 'Transcription failed' }, { status: 500 });
+    console.error("Transcription error:", error);
+    return NextResponse.json({ error: "Transcription failed" }, { status: 500 });
   }
 }
 ```
@@ -130,8 +134,8 @@ export async function POST(request: NextRequest) {
 Create `waiter-pwa/app/api/voice/speak/route.ts`:
 
 ```typescript
-import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { NextRequest, NextResponse } from "next/server";
+import OpenAI from "openai";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
@@ -142,12 +146,12 @@ export async function POST(request: NextRequest) {
     const { text, voice } = await request.json();
 
     if (!text) {
-      return NextResponse.json({ error: 'No text provided' }, { status: 400 });
+      return NextResponse.json({ error: "No text provided" }, { status: 400 });
     }
 
     const mp3 = await openai.audio.speech.create({
-      model: 'tts-1',
-      voice: voice || 'nova',
+      model: "tts-1",
+      voice: voice || "nova",
       input: text,
     });
 
@@ -155,13 +159,13 @@ export async function POST(request: NextRequest) {
 
     return new NextResponse(buffer, {
       headers: {
-        'Content-Type': 'audio/mpeg',
-        'Content-Length': buffer.length.toString(),
+        "Content-Type": "audio/mpeg",
+        "Content-Length": buffer.length.toString(),
       },
     });
   } catch (error) {
-    console.error('TTS error:', error);
-    return NextResponse.json({ error: 'TTS failed' }, { status: 500 });
+    console.error("TTS error:", error);
+    return NextResponse.json({ error: "TTS failed" }, { status: 500 });
   }
 }
 ```
@@ -189,7 +193,7 @@ export default function MessageInput() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
-      
+
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -200,7 +204,7 @@ export default function MessageInput() {
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         setAudioBlob(audioBlob);
-        
+
         // Transcribe audio
         const formData = new FormData();
         const audioFile = new File([audioBlob], 'recording.webm', { type: 'audio/webm' });
@@ -213,7 +217,7 @@ export default function MessageInput() {
 
         const { text } = await response.json();
         setMessage(text);
-        
+
         // Auto-send transcribed message
         await sendMessage(text);
       };
@@ -253,7 +257,7 @@ export default function MessageInput() {
           className="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500"
           disabled={isLoading || isRecording}
         />
-        
+
         {isRecording ? (
           <button
             type="button"
@@ -280,7 +284,7 @@ export default function MessageInput() {
           <PaperAirplaneIcon className="w-6 h-6" />
         </button>
       </div>
-      
+
       {isRecording && (
         <div className="mt-2 text-center text-sm text-red-600 animate-pulse">
           🔴 Recording... Tap stop when done
@@ -303,7 +307,7 @@ import { textToSpeech, transcribeAudio } from "../_shared/voice-handler.ts";
 if (req.headers.get("content-type")?.includes("audio/")) {
   const audioBuffer = await req.arrayBuffer();
   const transcription = await transcribeAudio(new Uint8Array(audioBuffer));
-  
+
   // Process transcription as text message
   body.message = transcription.text;
 }
@@ -380,23 +384,23 @@ export class RestaurantDiscoveryService {
     } = {}
   ): Promise<Restaurant[]> {
     const radius = options.radius || 5000;
-    const url = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json');
-    
-    url.searchParams.set('key', this.apiKey);
-    url.searchParams.set('location', `${lat},${lng}`);
-    url.searchParams.set('radius', String(radius));
-    url.searchParams.set('type', 'restaurant');
-    
+    const url = new URL("https://maps.googleapis.com/maps/api/place/nearbysearch/json");
+
+    url.searchParams.set("key", this.apiKey);
+    url.searchParams.set("location", `${lat},${lng}`);
+    url.searchParams.set("radius", String(radius));
+    url.searchParams.set("type", "restaurant");
+
     if (options.cuisine) {
-      url.searchParams.set('keyword', options.cuisine);
+      url.searchParams.set("keyword", options.cuisine);
     }
-    
+
     if (options.minRating) {
-      url.searchParams.set('minprice', String(options.minRating));
+      url.searchParams.set("minprice", String(options.minRating));
     }
-    
+
     if (options.openNow) {
-      url.searchParams.set('opennow', 'true');
+      url.searchParams.set("opennow", "true");
     }
 
     const response = await fetch(url.toString());
@@ -411,16 +415,24 @@ export class RestaurantDiscoveryService {
       location: place.geometry.location,
       photos: place.photos?.map((p: any) => this.getPhotoUrl(p.photo_reference)) || [],
       openNow: place.opening_hours?.open_now || false,
-      cuisine: place.types?.filter((t: string) => t.includes('_food')) || [],
-      distance: this.calculateDistance(lat, lng, place.geometry.location.lat, place.geometry.location.lng),
+      cuisine: place.types?.filter((t: string) => t.includes("_food")) || [],
+      distance: this.calculateDistance(
+        lat,
+        lng,
+        place.geometry.location.lat,
+        place.geometry.location.lng
+      ),
     }));
   }
 
   async getDetails(placeId: string): Promise<any> {
-    const url = new URL('https://maps.googleapis.com/maps/api/place/details/json');
-    url.searchParams.set('key', this.apiKey);
-    url.searchParams.set('place_id', placeId);
-    url.searchParams.set('fields', 'name,rating,formatted_phone_number,opening_hours,website,reviews,photos,price_level');
+    const url = new URL("https://maps.googleapis.com/maps/api/place/details/json");
+    url.searchParams.set("key", this.apiKey);
+    url.searchParams.set("place_id", placeId);
+    url.searchParams.set(
+      "fields",
+      "name,rating,formatted_phone_number,opening_hours,website,reviews,photos,price_level"
+    );
 
     const response = await fetch(url.toString());
     const data = await response.json();
@@ -433,14 +445,14 @@ export class RestaurantDiscoveryService {
 
   private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 6371e3; // Earth radius in meters
-    const φ1 = lat1 * Math.PI / 180;
-    const φ2 = lat2 * Math.PI / 180;
-    const Δφ = (lat2 - lat1) * Math.PI / 180;
-    const Δλ = (lon2 - lon1) * Math.PI / 180;
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
 
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return R * c; // Distance in meters
@@ -563,7 +575,7 @@ function RestaurantCard({ restaurant }: { restaurant: Restaurant }) {
       )}
       <div className="p-4">
         <h3 className="font-bold text-lg mb-2">{restaurant.name}</h3>
-        
+
         <div className="flex items-center gap-2 mb-2">
           <div className="flex items-center">
             <StarIcon className="w-5 h-5 text-yellow-500 fill-current" />
@@ -709,7 +721,7 @@ export default function KitchenDisplayPage() {
     }
   };
 
-  const filteredOrders = orders.filter(order => 
+  const filteredOrders = orders.filter(order =>
     filter === 'all' ? true : order.status === filter
   );
 
@@ -719,7 +731,7 @@ export default function KitchenDisplayPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-4xl font-bold">Kitchen Display System</h1>
-          
+
           <div className="flex gap-2">
             {(['all', 'pending', 'preparing'] as const).map((status) => (
               <button
@@ -763,11 +775,11 @@ export default function KitchenDisplayPage() {
   );
 }
 
-function OrderCard({ 
-  order, 
-  onStatusChange 
-}: { 
-  order: Order; 
+function OrderCard({
+  order,
+  onStatusChange
+}: {
+  order: Order;
   onStatusChange: (id: string, status: Order['status']) => void;
 }) {
   const getStatusColor = (status: Order['status']) => {
@@ -836,7 +848,7 @@ function OrderCard({
             Start Preparing
           </button>
         )}
-        
+
         {order.status === 'preparing' && (
           <button
             onClick={() => onStatusChange(order.id, 'ready')}
@@ -870,8 +882,8 @@ export class KitchenNotificationService {
   private audio: HTMLAudioElement | null = null;
 
   constructor() {
-    if (typeof window !== 'undefined') {
-      this.audio = new Audio('/sounds/new-order.mp3');
+    if (typeof window !== "undefined") {
+      this.audio = new Audio("/sounds/new-order.mp3");
     }
   }
 
@@ -880,16 +892,16 @@ export class KitchenNotificationService {
   }
 
   async requestPermission() {
-    if ('Notification' in window && Notification.permission === 'default') {
+    if ("Notification" in window && Notification.permission === "default") {
       await Notification.requestPermission();
     }
   }
 
   showNotification(title: string, options?: NotificationOptions) {
-    if ('Notification' in window && Notification.permission === 'granted') {
+    if ("Notification" in window && Notification.permission === "granted") {
       new Notification(title, {
-        icon: '/icons/icon-192x192.png',
-        badge: '/icons/badge-72x72.png',
+        icon: "/icons/icon-192x192.png",
+        badge: "/icons/badge-72x72.png",
         ...options,
       });
     }
@@ -914,7 +926,7 @@ export class KitchenNotificationService {
 Create `waiter-pwa/lib/menu-vision.ts`:
 
 ```typescript
-import OpenAI from 'openai';
+import OpenAI from "openai";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
@@ -931,13 +943,13 @@ export interface ExtractedMenuItem {
 
 export async function extractMenuFromPhoto(imageUrl: string): Promise<ExtractedMenuItem[]> {
   const response = await openai.chat.completions.create({
-    model: 'gpt-4o',
+    model: "gpt-4o",
     messages: [
       {
-        role: 'user',
+        role: "user",
         content: [
           {
-            type: 'text',
+            type: "text",
             text: `Extract all menu items from this restaurant menu photo.
             
 Return a JSON array with this structure:
@@ -956,16 +968,16 @@ Be accurate with prices. If no price is shown, use 0.
 Include all items you can identify.`,
           },
           {
-            type: 'image_url',
+            type: "image_url",
             image_url: { url: imageUrl },
           },
         ],
       },
     ],
-    response_format: { type: 'json_object' },
+    response_format: { type: "json_object" },
   });
 
-  const result = JSON.parse(response.choices[0].message.content || '{}');
+  const result = JSON.parse(response.choices[0].message.content || "{}");
   return result.items || [];
 }
 ```
@@ -975,7 +987,7 @@ Include all items you can identify.`,
 Create `waiter-pwa/lib/upsell-engine.ts`:
 
 ```typescript
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from "@/lib/supabase/client";
 
 export interface UpsellRecommendation {
   item: any;
@@ -990,25 +1002,25 @@ export class UpsellEngine {
     const recommendations: UpsellRecommendation[] = [];
 
     // Rule 1: Suggest drinks with food
-    const hasDrinks = cartItems.some(item => item.category === 'Drinks');
-    const hasFood = cartItems.some(item => ['Appetizers', 'Mains'].includes(item.category));
-    
+    const hasDrinks = cartItems.some((item) => item.category === "Drinks");
+    const hasFood = cartItems.some((item) => ["Appetizers", "Mains"].includes(item.category));
+
     if (hasFood && !hasDrinks) {
       const drinks = await this.getDrinkRecommendations();
       recommendations.push({
         item: drinks[0],
-        reason: 'Pairs well with your order',
+        reason: "Pairs well with your order",
         confidence: 0.9,
       });
     }
 
     // Rule 2: Suggest dessert
-    const hasDessert = cartItems.some(item => item.category === 'Desserts');
+    const hasDessert = cartItems.some((item) => item.category === "Desserts");
     if (hasFood && !hasDessert && cartItems.length >= 2) {
       const desserts = await this.getDessertRecommendations();
       recommendations.push({
         item: desserts[0],
-        reason: 'Complete your meal',
+        reason: "Complete your meal",
         confidence: 0.8,
       });
     }
@@ -1022,36 +1034,37 @@ export class UpsellEngine {
 
   private async getDrinkRecommendations() {
     const { data } = await this.supabase
-      .from('menu_items')
-      .select('*')
-      .eq('category', 'Drinks')
-      .eq('available', true)
-      .order('popularity', { ascending: false })
+      .from("menu_items")
+      .select("*")
+      .eq("category", "Drinks")
+      .eq("available", true)
+      .order("popularity", { ascending: false })
       .limit(3);
     return data || [];
   }
 
   private async getDessertRecommendations() {
     const { data } = await this.supabase
-      .from('menu_items')
-      .select('*')
-      .eq('category', 'Desserts')
-      .eq('available', true)
-      .order('rating', { ascending: false })
+      .from("menu_items")
+      .select("*")
+      .eq("category", "Desserts")
+      .eq("available", true)
+      .order("rating", { ascending: false })
       .limit(3);
     return data || [];
   }
 
   private async getFrequentlyBoughtTogether(cartItems: any[]): Promise<UpsellRecommendation[]> {
     // Query order_items to find items frequently bought together
-    const itemIds = cartItems.map(item => item.id);
-    
-    const { data } = await this.supabase
-      .rpc('get_frequently_bought_together', { item_ids: itemIds });
+    const itemIds = cartItems.map((item) => item.id);
+
+    const { data } = await this.supabase.rpc("get_frequently_bought_together", {
+      item_ids: itemIds,
+    });
 
     return (data || []).map((item: any) => ({
       item,
-      reason: 'Frequently bought together',
+      reason: "Frequently bought together",
       confidence: 0.7,
     }));
   }
@@ -1184,16 +1197,19 @@ COMMIT;
 ## 📊 Implementation Timeline
 
 ### Week 1: Core Advanced Features
+
 - **Days 1-2:** Voice Ordering (4h)
 - **Day 3:** Restaurant Discovery (3h)
 - **Days 4-5:** Kitchen Display System (3h)
 
 ### Week 2: Enhancement Features
+
 - **Day 1:** Menu Photo Recognition (3h)
 - **Day 2:** Smart Upselling (2h)
 - **Days 3-4:** Loyalty Program (3h)
 
 ### Week 3: Polish & Testing
+
 - **Day 1-2:** Integration testing
 - **Day 3:** Performance optimization
 - **Day 4:** Bug fixes
@@ -1204,6 +1220,7 @@ COMMIT;
 ## ✅ Success Criteria
 
 ### Voice Ordering
+
 - [ ] Microphone recording works in browser
 - [ ] Transcription accuracy > 95%
 - [ ] TTS voice quality is natural
@@ -1211,6 +1228,7 @@ COMMIT;
 - [ ] Multi-language voice support
 
 ### Restaurant Discovery
+
 - [ ] Location detection works
 - [ ] Search returns relevant results
 - [ ] Distance calculations accurate
@@ -1218,6 +1236,7 @@ COMMIT;
 - [ ] Integration with ordering flow
 
 ### Kitchen Display System
+
 - [ ] Real-time order updates via Realtime
 - [ ] Status transitions work correctly
 - [ ] Sound notifications on new orders
@@ -1225,6 +1244,7 @@ COMMIT;
 - [ ] Handles multiple simultaneous orders
 
 ### All Features
+
 - [ ] Mobile responsive
 - [ ] Offline capable (PWA)
 - [ ] Multi-language support
@@ -1243,11 +1263,11 @@ After implementing all Priority 1 & 2 features, your Waiter AI will be **world-c
 ✅ Kitchen display system for staff  
 ✅ Menu photo recognition with GPT-4 Vision  
 ✅ Smart AI upselling  
-✅ Loyalty/rewards program  
+✅ Loyalty/rewards program
 
 **Total Implementation Time:** 15-20 hours  
 **Result:** Production-ready, world-class restaurant AI assistant
 
 ---
 
-*Generated: 2025-11-27*
+_Generated: 2025-11-27_

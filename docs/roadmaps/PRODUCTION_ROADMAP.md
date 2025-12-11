@@ -1,4 +1,5 @@
 # EasyMO Production Go-Live Roadmap
+
 **Start**: Week 1 Monday  
 **Go-Live**: Week 3 Wednesday  
 **Total Duration**: 15 business days
@@ -18,17 +19,19 @@ Current (Day 0)     Week 1         Week 2         Week 3
 ## 📅 **3-Week Master Timeline**
 
 ### **Week 1: Deploy + Monitoring (78% → 85%)**
+
 **Goal**: Deploy core infrastructure, establish monitoring
 
-| Day | Focus | Deliverables | Readiness |
-|-----|-------|--------------|-----------|
-| Mon | Production Deployment | DLQ, vacuum, functions deployed | 80% |
-| Tue | Monitoring Setup | Grafana dashboards, alerts configured | 82% |
-| Wed | DB Optimization (Staging) | Partitioning tested | 83% |
-| Thu | DB Optimization (Prod) | Partitioning deployed | 84% |
-| Fri | Validation & Review | Week 1 complete, documented | 85% |
+| Day | Focus                     | Deliverables                          | Readiness |
+| --- | ------------------------- | ------------------------------------- | --------- |
+| Mon | Production Deployment     | DLQ, vacuum, functions deployed       | 80%       |
+| Tue | Monitoring Setup          | Grafana dashboards, alerts configured | 82%       |
+| Wed | DB Optimization (Staging) | Partitioning tested                   | 83%       |
+| Thu | DB Optimization (Prod)    | Partitioning deployed                 | 84%       |
+| Fri | Validation & Review       | Week 1 complete, documented           | 85%       |
 
 **Deliverables**:
+
 - ✅ DLQ system live
 - ✅ 100% signature verification
 - ✅ Monitoring dashboards
@@ -38,17 +41,19 @@ Current (Day 0)     Week 1         Week 2         Week 3
 ---
 
 ### **Week 2: Security + Performance (85% → 90%)**
+
 **Goal**: Harden security, validate performance
 
-| Day | Focus | Deliverables | Readiness |
-|-----|-------|--------------|-----------|
-| Mon | Admin App Consolidation | Single admin app | 86% |
-| Tue | Security Scanning | Snyk + Trivy integrated | 87% |
-| Wed | Performance Testing | Load tests passed | 88% |
-| Thu | Security Audit | Audit complete, issues fixed | 89% |
-| Fri | Final Validation | Go-live approved | 90% |
+| Day | Focus                   | Deliverables                 | Readiness |
+| --- | ----------------------- | ---------------------------- | --------- |
+| Mon | Admin App Consolidation | Single admin app             | 86%       |
+| Tue | Security Scanning       | Snyk + Trivy integrated      | 87%       |
+| Wed | Performance Testing     | Load tests passed            | 88%       |
+| Thu | Security Audit          | Audit complete, issues fixed | 89%       |
+| Fri | Final Validation        | Go-live approved             | 90%       |
 
 **Deliverables**:
+
 - ✅ Admin app consolidated
 - ✅ Security scans in CI/CD
 - ✅ Load testing complete
@@ -58,17 +63,19 @@ Current (Day 0)     Week 1         Week 2         Week 3
 ---
 
 ### **Week 3: Go-Live (90% → 100%)**
+
 **Goal**: Production rollout with monitoring
 
-| Day | Focus | Activities | Readiness |
-|-----|-------|-----------|-----------|
-| Mon | 10% Rollout | Canary deployment, 24h monitoring | 92% |
-| Tue | 50% Rollout | Expand traffic, monitor metrics | 95% |
-| Wed | 100% Rollout | Full production, team on standby | 98% |
-| Thu | Stabilization | Monitor, optimize, fix issues | 99% |
-| Fri | Celebration 🎉 | Retrospective, documentation | 100% |
+| Day | Focus          | Activities                        | Readiness |
+| --- | -------------- | --------------------------------- | --------- |
+| Mon | 10% Rollout    | Canary deployment, 24h monitoring | 92%       |
+| Tue | 50% Rollout    | Expand traffic, monitor metrics   | 95%       |
+| Wed | 100% Rollout   | Full production, team on standby  | 98%       |
+| Thu | Stabilization  | Monitor, optimize, fix issues     | 99%       |
+| Fri | Celebration 🎉 | Retrospective, documentation      | 100%      |
 
 **Deliverables**:
+
 - ✅ Production at 100% traffic
 - ✅ Zero critical incidents
 - ✅ Metrics meeting SLAs
@@ -80,6 +87,7 @@ Current (Day 0)     Week 1         Week 2         Week 3
 ## 📊 **Success Criteria by Week**
 
 ### **Week 1: Infrastructure**
+
 - [ ] Zero downtime deployment
 - [ ] DLQ processing >100 messages
 - [ ] Webhook success rate >99%
@@ -87,6 +95,7 @@ Current (Day 0)     Week 1         Week 2         Week 3
 - [ ] Database query performance +90%
 
 ### **Week 2: Quality**
+
 - [ ] All security scans passing
 - [ ] Zero critical vulnerabilities
 - [ ] Load tests: 10x headroom
@@ -94,6 +103,7 @@ Current (Day 0)     Week 1         Week 2         Week 3
 - [ ] Security audit passed
 
 ### **Week 3: Production**
+
 - [ ] 99.9% uptime during rollout
 - [ ] Error rate <0.1%
 - [ ] User satisfaction >95%
@@ -105,6 +115,7 @@ Current (Day 0)     Week 1         Week 2         Week 3
 ## 🚀 **Quick Start Commands**
 
 ### **Week 1**
+
 ```bash
 # Day 1: Deploy
 ./deploy-production-week1.sh
@@ -117,6 +128,7 @@ supabase db query -f monitoring/queries.sql
 ```
 
 ### **Week 2**
+
 ```bash
 # Day 1: Admin consolidation
 cd admin-app && pnpm install && pnpm build
@@ -129,6 +141,7 @@ lhci autorun && k6 run loadtest.js
 ```
 
 ### **Week 3**
+
 ```bash
 # Gradual rollout (managed via feature flags)
 # Monitor via Grafana dashboards
@@ -139,16 +152,19 @@ lhci autorun && k6 run loadtest.js
 ## 📈 **Key Metrics to Watch**
 
 ### **Reliability**
+
 - **Uptime**: >99.9%
 - **Error Rate**: <0.1%
 - **DLQ Success**: >95%
 
 ### **Performance**
+
 - **Webhook Latency**: <100ms (p95)
 - **DB Queries**: <50ms (p95)
 - **Edge Functions**: <200ms (p95)
 
 ### **Business**
+
 - **User Growth**: +20% month-over-month
 - **Transaction Volume**: +50% capacity
 - **Support Load**: Reduced by 30%
@@ -158,17 +174,20 @@ lhci autorun && k6 run loadtest.js
 ## 🛠️ **Tools & Resources**
 
 ### **Deployment**
+
 - `deploy-production-week1.sh` - Automated deployment
 - `setup-monitoring.sh` - Monitoring setup
 - `DEPLOYMENT_GUIDE.md` - Step-by-step guide
 
 ### **Monitoring**
+
 - Grafana dashboards (2 dashboards)
 - PagerDuty alerts
 - Slack notifications
 - `monitoring/queries.sql` - Health queries
 
 ### **Documentation**
+
 - `WEEK1_ROADMAP.md` - Week 1 detailed plan
 - `WEEK2_ROADMAP.md` - Week 2 detailed plan
 - `CHECKLIST.md` - Comprehensive checklist
@@ -179,43 +198,49 @@ lhci autorun && k6 run loadtest.js
 ## 🚨 **Risk Mitigation**
 
 ### **Technical Risks**
-| Risk | Impact | Mitigation | Owner |
-|------|--------|------------|-------|
-| Database migration fails | HIGH | Test in staging first, backup strategy | DB Team |
-| DLQ overflow | MEDIUM | Monitor thresholds, auto-scaling | DevOps |
-| Security vulnerability | HIGH | Snyk/Trivy scans, audit before go-live | Security |
-| Performance degradation | MEDIUM | Load testing, gradual rollout | Engineering |
+
+| Risk                     | Impact | Mitigation                             | Owner       |
+| ------------------------ | ------ | -------------------------------------- | ----------- |
+| Database migration fails | HIGH   | Test in staging first, backup strategy | DB Team     |
+| DLQ overflow             | MEDIUM | Monitor thresholds, auto-scaling       | DevOps      |
+| Security vulnerability   | HIGH   | Snyk/Trivy scans, audit before go-live | Security    |
+| Performance degradation  | MEDIUM | Load testing, gradual rollout          | Engineering |
 
 ### **Business Risks**
-| Risk | Impact | Mitigation | Owner |
-|------|--------|------------|-------|
-| User churn | HIGH | Clear communication, feature flags | Product |
-| Support overwhelm | MEDIUM | Team training, documentation | Support |
-| Revenue impact | HIGH | Gradual rollout, rollback plan | Business |
+
+| Risk              | Impact | Mitigation                         | Owner    |
+| ----------------- | ------ | ---------------------------------- | -------- |
+| User churn        | HIGH   | Clear communication, feature flags | Product  |
+| Support overwhelm | MEDIUM | Team training, documentation       | Support  |
+| Revenue impact    | HIGH   | Gradual rollout, rollback plan     | Business |
 
 ---
 
 ## 📞 **Team Responsibilities**
 
 ### **Engineering**
+
 - Execute deployments
 - Monitor systems
 - Fix incidents
 - Update documentation
 
 ### **DevOps**
+
 - Manage infrastructure
 - Configure monitoring
 - Handle deployments
 - Maintain runbooks
 
 ### **Security**
+
 - Run security scans
 - Conduct audits
 - Fix vulnerabilities
 - Approve go-live
 
 ### **Product/Business**
+
 - Stakeholder communication
 - Feature prioritization
 - Success metrics
@@ -273,6 +298,7 @@ Every Friday at 4 PM:
 ## ✅ **Master Checklist**
 
 ### **Pre-Week 1**
+
 - [x] Repository audit complete
 - [x] Documentation consolidated
 - [x] Infrastructure code ready
@@ -280,18 +306,21 @@ Every Friday at 4 PM:
 - [x] Stakeholders aligned
 
 ### **Week 1**
+
 - [ ] Production deployment successful
 - [ ] Monitoring operational
 - [ ] Database optimized
 - [ ] 85% readiness achieved
 
 ### **Week 2**
+
 - [ ] Security scans passing
 - [ ] Performance validated
 - [ ] Admin app consolidated
 - [ ] 90% readiness achieved
 
 ### **Week 3**
+
 - [ ] 10% rollout successful
 - [ ] 50% rollout successful
 - [ ] 100% rollout successful
@@ -302,6 +331,7 @@ Every Friday at 4 PM:
 ## 🏆 **Success Definition**
 
 **Production is successful when**:
+
 1. ✅ 99.9%+ uptime
 2. ✅ <0.1% error rate
 3. ✅ Zero message loss (DLQ working)
@@ -318,5 +348,4 @@ Every Friday at 4 PM:
 
 ---
 
-*Let's ship to production!* 🎉✨
-
+_Let's ship to production!_ 🎉✨

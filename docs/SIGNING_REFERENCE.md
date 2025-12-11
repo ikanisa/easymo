@@ -27,6 +27,7 @@ easymo/
 ## 🚀 Quick Commands
 
 ### Development Workflow
+
 ```bash
 # 1. Verify certificate exists
 ./scripts/check_certificate.sh
@@ -45,6 +46,7 @@ easymo/
 ```
 
 ### CI/CD Workflow
+
 ```bash
 # Trigger automated signing on GitHub
 git tag v1.0.0
@@ -58,11 +60,11 @@ git push origin v1.0.0
 
 ## 📚 Documentation Map
 
-| Document | Purpose | Audience | Length |
-|----------|---------|----------|--------|
-| **SIGNING_QUICK_START.md** | Fast setup guide | Developers | 2 min read |
-| **docs/internal_mac_signing.md** | Complete reference | All users | 10 min read |
-| **docs/github_actions_signing.md** | CI/CD setup | DevOps | 5 min read |
+| Document                           | Purpose            | Audience   | Length      |
+| ---------------------------------- | ------------------ | ---------- | ----------- |
+| **SIGNING_QUICK_START.md**         | Fast setup guide   | Developers | 2 min read  |
+| **docs/internal_mac_signing.md**   | Complete reference | All users  | 10 min read |
+| **docs/github_actions_signing.md** | CI/CD setup        | DevOps     | 5 min read  |
 
 ### When to use which doc:
 
@@ -76,18 +78,22 @@ git push origin v1.0.0
 ## 🔧 Script Reference
 
 ### `list_identities.sh`
+
 **Purpose:** List all code-signing identities on the current Mac.
 
 **Usage:**
+
 ```bash
 ./scripts/list_identities.sh
 ```
 
 **Output:**
+
 - All valid code-signing certificates
 - Instructions for setting `SIGNING_IDENTITY` env var
 
 **When to use:**
+
 - Verify certificate exists before signing
 - Find exact certificate name
 - Debug "identity not found" errors
@@ -95,9 +101,11 @@ git push origin v1.0.0
 ---
 
 ### `check_certificate.sh`
+
 **Purpose:** Verify a specific certificate exists and is trusted.
 
 **Usage:**
+
 ```bash
 ./scripts/check_certificate.sh ["Certificate Name"]
 
@@ -109,15 +117,18 @@ git push origin v1.0.0
 ```
 
 **Output:**
+
 - ✅ Certificate found
 - ✅ Trust settings
 - ✅ Validity period
 
 **Exit codes:**
+
 - `0` = Certificate found and valid
 - `1` = Certificate not found
 
 **When to use:**
+
 - Before running signing scripts
 - Debugging trust issues
 - Verifying setup on new machines
@@ -125,9 +136,11 @@ git push origin v1.0.0
 ---
 
 ### `sign_app.sh`
+
 **Purpose:** Sign a single macOS .app bundle with full verification.
 
 **Usage:**
+
 ```bash
 ./scripts/sign_app.sh <app-path> <identity> [entitlements-path]
 
@@ -139,6 +152,7 @@ git push origin v1.0.0
 ```
 
 **Features:**
+
 - Deep signing with `--deep`
 - Hardened runtime with `--options runtime`
 - Timestamping
@@ -147,10 +161,12 @@ git push origin v1.0.0
 - Color-coded output
 
 **Exit codes:**
+
 - `0` = Successfully signed and verified
 - `1` = Signing or verification failed
 
 **When to use:**
+
 - Sign a single app during development
 - Test signing setup
 - Called by `sign_all_apps.sh`
@@ -158,9 +174,11 @@ git push origin v1.0.0
 ---
 
 ### `sign_all_apps.sh`
+
 **Purpose:** Sign both apps (Admin Panel + Client/Staff Portal) in one command.
 
 **Usage:**
+
 ```bash
 # Use default identity
 ./scripts/sign_all_apps.sh
@@ -169,23 +187,26 @@ git push origin v1.0.0
 SIGNING_IDENTITY="Developer ID Application: Company (TEAMID)" ./scripts/sign_all_apps.sh
 ```
 
-**Configuration:**
-Edit lines 28-29 to set app paths:
+**Configuration:** Edit lines 28-29 to set app paths:
+
 ```bash
 ADMIN_APP_PATH="./dist/mac/AdminPanel.app"
 CLIENT_APP_PATH="./dist/mac/ClientPortal.app"
 ```
 
 Edit line 33 for default identity:
+
 ```bash
 DEFAULT_IDENTITY="Inhouse Dev Signing"
 ```
 
 **Exit codes:**
+
 - `0` = Both apps signed successfully
 - `1` = One or more apps failed
 
 **When to use:**
+
 - Sign both apps before distribution
 - Automated CI/CD pipelines
 - Release builds
@@ -193,28 +214,34 @@ DEFAULT_IDENTITY="Inhouse Dev Signing"
 ---
 
 ### `verify_apps.sh`
+
 **Purpose:** Comprehensive verification of signed apps.
 
 **Usage:**
+
 ```bash
 ./scripts/verify_apps.sh
 ```
 
 **Checks:**
+
 1. App bundle exists
 2. Signature validity (`codesign --verify`)
 3. Signature details (authority, identifier)
 4. Gatekeeper status (`spctl --assess`)
 
 **Output:**
+
 - Detailed verification report for each app
 - Color-coded status (green=pass, red=fail, yellow=warning)
 
 **Exit codes:**
+
 - `0` = All apps verified successfully
 - `1` = One or more apps failed verification
 
 **When to use:**
+
 - After signing apps
 - Before distributing to users
 - Debugging signature issues
@@ -223,14 +250,17 @@ DEFAULT_IDENTITY="Inhouse Dev Signing"
 ---
 
 ### `test_signing_workflow.sh`
+
 **Purpose:** End-to-end test of the entire signing workflow.
 
 **Usage:**
+
 ```bash
 ./scripts/test_signing_workflow.sh
 ```
 
 **Tests:**
+
 1. ✅ All scripts exist and are executable
 2. ✅ Documentation files exist
 3. ✅ Scripts run without errors
@@ -240,16 +270,19 @@ DEFAULT_IDENTITY="Inhouse Dev Signing"
 7. ✅ `.gitignore` blocks .p12 files
 
 **Features:**
+
 - Creates temporary mock .app bundles
 - Safe to run repeatedly (no side effects)
 - Auto-cleanup on exit
 - Works with or without certificate
 
 **Exit codes:**
+
 - `0` = All tests passed
 - `1` = One or more tests failed
 
 **When to use:**
+
 - After initial setup
 - Before committing changes to signing scripts
 - CI/CD validation
@@ -260,6 +293,7 @@ DEFAULT_IDENTITY="Inhouse Dev Signing"
 ## 🔐 Security
 
 ### Protected Files (never commit)
+
 ```
 *.p12                    # Certificate exports
 *.cer                    # Certificate files
@@ -271,6 +305,7 @@ InhouseDevSigning.*      # Certificate exports
 All these are automatically blocked by `.gitignore`.
 
 ### GitHub Secrets (required for CI/CD)
+
 ```
 MACOS_CERTIFICATE_BASE64      # Base64-encoded .p12
 MACOS_CERTIFICATE_PASSWORD    # .p12 password
@@ -285,6 +320,7 @@ APPLE_TEAM_ID                 # (Optional) For notarization
 ## 🎯 Common Workflows
 
 ### First-Time Setup (Developer)
+
 ```bash
 # 1. Create certificate (Keychain Access GUI)
 # 2. Verify setup
@@ -301,12 +337,14 @@ vim scripts/sign_all_apps.sh  # Edit lines 28-29
 ```
 
 ### Daily Development
+
 ```bash
 # After building apps
 ./scripts/sign_all_apps.sh && ./scripts/verify_apps.sh
 ```
 
 ### Release Build
+
 ```bash
 # 1. Tag release
 git tag v1.2.3
@@ -318,6 +356,7 @@ git push origin v1.2.3
 ```
 
 ### New Team Member Setup
+
 ```bash
 # 1. Import .p12 certificate (double-click, trust it)
 # 2. Verify setup
@@ -328,6 +367,7 @@ git push origin v1.2.3
 ```
 
 ### Upgrade to Apple Developer ID
+
 ```bash
 # 1. Get certificate from Apple Developer portal
 # 2. Update scripts/sign_all_apps.sh line 33:
@@ -342,14 +382,14 @@ DEFAULT_IDENTITY="Developer ID Application: Your Company (TEAMID)"
 
 ## 🐛 Troubleshooting
 
-| Problem | Solution | Doc Reference |
-|---------|----------|---------------|
-| "No identity found" | Run `./scripts/check_certificate.sh` | `docs/internal_mac_signing.md` |
-| "App bundle not found" | Update paths in `sign_all_apps.sh` | `SIGNING_QUICK_START.md` |
-| "Signature invalid" | Re-sign: `./scripts/sign_all_apps.sh` | `docs/internal_mac_signing.md` |
-| CI/CD fails | Check GitHub Secrets | `docs/github_actions_signing.md` |
-| Gatekeeper rejects | Right-click → Open (first time only) | `SIGNING_QUICK_START.md` |
-| Certificate not trusted | Mark "Always Trust" in Keychain | `docs/internal_mac_signing.md` |
+| Problem                 | Solution                              | Doc Reference                    |
+| ----------------------- | ------------------------------------- | -------------------------------- |
+| "No identity found"     | Run `./scripts/check_certificate.sh`  | `docs/internal_mac_signing.md`   |
+| "App bundle not found"  | Update paths in `sign_all_apps.sh`    | `SIGNING_QUICK_START.md`         |
+| "Signature invalid"     | Re-sign: `./scripts/sign_all_apps.sh` | `docs/internal_mac_signing.md`   |
+| CI/CD fails             | Check GitHub Secrets                  | `docs/github_actions_signing.md` |
+| Gatekeeper rejects      | Right-click → Open (first time only)  | `SIGNING_QUICK_START.md`         |
+| Certificate not trusted | Mark "Always Trust" in Keychain       | `docs/internal_mac_signing.md`   |
 
 Full troubleshooting guide: `docs/internal_mac_signing.md` → Troubleshooting section
 
@@ -358,18 +398,21 @@ Full troubleshooting guide: `docs/internal_mac_signing.md` → Troubleshooting s
 ## 🔄 Upgrade Paths
 
 ### Self-Signed → Developer ID
+
 **Effort:** 15 minutes  
 **Cost:** $99/year  
 **Benefits:** No user warnings, works on any Mac  
 **Guide:** `docs/internal_mac_signing.md` → Part 7
 
 ### Manual → CI/CD
+
 **Effort:** 10 minutes  
 **Cost:** Free  
 **Benefits:** Automatic signing on release  
 **Guide:** `docs/github_actions_signing.md`
 
 ### Developer ID → Notarized
+
 **Effort:** 5 minutes (if already have Dev ID)  
 **Cost:** Included in Developer ID  
 **Benefits:** Extra trust, no warnings  
@@ -379,21 +422,22 @@ Full troubleshooting guide: `docs/internal_mac_signing.md` → Troubleshooting s
 
 ## 📊 Metrics
 
-| Metric | Value |
-|--------|-------|
-| Scripts | 6 executable files |
-| Documentation | 3 comprehensive guides |
-| Total Lines | ~1,200 LOC (scripts + docs) |
-| Setup time | 5 minutes (first time) |
-| Sign time | <30 seconds (both apps) |
-| Test time | ~10 seconds |
-| CI/CD time | ~5 minutes (build + sign + upload) |
+| Metric        | Value                              |
+| ------------- | ---------------------------------- |
+| Scripts       | 6 executable files                 |
+| Documentation | 3 comprehensive guides             |
+| Total Lines   | ~1,200 LOC (scripts + docs)        |
+| Setup time    | 5 minutes (first time)             |
+| Sign time     | <30 seconds (both apps)            |
+| Test time     | ~10 seconds                        |
+| CI/CD time    | ~5 minutes (build + sign + upload) |
 
 ---
 
 ## ✅ Checklist
 
 ### For Developers
+
 - [ ] Read `SIGNING_QUICK_START.md`
 - [ ] Create certificate in Keychain Access
 - [ ] Run `./scripts/check_certificate.sh` (passes)
@@ -403,6 +447,7 @@ Full troubleshooting guide: `docs/internal_mac_signing.md` → Troubleshooting s
 - [ ] Verify with `./scripts/verify_apps.sh`
 
 ### For Team Members
+
 - [ ] Receive .p12 file + password securely
 - [ ] Import certificate (double-click .p12)
 - [ ] Trust certificate in Keychain Access
@@ -410,6 +455,7 @@ Full troubleshooting guide: `docs/internal_mac_signing.md` → Troubleshooting s
 - [ ] Test with `./scripts/test_signing_workflow.sh`
 
 ### For DevOps
+
 - [ ] Read `docs/github_actions_signing.md`
 - [ ] Export certificate as base64
 - [ ] Add GitHub Secrets (3 required)
@@ -441,11 +487,13 @@ Full troubleshooting guide: `docs/internal_mac_signing.md` → Troubleshooting s
 ## 📝 Maintenance
 
 ### Regular Tasks
+
 - **Quarterly:** Verify certificates haven't expired
 - **Yearly:** Review trust settings on all Macs
 - **Every 2-3 years:** Rotate certificates
 
 ### Updates
+
 - Scripts are designed to be future-proof
 - Changing identity name: Edit one variable
 - Adding third app: Add to `sign_all_apps.sh`

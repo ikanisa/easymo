@@ -1,4 +1,5 @@
 # EasyMO Refactoring - Ready to Execute
+
 **Date:** December 10, 2025  
 **Status:** ✅ Plans Complete, Ready for Execution  
 **Estimated Effort:** 2-3 days (Quick Wins) OR 18-28 days (Full Plan)
@@ -8,6 +9,7 @@
 ## 📊 Executive Summary
 
 ### Current State
+
 - **Edge Functions:** 112 (down from 121)
 - **Packages:** 35
 - **Root Files:** 44
@@ -15,6 +17,7 @@
 - **CI/CD:** ✅ Quality gates active
 
 ### What's Already Done ✅
+
 1. ✅ Phase 1: Root cleanup complete
 2. ✅ Phase 2 (Partial):
    - Admin functions consolidated (admin-api)
@@ -25,6 +28,7 @@
 5. ✅ Execution scripts created
 
 ### What's Remaining
+
 - 🔄 Phase 2: 5 more functions could be consolidated
 - 📋 Phase 3: 11-13 packages could be consolidated
 - 📋 Phase 4-6: Configuration, database, CI/CD improvements
@@ -35,11 +39,13 @@
 ## 🎯 Two Execution Paths
 
 ### Path A: Quick Wins (RECOMMENDED) ⭐
+
 **Timeline:** 2-3 days  
 **Risk:** 🟢 LOW  
 **Team:** 1-2 developers
 
 #### Actions:
+
 1. **Phase 3A: Merge `@easymo/types` → `@easymo/commons`**
    - Script ready: `scripts/refactor/phase3a-merge-types.sh`
    - Only 13 imports to update
@@ -64,6 +70,7 @@
 **Total:** 2-3 days, **4 packages removed**, minimal risk
 
 #### Expected Outcomes:
+
 - ✅ Cleaner package structure
 - ✅ Fewer dependencies to manage
 - ✅ Easier onboarding
@@ -73,11 +80,13 @@
 ---
 
 ### Path B: Comprehensive (AMBITIOUS)
+
 **Timeline:** 18-28 days  
 **Risk:** 🟡 MEDIUM-HIGH  
 **Team:** 3-4 developers
 
 #### Full Phases:
+
 1. **Phase 2: Edge Functions** (8 days)
    - Consolidate 5 more functions
    - Target: 112 → 80-90 functions
@@ -108,6 +117,7 @@
 ## 🚀 Ready-to-Execute Scripts
 
 ### Analysis Scripts (Already Available)
+
 ```bash
 # Analyze current state
 ./scripts/refactor/phase2-analyze-functions.sh
@@ -117,12 +127,14 @@
 ```
 
 ### Execution Scripts (New)
+
 ```bash
 # Phase 3A: Merge types → commons
 ./scripts/refactor/phase3a-merge-types.sh
 ```
 
 ### Manual Steps Documented
+
 - All consolidation steps documented in phase plans
 - Import update commands provided
 - Testing procedures defined
@@ -133,6 +145,7 @@
 ## 📋 Execution Checklist for Path A (Quick Wins)
 
 ### Pre-Execution
+
 - [x] Plans reviewed and approved
 - [x] Scripts created and tested
 - [x] Branch strategy defined
@@ -140,6 +153,7 @@
 - [ ] Create feature branch: `refactor/phase3-quick-wins`
 
 ### Phase 3A: Types Consolidation
+
 - [ ] Run `./scripts/refactor/phase3a-merge-types.sh`
 - [ ] Update `packages/commons/package.json` exports
 - [ ] Run import replacement command
@@ -150,6 +164,7 @@
 - [ ] Commit: "refactor: merge @easymo/types into @easymo/commons"
 
 ### Phase 3B: Archive @va/shared
+
 - [ ] Verify 0 imports: `grep -r "@va/shared" --include="*.ts"`
 - [ ] Archive: `mv packages/shared .archive/packages/shared-$(date +%Y%m%d)`
 - [ ] Update `pnpm-workspace.yaml`
@@ -157,6 +172,7 @@
 - [ ] Commit: "refactor: archive unused @va/shared package"
 
 ### Phase 3C: Localization (Optional)
+
 - [ ] Create `packages/i18n/` structure
 - [ ] Merge `locales`, `localization`, `ibimina-locales`
 - [ ] Update imports (find all i18n imports)
@@ -165,11 +181,13 @@
 - [ ] Commit: "refactor: consolidate localization packages"
 
 ### Phase 7: Documentation
+
 - [ ] Create `docs/README.md` index
 - [ ] Archive old session docs
 - [ ] Commit: "docs: create documentation index"
 
 ### Post-Execution
+
 - [ ] Full build passes: `pnpm build`
 - [ ] All tests pass: `pnpm exec vitest run`
 - [ ] Type check passes: `pnpm run type-check`
@@ -184,51 +202,56 @@
 ## 📈 Success Metrics
 
 ### Before Execution
-| Metric | Value |
-|--------|-------|
-| Edge Functions | 112 |
-| Packages | 35 |
-| Root Files | 44 |
-| Test Coverage | TBD |
-| Build Time | ~5s |
+
+| Metric         | Value |
+| -------------- | ----- |
+| Edge Functions | 112   |
+| Packages       | 35    |
+| Root Files     | 44    |
+| Test Coverage  | TBD   |
+| Build Time     | ~5s   |
 
 ### After Path A (Quick Wins)
-| Metric | Target |
-|--------|--------|
-| Edge Functions | 112 (no change) |
-| Packages | **31** (-4) ✅ |
-| Root Files | 44 (no change) |
-| Test Coverage | Maintained |
-| Build Time | ~5s (no degradation) |
+
+| Metric         | Target               |
+| -------------- | -------------------- |
+| Edge Functions | 112 (no change)      |
+| Packages       | **31** (-4) ✅       |
+| Root Files     | 44 (no change)       |
+| Test Coverage  | Maintained           |
+| Build Time     | ~5s (no degradation) |
 
 ### After Path B (Full)
-| Metric | Target |
-|--------|--------|
+
+| Metric         | Target                |
+| -------------- | --------------------- |
 | Edge Functions | **80-90** (-22-32) ✅ |
-| Packages | **20-22** (-13-15) ✅ |
-| Root Files | **<20** (-24+) ✅ |
-| Test Coverage | **>80%** ✅ |
-| Build Time | <10s |
+| Packages       | **20-22** (-13-15) ✅ |
+| Root Files     | **<20** (-24+) ✅     |
+| Test Coverage  | **>80%** ✅           |
+| Build Time     | <10s                  |
 
 ---
 
 ## ⚠️ Risk Assessment
 
 ### Path A Risks: 🟢 LOW
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| Build breaks | Low | Medium | Test after each step |
-| Import errors | Low | Low | Automated find/replace |
-| Test failures | Very Low | Low | Only type changes |
-| Production impact | None | None | No runtime changes |
+
+| Risk              | Likelihood | Impact | Mitigation             |
+| ----------------- | ---------- | ------ | ---------------------- |
+| Build breaks      | Low        | Medium | Test after each step   |
+| Import errors     | Low        | Low    | Automated find/replace |
+| Test failures     | Very Low   | Low    | Only type changes      |
+| Production impact | None       | None   | No runtime changes     |
 
 ### Path B Risks: 🟡 MEDIUM
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| Webhook changes break production | Medium | High | Feature flags, gradual rollout |
-| Circular dependencies | Medium | Medium | Careful planning |
-| Team coordination | High | Medium | Dedicated teams per phase |
-| Timeline overrun | Medium | Low | Focus on quick wins first |
+
+| Risk                             | Likelihood | Impact | Mitigation                     |
+| -------------------------------- | ---------- | ------ | ------------------------------ |
+| Webhook changes break production | Medium     | High   | Feature flags, gradual rollout |
+| Circular dependencies            | Medium     | Medium | Careful planning               |
+| Team coordination                | High       | Medium | Dedicated teams per phase      |
+| Timeline overrun                 | Medium     | Low    | Focus on quick wins first      |
 
 ---
 
@@ -250,6 +273,7 @@
 ## 📚 Documentation Index
 
 ### Planning Documents (Complete)
+
 - ✅ `docs/REFACTORING_PROGRESS.md` - Overall tracker
 - ✅ `docs/REFACTORING_QUICKSTART.md` - Quick start guide
 - ✅ `docs/PHASE2_CONSOLIDATION_PLAN.md` - Function consolidation
@@ -259,6 +283,7 @@
 - ✅ THIS DOCUMENT - Ready-to-execute summary
 
 ### Execution Scripts
+
 - ✅ `scripts/refactor/phase1-root-cleanup.sh`
 - ✅ `scripts/refactor/phase2-analyze-functions.sh`
 - ✅ `scripts/refactor/phase3-analyze-packages.sh`
@@ -272,17 +297,20 @@
 ## 🚦 Next Steps
 
 ### Immediate (Today)
+
 1. ✅ Review this summary
 2. ⏳ **DECIDE:** Approve Path A (Quick Wins) or Path B (Full)
 3. ⏳ Create feature branch
 4. ⏳ Execute Phase 3A
 
 ### This Week
+
 - Execute remaining Path A steps
 - Test thoroughly
 - Create PR and merge
 
 ### Future (Optional)
+
 - Consider Path B phases
 - Monitor metrics
 - Iterate based on learnings
@@ -292,6 +320,7 @@
 ## 📞 Support
 
 **Questions?** Contact:
+
 - Engineering Lead (Phase 1, 6)
 - Backend Lead (Phase 2)
 - Frontend Lead (Phase 3)

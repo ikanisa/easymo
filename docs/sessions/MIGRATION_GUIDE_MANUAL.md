@@ -22,7 +22,8 @@ Copy and paste each migration file into the SQL Editor and click "Run":
 -- (Copy the entire content of this file)
 ```
 
-Location: `/Users/jeanbosco/workspace/easymo/supabase/migrations/20251209190000_create_app_schema_sacco_tables.sql`
+Location:
+`/Users/jeanbosco/workspace/easymo/supabase/migrations/20251209190000_create_app_schema_sacco_tables.sql`
 
 #### **Migration 2: Add SACCO webhook support**
 
@@ -31,7 +32,8 @@ Location: `/Users/jeanbosco/workspace/easymo/supabase/migrations/20251209190000_
 -- (Copy the entire content of this file)
 ```
 
-Location: `/Users/jeanbosco/workspace/easymo/supabase/migrations/20251209190001_add_sacco_webhook_support.sql`
+Location:
+`/Users/jeanbosco/workspace/easymo/supabase/migrations/20251209190001_add_sacco_webhook_support.sql`
 
 #### **Migration 3: SACCO payment functions**
 
@@ -40,7 +42,8 @@ Location: `/Users/jeanbosco/workspace/easymo/supabase/migrations/20251209190001_
 -- (Copy the entire content of this file)
 ```
 
-Location: `/Users/jeanbosco/workspace/easymo/supabase/migrations/20251209190002_sacco_payment_functions.sql`
+Location:
+`/Users/jeanbosco/workspace/easymo/supabase/migrations/20251209190002_sacco_payment_functions.sql`
 
 ### **Step 3: Verify Tables Created**
 
@@ -48,10 +51,10 @@ Run in SQL Editor:
 
 ```sql
 -- Check app schema tables
-SELECT 
+SELECT
     schemaname,
     tablename
-FROM pg_tables 
+FROM pg_tables
 WHERE schemaname = 'app'
 ORDER BY tablename;
 
@@ -62,7 +65,7 @@ ORDER BY tablename;
 
 ```sql
 -- Check app schema functions
-SELECT 
+SELECT
     routine_name,
     routine_type
 FROM information_schema.routines
@@ -134,17 +137,21 @@ supabase db push --linked
 ## Migration Files Summary
 
 ### **Migration 1** (255 lines)
+
 - Creates `app` schema
-- Creates tables: `saccos`, `ikimina`, `members`, `accounts`, `sms_inbox`, `payments`, `ledger_entries`
+- Creates tables: `saccos`, `ikimina`, `members`, `accounts`, `sms_inbox`, `payments`,
+  `ledger_entries`
 - RLS policies enabled
 - Indexes for performance
 
 ### **Migration 2** (47 lines)
+
 - Adds `sacco_id` to `momo_webhook_endpoints`
 - Updates `service_type` constraint to include 'sacco'
 - Creates functions: `register_sacco_webhook()`, `get_sacco_for_phone()`
 
 ### **Migration 3** (592 lines)
+
 - Creates 9 payment processing functions:
   - `match_member_by_phone()` - Phone hash matching
   - `match_member_by_name()` - Fuzzy name matching
@@ -204,11 +211,13 @@ DROP FUNCTION IF EXISTS app.register_sacco_webhook CASCADE;
 ## Next Steps After Migration
 
 1. **Verify deployment**:
+
    ```sql
    SELECT * FROM app.saccos LIMIT 1;
    ```
 
 2. **Register SACCO webhook**:
+
    ```sql
    SELECT app.register_sacco_webhook(
      p_sacco_id := gen_random_uuid(),

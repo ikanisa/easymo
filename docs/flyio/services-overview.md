@@ -7,13 +7,15 @@
 
 ## Overview
 
-easyMO is a multi-service platform running primarily on Supabase Edge Functions with some Node.js microservices. For Fly.io deployment, we're migrating the following critical services:
+easyMO is a multi-service platform running primarily on Supabase Edge Functions with some Node.js
+microservices. For Fly.io deployment, we're migrating the following critical services:
 
 ---
 
 ## 1. Frontend Applications
 
 ### 1.1 Admin PWA (`easymo-admin`)
+
 - **Path:** `admin-app/`
 - **Tech Stack:** Next.js 15, React 18, TypeScript
 - **Current Start:** `next start` (port 3000)
@@ -28,6 +30,7 @@ easyMO is a multi-service platform running primarily on Supabase Edge Functions 
 - **Deployment Priority:** HIGH
 
 ### 1.2 Vendor Portal PWA (`easymo-vendor`)
+
 - **Path:** `client-pwa/` or `apps/router-fn/` (needs verification)
 - **Tech Stack:** Next.js, React, TypeScript
 - **Current Start:** `next start`
@@ -47,10 +50,11 @@ easyMO is a multi-service platform running primarily on Supabase Edge Functions 
 ## 2. Backend Services
 
 ### 2.1 WhatsApp Voice Bridge (`easymo-voice-bridge`)
+
 - **Path:** `services/whatsapp-voice-bridge/`
 - **Tech Stack:** Node.js 20, TypeScript, Express, WebRTC (wrtc), ws
 - **Current Start:** `node dist/index.js` (port 8080)
-- **Purpose:** 
+- **Purpose:**
   - Bridges WhatsApp voice calls to OpenAI Realtime API
   - Handles WebRTC media streams
   - Manages SIP/voice connections
@@ -72,9 +76,10 @@ easyMO is a multi-service platform running primarily on Supabase Edge Functions 
   - Health check on `/health`
 
 ### 2.2 WhatsApp Webhook Router (`easymo-wa-router`)
+
 - **Current Location:** Supabase Edge Functions (`supabase/functions/wa-webhook-core/`)
 - **Tech Stack:** Deno (Supabase Edge Function runtime)
-- **Migration Path:** 
+- **Migration Path:**
   - **Option A:** Keep on Supabase Edge Functions (recommended)
   - **Option B:** Extract to standalone Node.js service for Fly
 - **Purpose:**
@@ -106,6 +111,7 @@ easyMO is a multi-service platform running primarily on Supabase Edge Functions 
 - **Note:** Uses **Meta WhatsApp Cloud API directly**, NOT Twilio
 
 ### 2.3 Call Center AGI Backend (`easymo-agents`)
+
 - **Current Location:** Supabase Edge Functions (`supabase/functions/wa-agent-call-center/`)
 - **Tech Stack:** Deno/TypeScript (currently), would be Node.js on Fly
 - **Migration Path:** Extract to standalone Node.js service
@@ -133,6 +139,7 @@ easyMO is a multi-service platform running primarily on Supabase Edge Functions 
   - High memory (AI processing)
 
 ### 2.4 Agent Core Service (`easymo-agent-core`)
+
 - **Path:** `services/agent-core/`
 - **Tech Stack:** NestJS, TypeScript, Prisma
 - **Current Start:** `npm run start:prod`
@@ -147,6 +154,7 @@ easyMO is a multi-service platform running primarily on Supabase Edge Functions 
 - **Deployment Priority:** MEDIUM
 
 ### 2.5 SMS Inbound Webhook (`easymo-sms-webhook`)
+
 - **Current Location:** `supabase/functions/sms-inbound-webhook/`
 - **Tech Stack:** Deno (Supabase Edge Function)
 - **Migration Path:** Could stay on Supabase or extract to Fly
@@ -161,6 +169,7 @@ easyMO is a multi-service platform running primarily on Supabase Edge Functions 
 - **Deployment Priority:** MEDIUM
 
 ### 2.6 Post-Call Notify Service (`easymo-post-call`)
+
 - **Current Location:** `supabase/functions/post-call-notify/`
 - **Tech Stack:** Deno (Supabase Edge Function)
 - **Migration Path:** Could stay on Supabase or extract to Fly
@@ -175,6 +184,7 @@ easyMO is a multi-service platform running primarily on Supabase Edge Functions 
 ## 3. Background Workers / Cron Jobs
 
 ### 3.1 WhatsApp Webhook Worker (`easymo-wa-worker`)
+
 - **Path:** `services/whatsapp-webhook-worker/`
 - **Tech Stack:** Node.js, TypeScript, Bull/Redis
 - **Purpose:**
@@ -185,6 +195,7 @@ easyMO is a multi-service platform running primarily on Supabase Edge Functions 
 - **Deployment Priority:** MEDIUM
 
 ### 3.2 Mobility Orchestrator (`easymo-mobility`)
+
 - **Path:** `services/mobility-orchestrator/`
 - **Tech Stack:** Node.js, TypeScript
 - **Purpose:**
@@ -201,12 +212,14 @@ easyMO is a multi-service platform running primarily on Supabase Edge Functions 
 These will remain on their current platforms:
 
 ### 4.1 Supabase Services (Stay on Supabase)
+
 - **Database & Auth:** PostgreSQL, Auth
 - **Storage:** File uploads, images
 - **Edge Functions:** Most domain-specific webhooks can stay
 - **Real-time:** Subscriptions
 
 ### 4.2 Other Microservices (Evaluate Later)
+
 - `video-orchestrator` - May not be production-critical yet
 - `openai-deep-research-service` - Low usage
 - `openai-responses-service` - Low usage
@@ -268,17 +281,17 @@ These will remain on their current platforms:
 
 ## 6. Deployment Priority Matrix
 
-| Service | Priority | Complexity | Dependencies | Region |
-|---------|----------|------------|--------------|--------|
-| `easymo-admin` | HIGH | Low | Supabase | ams |
-| `easymo-vendor` | HIGH | Low | Supabase | ams |
-| `easymo-voice-bridge` | CRITICAL | High | OpenAI, Supabase | ams |
-| `easymo-wa-router` | CRITICAL | Medium | Meta WhatsApp, Supabase | ams |
-| `easymo-agents` | CRITICAL | High | OpenAI, Supabase | ams |
-| `easymo-agent-core` | MEDIUM | Medium | Postgres, Redis | ams |
-| `easymo-wa-worker` | MEDIUM | Medium | Redis, Kafka | ams |
-| `easymo-mobility` | MEDIUM | Medium | Supabase | ams |
-| `easymo-sms-webhook` | LOW | Low | MTN, Supabase | ams |
+| Service               | Priority | Complexity | Dependencies            | Region |
+| --------------------- | -------- | ---------- | ----------------------- | ------ |
+| `easymo-admin`        | HIGH     | Low        | Supabase                | ams    |
+| `easymo-vendor`       | HIGH     | Low        | Supabase                | ams    |
+| `easymo-voice-bridge` | CRITICAL | High       | OpenAI, Supabase        | ams    |
+| `easymo-wa-router`    | CRITICAL | Medium     | Meta WhatsApp, Supabase | ams    |
+| `easymo-agents`       | CRITICAL | High       | OpenAI, Supabase        | ams    |
+| `easymo-agent-core`   | MEDIUM   | Medium     | Postgres, Redis         | ams    |
+| `easymo-wa-worker`    | MEDIUM   | Medium     | Redis, Kafka            | ams    |
+| `easymo-mobility`     | MEDIUM   | Medium     | Supabase                | ams    |
+| `easymo-sms-webhook`  | LOW      | Low        | MTN, Supabase           | ams    |
 
 **Recommended Region:** `ams` (Amsterdam) - Good latency to Rwanda/SSA, well-supported Fly region
 
@@ -287,6 +300,7 @@ These will remain on their current platforms:
 ## 7. Critical Notes
 
 ### WhatsApp Integration
+
 - **IMPORTANT:** easyMO uses **Meta WhatsApp Cloud API directly**
 - **NO Twilio** - Do not introduce or reference Twilio anywhere
 - Webhook URL must be publicly accessible with HTTPS
@@ -294,18 +308,21 @@ These will remain on their current platforms:
 - Message delivery status webhooks required
 
 ### Voice Bridge Requirements
+
 - Needs WebRTC/UDP support
 - Low-latency critical (voice quality)
 - Persistent WebSocket connections
 - Health check endpoint required
 
 ### Auth & Access Control
+
 - **Admin PWA:** Staff-only, role enforcement
 - **Vendor Portal:** Vendors-only, no public signup, role enforcement
 - Both use Supabase Auth
 - All routes protected behind login
 
 ### Environment Management
+
 - All secrets via `fly secrets set`
 - No `.env` files in containers
 - 12-factor app principles

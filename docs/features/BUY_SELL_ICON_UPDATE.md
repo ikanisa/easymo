@@ -1,19 +1,21 @@
 # ✅ Buy & Sell Icon Update
 
 **Date**: December 10, 2025  
-**Change**: Added 🛒 emoji to menu item name  
+**Change**: Added 🛒 emoji to menu item name
 
 ## What Changed
 
 Updated the `whatsapp_home_menu_items` table to include the 🛒 emoji in the menu name.
 
 ### Before
+
 ```
 name: "Buy and Sell"
 icon: "🛒"
 ```
 
-### After  
+### After
+
 ```
 name: "🛒 Buy and Sell"
 icon: "🛒"
@@ -21,7 +23,8 @@ icon: "🛒"
 
 ## Why
 
-The emoji needs to be in the name field so it displays together with the text in the WhatsApp menu. The `icon` field is for reference/admin UI, but WhatsApp shows the `name` field.
+The emoji needs to be in the name field so it displays together with the text in the WhatsApp menu.
+The `icon` field is for reference/admin UI, but WhatsApp shows the `name` field.
 
 ## Files Changed
 
@@ -61,7 +64,7 @@ After applying, the WhatsApp home menu should show:
 
 ```
 1. 🍽️ Waiter
-2. 🚗 Rides  
+2. 🚗 Rides
 3. 💼 Jobs
 4. 🛒 Buy and Sell  ← Now has emoji!
 5. 🏠 Property Rentals

@@ -3,6 +3,7 @@
 ## ✅ Completed Tasks
 
 ### 1. Database Cleanup & Agent Setup
+
 **Status:** ✅ Complete
 
 - Created `buy_sell` AI agent with full documentation
@@ -13,32 +14,39 @@
 - Deactivated old agents: business_broker, marketplace, buy_and_sell
 - Updated home menu to use `buy_sell_agent` key
 
-### 2. WhatsApp Webhook Integration  
+### 2. WhatsApp Webhook Integration
+
 **Status:** ✅ Complete
 
 **File:** `supabase/functions/wa-webhook-buy-sell/show_ai_welcome.ts`
+
 - Shows natural language welcome message (English only)
 - Sets `business_broker_chat` state for AI mode
 - Logs CHAT_AGENT_WELCOME_SHOWN event
 
 **File:** `supabase/functions/wa-webhook-buy-sell/index.ts`
+
 - Replaced category menu with AI welcome on menu/home/buy/sell commands
 - Routes to `showAIWelcome()` instead of `showBuySellCategories()`
 
 **Deployment:** ✅ Deployed to Supabase Edge Functions
 
 ### 3. Home Menu Entry
+
 **Status:** ✅ Complete
 
 **Table:** `whatsapp_home_menu_items`
+
 - Key: `buy_sell_agent`
 - Title: "🤖 Chat with Agent"
 - Description: "AI-powered natural language search for any business"
 
 ### 4. Business Directory Enhancement
+
 **Status:** ✅ Complete
 
 **Table:** `businesses`
+
 - Total: 8,232 businesses
 - **Tags column:** Added with rich tags across 17 categories
 - **Phone standardization:** All numbers formatted with +250 country code
@@ -47,6 +55,7 @@
 - **Duplicates:** Cleaned up based on name + phone matching
 
 **Categories with Tags:**
+
 1. Pharmacies (60+ tags)
 2. Salons & Barbers (50+ tags)
 3. Electronics (70+ tags)
@@ -73,6 +82,7 @@
 
 1. **User clicks "🤖 Chat with Agent" on home menu**
 2. **AI Welcome Message shown:**
+
    ```
    🤖 Chat with Agent
 
@@ -103,16 +113,19 @@
 ### Tag-Based Search
 
 **Example 1:** "I need medicine"
+
 - Tags: `['pharmacy', 'medicine', 'drugs', 'prescriptions', 'chemist']`
 - Query: `SELECT * FROM businesses WHERE tags && ARRAY['pharmacy', 'medicine']::text[]`
 - Results: Pharmacies sorted by distance
 
 **Example 2:** "hungry pizza"
+
 - Tags: `['restaurant', 'pizza', 'food', 'fast food']`
 - Query: `SELECT * FROM businesses WHERE tags && ARRAY['restaurant', 'pizza']::text[]`
 - Results: Pizza restaurants nearby
 
 **Example 3:** "phone repair"
+
 - Tags: `['electronics', 'phone', 'repair', 'phone repair']`
 - Query: `SELECT * FROM businesses WHERE tags && ARRAY['phone', 'repair']::text[]`
 - Results: Phone repair shops
@@ -248,8 +261,5 @@ businesses (
 
 ---
 
-**Deployed:** December 9, 2025
-**Status:** ✅ Production Ready
-**Total Businesses:** 8,232
-**Total Tags:** 900+
-**Categories:** 17
+**Deployed:** December 9, 2025 **Status:** ✅ Production Ready **Total Businesses:** 8,232 **Total
+Tags:** 900+ **Categories:** 17

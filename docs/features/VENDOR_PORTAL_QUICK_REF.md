@@ -93,6 +93,7 @@ NEXT_PUBLIC_APP_NAME=Vendor Portal
 ## Phase 1 Status
 
 ✅ **Complete** (37 files)
+
 - Vendor portal configuration
 - @easymo/sacco-core package
 - @easymo/sms-parser package
@@ -101,6 +102,7 @@ NEXT_PUBLIC_APP_NAME=Vendor Portal
 ## Phase 2 Roadmap
 
 ⏳ **Pending** (~60 files)
+
 - App directory structure
 - Authentication (Supabase SSR)
 - Dashboard layout

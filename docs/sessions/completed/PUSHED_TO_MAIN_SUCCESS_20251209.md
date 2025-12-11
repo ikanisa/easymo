@@ -9,6 +9,7 @@
 ## ✅ What's Now Live in Main Branch
 
 ### 1. Ibimina SACCO Platform ✅
+
 - 2,600+ files merged
 - 27 database tables created
 - 40 edge functions ready
@@ -16,6 +17,7 @@
 - Admin routes integrated
 
 ### 2. WhatsApp Agents ✅
+
 - agent-property-rental integrated
 - All 5 AI agents routed
 - 4 workflows ready
@@ -40,11 +42,13 @@ pnpm --filter @easymo/admin-app dev
 
 ## 📚 Documentation
 
-**Read**: 
+**Read**:
+
 - IBIMINA_DEPLOYMENT_SUCCESS.md
 - WHATSAPP_AGENTS_PRODUCTION_READY.md
 
 **Scripts**:
+
 - deploy-whatsapp-agents.sh
 - verify-ibimina-deployment.sh
 

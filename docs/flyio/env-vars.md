@@ -7,7 +7,9 @@
 
 ## 🎯 Overview
 
-All easyMO services use environment variables for configuration (12-factor app). This guide documents:
+All easyMO services use environment variables for configuration (12-factor app). This guide
+documents:
+
 - Required variables per service
 - How to set them in Fly.io
 - Security best practices
@@ -28,6 +30,7 @@ All easyMO services use environment variables for configuration (12-factor app).
 ## 📋 Common Variables (All Services)
 
 ### Supabase (Database & Auth)
+
 ```bash
 # Public URL (can be in fly.toml [env])
 SUPABASE_URL=https://lhbowpbcpwoiparwnwgt.supabase.co
@@ -44,6 +47,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 ### Node.js Runtime
+
 ```bash
 # Environment (can be in fly.toml)
 NODE_ENV=production
@@ -60,6 +64,7 @@ LOG_LEVEL=info
 ## 1️⃣ Admin PWA (`easymo-admin`)
 
 ### fly.toml [env] Section
+
 ```toml
 [env]
   NODE_ENV = 'production'
@@ -68,6 +73,7 @@ LOG_LEVEL=info
 ```
 
 ### Secrets to Set
+
 ```bash
 fly secrets set \
   NEXT_PUBLIC_SUPABASE_URL=https://lhbowpbcpwoiparwnwgt.supabase.co \
@@ -77,6 +83,7 @@ fly secrets set \
 ```
 
 ### Optional Secrets
+
 ```bash
 # Sentry (error tracking)
 fly secrets set SENTRY_DSN=https://... --app easymo-admin
@@ -86,6 +93,7 @@ fly secrets set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=AIza... --app easymo-admin
 ```
 
 ### .env.fly.example
+
 ```bash
 # Public (build-time)
 NEXT_PUBLIC_SUPABASE_URL=https://lhbowpbcpwoiparwnwgt.supabase.co
@@ -104,6 +112,7 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-gmaps-key
 ## 2️⃣ Vendor Portal (`easymo-vendor`)
 
 ### Same as Admin PWA
+
 Use identical configuration to Admin PWA.
 
 ---
@@ -111,6 +120,7 @@ Use identical configuration to Admin PWA.
 ## 3️⃣ WhatsApp Voice Bridge (`easymo-voice-bridge`)
 
 ### fly.toml [env] Section
+
 ```toml
 [env]
   NODE_ENV = 'production'
@@ -123,6 +133,7 @@ Use identical configuration to Admin PWA.
 ```
 
 ### Secrets to Set
+
 ```bash
 fly secrets set \
   OPENAI_API_KEY=your-openai-key \
@@ -131,6 +142,7 @@ fly secrets set \
 ```
 
 ### Optional Secrets
+
 ```bash
 # SIP provider (if used)
 fly secrets set \
@@ -144,6 +156,7 @@ fly secrets set SENTRY_DSN=https://... --app easymo-voice-bridge
 ```
 
 ### .env.fly.example
+
 ```bash
 # Runtime (non-sensitive, in fly.toml)
 NODE_ENV=production
@@ -170,6 +183,7 @@ SENTRY_DSN=https://...
 ## 4️⃣ WhatsApp Router (`easymo-wa-router`)
 
 ### fly.toml [env] Section
+
 ```toml
 [env]
   NODE_ENV = 'production'
@@ -179,6 +193,7 @@ SENTRY_DSN=https://...
 ```
 
 ### Secrets to Set
+
 ```bash
 fly secrets set \
   WHATSAPP_PHONE_ID=your-whatsapp-phone-id \
@@ -189,6 +204,7 @@ fly secrets set \
 ```
 
 ### .env.fly.example
+
 ```bash
 # Runtime (non-sensitive)
 NODE_ENV=production
@@ -214,6 +230,7 @@ SENTRY_DSN=https://...
 **easyMO uses Meta WhatsApp Cloud API directly, NOT Twilio.**
 
 Get credentials from:
+
 1. Go to https://business.facebook.com/
 2. Create WhatsApp Business App
 3. Get Phone Number ID and Access Token
@@ -227,6 +244,7 @@ Get credentials from:
 ## 5️⃣ Call Center AGI (`easymo-agents`)
 
 ### fly.toml [env] Section
+
 ```toml
 [env]
   NODE_ENV = 'production'
@@ -239,6 +257,7 @@ Get credentials from:
 ```
 
 ### Secrets to Set
+
 ```bash
 fly secrets set \
   OPENAI_API_KEY=sk-proj-... \
@@ -248,6 +267,7 @@ fly secrets set \
 ```
 
 ### Optional Secrets
+
 ```bash
 # Additional AI providers
 fly secrets set \
@@ -261,6 +281,7 @@ fly secrets set \
 ```
 
 ### .env.fly.example
+
 ```bash
 # Runtime (non-sensitive)
 NODE_ENV=production
@@ -286,6 +307,7 @@ SENTRY_DSN=https://...
 ## 6️⃣ Agent Core (`easymo-agent-core`)
 
 ### fly.toml [env] Section
+
 ```toml
 [env]
   NODE_ENV = 'production'
@@ -294,6 +316,7 @@ SENTRY_DSN=https://...
 ```
 
 ### Secrets to Set
+
 ```bash
 fly secrets set \
   DATABASE_URL=postgresql://user:password@host:5432/database \
@@ -303,6 +326,7 @@ fly secrets set \
 ```
 
 ### .env.fly.example
+
 ```bash
 # Runtime
 NODE_ENV=production
@@ -320,6 +344,7 @@ KAFKA_BROKERS=broker1:9092,broker2:9092
 ## 7️⃣ SMS Webhook (`easymo-sms-webhook`)
 
 ### Secrets to Set
+
 ```bash
 fly secrets set \
   MTN_SMS_API_KEY=your-mtn-api-key \
@@ -335,11 +360,13 @@ fly secrets set \
 ## 🛠️ Secret Management Commands
 
 ### List All Secrets (shows names only, not values)
+
 ```bash
 fly secrets list --app easymo-admin
 ```
 
 ### Set Multiple Secrets at Once
+
 ```bash
 fly secrets set \
   KEY1=value1 \
@@ -349,6 +376,7 @@ fly secrets set \
 ```
 
 ### Set from File
+
 ```bash
 # Create .env.production (DO NOT commit!)
 cat > .env.production << 'EOF'
@@ -366,11 +394,13 @@ rm .env.production
 ```
 
 ### Unset Secret
+
 ```bash
 fly secrets unset KEY_NAME --app <app-name>
 ```
 
 ### Rotate Secrets
+
 ```bash
 # Set new value (app restarts automatically)
 fly secrets set OPENAI_API_KEY=new-key --app easymo-agents
@@ -384,21 +414,19 @@ fly logs --app easymo-agents
 ## 🔒 Security Best Practices
 
 ### 1. Never Log Secrets
+
 ```typescript
 // ❌ BAD
-console.log('API Key:', process.env.OPENAI_API_KEY);
+console.log("API Key:", process.env.OPENAI_API_KEY);
 
 // ✅ GOOD
-console.log('API Key configured:', !!process.env.OPENAI_API_KEY);
+console.log("API Key configured:", !!process.env.OPENAI_API_KEY);
 ```
 
 ### 2. Validate Required Env Vars on Startup
+
 ```typescript
-const requiredEnvVars = [
-  'OPENAI_API_KEY',
-  'SUPABASE_URL',
-  'SUPABASE_SERVICE_ROLE_KEY'
-];
+const requiredEnvVars = ["OPENAI_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
 
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
@@ -408,6 +436,7 @@ for (const envVar of requiredEnvVars) {
 ```
 
 ### 3. Use Different Secrets Per Environment
+
 ```bash
 # Staging
 fly secrets set OPENAI_API_KEY=sk-staging-... --app easymo-agents-staging
@@ -417,6 +446,7 @@ fly secrets set OPENAI_API_KEY=sk-prod-... --app easymo-agents
 ```
 
 ### 4. Audit Secret Access
+
 ```bash
 # Check who has access
 fly orgs show easymo

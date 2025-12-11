@@ -1,18 +1,19 @@
 # Buy & Sell Agent Consolidation - Quick Reference
 
-**🎯 TL;DR**: We have 3 separate Buy & Sell agent implementations (1,772 lines). Consolidate to 1 source of truth.
+**🎯 TL;DR**: We have 3 separate Buy & Sell agent implementations (1,772 lines). Consolidate to 1
+source of truth.
 
 ---
 
 ## 📍 Current Issues
 
-| Issue | Impact | Location |
-|-------|--------|----------|
-| 3 separate agents | Code duplication, inconsistent behavior | packages/agents/, wa-webhook-buy-sell/, admin-app/ |
-| Import cycle | Maintenance nightmare | agent-buy-sell → wa-webhook-buy-sell |
-| Slug mismatch | Config errors | DB: `buy_sell`, Config: `buy_and_sell` |
-| Different models | Inconsistent AI responses | gemini-1.5-flash vs gpt-4o-mini vs gemini-2.5-flash |
-| Different tools | Incompatible features | 6+ different tool implementations |
+| Issue             | Impact                                  | Location                                            |
+| ----------------- | --------------------------------------- | --------------------------------------------------- |
+| 3 separate agents | Code duplication, inconsistent behavior | packages/agents/, wa-webhook-buy-sell/, admin-app/  |
+| Import cycle      | Maintenance nightmare                   | agent-buy-sell → wa-webhook-buy-sell                |
+| Slug mismatch     | Config errors                           | DB: `buy_sell`, Config: `buy_and_sell`              |
+| Different models  | Inconsistent AI responses               | gemini-1.5-flash vs gpt-4o-mini vs gemini-2.5-flash |
+| Different tools   | Incompatible features                   | 6+ different tool implementations                   |
 
 ---
 
@@ -35,6 +36,7 @@ ALL OTHER FILES → Re-export or wrap this
 ## 📋 Action Checklist
 
 ### Phase 1: Create Structure ✅
+
 - [ ] Create `packages/agents/src/agents/commerce/buy-and-sell/` directory
 - [ ] Create subdirectories: `tools/`, `prompts/`, `workflows/`
 - [ ] Extract `config.ts` with constants:
@@ -43,6 +45,7 @@ ALL OTHER FILES → Re-export or wrap this
   - `BUSINESS_CATEGORIES`, `EMOJI_NUMBERS`, etc.
 
 ### Phase 2: Refactor Core ✅
+
 - [ ] Extract system prompt to `prompts/system-prompt.ts`
 - [ ] Modularize tools in `tools/`:
   - `search-businesses.ts` (search_businesses_ai + search_businesses)
@@ -53,10 +56,11 @@ ALL OTHER FILES → Re-export or wrap this
 - [ ] Add JSDoc comments linking to consolidation docs
 
 ### Phase 3: Update Wrappers ✅
+
 - [ ] Create Deno wrapper: `supabase/functions/_shared/agents/buy-and-sell.ts`
 - [ ] Update `admin-app/lib/ai/domain/marketplace-agent.ts`:
   ```typescript
-  export { BuyAndSellAgent, MarketplaceAgent } from '@easymo/agents/commerce';
+  export { BuyAndSellAgent, MarketplaceAgent } from "@easymo/agents/commerce";
   ```
 - [ ] Update `agent-buy-sell/index.ts` import:
   ```typescript
@@ -65,19 +69,22 @@ ALL OTHER FILES → Re-export or wrap this
 - [ ] Update `wa-webhook-buy-sell/index.ts` import
 
 ### Phase 4: Fix Database ✅
+
 - [ ] Create migration: `YYYYMMDDHHMMSS_consolidate_buy_sell_agent.sql`
 - [ ] Delete old slugs: `buy_and_sell`, `business_broker`, `marketplace`
 - [ ] Ensure `buy_sell` is the only active slug
 - [ ] Verify menu keys: `buy_sell_categories`, `business_broker_agent`
 
 ### Phase 5: Update Config ✅
+
 - [ ] Fix `agent_configs.ts`: `type: "buy_sell"` (not `buy_and_sell`)
 - [ ] Use constants from `config.ts`:
   ```typescript
-  import { BUY_SELL_AGENT_TYPE } from '../_shared/agents/buy-and-sell/config.ts';
+  import { BUY_SELL_AGENT_TYPE } from "../_shared/agents/buy-and-sell/config.ts";
   ```
 
 ### Phase 6: Migrate Features ⏳
+
 - [ ] Move unique features from `wa-webhook-buy-sell/agent.ts` to core:
   - Category selection workflow → `workflows/category-selection.ts`
   - Vendor outreach → `workflows/vendor-outreach.ts`
@@ -86,11 +93,13 @@ ALL OTHER FILES → Re-export or wrap this
 - [ ] Keep WhatsApp-specific UI logic in `wa-webhook-buy-sell/`
 
 ### Phase 7: Testing ⏳
+
 - [ ] Unit tests: `packages/agents/src/agents/commerce/buy-and-sell/__tests__/`
 - [ ] Integration tests: Test all 3 entry points (admin, webhook, API)
 - [ ] E2E tests: WhatsApp flows on staging
 
 ### Phase 8: Deploy ⏳
+
 - [ ] Deploy database migration to staging
 - [ ] Deploy edge functions to staging
 - [ ] Deploy admin app to staging
@@ -103,6 +112,7 @@ ALL OTHER FILES → Re-export or wrap this
 ## 🔍 Files to Change
 
 ### Create New Files
+
 ```
 packages/agents/src/agents/commerce/buy-and-sell/
 ├── config.ts                    (NEW)
@@ -120,6 +130,7 @@ supabase/functions/_shared/agents/
 ```
 
 ### Modify Existing Files
+
 ```
 packages/agents/src/agents/commerce/buy-and-sell.agent.ts  (REFACTOR)
 admin-app/lib/ai/domain/marketplace-agent.ts               (REPLACE with re-export)
@@ -129,6 +140,7 @@ supabase/functions/wa-webhook/shared/agent_configs.ts      (FIX type)
 ```
 
 ### Delete After Consolidation
+
 ```
 # After confirming everything works:
 supabase/functions/wa-webhook-buy-sell/agent.ts            (DELETE or archive)
@@ -140,12 +152,14 @@ supabase/functions/wa-webhook-buy-sell/agent.ts            (DELETE or archive)
 ## 🚨 Common Pitfalls
 
 ### ❌ Don't Do This
+
 ```typescript
 // Import cycle - BAD
 import { MarketplaceAgent } from "../wa-webhook-buy-sell/agent.ts";
 ```
 
 ### ✅ Do This Instead
+
 ```typescript
 // Use shared source - GOOD
 import { BuyAndSellAgent } from "../_shared/agents/buy-and-sell.ts";
@@ -154,27 +168,31 @@ import { BuyAndSellAgent } from "../_shared/agents/buy-and-sell.ts";
 ---
 
 ### ❌ Don't Do This
+
 ```typescript
 // Hardcoded slug - BAD
 const agentType = "buy_and_sell";
 ```
 
 ### ✅ Do This Instead
+
 ```typescript
 // Use constant - GOOD
-import { BUY_SELL_AGENT_SLUG } from '../config';
+import { BUY_SELL_AGENT_SLUG } from "../config";
 const agentType = BUY_SELL_AGENT_SLUG;
 ```
 
 ---
 
 ### ❌ Don't Do This
+
 ```sql
 -- Wrong slug - BAD
 UPDATE ai_agents SET is_active = true WHERE slug = 'buy_and_sell';
 ```
 
 ### ✅ Do This Instead
+
 ```sql
 -- Correct slug - GOOD
 UPDATE ai_agents SET is_active = true WHERE slug = 'buy_sell';
@@ -213,24 +231,32 @@ After consolidation:
 ## 🆘 Need Help?
 
 ### Question: Which file is the "source of truth"?
+
 **Answer**: `packages/agents/src/agents/commerce/buy-and-sell/agent.ts`
 
 ### Question: Can I modify `wa-webhook-buy-sell/agent.ts`?
+
 **Answer**: No, extract logic to shared agent first, then delete or make it a thin wrapper.
 
 ### Question: What slug should I use in the database?
+
 **Answer**: `buy_sell` (no underscore in "and")
 
 ### Question: What about the menu keys?
+
 **Answer**: Two keys:
+
 - `buy_sell_categories` - Category selection workflow
 - `business_broker_agent` - AI chat interface
 
 ### Question: Which model should I use?
+
 **Answer**: Use constant from `config.ts`: `BUY_SELL_DEFAULT_MODEL = 'gemini-1.5-flash'`
 
 ### Question: How do I test locally?
+
 **Answer**:
+
 ```bash
 pnpm --filter @va/shared build
 pnpm --filter @easymo/commons build

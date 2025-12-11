@@ -1,6 +1,7 @@
 # 🔧 Property Rental Routing Fix
 
-**Issue:** Tapping "Property Rental" returns home welcome message instead of starting property flow  
+**Issue:** Tapping "Property Rental" returns home welcome message instead of starting property
+flow  
 **Date:** 2025-12-09  
 **Status:** Root cause identified
 
@@ -9,18 +10,20 @@
 ## ✅ What I Found
 
 ### **1. Menu Configuration - CORRECT**
+
 ```sql
 -- Database check
-SELECT key, name, is_active FROM whatsapp_home_menu_items 
+SELECT key, name, is_active FROM whatsapp_home_menu_items
 WHERE key = 'real_estate_agent';
 
 Result:
 key: real_estate_agent
-name: 🏠 Property Rentals  
+name: 🏠 Property Rentals
 is_active: true
 ```
 
 ### **2. Route Config - CORRECT**
+
 ```typescript
 // File: supabase/functions/_shared/route-config.ts
 {
@@ -34,6 +37,7 @@ is_active: true
 **Routing should be:** `real_estate_agent` → `wa-webhook-property`
 
 ### **3. Handler Code - CORRECT**
+
 ```typescript
 // File: supabase/functions/wa-webhook-property/index.ts
 if (buttonId === "real_estate_agent" || buttonId === "property_rentals") {
@@ -51,17 +55,20 @@ if (buttonId === "real_estate_agent" || buttonId === "property_rentals") {
 **Most likely reasons:**
 
 ###1. **wa-webhook-property not deployed or outdated**
-   - Function exists but hasn't been updated
-   - Routing config exists but service isn't live
+
+- Function exists but hasn't been updated
+- Routing config exists but service isn't live
 
 ### **2. Router not matching button ID**
-   - Button sends: `real_estate_agent`
-   - Router looking for: something else
-   - Case sensitivity mismatch
+
+- Button sends: `real_estate_agent`
+- Router looking for: something else
+- Case sensitivity mismatch
 
 ### **3. Session state override**
-   - Active session routing to different service
-   - State machine stuck in wrong flow
+
+- Active session routing to different service
+- State machine stuck in wrong flow
 
 ---
 
@@ -96,6 +103,7 @@ curl https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook-core
 ### **Step 3: Test the Flow**
 
 After deployment, test by:
+
 1. Open WhatsApp
 2. Send "Hi" to bot
 3. Tap "🏠 Property Rentals"
@@ -112,22 +120,22 @@ If deployment doesn't fix it, add logging to identify exact issue:
 ```typescript
 // Add before routing decision (around line 200)
 export async function routeToService(buttonId: string, state?: any) {
-  console.log('🔍 ROUTING DEBUG:', {
+  console.log("🔍 ROUTING DEBUG:", {
     buttonId,
     buttonIdType: typeof buttonId,
     state,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
-  
+
   // Existing routing logic...
   const service = SERVICE_KEY_MAP[buttonId];
-  
-  console.log('🎯 ROUTE DECISION:', {
+
+  console.log("🎯 ROUTE DECISION:", {
     buttonId,
-    matchedService: service || 'NO_MATCH',
-    availableKeys: Object.keys(SERVICE_KEY_MAP).filter(k => k.includes('property'))
+    matchedService: service || "NO_MATCH",
+    availableKeys: Object.keys(SERVICE_KEY_MAP).filter((k) => k.includes("property")),
   });
-  
+
   return service || FALLBACK_SERVICE;
 }
 ```
@@ -136,12 +144,12 @@ export async function routeToService(buttonId: string, state?: any) {
 
 ```typescript
 // Add at the top of message handler
-console.log('🏠 PROPERTY WEBHOOK RECEIVED:', {
+console.log("🏠 PROPERTY WEBHOOK RECEIVED:", {
   buttonId: ctx.message?.interactive?.button_reply?.id,
   listId: ctx.message?.interactive?.list_reply?.id,
   messageType: ctx.message?.type,
   from: ctx.from,
-  timestamp: new Date().toISOString()
+  timestamp: new Date().toISOString(),
 });
 ```
 
@@ -160,7 +168,7 @@ supabase functions deploy wa-webhook-core --project-ref $SUPABASE_PROJECT_REF
 
 # Or deploy all WhatsApp functions at once
 supabase functions deploy wa-webhook --project-ref $SUPABASE_PROJECT_REF
-supabase functions deploy wa-webhook-core --project-ref $SUPABASE_PROJECT_REF  
+supabase functions deploy wa-webhook-core --project-ref $SUPABASE_PROJECT_REF
 supabase functions deploy wa-webhook-property --project-ref $SUPABASE_PROJECT_REF
 supabase functions deploy wa-webhook-mobility --project-ref $SUPABASE_PROJECT_REF
 supabase functions deploy wa-webhook-jobs --project-ref $SUPABASE_PROJECT_REF
@@ -172,10 +180,11 @@ supabase functions deploy wa-webhook-insurance --project-ref $SUPABASE_PROJECT_R
 ## ✅ Expected Result After Fix
 
 **User Journey:**
+
 ```
 1. User: Taps "🏠 Property Rentals"
 2. Bot: "🏠 Welcome to Property Rentals!
-        
+
         Are you a:
         👤 Renter (looking for property)
         🏢 Landlord (have property to rent)
@@ -202,6 +211,7 @@ supabase functions logs wa-webhook-core --tail
 ```
 
 ### **Look for:**
+
 - ✅ "PROPERTY WEBHOOK RECEIVED" log
 - ✅ "ROUTING DEBUG" showing buttonId
 - ✅ "ROUTE DECISION" showing matched service

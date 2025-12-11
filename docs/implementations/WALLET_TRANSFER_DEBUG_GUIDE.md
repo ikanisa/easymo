@@ -1,10 +1,13 @@
 # Wallet Transfer Debugging Guide
 
 ## Issue Reported
+
 **Date:** 2025-11-27 09:23 AM  
-**Problem:** When transferring tokens, user doesn't get response message and recipient doesn't receive notification or tokens.
+**Problem:** When transferring tokens, user doesn't get response message and recipient doesn't
+receive notification or tokens.
 
 ## Symptoms
+
 1. ❌ User selects partner to send tokens to
 2. ❌ User sees "How many tokens to send to SP Test Petro?"
 3. ❌ User enters amount (e.g., "100")
@@ -15,11 +18,12 @@
 ## Root Cause Analysis
 
 ### Code Flow
+
 ```
 User Message Flow:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. User taps "Transfer Tokens" 
+1. User taps "Transfer Tokens"
    → startWalletTransfer() called
    → Shows partner list
 
@@ -35,7 +39,7 @@ User Message Flow:
         handleWalletTransferText(ctx, message.text.body, state);
       }
    → Goes to transfer.ts handleWalletTransferText()
-   
+
 4. handleWalletTransferText() processes amount
    → Line 175: if (data.stage === "amount")
    → Parses amount
@@ -48,7 +52,9 @@ User Message Flow:
 ### Possible Failure Points
 
 #### 1. State Mismatch
+
 **Check:** Is `state.data.stage === "amount"`?
+
 ```typescript
 // transfer.ts line 136
 const data = state.data || { stage: "recipient" };
@@ -62,13 +68,16 @@ if (data.stage === "amount") {
 **Fix Added:** Enhanced logging to track state transitions
 
 #### 2. Text Message Not Captured
+
 **Check:** Is `message.text.body` properly extracted?
+
 ```typescript
 // index.ts line 615
 const body = (message.text as any)?.body ?? "";
 ```
 
-**Potential Issue:** 
+**Potential Issue:**
+
 - `message.text` might be undefined
 - `body` might be empty string
 - Type assertion `as any` hiding issues
@@ -76,7 +85,9 @@ const body = (message.text as any)?.body ?? "";
 **Fix Added:** Log raw body and parsed amount
 
 #### 3. RPC Call Failure
+
 **Check:** Is `wallet_transfer_tokens` RPC succeeding?
+
 ```typescript
 // transfer.ts line 277-296
 const { data: result2, error: err2 } = await ctx.supabase.rpc("wallet_transfer_tokens", {
@@ -88,6 +99,7 @@ const { data: result2, error: err2 } = await ctx.supabase.rpc("wallet_transfer_t
 ```
 
 **Potential Issues:**
+
 - RPC not found
 - Permission denied
 - Insufficient balance (already checked)
@@ -97,17 +109,18 @@ const { data: result2, error: err2 } = await ctx.supabase.rpc("wallet_transfer_t
 **Fix Added:** Enhanced error logging for RPC calls
 
 #### 4. Success Message Not Sent
+
 **Check:** Is `sendButtonsMessage()` actually being called?
+
 ```typescript
 // transfer.ts line 322-326
-await sendButtonsMessage(
-  ctx,
-  `✅ Sent ${amount} tokens to ${data.to}.`,
-  [{ id: IDS.WALLET, title: "💎 Wallet" }],
-);
+await sendButtonsMessage(ctx, `✅ Sent ${amount} tokens to ${data.to}.`, [
+  { id: IDS.WALLET, title: "💎 Wallet" },
+]);
 ```
 
 **Potential Issues:**
+
 - WhatsApp API rate limit
 - Invalid `ctx.from` number
 - Network timeout
@@ -116,20 +129,24 @@ await sendButtonsMessage(
 **Fix Added:** Log before and after message sending
 
 #### 5. Notification Not Sent
+
 **Check:** Is `notifyWalletTransferRecipient()` working?
+
 ```typescript
 // transfer.ts line 337-344
-notifyWalletTransferRecipient(ctx.supabase, recipient.user_id, amount, senderName)
-  .catch((err) => {
-    console.error(JSON.stringify({
+notifyWalletTransferRecipient(ctx.supabase, recipient.user_id, amount, senderName).catch((err) => {
+  console.error(
+    JSON.stringify({
       event: "WALLET_TRANSFER_NOTIFICATION_FAILED",
       error: err instanceof Error ? err.message : String(err),
-      recipient: recipient.user_id
-    }));
-  });
+      recipient: recipient.user_id,
+    })
+  );
+});
 ```
 
 **Potential Issues:**
+
 - Recipient has no `whatsapp_e164` or `wa_id`
 - WhatsApp API quota exceeded
 - sendText() function failure
@@ -203,6 +220,7 @@ console.log(JSON.stringify({
 ### Test the transfer flow with enhanced logging:
 
 1. **Trigger a transfer:**
+
    ```
    User: Type "home" or "hi"
    Bot: Shows main menu
@@ -219,39 +237,40 @@ console.log(JSON.stringify({
    ```
 
 2. **Check Supabase Logs:**
+
    ```bash
    # Open Supabase Dashboard
    https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions
-   
+
    # Select: wa-webhook-profile
    # View: Logs tab
    # Look for these events in order:
-   
+
    ✅ WALLET_TRANSFER_TEXT_HANDLER_CALLED
       body_length: 3
       body_preview: "100"
       state_key: "wallet_transfer"
       stage: "amount"
-      
+
    ✅ WALLET_TRANSFER_AMOUNT_INPUT
       raw_body: "100"
       recipient: "+250..."
-      
+
    ✅ WALLET_TRANSFER_RPC_RESPONSE
       success_field: true
       transfer_id: "uuid..."
-      
+
    ✅ WALLET_TRANSFER_SENDING_SUCCESS_MESSAGE
       to: "35677186193"
       message: "✅ Sent 100 tokens to..."
-      
+
    ✅ WALLET_TRANSFER_SUCCESS_MESSAGE_SENT
       to: "35677186193"
-      
+
    ✅ WALLET_TRANSFER_SENDING_NOTIFICATION
       recipient: "uuid..."
       amount: 100
-      
+
    ✅ WALLET_TRANSFER_NOTIFICATION_SENT
       recipient: "uuid..."
    ```
@@ -301,7 +320,7 @@ ORDER BY created_at DESC
 LIMIT 5;
 
 -- Check wallet balances
-SELECT 
+SELECT
   p.display_name,
   p.whatsapp_e164,
   w.tokens,
@@ -322,7 +341,7 @@ LIMIT 5;
 
 ```sql
 -- Check if wallet_transfer_tokens RPC exists
-SELECT 
+SELECT
   routine_name,
   routine_type,
   data_type
@@ -331,7 +350,7 @@ WHERE routine_name = 'wallet_transfer_tokens'
   AND routine_schema = 'public';
 
 -- If exists, check signature
-SELECT 
+SELECT
   proname AS function_name,
   pg_get_function_arguments(oid) AS arguments
 FROM pg_proc
@@ -358,6 +377,7 @@ WHERE proname = 'wallet_transfer_tokens';
 ### If issue persists after logging reveals the problem:
 
 1. **Clear stuck state:**
+
    ```sql
    -- Clear wallet_transfer state for user
    UPDATE whatsapp_user_state
@@ -367,13 +387,14 @@ WHERE proname = 'wallet_transfer_tokens';
    ```
 
 2. **Manually credit recipient (emergency):**
+
    ```sql
    -- Only if transfer was deducted from sender but not credited to recipient
    UPDATE wallet_accounts
    SET tokens = tokens + 100,
        updated_at = NOW()
    WHERE profile_id = 'recipient_user_id';
-   
+
    -- Log the manual adjustment
    INSERT INTO wallet_transactions (profile_id, amount, type, description)
    VALUES ('recipient_user_id', 100, 'ADMIN_ADJUSTMENT', 'Manual credit - transfer issue');
@@ -399,6 +420,7 @@ WHERE proname = 'wallet_transfer_tokens';
 **Version:** wa-webhook-profile v2.1.0  
 **Deployed:** 2025-11-27 12:53 UTC  
 **Changes:**
+
 - Added 10+ new log events for transfer flow
 - Enhanced error tracking
 - Better state transition visibility
@@ -427,7 +449,8 @@ If issue persists after following this guide:
 **Document Version:** 1.0  
 **Last Updated:** 2025-11-27 12:53 UTC  
 **Author:** AI Assistant  
-**Related Files:** 
+**Related Files:**
+
 - `supabase/functions/wa-webhook-profile/wallet/transfer.ts`
 - `supabase/functions/wa-webhook-profile/index.ts`
 - `supabase/functions/wa-webhook-profile/wallet/notifications.ts`

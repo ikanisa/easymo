@@ -2,7 +2,7 @@
 
 **Date**: December 10, 2025  
 **Issue**: `wa-webhook-buy-sell` was returning 404 when forwarding to `agent-buy-sell`  
-**Solution**: Deployed missing `agent-buy-sell` edge function  
+**Solution**: Deployed missing `agent-buy-sell` edge function
 
 ## Problem
 
@@ -19,6 +19,7 @@ After restoring the Buy & Sell menu item, users got 500 errors when clicking it:
 ### Root Cause
 
 The traffic flow is:
+
 1. User clicks "Buy and Sell" menu
 2. `webhook-traffic-router` routes to `wa-webhook-buy-sell`
 3. `wa-webhook-buy-sell` tries to forward to `agent-buy-sell` (AI agent)
@@ -36,17 +37,20 @@ npx supabase functions deploy agent-buy-sell
 ## Files Involved
 
 ### 1. Traffic Router
+
 - **File**: `supabase/functions/webhook-traffic-router/index.ts:146`
 - **Logic**: Routes "buy_sell" domain to `wa-webhook-buy-sell`
 
 ### 2. Buy & Sell Webhook
+
 - **File**: `supabase/functions/wa-webhook-buy-sell/index.ts:324`
 - **Logic**: Forwards messages to `agent-buy-sell` when AI is enabled
 - **Env var**: `BUY_SELL_AI_ENABLED` (default: true)
 
 ### 3. AI Agent (NOW DEPLOYED ✅)
+
 - **File**: `supabase/functions/agent-buy-sell/index.ts`
-- **Logic**: 
+- **Logic**:
   - Uses MarketplaceAgent class
   - Natural language processing
   - Tag-based business search
@@ -80,12 +84,14 @@ npx supabase functions deploy agent-buy-sell
 ## Verification
 
 ### Check Function is Live
+
 ```bash
 curl https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/agent-buy-sell
 # Should return: {"status":"healthy","service":"agent-buy-sell"}
 ```
 
 ### Test via WhatsApp
+
 1. Send message to WhatsApp bot
 2. Tap "🛒 Buy and Sell" from home menu
 3. Should receive AI welcome message (no more 500 errors)
@@ -93,15 +99,16 @@ curl https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/agent-buy-sell
 
 ## What Changed
 
-| Component | Before | After |
-|-----------|--------|-------|
-| Menu item in DB | ❌ Missing | ✅ Restored |
+| Component                 | Before          | After       |
+| ------------------------- | --------------- | ----------- |
+| Menu item in DB           | ❌ Missing      | ✅ Restored |
 | `agent-buy-sell` function | ❌ Not deployed | ✅ Deployed |
-| User experience | ❌ 500 errors | ✅ Working |
+| User experience           | ❌ 500 errors   | ✅ Working  |
 
 ## Summary
 
 **Two fixes applied:**
+
 1. **Migration** → Restored menu item to database ✅
 2. **Deployment** → Deployed `agent-buy-sell` edge function ✅
 

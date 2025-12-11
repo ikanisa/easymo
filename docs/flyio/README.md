@@ -1,13 +1,14 @@
 # easyMO Fly.io Deployment - Quick Start
 
 **Date:** 2025-12-07  
-**Status:** Implementation Ready  
+**Status:** Implementation Ready
 
 ---
 
 ## 🎯 What is This?
 
-Complete guide for deploying easyMO services to **Fly.io** - a modern platform-as-a-service for running containerized applications globally.
+Complete guide for deploying easyMO services to **Fly.io** - a modern platform-as-a-service for
+running containerized applications globally.
 
 ### Why Fly.io?
 
@@ -24,19 +25,20 @@ Complete guide for deploying easyMO services to **Fly.io** - a modern platform-a
 
 All Fly.io documentation is in `docs/flyio/`:
 
-| File | Purpose |
-|------|---------|
-| **README.md** (this file) | Quick start and overview |
-| **services-overview.md** | Complete service inventory and architecture |
-| **docker-notes.md** | Docker configuration for all services |
-| **apps.md** | Fly apps and `fly.toml` configurations |
-| **env-vars.md** | Environment variable management |
+| File                      | Purpose                                     |
+| ------------------------- | ------------------------------------------- |
+| **README.md** (this file) | Quick start and overview                    |
+| **services-overview.md**  | Complete service inventory and architecture |
+| **docker-notes.md**       | Docker configuration for all services       |
+| **apps.md**               | Fly apps and `fly.toml` configurations      |
+| **env-vars.md**           | Environment variable management             |
 
 ---
 
 ## 🚀 Quick Start (5 Minutes)
 
 ### 1. Install Fly CLI
+
 ```bash
 # macOS/Linux
 curl -L https://fly.io/install.sh | sh
@@ -46,11 +48,13 @@ fly version
 ```
 
 ### 2. Login
+
 ```bash
 fly auth login
 ```
 
 ### 3. Deploy Your First Service (Admin PWA)
+
 ```bash
 cd admin-app
 
@@ -70,6 +74,7 @@ fly logs --app easymo-admin
 ```
 
 ### 4. Access Your App
+
 ```bash
 # Get URL
 fly info --app easymo-admin
@@ -80,14 +85,14 @@ fly info --app easymo-admin
 
 ## 📦 Services Deploying to Fly.io
 
-| Service | App Name | Status | Priority |
-|---------|----------|--------|----------|
-| **Admin PWA** | `easymo-admin` | ✅ Dockerfile ready | HIGH |
-| **Vendor Portal** | `easymo-vendor` | ⏳ Needs setup | HIGH |
-| **Voice Bridge** | `easymo-voice-bridge` | ✅ Already deployed | CRITICAL |
-| **WhatsApp Router** | `easymo-wa-router` | ⏳ Migration needed | CRITICAL |
-| **Call Center AGI** | `easymo-agents` | ⏳ Extraction needed | CRITICAL |
-| **Agent Core** | `easymo-agent-core` | ⏳ Needs fly.toml | MEDIUM |
+| Service             | App Name              | Status               | Priority |
+| ------------------- | --------------------- | -------------------- | -------- |
+| **Admin PWA**       | `easymo-admin`        | ✅ Dockerfile ready  | HIGH     |
+| **Vendor Portal**   | `easymo-vendor`       | ⏳ Needs setup       | HIGH     |
+| **Voice Bridge**    | `easymo-voice-bridge` | ✅ Already deployed  | CRITICAL |
+| **WhatsApp Router** | `easymo-wa-router`    | ⏳ Migration needed  | CRITICAL |
+| **Call Center AGI** | `easymo-agents`       | ⏳ Extraction needed | CRITICAL |
+| **Agent Core**      | `easymo-agent-core`   | ⏳ Needs fly.toml    | MEDIUM   |
 
 **Region:** `ams` (Amsterdam) - Optimal for Rwanda/SSA
 
@@ -138,19 +143,24 @@ fly info --app easymo-admin
 ## 🔑 Key Concepts
 
 ### Apps
+
 Each service is a separate Fly app with its own:
+
 - `fly.toml` configuration
 - Secrets (env vars)
 - Scaling settings
 - URL (e.g., `easymo-admin.fly.dev`)
 
 ### Machines
+
 Fly runs your app in lightweight VMs called "machines":
+
 - Start/stop automatically
 - Scale based on load
 - Configurable CPU/memory
 
 ### Regions
+
 - **Primary:** `ams` (Amsterdam)
 - **Backups:** Can deploy to multiple regions for HA
 
@@ -159,18 +169,21 @@ Fly runs your app in lightweight VMs called "machines":
 ## 🛠️ Common Commands
 
 ### Deployment
+
 ```bash
 cd <service-directory>
 fly deploy --app <app-name>
 ```
 
 ### Logs
+
 ```bash
 fly logs --app <app-name>           # Real-time
 fly logs --app <app-name> -n 1000    # Last 1000 lines
 ```
 
 ### Secrets
+
 ```bash
 fly secrets list --app <app-name>
 fly secrets set KEY=value --app <app-name>
@@ -178,12 +191,14 @@ fly secrets unset KEY --app <app-name>
 ```
 
 ### Scaling
+
 ```bash
 fly scale memory 1024 --app <app-name>  # MB
 fly scale count 2 --app <app-name>      # Instances
 ```
 
 ### Status & Info
+
 ```bash
 fly status --app <app-name>
 fly info --app <app-name>
@@ -191,6 +206,7 @@ fly dashboard <app-name>
 ```
 
 ### SSH Access
+
 ```bash
 fly ssh console --app <app-name>
 ```
@@ -202,18 +218,22 @@ fly ssh console --app <app-name>
 ### Environment Variables
 
 **Public (can be in `fly.toml`):**
+
 - `NODE_ENV=production`
 - `PORT=8080`
 - `SUPABASE_URL=https://...`
 
 **Private (must use `fly secrets set`):**
+
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `OPENAI_API_KEY`
 - `WHATSAPP_ACCESS_TOKEN`
 - Any API keys, passwords, tokens
 
 ### Access Control
+
 Managed at organization level:
+
 ```bash
 fly orgs show easymo
 fly orgs invite member@example.com --org easymo
@@ -224,6 +244,7 @@ fly orgs invite member@example.com --org easymo
 ## 💰 Cost Optimization
 
 ### Auto-Scaling
+
 ```toml
 [http_service]
   auto_stop_machines = 'stop'      # Stop when idle
@@ -232,6 +253,7 @@ fly orgs invite member@example.com --org easymo
 ```
 
 ### Resource Sizing
+
 - **Development:** `shared-cpu-1x`, 256MB (~$2/month)
 - **Production:** `shared-cpu-1x`, 512MB (~$5/month)
 - **High-traffic:** `shared-cpu-2x`, 1-2GB (~$15/month)
@@ -243,11 +265,13 @@ fly orgs invite member@example.com --org easymo
 ## 📊 Monitoring
 
 ### Built-in
+
 - Metrics dashboard: `fly dashboard <app-name>`
 - Real-time logs: `fly logs --app <app-name>`
 - Health checks in `fly.toml`
 
 ### External
+
 - **Sentry:** Error tracking (set `SENTRY_DSN`)
 - **DataDog/New Relic:** APM (optional)
 
@@ -256,6 +280,7 @@ fly orgs invite member@example.com --org easymo
 ## 🚨 Troubleshooting
 
 ### App Won't Deploy
+
 ```bash
 # Check build logs
 fly logs --app <app-name>
@@ -268,6 +293,7 @@ fly secrets list --app <app-name>
 ```
 
 ### App Crashes on Start
+
 ```bash
 # View crash logs
 fly logs --app <app-name>
@@ -279,6 +305,7 @@ fly logs --app <app-name>
 ```
 
 ### Slow Performance
+
 ```bash
 # Check metrics
 fly status --app <app-name>
@@ -304,12 +331,14 @@ For more details, see:
 ## 🎯 Deployment Checklist
 
 ### Phase 1: Setup (✅ Complete)
+
 - [x] Document services
 - [x] Create Docker configurations
 - [x] Define fly.toml templates
 - [x] Document environment variables
 
 ### Phase 2: Deploy Staging (⏳ Next)
+
 - [ ] Deploy `easymo-admin`
 - [ ] Deploy `easymo-vendor`
 - [ ] Deploy `easymo-voice-bridge`
@@ -318,11 +347,13 @@ For more details, see:
 - [ ] Test end-to-end flows
 
 ### Phase 3: CI/CD (⏳ Pending)
+
 - [ ] Create GitHub Actions workflow
 - [ ] Set up `FLY_API_TOKEN` secret
 - [ ] Auto-deploy on `main` branch push
 
 ### Phase 4: Production (⏳ Pending)
+
 - [ ] Create production apps
 - [ ] Set production secrets
 - [ ] Configure custom domains
@@ -334,11 +365,13 @@ For more details, see:
 ## 🔗 Resources
 
 ### Fly.io Documentation
+
 - [Fly.io Docs](https://fly.io/docs/)
 - [Fly.io CLI Reference](https://fly.io/docs/flyctl/)
 - [Fly.io Pricing](https://fly.io/docs/about/pricing/)
 
 ### easyMO Resources
+
 - [Main README](../../README.md)
 - [Architecture Docs](../../docs/)
 - [Supabase Deployment](../../SUPABASE_DEPLOYMENT.md)
@@ -348,17 +381,21 @@ For more details, see:
 ## ⚠️ Important Notes
 
 ### WhatsApp Integration
+
 **easyMO uses Meta WhatsApp Cloud API directly, NOT Twilio.**
+
 - Get credentials from Meta Business Manager
 - Webhook URL: `https://easymo-wa-router.fly.dev/webhook`
 - Never reference or introduce Twilio
 
 ### Auth & Access
+
 - **Admin PWA:** Internal staff only
 - **Vendor Portal:** Invited vendors only (NO public signup)
 - Both use Supabase Auth with role enforcement
 
 ### Voice Bridge
+
 - Requires UDP support for WebRTC
 - Needs low latency region
 - Always-on for production (no auto-stop)
@@ -368,16 +405,19 @@ For more details, see:
 ## 🆘 Need Help?
 
 ### Check Logs First
+
 ```bash
 fly logs --app <app-name>
 ```
 
 ### Common Issues
+
 1. **Missing secrets:** `fly secrets list --app <app-name>`
 2. **Build fails:** Check `Dockerfile` and dependencies
 3. **Port binding:** Ensure app listens on `0.0.0.0:${PORT}`
 
 ### Get Support
+
 - Fly.io Community: https://community.fly.io
 - Internal team Slack: #infrastructure
 

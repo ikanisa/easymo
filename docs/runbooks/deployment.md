@@ -88,4 +88,4 @@ git checkout <commit-sha>
    - Post in #deployments channel
    - Include version and changes
 
-*Last Updated: 2025-12-02*
+_Last Updated: 2025-12-02_
