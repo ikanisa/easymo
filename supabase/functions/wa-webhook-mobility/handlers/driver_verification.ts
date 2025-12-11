@@ -3,9 +3,9 @@
 // ============================================================================
 // Handles complete driver verification including:
 // - Driver's license verification (OCR via OpenAI/Gemini)
-// - Insurance certificate verification (delegates to driver_insurance.ts)
-// - Vehicle inspection status
-// - Background check status
+// - Vehicle inspection status (optional)
+// - Background check status (optional)
+// Note: Insurance verification removed - simple vehicle registration is sufficient
 // ============================================================================
 
 import { logStructuredEvent } from "../../_shared/observability.ts";
@@ -21,10 +21,6 @@ import {
   saveLicenseCertificate,
   type DriverLicenseData,
 } from "../insurance/driver_license_ocr.ts";
-import {
-  hasValidInsurance,
-  getActiveInsurance,
-} from "./driver_insurance.ts";
 
 // ============================================================================
 // TYPES
@@ -35,7 +31,6 @@ const LICENSE_UPLOAD_STATE_KEY = "driver_license_upload";
 
 export type VerificationStatus = {
   licenseVerified: boolean;
-  insuranceVerified: boolean;
   vehicleInspected: boolean;
   backgroundCheck: boolean;
   overallComplete: boolean;
@@ -45,7 +40,6 @@ export type VerificationStatus = {
 export type VerificationStep =
   | "menu"
   | "license_upload"
-  | "insurance_redirect"
   | "vehicle_inspection"
   | "background_check";
 
@@ -55,6 +49,7 @@ export type VerificationStep =
 
 /**
  * Checks complete driver verification status
+ * Simplified: only license is required, insurance removed
  */
 export async function checkDriverVerificationStatus(
   ctx: RouterContext
@@ -62,7 +57,6 @@ export async function checkDriverVerificationStatus(
   if (!ctx.profileId) {
     return {
       licenseVerified: false,
-      insuranceVerified: false,
       vehicleInspected: false,
       backgroundCheck: false,
       overallComplete: false,
@@ -84,10 +78,6 @@ export async function checkDriverVerificationStatus(
 
   const licenseVerified = !!license && !isLicenseExpired(license.expiry_date);
   if (!licenseVerified) missingItems.push("driver_license");
-
-  // Check insurance
-  const insuranceVerified = await hasValidInsurance(ctx.supabase, ctx.profileId);
-  if (!insuranceVerified) missingItems.push("insurance_certificate");
 
   // Check vehicle inspection (optional for now)
   const { data: inspection } = await ctx.supabase
@@ -114,11 +104,11 @@ export async function checkDriverVerificationStatus(
   // Not required for basic operation
   // if (!backgroundCheck) missingItems.push("background_check");
 
-  const overallComplete = licenseVerified && insuranceVerified;
+  // Only license is required now
+  const overallComplete = licenseVerified;
 
   return {
     licenseVerified,
-    insuranceVerified,
     vehicleInspected,
     backgroundCheck,
     overallComplete,
@@ -152,13 +142,6 @@ export async function showVerificationMenu(
       description: status.licenseVerified
         ? "Verified and active"
         : "Upload your driver's license",
-    },
-    {
-      id: IDS.VERIFY_INSURANCE,
-      title: status.insuranceVerified ? "✅ Insurance" : "🛡️ Insurance",
-      description: status.insuranceVerified
-        ? "Valid insurance on file"
-        : "Upload vehicle insurance certificate",
     },
     {
       id: IDS.VERIFY_INSPECTION,
