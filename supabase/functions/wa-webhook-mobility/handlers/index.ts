@@ -14,7 +14,7 @@ import { lazy, preloadHandlers } from "../../_shared/handlers/lazy-loader.ts";
  */
 export const nearbyHandler = lazy(
   "mobility:nearby",
-  () => import("./nearby/index.ts")
+  () => import("./nearby.ts")
 );
 
 /**
@@ -38,7 +38,7 @@ export const tripHandler = lazy(
  */
 export const onlineHandler = lazy(
   "mobility:online",
-  () => import("./driver/online.ts")
+  () => import("./go_online.ts")
 );
 
 /**
@@ -46,7 +46,7 @@ export const onlineHandler = lazy(
  */
 export const verificationHandler = lazy(
   "mobility:verification",
-  () => import("./driver/verification.ts")
+  () => import("./driver_verification.ts")
 );
 
 // ============================================================================
