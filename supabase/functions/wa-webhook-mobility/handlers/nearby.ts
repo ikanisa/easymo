@@ -475,11 +475,11 @@ export async function handleNearbyResultSelection(
     return true;
   }
 
-  // Extract the actual trip ID from the list row identifier
+  // Extract the actual trip ID from the list row identifier (e.g., "MTCH::uuid" -> "uuid")
   const matchId = id.startsWith("MTCH::") ? id.replace("MTCH::", "") : id;
   
-  // Find the selected match from stored rows
-  const match = state.rows.find((row) => row.id === id || row.id === matchId || row.tripId === matchId);
+  // Find the selected match from stored rows using matchId or tripId
+  const match = state.rows.find((row) => row.id === matchId || row.tripId === matchId);
   
   if (!match || !match.whatsapp) {
     await sendText(ctx.from, t(ctx.locale, "mobility.nearby.match_unavailable"));
@@ -488,7 +488,8 @@ export async function handleNearbyResultSelection(
   }
 
   // Build WhatsApp deep link with prefilled message
-  // isPassenger means the user is looking for drivers (they are a passenger)
+  // When mode === "drivers", the user is a passenger looking for drivers
+  // When mode === "passengers", the user is a driver looking for passengers
   const isPassenger = state.mode === "drivers";
   const prefill = isPassenger
     ? t(ctx.locale, "mobility.nearby.prefill.passenger", { 
