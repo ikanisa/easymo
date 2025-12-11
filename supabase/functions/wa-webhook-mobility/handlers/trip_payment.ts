@@ -7,7 +7,6 @@
 
 import { logStructuredEvent } from "../../_shared/observability.ts";
 import type { RouterContext } from "../types.ts";
-import type { SupabaseClient } from "../deps.ts";
 import { buildMomoUssd, buildMomoUssdForQr } from "../utils/momo.ts";
 import { sendText, sendImageUrl } from "../wa/client.ts";
 import { buildButtons, sendButtonsMessage } from "../utils/reply.ts";
