@@ -18,15 +18,22 @@ export async function showAIWelcome(
   );
 
   // Ensure profile exists and set state for AI chat mode
-  const profileId = await ensureProfile(supabase, userPhone, userCountry);
-  if (profileId) {
-    await setState(supabase, profileId, {
+  const profile = await ensureProfile(supabase, userPhone);
+  if (profile?.user_id) {
+    await setState(supabase, profile.user_id, {
       key: "business_broker_chat",
       data: {
         active: true,
         started_at: new Date().toISOString(),
         agent_type: "business_broker",
       },
+    });
+    
+    // Track AI session start
+    await import("../_shared/observability.ts").then(({ recordMetric }) => {
+      recordMetric("buy_sell.ai_session_start", 1, {
+        country: userCountry,
+      });
     });
   }
 

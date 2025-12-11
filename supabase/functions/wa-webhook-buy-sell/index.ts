@@ -281,6 +281,12 @@ serve(async (req: Request): Promise<Response> => {
             triggeredBy: buttonId,
           });
           
+          // Track AI exit metric
+          await recordMetric("buy_sell.ai_session_exit", 1, {
+            reason: "user_button",
+            buttonId,
+          });
+          
           const userCountry = mapCountry(getCountryCode(userPhone));
           await showBuySellCategories(userPhone, userCountry);
           return respond({ success: true, message: "returned_to_categories" });
@@ -343,6 +349,12 @@ serve(async (req: Request): Promise<Response> => {
             triggeredBy: "keyword",
             keyword: lower,
           });
+          
+          // Track AI exit metric
+          await recordMetric("buy_sell.ai_session_exit", 1, {
+            reason: "user_keyword",
+            keyword: lower,
+          });
         }
         
         const userCountry = mapCountry(getCountryCode(userPhone));
@@ -385,6 +397,12 @@ serve(async (req: Request): Promise<Response> => {
             elapsedMs: elapsed,
           });
           
+          // Track AI timeout metric
+          await recordMetric("buy_sell.ai_session_exit", 1, {
+            reason: "timeout",
+            duration_ms: elapsed,
+          });
+          
           await sendText(userPhone, "⏱️ Your AI session has expired. Showing categories...");
           const userCountry = mapCountry(getCountryCode(userPhone));
           await showBuySellCategories(userPhone, userCountry);
@@ -412,7 +430,14 @@ serve(async (req: Request): Promise<Response> => {
           await logStructuredEvent("BUY_SELL_NON_TEXT_IN_AI_MODE", {
             userId: profile.user_id,
             messageType: message.type,
+            buttonId: message.type === "interactive" ? message.interactive?.button_reply?.id : undefined,
           }, "warn");
+          
+          // Track user frustration metric
+          await recordMetric("buy_sell.button_tap_in_ai_mode", 1, {
+            messageType: message.type,
+            sessionDuration: elapsed,
+          });
           
           await sendText(userPhone, "⚠️ I can only understand text messages in AI mode.\n\nType 'menu' to return to categories.");
           return respond({ success: true, message: "non_text_in_ai_mode" });
