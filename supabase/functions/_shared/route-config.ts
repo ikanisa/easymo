@@ -48,19 +48,29 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
     priority: 1,
   },
   {
-    // Profile service handles both user profile and wallet functionality
-    // This consolidation simplifies the architecture - "wallet" is now part of "profile"
-    service: "wa-webhook-profile",
+    // Wallet service - dedicated microservice for financial operations
+    // Extracted from wa-webhook-profile for single-responsibility
+    service: "wa-webhook-wallet",
     keywords: [
-      // Wallet/financial keywords
       "wallet", "token", "transfer", "redeem", "earn", "reward", "balance",
-      "payment", "pay", "deposit", "withdraw", "money", "referral", "share",
-      // Profile keywords
-      "profile", "account", "my account",
+      "payment", "pay", "deposit", "withdraw", "money", "referral", "cashout", "cash out",
+      "momo", "qr",
     ],
     menuKeys: [
-      // Wallet menu keys
-      "wallet", "token_transfer", "momo_qr", "momo qr", "momoqr",
+      "wallet", "wallet_tokens", "token_transfer", "momo_qr", "momo qr", "momoqr",
+      "wallet_earn", "wallet_transfer", "wallet_redeem", "wallet_transactions",
+    ],
+    priority: 1,
+  },
+  {
+    // Profile service - user profile, settings, and assets management
+    // Wallet functionality moved to wa-webhook-wallet
+    service: "wa-webhook-profile",
+    keywords: [
+      // Profile keywords
+      "profile", "account", "my account", "settings",
+    ],
+    menuKeys: [
       // Profile menu keys
       "profile", "my_account", "my account", "account", "profile_assets", 
       "my_business", "my_businesses",
@@ -153,6 +163,7 @@ export const ROUTED_SERVICES: readonly string[] = [
   "wa-webhook-jobs",
   "wa-webhook-property",
   "wa-webhook-profile",
+  "wa-webhook-wallet",
   "wa-webhook-buy-sell",
   "wa-webhook-buy-sell-directory",
   "wa-webhook-buy-sell-agent",
@@ -190,7 +201,8 @@ export const STATE_PATTERNS: Array<{ patterns: string[]; service: string }> = [
   { patterns: ["jobs", "job_"], service: "wa-webhook-jobs" },
   { patterns: ["mobility", "trip_", "ride_"], service: "wa-webhook-mobility" },
   { patterns: ["property", "rental_"], service: "wa-webhook-property" },
-  { patterns: ["wallet", "payment_", "transfer_"], service: "wa-webhook-profile" },
+  // Wallet state patterns - route to dedicated wallet service
+  { patterns: ["wallet_", "payment_", "transfer_", "momo_qr", "wallet_cashout", "wallet_purchase", "wallet_referral"], service: "wa-webhook-wallet" },
   // New directory service state patterns
   { patterns: ["directory_category", "directory_results", "directory_menu_pagination"], service: "wa-webhook-buy-sell-directory" },
   // New agent service state patterns

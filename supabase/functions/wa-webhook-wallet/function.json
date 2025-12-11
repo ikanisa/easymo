@@ -1,0 +1,5 @@
+{
+  "name": "wa-webhook-wallet",
+  "version": "1.0.0",
+  "verify_jwt": false
+}
