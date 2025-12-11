@@ -35,7 +35,6 @@ TABLES=(
     "driver_licenses"
     "driver_insurance_certificates"
     "vehicle_inspections"
-    "trip_payment_requests"
     "mobility_intent_cache"
     "location_cache"
     "momo_transactions"

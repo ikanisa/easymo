@@ -142,16 +142,6 @@ export async function initiateTripPayment(
       )
     );
 
-    // Log payment request to database
-    await logPaymentRequest(ctx.supabase, {
-      tripId: payment.tripId,
-      payerId: ctx.profileId,
-      recipientPhone: recipient,
-      amount: payment.amount,
-      ussdCode: ussdStandard,
-      qrUrl,
-    });
-
     return true;
   } catch (error) {
     await logStructuredEvent("TRIP_PAYMENT_INIT_ERROR", {
@@ -401,39 +391,6 @@ function normalizeToLocal(phone: string): string | null {
 function buildQrCodeUrl(telUri: string): string {
   const encoded = encodeURIComponent(telUri);
   return `https://quickchart.io/qr?size=512&margin=2&text=${encoded}`;
-}
-
-/**
- * Logs payment request to database
- */
-async function logPaymentRequest(
-  client: SupabaseClient,
-  data: {
-    tripId: string;
-    payerId: string;
-    recipientPhone: string;
-    amount: number;
-    ussdCode: string;
-    qrUrl: string;
-  }
-): Promise<void> {
-  try {
-    await client.from("trip_payment_requests").insert({
-      trip_id: data.tripId,
-      payer_id: data.payerId,
-      recipient_phone: data.recipientPhone,
-      amount_rwf: data.amount,
-      ussd_code: data.ussdCode,
-      qr_url: data.qrUrl,
-      status: "pending",
-    });
-  } catch (error) {
-    await logStructuredEvent("TRIP_PAYMENT_LOG_ERROR", {
-      tripId: data.tripId,
-      error: error instanceof Error ? error.message : String(error),
-    }, "error");
-    // Don't throw - logging failure shouldn't break payment flow
-  }
 }
 
 // ============================================================================

@@ -268,7 +268,7 @@ COMMIT;
 --
 -- Final schema:
 --   CORE: trips, mobility_matches, ride_notifications, recurring_trips, mobility_intents
---   SUPPORT: trip_payment_requests, trip_status_audit, mobility_*_metrics, mobility_pricing_config
+--   SUPPORT: mobility_*_metrics, mobility_pricing_config
 --
--- Total: 10 clean, focused tables (down from 15+)
+-- Total: 8 clean, focused tables (down from 15+)
 -- ============================================================================
