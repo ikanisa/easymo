@@ -29,8 +29,6 @@ WHERE table_schema = 'public'
     'ride_driver_status', 
     'mobility_trips_compact',
     'ride_notifications',
-    'trip_payment_requests',
-    'trip_status_audit',
     'recurring_trips',
     'mobility_intents'
   )
@@ -74,7 +72,7 @@ JOIN information_schema.constraint_column_usage AS ccu
 WHERE tc.constraint_type = 'FOREIGN KEY' 
   AND (
     ccu.table_name IN ('trips', 'rides_trips', 'mobility_trips', 'mobility_matches', 'mobility_trip_matches')
-    OR tc.table_name IN ('trip_payment_requests', 'trip_status_audit', 'ride_notifications', 'mobility_matches', 'mobility_trip_matches')
+    OR tc.table_name IN ('ride_notifications', 'mobility_matches', 'mobility_trip_matches')
   )
 ORDER BY tc.table_name, kcu.column_name;
 

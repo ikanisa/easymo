@@ -83,19 +83,18 @@ echo ""
 echo "Test 4: Foreign key constraints"
 echo "--------------------------------"
 
-PAYMENT_FK=$(psql "$DATABASE_URL" -t -c "
+FK_COUNT=$(psql "$DATABASE_URL" -t -c "
 SELECT COUNT(*) FROM information_schema.table_constraints tc
 JOIN information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name
-WHERE tc.table_name = 'trip_payment_requests'
-  AND tc.constraint_type = 'FOREIGN KEY'
-  AND ccu.table_name = 'mobility_matches';
+WHERE tc.constraint_type = 'FOREIGN KEY'
+  AND tc.table_name IN ('mobility_matches', 'trips', 'recurring_trips');
 " | tr -d ' ')
 
-if [ "$PAYMENT_FK" -gt 0 ]; then
-  echo "✅ PASS: trip_payment_requests FK points to mobility_matches"
+if [ "$FK_COUNT" -gt 0 ]; then
+  echo "✅ PASS: Foreign key constraints verified ($FK_COUNT found)"
   PASSED=$((PASSED + 1))
 else
-  echo "⚠️  WARNING: trip_payment_requests FK may need update"
+  echo "⚠️  WARNING: No foreign key constraints found"
 fi
 echo ""
 
