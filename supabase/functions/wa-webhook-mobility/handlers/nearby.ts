@@ -476,6 +476,7 @@ export async function handleNearbyResultSelection(
   }
 
   // Extract the actual trip ID from the list row identifier (e.g., "MTCH::uuid" -> "uuid")
+  // Extract the actual trip ID from the list row identifier
   const matchId = id.startsWith("MTCH::") ? id.replace("MTCH::", "") : id;
   
   // Find the selected match from stored rows using matchId or tripId

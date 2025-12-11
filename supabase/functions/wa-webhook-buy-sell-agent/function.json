@@ -1,0 +1,7 @@
+{
+  "name": "wa-webhook-buy-sell-agent",
+  "description": "WhatsApp Buy & Sell AI Agent - Natural language business discovery and recommendations",
+  "schema_version": "1.0",
+  "runtime": "deno",
+  "import_map": "../import_map.json"
+}

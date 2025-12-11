@@ -1,0 +1,7 @@
+{
+  "name": "wa-webhook-buy-sell-directory",
+  "description": "WhatsApp Buy & Sell Directory - Structured category browsing and location-based business search",
+  "schema_version": "1.0",
+  "runtime": "deno",
+  "import_map": "../import_map.json"
+}

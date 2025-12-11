@@ -85,17 +85,46 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
     priority: 1,
   },
   {
-    service: "wa-webhook-buy-sell",
-    keywords: ["buy", "sell", "category", "categories", "browse"],
-    menuKeys: ["buy_sell_categories", "buy_and_sell", "buy and sell", "shops_services", "6"],
+    // Directory service: Structured category browsing and location-based business search
+    service: "wa-webhook-buy-sell-directory",
+    keywords: ["buy", "sell", "category", "categories", "browse", "directory", "shops"],
+    menuKeys: ["buy_sell_directory", "buy_sell_categories", "buy_and_sell", "buy and sell", "shops_services", "directory", "browse_categories", "6"],
     priority: 1,
   },
   {
-    // AI-powered business search agent (natural language)
-    service: "agent-buy-sell",
-    keywords: ["business broker", "find business", "shopping assistant", "ai search"],
-    menuKeys: ["business_broker_agent", "chat_with_agent", "buy_sell_agent", "marketplace_agent", "shop_ai"],
+    // AI Agent service: Natural language business discovery
+    service: "wa-webhook-buy-sell-agent",
+    keywords: ["business broker", "find business", "shopping assistant", "ai search", "chat agent"],
+    menuKeys: ["buy_sell_agent", "business_broker_agent", "chat_with_agent", "marketplace_agent", "shop_ai", "ai_assistant"],
     priority: 1,
+  },
+  {
+    /**
+     * Legacy Buy & Sell service - DEPRECATED
+     * 
+     * This service is deprecated and traffic should be routed to wa-webhook-buy-sell-directory.
+     * The empty keywords and menuKeys arrays ensure this service is not directly accessible
+     * via keyword matching or menu selections. Only state-based routing or explicit redirects
+     * should route to this service (which will then redirect to the new directory service).
+     */
+    service: "wa-webhook-buy-sell",
+    keywords: [], // Intentionally empty - deprecated service
+    menuKeys: [],  // Intentionally empty - deprecated service
+    priority: 99,
+    deprecated: true,
+    redirectTo: "wa-webhook-buy-sell-directory",
+  },
+  {
+    /**
+     * Legacy agent-buy-sell endpoint
+     * 
+     * This endpoint is still active for AI processing but menu routing now goes through
+     * wa-webhook-buy-sell-agent. Direct access is intentionally disabled via empty arrays.
+     */
+    service: "agent-buy-sell",
+    keywords: [], // Intentionally empty - access via wa-webhook-buy-sell-agent
+    menuKeys: [],  // Intentionally empty - access via wa-webhook-buy-sell-agent
+    priority: 99,
   },
   {
     service: "wa-agent-farmer",
@@ -139,6 +168,8 @@ export const ROUTED_SERVICES: readonly string[] = [
   "wa-webhook-property",
   "wa-webhook-profile",
   "wa-webhook-buy-sell",
+  "wa-webhook-buy-sell-directory",
+  "wa-webhook-buy-sell-agent",
   "wa-webhook-waiter",
   "wa-agent-farmer",
   "wa-agent-support",
@@ -174,12 +205,17 @@ export const STATE_PATTERNS: Array<{ patterns: string[]; service: string }> = [
   { patterns: ["mobility", "trip_", "ride_"], service: "wa-webhook-mobility" },
   { patterns: ["property", "rental_"], service: "wa-webhook-property" },
   { patterns: ["wallet", "payment_", "transfer_"], service: "wa-webhook-profile" },
-  { patterns: ["shop_", "buy_", "sell_"], service: "wa-webhook-buy-sell" },
+  // New directory service state patterns
+  { patterns: ["directory_category", "directory_results", "directory_menu_pagination"], service: "wa-webhook-buy-sell-directory" },
+  // New agent service state patterns
+  { patterns: ["agent_chat", "business_broker_chat"], service: "wa-webhook-buy-sell-agent" },
+  // Legacy buy/sell patterns - route to directory
+  { patterns: ["shop_", "buy_sell_", "buy_sell_location", "buy_sell_results", "buy_sell_menu"], service: "wa-webhook-buy-sell-directory" },
   { patterns: ["waiter_workflow_"], service: "wa-webhook-waiter" },
   { patterns: ["farmer_"], service: "wa-agent-farmer" },
   { patterns: ["support_"], service: "wa-agent-support" },
   { patterns: ["waiter_", "restaurant_"], service: "wa-agent-waiter" },
-  { patterns: ["buy_sell_agent_"], service: "agent-buy-sell" },
+  { patterns: ["buy_sell_agent_"], service: "wa-webhook-buy-sell-agent" },
   { patterns: ["property_agent_", "rental_agent_"], service: "agent-property-rental" },
   { patterns: ["agent_", "call_center_"], service: "wa-agent-call-center" },
 ];
