@@ -19,11 +19,12 @@ export function normalizePlate(input: string): string | null {
   return cleaned;
 }
 
-export function isPlateFormatValid(input: string): boolean {
-  const normalized = normalizePlate(input);
-  if (!normalized) return false;
+/**
+ * Validates an already-normalized plate format
+ */
+export function isPlateFormatValid(normalizedPlate: string): boolean {
   // Accept alphanumeric plates (4-10 chars)
-  return /^[A-Z0-9]{4,10}$/.test(normalized);
+  return /^[A-Z0-9]{4,10}$/.test(normalizedPlate);
 }
 
 export async function getVehiclePlate(
@@ -121,10 +122,16 @@ export async function handleVehiclePlateInput(
   value: string,
 ): Promise<string | null> {
   if (!ctx.profileId) return "Missing profile";
+  
   const normalized = normalizePlate(value);
-  if (!normalized || !isPlateFormatValid(normalized)) {
+  if (!normalized) {
     return "Plate must be 4-10 letters/numbers. Example: RAA123C.";
   }
+  
+  if (!isPlateFormatValid(normalized)) {
+    return "Invalid plate format. Please use letters and numbers only.";
+  }
+  
   await updateVehiclePlate(ctx.supabase, ctx.profileId, normalized);
   return null;
 }
