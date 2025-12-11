@@ -286,59 +286,18 @@ serve(async (req: Request): Promise<Response> => {
           handled = true;
         }
         
-        // My Jobs
-        else if (id === IDS.MY_JOBS || id === "MY_JOBS" || id === "my_jobs") {
-          const { listMyJobs } = await import("./jobs/list.ts");
-          handled = await listMyJobs(ctx);
-        }
-        else if (id.startsWith("JOB::")) {
-          const jobId = id.replace("JOB::", "");
-          const { handleJobSelection } = await import("./jobs/list.ts");
-          handled = await handleJobSelection(ctx, jobId);
-        }
-        else if (id === IDS.CREATE_JOB) {
-          const { startCreateJob } = await import("./jobs/create.ts");
-          handled = await startCreateJob(ctx);
-        }
-        else if (id.startsWith("EDIT_JOB::")) {
-          const jobId = id.replace("EDIT_JOB::", "");
-          const { startEditJob } = await import("./jobs/update.ts");
-          handled = await startEditJob(ctx, jobId);
-        }
-        else if (id.startsWith("DELETE_JOB::")) {
-          const jobId = id.replace("DELETE_JOB::", "");
-          const { confirmDeleteJob } = await import("./jobs/delete.ts");
-          handled = await confirmDeleteJob(ctx, jobId);
-        }
-        else if (id.startsWith("CONFIRM_DELETE_JOB::")) {
-          const jobId = id.replace("CONFIRM_DELETE_JOB::", "");
-          const { handleDeleteJob } = await import("./jobs/delete.ts");
-          handled = await handleDeleteJob(ctx, jobId);
-        }
-        else if (id.startsWith("EDIT_JOB_TITLE::")) {
-          const jobId = id.replace("EDIT_JOB_TITLE::", "");
-          const { promptEditJobField } = await import("./jobs/update.ts");
-          handled = await promptEditJobField(ctx, jobId, "title");
-        }
-        else if (id.startsWith("EDIT_JOB_DESC::")) {
-          const jobId = id.replace("EDIT_JOB_DESC::", "");
-          const { promptEditJobField } = await import("./jobs/update.ts");
-          handled = await promptEditJobField(ctx, jobId, "description");
-        }
-        else if (id.startsWith("EDIT_JOB_LOC::")) {
-          const jobId = id.replace("EDIT_JOB_LOC::", "");
-          const { promptEditJobField } = await import("./jobs/update.ts");
-          handled = await promptEditJobField(ctx, jobId, "location");
-        }
-        else if (id.startsWith("EDIT_JOB_REQ::")) {
-          const jobId = id.replace("EDIT_JOB_REQ::", "");
-          const { promptEditJobField } = await import("./jobs/update.ts");
-          handled = await promptEditJobField(ctx, jobId, "requirements");
-        }
-        else if (id.startsWith("BACK_JOB::")) {
-          const jobId = id.replace("BACK_JOB::", "");
-          const { handleJobSelection } = await import("./jobs/list.ts");
-          handled = await handleJobSelection(ctx, jobId);
+        // My Jobs - Moved to wa-webhook-jobs
+        else if (id === IDS.MY_JOBS || id === "MY_JOBS" || id === "my_jobs" ||
+                 id.startsWith("JOB::") || id === IDS.CREATE_JOB ||
+                 id.startsWith("EDIT_JOB") || id.startsWith("DELETE_JOB") ||
+                 id.startsWith("CONFIRM_DELETE_JOB") || id.startsWith("BACK_JOB")) {
+          // Jobs management moved to wa-webhook-jobs
+          logEvent("JOB_DEPRECATED_ROUTE", { id }, "warn");
+          await sendText(
+            ctx.from,
+            "⚠️ Job management has been moved. Please restart by sending 'hi' or 'menu'."
+          );
+          handled = true;
         }
         
         // My Properties
@@ -803,29 +762,6 @@ serve(async (req: Request): Promise<Response> => {
         }
       }
 
-      // Handle job creation title
-      else if (state?.key === "job_create_title") {
-        const { handleCreateJobTitle } = await import("./jobs/create.ts");
-        handled = await handleCreateJobTitle(ctx, (message.text as any)?.body ?? "");
-      }
-      
-      // Handle job edit fields
-      else if (state?.key === "job_edit_title" && state.data) {
-        const { handleUpdateJobField } = await import("./jobs/update.ts");
-        handled = await handleUpdateJobField(ctx, String(state.data.jobId), "title", (message.text as any)?.body ?? "");
-      }
-      else if (state?.key === "job_edit_description" && state.data) {
-        const { handleUpdateJobField } = await import("./jobs/update.ts");
-        handled = await handleUpdateJobField(ctx, String(state.data.jobId), "description", (message.text as any)?.body ?? "");
-      }
-      else if (state?.key === "job_edit_location" && state.data) {
-        const { handleUpdateJobField } = await import("./jobs/update.ts");
-        handled = await handleUpdateJobField(ctx, String(state.data.jobId), "location", (message.text as any)?.body ?? "");
-      }
-      else if (state?.key === "job_edit_requirements" && state.data) {
-        const { handleUpdateJobField } = await import("./jobs/update.ts");
-        handled = await handleUpdateJobField(ctx, String(state.data.jobId), "requirements", (message.text as any)?.body ?? "");
-      }
       
       // Handle property creation title
       else if (state?.key === "property_create_title") {
