@@ -230,10 +230,23 @@ serve(async (req: Request): Promise<Response> => {
           handled = await handleMomoButton(ctx, id, state ?? { key: "home", data: {} });
         }
         
-        // Wallet Home
-        else if (id === IDS.WALLET_HOME || id === "WALLET_HOME" || id === IDS.WALLET || id === "wallet" || id === "wallet_tokens") {
-          const { startWallet } = await import("./wallet/home.ts");
-          handled = await startWallet(ctx, state ?? { key: "home" });
+        // Wallet - Forward to wa-webhook-wallet
+        else if (id === IDS.WALLET_HOME || id === "WALLET_HOME" || id === IDS.WALLET || id === "wallet" || id === "wallet_tokens" ||
+                 id === IDS.WALLET_EARN || id === IDS.WALLET_VIEW_BALANCE || id === IDS.WALLET_TRANSFER ||
+                 id === IDS.WALLET_REDEEM || id === IDS.WALLET_TOP || id === IDS.WALLET_TRANSACTIONS ||
+                 id === IDS.WALLET_REFERRAL || id === IDS.WALLET_SHARE || id === "WALLET_PURCHASE" ||
+                 id === "buy_tokens" || id === "WALLET_CASHOUT" || id === "cash_out" ||
+                 id.startsWith("partner::") || id.startsWith("wallet_tx::") || id.startsWith("wallet_top::") ||
+                 id.startsWith("purchase_") || id.startsWith("cashout_confirm_") || id === "manual_recipient" ||
+                 id === IDS.WALLET_SHARE_WHATSAPP || id === IDS.WALLET_SHARE_QR || id === IDS.WALLET_SHARE_DONE) {
+          // All wallet functionality has been moved to wa-webhook-wallet
+          // This profile webhook no longer handles wallet operations
+          logEvent("WALLET_DEPRECATED_ROUTE", { id }, "warn");
+          await sendText(
+            ctx.from,
+            "⚠️ Wallet feature has been moved. Please restart the conversation by sending 'hi' or 'menu'."
+          );
+          handled = true;
         }
         
         // My Businesses
@@ -893,72 +906,10 @@ serve(async (req: Request): Promise<Response> => {
           handled = await startProfile(ctx, state ?? { key: "home" });
         }
         
-        // Back to Menu (from wallet/other submenus)
+        // Back to Menu (from submenus)
         else if (id === IDS.BACK_MENU || id === "back_menu") {
           const { startProfile } = await import("./profile/home.ts");
           handled = await startProfile(ctx, state ?? { key: "home" });
-        }
-        
-        // Wallet Earn
-        else if (id === IDS.WALLET_EARN) {
-          const { showWalletEarn } = await import("./wallet/earn.ts");
-          handled = await showWalletEarn(ctx);
-        }
-        else if (id === IDS.WALLET_VIEW_BALANCE) {
-          const { showWalletBalance } = await import("./wallet/home.ts");
-          handled = await showWalletBalance(ctx);
-        }
-
-        // Wallet Share - WhatsApp
-        else if (id === IDS.WALLET_SHARE_WHATSAPP || id === IDS.WALLET_SHARE_QR || id === IDS.WALLET_SHARE_DONE) {
-          const { handleWalletEarnSelection, handleWalletShareDone } = await import("./wallet/earn.ts");
-          if (id === IDS.WALLET_SHARE_DONE) {
-            handled = await handleWalletShareDone(ctx);
-          } else {
-            handled = await handleWalletEarnSelection(ctx, state as any, id);
-          }
-        }
-        
-        // Wallet Transfer
-        else if (id === IDS.WALLET_TRANSFER) {
-          const { startWalletTransfer } = await import("./wallet/transfer.ts");
-          handled = await startWalletTransfer(ctx);
-        }
-        
-        // Wallet Redeem
-        else if (id === IDS.WALLET_REDEEM) {
-          const { showWalletRedeem } = await import("./wallet/redeem.ts");
-          handled = await showWalletRedeem(ctx);
-        }
-        
-        // Wallet Top (Leaderboard)
-        else if (id === IDS.WALLET_TOP) {
-          const { showWalletTop } = await import("./wallet/top.ts");
-          handled = await showWalletTop(ctx);
-        }
-        
-        // Wallet Transactions
-        else if (id === IDS.WALLET_TRANSACTIONS) {
-          const { showWalletTransactions } = await import("./wallet/transactions.ts");
-          handled = await showWalletTransactions(ctx);
-        }
-        
-        // Wallet Referral
-        else if (id === IDS.WALLET_REFERRAL || id === IDS.WALLET_SHARE) {
-          const { handleWalletReferral } = await import("./wallet/referral.ts");
-          handled = await handleWalletReferral(ctx);
-        }
-        else if (id.startsWith("partner::") || id === "manual_recipient") {
-          const { handleWalletTransferSelection } = await import("./wallet/transfer.ts");
-          handled = await handleWalletTransferSelection(ctx, state as any, id);
-        }
-        else if (id.startsWith("wallet_tx::")) {
-          const { showWalletTransactions } = await import("./wallet/transactions.ts");
-          handled = await showWalletTransactions(ctx);
-        }
-        else if (id.startsWith("wallet_top::")) {
-          const { showWalletTop } = await import("./wallet/top.ts");
-          handled = await showWalletTop(ctx);
         }
         
         // Share EasyMO
@@ -996,29 +947,6 @@ serve(async (req: Request): Promise<Response> => {
           }
         }
         
-        // Token Purchase
-        else if (id === "WALLET_PURCHASE" || id === "buy_tokens") {
-          const { handleWalletPurchase } = await import("./wallet/purchase.ts");
-          handled = await handleWalletPurchase(ctx);
-        }
-        else if (id.startsWith("purchase_")) {
-          const { handlePurchasePackage } = await import("./wallet/purchase.ts");
-          handled = await handlePurchasePackage(ctx, id);
-        }
-        
-        // Cash Out
-        else if (id === "WALLET_CASHOUT" || id === "cash_out") {
-          const { handleCashOut } = await import("./wallet/cashout.ts");
-          handled = await handleCashOut(ctx);
-        }
-        else if (id === "cashout_confirm_yes") {
-          const { handleCashOutConfirm } = await import("./wallet/cashout.ts");
-          handled = await handleCashOutConfirm(ctx);
-        }
-        else if (id === "cashout_confirm_no") {
-          const { handleCashOutCancel } = await import("./wallet/cashout.ts");
-          handled = await handleCashOutCancel(ctx);
-        }
         
         // MoMo QR
         else if (id === IDS.MOMO_QR || id.startsWith("momoqr_")) {
@@ -1030,12 +958,6 @@ serve(async (req: Request): Promise<Response> => {
             handled = await handleMomoButton(ctx, id, momoState);
           }
         }
-        
-        // Reward selection (TODO: implement handleRewardSelection)
-        // else if (id.startsWith("REWARD::") && state?.key === IDS.WALLET_REDEEM) {
-        //   const { handleRewardSelection } = await import("./wallet/redeem.ts");
-        //   handled = await handleRewardSelection(ctx, state.data as any, id);
-        // }
         
       }
     }
@@ -1054,47 +976,18 @@ serve(async (req: Request): Promise<Response> => {
                               !/^(HELLO|THANKS|CANCEL|SUBMIT|ACCEPT|REJECT|STATUS|URGENT|PLEASE|PROFILE|WALLET)$/.test(upperText);
       
       if (refMatch || isStandaloneCode) {
-        const code = refMatch ? refMatch[1] : originalText;
-        logEvent("PROFILE_REFERRAL_CODE_DETECTED", { code: code.substring(0, 4) + "***" });
-        const { applyReferralCodeFromMessage } = await import("./wallet/referral.ts");
-        handled = await applyReferralCodeFromMessage(ctx, code);
+        // Referral codes are handled by wa-webhook-wallet
+        logEvent("PROFILE_REFERRAL_DEPRECATED", { type: "referral_code" }, "warn");
+        await sendText(
+          ctx.from,
+          "⚠️ Referral feature has been moved. Please restart by sending 'hi' or 'menu'."
+        );
+        handled = true;
       }
       // Check for menu selection key first
       else if (text === "profile") {
         const { startProfile } = await import("./profile/home.ts");
         handled = await startProfile(ctx, state ?? { key: "home" });
-      }
-      // Wallet keywords
-      else if (text.includes("wallet") || text.includes("balance")) {
-        const { startWallet } = await import("./wallet/home.ts");
-        handled = await startWallet(ctx, state ?? { key: "home" });
-      } else if (text.includes("transfer") || text.includes("send")) {
-        const { startWalletTransfer } = await import("./wallet/transfer.ts");
-        handled = await startWalletTransfer(ctx);
-      } else if (text.includes("redeem") || text.includes("reward")) {
-        const { showWalletRedeem } = await import("./wallet/redeem.ts");
-        handled = await showWalletRedeem(ctx);
-      } else if (text.includes("earn") || text.includes("get token")) {
-        const { showWalletEarn } = await import("./wallet/earn.ts");
-        handled = await showWalletEarn(ctx);
-      } else if (text.includes("share") || text.includes("referral")) {
-        const { handleWalletReferral } = await import("./wallet/referral.ts");
-        handled = await handleWalletReferral(ctx);
-      } else if (text.includes("transaction") || text.includes("history")) {
-        const { showWalletTransactions } = await import("./wallet/transactions.ts");
-        handled = await showWalletTransactions(ctx);
-      }
-      
-      // Purchase keywords
-      else if (["buy", "buy tokens", "purchase", "purchase tokens"].includes(text)) {
-        const { handleWalletPurchase } = await import("./wallet/purchase.ts");
-        handled = await handleWalletPurchase(ctx);
-      }
-      
-      // Cash-out keywords
-      else if (["cash out", "cashout", "withdraw", "withdrawal"].includes(text)) {
-        const { handleCashOut } = await import("./wallet/cashout.ts");
-        handled = await handleCashOut(ctx);
       }
       
       // MOMO QR Text - handle state-based input or keywords
@@ -1109,33 +1002,6 @@ serve(async (req: Request): Promise<Response> => {
         }
       }
 
-      else if (state?.key === IDS.WALLET_TRANSFER) {
-        const { handleWalletTransferText } = await import("./wallet/transfer.ts");
-        handled = await handleWalletTransferText(ctx, (message.text as any)?.body ?? "", state as any);
-      }
-      else if (state?.key === IDS.WALLET_REFERRAL) {
-        const { applyReferralCodeFromMessage } = await import("./wallet/referral.ts");
-        handled = await applyReferralCodeFromMessage(ctx, (message.text as any)?.body ?? "");
-      }
-      
-      // Handle purchase amount input
-      else if (state?.key === "wallet_purchase_amount") {
-        const { handlePurchaseAmount } = await import("./wallet/purchase.ts");
-        handled = await handlePurchaseAmount(ctx, text);
-      }
-      
-      // Handle cash-out amount input
-      else if (state?.key === "wallet_cashout_amount") {
-        const { handleCashOutAmount } = await import("./wallet/cashout.ts");
-        handled = await handleCashOutAmount(ctx, text);
-      }
-      
-      // Handle cash-out phone input
-      else if (state?.key === "wallet_cashout_phone") {
-        const { handleCashOutPhone } = await import("./wallet/cashout.ts");
-        handled = await handleCashOutPhone(ctx, text);
-      }
-      
       // Handle business creation name
       else if (state?.key === "business_create_name") {
         const { handleCreateBusinessName } = await import("./business/create.ts");
