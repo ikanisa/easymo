@@ -1,8 +1,0 @@
-{
-  "name": "EasyMo AI Sales Agent",
-  "description": "Kinyarwanda-speaking AI Cold Call Agent & Broker for the Rwandan Market using Gemini Live API, Search/Maps Grounding, and Thinking Mode.",
-  "requestFramePermissions": [
-    "microphone",
-    "geolocation"
-  ]
-}
