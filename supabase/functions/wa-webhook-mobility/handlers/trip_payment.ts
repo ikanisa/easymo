@@ -4,6 +4,13 @@
 // Handles trip payment using MTN Mobile Money USSD codes
 // NO API integration - user-initiated USSD workflow only
 // ============================================================================
+//
+// ⚠️ DEPRECATION NOTICE: These functions reference the `mobility_trip_matches`
+// table which was dropped in migration 20251209093000. The simplified mobility
+// flow now uses direct WhatsApp links without formal match/payment records.
+//
+// Functions checkPendingPayments and finalizePayment reference the dropped table.
+// ============================================================================
 
 import { logStructuredEvent } from "../../_shared/observability.ts";
 import type { RouterContext } from "../types.ts";
@@ -273,6 +280,9 @@ export async function processTransactionReference(
 
 /**
  * Finalizes payment state and updates database
+ * 
+ * NOTE: The mobility_trip_matches table was dropped. This function now just
+ * clears state and logs the event without database updates.
  */
 async function finalizePayment(
   ctx: RouterContext,
@@ -280,18 +290,8 @@ async function finalizePayment(
   status: "paid" | "skipped",
   reference?: string
 ): Promise<boolean> {
-  // Update trip payment status
-  const { error: updateError } = await ctx.supabase
-    .from("mobility_trip_matches") // V2 table
-    .update({
-      payment_status: status === "skipped" ? "pending_verification" : "paid",
-      payment_reference: reference || null,
-      payment_confirmed_at: status === "paid" ? new Date().toISOString() : null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", payment.tripId);
-
-  if (updateError) throw updateError;
+  // NOTE: mobility_trip_matches table was dropped - skipping database update
+  // The simplified flow handles payments directly via WhatsApp between users
 
   // Clear state
   await clearState(ctx.supabase, ctx.profileId);
@@ -322,27 +322,17 @@ async function finalizePayment(
 /**
  * Checks for pending payments for a user
  * Returns the amount pending if any, or null
+ * 
+ * NOTE: The mobility_trip_matches table was dropped. This function now always
+ * returns null since there's no match/payment table in the simplified flow.
+ * Payment is handled directly between users via WhatsApp.
  */
 export async function checkPendingPayments(
-  ctx: RouterContext
+  _ctx: RouterContext
 ): Promise<{ amount: number; tripId: string } | null> {
-  if (!ctx.profileId) return null;
-
-  const { data, error } = await ctx.supabase
-    .from("mobility_trip_matches")
-    .select("id, actual_fare, fare_estimate")
-    .eq("passenger_id", ctx.profileId)
-    .eq("payment_status", "pending_verification")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .single();
-
-  if (error || !data) return null;
-
-  const amount = data.actual_fare || data.fare_estimate || 0;
-  if (amount <= 0) return null;
-
-  return { amount, tripId: data.id };
+  // mobility_trip_matches table was dropped - simplified flow uses direct WhatsApp links
+  // without formal payment records. Always return null (no pending payments).
+  return null;
 }
 
 /**

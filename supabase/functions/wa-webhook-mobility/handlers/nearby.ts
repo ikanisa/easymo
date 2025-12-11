@@ -475,10 +475,11 @@ export async function handleNearbyResultSelection(
     return true;
   }
 
+  // Extract the actual trip ID from the list row identifier (e.g., "MTCH::uuid" -> "uuid")
   // Extract the actual trip ID from the list row identifier
   const matchId = id.startsWith("MTCH::") ? id.replace("MTCH::", "") : id;
   
-  // Find the selected match from stored rows (same pattern as schedule flow)
+  // Find the selected match from stored rows using matchId or tripId
   const match = state.rows.find((row) => row.id === matchId || row.tripId === matchId);
   
   if (!match || !match.whatsapp) {
@@ -488,6 +489,8 @@ export async function handleNearbyResultSelection(
   }
 
   // Build WhatsApp deep link with prefilled message
+  // When mode === "drivers", the user is a passenger looking for drivers
+  // When mode === "passengers", the user is a driver looking for passengers
   const isPassenger = state.mode === "drivers";
   const prefill = isPassenger
     ? t(ctx.locale, "mobility.nearby.prefill.passenger", { 
@@ -501,7 +504,7 @@ export async function handleNearbyResultSelection(
   
   const link = waChatLink(match.whatsapp, prefill);
   
-  // Send clickable WhatsApp link to user (matches schedule flow pattern)
+  // Send clickable WhatsApp link to user
   await sendButtonsMessage(
     ctx,
     t(ctx.locale, "mobility.nearby.chat_cta", { 

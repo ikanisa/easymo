@@ -4,6 +4,14 @@
 // Handles complete trip lifecycle: start → in-progress → complete → rating
 // Target: 75% production readiness
 // ============================================================================
+//
+// ⚠️ DEPRECATION NOTICE: These functions reference the `mobility_trip_matches`
+// table which was dropped in migration 20251209093000. The simplified mobility
+// flow now uses direct WhatsApp links via waChatLink() without match records.
+//
+// These handlers will return false until properly refactored to use the 
+// simplified trips-only approach.
+// ============================================================================
 
 import { logStructuredEvent } from "../../_shared/observability.ts";
 import type { RouterContext } from "../types.ts";
