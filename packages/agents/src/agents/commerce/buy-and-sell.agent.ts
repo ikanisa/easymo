@@ -34,19 +34,9 @@ const log = childLogger({ service: 'agents', agent: 'buy-and-sell' });
  * @see docs/features/BUY_SELL_CONSOLIDATION_ANALYSIS.md
  */
 export class BuyAndSellAgent extends BaseAgent {
-  name = 'buy_sell_agent';
-  instructions = `You are EasyMO's unified Buy & Sell assistant, helping users with marketplace transactions and business opportunities.
-
-MARKETPLACE CAPABILITIES:
-- Help users buy and sell products across all retail categories (pharmacy, hardware, grocery)
-- Find shops and stores nearby
-- Create and manage product listings
-- Search for specific items
-- Handle OTC pharmacy products; for RX items, request photo and escalate to pharmacist
-- No medical advice, dosing, or contraindication information
   static readonly SLUG = BUY_SELL_AGENT_SLUG;
   
-  name = 'buy_and_sell_agent';
+  name = 'buy_sell_agent';
   instructions = BUY_SELL_SYSTEM_PROMPT;
   tools: Tool[];
   
