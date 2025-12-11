@@ -32,12 +32,7 @@ UPDATE whatsapp_home_menu_items
 SET description = 'Find rides and drivers via WhatsApp (button-based workflow)'
 WHERE key = 'rides_agent' OR key = 'rides' OR key = 'mobility';
 
--- Log the deletion
-INSERT INTO system_audit_log (action, details, created_at)
-VALUES (
-  'DELETE_AI_AGENT', 
-  '{"slug": "rides", "reason": "Replaced with WhatsApp button workflows per directive", "date": "2025-12-10"}',
-  NOW()
-);
+-- Add comment
+COMMENT ON TABLE ai_agents IS 'AI Agents registry. Rides agent deleted 2025-12-10, replaced with workflows.';
 
 COMMIT;

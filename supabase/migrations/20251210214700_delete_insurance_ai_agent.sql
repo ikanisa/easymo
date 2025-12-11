@@ -31,14 +31,6 @@ UPDATE whatsapp_home_menu_items
 SET description = 'Get insurance quotes and manage policies via WhatsApp (button-based workflow)'
 WHERE key = 'insurance_agent' OR key = 'insurance';
 
--- Log the deletion
-INSERT INTO system_audit_log (action, details, created_at)
-VALUES (
-  'DELETE_AI_AGENT', 
-  '{"slug": "insurance", "reason": "Replaced with WhatsApp button workflows per directive", "date": "2025-12-10"}',
-  NOW()
-);
-
 -- Add comment
 COMMENT ON TABLE ai_agents IS 'AI Agents registry. Insurance agent deleted 2025-12-10, replaced with workflows.';
 

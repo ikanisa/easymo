@@ -251,7 +251,9 @@ async function fetchActiveContacts(client: SupabaseClient): Promise<AdminContact
       .from("insurance_admin_contacts")
       .select("id, display_name, channel, destination")
       .eq("is_active", true)
-      .order("created_at");
+      .eq("category", "insurance")
+      .order("priority", { ascending: true })
+      .order("display_order", { ascending: true });
 
     if (error) {
       console.error("insurance.fetch_contacts_error", error);
