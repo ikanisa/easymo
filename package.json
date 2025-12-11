@@ -102,8 +102,7 @@
       "protobufjs",
       "sharp",
       "unrs-resolver",
-      "workerd",
-      "wrtc"
+      "workerd"
     ]
   },
   "engines": {
