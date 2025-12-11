@@ -46,7 +46,7 @@ import { buildSaveRows } from "../locations/save.ts";
 import { sortMatches } from "../../../_shared/wa-webhook-shared/utils/sortMatches.ts";
 
 // Use centralized config from MOBILITY_CONFIG - imported from rpc/mobility.ts
-const DEFAULT_WINDOW_DAYS = MOBILITY_CONFIG.DEFAULT_WINDOW_DAYS;
+const TRIP_MATCHING_WINDOW_MINUTES = MOBILITY_CONFIG.TRIP_MATCHING_WINDOW_MINUTES;
 const REQUIRED_RADIUS_METERS = MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS;
 const DEFAULT_RADIUS_METERS = MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS;
 const SAVED_ROW_PREFIX = "FAV::";
@@ -695,7 +695,7 @@ async function runMatchingFallback(
         max,
         Boolean(dropoff),
         radiusMeters,
-        DEFAULT_WINDOW_DAYS,
+        TRIP_MATCHING_WINDOW_MINUTES,
       )
       : await matchPassengersForTrip(
         ctx.supabase,
@@ -703,7 +703,7 @@ async function runMatchingFallback(
         max,
         false,
         radiusMeters,
-        DEFAULT_WINDOW_DAYS,
+        TRIP_MATCHING_WINDOW_MINUTES,
       );
 
     await logStructuredEvent("MATCHES_RESULT", {

@@ -51,7 +51,7 @@ import {
 import { saveUserLocation } from "../locations/save_location.ts";
 
 // Use centralized config for all mobility constants
-const DEFAULT_WINDOW_DAYS = MOBILITY_CONFIG.DEFAULT_WINDOW_DAYS;
+const TRIP_MATCHING_WINDOW_MINUTES = MOBILITY_CONFIG.TRIP_MATCHING_WINDOW_MINUTES;
 const REQUIRED_RADIUS_METERS = MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS;
 const DEFAULT_RADIUS_METERS = MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS;
 const MAX_RADIUS_METERS = MOBILITY_CONFIG.MAX_SEARCH_RADIUS_METERS;
@@ -939,7 +939,7 @@ async function runMatchingFallback(
       mode: state.mode,
       vehicle: state.vehicle,
       radius_m: radiusMeters,
-      window_days: DEFAULT_WINDOW_DAYS,
+      window_minutes: TRIP_MATCHING_WINDOW_MINUTES,
       tripId: tempTripId,
       pickup_lat: pickup.lat,
       pickup_lng: pickup.lng,
@@ -956,7 +956,7 @@ async function runMatchingFallback(
         max,
         Boolean(dropoff),
         radiusMeters,
-        DEFAULT_WINDOW_DAYS,
+        TRIP_MATCHING_WINDOW_MINUTES,
       )
       : await matchPassengersForTrip(
         ctx.supabase,
@@ -964,7 +964,7 @@ async function runMatchingFallback(
         max,
         false,
         radiusMeters,
-        DEFAULT_WINDOW_DAYS,
+        TRIP_MATCHING_WINDOW_MINUTES,
       );
 
     // Log detailed match results for debugging
@@ -992,11 +992,11 @@ async function runMatchingFallback(
         vehicle: state.vehicle,
         pickup: `${pickup.lat.toFixed(4)},${pickup.lng.toFixed(4)}`,
         radiusMeters,
-        windowDays: DEFAULT_WINDOW_DAYS,
+        windowMinutes: TRIP_MATCHING_WINDOW_MINUTES,
         possibleCauses: [
           "No active trips in area",
           "Vehicle type mismatch", 
-          "Trips expired (>24h location age)",
+          "Trips expired (>30 min)",
           "Trips outside radius",
         ],
         hint: "Check mobility_trips table for open trips with role=driver/passenger",

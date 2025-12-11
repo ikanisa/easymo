@@ -1125,7 +1125,7 @@ export async function fetchMatches(
       options.limit,
       options.preferDropoff,
       options.radiusMeters,
-      MOBILITY_CONFIG.DEFAULT_WINDOW_DAYS,
+      MOBILITY_CONFIG.TRIP_MATCHING_WINDOW_MINUTES,
     )
     : await matchPassengersForTrip(
       ctx.supabase,
@@ -1133,7 +1133,7 @@ export async function fetchMatches(
       options.limit,
       options.preferDropoff,
       options.radiusMeters,
-      MOBILITY_CONFIG.DEFAULT_WINDOW_DAYS,
+      MOBILITY_CONFIG.TRIP_MATCHING_WINDOW_MINUTES,
     );
   return sortMatches(matches, { prioritize: "time" }).slice(0, 9);
 }

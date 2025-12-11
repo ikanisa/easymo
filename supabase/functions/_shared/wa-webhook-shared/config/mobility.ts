@@ -3,12 +3,12 @@
  * Centralized configuration for mobility services to prevent hardcoded values
  * 
  * TIME WINDOWS:
- * - Recent searches: 30 minutes (in intent_storage.ts expiresInMinutes default)
- * - Trip matching: 48 hours (DEFAULT_WINDOW_DAYS = 2 days)
- * - Location cache (client-side): 30 minutes (LOCATION_FRESHNESS_MINUTES)
- * - Location freshness (SQL-side): 24 hours (SQL_LOCATION_FRESHNESS_HOURS)
- *   This was increased from 30 minutes to fix the "No matches found" issue
- *   when drivers/passengers haven't updated location recently.
+ * - All time windows standardized to 30 minutes for real-time matching
+ * - Recent searches: 30 minutes
+ * - Trip matching: 30 minutes (intent-based trips)
+ * - Trip expiry: 30 minutes (intent-based trips)
+ * - Location cache (client-side): 30 minutes
+ * - Location freshness (SQL-side): 30 minutes
  */
 
 // Search and matching constants
@@ -19,16 +19,14 @@ export const MOBILITY_CONFIG = {
   MAX_SEARCH_RADIUS_METERS: 25_000,
   /** Location cache window in minutes (30 min) - for client-side caching */
   LOCATION_FRESHNESS_MINUTES: 30,
-  /** SQL-side location freshness in hours (24h) - how old location can be for matching */
-  SQL_LOCATION_FRESHNESS_HOURS: 24,
-  /** Recent search window in minutes (30 min) - matches LOCATION_FRESHNESS_MINUTES */
+  /** Recent search window in minutes (30 min) */
   RECENT_SEARCH_WINDOW_MINUTES: 30,
-  /** Trip expiry time in minutes (90 min) */
-  TRIP_EXPIRY_MINUTES: 90,
+  /** Trip expiry time in minutes (30 min for intent-based trips) */
+  TRIP_EXPIRY_MINUTES: 30,
+  /** Trip matching window in minutes (30 min) */
+  TRIP_MATCHING_WINDOW_MINUTES: 30,
   /** Maximum number of results to return */
   MAX_RESULTS_LIMIT: 9,
-  /** Default time window for trip matching in days (2 days = 48 hours) */
-  DEFAULT_WINDOW_DAYS: 2,
 } as const;
 
 /**

@@ -1,9 +1,9 @@
 import type { SupabaseClient } from "../deps.ts";
 import type { RecurrenceType } from "../../_shared/wa-webhook-shared/domains/intent_storage.ts";
 
-// Trip expiry: configurable via environment variable, default 90 minutes
-// Increased from 30 to 90 minutes to improve match rate (75% → 90%+)
-const DEFAULT_TRIP_EXPIRY_MINUTES = 90;
+// Trip expiry: 30 minutes for intent-based trips (real-time matching)
+// Scheduled trips use longer window (7 days)
+const DEFAULT_TRIP_EXPIRY_MINUTES = 30;
 const envExpiryMinutes = Number(Deno.env.get("MOBILITY_TRIP_EXPIRY_MINUTES"));
 const TRIP_EXPIRY_MINUTES = Number.isFinite(envExpiryMinutes) && envExpiryMinutes > 0 
   ? envExpiryMinutes 
@@ -73,7 +73,7 @@ export async function insertTrip(
     throw new Error("Invalid coordinates: lat must be [-90,90], lng must be [-180,180]");
   }
 
-  // For scheduled trips, use longer expiry (7 days) or default 90 minutes
+  // For scheduled trips, use longer expiry (7 days) or default 30 minutes for intent
   const isScheduled = params.scheduledAt !== undefined;
   const expiryMs = isScheduled ? 7 * 24 * 60 * 60 * 1000 : TRIP_EXPIRY_MS;
   const expires = new Date(Date.now() + expiryMs).toISOString();
