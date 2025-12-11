@@ -84,8 +84,6 @@ COMMENT ON TABLE trips IS 'Canonical table for all trip requests (driver & passe
 COMMENT ON TABLE driver_status IS 'Current online/offline status and location of drivers';
 COMMENT ON TABLE trip_notifications IS 'Notifications sent to users about trips';
 COMMENT ON TABLE recurring_trips IS 'Templates for recurring trip schedules (e.g., daily commute)';
-COMMENT ON TABLE trip_payment_requests IS 'Payment requests for completed trips';
-COMMENT ON TABLE trip_status_audit IS 'Audit log of trip status changes';
 
 -- ============================================================================
 -- VERIFICATION

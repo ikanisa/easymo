@@ -79,28 +79,8 @@ else
 fi
 echo ""
 
-# Test 4: Check foreign key constraints
-echo "Test 4: Foreign key constraints"
-echo "--------------------------------"
-
-PAYMENT_FK=$(psql "$DATABASE_URL" -t -c "
-SELECT COUNT(*) FROM information_schema.table_constraints tc
-JOIN information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name
-WHERE tc.table_name = 'trip_payment_requests'
-  AND tc.constraint_type = 'FOREIGN KEY'
-  AND ccu.table_name = 'mobility_matches';
-" | tr -d ' ')
-
-if [ "$PAYMENT_FK" -gt 0 ]; then
-  echo "✅ PASS: trip_payment_requests FK points to mobility_matches"
-  PASSED=$((PASSED + 1))
-else
-  echo "⚠️  WARNING: trip_payment_requests FK may need update"
-fi
-echo ""
-
-# Test 5: Test trip creation
-echo "Test 5: Trip creation test"
+# Test 4: Test trip creation
+echo "Test 4: Trip creation test"
 echo "--------------------------------"
 
 TEST_USER_ID=$(psql "$DATABASE_URL" -t -c "SELECT user_id FROM profiles LIMIT 1;" | tr -d ' ')
@@ -146,8 +126,8 @@ else
 fi
 echo ""
 
-# Test 6: Test matching function
-echo "Test 6: Matching function test"
+# Test 5: Test matching function
+echo "Test 5: Matching function test"
 echo "--------------------------------"
 
 LATEST_TRIP=$(psql "$DATABASE_URL" -t -c "SELECT id FROM trips LIMIT 1;" | tr -d ' ')
@@ -170,8 +150,8 @@ else
 fi
 echo ""
 
-# Test 7: Check for orphaned records
-echo "Test 7: Orphaned records check"
+# Test 6: Check for orphaned records
+echo "Test 6: Orphaned records check"
 echo "--------------------------------"
 
 ORPHANED_MATCHES=$(psql "$DATABASE_URL" -t -c "
