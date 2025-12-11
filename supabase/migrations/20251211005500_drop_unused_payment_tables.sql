@@ -22,6 +22,8 @@ BEGIN;
 -- ============================================================================
 
 DO $$
+DECLARE
+  fk_record RECORD;
 BEGIN
   IF EXISTS (
     SELECT 1 FROM information_schema.tables 
@@ -31,21 +33,17 @@ BEGIN
     
     -- Drop any foreign key constraints first
     -- (in case they exist pointing TO this table or FROM this table)
-    DECLARE
-      fk_record RECORD;
-    BEGIN
-      FOR fk_record IN 
-        SELECT tc.constraint_name, tc.table_name
-        FROM information_schema.table_constraints tc
-        WHERE tc.constraint_type = 'FOREIGN KEY'
-          AND (tc.table_name = 'trip_payment_requests' 
-               OR tc.constraint_name LIKE '%trip_payment_requests%')
-      LOOP
-        EXECUTE format('ALTER TABLE %I DROP CONSTRAINT IF EXISTS %I CASCADE', 
-                      fk_record.table_name, fk_record.constraint_name);
-        RAISE NOTICE 'Dropped FK constraint: %.%', fk_record.table_name, fk_record.constraint_name;
-      END LOOP;
-    END;
+    FOR fk_record IN 
+      SELECT tc.constraint_name, tc.table_name
+      FROM information_schema.table_constraints tc
+      WHERE tc.constraint_type = 'FOREIGN KEY'
+        AND (tc.table_name = 'trip_payment_requests' 
+             OR tc.constraint_name LIKE '%trip_payment_requests%')
+    LOOP
+      EXECUTE format('ALTER TABLE %I DROP CONSTRAINT IF EXISTS %I CASCADE', 
+                    fk_record.table_name, fk_record.constraint_name);
+      RAISE NOTICE 'Dropped FK constraint: %.%', fk_record.table_name, fk_record.constraint_name;
+    END LOOP;
     
     -- Drop the table with CASCADE to handle any remaining dependencies
     DROP TABLE IF EXISTS public.trip_payment_requests CASCADE;
@@ -60,6 +58,8 @@ END $$;
 -- ============================================================================
 
 DO $$
+DECLARE
+  fk_record RECORD;
 BEGIN
   IF EXISTS (
     SELECT 1 FROM information_schema.tables 
@@ -68,21 +68,17 @@ BEGIN
     RAISE NOTICE 'Dropping trip_status_audit table and related constraints...';
     
     -- Drop any foreign key constraints first
-    DECLARE
-      fk_record RECORD;
-    BEGIN
-      FOR fk_record IN 
-        SELECT tc.constraint_name, tc.table_name
-        FROM information_schema.table_constraints tc
-        WHERE tc.constraint_type = 'FOREIGN KEY'
-          AND (tc.table_name = 'trip_status_audit' 
-               OR tc.constraint_name LIKE '%trip_status_audit%')
-      LOOP
-        EXECUTE format('ALTER TABLE %I DROP CONSTRAINT IF EXISTS %I CASCADE', 
-                      fk_record.table_name, fk_record.constraint_name);
-        RAISE NOTICE 'Dropped FK constraint: %.%', fk_record.table_name, fk_record.constraint_name;
-      END LOOP;
-    END;
+    FOR fk_record IN 
+      SELECT tc.constraint_name, tc.table_name
+      FROM information_schema.table_constraints tc
+      WHERE tc.constraint_type = 'FOREIGN KEY'
+        AND (tc.table_name = 'trip_status_audit' 
+             OR tc.constraint_name LIKE '%trip_status_audit%')
+    LOOP
+      EXECUTE format('ALTER TABLE %I DROP CONSTRAINT IF EXISTS %I CASCADE', 
+                    fk_record.table_name, fk_record.constraint_name);
+      RAISE NOTICE 'Dropped FK constraint: %.%', fk_record.table_name, fk_record.constraint_name;
+    END LOOP;
     
     -- Drop the table with CASCADE to handle any remaining dependencies
     DROP TABLE IF EXISTS public.trip_status_audit CASCADE;
