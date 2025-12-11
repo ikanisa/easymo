@@ -5,11 +5,12 @@
 // Target: 75% production readiness
 // ============================================================================
 //
-// NOTE: These handlers now use the canonical `trips` table directly.
-// The deprecated `mobility_trip_matches` table was dropped in migration 
-// 20251209093000. The simplified flow uses direct WhatsApp links via 
-// waChatLink() for driver-passenger communication.
+// ⚠️ DEPRECATION NOTICE: These functions reference the `mobility_trip_matches`
+// table which was dropped in migration 20251209093000. The simplified mobility
+// flow now uses direct WhatsApp links via waChatLink() without match records.
 //
+// These handlers will return false until properly refactored to use the 
+// simplified trips-only approach.
 // ============================================================================
 
 import { logStructuredEvent } from "../../_shared/observability.ts";
@@ -68,7 +69,7 @@ export async function handleTripStart(
 
     // 1. Verify trip exists and is in accepted state
     const { data: trip, error: tripError } = await ctx.supabase
-      .from("trips") // canonical trips table
+      .from("mobility_trip_matches") // V2 table
       .select("*")
       .eq("id", tripId)
       .eq("status", "accepted")
@@ -94,7 +95,7 @@ export async function handleTripStart(
 
     // 3. Update trip status to in_progress with optimistic locking
     const { data: updated, error: updateError } = await ctx.supabase
-      .from("trips") // canonical trips table
+      .from("mobility_trip_matches") // V2 table
       .update({
         status: "in_progress",
         started_at: new Date().toISOString(),
@@ -173,7 +174,7 @@ export async function handleTripArrivedAtPickup(
 
     // 1. Get current trip state
     const { data: currentTrip } = await ctx.supabase
-      .from("trips") // canonical trips table
+      .from("mobility_trip_matches") // V2 table
       .select("*")
       .eq("id", tripId)
       .eq("driver_user_id", userId)
@@ -190,7 +191,7 @@ export async function handleTripArrivedAtPickup(
 
     // 2. Update trip status with optimistic locking
     const { data: trip, error: updateError } = await ctx.supabase
-      .from("trips") // canonical trips table
+      .from("mobility_trip_matches") // V2 table
       .update({
         status: "driver_arrived",
         arrived_at_pickup_at: new Date().toISOString(),
@@ -263,7 +264,7 @@ export async function handleTripPickedUp(
     // 1. Update trip status
     // Get current state for optimistic locking
     const { data: currentTrip } = await ctx.supabase
-      .from("trips") // canonical trips table
+      .from("mobility_trip_matches") // V2 table
       .select("*")
       .eq("id", tripId)
       .eq("driver_user_id", userId)
@@ -279,7 +280,7 @@ export async function handleTripPickedUp(
     }
 
     const { data: trip, error: updateError } = await ctx.supabase
-      .from("trips") // canonical trips table
+      .from("mobility_trip_matches") // V2 table
       .update({
         status: "in_progress",
         picked_up_at: new Date().toISOString(),
@@ -361,7 +362,7 @@ export async function handleTripComplete(
 
     // 1. Get trip details
     const { data: trip, error: tripError } = await ctx.supabase
-      .from("trips") // canonical trips table
+      .from("mobility_trip_matches") // V2 table
       .select("*")
       .eq("id", tripId)
       .eq("status", "in_progress")
@@ -421,7 +422,7 @@ export async function handleTripComplete(
 
     // 5. Update trip status
     const { error: updateError } = await ctx.supabase
-      .from("trips") // canonical trips table
+      .from("mobility_trip_matches") // V2 table
       .update({
         status: "completed",
         completed_at: completedAt.toISOString(),
@@ -559,7 +560,7 @@ export async function handleTripCancel(
 
     // 1. Get trip details
     const { data: trip, error: tripError } = await ctx.supabase
-      .from("trips") // canonical trips table
+      .from("mobility_trip_matches") // V2 table
       .select("*")
       .eq("id", tripId)
       .single();
@@ -594,7 +595,7 @@ export async function handleTripCancel(
 
     // 5. Update trip status
     const { error: updateError } = await ctx.supabase
-      .from("trips") // canonical trips table
+      .from("mobility_trip_matches") // V2 table
       .update({
         status: cancellationStatus,
         cancelled_at: new Date().toISOString(),
@@ -701,7 +702,7 @@ export async function handleTripRating(
 
     // 2. Get trip details
     const { data: trip, error: tripError } = await ctx.supabase
-      .from("trips") // canonical trips table
+      .from("mobility_trip_matches") // V2 table
       .select("*")
       .eq("id", tripId)
       .eq("status", "completed")
@@ -791,7 +792,7 @@ export async function getTripStatus(
 ): Promise<{ status: TripStatus; trip: any } | null> {
   try {
     const { data: trip, error } = await ctx.supabase
-      .from("trips") // canonical trips table
+      .from("mobility_trip_matches") // V2 table
       .select("*")
       .eq("id", tripId)
       .single();
