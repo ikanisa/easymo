@@ -314,24 +314,18 @@ serve(async (req: Request): Promise<Response> => {
           handled = true;
         }
         
-        // My Vehicles
-        else if (id === IDS.MY_VEHICLES || id === "MY_VEHICLES" || id === "my_vehicles") {
-          const { listMyVehicles } = await import("./vehicles/list.ts");
-          handled = await listMyVehicles(ctx);
-        }
-        else if (id === "ADD_VEHICLE" || id === "add_vehicle") {
-          const { startAddVehicle } = await import("./vehicles/add.ts");
-          handled = await startAddVehicle(ctx);
-        }
-        // Handle vehicle type selection (veh_moto, veh_cab, etc.)
-        else if (id.startsWith("veh_") && state?.key === "vehicle_add_select_type") {
-          const { handleVehicleTypeSelection } = await import("./vehicles/add.ts");
-          handled = await handleVehicleTypeSelection(ctx, id);
-        }
-        else if (id.startsWith("VEHICLE::")) {
-          const vehicleId = id.replace("VEHICLE::", "");
-          const { handleVehicleSelection } = await import("./vehicles/list.ts");
-          handled = await handleVehicleSelection(ctx, vehicleId);
+        // My Vehicles - Moved to wa-webhook-mobility
+        else if (id === IDS.MY_VEHICLES || id === "MY_VEHICLES" || id === "my_vehicles" ||
+                 id === "ADD_VEHICLE" || id === "add_vehicle" ||
+                 (id.startsWith("veh_") && state?.key === "vehicle_add_select_type") ||
+                 id.startsWith("VEHICLE::")) {
+          // Vehicles management moved to wa-webhook-mobility
+          logEvent("VEHICLE_DEPRECATED_ROUTE", { id }, "warn");
+          await sendText(
+            ctx.from,
+            "⚠️ Vehicle management has been moved. Please restart by sending 'hi' or 'menu'."
+          );
+          handled = true;
         }
         
         // Saved Locations
@@ -727,12 +721,6 @@ serve(async (req: Request): Promise<Response> => {
       else if (state?.key === IDS.EDIT_PROFILE_NAME) {
         const { handleEditName } = await import("./profile/edit.ts");
         handled = await handleEditName(ctx, (message.text as any)?.body ?? "");
-      }
-      
-      // Handle vehicle plate number input
-      else if (state?.key === "vehicle_add_plate") {
-        const { handleVehiclePlateInput } = await import("./vehicles/add.ts");
-        handled = await handleVehiclePlateInput(ctx, (message.text as any)?.body ?? "", state);
       }
       
       // Handle add location (text address)
