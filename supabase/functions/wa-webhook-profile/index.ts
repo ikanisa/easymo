@@ -249,97 +249,25 @@ serve(async (req: Request): Promise<Response> => {
           handled = true;
         }
         
-        // My Businesses
-        else if (id === IDS.MY_BUSINESSES || id === "MY_BUSINESSES" || id === "my_business") {
-          const { listMyBusinesses } = await import("./business/list.ts");
-          handled = await listMyBusinesses(ctx);
-        }
-        else if (id === IDS.CREATE_BUSINESS) {
-          const { startCreateBusiness } = await import("./business/list.ts");
-          handled = await startCreateBusiness(ctx);
-        }
-        else if (id.startsWith("BIZ::")) {
-          const businessId = id.replace("BIZ::", "");
-          const { handleBusinessSelection } = await import("./business/list.ts");
-          handled = await handleBusinessSelection(ctx, businessId);
-        }
-        else if (id.startsWith("EDIT_BIZ::")) {
-          const businessId = id.replace("EDIT_BIZ::", "");
-          const { startEditBusiness } = await import("./business/update.ts");
-          handled = await startEditBusiness(ctx, businessId);
-        }
-        else if (id.startsWith("DELETE_BIZ::")) {
-          const businessId = id.replace("DELETE_BIZ::", "");
-          const { confirmDeleteBusiness } = await import("./business/delete.ts");
-          handled = await confirmDeleteBusiness(ctx, businessId);
-        }
-        else if (id.startsWith("CONFIRM_DELETE_BIZ::")) {
-          const businessId = id.replace("CONFIRM_DELETE_BIZ::", "");
-          const { handleDeleteBusiness } = await import("./business/delete.ts");
-          handled = await handleDeleteBusiness(ctx, businessId);
-        }
-        else if (id.startsWith("EDIT_BIZ_NAME::")) {
-          const businessId = id.replace("EDIT_BIZ_NAME::", "");
-          const { promptEditField } = await import("./business/update.ts");
-          handled = await promptEditField(ctx, businessId, "name");
-        }
-        else if (id.startsWith("EDIT_BIZ_DESC::")) {
-          const businessId = id.replace("EDIT_BIZ_DESC::", "");
-          const { promptEditField } = await import("./business/update.ts");
-          handled = await promptEditField(ctx, businessId, "description");
-        }
-        else if (id.startsWith("BACK_BIZ::")) {
-          const businessId = id.replace("BACK_BIZ::", "");
-          const { handleBusinessSelection } = await import("./business/list.ts");
-          handled = await handleBusinessSelection(ctx, businessId);
-        }
-        
-        // ⚡ NEW: Business Detail Selection (lowercase prefix)
-        else if (id.startsWith("biz::")) {
-          const businessId = id.replace("biz::", "");
-          const { handleBusinessSelection } = await import("./business/list.ts");
-          handled = await handleBusinessSelection(ctx, businessId);
-        }
-        
-        // ⚡ NEW: Manage Menu (Restaurant/Bar only)
-        else if (id === IDS.BUSINESS_MANAGE_MENU && state?.key === "business_detail") {
-          const { startRestaurantManager } = await import(
-            "../wa-webhook/domains/vendor/restaurant.ts"
+        // My Businesses - Moved to wa-webhook-buy-sell
+        else if (id === IDS.MY_BUSINESSES || id === "MY_BUSINESSES" || id === "my_business" ||
+                 id === IDS.CREATE_BUSINESS || id.startsWith("BIZ::") || id.startsWith("EDIT_BIZ::") ||
+                 id.startsWith("DELETE_BIZ::") || id.startsWith("CONFIRM_DELETE_BIZ::") ||
+                 id.startsWith("EDIT_BIZ_NAME::") || id.startsWith("EDIT_BIZ_DESC::") ||
+                 id.startsWith("BACK_BIZ::") || id.startsWith("biz::") ||
+                 id === IDS.BUSINESS_MANAGE_MENU || id === IDS.BUSINESS_VIEW_ORDERS ||
+                 id === IDS.BUSINESS_SEARCH || id.startsWith("claim::") ||
+                 id === IDS.BUSINESS_CLAIM_CONFIRM || id === IDS.BUSINESS_ADD_MANUAL ||
+                 id === IDS.BUSINESS_ADD_CONFIRM || id === "skip_description" ||
+                 id === "skip_location" || id.startsWith("cat::")) {
+          // Business management moved to wa-webhook-buy-sell
+          logEvent("BUSINESS_DEPRECATED_ROUTE", { id }, "warn");
+          await sendText(
+            ctx.from,
+            "⚠️ Business management has been moved. Please restart by sending 'hi' or 'menu'."
           );
-          const barId = state.data?.barId as string;
-          if (barId) {
-            handled = await startRestaurantManager(ctx, { barId, initialAction: "menu" });
-          } else {
-            await sendButtonsMessage(
-              ctx,
-              "⚠️ This business is not set up for menu management yet.",
-              [{ id: IDS.MY_BUSINESSES, title: "← Back to Businesses" }],
-            );
-            handled = true;
-          }
+          handled = true;
         }
-        
-        // ⚡ NEW: View Orders (Restaurant/Bar only)
-        else if (id === IDS.BUSINESS_VIEW_ORDERS && state?.key === "business_detail") {
-          const { startRestaurantManager } = await import(
-            "../wa-webhook/domains/vendor/restaurant.ts"
-          );
-          const barId = state.data?.barId as string;
-          if (barId) {
-            handled = await startRestaurantManager(ctx, { barId, initialAction: "orders" });
-          } else {
-            await sendButtonsMessage(
-              ctx,
-              "⚠️ This business is not set up for order management yet.",
-              [{ id: IDS.MY_BUSINESSES, title: "← Back to Businesses" }],
-            );
-            handled = true;
-          }
-        }
-        
-        // ============================================================
-        // PHASE 2-5: My Business Workflow - Bars & Restaurants
-        // ============================================================
         
         // My Bars & Restaurants
         else if (id === IDS.MY_BARS_RESTAURANTS) {
@@ -1002,43 +930,6 @@ serve(async (req: Request): Promise<Response> => {
         }
       }
 
-      // Handle business creation name
-      else if (state?.key === "business_create_name") {
-        const { handleCreateBusinessName } = await import("./business/create.ts");
-        handled = await handleCreateBusinessName(ctx, (message.text as any)?.body ?? "");
-      }
-      
-      // Handle business edit fields
-      else if (state?.key === "business_edit_name" && state.data) {
-        const { handleUpdateBusinessField } = await import("./business/update.ts");
-        handled = await handleUpdateBusinessField(ctx, String(state.data.businessId), "name", (message.text as any)?.body ?? "");
-      }
-      else if (state?.key === "business_edit_description" && state.data) {
-        const { handleUpdateBusinessField } = await import("./business/update.ts");
-        handled = await handleUpdateBusinessField(ctx, String(state.data.businessId), "description", (message.text as any)?.body ?? "");
-      }
-      
-      // ============================================================
-      // PHASE 2-5: Text Handlers for Business Search & Manual Add
-      // ============================================================
-      
-      // Business Search - awaiting name input
-      else if (state?.key === "business_search" && state.data?.step === "awaiting_name") {
-        const { handleBusinessNameSearch } = await import("./business/search.ts");
-        handled = await handleBusinessNameSearch(ctx, (message.text as any)?.body ?? "");
-      }
-      
-      // Manual Business Add - step-by-step text input
-      else if (state?.key === "business_add_manual" && state.data) {
-        const { handleManualBusinessStep } = await import("./business/add_manual.ts");
-        const textInput = (message.text as any)?.body ?? "";
-        handled = await handleManualBusinessStep(ctx, state.data, textInput);
-      }
-      
-      // ============================================================
-      // END PHASE 2-5 Text Handlers
-      // ============================================================
-      
       // Handle job creation title
       else if (state?.key === "job_create_title") {
         const { handleCreateJobTitle } = await import("./jobs/create.ts");
