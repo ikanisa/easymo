@@ -168,12 +168,127 @@ export function normalizeLocation(location: any): Coordinates {
 // EXPORT UTILITIES
 // ============================================================================
 
+// ============================================================================
+// LOCATION CACHE HELPERS
+// ============================================================================
+
+export interface CachedLocation {
+  lat: number;
+  lng: number;
+  address?: string;
+  source: string;
+  cached_at: Date;
+  age_minutes: number;
+}
+
+/**
+ * Cache a user's location for future use
+ * Addresses Issue #7: Location Cache Not Integrated Everywhere
+ */
+export async function cacheUserLocation(
+  supabaseClient: any,
+  userId: string,
+  coords: Coordinates,
+  options?: {
+    address?: string;
+    source?: string;
+    context?: string;
+    ttlHours?: number;
+  }
+): Promise<string> {
+  const validated = validateCoordinates(coords);
+  
+  const { data, error } = await supabaseClient.rpc('cache_user_location', {
+    p_user_id: userId,
+    p_lat: validated.lat,
+    p_lng: validated.lng,
+    p_address: options?.address ?? null,
+    p_source: options?.source ?? 'user_input',
+    p_context: options?.context ?? 'general',
+    p_ttl_hours: options?.ttlHours ?? 24,
+  });
+  
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Get user's most recent cached location
+ * Addresses Issue #7: Location Cache Not Integrated Everywhere
+ */
+export async function getRecentLocation(
+  supabaseClient: any,
+  userId: string,
+  context: string = 'general',
+  maxAgeMinutes: number = 60
+): Promise<CachedLocation | null> {
+  const { data, error } = await supabaseClient.rpc('get_recent_location', {
+    p_user_id: userId,
+    p_context: context,
+    p_max_age_minutes: maxAgeMinutes,
+  });
+  
+  if (error) throw error;
+  if (!data || data.length === 0) return null;
+  
+  return {
+    lat: data[0].lat,
+    lng: data[0].lng,
+    address: data[0].address,
+    source: data[0].source,
+    cached_at: new Date(data[0].cached_at),
+    age_minutes: data[0].age_minutes,
+  };
+}
+
+// ============================================================================
+// PROXIMITY SEARCH HELPER
+// ============================================================================
+
+export interface ProximitySearchOptions {
+  tableName: string;
+  lat: number;
+  lng: number;
+  radiusKm?: number;
+  limit?: number;
+  whereClause?: string;
+}
+
+/**
+ * Universal proximity search - works with any table
+ */
+export async function findNearbyItems(
+  supabaseClient: any,
+  options: ProximitySearchOptions
+): Promise<Array<{ item_data: any; distance_km: number }>> {
+  const coords = validateCoordinates({ lat: options.lat, lng: options.lng });
+  
+  const { data, error } = await supabaseClient.rpc('find_nearby_items', {
+    p_table_name: options.tableName,
+    p_lat: coords.lat,
+    p_lng: coords.lng,
+    p_radius_km: options.radiusKm ?? 10,
+    p_limit: options.limit ?? 20,
+    p_where_clause: options.whereClause ?? null,
+  });
+  
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ============================================================================
+// EXPORT UTILITIES
+// ============================================================================
+
 export const LocationUtils = {
   validateCoordinates,
   makePostGISPoint,
   isLocationFresh,
   getLocationCacheKey,
   normalizeLocation,
+  cacheUserLocation,
+  getRecentLocation,
+  findNearbyItems,
   config: LOCATION_CONFIG,
 };
 
