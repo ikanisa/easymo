@@ -300,59 +300,18 @@ serve(async (req: Request): Promise<Response> => {
           handled = true;
         }
         
-        // My Properties
-        else if (id === IDS.MY_PROPERTIES || id === "MY_PROPERTIES" || id === "my_properties") {
-          const { listMyProperties } = await import("./properties/list.ts");
-          handled = await listMyProperties(ctx);
-        }
-        else if (id.startsWith("PROP::")) {
-          const propertyId = id.replace("PROP::", "");
-          const { handlePropertySelection } = await import("./properties/list.ts");
-          handled = await handlePropertySelection(ctx, propertyId);
-        }
-        else if (id === IDS.CREATE_PROPERTY) {
-          const { startCreateProperty } = await import("./properties/create.ts");
-          handled = await startCreateProperty(ctx);
-        }
-        else if (id.startsWith("EDIT_PROP::")) {
-          const propertyId = id.replace("EDIT_PROP::", "");
-          const { startEditProperty } = await import("./properties/update.ts");
-          handled = await startEditProperty(ctx, propertyId);
-        }
-        else if (id.startsWith("DELETE_PROP::")) {
-          const propertyId = id.replace("DELETE_PROP::", "");
-          const { confirmDeleteProperty } = await import("./properties/delete.ts");
-          handled = await confirmDeleteProperty(ctx, propertyId);
-        }
-        else if (id.startsWith("CONFIRM_DELETE_PROP::")) {
-          const propertyId = id.replace("CONFIRM_DELETE_PROP::", "");
-          const { handleDeleteProperty } = await import("./properties/delete.ts");
-          handled = await handleDeleteProperty(ctx, propertyId);
-        }
-        else if (id.startsWith("EDIT_PROP_TITLE::")) {
-          const propertyId = id.replace("EDIT_PROP_TITLE::", "");
-          const { promptEditPropertyField } = await import("./properties/update.ts");
-          handled = await promptEditPropertyField(ctx, propertyId, "title");
-        }
-        else if (id.startsWith("EDIT_PROP_DESC::")) {
-          const propertyId = id.replace("EDIT_PROP_DESC::", "");
-          const { promptEditPropertyField } = await import("./properties/update.ts");
-          handled = await promptEditPropertyField(ctx, propertyId, "description");
-        }
-        else if (id.startsWith("EDIT_PROP_LOC::")) {
-          const propertyId = id.replace("EDIT_PROP_LOC::", "");
-          const { promptEditPropertyField } = await import("./properties/update.ts");
-          handled = await promptEditPropertyField(ctx, propertyId, "location");
-        }
-        else if (id.startsWith("EDIT_PROP_PRICE::")) {
-          const propertyId = id.replace("EDIT_PROP_PRICE::", "");
-          const { promptEditPropertyField } = await import("./properties/update.ts");
-          handled = await promptEditPropertyField(ctx, propertyId, "price");
-        }
-        else if (id.startsWith("BACK_PROP::")) {
-          const propertyId = id.replace("BACK_PROP::", "");
-          const { handlePropertySelection } = await import("./properties/list.ts");
-          handled = await handlePropertySelection(ctx, propertyId);
+        // My Properties - Moved to wa-webhook-property
+        else if (id === IDS.MY_PROPERTIES || id === "MY_PROPERTIES" || id === "my_properties" ||
+                 id.startsWith("PROP::") || id === IDS.CREATE_PROPERTY ||
+                 id.startsWith("EDIT_PROP") || id.startsWith("DELETE_PROP") ||
+                 id.startsWith("CONFIRM_DELETE_PROP") || id.startsWith("BACK_PROP")) {
+          // Properties management moved to wa-webhook-property
+          logEvent("PROPERTY_DEPRECATED_ROUTE", { id }, "warn");
+          await sendText(
+            ctx.from,
+            "⚠️ Property management has been moved. Please restart by sending 'hi' or 'menu'."
+          );
+          handled = true;
         }
         
         // My Vehicles
@@ -763,29 +722,6 @@ serve(async (req: Request): Promise<Response> => {
       }
 
       
-      // Handle property creation title
-      else if (state?.key === "property_create_title") {
-        const { handleCreatePropertyTitle } = await import("./properties/create.ts");
-        handled = await handleCreatePropertyTitle(ctx, (message.text as any)?.body ?? "");
-      }
-      
-      // Handle property edit fields
-      else if (state?.key === "property_edit_title" && state.data) {
-        const { handleUpdatePropertyField } = await import("./properties/update.ts");
-        handled = await handleUpdatePropertyField(ctx, String(state.data.propertyId), "title", (message.text as any)?.body ?? "");
-      }
-      else if (state?.key === "property_edit_description" && state.data) {
-        const { handleUpdatePropertyField } = await import("./properties/update.ts");
-        handled = await handleUpdatePropertyField(ctx, String(state.data.propertyId), "description", (message.text as any)?.body ?? "");
-      }
-      else if (state?.key === "property_edit_location" && state.data) {
-        const { handleUpdatePropertyField } = await import("./properties/update.ts");
-        handled = await handleUpdatePropertyField(ctx, String(state.data.propertyId), "location", (message.text as any)?.body ?? "");
-      }
-      else if (state?.key === "property_edit_price" && state.data) {
-        const { handleUpdatePropertyField } = await import("./properties/update.ts");
-        handled = await handleUpdatePropertyField(ctx, String(state.data.propertyId), "price", (message.text as any)?.body ?? "");
-      }
       
       // Handle profile edit name
       else if (state?.key === IDS.EDIT_PROFILE_NAME) {
