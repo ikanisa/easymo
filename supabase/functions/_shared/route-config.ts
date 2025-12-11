@@ -202,7 +202,8 @@ export const STATE_PATTERNS: Array<{ patterns: string[]; service: string }> = [
   { patterns: ["mobility", "trip_", "ride_"], service: "wa-webhook-mobility" },
   { patterns: ["property", "rental_"], service: "wa-webhook-property" },
   // Wallet state patterns - route to dedicated wallet service
-  { patterns: ["wallet_", "payment_", "transfer_", "momo_qr", "wallet_cashout", "wallet_purchase", "wallet_referral"], service: "wa-webhook-wallet" },
+  // Note: wallet_ prefix catches wallet_cashout, wallet_purchase, wallet_referral, wallet_transfer, etc.
+  { patterns: ["wallet_", "payment_", "transfer_", "momo_qr_"], service: "wa-webhook-wallet" },
   // New directory service state patterns
   { patterns: ["directory_category", "directory_results", "directory_menu_pagination"], service: "wa-webhook-buy-sell-directory" },
   // New agent service state patterns

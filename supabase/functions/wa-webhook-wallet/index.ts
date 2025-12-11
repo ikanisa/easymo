@@ -28,7 +28,7 @@ import { WEBHOOK_CONFIG } from "../_shared/config/webhooks.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { ensureProfile } from "../_shared/wa-webhook-shared/utils/profile.ts";
 
-const walletConfig = WEBHOOK_CONFIG.profile; // Re-use profile config for now
+const walletConfig = WEBHOOK_CONFIG.wallet;
 
 const SERVICE_NAME = "wa-webhook-wallet";
 const SERVICE_VERSION = "1.0.0";
