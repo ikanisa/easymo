@@ -475,17 +475,54 @@ export async function handleNearbyResultSelection(
   }
 
   // Extract the actual trip ID from the list row identifier (e.g., "MTCH::uuid" -> "uuid")
-  // Extract the actual trip ID from the list row identifier
   const matchId = id.startsWith("MTCH::") ? id.replace("MTCH::", "") : id;
   
   // Find the selected match from stored rows using matchId or tripId
-  const match = state.rows.find((row) => row.id === matchId || row.tripId === matchId);
+  const cachedMatch = state.rows.find((row) => row.id === matchId || row.tripId === matchId);
   
-  if (!match || !match.whatsapp) {
+  if (!cachedMatch) {
     await sendText(ctx.from, t(ctx.locale, "mobility.nearby.match_unavailable"));
     await clearState(ctx.supabase, ctx.profileId);
     return true;
   }
+
+  // CRITICAL FIX: Verify match still exists and hasn't expired in database
+  const { data: trip, error: tripError } = await ctx.supabase
+    .from("trips")
+    .select("id, status, expires_at, user_id")
+    .eq("id", cachedMatch.tripId)
+    .eq("status", "open")
+    .gt("expires_at", new Date().toISOString())
+    .maybeSingle();
+
+  if (tripError || !trip) {
+    await sendText(
+      ctx.from,
+      t(ctx.locale, "mobility.nearby.match_expired", {
+        defaultValue: "⚠️ That match is no longer available. Please search again."
+      })
+    );
+    await clearState(ctx.supabase, ctx.profileId);
+    return true;
+  }
+
+  // Get fresh contact info from profiles
+  const { data: profile } = await ctx.supabase
+    .from("profiles")
+    .select("phone_number, wa_id")
+    .eq("user_id", trip.user_id)
+    .maybeSingle();
+
+  const whatsapp = profile?.phone_number || profile?.wa_id || cachedMatch.whatsapp;
+  
+  if (!whatsapp) {
+    await sendText(ctx.from, t(ctx.locale, "mobility.nearby.match_unavailable"));
+    await clearState(ctx.supabase, ctx.profileId);
+    return true;
+  }
+
+  // Use fresh data for the match
+  const match = { ...cachedMatch, whatsapp };
 
   // Build WhatsApp deep link with prefilled message
   // When mode === "drivers", the user is a passenger looking for drivers
