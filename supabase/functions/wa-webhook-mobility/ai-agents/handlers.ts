@@ -26,7 +26,7 @@ import {
 import { t } from "../i18n/translator.ts";
 import { clearState, setState } from "../state/store.ts";
 import { IDS } from "../wa/ids.ts";
-import { listBusinesses } from "../rpc/marketplace.ts";
+import { listBusinesses } from "../../_shared/wa-webhook-shared/rpc/marketplace.ts";
 import { waChatLink } from "../utils/links.ts";
 
 const SHOP_RESULT_PREFIX = "SHOP::";

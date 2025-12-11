@@ -27,6 +27,9 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { DualAIProvider } from "../wa-agent-waiter/core/providers/dual-ai-provider.ts";
 import { AgentConfigLoader } from "../_shared/agent-config-loader.ts";
 
+// Re-export shared types
+export type { MarketplaceContext } from "./types.ts";
+
 // =====================================================
 // CONFIGURATION
 // =====================================================
@@ -56,26 +59,7 @@ export const EMOJI_NUMBERS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️�
 // TYPES
 // =====================================================
 
-export interface MarketplaceContext {
-  phone: string;
-  flowType: "selling" | "buying" | "inquiry" | "category_selection" | "awaiting_location" | "show_results" | "vendor_outreach" | null;
-  flowStep: string | null;
-  collectedData: Record<string, unknown>;
-  conversationHistory: Array<{ role: "user" | "assistant"; content: string }>;
-  location?: { lat: number; lng: number };
-  currentListingId?: string | null;
-  currentIntentId?: string | null;
-  selectedCategory?: string;
-  searchResults?: Array<Record<string, unknown>>;
-  // Vendor outreach state
-  pendingVendorOutreach?: {
-    businessIds: string[];
-    requestSummary: string;
-    requestType: "product" | "service" | "medicine";
-    awaitingConsent: boolean;
-  };
-  currentInquiryId?: string | null;
-}
+// MarketplaceContext is now in types.ts and re-exported above
 
 export interface AgentResponse {
   message: string;

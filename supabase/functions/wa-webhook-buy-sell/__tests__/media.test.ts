@@ -6,7 +6,7 @@
 
 import { assertEquals, assertExists } from "https://deno.land/std@0.168.0/testing/asserts.ts";
 import { handleMediaUpload } from "../media.ts";
-import type { MarketplaceContext } from "../agent.ts";
+import type { MarketplaceContext } from "../types.ts";
 
 Deno.test("handleMediaUpload - rejects media without active listing", async () => {
   const mockSupabase = {

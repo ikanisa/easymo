@@ -61,19 +61,21 @@ import {
   handleLicenseUpload,
   VERIFICATION_STATES,
 } from "./handlers/driver_verification.ts";
-// TEMPORARY: Trip lifecycle handlers disabled due to bundler issue
-// TODO: Re-enable after splitting trip_lifecycle.ts into modular files
-// See: MOBILITY_QUICK_ACTION_PLAN.md
-/*
-import {
-  handleTripStart,
-  handleTripArrivedAtPickup,
-  handleTripPickedUp,
-  handleTripComplete,
-  handleTripCancel,
-  handleTripRate,
-} from "./handlers/trip_lifecycle.ts";
-*/
+// ============================================================================
+// TRIP LIFECYCLE HANDLERS - DISABLED
+// ============================================================================
+// Status: Cannot be re-enabled without major refactoring
+// Reason: References dropped table `mobility_trip_matches` (removed in migration 20251209093000)
+// Architecture: System now uses simplified trips-only approach with direct WhatsApp links
+// 
+// TODO: Redesign handlers to work with current architecture
+// - Remove dependencies on mobility_trip_matches table
+// - Update to use simplified trips table
+// - Implement with direct WhatsApp communication
+// - Add comprehensive tests before re-enabling
+// 
+// See: REFACTORING_ASSESSMENT.md Part 3 for detailed analysis
+// ============================================================================
 import {
   startDriverTracking,
   updateDriverLocation,
