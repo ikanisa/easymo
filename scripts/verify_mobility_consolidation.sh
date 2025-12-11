@@ -79,6 +79,8 @@ else
 fi
 echo ""
 
+# Test 4: Test trip creation
+echo "Test 4: Trip creation test"
 # Test 4: Check foreign key constraints
 echo "Test 4: Foreign key constraints"
 echo "--------------------------------"
@@ -145,8 +147,8 @@ else
 fi
 echo ""
 
-# Test 6: Test matching function
-echo "Test 6: Matching function test"
+# Test 5: Test matching function
+echo "Test 5: Matching function test"
 echo "--------------------------------"
 
 LATEST_TRIP=$(psql "$DATABASE_URL" -t -c "SELECT id FROM trips LIMIT 1;" | tr -d ' ')
@@ -169,8 +171,8 @@ else
 fi
 echo ""
 
-# Test 7: Check for orphaned records
-echo "Test 7: Orphaned records check"
+# Test 6: Check for orphaned records
+echo "Test 6: Orphaned records check"
 echo "--------------------------------"
 
 ORPHANED_MATCHES=$(psql "$DATABASE_URL" -t -c "
