@@ -19,37 +19,13 @@ BEGIN;
 -- STEP 1: DROP trip_payment_requests TABLE
 -- ============================================================================
 
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM information_schema.tables 
-    WHERE table_schema = 'public' AND table_name = 'trip_payment_requests'
-  ) THEN
-    RAISE NOTICE 'Dropping trip_payment_requests table...';
-    DROP TABLE IF EXISTS public.trip_payment_requests CASCADE;
-    RAISE NOTICE 'trip_payment_requests dropped';
-  ELSE
-    RAISE NOTICE 'trip_payment_requests table does not exist - skipping';
-  END IF;
-END $$;
+DROP TABLE IF EXISTS public.trip_payment_requests CASCADE;
 
 -- ============================================================================
 -- STEP 2: DROP trip_status_audit TABLE
 -- ============================================================================
 
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM information_schema.tables 
-    WHERE table_schema = 'public' AND table_name = 'trip_status_audit'
-  ) THEN
-    RAISE NOTICE 'Dropping trip_status_audit table...';
-    DROP TABLE IF EXISTS public.trip_status_audit CASCADE;
-    RAISE NOTICE 'trip_status_audit dropped';
-  ELSE
-    RAISE NOTICE 'trip_status_audit table does not exist - skipping';
-  END IF;
-END $$;
+DROP TABLE IF EXISTS public.trip_status_audit CASCADE;
 
 -- ============================================================================
 -- STEP 3: VERIFY CLEANUP
