@@ -470,12 +470,20 @@ export async function handleNearbyResultSelection(
   id: string,
 ): Promise<boolean> {
   if (!ctx.profileId) {
+  // Validate state
+  if (!ctx.profileId || !state.rows) {
     await sendText(ctx.from, t(ctx.locale, "mobility.nearby.session_expired"));
     return true;
   }
 
   // Find the selected match from stored rows
   const match = state.rows?.find((row) => row.id === id);
+  // Extract the actual trip ID from the list row identifier
+  const matchId = id.startsWith("MTCH::") ? id.replace("MTCH::", "") : id;
+  
+  // Find the selected match from stored rows (same pattern as schedule flow)
+  const match = state.rows.find((row) => row.id === matchId || row.tripId === matchId);
+  
   if (!match || !match.whatsapp) {
     await sendText(ctx.from, t(ctx.locale, "mobility.nearby.match_unavailable"));
     await clearState(ctx.supabase, ctx.profileId);
@@ -505,6 +513,49 @@ export async function handleNearbyResultSelection(
     selectedRef: match.ref,
   });
 
+  
+  // Build WhatsApp deep link with prefilled message
+  const isPassenger = state.mode === "drivers";
+  const prefill = isPassenger
+    ? t(ctx.locale, "mobility.nearby.prefill.passenger", { 
+        ref: match.ref,
+        defaultValue: `Hi! I need a ride. Ref ${match.ref}` 
+      })
+    : t(ctx.locale, "mobility.nearby.prefill.driver", { 
+        ref: match.ref,
+        defaultValue: `Hi! I'm available for a ride. Ref ${match.ref}` 
+      });
+  
+  const link = waChatLink(match.whatsapp, prefill);
+  
+  // Send clickable WhatsApp link to user (matches schedule flow pattern)
+  await sendButtonsMessage(
+    ctx,
+    t(ctx.locale, "mobility.nearby.chat_cta", { 
+      link,
+      defaultValue: `✅ Contact them directly:\n\n${link}\n\nTap the link to start chatting on WhatsApp!`
+    }),
+    [
+      {
+        id: IDS.NEARBY_RECENT,
+        title: t(ctx.locale, "common.buttons.new_search", {
+          defaultValue: "New search"
+        }),
+      },
+    ],
+  );
+  
+  // Clear state
+  await clearState(ctx.supabase, ctx.profileId);
+  
+  // Log success
+  await logStructuredEvent("MATCH_SELECTED", {
+    mode: state.mode,
+    vehicle: state.vehicle,
+    matchId: match.tripId,
+    via: "nearby_selection",
+  });
+  
   return true;
 }
 

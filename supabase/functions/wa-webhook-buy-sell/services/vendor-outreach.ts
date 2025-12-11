@@ -337,9 +337,29 @@ export class VendorOutreachService {
           continue;
         }
 
-        // TODO: Actually send WhatsApp message via Cloud API
-        // For now, we just record it in the database
-        // In production, this would call the WhatsApp API
+        // Send WhatsApp message via Cloud API
+        try {
+          const { sendText } = await import("../../_shared/wa-webhook-shared/wa/client.ts");
+          await sendText(vendorPhone, message);
+          
+          logStructuredEvent("VENDOR_OUTREACH_WHATSAPP_SENT", {
+            sessionId: params.sessionId,
+            vendorPhone: vendorPhone.slice(-4),
+            messageLength: message.length,
+            correlationId: this.correlationId,
+          });
+        } catch (sendError) {
+          logStructuredEvent(
+            "VENDOR_OUTREACH_WHATSAPP_FAILED",
+            {
+              error: sendError instanceof Error ? sendError.message : String(sendError),
+              vendorPhone: vendorPhone.slice(-4),
+              correlationId: this.correlationId,
+            },
+            "error"
+          );
+          // Continue anyway - message is recorded in DB for retry
+        }
 
         contactedCount++;
       }

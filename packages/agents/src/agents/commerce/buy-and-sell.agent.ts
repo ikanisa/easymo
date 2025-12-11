@@ -36,7 +36,7 @@ const log = childLogger({ service: 'agents', agent: 'buy-and-sell' });
 export class BuyAndSellAgent extends BaseAgent {
   static readonly SLUG = BUY_SELL_AGENT_SLUG;
   
-  name = 'buy_and_sell_agent';
+  name = 'buy_sell_agent';
   instructions = BUY_SELL_SYSTEM_PROMPT;
   tools: Tool[];
   

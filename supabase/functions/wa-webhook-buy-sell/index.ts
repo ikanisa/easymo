@@ -411,7 +411,7 @@ serve(async (req: Request): Promise<Response> => {
         
         // Only forward TEXT messages to AI
         if (message.type === "text" && text.trim()) {
-          const forwarded = await forwardToBuySellAgent(userPhone, text, correlationId);
+          const forwarded = await forwardToBuySellAgent(userPhone, text, message.id, correlationId);
           
           if (forwarded) {
             const duration = Date.now() - startTime;
@@ -486,9 +486,34 @@ function isBuySellAIEnabled(): boolean {
 async function forwardToBuySellAgent(
   userPhone: string,
   text: string,
+  messageId: string,
   correlationId: string,
 ): Promise<boolean> {
   try {
+    // Create idempotency key from user phone and message ID
+    const idempotencyKey = `buy_sell:${userPhone}:${messageId}`;
+    
+    // Check if this message was already processed
+    const { data: existingRequest } = await supabase
+      .from('agent_requests')
+      .select('response')
+      .eq('idempotency_key', idempotencyKey)
+      .maybeSingle();
+    
+    if (existingRequest) {
+      await logStructuredEvent("AI_AGENT_IDEMPOTENT_HIT", {
+        correlationId,
+        phone: userPhone.slice(-4),
+        idempotencyKey,
+        cachedResponse: true
+      });
+      
+      await recordMetric("buy_sell.ai_idempotent_hit", 1);
+      
+      // Already processed, skip
+      return true;
+    }
+    
     const baseUrl = Deno.env.get("SUPABASE_URL");
     if (!baseUrl) return false;
 
@@ -509,6 +534,8 @@ async function forwardToBuySellAgent(
       body: JSON.stringify({
         userPhone,
         message: text,
+        idempotencyKey,
+        correlationId,
       }),
     });
 
@@ -522,6 +549,30 @@ async function forwardToBuySellAgent(
     }
 
     const data = await res.json();
+    
+    // Cache the response for idempotency (before sending to user)
+    try {
+      await supabase
+        .from('agent_requests')
+        .insert({
+          idempotency_key: idempotencyKey,
+          agent_slug: 'buy_sell',
+          request_payload: { userPhone, message: text },
+          response: data,
+          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+        });
+      
+      await logStructuredEvent("AI_AGENT_RESPONSE_CACHED", {
+        correlationId,
+        idempotencyKey
+      });
+    } catch (cacheError) {
+      // Log but don't fail - caching is best-effort
+      await logStructuredEvent("AI_AGENT_CACHE_FAILED", {
+        correlationId,
+        error: cacheError instanceof Error ? cacheError.message : String(cacheError)
+      }, "warn");
+    }
     
     // Agent returns { response_text: "..." } or { message: "..." }
     const responseText = data?.response_text || data?.message;
