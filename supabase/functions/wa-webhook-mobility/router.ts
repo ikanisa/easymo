@@ -27,6 +27,15 @@ export const STATE_KEYS = {
   },
 } as const;
 
+// Trip cancellation reasons
+export const CANCELLATION_REASONS = {
+  USER_CANCELLED: "user_cancelled",
+  DRIVER_NO_SHOW: "driver_no_show",
+  PASSENGER_NO_SHOW: "passenger_no_show",
+  TIMEOUT: "timeout",
+  SYSTEM: "system",
+} as const;
+
 // ============================================================================
 // ROUTE TYPES
 // ============================================================================

@@ -67,7 +67,7 @@ import { sendListMessage, sendButtonsMessage } from "./utils/reply.ts";
 import { recordLastLocation } from "./locations/favorites.ts";
 import { sendLocation, sendText } from "./wa/client.ts";
 import { t } from "./i18n/translator.ts";
-import { STATE_KEYS } from "./router.ts";
+import { STATE_KEYS, CANCELLATION_REASONS } from "./router.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -411,7 +411,7 @@ serve(async (req: Request): Promise<Response> => {
         } else if (id.startsWith(IDS.TRIP_CANCEL_PREFIX + "::")) {
           const tripId = id.replace(IDS.TRIP_CANCEL_PREFIX + "::", "");
           const initiator = state?.data?.role === "passenger" ? "passenger" : "driver";
-          handled = await handleTripCancel(ctx, tripId, "user_cancelled", initiator);
+          handled = await handleTripCancel(ctx, tripId, CANCELLATION_REASONS.USER_CANCELLED, initiator);
         } else if (id.startsWith(IDS.RATE_PREFIX + "::")) {
           const parts = id.split("::");
           const tripId = parts[1];
