@@ -270,148 +270,21 @@ serve(async (req: Request): Promise<Response> => {
         }
         
         // My Bars & Restaurants
-        else if (id === IDS.MY_BARS_RESTAURANTS) {
-          const { showMyBarsRestaurants } = await import("./bars/index.ts");
-          handled = await showMyBarsRestaurants(ctx);
-        }
-        
-        // Bar Management (bar:: prefix)
-        else if (id.startsWith("bar::")) {
-          const businessId = id.replace("bar::", "");
-          const { showBarManagement } = await import("./bars/index.ts");
-          handled = await showBarManagement(ctx, businessId);
-        }
-        
-        // Business Search & Claim
-        else if (id === IDS.BUSINESS_SEARCH) {
-          const { startBusinessSearch } = await import("./business/search.ts");
-          handled = await startBusinessSearch(ctx);
-        }
-        else if (id.startsWith("claim::")) {
-          const businessId = id.replace("claim::", "");
-          const { handleBusinessClaim } = await import("./business/search.ts");
-          handled = await handleBusinessClaim(ctx, businessId);
-        }
-        else if (id === IDS.BUSINESS_CLAIM_CONFIRM) {
-          const claimState = await getState(supabase, ctx.profileId!, "business_claim");
-          if (claimState?.data?.businessId) {
-            const { confirmBusinessClaim } = await import("./business/search.ts");
-            handled = await confirmBusinessClaim(ctx, claimState.data.businessId);
-          }
-        }
-        
-        // Manual Business Addition
-        else if (id === IDS.BUSINESS_ADD_MANUAL) {
-          const { startManualBusinessAdd } = await import("./business/add_manual.ts");
-          handled = await startManualBusinessAdd(ctx);
-        }
-        else if (id === IDS.BUSINESS_ADD_CONFIRM) {
-          // Handled in text handler - placeholder for confirmation
-          handled = false;
-        }
-        else if (id === "skip_description") {
-          const addState = await getState(supabase, ctx.profileId!, "business_add_manual");
-          if (addState?.data) {
-            const { handleManualBusinessStep } = await import("./business/add_manual.ts");
-            handled = await handleManualBusinessStep(ctx, addState.data, "skip_description");
-          }
-        }
-        else if (id === "skip_location") {
-          const addState = await getState(supabase, ctx.profileId!, "business_add_manual");
-          if (addState?.data) {
-            const { handleManualBusinessStep } = await import("./business/add_manual.ts");
-            handled = await handleManualBusinessStep(ctx, addState.data, "skip_location");
-          }
-        }
-        else if (id.startsWith("cat::")) {
-          const addState = await getState(supabase, ctx.profileId!, "business_add_manual");
-          if (addState?.data) {
-            const { handleManualBusinessStep } = await import("./business/add_manual.ts");
-            handled = await handleManualBusinessStep(ctx, addState.data, id);
-          }
-        }
-        
-        // Bar Menu Upload
-        else if (id === IDS.BAR_UPLOAD_MENU) {
-          const barState = await getState(supabase, ctx.profileId!, "bar_detail");
-          if (barState?.data) {
-            const { startMenuUpload } = await import("./bars/menu_upload.ts");
-            handled = await startMenuUpload(ctx, barState.data);
-          }
-        }
-        
-        // Bar Menu Management
-        else if (id === IDS.BAR_MANAGE_MENU) {
-          const barState = await getState(supabase, ctx.profileId!, "bar_detail");
-          if (barState?.data?.barId) {
-            const { showMenuManagement } = await import("./bars/menu_edit.ts");
-            handled = await showMenuManagement(ctx, barState.data.barId, barState.data.businessName);
-          }
-        }
-        
-        // Menu Item Actions
-        else if (id.startsWith("menuitem::")) {
-          const itemId = id.replace("menuitem::", "");
-          const { showMenuItemDetail } = await import("./bars/menu_edit.ts");
-          handled = await showMenuItemDetail(ctx, itemId);
-        }
-        else if (id === IDS.MENU_ITEM_ADD) {
-          // TODO: Implement manual menu item add
-          await sendText(ctx.from, "Manual menu item addition coming soon. Use 'Upload Menu' with a photo.");
+        // My Bars & Restaurants - Moved to wa-webhook-waiter
+        else if (id === IDS.MY_BARS_RESTAURANTS || id.startsWith("bar::") ||
+                 id === IDS.BAR_UPLOAD_MENU || id === IDS.BAR_MANAGE_MENU ||
+                 id.startsWith("menuitem::") || id === IDS.MENU_ITEM_ADD ||
+                 id === IDS.MENU_SAVE_ALL || id === IDS.MENU_TOGGLE_AVAILABLE ||
+                 id === IDS.MENU_DELETE_ITEM || id === IDS.BAR_VIEW_ORDERS ||
+                 id.startsWith("order::") || id.startsWith("status::")) {
+          // Bar management moved to wa-webhook-waiter
+          logEvent("BAR_DEPRECATED_ROUTE", { id }, "warn");
+          await sendText(
+            ctx.from,
+            "⚠️ Bar management has been moved. Please restart by sending 'hi' or 'menu'."
+          );
           handled = true;
         }
-        else if (id === IDS.MENU_SAVE_ALL) {
-          const reviewState = await getState(supabase, ctx.profileId!, "menu_review");
-          if (reviewState?.data) {
-            const { saveExtractedMenuItems } = await import("./bars/menu_upload.ts");
-            handled = await saveExtractedMenuItems(ctx, reviewState.data);
-          }
-        }
-        else if (id === IDS.MENU_TOGGLE_AVAILABLE) {
-          const editState = await getState(supabase, ctx.profileId!, "menu_item_edit");
-          if (editState?.data?.itemId) {
-            const { toggleMenuItemAvailability } = await import("./bars/menu_edit.ts");
-            handled = await toggleMenuItemAvailability(ctx, editState.data.itemId);
-          }
-        }
-        else if (id === IDS.MENU_DELETE_ITEM) {
-          const deleteState = await getState(supabase, ctx.profileId!, "menu_item_edit");
-          if (deleteState?.data?.itemId) {
-            const { deleteMenuItem } = await import("./bars/menu_edit.ts");
-            handled = await deleteMenuItem(ctx, deleteState.data.itemId);
-          }
-        }
-        
-        // Bar Orders Management
-        else if (id === IDS.BAR_VIEW_ORDERS) {
-          const barState = await getState(supabase, ctx.profileId!, "bar_detail");
-          if (barState?.data?.businessId) {
-            const { showBarOrders } = await import("./bars/orders.ts");
-            handled = await showBarOrders(ctx, barState.data.businessId, barState.data.businessName);
-          }
-        }
-        else if (id.startsWith("order::")) {
-          const orderId = id.replace("order::", "");
-          const { showOrderDetail } = await import("./bars/orders.ts");
-          handled = await showOrderDetail(ctx, orderId);
-        }
-        else if (id.startsWith("status::")) {
-          const parts = id.split("::");
-          if (parts.length === 3) {
-            const [, orderId, newStatus] = parts;
-            const { updateOrderStatus } = await import("./bars/orders.ts");
-            handled = await updateOrderStatus(ctx, orderId, newStatus as any);
-          }
-        }
-        else if (id.startsWith("contact::")) {
-          const phone = id.replace("contact::", "");
-          await sendText(ctx.from, `Contact customer: ${phone}\n\nUse WhatsApp to message them directly.`);
-          handled = true;
-        }
-        
-        // ============================================================
-        // END PHASE 2-5
-        // ============================================================
         
         // My Jobs
         else if (id === IDS.MY_JOBS || id === "MY_JOBS" || id === "my_jobs") {
@@ -1014,24 +887,6 @@ serve(async (req: Request): Promise<Response> => {
     
     // ============================================================
     // PHASE 2: Menu Upload Media Handler
-    // ============================================================
-    
-    // Handle menu upload (image or document)
-    else if ((message.type === "image" || message.type === "document") && state?.key === "menu_upload") {
-      const { handleMenuMediaUpload } = await import("./bars/menu_upload.ts");
-      const mediaId = (message as any).image?.id || (message as any).document?.id;
-      const mediaType = message.type === "image" ? "image" : "document";
-      
-      if (mediaId && state.data) {
-        handled = await handleMenuMediaUpload(ctx, state.data, mediaId, mediaType as any);
-      } else {
-        await sendText(ctx.from, "⚠️ Failed to process media. Please try again.");
-        handled = true;
-      }
-    }
-    
-    // ============================================================
-    // END PHASE 2 Media Handler
     // ============================================================
     
     // Handle location messages (when user shares location)
