@@ -8,6 +8,7 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { LOCATION_CONFIG } from "../location-config.ts";
 import type {
   LocationConfig,
   LocationResult,
@@ -17,9 +18,9 @@ import type {
   Locale,
 } from "./types.ts";
 
-// Default TTL values
-const DEFAULT_CACHE_TTL_MINUTES = 30;
-const DEFAULT_SEARCH_RADIUS_METERS = 10_000; // 10km
+// Use centralized configuration
+const DEFAULT_CACHE_TTL_MINUTES = LOCATION_CONFIG.CACHE_TTL_MINUTES;
+const DEFAULT_SEARCH_RADIUS_METERS = LOCATION_CONFIG.DEFAULT_SEARCH_RADIUS_METERS;
 
 /**
  * Multilingual prompts for location sharing

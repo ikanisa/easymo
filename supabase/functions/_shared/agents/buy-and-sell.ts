@@ -12,12 +12,13 @@
 
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent } from "../observability.ts";
+import { LOCATION_CONFIG } from "../location-config.ts";
 
 // Import config constants (Deno-compatible)
 export const BUY_SELL_AGENT_SLUG = 'buy_sell';
 export const BUY_SELL_AGENT_NAME = 'Buy & Sell AI Agent';
 export const BUY_SELL_DEFAULT_MODEL = 'gemini-1.5-flash';
-export const DEFAULT_SEARCH_RADIUS_KM = 10;
+export const DEFAULT_SEARCH_RADIUS_KM = LOCATION_CONFIG.MARKETPLACE_RADIUS_METERS / 1000;
 export const DEFAULT_SEARCH_LIMIT = 5;
 
 // Business categories

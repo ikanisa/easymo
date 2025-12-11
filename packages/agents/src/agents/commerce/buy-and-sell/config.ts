@@ -37,8 +37,10 @@ export const BUY_SELL_MAX_TOKENS = 1024;
 // SEARCH CONFIGURATION
 // =====================================================
 
-/** Default search radius in kilometers */
-export const DEFAULT_SEARCH_RADIUS_KM = 10;
+import { LOCATION_CONFIG } from '@easymo/location';
+
+/** Default search radius in kilometers - uses centralized config */
+export const DEFAULT_SEARCH_RADIUS_KM = LOCATION_CONFIG.MARKETPLACE_RADIUS_METERS / 1000;
 
 /** Default number of search results */
 export const DEFAULT_SEARCH_LIMIT = 5;
