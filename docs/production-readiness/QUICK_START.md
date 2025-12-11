@@ -4,12 +4,12 @@
 
 ## 🚨 Priority Overview
 
-| Task | Effort | Owner | Blocker Level |
-|------|--------|-------|---------------|
-| Rate Limiting | 8h | Backend Dev | P0 - Critical |
-| RLS Audit | 16h | DB Engineer | P0 - Critical |
-| Wallet Tests | 24h | Senior Dev | P0 - Critical |
-| Audit Triggers | 8h | DB Engineer | P0 - Critical |
+| Task           | Effort | Owner       | Blocker Level |
+| -------------- | ------ | ----------- | ------------- |
+| Rate Limiting  | 8h     | Backend Dev | P0 - Critical |
+| RLS Audit      | 16h    | DB Engineer | P0 - Critical |
+| Wallet Tests   | 24h    | Senior Dev  | P0 - Critical |
+| Audit Triggers | 8h     | DB Engineer | P0 - Critical |
 
 **Total Effort**: 56 hours (Week 1 of implementation plan)
 
@@ -18,17 +18,20 @@
 ## 🔴 Task 1: Rate Limiting (8 hours)
 
 ### Objective
+
 Implement rate limiting on all 80+ edge functions to prevent DDoS and API abuse.
 
 ### Quick Implementation
 
 #### Step 1: Create Rate Limit Module (2h)
+
 ```bash
 cd supabase/functions
 mkdir -p _shared/rate-limit
 ```
 
 Create `_shared/rate-limit/index.ts`:
+
 ```typescript
 import { Redis } from "@upstash/redis";
 
@@ -47,16 +50,16 @@ export async function checkRateLimit(config: RateLimitConfig) {
   const redisKey = `ratelimit:${config.key}`;
   const now = Date.now();
   const windowMs = config.windowSeconds * 1000;
-  
+
   const pipeline = redis.pipeline();
   pipeline.zremrangebyscore(redisKey, 0, now - windowMs);
   pipeline.zadd(redisKey, { score: now, member: `${now}-${Math.random()}` });
   pipeline.zcard(redisKey);
   pipeline.pexpire(redisKey, windowMs);
-  
+
   const results = await pipeline.exec();
   const requestCount = results[2] as number;
-  
+
   return {
     allowed: requestCount <= config.limit,
     remaining: Math.max(0, config.limit - requestCount),
@@ -68,38 +71,41 @@ export async function checkRateLimit(config: RateLimitConfig) {
 #### Step 2: Apply to Edge Functions (4h)
 
 For each function (e.g., `wa-webhook-core/index.ts`):
+
 ```typescript
 import { checkRateLimit } from "../_shared/rate-limit/index.ts";
 
 serve(async (req) => {
-  const clientId = req.headers.get("x-wamid") || 
-                   req.headers.get("x-forwarded-for") || 
-                   "anonymous";
-  
+  const clientId = req.headers.get("x-wamid") || req.headers.get("x-forwarded-for") || "anonymous";
+
   const rateLimitResult = await checkRateLimit({
     key: `wa-webhook:${clientId}`,
     limit: 100,
     windowSeconds: 60,
   });
-  
+
   if (!rateLimitResult.allowed) {
-    return new Response(JSON.stringify({
-      error: "Rate limit exceeded",
-      retryAfter: Math.ceil((rateLimitResult.resetAt.getTime() - Date.now()) / 1000),
-    }), {
-      status: 429,
-      headers: {
-        "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
-        "Retry-After": "60",
-      },
-    });
+    return new Response(
+      JSON.stringify({
+        error: "Rate limit exceeded",
+        retryAfter: Math.ceil((rateLimitResult.resetAt.getTime() - Date.now()) / 1000),
+      }),
+      {
+        status: 429,
+        headers: {
+          "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
+          "Retry-After": "60",
+        },
+      }
+    );
   }
-  
+
   // Continue with existing logic...
 });
 ```
 
 #### Step 3: Test & Verify (2h)
+
 ```bash
 # Create verification script
 cat > scripts/verify/rate-limiting.sh << 'EOF'
@@ -127,6 +133,7 @@ chmod +x scripts/verify/rate-limiting.sh
 ```
 
 ### Deliverables
+
 - [ ] Rate limit module created
 - [ ] Applied to all 80+ edge functions
 - [ ] Verification script passing
@@ -137,29 +144,31 @@ chmod +x scripts/verify/rate-limiting.sh
 ## 🔴 Task 2: RLS Audit (16 hours)
 
 ### Objective
+
 Ensure all tables have Row Level Security enabled with proper policies.
 
 ### Quick Implementation
 
 #### Step 1: Run Audit Query (2h)
+
 ```bash
 # Create audit script
 cat > scripts/sql/rls-audit.sql << 'EOF'
 -- Find tables without RLS
-SELECT 
+SELECT
   schemaname,
   tablename,
   'NO RLS ENABLED' as issue
-FROM pg_tables 
-WHERE schemaname = 'public' 
+FROM pg_tables
+WHERE schemaname = 'public'
   AND tablename NOT IN (
-    SELECT tablename FROM pg_catalog.pg_policies 
+    SELECT tablename FROM pg_catalog.pg_policies
     WHERE schemaname = 'public'
   )
 ORDER BY tablename;
 
 -- Find tables with RLS but no policies
-SELECT 
+SELECT
   c.relname as tablename,
   'RLS ENABLED BUT NO POLICIES' as issue
 FROM pg_class c
@@ -168,8 +177,8 @@ WHERE n.nspname = 'public'
   AND c.relkind = 'r'
   AND c.relrowsecurity = true
   AND NOT EXISTS (
-    SELECT 1 FROM pg_policies p 
-    WHERE p.tablename = c.relname 
+    SELECT 1 FROM pg_policies p
+    WHERE p.tablename = c.relname
   );
 EOF
 
@@ -178,6 +187,7 @@ psql "$DATABASE_URL" -f scripts/sql/rls-audit.sql
 ```
 
 #### Step 2: Apply RLS Policies (10h)
+
 ```bash
 cat > scripts/sql/rls-policies.sql << 'EOF'
 -- Wallet Accounts
@@ -198,8 +208,8 @@ CREATE POLICY "Users view own entries"
   ON wallet_entries FOR SELECT
   USING (
     EXISTS (
-      SELECT 1 FROM wallet_accounts wa 
-      WHERE wa.id = wallet_entries.account_id 
+      SELECT 1 FROM wallet_accounts wa
+      WHERE wa.id = wallet_entries.account_id
         AND wa.user_id = auth.uid()
     )
   );
@@ -211,15 +221,16 @@ psql "$DATABASE_URL" -f scripts/sql/rls-policies.sql
 ```
 
 #### Step 3: Create GitHub Action (2h)
+
 ```yaml
 # .github/workflows/rls-audit.yml
 name: RLS Security Audit
 
 on:
   pull_request:
-    paths: ['supabase/migrations/**']
+    paths: ["supabase/migrations/**"]
   schedule:
-    - cron: '0 6 * * 1' # Weekly
+    - cron: "0 6 * * 1" # Weekly
 
 jobs:
   rls-audit:
@@ -232,9 +243,11 @@ jobs:
 ```
 
 #### Step 4: Document (2h)
+
 Create `docs/security/RLS_POLICIES.md` documenting all policies.
 
 ### Deliverables
+
 - [ ] RLS audit script created
 - [ ] All financial tables have RLS + policies
 - [ ] Weekly audit action added
@@ -245,11 +258,13 @@ Create `docs/security/RLS_POLICIES.md` documenting all policies.
 ## 🔴 Task 3: Wallet Service Tests (24 hours)
 
 ### Objective
+
 Achieve 80%+ test coverage on wallet-service with comprehensive test cases.
 
 ### Critical Test Cases
 
 #### Setup (2h)
+
 ```bash
 cd services/wallet-service
 pnpm install
@@ -257,16 +272,17 @@ pnpm add -D vitest @vitest/coverage-v8
 ```
 
 Create `vitest.config.ts`:
+
 ```typescript
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
     coverage: {
-      provider: 'v8',
+      provider: "v8",
       thresholds: {
-        'src/transfer/**': { statements: 95, branches: 95 },
-        'src/balance/**': { statements: 90, branches: 90 },
+        "src/transfer/**": { statements: 95, branches: 95 },
+        "src/balance/**": { statements: 90, branches: 90 },
       },
     },
   },
@@ -274,59 +290,64 @@ export default defineConfig({
 ```
 
 #### Transfer Tests (10h)
+
 ```typescript
 // src/transfer/__tests__/transfer.test.ts
-describe('WalletService - Transfer', () => {
-  it('should transfer with double-entry bookkeeping', async () => {
+describe("WalletService - Transfer", () => {
+  it("should transfer with double-entry bookkeeping", async () => {
     const result = await walletService.transfer({
-      sourceAccountId: 'src',
-      destinationAccountId: 'dst',
+      sourceAccountId: "src",
+      destinationAccountId: "dst",
       amount: 1000,
-      currency: 'RWF',
-      idempotencyKey: 'test-1',
+      currency: "RWF",
+      idempotencyKey: "test-1",
     });
-    
+
     expect(result.entries).toHaveLength(2);
     expect(result.entries[0].amount).toBe(-1000);
     expect(result.entries[1].amount).toBe(1000);
   });
 
-  it('should be idempotent', async () => {
-    const key = 'idempotent-test';
-    const r1 = await walletService.transfer({...params, idempotencyKey: key});
-    const r2 = await walletService.transfer({...params, idempotencyKey: key});
+  it("should be idempotent", async () => {
+    const key = "idempotent-test";
+    const r1 = await walletService.transfer({ ...params, idempotencyKey: key });
+    const r2 = await walletService.transfer({ ...params, idempotencyKey: key });
     expect(r1.transaction.id).toBe(r2.transaction.id);
   });
 
-  it('should prevent overdraft', async () => {
-    await expect(
-      walletService.transfer({...params, amount: 999999})
-    ).rejects.toThrow('Insufficient funds');
+  it("should prevent overdraft", async () => {
+    await expect(walletService.transfer({ ...params, amount: 999999 })).rejects.toThrow(
+      "Insufficient funds"
+    );
   });
 
-  it('should handle concurrent transfers', async () => {
-    const transfers = Array(10).fill(null).map((_, i) =>
-      walletService.transfer({...params, idempotencyKey: `concurrent-${i}`})
-    );
+  it("should handle concurrent transfers", async () => {
+    const transfers = Array(10)
+      .fill(null)
+      .map((_, i) => walletService.transfer({ ...params, idempotencyKey: `concurrent-${i}` }));
     const results = await Promise.allSettled(transfers);
-    expect(results.filter(r => r.status === 'fulfilled')).toHaveLength(10);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(10);
   });
 });
 ```
 
 #### Balance Tests (6h)
+
 Test balance calculation, consistency checks, reconciliation.
 
 #### Integration Tests (4h)
+
 Test full payment flows end-to-end.
 
 #### Run Coverage (2h)
+
 ```bash
 pnpm test:coverage
 # Target: 80%+ overall, 95%+ on transfer module
 ```
 
 ### Deliverables
+
 - [ ] 95%+ coverage on transfer module
 - [ ] 90%+ coverage on balance module
 - [ ] Concurrency tests passing
@@ -337,11 +358,13 @@ pnpm test:coverage
 ## 🔴 Task 4: Audit Triggers (8 hours)
 
 ### Objective
+
 Implement audit log triggers on all financial tables.
 
 ### Quick Implementation
 
 #### Step 1: Create Audit Table (2h)
+
 ```sql
 CREATE TABLE audit_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -359,6 +382,7 @@ CREATE INDEX idx_audit_log_table ON audit_log(table_name, created_at DESC);
 ```
 
 #### Step 2: Create Trigger Function (2h)
+
 ```sql
 CREATE OR REPLACE FUNCTION audit_trigger_func()
 RETURNS TRIGGER AS $$
@@ -386,6 +410,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 ```
 
 #### Step 3: Apply to Financial Tables (3h)
+
 ```sql
 CREATE TRIGGER audit_wallet_accounts
   AFTER INSERT OR UPDATE OR DELETE ON wallet_accounts
@@ -399,6 +424,7 @@ CREATE TRIGGER audit_wallet_transactions
 ```
 
 #### Step 4: Verify (1h)
+
 ```bash
 psql "$DATABASE_URL" << 'EOF'
 SELECT COUNT(*) FROM pg_trigger WHERE tgname LIKE 'audit_%';
@@ -407,6 +433,7 @@ EOF
 ```
 
 ### Deliverables
+
 - [ ] Audit log table created
 - [ ] Triggers on 10 financial tables
 - [ ] Changed field tracking works
@@ -460,6 +487,7 @@ echo "======================="
 ```
 
 Make it executable:
+
 ```bash
 chmod +x scripts/verify/p0-readiness.sh
 ./scripts/verify/p0-readiness.sh
@@ -470,6 +498,7 @@ chmod +x scripts/verify/p0-readiness.sh
 ## 🎯 Success Criteria
 
 ### Week 1 Complete When:
+
 - [ ] Rate limiting active on 80+ edge functions
 - [ ] All financial tables have RLS policies
 - [ ] Wallet service has ≥80% test coverage
@@ -477,6 +506,7 @@ chmod +x scripts/verify/p0-readiness.sh
 - [ ] All P0 verification scripts pass
 
 ### Metrics to Track:
+
 - Edge functions with rate limiting: **0/80 → 80/80**
 - RLS policies count: **? → 30+**
 - Wallet test coverage: **~40% → 80%+**
@@ -487,18 +517,22 @@ chmod +x scripts/verify/p0-readiness.sh
 ## 🆘 Troubleshooting
 
 ### Rate Limiting Issues
+
 **Problem**: Redis connection failing  
 **Solution**: Verify `UPSTASH_REDIS_URL` and `UPSTASH_REDIS_TOKEN` in env
 
 ### RLS Issues
+
 **Problem**: Policies blocking service role  
 **Solution**: Add `auth.role() = 'service_role'` bypass policy
 
 ### Test Coverage Issues
+
 **Problem**: Cannot reach 80% coverage  
 **Solution**: Focus on critical paths first (transfer, balance check)
 
 ### Audit Trigger Issues
+
 **Problem**: Triggers not firing  
 **Solution**: Check `SECURITY DEFINER` on trigger function
 
@@ -507,6 +541,7 @@ chmod +x scripts/verify/p0-readiness.sh
 ## 📞 Escalation
 
 If blocked for >2 hours:
+
 1. Check [AUDIT_REPORT.md](./AUDIT_REPORT.md) for context
 2. Review [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) for details
 3. Post in #engineering-critical Slack channel with:
@@ -523,4 +558,5 @@ If blocked for >2 hours:
 - **Ground Rules**: [../GROUND_RULES.md](../GROUND_RULES.md)
 - **Architecture**: [../architecture/](../architecture/)
 
-**Next Steps**: After completing P0 tasks, proceed to Phase 2 (DevOps & Infrastructure) in the Implementation Plan.
+**Next Steps**: After completing P0 tasks, proceed to Phase 2 (DevOps & Infrastructure) in the
+Implementation Plan.

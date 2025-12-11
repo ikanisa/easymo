@@ -8,6 +8,7 @@
 ## 📁 File Locations
 
 ### Backend (Edge Functions)
+
 ```
 supabase/functions/
 ├── waiter-ai-agent/index.ts               # OpenAI GPT-4 Turbo (825 LOC)
@@ -20,6 +21,7 @@ supabase/functions/
 ```
 
 ### Database
+
 ```
 supabase/migrations/
 ├── 20251122082500_apply_intent_waiter.sql # Intent handler (305 LOC)
@@ -28,6 +30,7 @@ supabase/migrations/
 ```
 
 ### Frontend (PWA)
+
 ```
 waiter-pwa/
 ├── app/
@@ -57,6 +60,7 @@ waiter-pwa/
 ## 🚀 Quick Commands
 
 ### Development
+
 ```bash
 # Start PWA dev server
 cd waiter-pwa
@@ -72,6 +76,7 @@ supabase db push
 ```
 
 ### Testing
+
 ```bash
 # Test PWA
 cd waiter-pwa
@@ -86,6 +91,7 @@ curl -X POST https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/waiter-ai-age
 ```
 
 ### Deployment
+
 ```bash
 # Deploy PWA to Vercel
 cd waiter-pwa
@@ -100,6 +106,7 @@ vercel --prod
 ## 🔑 Environment Variables
 
 ### Required (Server-side)
+
 ```bash
 # Edge Functions
 OPENAI_API_KEY=sk-...
@@ -113,6 +120,7 @@ GOOGLE_PLACES_API_KEY=AIza...  # Optional for restaurant discovery
 ```
 
 ### Public (Client-safe)
+
 ```bash
 # PWA Frontend (.env.local)
 NEXT_PUBLIC_SUPABASE_URL=https://lhbowpbcpwoiparwnwgt.supabase.co
@@ -125,6 +133,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3001
 ## 📊 Database Tables (12 Tables)
 
 ### Core Tables
+
 ```sql
 waiter_conversations    -- Chat sessions
 waiter_messages         -- Message history
@@ -132,12 +141,14 @@ waiter_settings         -- Configuration
 ```
 
 ### Menu Tables
+
 ```sql
 menu_items              -- Restaurant menu with translations
 menu_categories         -- Menu organization
 ```
 
 ### Order Tables
+
 ```sql
 draft_orders            -- Shopping cart
 draft_order_items       -- Cart line items
@@ -146,6 +157,7 @@ order_items             -- Order details
 ```
 
 ### Other Tables
+
 ```sql
 waiter_reservations     -- Table bookings
 waiter_feedback         -- Customer reviews
@@ -157,6 +169,7 @@ payments                -- Payment transactions
 ## 🛠️ AI Tools (7 Tools)
 
 ### 1. search_menu
+
 ```typescript
 {
   name: 'search_menu',
@@ -170,6 +183,7 @@ payments                -- Payment transactions
 ```
 
 ### 2. add_to_cart
+
 ```typescript
 {
   name: 'add_to_cart',
@@ -185,6 +199,7 @@ payments                -- Payment transactions
 ```
 
 ### 3. recommend_wine
+
 ```typescript
 {
   name: 'recommend_wine',
@@ -197,6 +212,7 @@ payments                -- Payment transactions
 ```
 
 ### 4. book_table
+
 ```typescript
 {
   name: 'book_table',
@@ -211,6 +227,7 @@ payments                -- Payment transactions
 ```
 
 ### 5. update_order
+
 ```typescript
 {
   name: 'update_order',
@@ -223,6 +240,7 @@ payments                -- Payment transactions
 ```
 
 ### 6. cancel_order
+
 ```typescript
 {
   name: 'cancel_order',
@@ -235,6 +253,7 @@ payments                -- Payment transactions
 ```
 
 ### 7. submit_feedback
+
 ```typescript
 {
   name: 'submit_feedback',
@@ -262,21 +281,23 @@ payments                -- Payment transactions
 ## 💳 Payment Methods
 
 ### 1. MTN Mobile Money (USSD)
+
 ```typescript
 // Generate USSD code
 const ussdCode = `*182*8*1*${amount}#`;
 
 // Instructions
-"Please dial *182*8*1*5000# to complete your payment of 5,000 RWF"
+("Please dial *182*8*1*5000# to complete your payment of 5,000 RWF");
 ```
 
 ### 2. Revolut Payment Link
+
 ```typescript
 // Generate payment link
 const paymentLink = `https://revolut.me/restaurant/${amount}`;
 
 // Instructions
-"Click here to pay: https://revolut.me/restaurant/50.00"
+("Click here to pay: https://revolut.me/restaurant/50.00");
 ```
 
 ---
@@ -307,6 +328,7 @@ give_tip, general_inquiry, help, save_favorite, order_history
 ## 📱 WhatsApp Integration
 
 ### Message Flow
+
 ```
 User sends message
   ↓
@@ -322,6 +344,7 @@ Sends back to user via WhatsApp
 ```
 
 ### Response Format
+
 ```
 The AI always uses emoji-numbered lists:
 
@@ -340,6 +363,7 @@ The AI always uses emoji-numbered lists:
 ## 🧪 Testing Checklist
 
 ### Backend
+
 - [ ] Edge function responds to API calls
 - [ ] AI tools execute correctly
 - [ ] Database inserts work
@@ -347,6 +371,7 @@ The AI always uses emoji-numbered lists:
 - [ ] Multi-language responses
 
 ### Frontend
+
 - [ ] Chat interface loads
 - [ ] Messages send/receive
 - [ ] Menu browser shows items
@@ -356,6 +381,7 @@ The AI always uses emoji-numbered lists:
 - [ ] PWA installs on mobile
 
 ### Integration
+
 - [ ] WhatsApp messages route correctly
 - [ ] Voice notes transcribe
 - [ ] Payments confirm
@@ -367,14 +393,18 @@ The AI always uses emoji-numbered lists:
 ## 🐛 Common Issues
 
 ### Issue: "Cannot find module '@/lib/supabase'"
+
 **Solution:**
+
 ```bash
 cd waiter-pwa
 pnpm install
 ```
 
 ### Issue: "Edge function returns 500"
+
 **Solution:** Check environment variables:
+
 ```bash
 # Verify these are set
 echo $OPENAI_API_KEY
@@ -383,14 +413,18 @@ echo $SUPABASE_SERVICE_ROLE_KEY
 ```
 
 ### Issue: "PWA not installing"
+
 **Solution:** Must be served over HTTPS or localhost:
+
 ```bash
 # Use ngrok for HTTPS in development
 ngrok http 3001
 ```
 
 ### Issue: "Voice ordering not working"
+
 **Solution:** Browser permissions:
+
 - Allow microphone access
 - Ensure HTTPS connection
 - Check OpenAI API key is set
@@ -399,34 +433,37 @@ ngrok http 3001
 
 ## 📈 Performance Targets
 
-| Metric | Target | Current |
-|--------|--------|---------|
-| Initial Load | < 2s | ✅ ~1.5s |
-| Chat Response | < 1s | ✅ ~800ms |
-| Menu Load | < 500ms | ✅ ~300ms |
-| Order Submit | < 1s | ✅ ~700ms |
-| Lighthouse Performance | 95+ | ✅ 96 |
-| PWA Score | 100 | ✅ 100 |
+| Metric                 | Target  | Current   |
+| ---------------------- | ------- | --------- |
+| Initial Load           | < 2s    | ✅ ~1.5s  |
+| Chat Response          | < 1s    | ✅ ~800ms |
+| Menu Load              | < 500ms | ✅ ~300ms |
+| Order Submit           | < 1s    | ✅ ~700ms |
+| Lighthouse Performance | 95+     | ✅ 96     |
+| PWA Score              | 100     | ✅ 100    |
 
 ---
 
 ## 🔐 Security
 
 ### Row Level Security (RLS)
+
 All tables have RLS enabled:
+
 ```sql
 -- Users can only see their own data
-CREATE POLICY "Users view own conversations" 
-ON waiter_conversations FOR SELECT 
+CREATE POLICY "Users view own conversations"
+ON waiter_conversations FOR SELECT
 USING (auth.uid() = user_id);
 
 -- Users can only modify their own cart
-CREATE POLICY "Users modify own cart" 
-ON draft_orders FOR ALL 
+CREATE POLICY "Users modify own cart"
+ON draft_orders FOR ALL
 USING (auth.uid() = user_id);
 ```
 
 ### API Key Security
+
 - ✅ Never expose `SUPABASE_SERVICE_ROLE_KEY` in client code
 - ✅ Use `NEXT_PUBLIC_*` only for public keys
 - ✅ Validate all inputs in edge functions
@@ -437,6 +474,7 @@ USING (auth.uid() = user_id);
 ## 📊 Monitoring
 
 ### Logs
+
 ```bash
 # View edge function logs
 supabase functions logs waiter-ai-agent --tail
@@ -446,6 +484,7 @@ supabase db logs --tail
 ```
 
 ### Metrics
+
 ```typescript
 // Structured logging
 await logStructuredEvent("ORDER_PLACED", {
@@ -461,6 +500,7 @@ await logStructuredEvent("ORDER_PLACED", {
 ## 🎨 UI Components
 
 ### Chat Components
+
 ```typescript
 <ChatInterface />      // Main chat UI
 <MessageBubble />      // User/AI messages
@@ -471,6 +511,7 @@ await logStructuredEvent("ORDER_PLACED", {
 ```
 
 ### Menu Components
+
 ```typescript
 <MenuBrowser />        // Grid view of items
 <MenuItemCard />       // Individual item
@@ -485,25 +526,27 @@ await logStructuredEvent("ORDER_PLACED", {
 ## 🚦 Status Indicators
 
 ### Order Status
+
 ```typescript
-type OrderStatus = 
-  | 'draft'       // 🛒 In cart
-  | 'pending'     // ⏳ Payment pending
-  | 'confirmed'   // ✅ Payment confirmed
-  | 'preparing'   // 👨‍🍳 Kitchen preparing
-  | 'ready'       // 🎉 Ready for pickup/delivery
-  | 'completed'   // ✅ Delivered
-  | 'cancelled';  // ❌ Cancelled
+type OrderStatus =
+  | "draft" // 🛒 In cart
+  | "pending" // ⏳ Payment pending
+  | "confirmed" // ✅ Payment confirmed
+  | "preparing" // 👨‍🍳 Kitchen preparing
+  | "ready" // 🎉 Ready for pickup/delivery
+  | "completed" // ✅ Delivered
+  | "cancelled"; // ❌ Cancelled
 ```
 
 ### Payment Status
+
 ```typescript
-type PaymentStatus = 
-  | 'pending'     // ⏳ Awaiting payment
-  | 'processing'  // 🔄 Processing
-  | 'completed'   // ✅ Paid
-  | 'failed'      // ❌ Failed
-  | 'refunded';   // 💸 Refunded
+type PaymentStatus =
+  | "pending" // ⏳ Awaiting payment
+  | "processing" // 🔄 Processing
+  | "completed" // ✅ Paid
+  | "failed" // ❌ Failed
+  | "refunded"; // 💸 Refunded
 ```
 
 ---
@@ -511,18 +554,21 @@ type PaymentStatus =
 ## 📚 Additional Resources
 
 ### Documentation
+
 - [Complete Status](./WAITER_AI_COMPLETE_STATUS.md)
 - [Advanced Features Roadmap](./WAITER_AI_ADVANCED_FEATURES_ROADMAP.md)
 - [User Guide](./waiter-pwa/USER_GUIDE.md)
 - [Deployment Guide](./waiter-pwa/deploy.sh)
 
 ### API References
+
 - [OpenAI API](https://platform.openai.com/docs)
 - [Gemini API](https://ai.google.dev/docs)
 - [Supabase Docs](https://supabase.com/docs)
 - [Next.js Docs](https://nextjs.org/docs)
 
 ### Related Files
+
 - Edge Function: `supabase/functions/waiter-ai-agent/index.ts`
 - WhatsApp Agent: `supabase/functions/wa-webhook-ai-agents/ai-agents/waiter_agent.ts`
 - Apply Intent: `supabase/migrations/20251122082500_apply_intent_waiter.sql`
@@ -559,6 +605,7 @@ open http://localhost:3001
 ## ✅ Production Deployment Checklist
 
 ### Pre-Deployment
+
 - [ ] All environment variables set
 - [ ] Database migrations applied
 - [ ] Edge functions deployed
@@ -566,6 +613,7 @@ open http://localhost:3001
 - [ ] Tests passing
 
 ### Deployment
+
 - [ ] Deploy edge functions to Supabase
 - [ ] Deploy PWA to Vercel
 - [ ] Configure custom domain
@@ -573,6 +621,7 @@ open http://localhost:3001
 - [ ] Test all flows end-to-end
 
 ### Post-Deployment
+
 - [ ] Monitor error logs
 - [ ] Check performance metrics
 - [ ] Test on mobile devices
@@ -586,4 +635,4 @@ open http://localhost:3001
 
 ---
 
-*Quick reference for the Waiter AI implementation. Last updated: 2025-11-27*
+_Quick reference for the Waiter AI implementation. Last updated: 2025-11-27_

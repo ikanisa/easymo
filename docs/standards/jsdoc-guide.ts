@@ -1,6 +1,6 @@
 /**
  * JSDoc Documentation Standards
- * 
+ *
  * This file serves as a reference for documenting code in the EasyMO project.
  * All public functions, classes, and modules should follow these standards.
  */
@@ -8,7 +8,7 @@
 /**
  * @module messaging/client
  * @description WhatsApp messaging client for sending messages to users.
- * 
+ *
  * @example
  * ```typescript
  * import { sendText } from './client.ts';
@@ -18,18 +18,18 @@
 
 /**
  * Sends a text message to a WhatsApp user.
- * 
+ *
  * @param {RouterContext} ctx - The router context containing user information
  * @param {string} text - The text content to send (max 4096 characters)
  * @param {SendOptions} [options] - Optional send configuration
  * @param {boolean} [options.preview] - Enable link previews (default: true)
  * @param {string} [options.replyTo] - Message ID to reply to
- * 
+ *
  * @returns {Promise<SendResult>} Result object with success status and message ID
- * 
+ *
  * @throws {WhatsAppApiError} When the API call fails
  * @throws {ValidationError} When text exceeds maximum length
- * 
+ *
  * @example
  * ```typescript
  * const result = await sendText(ctx, "Hello!");
@@ -37,7 +37,7 @@
  *   console.log("Message sent:", result.messageId);
  * }
  * ```
- * 
+ *
  * @see {@link sendButtons} for sending interactive button messages
  * @since 2.0.0
  */
@@ -51,7 +51,7 @@ export async function sendTextExample(
 
 /**
  * Configuration options for the router context.
- * 
+ *
  * @interface RouterContext
  * @property {SupabaseClient} supabase - Supabase client instance
  * @property {string} from - User's WhatsApp phone number in E.164 format
@@ -69,7 +69,7 @@ interface RouterContextExample {
 
 /**
  * Result of a message send operation.
- * 
+ *
  * @typedef {Object} SendResult
  * @property {boolean} success - Whether the send was successful
  * @property {string} [messageId] - WhatsApp message ID if successful

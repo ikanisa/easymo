@@ -9,6 +9,7 @@
 ## 🧪 Test Results Summary
 
 ### Overall Test Status
+
 ```
 Test Files:  10 passed | 7 failed (17)
 Tests:       186 passed | 21 failed (207)
@@ -24,6 +25,7 @@ Duration:    3.68s
 ## ✅ Tests Passed
 
 ### 1. Type Checking
+
 **Status**: ⚠️ Partial Pass (expected issues)
 
 ```bash
@@ -31,6 +33,7 @@ cd packages/agents && pnpm exec tsc --noEmit
 ```
 
 **Issues Found**:
+
 - ✅ Buy & Sell agent compiles (main errors fixed)
 - ⚠️ `@easymo/commons` missing .d.ts files (pre-existing issue, not blocking)
 - ✅ No import cycle errors
@@ -41,6 +44,7 @@ cd packages/agents && pnpm exec tsc --noEmit
 ---
 
 ### 2. Linting
+
 **Status**: ✅ Pass
 
 ```bash
@@ -48,6 +52,7 @@ pnpm lint --filter @easymo/agents
 ```
 
 **Results**:
+
 - ✅ No new linting errors in Buy & Sell files
 - ✅ Code style consistent
 - ✅ No unused imports
@@ -55,15 +60,18 @@ pnpm lint --filter @easymo/agents
 ---
 
 ### 3. Unit Tests
+
 **Status**: ✅ Pass (186/207 tests)
 
 **Relevant Test Suites**:
+
 - ✅ Synthetic Failure Tests (15/15 passed)
 - ✅ Agent Registry Tests
 - ✅ Tool Definition Tests
 - ✅ Config Constants Tests
 
 **Not Tested** (requires manual verification):
+
 - Edge function integration (Deno runtime)
 - Database migration effects
 - WhatsApp webhook flows
@@ -71,6 +79,7 @@ pnpm lint --filter @easymo/agents
 ---
 
 ### 4. Build Verification
+
 **Status**: ✅ Pass
 
 ```bash
@@ -82,7 +91,8 @@ pnpm --filter @easymo/commons build ✅
 pnpm --filter @easymo/agents build ⚠️ (commons type warnings only)
 ```
 
-**Assessment**: Build succeeds despite type warnings. Type warnings are pre-existing and non-blocking.
+**Assessment**: Build succeeds despite type warnings. Type warnings are pre-existing and
+non-blocking.
 
 ---
 
@@ -91,6 +101,7 @@ pnpm --filter @easymo/agents build ⚠️ (commons type warnings only)
 ### 1. Modular Structure ✅
 
 **Files Created** (9 files):
+
 ```
 packages/agents/src/agents/commerce/buy-and-sell/
 ├── config.ts ✅
@@ -107,6 +118,7 @@ packages/agents/src/agents/commerce/buy-and-sell/
 ```
 
 **Verification**:
+
 - ✅ All files exist
 - ✅ Exports working correctly
 - ✅ Constants accessible
@@ -119,6 +131,7 @@ packages/agents/src/agents/commerce/buy-and-sell/
 **File**: `packages/agents/src/agents/commerce/buy-and-sell.agent.ts`
 
 **Verification**:
+
 - ✅ Imports from modular structure
 - ✅ Uses BUY_SELL_SYSTEM_PROMPT
 - ✅ Uses BUY_SELL_DEFAULT_MODEL constant
@@ -134,6 +147,7 @@ packages/agents/src/agents/commerce/buy-and-sell/
 **File**: `supabase/functions/_shared/agents/buy-and-sell.ts`
 
 **Verification**:
+
 - ✅ File created
 - ✅ Exports BuyAndSellAgent class
 - ✅ Exports helper functions (loadContext, saveContext, resetContext)
@@ -141,24 +155,28 @@ packages/agents/src/agents/commerce/buy-and-sell/
 - ✅ MarketplaceAgent alias for backward compatibility
 - ✅ Observability logging integrated
 
-**⚠️ Note**: Currently delegates to `wa-webhook-buy-sell/agent.ts`. This is intentional for gradual migration.
+**⚠️ Note**: Currently delegates to `wa-webhook-buy-sell/agent.ts`. This is intentional for gradual
+migration.
 
 ---
 
 ### 4. Edge Functions ✅
 
 **agent-buy-sell/index.ts**:
+
 - ✅ Imports from `_shared/agents/buy-and-sell.ts`
 - ✅ Uses BuyAndSellAgent class
 - ✅ Uses loadContext/saveContext helpers
 - ✅ No import cycle
 
 **wa-webhook-buy-sell/marketplace/index.ts**:
+
 - ✅ Re-exports from `_shared/agents/buy-and-sell.ts`
 - ✅ Maintains backward compatibility
 - ✅ Deprecation warning added
 
 **wa-webhook-buy-sell/agent.ts**:
+
 - ✅ Deprecation notice added
 - ✅ Still functional (used by wrapper)
 - ⏳ Will be removed after Phase 5 deployment
@@ -170,6 +188,7 @@ packages/agents/src/agents/commerce/buy-and-sell/
 **File**: `admin-app/lib/ai/domain/marketplace-agent.ts`
 
 **Verification**:
+
 - ✅ Re-exports from `@easymo/agents`
 - ✅ Code reduced from 139 lines to ~40 lines (71% reduction)
 - ✅ MarketplaceAgent alias maintained
@@ -182,6 +201,7 @@ packages/agents/src/agents/commerce/buy-and-sell/
 **File**: `supabase/functions/wa-webhook/shared/agent_configs.ts`
 
 **Verification**:
+
 - ✅ Type changed from `buy_and_sell` to `buy_sell`
 - ✅ Matches database slug
 
@@ -192,6 +212,7 @@ packages/agents/src/agents/commerce/buy-and-sell/
 **File**: `supabase/migrations/20251210185001_consolidate_buy_sell_agent.sql`
 
 **Verification**:
+
 - ✅ SQL syntax valid
 - ✅ Includes BEGIN/COMMIT
 - ✅ Has verification checks
@@ -199,6 +220,7 @@ packages/agents/src/agents/commerce/buy-and-sell/
 - ✅ Idempotent (can run multiple times safely)
 
 **Migration Actions**:
+
 1. ✅ Deletes old agent slugs
 2. ✅ Ensures buy_sell is active
 3. ✅ Cleans up menu items
@@ -210,6 +232,7 @@ packages/agents/src/agents/commerce/buy-and-sell/
 ## 🔍 Pre-Deployment Checklist
 
 ### Code Quality ✅
+
 - [x] No syntax errors
 - [x] No import cycles
 - [x] Linting passes
@@ -217,6 +240,7 @@ packages/agents/src/agents/commerce/buy-and-sell/
 - [x] Build succeeds
 
 ### Functionality ✅
+
 - [x] Agent class compiles
 - [x] Tools properly modularized
 - [x] Constants exported correctly
@@ -224,12 +248,14 @@ packages/agents/src/agents/commerce/buy-and-sell/
 - [x] Edge functions updated
 
 ### Documentation ✅
+
 - [x] Phase summaries created (1, 2, 3&4)
 - [x] Migration guide created
 - [x] Deprecation warnings added
 - [x] Code comments added
 
 ### Database ✅
+
 - [x] Migration file created
 - [x] Migration has safety checks
 - [x] Migration is idempotent
@@ -240,24 +266,28 @@ packages/agents/src/agents/commerce/buy-and-sell/
 ## ⚠️ Known Issues (Non-Blocking)
 
 ### 1. Commons Type Declarations
+
 **Issue**: `@easymo/commons` missing .d.ts files  
 **Impact**: Type warnings during build  
 **Severity**: Low - Pre-existing issue  
 **Action**: No action needed (doesn't affect runtime)
 
 ### 2. Mobility Test Failures
+
 **Issue**: 21 mobility integration tests failing  
 **Impact**: None (unrelated to Buy & Sell)  
 **Severity**: Low - Pre-existing failures  
 **Action**: No action needed for this consolidation
 
 ### 3. Legacy Code Still Present
+
 **Issue**: `BuyAndSellAgentLegacy` class still in codebase  
 **Impact**: None (not used)  
 **Severity**: Low  
 **Action**: Remove in cleanup phase after deployment
 
 ### 4. Deno Wrapper Delegation
+
 **Issue**: Wrapper currently delegates to old agent file  
 **Impact**: None (works correctly)  
 **Severity**: Low  
@@ -268,6 +298,7 @@ packages/agents/src/agents/commerce/buy-and-sell/
 ## 🚀 Deployment Readiness
 
 ### Pre-Deployment Steps ✅
+
 - [x] Code committed to version control
 - [x] Tests passing (186/207, all relevant tests pass)
 - [x] Documentation complete
@@ -277,17 +308,19 @@ packages/agents/src/agents/commerce/buy-and-sell/
 ### Deployment Plan
 
 #### Step 1: Database Migration
+
 ```bash
 # On staging
 supabase db push
 
 # Verify
 SELECT slug, name, is_active FROM ai_agents WHERE slug = 'buy_sell';
-SELECT key, name FROM whatsapp_home_menu_items 
+SELECT key, name FROM whatsapp_home_menu_items
 WHERE key IN ('buy_sell_categories', 'business_broker_agent');
 ```
 
 #### Step 2: Deploy Edge Functions
+
 ```bash
 # Deploy updated functions
 supabase functions deploy agent-buy-sell
@@ -298,12 +331,14 @@ curl https://[project].supabase.co/functions/v1/agent-buy-sell/health
 ```
 
 #### Step 3: Monitor
+
 - Watch error logs for 24-48 hours
 - Check agent lookup metrics
 - Monitor WhatsApp webhook success rate
 - Verify admin panel functionality
 
 #### Step 4: Production Deployment
+
 - Same steps as staging
 - Deploy during low-traffic window
 - Have rollback plan ready
@@ -313,6 +348,7 @@ curl https://[project].supabase.co/functions/v1/agent-buy-sell/health
 ## 📈 Test Coverage
 
 ### What Was Tested ✅
+
 - ✅ Type checking
 - ✅ Linting
 - ✅ Unit tests (186 tests)
@@ -322,6 +358,7 @@ curl https://[project].supabase.co/functions/v1/agent-buy-sell/health
 - ✅ Backward compatibility
 
 ### What Needs Manual Testing 🔜
+
 - ⏳ Database migration on staging
 - ⏳ Edge function deployment
 - ⏳ WhatsApp category selection flow
@@ -338,6 +375,7 @@ curl https://[project].supabase.co/functions/v1/agent-buy-sell/health
 ### Confidence Level: HIGH (90%)
 
 **Reasons**:
+
 1. ✅ 186/186 relevant tests passing
 2. ✅ No breaking changes introduced
 3. ✅ Backward compatibility maintained
@@ -347,6 +385,7 @@ curl https://[project].supabase.co/functions/v1/agent-buy-sell/health
 7. ✅ Comprehensive documentation
 
 **Risk Assessment**: LOW
+
 - No production code deleted
 - Old code marked deprecated but still functional
 - Migration only touches inactive data
@@ -357,17 +396,20 @@ curl https://[project].supabase.co/functions/v1/agent-buy-sell/health
 ## 🔜 Post-Deployment Tasks
 
 ### Immediate (Within 24 hours)
+
 - [ ] Monitor error logs
 - [ ] Check agent lookup metrics
 - [ ] Verify WhatsApp flows working
 - [ ] Test admin panel functionality
 
 ### Short-term (Within 1 week)
+
 - [ ] Remove deprecated `wa-webhook-buy-sell/agent.ts`
 - [ ] Update test files to use new imports
 - [ ] Clean up legacy code in `buy-and-sell.agent.ts`
 
 ### Long-term (Within 1 month)
+
 - [ ] Refactor Deno wrapper to not delegate
 - [ ] Add more comprehensive integration tests
 - [ ] Update remaining documentation

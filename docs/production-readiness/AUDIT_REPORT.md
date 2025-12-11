@@ -6,37 +6,43 @@
 
 ## Executive Summary
 
-Based on deep audit of the ikanisa/easymo- repository, this is a WhatsApp-first mobility and commerce platform built as a sophisticated pnpm monorepo with React/Vite admin panels, Supabase Edge Functions, and NestJS microservices. The system includes ~20k lines of SQL, 12+ microservices, and multiple frontend applications.
+Based on deep audit of the ikanisa/easymo- repository, this is a WhatsApp-first mobility and
+commerce platform built as a sophisticated pnpm monorepo with React/Vite admin panels, Supabase Edge
+Functions, and NestJS microservices. The system includes ~20k lines of SQL, 12+ microservices, and
+multiple frontend applications.
 
 ### Readiness Scores
 
-| Category | Score | Status |
-|----------|-------|--------|
-| Architecture & Design | 85/100 | ✅ Good |
-| Security | 78/100 | ⚠️ Needs Attention |
-| Code Quality | 70/100 | ⚠️ Moderate Concerns |
-| Testing | 65/100 | ⚠️ Insufficient Coverage |
-| DevOps/CI/CD | 82/100 | ✅ Good |
-| Documentation | 75/100 | ⚠️ Needs Cleanup |
-| Observability | 80/100 | ✅ Good |
-| Performance | 72/100 | ⚠️ Needs Optimization |
+| Category              | Score  | Status                   |
+| --------------------- | ------ | ------------------------ |
+| Architecture & Design | 85/100 | ✅ Good                  |
+| Security              | 78/100 | ⚠️ Needs Attention       |
+| Code Quality          | 70/100 | ⚠️ Moderate Concerns     |
+| Testing               | 65/100 | ⚠️ Insufficient Coverage |
+| DevOps/CI/CD          | 82/100 | ✅ Good                  |
+| Documentation         | 75/100 | ⚠️ Needs Cleanup         |
+| Observability         | 80/100 | ✅ Good                  |
+| Performance           | 72/100 | ⚠️ Needs Optimization    |
 
 ## All 23 Issues by Priority
 
 ### P0 - Production Blockers
+
 - **#5**: Rate limiting gaps on public endpoints
-- **#6**: RLS audit incomplete  
+- **#6**: RLS audit incomplete
 - **#7**: Wallet service test coverage <50%
 - **#18**: Audit triggers verification needed
 
 ### P1 - High Priority
+
 - **#1**: Root directory clutter (80+ markdown files)
 - **#2**: Duplicate admin apps (admin-app vs admin-app-v2)
 - **#10**: 50+ deployment scripts need consolidation
 - **#11**: Build order dependencies not automated
 - **#16**: Health check coverage unknown
 
-### P2 - Medium Priority  
+### P2 - Medium Priority
+
 - **#3**: Stray files in services/ directory
 - **#4**: .env.example exposure risk
 - **#8**: Test infrastructure fragmentation
@@ -59,6 +65,7 @@ Based on deep audit of the ikanisa/easymo- repository, this is a WhatsApp-first 
 ### 1.1 Monorepo Structure
 
 **Strengths:**
+
 - ✅ Well-organized pnpm workspace with clear separation
 - ✅ Shared packages (@va/shared, @easymo/commons, @easymo/db, @easymo/messaging)
 - ✅ Multiple targeted applications (admin-app, bar-manager-app, waiter-pwa, real-estate-pwa)
@@ -67,7 +74,8 @@ Based on deep audit of the ikanisa/easymo- repository, this is a WhatsApp-first 
 
 #### ⚠️ ISSUE #1: Root Directory Clutter (CRITICAL)
 
-The root directory contains 80+ markdown/txt files that appear to be session notes, visual summaries, and temporary documentation:
+The root directory contains 80+ markdown/txt files that appear to be session notes, visual
+summaries, and temporary documentation:
 
 - `AI_AGENT_INTEGRATION_COMPLETE.md`
 - `SESSION_COMPLETE_2025-11-27.md`
@@ -78,6 +86,7 @@ The root directory contains 80+ markdown/txt files that appear to be session not
 **Impact**: Creates confusion, makes navigation difficult, violates clean repository practices.
 
 **Recommendation**:
+
 ```bash
 mkdir -p docs/sessions docs/architecture
 mv *_COMPLETE*.md *_STATUS*.md *_SUMMARY*.txt docs/sessions/
@@ -87,29 +96,31 @@ mv *_VISUAL*.txt *_ARCHITECTURE*.txt docs/architecture/
 #### ⚠️ ISSUE #2: Duplicate Admin Apps
 
 Two admin applications exist:
+
 - `admin-app/` - Next.js 15.1.6 (uses npm, has Tauri desktop support)
 - `admin-app-v2/` - Next.js 15.1.6 (uses vitest, cleaner structure)
 
-**Impact**: Maintenance burden, confusion about which is production, potential security updates missed.
+**Impact**: Maintenance burden, confusion about which is production, potential security updates
+missed.
 
 ### 1.2 Microservices Architecture
 
 **Identified Services:**
 
-| Service | Purpose | Status |
-|---------|---------|--------|
-| agent-core | AI Agent orchestration | Active |
-| attribution-service | Analytics attribution | Active |
-| broker-orchestrator | Message broker orchestration | Active |
-| buyer-service | Buyer management | Active |
-| ranking-service | Content/user ranking | Active |
-| vendor-service | Vendor management | Active |
-| video-orchestrator | Video call orchestration | Active |
-| voice-bridge | Voice call handling | Active |
-| wa-webhook-ai-agents | WhatsApp AI processing | Active |
-| wallet-service | Financial transactions | Active |
-| whatsapp-pricing-server | Pricing calculations | Active |
-| whatsapp-webhook-worker | Webhook processing | Active |
+| Service                 | Purpose                      | Status |
+| ----------------------- | ---------------------------- | ------ |
+| agent-core              | AI Agent orchestration       | Active |
+| attribution-service     | Analytics attribution        | Active |
+| broker-orchestrator     | Message broker orchestration | Active |
+| buyer-service           | Buyer management             | Active |
+| ranking-service         | Content/user ranking         | Active |
+| vendor-service          | Vendor management            | Active |
+| video-orchestrator      | Video call orchestration     | Active |
+| voice-bridge            | Voice call handling          | Active |
+| wa-webhook-ai-agents    | WhatsApp AI processing       | Active |
+| wallet-service          | Financial transactions       | Active |
+| whatsapp-pricing-server | Pricing calculations         | Active |
+| whatsapp-webhook-worker | Webhook processing           | Active |
 
 #### ⚠️ ISSUE #3: Stray Files in services/
 
@@ -123,19 +134,22 @@ Two admin applications exist:
 ### 2.1 Secret Management
 
 **Positive Findings:**
+
 - ✅ Prebuild security guard script (`scripts/assert-no-service-role-in-client.mjs`)
 - ✅ CI secret guard workflow (`.github/workflows/ci-secret-guard.yml`)
-- ✅ Ground rules explicitly prohibit VITE_* or NEXT_PUBLIC_* with service keys
+- ✅ Ground rules explicitly prohibit VITE*\* or NEXT_PUBLIC*\* with service keys
 
 **Concerns:**
 
 #### ⚠️ ISSUE #4: .env.example Exposure
 
-Need to verify `.env.example` doesn't contain actual secrets or overly specific patterns that could aid attackers.
+Need to verify `.env.example` doesn't contain actual secrets or overly specific patterns that could
+aid attackers.
 
 ### 2.2 Webhook Security
 
 **Implemented:**
+
 - ✅ WhatsApp signature verification required
 - ✅ Twilio signature verification pattern documented
 - ✅ HMAC-SHA1 timing-safe comparison
@@ -145,11 +159,13 @@ Need to verify `.env.example` doesn't contain actual secrets or overly specific 
 **Impact**: DDoS vulnerability, API abuse risk
 
 Rate limiting is documented in Ground Rules but needs verification across all public endpoints:
+
 - `/api/*` endpoints
 - Edge function endpoints (80+ functions)
 - Webhook receivers
 
 **Required Limits:**
+
 - WhatsApp Webhooks: 100 req/min
 - Payment Webhooks: 50 req/min
 - AI Agents: 30 req/min
@@ -161,9 +177,11 @@ Rate limiting is documented in Ground Rules but needs verification across all pu
 
 **Impact**: Data leakage risk
 
-With ~20k lines of SQL migrations, a comprehensive Row Level Security (RLS) audit is essential. The `admin-app-ci.yml` mentions "RLS audit" but implementation verification needed.
+With ~20k lines of SQL migrations, a comprehensive Row Level Security (RLS) audit is essential. The
+`admin-app-ci.yml` mentions "RLS audit" but implementation verification needed.
 
 **Required Checks:**
+
 - All tables have RLS enabled
 - Financial tables have strict policies
 - User data is properly scoped
@@ -176,6 +194,7 @@ With ~20k lines of SQL migrations, a comprehensive Row Level Security (RLS) audi
 ### 3.1 Test Coverage Analysis
 
 **Current State:**
+
 - Vitest: 84 tests (~6s runtime)
 - Jest: Used in some services (wallet-service)
 - Deno tests: For Edge Functions
@@ -184,19 +203,21 @@ With ~20k lines of SQL migrations, a comprehensive Row Level Security (RLS) audi
 
 **Impact**: Financial operations at risk
 
-| Area | Expected | Observed | Gap |
-|------|----------|----------|-----|
-| Unit Tests | 80%+ | ~40-50% | Critical |
-| Integration Tests | 60%+ | Unknown | Critical |
-| E2E Tests | Key flows | Minimal | High |
-| Edge Function Tests | All functions | Partial | Medium |
+| Area                | Expected      | Observed | Gap      |
+| ------------------- | ------------- | -------- | -------- |
+| Unit Tests          | 80%+          | ~40-50%  | Critical |
+| Integration Tests   | 60%+          | Unknown  | Critical |
+| E2E Tests           | Key flows     | Minimal  | High     |
+| Edge Function Tests | All functions | Partial  | Medium   |
 
 **Missing Test Files:**
+
 - No visible tests for broker-orchestrator
 - No visible tests for video-orchestrator
 - Wallet service financial operations need exhaustive testing
 
 **Critical Missing Test Cases:**
+
 - ❌ Wallet transfer concurrency tests
 - ❌ Idempotency verification
 - ❌ Transaction rollback tests
@@ -225,16 +246,16 @@ With ~20k lines of SQL migrations, a comprehensive Row Level Security (RLS) audi
 
 **Identified Workflows (25 workflows):**
 
-| Workflow | Purpose | Status |
-|----------|---------|--------|
-| ci.yml | Main CI (30min timeout) | ✅ Critical |
-| admin-app-ci.yml | Admin app specific | ✅ Good |
-| validate.yml | Migration hygiene, Deno locks | ✅ Good |
-| additive-guard.yml | Blocks migration modifications | ✅ Excellent |
-| ci-secret-guard.yml | Secret scanning | ✅ Excellent |
-| supabase-deploy.yml | Supabase deployment | ✅ Good |
-| supabase-drift.yml | Schema drift detection | ✅ Excellent |
-| lighthouse.yml / lighthouse-audit.yml | Performance audits | ⚠️ Duplicate? |
+| Workflow                              | Purpose                        | Status        |
+| ------------------------------------- | ------------------------------ | ------------- |
+| ci.yml                                | Main CI (30min timeout)        | ✅ Critical   |
+| admin-app-ci.yml                      | Admin app specific             | ✅ Good       |
+| validate.yml                          | Migration hygiene, Deno locks  | ✅ Good       |
+| additive-guard.yml                    | Blocks migration modifications | ✅ Excellent  |
+| ci-secret-guard.yml                   | Secret scanning                | ✅ Excellent  |
+| supabase-deploy.yml                   | Supabase deployment            | ✅ Good       |
+| supabase-drift.yml                    | Schema drift detection         | ✅ Excellent  |
+| lighthouse.yml / lighthouse-audit.yml | Performance audits             | ⚠️ Duplicate? |
 
 #### ⚠️ ISSUE #9: Workflow Duplication (P2)
 
@@ -246,6 +267,7 @@ With ~20k lines of SQL migrations, a comprehensive Row Level Security (RLS) audi
 **Impact**: Unmaintainable, inconsistent deployment practices
 
 Root directory contains 50+ shell scripts for deployment:
+
 - `deploy-agent-functions.sh`
 - `deploy-ai-agent-ecosystem.sh`
 - `deploy-all-agents.sh`
@@ -253,6 +275,7 @@ Root directory contains 50+ shell scripts for deployment:
 - ... (40+ more)
 
 **Recommendation**:
+
 ```bash
 scripts/
 ├── deploy/
@@ -271,6 +294,7 @@ scripts/
 **Impact**: Frequent build failures for new developers
 
 Critical build sequence required:
+
 ```bash
 pnpm --filter @va/shared build         # MUST build first
 pnpm --filter @easymo/commons build    # MUST build second
@@ -278,6 +302,7 @@ pnpm build  # Only then safe
 ```
 
 This should be automated in root `package.json`:
+
 ```json
 {
   "scripts": {
@@ -293,6 +318,7 @@ This should be automated in root `package.json`:
 ### 5.1 TypeScript Configuration
 
 **Positive:**
+
 - ✅ Multiple tsconfig files for different contexts (base, build, CI)
 - ✅ TypeScript 5.5.4 (modern version)
 
@@ -307,6 +333,7 @@ This should be automated in root `package.json`:
 #### ⚠️ ISSUE #13: Dependency Concerns (P2)
 
 Workspace dependencies without version pinning:
+
 ```json
 "@easymo/commons": "*",
 "@easymo/ui": "*",
@@ -328,6 +355,7 @@ From instructions: "2 console warnings OK" - This should be 0 warnings for produ
 ### 6.1 Logging Standards (from GROUND_RULES.md)
 
 **Implemented:**
+
 - ✅ Structured JSON logging required
 - ✅ Correlation IDs mandatory
 - ✅ PII masking patterns defined
@@ -346,6 +374,7 @@ Need to verify all 12+ services actually implement these patterns consistently.
 Cannot confirm all services expose `/health` endpoints without deeper inspection.
 
 **Required Endpoints:**
+
 - `/health` - Overall status
 - `/health/liveness` - K8s liveness probe
 - `/health/readiness` - K8s readiness probe
@@ -357,6 +386,7 @@ Cannot confirm all services expose `/health` endpoints without deeper inspection
 ### 7.1 Migration Management
 
 **Strengths:**
+
 - ✅ Additive-only guard workflow prevents modifying existing migrations
 - ✅ Migration hygiene check (`scripts/check-migration-hygiene.sh`)
 - ✅ BEGIN/COMMIT wrapper enforcement
@@ -368,6 +398,7 @@ Both `/migrations` and `/supabase/migrations` exist. This could cause confusion.
 ### 7.2 Data Integrity
 
 **Required patterns from GROUND_RULES.md:**
+
 - ✅ Foreign key constraints
 - ✅ Database transactions for multi-table operations
 - ✅ Audit triggers for financial tables
@@ -376,9 +407,11 @@ Both `/migrations` and `/supabase/migrations` exist. This could cause confusion.
 
 **Impact**: Financial compliance risk
 
-Ground rules require audit triggers for financial tables - implementation verification needed in actual migrations:
+Ground rules require audit triggers for financial tables - implementation verification needed in
+actual migrations:
 
 **Tables Requiring Audit Triggers:**
+
 - `wallet_accounts`
 - `wallet_entries`
 - `wallet_transactions`
@@ -395,6 +428,7 @@ Ground rules require audit triggers for financial tables - implementation verifi
 ### 8.1 Build Performance
 
 **Current Metrics (from instructions):**
+
 - Vitest: 84 tests, ~6s ✅
 - Vite build: ~5s, 163KB gzipped ✅
 
@@ -409,6 +443,7 @@ Ground rules require audit triggers for financial tables - implementation verifi
 **Impact**: Slow queries in production
 
 Ground rules require indexes for high-traffic queries:
+
 ```sql
 CREATE INDEX idx_transactions_user_created
   ON transactions(user_id, created_at DESC);
@@ -423,6 +458,7 @@ Need to verify these exist in migrations.
 ### 9.1 Documentation Quality
 
 **Good:**
+
 - ✅ GROUND_RULES.md - Comprehensive development standards
 - ✅ CONTRIBUTING.md - Contribution guidelines
 - ✅ Multiple README files
@@ -433,6 +469,7 @@ Need to verify these exist in migrations.
 **Impact**: Difficult to find authoritative documentation
 
 80+ documentation files in root, many appear to be session notes:
+
 - `EXECUTIVE_SUMMARY_2025-11-27.md`
 - `SESSION_COMPLETE_2025-11-27_FINAL_SUMMARY.md`
 - `WAITER_AI_DOCUMENTATION_INDEX.md`
@@ -450,6 +487,7 @@ OpenAPI lint workflow exists (`openapi-lint.yml`) but need to verify API specs e
 ### 10.1 Container Configuration
 
 **Files Found:**
+
 - ✅ Dockerfile
 - ✅ docker-compose.agent-core.yml
 - ✅ docker-compose.wa-realtime.yml
@@ -462,6 +500,7 @@ OpenAPI lint workflow exists (`openapi-lint.yml`) but need to verify API specs e
 **Impact**: Unclear production architecture
 
 Configuration for multiple platforms:
+
 - Netlify (`netlify.toml`)
 - Google Cloud Build (`cloudbuild.yaml`)
 - Supabase (native)
@@ -474,6 +513,7 @@ Need clear documentation on which platform is used for what.
 ## Pre-Production Checklist
 
 ### Security
+
 - [ ] Complete RLS audit for all Supabase tables
 - [ ] Verify rate limiting on all public endpoints
 - [ ] Run secret scanning on full repository history
@@ -481,24 +521,28 @@ Need clear documentation on which platform is used for what.
 - [ ] Review and rotate all API keys
 
 ### Testing
+
 - [ ] Achieve 80%+ coverage on wallet-service
 - [ ] Add E2E tests for payment flows
 - [ ] Load test WhatsApp webhook processing
 - [ ] Test circuit breakers for external services
 
 ### Infrastructure
+
 - [ ] Verify all health check endpoints respond correctly
 - [ ] Set up monitoring dashboards (Sentry configured ✅)
 - [ ] Configure alerting for critical paths
 - [ ] Document rollback procedures
 
 ### Database
+
 - [ ] Run migration dry-run on production-like dataset
 - [ ] Verify all indexes exist for high-traffic queries
 - [ ] Test backup and restore procedures
 - [ ] Verify audit log triggers are active
 
 ### Documentation
+
 - [ ] Consolidate documentation into /docs
 - [ ] Create deployment runbook
 - [ ] Document incident response procedures
@@ -509,6 +553,7 @@ Need clear documentation on which platform is used for what.
 ## Conclusion
 
 The EasyMO platform demonstrates solid architectural foundations with:
+
 - Well-structured monorepo
 - Comprehensive Ground Rules
 - Mature CI/CD pipelines
@@ -517,17 +562,21 @@ The EasyMO platform demonstrates solid architectural foundations with:
 However, the codebase shows signs of rapid development with accumulated technical debt.
 
 **Key Strengths:**
+
 - ✅ Strong security-first mindset with multiple guard workflows
 - ✅ Well-defined development standards (GROUND_RULES.md)
 - ✅ Modern tech stack with good tooling choices
 - ✅ Comprehensive CI/CD coverage
 
 **Key Concerns:**
+
 - ⚠️ Insufficient test coverage for financial operations
 - ⚠️ Repository organization needs cleanup
 - ⚠️ Documentation sprawl creates confusion
 - ⚠️ Deployment script explosion indicates process debt
 
-**Recommendation**: Proceed with 4-week implementation plan addressing all P0 and P1 issues before production launch.
+**Recommendation**: Proceed with 4-week implementation plan addressing all P0 and P1 issues before
+production launch.
 
-**Next Steps**: See [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) for detailed timeline and tasks.
+**Next Steps**: See [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) for detailed timeline and
+tasks.

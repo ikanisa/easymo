@@ -51,10 +51,11 @@ pnpm install
 ### Afternoon: Review Current Code
 
 1. **Read existing webhook handler**:
+
    ```bash
    # Main entry point
    view supabase/functions/wa-webhook/index.ts
-   
+
    # Current router
    view supabase/functions/wa-webhook/router.ts
    view supabase/functions/wa-webhook/router/pipeline.ts
@@ -62,19 +63,21 @@ pnpm install
    ```
 
 2. **Understand agent tables**:
+
    ```bash
    # Schema
    view supabase/migrations/20251121184617_ai_agent_ecosystem_whatsapp_first.sql
-   
+
    # Data population
    view supabase/migrations/20251121192657_ai_agents_comprehensive_data_part1.sql
    ```
 
 3. **Review agent implementations**:
+
    ```bash
    # Waiter agent (most complete)
    ls -la supabase/functions/waiter-ai-agent/
-   
+
    # Jobs agent
    ls -la supabase/functions/job-board-ai-agent/
    ls -la supabase/functions/wa-webhook-jobs/
@@ -137,26 +140,34 @@ import { normalizeWhatsAppEvent } from "../normalizer.ts";
 
 Deno.test("normalizeWhatsAppEvent - text message", async () => {
   const payload = {
-    entry: [{
-      changes: [{
-        value: {
-          messages: [{
-            from: "+250788123456",
-            id: "wamid.123",
-            type: "text",
-            timestamp: "1700000000",
-            text: { body: "Hello" }
-          }],
-          contacts: [{
-            profile: { name: "John Doe" }
-          }]
-        }
-      }]
-    }]
+    entry: [
+      {
+        changes: [
+          {
+            value: {
+              messages: [
+                {
+                  from: "+250788123456",
+                  id: "wamid.123",
+                  type: "text",
+                  timestamp: "1700000000",
+                  text: { body: "Hello" },
+                },
+              ],
+              contacts: [
+                {
+                  profile: { name: "John Doe" },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ],
   };
 
   const result = await normalizeWhatsAppEvent(payload, "test-correlation-id");
-  
+
   assertEquals(result.event.phoneNumber, "+250788123456");
   assertEquals(result.event.messageType, "text");
   assertEquals(result.event.content, "Hello");
@@ -199,24 +210,24 @@ export interface Conversation {
 }
 
 const MENU_TO_AGENT: Record<string, string> = {
-  '1': 'waiter',
-  '1️⃣': 'waiter',
-  '2': 'farmer',
-  '2️⃣': 'farmer',
-  '3': 'business_broker',
-  '3️⃣': 'business_broker',
-  '4': 'real_estate',
-  '4️⃣': 'real_estate',
-  '5': 'jobs',
-  '5️⃣': 'jobs',
-  '6': 'sales_cold_caller',
-  '6️⃣': 'sales_cold_caller',
-  '7': 'rides',
-  '7️⃣': 'rides',
-  '8': 'insurance',
-  '8️⃣': 'insurance',
-  '9': null, // Profile - not an agent
-  '9️⃣': null,
+  "1": "waiter",
+  "1️⃣": "waiter",
+  "2": "farmer",
+  "2️⃣": "farmer",
+  "3": "business_broker",
+  "3️⃣": "business_broker",
+  "4": "real_estate",
+  "4️⃣": "real_estate",
+  "5": "jobs",
+  "5️⃣": "jobs",
+  "6": "sales_cold_caller",
+  "6️⃣": "sales_cold_caller",
+  "7": "rides",
+  "7️⃣": "rides",
+  "8": "insurance",
+  "8️⃣": "insurance",
+  "9": null, // Profile - not an agent
+  "9️⃣": null,
 };
 
 export async function detectAgent(
@@ -273,11 +284,11 @@ Deno.test("End-to-end pipeline - waiter order", async () => {
   // 1. Normalize event
   const payload = createMockWhatsAppPayload("1️⃣"); // Select waiter
   const normalized = await normalizeWhatsAppEvent(payload, "test-id");
-  
+
   // 2. Detect agent
   const agent = await detectAgent(normalized.event.userId, normalized.event.content, "test-id");
   assertEquals(agent?.slug, "waiter");
-  
+
   // 3. TODO: Test agent runtime
   // 4. TODO: Test intent parsing
   // 5. TODO: Test apply intent
@@ -286,22 +297,30 @@ Deno.test("End-to-end pipeline - waiter order", async () => {
 
 function createMockWhatsAppPayload(message: string) {
   return {
-    entry: [{
-      changes: [{
-        value: {
-          messages: [{
-            from: "+250788123456",
-            id: "wamid.test",
-            type: "text",
-            timestamp: String(Math.floor(Date.now() / 1000)),
-            text: { body: message }
-          }],
-          contacts: [{
-            profile: { name: "Test User" }
-          }]
-        }
-      }]
-    }]
+    entry: [
+      {
+        changes: [
+          {
+            value: {
+              messages: [
+                {
+                  from: "+250788123456",
+                  id: "wamid.test",
+                  type: "text",
+                  timestamp: String(Math.floor(Date.now() / 1000)),
+                  text: { body: message },
+                },
+              ],
+              contacts: [
+                {
+                  profile: { name: "Test User" },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ],
   };
 }
 ```
@@ -319,15 +338,17 @@ import { detectAgent } from "./pipeline/agent-detector.ts";
 
 // In main serve() function, before existing router:
 if (FEATURES.UNIFIED_WEBHOOK) {
-  console.log(JSON.stringify({
-    event: "USING_UNIFIED_WEBHOOK",
-    correlationId,
-  }));
-  
+  console.log(
+    JSON.stringify({
+      event: "USING_UNIFIED_WEBHOOK",
+      correlationId,
+    })
+  );
+
   // TODO: Call unified pipeline
   // const result = await processUnifiedPipeline(req);
   // return finalize(result);
-  
+
   // For now, fall through to legacy
 }
 
@@ -357,19 +378,22 @@ const prisma = new PrismaClient();
 export async function processIntents() {
   // Background worker that polls ai_agent_intents table
   log.info({ event: "INTENT_PROCESSOR_STARTED" }, "Starting intent processor");
-  
+
   while (true) {
     try {
       // Get pending intents
       const intents = await getPendingIntents();
-      
+
       for (const intent of intents) {
         await applyIntent(intent);
       }
-      
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Poll every 1s
+
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Poll every 1s
     } catch (error) {
-      log.error({ event: "INTENT_PROCESSOR_ERROR", error: error.message }, "Error processing intents");
+      log.error(
+        { event: "INTENT_PROCESSOR_ERROR", error: error.message },
+        "Error processing intents"
+      );
     }
   }
 }
@@ -401,16 +425,13 @@ const log = childLogger({ handler: "waiter-order-food" });
 
 export async function handleOrderFood(intent: any) {
   log.info({ event: "HANDLING_ORDER_FOOD", intentId: intent.id }, "Processing order");
-  
+
   // Extract structured data from intent.structured_payload
   const { barId, menuItems, deliveryLocation, notes } = intent.structured_payload;
-  
+
   // Insert into orders table
-  const supabase = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-  
+  const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+
   const { data: order, error } = await supabase
     .from("orders")
     .insert({
@@ -425,13 +446,13 @@ export async function handleOrderFood(intent: any) {
     })
     .select()
     .single();
-    
+
   if (error) {
     throw new Error(`Failed to create order: ${error.message}`);
   }
-  
+
   log.info({ event: "ORDER_CREATED", orderId: order.id }, "Order created successfully");
-  
+
   return {
     orderId: order.id,
     status: "pending",
@@ -494,12 +515,14 @@ supabase secrets set FEATURE_UNIFIED_WEBHOOK=true
 
 **Issue**: Feature flag not working  
 **Solution**: Check Supabase secrets are set correctly
+
 ```bash
 supabase secrets list --project-ref <your-ref>
 ```
 
 **Issue**: Tests failing with database connection error  
 **Solution**: Ensure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are in .env
+
 ```bash
 cp .env.example .env
 # Fill in values from Supabase dashboard
@@ -507,6 +530,7 @@ cp .env.example .env
 
 **Issue**: Intent not being applied  
 **Solution**: Check apply-intent service logs
+
 ```bash
 kubectl logs -f deployment/agent-core | grep INTENT
 ```

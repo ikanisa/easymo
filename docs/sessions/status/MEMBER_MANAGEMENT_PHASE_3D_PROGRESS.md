@@ -9,6 +9,7 @@
 ## ✅ Completed (1.5h)
 
 ### 1. Members List View (`/members`)
+
 - **File**: `app/(dashboard)/members/page.tsx` (84 lines)
 - **Features**:
   - MembersTable component with status badges (Active/Inactive/Suspended)
@@ -18,6 +19,7 @@
   - Loading states
 
 ### 2. Add Member Form (`/members/new`)
+
 - **File**: `app/(dashboard)/members/new/page.tsx` (108 lines)
 - **Features**:
   - Form with required fields (name, phone, group)
@@ -27,6 +29,7 @@
   - Back navigation
 
 ### 3. Groups List View (`/members`)
+
 - **File**: `app/(dashboard)/groups/page.tsx` (87 lines)
 - **Features**:
   - Grid layout with group cards
@@ -36,6 +39,7 @@
   - Link to group details
 
 ### 4. Reusable Components
+
 - **members-table.tsx** - Table component with actions
 - **index.ts** - Component exports
 
@@ -44,6 +48,7 @@
 ## 🚧 Remaining Work (1.5h)
 
 ### 1. Member Detail View (30min)
+
 - **File**: `app/(dashboard)/members/[id]/page.tsx`
 - **Features**:
   - Member profile card
@@ -53,6 +58,7 @@
   - Edit/Delete buttons
 
 ### 2. Member Edit Form (20min)
+
 - **File**: `app/(dashboard)/members/[id]/edit/page.tsx`
 - **Features**:
   - Pre-populated form
@@ -60,6 +66,7 @@
   - Transfer to another group option
 
 ### 3. Bulk Import UI (25min)
+
 - **File**: `app/(dashboard)/members/import/page.tsx`
 - **Features**:
   - CSV file upload
@@ -68,6 +75,7 @@
   - POST to `/api/members/import`
 
 ### 4. Group Detail View (15min)
+
 - **File**: `app/(dashboard)/groups/[id]/page.tsx`
 - **Features**:
   - Group info card
@@ -96,16 +104,16 @@ vendor-portal/app/(dashboard)/
 
 ## API Integration Status
 
-| Endpoint | UI Component | Status |
-|----------|--------------|--------|
-| GET /api/members | Members list | ✅ Integrated |
-| POST /api/members | Add member form | ✅ Integrated |
-| GET /api/members/[id] | Member detail | ⏳ Pending |
-| PUT /api/members/[id] | Edit member form | ⏳ Pending |
-| DELETE /api/members/[id] | Delete action | ✅ Integrated |
-| POST /api/members/import | Bulk import | ⏳ Pending |
-| GET /api/groups | Groups list | ✅ Integrated |
-| GET /api/groups/[id] | Group detail | ⏳ Pending |
+| Endpoint                 | UI Component     | Status        |
+| ------------------------ | ---------------- | ------------- |
+| GET /api/members         | Members list     | ✅ Integrated |
+| POST /api/members        | Add member form  | ✅ Integrated |
+| GET /api/members/[id]    | Member detail    | ⏳ Pending    |
+| PUT /api/members/[id]    | Edit member form | ⏳ Pending    |
+| DELETE /api/members/[id] | Delete action    | ✅ Integrated |
+| POST /api/members/import | Bulk import      | ⏳ Pending    |
+| GET /api/groups          | Groups list      | ✅ Integrated |
+| GET /api/groups/[id]     | Group detail     | ⏳ Pending    |
 
 ---
 

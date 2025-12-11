@@ -6,13 +6,15 @@
 
 ## 🎯 Goal
 
-Consolidate 3 separate Buy & Sell agent implementations (1,772 total lines) into a single, maintainable source of truth while preserving all functionality.
+Consolidate 3 separate Buy & Sell agent implementations (1,772 total lines) into a single,
+maintainable source of truth while preserving all functionality.
 
 ---
 
 ## 📐 Architecture Overview
 
 ### Current State (Fragmented)
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ CLIENT REQUESTS                                             │
@@ -65,6 +67,7 @@ PROBLEMS:
 ```
 
 ### Target State (Unified)
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ CLIENT REQUESTS                                             │
@@ -132,6 +135,7 @@ mkdir -p packages/agents/src/agents/commerce/buy-and-sell/{tools,prompts,workflo
 ```
 
 Files to create:
+
 ```
 packages/agents/src/agents/commerce/buy-and-sell/
 ├── index.ts                      # Main export
@@ -164,12 +168,12 @@ packages/agents/src/agents/commerce/buy-and-sell/
  */
 
 // Agent Identity
-export const BUY_SELL_AGENT_SLUG = 'buy_sell';
-export const BUY_SELL_AGENT_NAME = 'Buy & Sell AI Agent';
-export const BUY_SELL_AGENT_TYPE = 'buy_sell'; // For agent_configs.ts
+export const BUY_SELL_AGENT_SLUG = "buy_sell";
+export const BUY_SELL_AGENT_NAME = "Buy & Sell AI Agent";
+export const BUY_SELL_AGENT_TYPE = "buy_sell"; // For agent_configs.ts
 
 // AI Model Configuration
-export const BUY_SELL_DEFAULT_MODEL = 'gemini-1.5-flash';
+export const BUY_SELL_DEFAULT_MODEL = "gemini-1.5-flash";
 export const BUY_SELL_TEMPERATURE = 0.7;
 export const BUY_SELL_MAX_TOKENS = 1024;
 
@@ -194,9 +198,9 @@ export const BUSINESS_CATEGORIES = [
 export const EMOJI_NUMBERS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"] as const;
 
 // RPC Function Names (for database)
-export const RPC_SEARCH_BUSINESSES_AI = 'search_businesses_ai';
-export const RPC_FIND_NEARBY_BUSINESSES = 'find_nearby_businesses';
-export const RPC_SEARCH_BUSINESSES_NEARBY = 'search_businesses_nearby';
+export const RPC_SEARCH_BUSINESSES_AI = "search_businesses_ai";
+export const RPC_FIND_NEARBY_BUSINESSES = "find_nearby_businesses";
+export const RPC_SEARCH_BUSINESSES_NEARBY = "search_businesses_nearby";
 ```
 
 ### Step 3: Extract System Prompt
@@ -204,7 +208,7 @@ export const RPC_SEARCH_BUSINESSES_NEARBY = 'search_businesses_nearby';
 **File**: `packages/agents/src/agents/commerce/buy-and-sell/prompts/system-prompt.ts`
 
 ```typescript
-import { BUY_SELL_AGENT_NAME } from '../config';
+import { BUY_SELL_AGENT_NAME } from "../config";
 
 export const BUY_SELL_SYSTEM_PROMPT = `You are ${BUY_SELL_AGENT_NAME}, EasyMO's unified Buy & Sell assistant.
 
@@ -260,62 +264,58 @@ RESPONSE FORMATTING:
 **File**: `packages/agents/src/agents/commerce/buy-and-sell/agent.ts`
 
 ```typescript
-import { childLogger } from '@easymo/commons';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import type { AgentInput, AgentResult, Tool } from '../../../types/agent.types';
-import { BaseAgent } from '../../base/agent.base';
-import { BUY_SELL_SYSTEM_PROMPT } from './prompts/system-prompt';
-import { 
-  BUY_SELL_AGENT_SLUG, 
-  BUY_SELL_DEFAULT_MODEL,
-  BUY_SELL_TEMPERATURE 
-} from './config';
-import { defineTools } from './tools';
+import { childLogger } from "@easymo/commons";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import type { AgentInput, AgentResult, Tool } from "../../../types/agent.types";
+import { BaseAgent } from "../../base/agent.base";
+import { BUY_SELL_SYSTEM_PROMPT } from "./prompts/system-prompt";
+import { BUY_SELL_AGENT_SLUG, BUY_SELL_DEFAULT_MODEL, BUY_SELL_TEMPERATURE } from "./config";
+import { defineTools } from "./tools";
 
-const log = childLogger({ service: 'agents', agent: 'buy-and-sell' });
+const log = childLogger({ service: "agents", agent: "buy-and-sell" });
 
 /**
  * Buy & Sell Agent
- * 
+ *
  * SINGLE SOURCE OF TRUTH for Buy & Sell AI agent.
  * Used by:
  * - Node.js packages (via direct import)
  * - Deno edge functions (via runtime-compatible wrapper)
  * - Admin app (via re-export)
- * 
+ *
  * @see docs/features/BUY_SELL_CONSOLIDATION_ANALYSIS.md
  */
 export class BuyAndSellAgent extends BaseAgent {
   static readonly SLUG = BUY_SELL_AGENT_SLUG;
-  
-  name = 'buy_and_sell_agent';
+
+  name = "buy_and_sell_agent";
   instructions = BUY_SELL_SYSTEM_PROMPT;
   tools: Tool[];
-  
+
   private supabase: SupabaseClient;
 
   constructor(supabaseClient?: SupabaseClient) {
     super();
-    
+
     // Use provided client or create new one
     if (supabaseClient) {
       this.supabase = supabaseClient;
     } else {
       const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY;
-      
+
       if (!supabaseUrl || !supabaseKey) {
         log.warn("Supabase credentials missing for BuyAndSellAgent");
       }
-      
-      this.supabase = createClient(supabaseUrl || '', supabaseKey || '', {
-        auth: { persistSession: false }
+
+      this.supabase = createClient(supabaseUrl || "", supabaseKey || "", {
+        auth: { persistSession: false },
       });
     }
-    
+
     // Initialize tools with supabase client
     this.tools = defineTools(this.supabase);
-    
+
     // Set default model
     this.model = BUY_SELL_DEFAULT_MODEL;
   }
@@ -336,7 +336,7 @@ export class BuyAndSellAgent extends BaseAgent {
 export class MarketplaceAgent extends BuyAndSellAgent {
   constructor(supabaseClient?: SupabaseClient) {
     super(supabaseClient);
-    log.warn('MarketplaceAgent is deprecated. Use BuyAndSellAgent instead.');
+    log.warn("MarketplaceAgent is deprecated. Use BuyAndSellAgent instead.");
   }
 }
 
@@ -356,12 +356,12 @@ export async function runBuyAndSellAgent(
 **File**: `packages/agents/src/agents/commerce/buy-and-sell/tools/index.ts`
 
 ```typescript
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Tool } from '../../../../types/agent.types';
-import { searchBusinessesAI, searchBusinesses } from './search-businesses';
-import { searchProducts, inventoryCheck } from './search-products';
-import { mapsGeocode } from './maps-geocode';
-import { getBusinessDetails } from './business-details';
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Tool } from "../../../../types/agent.types";
+import { searchBusinessesAI, searchBusinesses } from "./search-businesses";
+import { searchProducts, inventoryCheck } from "./search-products";
+import { mapsGeocode } from "./maps-geocode";
+import { getBusinessDetails } from "./business-details";
 
 /**
  * Define all tools for Buy & Sell agent
@@ -372,100 +372,102 @@ export function defineTools(supabase: SupabaseClient): Tool[] {
     searchBusinessesAI(supabase),
     searchBusinesses(supabase),
     getBusinessDetails(supabase),
-    
+
     // Location
     mapsGeocode(),
-    
+
     // Marketplace
     searchProducts(supabase),
     inventoryCheck(supabase),
   ];
 }
 
-export * from './search-businesses';
-export * from './search-products';
-export * from './maps-geocode';
-export * from './business-details';
+export * from "./search-businesses";
+export * from "./search-products";
+export * from "./maps-geocode";
+export * from "./business-details";
 ```
 
 **File**: `packages/agents/src/agents/commerce/buy-and-sell/tools/search-businesses.ts`
 
 ```typescript
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { childLogger } from '@easymo/commons';
-import type { Tool } from '../../../../types/agent.types';
-import { 
-  RPC_SEARCH_BUSINESSES_AI, 
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { childLogger } from "@easymo/commons";
+import type { Tool } from "../../../../types/agent.types";
+import {
+  RPC_SEARCH_BUSINESSES_AI,
   RPC_FIND_NEARBY_BUSINESSES,
   DEFAULT_SEARCH_RADIUS_KM,
-  DEFAULT_SEARCH_LIMIT 
-} from '../config';
+  DEFAULT_SEARCH_LIMIT,
+} from "../config";
 
-const log = childLogger({ service: 'agents', tool: 'search-businesses' });
+const log = childLogger({ service: "agents", tool: "search-businesses" });
 
 /**
  * AI-powered business search tool
  */
 export function searchBusinessesAI(supabase: SupabaseClient): Tool {
   return {
-    name: 'search_businesses_ai',
-    description: 'Natural language search for businesses. Finds businesses based on user query like "I need a computer" or "pharmacy nearby". Uses AI-powered relevance ranking.',
+    name: "search_businesses_ai",
+    description:
+      'Natural language search for businesses. Finds businesses based on user query like "I need a computer" or "pharmacy nearby". Uses AI-powered relevance ranking.',
     parameters: {
-      type: 'object',
+      type: "object",
       properties: {
-        query: { 
-          type: 'string', 
-          description: 'Natural language query (e.g., "computer shop", "print documents", "fix phone")' 
+        query: {
+          type: "string",
+          description:
+            'Natural language query (e.g., "computer shop", "print documents", "fix phone")',
         },
-        lat: { 
-          type: 'number', 
-          description: 'User latitude (optional, for location-aware results)' 
+        lat: {
+          type: "number",
+          description: "User latitude (optional, for location-aware results)",
         },
-        lng: { 
-          type: 'number', 
-          description: 'User longitude (optional, for location-aware results)' 
+        lng: {
+          type: "number",
+          description: "User longitude (optional, for location-aware results)",
         },
-        radius_km: { 
-          type: 'number', 
-          description: `Search radius in km (default ${DEFAULT_SEARCH_RADIUS_KM})` 
+        radius_km: {
+          type: "number",
+          description: `Search radius in km (default ${DEFAULT_SEARCH_RADIUS_KM})`,
         },
-        limit: { 
-          type: 'number', 
-          description: `Max results (default ${DEFAULT_SEARCH_LIMIT})` 
-        }
+        limit: {
+          type: "number",
+          description: `Max results (default ${DEFAULT_SEARCH_LIMIT})`,
+        },
       },
-      required: ['query']
+      required: ["query"],
     },
     execute: async (params, context) => {
-      const { 
-        query, 
-        lat = null, 
-        lng = null, 
-        radius_km = DEFAULT_SEARCH_RADIUS_KM, 
-        limit = DEFAULT_SEARCH_LIMIT 
+      const {
+        query,
+        lat = null,
+        lng = null,
+        radius_km = DEFAULT_SEARCH_RADIUS_KM,
+        limit = DEFAULT_SEARCH_LIMIT,
       } = params;
-      
-      log.info({ query, lat, lng }, 'Executing AI business search');
-      
+
+      log.info({ query, lat, lng }, "Executing AI business search");
+
       const { data, error } = await supabase.rpc(RPC_SEARCH_BUSINESSES_AI, {
         p_query: query,
         p_lat: lat,
         p_lng: lng,
         p_radius_km: radius_km,
-        p_limit: limit
+        p_limit: limit,
       });
 
       if (error) {
-        log.error({ error }, 'AI business search failed');
+        log.error({ error }, "AI business search failed");
         throw new Error(`AI search failed: ${error.message}`);
       }
 
-      log.info({ count: data?.length || 0 }, 'AI search returned results');
-      return { 
+      log.info({ count: data?.length || 0 }, "AI search returned results");
+      return {
         businesses: data,
-        source: 'ai_search'
+        source: "ai_search",
       };
-    }
+    },
   };
 }
 
@@ -474,40 +476,50 @@ export function searchBusinessesAI(supabase: SupabaseClient): Tool {
  */
 export function searchBusinesses(supabase: SupabaseClient): Tool {
   return {
-    name: 'search_businesses',
-    description: 'Find businesses by category and location. Use search_businesses_ai for natural language queries.',
+    name: "search_businesses",
+    description:
+      "Find businesses by category and location. Use search_businesses_ai for natural language queries.",
     parameters: {
-      type: 'object',
+      type: "object",
       properties: {
-        category: { 
-          type: 'string', 
-          description: 'Business category (e.g., pharmacy, restaurant, hardware)' 
+        category: {
+          type: "string",
+          description: "Business category (e.g., pharmacy, restaurant, hardware)",
         },
-        lat: { type: 'number', description: 'Latitude' },
-        lng: { type: 'number', description: 'Longitude' },
-        radius_km: { type: 'number', description: `Search radius in km (default ${DEFAULT_SEARCH_RADIUS_KM})` },
-        limit: { type: 'number', description: `Max results (default ${DEFAULT_SEARCH_LIMIT})` }
+        lat: { type: "number", description: "Latitude" },
+        lng: { type: "number", description: "Longitude" },
+        radius_km: {
+          type: "number",
+          description: `Search radius in km (default ${DEFAULT_SEARCH_RADIUS_KM})`,
+        },
+        limit: { type: "number", description: `Max results (default ${DEFAULT_SEARCH_LIMIT})` },
       },
-      required: ['category', 'lat', 'lng']
+      required: ["category", "lat", "lng"],
     },
     execute: async (params, context) => {
-      const { category, lat, lng, radius_km = DEFAULT_SEARCH_RADIUS_KM, limit = DEFAULT_SEARCH_LIMIT } = params;
-      
+      const {
+        category,
+        lat,
+        lng,
+        radius_km = DEFAULT_SEARCH_RADIUS_KM,
+        limit = DEFAULT_SEARCH_LIMIT,
+      } = params;
+
       const { data, error } = await supabase.rpc(RPC_FIND_NEARBY_BUSINESSES, {
         p_lat: lat,
         p_lng: lng,
         p_radius_km: radius_km,
         p_category: category,
-        p_limit: limit
+        p_limit: limit,
       });
 
       if (error) {
-        log.error({ error }, 'Nearby business search failed');
+        log.error({ error }, "Nearby business search failed");
         throw new Error(`Business search failed: ${error.message}`);
       }
 
       return { businesses: data };
-    }
+    },
   };
 }
 ```
@@ -519,7 +531,7 @@ export function searchBusinesses(supabase: SupabaseClient): Tool {
 ```typescript
 /**
  * Deno-compatible wrapper for Buy & Sell Agent
- * 
+ *
  * This is a lightweight adapter that makes the core agent
  * work in the Deno runtime without modifications.
  */
@@ -540,26 +552,26 @@ interface AgentResult {
 
 /**
  * BuyAndSellAgent for Deno runtime
- * 
+ *
  * Implements same interface as Node.js version but optimized for edge functions.
  * Core logic should match packages/agents/src/agents/commerce/buy-and-sell/agent.ts
  */
 export class BuyAndSellAgent {
   private supabase: SupabaseClient;
-  
+
   constructor(supabaseClient: SupabaseClient) {
     this.supabase = supabaseClient;
   }
-  
+
   async execute(input: AgentInput): Promise<AgentResult> {
     // Core execution logic
     // Either:
     // A) Copy from Node.js version (ensure compatibility)
     // B) Import and adapt from shared location
     // C) Use API call to Node.js agent service
-    
+
     // For now, delegate to existing implementation
-    throw new Error('Not implemented - migrate logic from wa-webhook-buy-sell/agent.ts');
+    throw new Error("Not implemented - migrate logic from wa-webhook-buy-sell/agent.ts");
   }
 }
 
@@ -613,19 +625,15 @@ const agent = new BuyAndSellAgent(supabase);
 ```typescript
 /**
  * Buy & Sell Agent - Admin App Re-export
- * 
+ *
  * @deprecated Import from @easymo/agents/commerce instead
  * This file exists only for backward compatibility.
  */
 
-export { 
-  BuyAndSellAgent, 
-  MarketplaceAgent,
-  runBuyAndSellAgent 
-} from '@easymo/agents/commerce';
+export { BuyAndSellAgent, MarketplaceAgent, runBuyAndSellAgent } from "@easymo/agents/commerce";
 
 // Singleton instances for convenience
-import { BuyAndSellAgent } from '@easymo/agents/commerce';
+import { BuyAndSellAgent } from "@easymo/agents/commerce";
 
 export const buyAndSellAgent = new BuyAndSellAgent();
 
@@ -666,12 +674,12 @@ import { BUY_SELL_AGENT_TYPE, BUY_SELL_AGENT_NAME } from '../_shared/agents/buy-
 BEGIN;
 
 -- 1. Ensure only 'buy_sell' slug exists
-DELETE FROM ai_agents 
+DELETE FROM ai_agents
 WHERE slug IN ('buy_and_sell', 'business_broker', 'marketplace');
 
 -- Ensure buy_sell is active
-UPDATE ai_agents 
-SET is_active = true 
+UPDATE ai_agents
+SET is_active = true
 WHERE slug = 'buy_sell';
 
 -- If buy_sell doesn't exist, create it (shouldn't happen if setup script ran)
@@ -681,7 +689,7 @@ ON CONFLICT (slug) DO UPDATE SET is_active = true;
 
 -- 2. Menu items already correct from 20251210085100_split_buy_sell_and_chat_agent.sql
 -- Verify they exist:
-SELECT key, name FROM whatsapp_home_menu_items 
+SELECT key, name FROM whatsapp_home_menu_items
 WHERE key IN ('buy_sell_categories', 'business_broker_agent');
 
 -- 3. Add comment for future reference
@@ -699,20 +707,20 @@ COMMIT;
 ```typescript
 // packages/agents/src/agents/commerce/buy-and-sell/__tests__/agent.test.ts
 
-import { BuyAndSellAgent } from '../agent';
-import { BUY_SELL_AGENT_SLUG } from '../config';
+import { BuyAndSellAgent } from "../agent";
+import { BUY_SELL_AGENT_SLUG } from "../config";
 
-describe('BuyAndSellAgent', () => {
-  it('should have correct slug', () => {
-    expect(BuyAndSellAgent.SLUG).toBe('buy_sell');
+describe("BuyAndSellAgent", () => {
+  it("should have correct slug", () => {
+    expect(BuyAndSellAgent.SLUG).toBe("buy_sell");
   });
-  
-  it('should initialize with tools', () => {
+
+  it("should initialize with tools", () => {
     const agent = new BuyAndSellAgent();
     expect(agent.tools.length).toBeGreaterThan(0);
   });
-  
-  it('should execute search_businesses_ai', async () => {
+
+  it("should execute search_businesses_ai", async () => {
     const agent = new BuyAndSellAgent();
     // Mock supabase.rpc()
     // ... test logic
@@ -753,24 +761,28 @@ describe('BuyAndSellAgent', () => {
 ## 🚀 Deployment Strategy
 
 ### Phase 1: Preparation (No deploy)
+
 1. Create new structure in packages/agents/
 2. Extract tools, prompts, config
 3. Update tests
 4. Verify build locally
 
 ### Phase 2: Backend (Deploy to staging)
+
 1. Deploy database migration
 2. Update agent_configs.ts
 3. Deploy edge functions with new imports
 4. Test WhatsApp flows on staging
 
 ### Phase 3: Frontend (Deploy admin app)
+
 1. Update admin-app imports
 2. Build and test locally
 3. Deploy to staging
 4. Test admin panel flows
 
 ### Phase 4: Production
+
 1. Deploy during low-traffic window
 2. Monitor error logs
 3. Test all entry points:

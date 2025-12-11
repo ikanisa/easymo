@@ -7,7 +7,8 @@
 
 ## Overview
 
-EasyMO provides a comprehensive API for managing mobility services, marketplace transactions, and AI-powered assistance across WhatsApp and web interfaces.
+EasyMO provides a comprehensive API for managing mobility services, marketplace transactions, and
+AI-powered assistance across WhatsApp and web interfaces.
 
 ### Base URLs
 
@@ -40,34 +41,42 @@ Handles incoming WhatsApp messages and routes them to appropriate handlers.
 Receives WhatsApp webhook events from Meta.
 
 **Request Body**:
+
 ```json
 {
   "object": "whatsapp_business_account",
-  "entry": [{
-    "id": "WHATSAPP_BUSINESS_ACCOUNT_ID",
-    "changes": [{
-      "value": {
-        "messaging_product": "whatsapp",
-        "metadata": {
-          "display_phone_number": "PHONE_NUMBER",
-          "phone_number_id": "PHONE_NUMBER_ID"
-        },
-        "messages": [{
-          "from": "SENDER_PHONE_NUMBER",
-          "id": "MESSAGE_ID",
-          "timestamp": "TIMESTAMP",
-          "text": {
-            "body": "MESSAGE_CONTENT"
-          },
-          "type": "text"
-        }]
-      }
-    }]
-  }]
+  "entry": [
+    {
+      "id": "WHATSAPP_BUSINESS_ACCOUNT_ID",
+      "changes": [
+        {
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "PHONE_NUMBER",
+              "phone_number_id": "PHONE_NUMBER_ID"
+            },
+            "messages": [
+              {
+                "from": "SENDER_PHONE_NUMBER",
+                "id": "MESSAGE_ID",
+                "timestamp": "TIMESTAMP",
+                "text": {
+                  "body": "MESSAGE_CONTENT"
+                },
+                "type": "text"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
 }
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -76,6 +85,7 @@ Receives WhatsApp webhook events from Meta.
 ```
 
 **Status Codes**:
+
 - `200 OK` - Message processed successfully
 - `400 Bad Request` - Invalid webhook payload
 - `401 Unauthorized` - Invalid verification token
@@ -86,6 +96,7 @@ Receives WhatsApp webhook events from Meta.
 Webhook verification endpoint for Meta.
 
 **Query Parameters**:
+
 - `hub.mode` - Should be "subscribe"
 - `hub.verify_token` - Verification token
 - `hub.challenge` - Challenge string to echo
@@ -99,9 +110,12 @@ Webhook verification endpoint for Meta.
 Send a message to a specific AI agent.
 
 **Parameters**:
-- `agentType`: `nearby-drivers` | `pharmacy` | `property-rental` | `schedule-trip` | `shops` | `quincaillerie`
+
+- `agentType`: `nearby-drivers` | `pharmacy` | `property-rental` | `schedule-trip` | `shops` |
+  `quincaillerie`
 
 **Request Body**:
+
 ```json
 {
   "message": "I need a ride from Kigali to Gisenyi",
@@ -117,6 +131,7 @@ Send a message to a specific AI agent.
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -141,6 +156,7 @@ Send a message to a specific AI agent.
 Get user profile information.
 
 **Response**:
+
 ```json
 {
   "id": "user_123",
@@ -160,6 +176,7 @@ Get user profile information.
 Update user profile.
 
 **Request Body**:
+
 ```json
 {
   "name": "John Doe",
@@ -177,6 +194,7 @@ Update user profile.
 Get user wallet balance.
 
 **Response**:
+
 ```json
 {
   "balance": 50000,
@@ -190,6 +208,7 @@ Get user wallet balance.
 Transfer funds.
 
 **Request Body**:
+
 ```json
 {
   "toUserId": "user_456",
@@ -200,6 +219,7 @@ Transfer funds.
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -217,12 +237,14 @@ Transfer funds.
 Get marketplace listings.
 
 **Query Parameters**:
+
 - `category`: Category filter
 - `location`: Location filter
 - `page`: Page number (default: 1)
 - `limit`: Items per page (default: 20)
 
 **Response**:
+
 ```json
 {
   "listings": [
@@ -310,6 +332,7 @@ API endpoints are rate-limited to ensure fair usage:
 - **Webhook endpoints**: 10,000 requests/minute
 
 Rate limit headers:
+
 ```http
 X-RateLimit-Limit: 1000
 X-RateLimit-Remaining: 999
@@ -323,11 +346,13 @@ X-RateLimit-Reset: 1640995200
 All API requests include correlation IDs for tracking:
 
 **Request Header**:
+
 ```http
 X-Correlation-ID: req_abc123xyz
 ```
 
 **Response Header**:
+
 ```http
 X-Correlation-ID: req_abc123xyz
 ```
@@ -341,19 +366,12 @@ Use correlation IDs when reporting issues to support.
 ### TypeScript/JavaScript
 
 ```typescript
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_ANON_KEY!
-);
+const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
 
 // Example: Get user profile
-const { data, error } = await supabase
-  .from('profiles')
-  .select('*')
-  .eq('id', userId)
-  .single();
+const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single();
 ```
 
 ---
@@ -388,6 +406,7 @@ EasyMO can send webhooks for various events:
 ## Support
 
 For API support, contact:
+
 - Email: api-support@easymo.rw
 - Documentation: https://docs.easymo.rw
 - Status Page: https://status.easymo.rw

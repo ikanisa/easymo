@@ -8,7 +8,8 @@
 
 ## Summary
 
-Successfully created comprehensive database functions for member management in the SACCO vendor portal. This includes CRUD operations with PII protection, analytics, and bulk import capabilities.
+Successfully created comprehensive database functions for member management in the SACCO vendor
+portal. This includes CRUD operations with PII protection, analytics, and bulk import capabilities.
 
 ---
 
@@ -17,6 +18,7 @@ Successfully created comprehensive database functions for member management in t
 ### 1. `20251209200000_member_management_functions.sql` (515 lines)
 
 **Core Member Operations**:
+
 - ✅ `generate_member_code()` - Auto-generate unique member codes (e.g., MBR-TWS-00001)
 - ✅ `create_member()` - Create member with PII hashing + default savings account
 - ✅ `update_member()` - Update member details with duplicate validation
@@ -26,14 +28,16 @@ Successfully created comprehensive database functions for member management in t
 - ✅ `search_members()` - Full-text search with relevance scoring
 
 **Security Features**:
+
 - Phone number hashing (SHA-256) for matching
-- Phone number masking for display (078****123)
+- Phone number masking for display (078\*\*\*\*123)
 - National ID duplicate detection
 - PII protection throughout
 
 ### 2. `20251209200001_member_analytics.sql` (325 lines)
 
 **Analytics & Reporting**:
+
 - ✅ `get_member_summary()` - Profile with stats (total balance, payments, averages)
 - ✅ `get_member_payment_history()` - Paginated payment history with running balance
 - ✅ `get_member_transactions()` - Ledger view with filtering
@@ -41,6 +45,7 @@ Successfully created comprehensive database functions for member management in t
 - ✅ `get_member_activity()` - Activity timeline (payments + ledger events)
 
 **Performance Optimizations**:
+
 - Window functions for running balances
 - CTEs for complex aggregations
 - Indexed searches with relevance ranking
@@ -126,6 +131,7 @@ SELECT * FROM app.create_member(
 ```
 
 **Expected Result**:
+
 ```
 member_id                          | member_code  | account_id
 -----------------------------------|--------------|----------------------------------
@@ -161,6 +167,7 @@ SELECT * FROM app.bulk_import_members(
 ```
 
 **Expected Result**:
+
 ```
 total_count | success_count | error_count | errors
 ------------|---------------|-------------|--------
@@ -172,11 +179,13 @@ total_count | success_count | error_count | errors
 ## Migration Verification
 
 ### Dry-Run (Already Passed ✅)
+
 ```bash
 supabase db push --dry-run
 ```
 
 **Output**:
+
 ```
 Would push these migrations:
  • 20251209200000_member_management_functions.sql
@@ -184,11 +193,13 @@ Would push these migrations:
 ```
 
 ### Apply to Local Database
+
 ```bash
 supabase db push
 ```
 
 ### Verify Functions Exist
+
 ```sql
 -- List all member management functions
 SELECT routine_name, routine_type
@@ -199,6 +210,7 @@ ORDER BY routine_name;
 ```
 
 **Expected Functions** (12 total):
+
 - `bulk_import_members`
 - `create_member`
 - `deactivate_member`
@@ -217,28 +229,32 @@ ORDER BY routine_name;
 ## Security Model
 
 ### Permissions Granted
+
 ```sql
 GRANT EXECUTE ON FUNCTION app.* TO service_role, authenticated;
 ```
 
 ### RLS Integration
+
 - Functions use `SECURITY DEFINER` with `search_path = app, public`
 - Relies on existing RLS policies on `app.members`, `app.accounts`, `app.payments`
 - Service role bypasses RLS (for admin operations)
 - Authenticated role uses RLS (for user operations)
 
 ### PII Protection
-| Field | Storage | Display | Matching |
-|-------|---------|---------|----------|
-| Phone | Hashed (SHA-256) | Masked (078****123) | Hash comparison |
-| National ID | Plaintext | Masked (via app logic) | Direct comparison |
-| Email | Plaintext | Full | Direct comparison |
+
+| Field       | Storage          | Display                 | Matching          |
+| ----------- | ---------------- | ----------------------- | ----------------- |
+| Phone       | Hashed (SHA-256) | Masked (078\*\*\*\*123) | Hash comparison   |
+| National ID | Plaintext        | Masked (via app logic)  | Direct comparison |
+| Email       | Plaintext        | Full                    | Direct comparison |
 
 ---
 
 ## Error Handling
 
 ### Duplicate Detection
+
 ```sql
 -- Duplicate phone
 EXCEPTION: Member with this phone number already exists in this SACCO
@@ -248,12 +264,14 @@ EXCEPTION: Member with this National ID already exists in this SACCO
 ```
 
 ### Balance Validation
+
 ```sql
 -- Cannot deactivate with balance
 EXCEPTION: Cannot deactivate member with outstanding balance of 50000 RWF
 ```
 
 ### Not Found
+
 ```sql
 -- Member doesn't exist
 EXCEPTION: Member not found
@@ -264,6 +282,7 @@ EXCEPTION: Member not found
 ## Performance Considerations
 
 ### Indexes Required
+
 ```sql
 -- Already exist in schema (from VENDOR_PORTAL_PHASE_1_COMPLETE.md)
 CREATE INDEX IF NOT EXISTS idx_members_sacco_id ON app.members(sacco_id);
@@ -273,6 +292,7 @@ CREATE INDEX IF NOT EXISTS idx_members_status ON app.members(status);
 ```
 
 ### Query Optimization
+
 - Search function uses `LIKE` with leading wildcard (may be slow on large datasets)
 - Consider adding `pg_trgm` extension for faster fuzzy search
 - Payment history uses window functions (efficient for running balance)
@@ -283,11 +303,13 @@ CREATE INDEX IF NOT EXISTS idx_members_status ON app.members(status);
 ## Next Steps (Phase 3B)
 
 ### Immediate (30 min):
+
 1. Create TypeScript types (`vendor-portal/types/member.ts`)
 2. Create validation schemas (`vendor-portal/lib/validations/member.ts`)
 3. Test types match database function return types
 
 ### After Types:
+
 1. Build API routes (Phase 3C)
 2. Build UI components (Phase 3D)
 

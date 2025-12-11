@@ -8,11 +8,13 @@
 ### Phase 3: Code Quality & Standardization
 
 #### Task 3.1: Admin App Duplication (COMPLETED)
+
 - ✅ Created deprecation notice in `admin-app-v2/DEPRECATED.md`
 - ✅ Updated `pnpm-workspace.yaml` to exclude admin-app-v2
 - ✅ Documented removal timeline (Dec 1 2025 - Jan 1 2026)
 
 #### Task 3.2: Stray Service Files (COMPLETED)
+
 - ✅ Created `packages/media-utils` package
 - ✅ Migrated `services/audioUtils.ts` → `@easymo/media-utils`
 - ✅ Updated imports in `services/gemini.ts`
@@ -21,12 +23,14 @@
 - ⏳ TODO: Migrate gemini.ts to AI package (deferred - needs ai-core refactor)
 
 #### Task 3.5: TypeScript Version Alignment (COMPLETED ✅)
+
 - ✅ Created alignment script: `scripts/maintenance/align-typescript-versions.sh`
 - ✅ Updated 28 packages to TypeScript 5.5.4
 - ✅ Added pnpm override for TypeScript 5.5.4
 - ✅ All package.json files now use exact version 5.5.4
 
 #### Task 3.7: ESLint Zero Warnings (COMPLETED ✅)
+
 - ✅ Created codemod: `scripts/codemod/replace-console-logging.mjs`
 - ✅ Replaced 72 console statements with structured logging (55 packages + 17 services)
 - ✅ Updated ESLint config: `no-console` now errors (except warn/error)
@@ -34,6 +38,7 @@
 - ✅ All linting passes with zero warnings
 
 #### Task 4.4: API Documentation (COMPLETED ✅)
+
 - ✅ Created comprehensive API documentation
 - ✅ Documented all major endpoints
 - ✅ Added authentication guide
@@ -41,6 +46,7 @@
 - ✅ Added rate limiting info
 
 #### Task 4.5: Architecture Updates (COMPLETED ✅)
+
 - ✅ Updated architecture documentation
 - ✅ Added system overview diagrams
 - ✅ Documented package structure
@@ -48,6 +54,7 @@
 - ✅ Included post-refactoring changes
 
 #### Task 4.6: CI/CD Integration (COMPLETED ✅)
+
 - ✅ Created GitHub Actions workflow
 - ✅ Added lint checking
 - ✅ Added observability compliance check
@@ -56,6 +63,7 @@
 - ✅ PR comment integration
 
 #### Task 5.1: Developer Onboarding Guide (COMPLETED ✅)
+
 - ✅ Created comprehensive onboarding guide
 - ✅ Quick start instructions (< 10 minutes)
 - ✅ Prerequisites and setup steps
@@ -65,6 +73,7 @@
 - ✅ Best practices guide
 
 #### Task 5.2: Production Readiness Checklist (COMPLETED ✅)
+
 - ✅ Created detailed production checklist
 - ✅ 10 major categories covered
 - ✅ ~50 checklist items defined
@@ -73,6 +82,7 @@
 - ✅ Sign-off process documented
 
 #### Task 5.3: Observability Improvements (IN PROGRESS)
+
 - ✅ Created improvement script
 - ✅ Identified services needing updates
 - ⏳ Add correlation IDs to services
@@ -83,6 +93,7 @@
 - ✅ Enforces internal package dependency standards
 
 #### Task 3.4: Test Framework Standardization (COMPLETED ✅)
+
 - ✅ Created shared Vitest config: `vitest.shared.ts`
 - ✅ Exported baseConfig, reactConfig, nodeConfig
 - ✅ Created unified tsconfig for apps: `tsconfig.apps.json`
@@ -93,6 +104,7 @@
 ### Phase 4: Documentation & Cleanup
 
 #### Task 4.1: Root Directory Cleanup (COMPLETED ✅)
+
 - ✅ Created cleanup script: `scripts/maintenance/cleanup-root-directory.sh`
 - ✅ **EXECUTED SUCCESSFULLY** - Organized 82 files:
   - 1 session note → `docs/sessions/`
@@ -106,14 +118,16 @@
 - ✅ Root directory dramatically cleaner and more organized
 
 #### Task 4.2: Environment Security (COMPLETED)
+
 - ✅ Created security audit script: `scripts/security/audit-env-files.sh`
 - ✅ Checks for exposed secrets in .env files
-- ✅ Validates no sensitive vars in NEXT_PUBLIC_/VITE_
+- ✅ Validates no sensitive vars in NEXT*PUBLIC*/VITE\_
 - ✅ Ensures .env files are gitignored
 
 ## 📁 Created Files
 
 ### Scripts
+
 ```
 scripts/
 ├── verify/
@@ -129,6 +143,7 @@ scripts/
 ```
 
 ### Packages
+
 ```
 packages/
 └── media-utils/                    # NEW - Audio processing utilities
@@ -142,6 +157,7 @@ packages/
 ```
 
 ### Configuration
+
 ```
 vitest.shared.ts           # Shared Vitest config
 tsconfig.apps.json        # Unified app TypeScript config
@@ -150,6 +166,7 @@ pnpm-workspace.yaml       # Updated (excludes admin-app-v2)
 ```
 
 ### Documentation
+
 ```
 REFACTORING_PROGRESS.md                      # Progress tracker
 REFACTORING_QUICKSTART.md                    # Quick reference
@@ -160,17 +177,20 @@ scripts/README.md                            # Comprehensive update
 ## 🎯 Next Steps
 
 ### Immediate (High Priority)
+
 1. **Run cleanup script**: `./scripts/maintenance/cleanup-root-directory.sh --dry-run`
 2. **Run security audit**: `./scripts/security/audit-env-files.sh`
 3. **Verify workspace deps**: `./scripts/verify/workspace-deps.sh`
 
 ### Short Term
+
 4. Create stray file relocation packages (media-utils, ai-core)
 5. Migrate Jest tests to Vitest in wallet-service and profile
 6. Update TypeScript to 5.5.4 across all packages
 7. Implement ESLint zero-warning policy
 
 ### Medium Term
+
 8. Complete observability compliance checker
 9. Standardize all console.log to structured logging
 10. Update CI/CD workflows
@@ -178,6 +198,7 @@ scripts/README.md                            # Comprehensive update
 ## 🚀 Usage Instructions
 
 ### 1. Clean Root Directory (DRY RUN first!)
+
 ```bash
 # See what would be moved
 ./scripts/maintenance/cleanup-root-directory.sh --dry-run
@@ -187,16 +208,19 @@ scripts/README.md                            # Comprehensive update
 ```
 
 ### 2. Audit Environment Security
+
 ```bash
 ./scripts/security/audit-env-files.sh
 ```
 
 ### 3. Verify Workspace Dependencies
+
 ```bash
 ./scripts/verify/workspace-deps.sh
 ```
 
 ### 4. Update Package Dependencies
+
 ```bash
 # Update to workspace protocol
 # Edit package.json files to use workspace:* for internal deps

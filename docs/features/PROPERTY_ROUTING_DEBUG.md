@@ -1,6 +1,7 @@
 # Property Rental Routing Debug Report
 
-**Issue:** When user taps "Property Rental" button, they get home welcome message instead of property agent
+**Issue:** When user taps "Property Rental" button, they get home welcome message instead of
+property agent
 
 **Date:** 2025-12-09  
 **Logs:** Empty (no logs generated)
@@ -43,7 +44,11 @@ property_rentals: "real_estate_agent",  // Line 67
 **File:** `supabase/functions/wa-webhook-property/index.ts`
 
 ```typescript
-if (buttonId === IDS.PROPERTY_RENTALS || buttonId === "property" || buttonId === "property_rentals") {
+if (
+  buttonId === IDS.PROPERTY_RENTALS ||
+  buttonId === "property" ||
+  buttonId === "property_rentals"
+) {
   await startPropertyRentals(ctx);
   return true;
 }
@@ -55,6 +60,7 @@ if (listId === "property" || listId === "property_rentals" || listId === "real_e
 ```
 
 **Handlers exist for:**
+
 - `property_rentals` button
 - `real_estate_agent` button
 - `property` button
@@ -69,19 +75,20 @@ if (listId === "property" || listId === "property_rentals" || listId === "real_e
 export async function startPropertyRentals(ctx: RouterContext): Promise<boolean> {
   // Check if role handshake is needed
   const reState = await getRealEstateState(ctx.supabase, ctx.profileId);
-  
+
   if (requiresRoleHandshake(reState)) {
     // Show role selection (Renter / Landlord / Agent)
     await sendButtonsMessage(ctx, roleMsg.body, roleMsg.buttons);
     return true;
   }
-  
+
   // Show property menu
   return true;
 }
 ```
 
 **Expected behavior:**
+
 1. User taps "Property Rental"
 2. Shows: "Are you a Renter, Landlord, or Agent?"
 3. User selects role
@@ -96,11 +103,13 @@ export async function startPropertyRentals(ctx: RouterContext): Promise<boolean>
 The routing from `wa-webhook-core` → `wa-webhook-property` is failing.
 
 **Routing chain:**
+
 ```
 WhatsApp → wa-webhook → wa-webhook-core → (route to) wa-webhook-property
 ```
 
 **Where it's breaking:**
+
 - `wa-webhook-core` receives button click
 - Button ID = `real_estate_agent` or `property_rentals`
 - **Should route to:** `wa-webhook-property`
@@ -135,6 +144,7 @@ supabase functions logs wa-webhook-property --tail
 ```
 
 **Look for:**
+
 - Routing decision logs
 - Which service was chosen
 - Any errors during routing
@@ -146,6 +156,7 @@ supabase functions logs wa-webhook-property --tail
 The button ID sent from the menu might not match expected values.
 
 **Possible IDs:**
+
 - `real_estate_agent` ✅
 - `property_rentals` ✅
 - `REAL_ESTATE_AGENT` ❓
@@ -160,6 +171,7 @@ The button ID sent from the menu might not match expected values.
 **File to check:** `supabase/functions/wa-webhook-core/router.ts`
 
 Look for:
+
 ```typescript
 // How does it match button clicks to services?
 const service = SERVICE_KEY_MAP[buttonId];
@@ -175,8 +187,8 @@ Add logs to track routing decision:
 
 ```typescript
 // In wa-webhook-core/router.ts
-console.log('Button clicked:', buttonId);
-console.log('Routing to service:', matchedService);
+console.log("Button clicked:", buttonId);
+console.log("Routing to service:", matchedService);
 ```
 
 ### **Fix 2: Verify Button ID in Menu**
@@ -248,6 +260,7 @@ curl -X POST https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook-pr
 **Most likely issue:** Button ID mismatch or routing logic not finding the service
 
 **Quick fix:** Check the exact button ID being sent and ensure it matches one of:
+
 - `property_rentals`
 - `real_estate_agent`
 - `property`

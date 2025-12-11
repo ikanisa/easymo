@@ -17,10 +17,12 @@
 ## Files Uploaded
 
 ### **Core Function**
+
 - ✅ `index.ts` - Main webhook handler (updated with SACCO routing)
 - ✅ `deno.json` - Deno configuration
 
 ### **Matchers** (NEW: SACCO matcher added)
+
 - ✅ `matchers/sacco.ts` - **NEW** - SACCO payment matcher
 - ✅ `matchers/rides.ts` - Ride payment matcher
 - ✅ `matchers/marketplace.ts` - Marketplace payment matcher
@@ -28,10 +30,12 @@
 - ✅ `matchers/insurance.ts` - Insurance payment matcher
 
 ### **Utilities**
+
 - ✅ `utils/sms-parser.ts` - SMS parsing utilities
 - ✅ `utils/hmac.ts` - HMAC signature verification
 
 ### **Shared Modules**
+
 - ✅ `_shared/observability.ts` - Structured logging
 - ✅ `_shared/webhook-error-boundary.ts` - Error handling
 - ✅ `_shared/nonce-validator.ts` - Replay protection
@@ -62,6 +66,7 @@ supabase db push
 ```
 
 This will apply:
+
 - `20251209190000_create_app_schema_sacco_tables.sql`
 - `20251209190001_add_sacco_webhook_support.sql`
 - `20251209190002_sacco_payment_functions.sql`
@@ -142,7 +147,7 @@ SELECT * FROM app.sms_inbox ORDER BY created_at DESC LIMIT 1;
 SELECT * FROM app.payments ORDER BY created_at DESC LIMIT 1;
 
 -- Check if member balance was updated
-SELECT 
+SELECT
   m.full_name,
   m.member_code,
   a.account_type,
@@ -187,7 +192,7 @@ supabase functions logs momo-sms-webhook --tail
    │   ├─→ Update account balance
    │   └─→ Create ledger entry
    └─→ Set status = 'matched'
-   
+
 6b. If not matched:
    └─→ Set status = 'unmatched' → Show in vendor portal
 ```
@@ -211,11 +216,13 @@ MOMO_SMS_RATE_LIMIT_MAX=100  # Optional, default 100
 ### **Issue: Function returns 500**
 
 **Check**:
+
 1. Database functions are deployed (`app.get_sacco_for_phone`, etc.)
 2. SACCO webhook is registered in `momo_webhook_endpoints`
 3. Service role key is correct
 
 **Solution**:
+
 ```bash
 # Redeploy migrations
 supabase db push
@@ -224,13 +231,15 @@ supabase db push
 ### **Issue: Payment not matched**
 
 **Check**:
+
 1. Member's phone hash matches sender phone
 2. Confidence score ≥ 0.7
 
 **Debug**:
+
 ```sql
 -- Check phone hash
-SELECT 
+SELECT
   full_name,
   msisdn_hash,
   encode(sha256('781234567'::bytea), 'hex') as expected_hash
@@ -244,6 +253,7 @@ SELECT * FROM app.sms_inbox WHERE status = 'unmatched';
 ### **Issue: SMS not routed to SACCO matcher**
 
 **Check**:
+
 ```sql
 -- Verify webhook registration
 SELECT * FROM public.momo_webhook_endpoints

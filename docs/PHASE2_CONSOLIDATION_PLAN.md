@@ -1,4 +1,5 @@
 # Phase 2: Edge Function Consolidation Plan
+
 **Date:** December 10, 2025  
 **Current Count:** 117 functions  
 **Target:** 80-90 functions  
@@ -11,8 +12,9 @@
 ### Immediate Actions (Quick Wins)
 
 #### 1. Remove Archived Directories ✅ COMPLETE
+
 - ✅ insurance-ocr.archived
-- ✅ vehicle-ocr.archived  
+- ✅ vehicle-ocr.archived
 - ✅ ocr-processor.archived
 
 **Result:** 120 → 117 functions
@@ -22,7 +24,9 @@
 ### Phase 2A: Identify Duplicate/Overlapping Functions
 
 #### Webhook Functions (9 active - KEEP SEPARATE)
+
 These are domain-specific and should remain separate per original plan:
+
 - ✅ `wa-webhook-core` - Base WhatsApp webhook handler
 - ✅ `wa-webhook-mobility` - 🔒 PROTECTED - Production trips/drivers
 - ✅ `wa-webhook-insurance` - 🔒 PROTECTED - Production insurance
@@ -36,10 +40,12 @@ These are domain-specific and should remain separate per original plan:
 **Decision:** Keep webhooks separate by domain. Potential merge: buy-sell → property
 
 #### Agent Functions (2 active)
+
 - `agent-buy-sell` - Overlaps with `wa-webhook-buy-sell`
 - `agent-property-rental` - Overlaps with `wa-webhook-property`
 
 **Consolidation Opportunity:**
+
 - Merge agent logic into respective webhooks
 - **Target:** 2 → 0 (save 2 functions)
 
@@ -48,6 +54,7 @@ These are domain-specific and should remain separate per original plan:
 ### Phase 2B: Administrative Function Consolidation
 
 #### Admin Functions (6 current)
+
 - `admin-health` - Health checks
 - `admin-messages` - Message management
 - `admin-settings` - Settings management
@@ -56,12 +63,13 @@ These are domain-specific and should remain separate per original plan:
 - `admin-users` - User management
 
 **Consolidation Opportunities:**
+
 1. **Create unified admin API:** `admin-api`
    - Merge health, messages, settings, stats, users
    - Use route-based handlers internally
    - **Save:** 5 → 1 (save 4 functions)
 
-2. **Keep domain-specific:** 
+2. **Keep domain-specific:**
    - `admin-trips` could stay or merge into mobility admin
 
 **Target:** 6 → 2 functions (save 4 functions)
@@ -71,32 +79,39 @@ These are domain-specific and should remain separate per original plan:
 ### Phase 2C: Utility Function Consolidation
 
 #### Cleanup Functions (Multiple)
+
 Current cleanup-related functions:
+
 - `cleanup-expired`
 - `cleanup-expired-intents`
 - `cleanup-mobility-intents`
 - `data-retention`
 
 **Consolidation:**
+
 - Create unified `scheduled-cleanup` function
 - Use job types/parameters to differentiate
 - **Target:** 4 → 1 (save 3 functions)
 
 #### Lookup Functions
+
 - `ai-lookup-customer`
 - `bars-lookup`
 - `business-lookup`
 
 **Consolidation:**
+
 - Consider unified `entity-lookup` with type parameter
 - **Potential save:** 3 → 1 (save 2 functions)
 
-#### Auth Functions  
+#### Auth Functions
+
 - `auth-qr-generate`
 - `auth-qr-poll`
 - `auth-qr-verify`
 
 **Consolidation:**
+
 - Create unified `auth-qr` with action parameter
 - **Target:** 3 → 1 (save 2 functions)
 
@@ -105,6 +120,7 @@ Current cleanup-related functions:
 ### Phase 2D: Feature-Specific Review
 
 #### Analytics Functions
+
 - `analytics-forecast`
 - `ai-contact-queue`
 - Various monitoring functions
@@ -112,6 +128,7 @@ Current cleanup-related functions:
 **Action:** Review usage and consolidate where appropriate
 
 #### OCR/Processing Functions
+
 - Check for remaining OCR functions
 - Consolidate into single OCR service if multiple exist
 
@@ -119,15 +136,15 @@ Current cleanup-related functions:
 
 ## 📊 Consolidation Summary
 
-| Category | Current | Target | Savings |
-|----------|---------|--------|---------|
-| Archived cleanup | 120 | 117 | ✅ 3 |
-| Agent functions | 2 | 0 | 2 |
-| Admin functions | 6 | 2 | 4 |
-| Cleanup utilities | 4 | 1 | 3 |
-| Lookup functions | 3 | 1 | 2 |
-| Auth QR functions | 3 | 1 | 2 |
-| **TOTAL** | **117** | **~101** | **16** |
+| Category          | Current | Target   | Savings |
+| ----------------- | ------- | -------- | ------- |
+| Archived cleanup  | 120     | 117      | ✅ 3    |
+| Agent functions   | 2       | 0        | 2       |
+| Admin functions   | 6       | 2        | 4       |
+| Cleanup utilities | 4       | 1        | 3       |
+| Lookup functions  | 3       | 1        | 2       |
+| Auth QR functions | 3       | 1        | 2       |
+| **TOTAL**         | **117** | **~101** | **16**  |
 
 **With additional review:** Target 80-90 (need to identify 11-21 more)
 
@@ -138,6 +155,7 @@ Current cleanup-related functions:
 ### Week 1: Safe Consolidations
 
 **Day 1-2:** Admin Function Consolidation
+
 ```bash
 # Create unified admin-api
 mkdir -p supabase/functions/admin-api
@@ -147,6 +165,7 @@ mkdir -p supabase/functions/admin-api
 ```
 
 **Day 3:** Agent Function Migration
+
 ```bash
 # Merge agent-buy-sell logic into wa-webhook-buy-sell
 # Merge agent-property-rental logic into wa-webhook-property
@@ -155,6 +174,7 @@ mkdir -p supabase/functions/admin-api
 ```
 
 **Day 4:** Cleanup Function Consolidation
+
 ```bash
 # Create scheduled-cleanup with job types
 # Migrate all cleanup logic
@@ -163,6 +183,7 @@ mkdir -p supabase/functions/admin-api
 ```
 
 **Day 5:** Utility Consolidations
+
 ```bash
 # Consolidate lookup functions
 # Consolidate auth-qr functions
@@ -172,15 +193,18 @@ mkdir -p supabase/functions/admin-api
 ### Week 2: Deep Review & Additional Consolidation
 
 **Day 6-7:** Function Usage Analysis
+
 - Query production logs for unused functions
 - Identify low-traffic candidates for consolidation
 - Document dependencies
 
 **Day 8-9:** Execute Additional Consolidations
+
 - Merge identified low-traffic functions
 - Create consolidated endpoints where appropriate
 
 **Day 10:** Testing & Documentation
+
 - Comprehensive testing of all changes
 - Update documentation
 - Deploy to staging
@@ -213,11 +237,13 @@ mkdir -p supabase/functions/admin-api
 ## 📋 Execution Checklist
 
 ### Phase 2A: Archived Cleanup
+
 - [x] Remove .archived directories (3 functions)
 - [x] Verify removal
 - [x] Commit changes
 
 ### Phase 2B: Agent Consolidation
+
 - [ ] Analyze agent-buy-sell usage
 - [ ] Merge into wa-webhook-buy-sell
 - [ ] Test integration
@@ -225,7 +251,8 @@ mkdir -p supabase/functions/admin-api
 - [ ] Merge into wa-webhook-property
 - [ ] Archive agent functions
 
-### Phase 2C: Admin Consolidation  
+### Phase 2C: Admin Consolidation
+
 - [ ] Create admin-api structure
 - [ ] Migrate admin-health
 - [ ] Migrate admin-messages
@@ -236,6 +263,7 @@ mkdir -p supabase/functions/admin-api
 - [ ] Archive old admin functions
 
 ### Phase 2D: Utility Consolidation
+
 - [ ] Create scheduled-cleanup
 - [ ] Migrate cleanup functions (4)
 - [ ] Create entity-lookup
@@ -246,6 +274,7 @@ mkdir -p supabase/functions/admin-api
 - [ ] Archive old functions
 
 ### Phase 2E: Additional Review
+
 - [ ] Analyze function usage logs
 - [ ] Identify additional merge candidates
 - [ ] Execute additional consolidations

@@ -1,6 +1,7 @@
 # Environment Variables – easyMO Services
 
 ## Overview
+
 Environment variables for each service, categorized by sensitivity and deployment method.
 
 ---
@@ -8,7 +9,9 @@ Environment variables for each service, categorized by sensitivity and deploymen
 ## Variable Types
 
 ### 1. Public Client Variables (Safe in Browser)
+
 Prefix: `NEXT_PUBLIC_*` (Next.js) or `VITE_*` (Vite)
+
 - Supabase public URL
 - Supabase anon key
 - Public API endpoints
@@ -16,6 +19,7 @@ Prefix: `NEXT_PUBLIC_*` (Next.js) or `VITE_*` (Vite)
 ⚠️ **NEVER** put service role keys or secrets in public vars!
 
 ### 2. Server-Only Variables
+
 - Database URLs
 - Service role keys
 - OpenAI API keys
@@ -30,6 +34,7 @@ Prefix: `NEXT_PUBLIC_*` (Next.js) or `VITE_*` (Vite)
 ### 1. Admin PWA (`easymo-admin`)
 
 **Public vars** (--set-env-vars):
+
 ```bash
 NODE_ENV=production
 NEXT_TELEMETRY_DISABLED=1
@@ -38,12 +43,14 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
 ```
 
 **Secrets** (Secret Manager):
+
 ```bash
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...  # Admin actions only
 ADMIN_SESSION_SECRET=min-16-chars-random
 ```
 
 **env/easymo-admin.yaml**:
+
 ```yaml
 NODE_ENV: production
 NEXT_TELEMETRY_DISABLED: "1"
@@ -56,6 +63,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGci...
 ### 2. Vendor Portal PWA (`easymo-vendor`)
 
 **Public vars**:
+
 ```bash
 NODE_ENV=production
 NEXT_TELEMETRY_DISABLED=1
@@ -64,6 +72,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
 ```
 
 **Secrets**:
+
 ```bash
 VENDOR_SESSION_SECRET=different-from-admin-secret
 ```
@@ -73,6 +82,7 @@ VENDOR_SESSION_SECRET=different-from-admin-secret
 ### 3. Client PWA (`easymo-client`)
 
 **Public vars only**:
+
 ```bash
 NODE_ENV=production
 NEXT_TELEMETRY_DISABLED=1
@@ -87,6 +97,7 @@ No server secrets needed (public PWA).
 ### 4. Voice Bridge (`easymo-voice-bridge`)
 
 **All server-side** (no public vars):
+
 ```bash
 NODE_ENV=production
 PORT=8080
@@ -108,6 +119,7 @@ ENABLE_WEBSOCKET_LOGGING=false
 ```
 
 **env/easymo-voice-bridge.yaml**:
+
 ```yaml
 NODE_ENV: production
 PORT: "8080"
@@ -116,6 +128,7 @@ SUPABASE_URL: https://xxx.supabase.co
 ```
 
 **Secrets** (Secret Manager):
+
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `OPENAI_API_KEY`
 - `SIP_PROVIDER_TOKEN`
@@ -125,6 +138,7 @@ SUPABASE_URL: https://xxx.supabase.co
 ### 5. WhatsApp Router (`easymo-wa-router`)
 
 **Environment vars**:
+
 ```bash
 NODE_ENV=production
 PORT=8080
@@ -149,6 +163,7 @@ KAFKA_PASSWORD=pass  # Secret Manager
 ```
 
 **env/easymo-wa-router.yaml**:
+
 ```yaml
 NODE_ENV: production
 PORT: "8080"
@@ -157,6 +172,7 @@ WHATSAPP_PHONE_ID: "123456789012345"
 ```
 
 **Secrets**:
+
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `WHATSAPP_ACCESS_TOKEN`
 - `WHATSAPP_VERIFY_TOKEN`
@@ -170,6 +186,7 @@ WHATSAPP_PHONE_ID: "123456789012345"
 ### 6. Agent Core (`easymo-agent-core`)
 
 **Environment vars**:
+
 ```bash
 NODE_ENV=production
 PORT=8080
@@ -195,6 +212,7 @@ SENTRY_DSN=https://...  # Secret Manager (optional)
 ```
 
 **env/easymo-agent-core.yaml**:
+
 ```yaml
 NODE_ENV: production
 PORT: "8080"
@@ -205,6 +223,7 @@ SUPABASE_URL: https://xxx.supabase.co
 ```
 
 **Secrets**:
+
 - `DATABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `OPENAI_API_KEY`
@@ -215,6 +234,7 @@ SUPABASE_URL: https://xxx.supabase.co
 ## Secret Manager Setup
 
 ### Create secrets
+
 ```bash
 # Supabase Service Role Key
 echo -n "eyJhbGciOi..." | gcloud secrets create SUPABASE_SERVICE_ROLE_KEY \
@@ -248,6 +268,7 @@ echo -n "redis://..." | gcloud secrets create REDIS_URL \
 ```
 
 ### Grant Cloud Run access to secrets
+
 ```bash
 # Get Cloud Run service account email
 PROJECT_NUMBER=$(gcloud projects describe easymoai --format="value(projectNumber)")
@@ -274,6 +295,7 @@ gcloud secrets add-iam-policy-binding DATABASE_URL \
 ```
 
 ### Use secrets in Cloud Run
+
 ```bash
 gcloud run deploy easymo-wa-router \
   --image IMAGE \
@@ -290,6 +312,7 @@ gcloud run deploy easymo-wa-router \
 Create these in each service for reference (DO NOT commit real values):
 
 ### `/admin-app/.env.gcp.example`
+
 ```bash
 # Public (embedded in client bundle)
 NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
@@ -301,6 +324,7 @@ ADMIN_SESSION_SECRET=min-16-chars-random
 ```
 
 ### `/waiter-pwa/.env.gcp.example`
+
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
@@ -308,6 +332,7 @@ VENDOR_SESSION_SECRET=different-secret
 ```
 
 ### `/services/voice-bridge/.env.gcp.example`
+
 ```bash
 NODE_ENV=production
 PORT=8080
@@ -318,6 +343,7 @@ LOG_LEVEL=info
 ```
 
 ### `/services/whatsapp-webhook-worker/.env.gcp.example`
+
 ```bash
 NODE_ENV=production
 PORT=8080
@@ -332,6 +358,7 @@ KAFKA_BROKERS=broker:9092
 ```
 
 ### `/services/agent-core/.env.gcp.example`
+
 ```bash
 NODE_ENV=production
 PORT=8080
@@ -363,6 +390,7 @@ Before deploying each service:
 ## Helper Script: Create All Secrets
 
 **scripts/gcp-create-secrets.sh**:
+
 ```bash
 #!/bin/bash
 set -e
@@ -410,6 +438,7 @@ echo "✅ Cloud Run service account granted access!"
 ```
 
 **.env.secrets** (example, DO NOT commit):
+
 ```bash
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
 OPENAI_API_KEY=sk-proj-...
@@ -419,6 +448,7 @@ DATABASE_URL=postgresql://user:pass@host:5432/db
 ```
 
 Usage:
+
 ```bash
 chmod +x scripts/gcp-create-secrets.sh
 ./scripts/gcp-create-secrets.sh
@@ -471,5 +501,6 @@ gcloud secrets versions access latest --secret="SUPABASE_SERVICE_ROLE_KEY"
 5. Set up secret rotation alerts
 
 See:
+
 - [cloud-run-services.md](./cloud-run-services.md) - Deployment commands
 - [ci-cd.md](./ci-cd.md) - Automate with GitHub Actions

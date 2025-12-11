@@ -6,27 +6,33 @@
 ## Issues Found
 
 ### 1. **Table Name Mismatch** ❌
+
 - **Code expects**: `profile_menu_items`
 - **Database has**: `whatsapp_profile_menu_items` (old schema)
 - **Impact**: Menu items not loading dynamically from database
 
 ### 2. **RPC Function Mismatch** ❌
+
 - **Code calls**: `get_profile_menu_items_v2(p_user_id, p_country_code, p_language)`
-- **Database has**: 
+- **Database has**:
   - `get_profile_menu_items(user_country_code)` - old, limited params
   - `get_profile_menu_items_localized(p_country_code, p_language)` - no user context
 - **Missing**: The v2 function with user-specific business category filtering
 - **Impact**: Cannot filter menu items based on user's business ownership
 
 ### 3. **Migration Status** ❌
-- Correct table structure exists in **archived/skipped** migration: `.archive/20251127074300_dynamic_profile_menu_system.sql.skip`
-- The v2 function exists in archived migration: `.archive/20251206130000_get_profile_menu_items_v2.sql`
+
+- Correct table structure exists in **archived/skipped** migration:
+  `.archive/20251127074300_dynamic_profile_menu_system.sql.skip`
+- The v2 function exists in archived migration:
+  `.archive/20251206130000_get_profile_menu_items_v2.sql`
 - **No active migration** creates the proper structure
 - **Impact**: Production database missing critical table and function
 
 ## Code Files Affected
 
 ### Edge Functions (Supabase/Deno)
+
 1. **`supabase/functions/wa-webhook-profile/profile/menu_items.ts`**
    - Lines 31-35: Calls `get_profile_menu_items_v2` ✅
    - Lines 109-116: Calls `get_profile_menu_items_v2` ✅
@@ -85,6 +91,7 @@ RETURNS TABLE (
 ```
 
 **Function Logic**:
+
 1. Checks if user has any businesses
 2. Gets user's business categories
 3. Detects if user owns bar/restaurant (special menu item)
@@ -99,6 +106,7 @@ RETURNS TABLE (
 ### ✅ Created Migration: `20251210075000_fix_profile_menu_items_alignment.sql`
 
 **What it does**:
+
 1. Creates `profile_menu_items` table with modern JSONB structure
 2. Creates `get_profile_menu_items_v2()` RPC function with full business filtering
 3. Inserts default menu items with proper translations:
@@ -137,25 +145,23 @@ psql $DATABASE_URL -c "SELECT item_key, display_order, icon, is_active FROM prof
 ## Code Updates Needed (Minor)
 
 ### 1. Update `home_dynamic.ts` to use v2 function
+
 **File**: `supabase/functions/wa-webhook-profile/profile/home_dynamic.ts`
 
 **Change line 58-65**:
+
 ```typescript
 // OLD (remove this)
-const { data, error } = await ctx.supabase.rpc(
-  "get_profile_menu_items",
-  { user_country_code: countryCode }
-);
+const { data, error } = await ctx.supabase.rpc("get_profile_menu_items", {
+  user_country_code: countryCode,
+});
 
 // NEW (use this)
-const { data, error } = await ctx.supabase.rpc(
-  "get_profile_menu_items_v2",
-  {
-    p_user_id: ctx.profileId || "00000000-0000-0000-0000-000000000000",
-    p_country_code: countryCode,
-    p_language: language,
-  }
-);
+const { data, error } = await ctx.supabase.rpc("get_profile_menu_items_v2", {
+  p_user_id: ctx.profileId || "00000000-0000-0000-0000-000000000000",
+  p_country_code: countryCode,
+  p_language: language,
+});
 ```
 
 ## Testing Checklist
@@ -172,6 +178,7 @@ const { data, error } = await ctx.supabase.rpc(
 ## Expected Behavior After Fix
 
 ### For Regular User (no businesses)
+
 ```
 👤 Profile Menu:
 1. ✏️ Edit Profile
@@ -186,6 +193,7 @@ const { data, error } = await ctx.supabase.rpc(
 ```
 
 ### For Bar/Restaurant Owner
+
 ```
 👤 Profile Menu:
 (Same as above, PLUS:)
@@ -195,6 +203,7 @@ const { data, error } = await ctx.supabase.rpc(
 ```
 
 ### Localization Example
+
 - **English**: "My Businesses" / "Manage your business listings"
 - **French**: "Mes Entreprises" / "Gérer vos annonces"
 - **Kinyarwanda**: "Ubucuruzi Bwanjye" / "Gucunga ubucuruzi"
@@ -202,12 +211,14 @@ const { data, error } = await ctx.supabase.rpc(
 ## Observability & Analytics
 
 Each menu item click is tracked:
+
 - Event: `PROFILE_EDIT_CLICKED`, `PROFILE_WALLET_CLICKED`, etc.
 - Metadata includes: `userId`, `country`, `language`, `itemCount`, `has_bar_restaurant`
 
 ## Maintenance
 
 ### Adding New Menu Items
+
 ```sql
 INSERT INTO profile_menu_items (
   item_key, display_order, icon, translations,
@@ -224,6 +235,7 @@ INSERT INTO profile_menu_items (
 ```
 
 ### Updating Translations
+
 ```sql
 UPDATE profile_menu_items
 SET translations = jsonb_set(
@@ -235,6 +247,7 @@ WHERE item_key = 'my_businesses';
 ```
 
 ### Conditional Visibility
+
 ```sql
 -- Only show for users with vehicle businesses
 UPDATE profile_menu_items
@@ -254,6 +267,6 @@ WHERE item_key = 'premium_feature';
 ✅ **Localized**: Proper multi-language support via JSONB  
 ✅ **Conditional**: Smart filtering by country, business type, user attributes  
 ✅ **Scalable**: Easy to add/modify menu items without code changes  
-✅ **Observable**: Full analytics tracking on menu interactions  
+✅ **Observable**: Full analytics tracking on menu interactions
 
 **Action Required**: Apply migration and update `home_dynamic.ts` as documented above.

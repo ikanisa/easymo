@@ -20,7 +20,9 @@
 
 ## System Overview
 
-EasyMO is a WhatsApp-first mobility and marketplace platform built as a TypeScript monorepo using pnpm workspaces. The system integrates AI agents, real-time messaging, payment processing, and marketplace features.
+EasyMO is a WhatsApp-first mobility and marketplace platform built as a TypeScript monorepo using
+pnpm workspaces. The system integrates AI agents, real-time messaging, payment processing, and
+marketplace features.
 
 ### High-Level Architecture
 
@@ -70,16 +72,19 @@ EasyMO is a WhatsApp-first mobility and marketplace platform built as a TypeScri
 ## Technology Stack
 
 ### Frontend
+
 - **Admin App**: Next.js 15.1.6, React 18, TypeScript 5.5.4
 - **PWAs**: Vite 6, React 18, TailwindCSS 3.4
 - **Desktop**: Tauri 2.0 (Rust + WebView)
 
 ### Backend
+
 - **Edge Functions**: Deno 2.x (Supabase Functions)
 - **Microservices**: NestJS 10.x, Express 4.x
 - **Language**: TypeScript 5.5.4 (aligned across all packages)
 
 ### Data & Storage
+
 - **Primary DB**: Supabase (PostgreSQL 15)
 - **Agent DB**: PostgreSQL (separate instance via Prisma)
 - **Cache**: Redis (Upstash)
@@ -87,6 +92,7 @@ EasyMO is a WhatsApp-first mobility and marketplace platform built as a TypeScri
 - **File Storage**: Supabase Storage
 
 ### AI & Integrations
+
 - **LLMs**: OpenAI GPT-4, Google Gemini, Anthropic Claude
 - **Vector DB**: Supabase pgvector
 - **WhatsApp**: Meta Business API
@@ -99,17 +105,20 @@ EasyMO is a WhatsApp-first mobility and marketplace platform built as a TypeScri
 ### 1. Client Layer
 
 **WhatsApp Interface**
+
 - Entry point for 90% of users
 - Natural language interaction
 - SMS fallback for USSD
 
 **Admin Dashboard**
+
 - Next.js 15 app in `admin-app/`
 - Real-time analytics
 - User management
 - Settings configuration
 
 **Progressive Web Apps**
+
 - `waiter-pwa/` - Restaurant staff interface
 - `real-estate-pwa/` - Property management
 - `client-pwa/` - Customer mobile app (new)
@@ -119,6 +128,7 @@ EasyMO is a WhatsApp-first mobility and marketplace platform built as a TypeScri
 All edge functions located in `supabase/functions/`
 
 **WhatsApp Webhook Handlers**:
+
 ```
 wa-webhook-core/         # Main router (validates, logs, routes)
 wa-webhook-ai-agents/    # AI agent orchestration
@@ -131,6 +141,7 @@ wa-webhook-marketplace/  # General marketplace
 ```
 
 **Admin Functions**:
+
 ```
 admin-settings/          # Platform configuration
 admin-stats/             # Analytics & reporting
@@ -180,17 +191,20 @@ Located in `services/`
 Located in `packages/`
 
 **Infrastructure Packages**:
+
 - `@easymo/commons` - Logging, utilities, auth
 - `@easymo/db` - Prisma client for Agent-Core DB
 - `@easymo/messaging` - Kafka wrappers
 - `@easymo/media-utils` - Audio/video processing (NEW)
 
 **AI Packages**:
+
 - `@easymo/agents` - Pre-built AI agents
 - `@easymo/ai-core` - Base agent framework
 - `@easymo/ai` - AI orchestration
 
 **Utility Packages**:
+
 - `@va/shared` - Shared TypeScript types
 - `@easymo/ui` - Shared UI components
 - `@easymo/localization` - i18n support
@@ -214,6 +228,7 @@ services/agent-core/
 ```
 
 **Key Features**:
+
 - Multi-agent orchestration
 - Tool execution framework
 - Conversation memory (Redis)
@@ -365,6 +380,7 @@ Local Machine
 ### Row-Level Security (RLS)
 
 All Supabase tables enforce RLS policies:
+
 - Users can only access their own data
 - Admin role for elevated permissions
 - Service role bypasses RLS (server-side only)
@@ -373,7 +389,7 @@ All Supabase tables enforce RLS policies:
 
 - **Development**: `.env.local` (gitignored)
 - **Production**: Environment variables (Cloud Run/Supabase)
-- **Never**: VITE_* or NEXT_PUBLIC_* prefixes for secrets
+- **Never**: VITE*\* or NEXT_PUBLIC*\* prefixes for secrets
 
 ---
 
@@ -382,11 +398,12 @@ All Supabase tables enforce RLS policies:
 ### Logging
 
 **Structured Logging** (enforced):
-```typescript
-import { childLogger } from '@easymo/commons';
-const log = childLogger({ service: 'wallet-service' });
 
-log.info({ event: 'payment_processed', txId, amount }, 'Payment successful');
+```typescript
+import { childLogger } from "@easymo/commons";
+const log = childLogger({ service: "wallet-service" });
+
+log.info({ event: "payment_processed", txId, amount }, "Payment successful");
 ```
 
 **Correlation IDs**: Every request tracked with unique ID
@@ -400,6 +417,7 @@ log.info({ event: 'payment_processed', txId, amount }, 'Payment successful');
 ### Compliance
 
 Run compliance audit:
+
 ```bash
 node scripts/audit/observability-compliance.mjs
 ```
@@ -409,11 +427,13 @@ node scripts/audit/observability-compliance.mjs
 ## Scaling Strategy
 
 ### Horizontal Scaling
+
 - Edge functions: Auto-scale with Supabase
 - Microservices: Cloud Run auto-scaling
 - Database: Supabase connection pooling
 
 ### Vertical Scaling
+
 - Database: Upgrade Supabase tier
 - Redis: Upgrade Upstash tier
 - Services: Increase container resources
@@ -446,7 +466,7 @@ pnpm dev
 # Unit tests
 pnpm test
 
-# Integration tests  
+# Integration tests
 pnpm test:integration
 
 # E2E tests
@@ -472,16 +492,19 @@ cd admin-app && npm run build
 ## Recent Changes (Post-Refactoring)
 
 ### Package Structure
+
 - ✅ Added `@easymo/media-utils` for audio processing
 - ✅ Deprecated `admin-app-v2`
 - ✅ Aligned TypeScript to 5.5.4 across 28 packages
 
 ### Code Quality
+
 - ✅ ESLint zero warnings enforced
 - ✅ Jest → Vitest migration
 - ✅ Console.log → structured logging (72 instances)
 
 ### Infrastructure
+
 - ✅ 6 automation scripts created
 - ✅ Observability compliance framework
 - ✅ CI/CD workflows for compliance

@@ -1,4 +1,5 @@
 # Phase 2 Progress Report
+
 **Date:** 2025-12-09 14:25 UTC  
 **Status:** 🟢 50% COMPLETE
 
@@ -7,12 +8,14 @@
 ## ✅ Completed Tasks
 
 ### Task 2.1: Session Manager ✅ COMPLETE
-**File:** `supabase/functions/wa-agent-waiter/core/session-manager.ts`
-**Status:** Already using `ai_agent_sessions` table - No changes needed!
+
+**File:** `supabase/functions/wa-agent-waiter/core/session-manager.ts` **Status:** Already using
+`ai_agent_sessions` table - No changes needed!
 
 ### Task 2.2: Waiter Agent Discovery Flow ✅ COMPLETE
-**File:** `supabase/functions/wa-agent-waiter/core/waiter-agent.ts`
-**Changes Made:**
+
+**File:** `supabase/functions/wa-agent-waiter/core/waiter-agent.ts` **Changes Made:**
+
 - ✅ Added discovery state machine
 - ✅ Handles "no context" scenario (starts discovery)
 - ✅ State: `awaiting_discovery_choice` - Ask user how to find bar
@@ -23,8 +26,9 @@
 - ✅ Logs all discovery events
 
 ### Task 2.3: Bar Search Functions ✅ COMPLETE
-**File:** `supabase/functions/wa-agent-waiter/core/bar-search.ts` (NEW)
-**Features:**
+
+**File:** `supabase/functions/wa-agent-waiter/core/bar-search.ts` (NEW) **Features:**
+
 - ✅ `searchBarsNearby()` - Geospatial search with fallback
 - ✅ `searchBarsByName()` - Text search
 - ✅ `getBarById()` - Get bar details
@@ -38,15 +42,17 @@
 ## 🟡 In Progress
 
 ### Task 2.4: QR Code Handler (50% Complete)
-**Status:** Existing deeplink handler found, needs Waiter-specific enhancement
-**File:** `supabase/functions/wa-webhook/domains/business/deeplink.ts`
-**What exists:**
+
+**Status:** Existing deeplink handler found, needs Waiter-specific enhancement **File:**
+`supabase/functions/wa-webhook/domains/business/deeplink.ts` **What exists:**
+
 - ✅ Business deeplink code system
 - ✅ QR code generation
 - ✅ Deeplink parsing
 - ✅ Bar detail routing (routes to menu/chat waiter)
 
 **What needs to be added:**
+
 - 🟡 Parse Waiter-specific QR format: `easymo://waiter?bar_id=xxx&table=5`
 - 🟡 Create AI agent session with full context
 - 🟡 Route directly to Waiter Agent (bypass discovery)
@@ -57,8 +63,9 @@
 ## ⏳ Pending
 
 ### Task 2.5: Business Broker Agent Enhancement
-**File:** `packages/agents/src/agents/general/business-broker.agent.ts`
-**Changes Needed:**
+
+**File:** `packages/agents/src/agents/general/business-broker.agent.ts` **Changes Needed:**
+
 - Use `search_businesses_ai()` function
 - Add natural language intent classification
 - Format results with emoji numbers
@@ -66,7 +73,9 @@
 - Handle selection flow
 
 ### Task 2.6: Integration Testing
+
 **Tests Needed:**
+
 - Waiter discovery flow (location share)
 - Waiter discovery flow (name search)
 - QR code scanning → immediate menu
@@ -77,15 +86,15 @@
 
 ## 📊 Progress Summary
 
-| Task | Status | Files Changed | Lines Added |
-|------|--------|---------------|-------------|
-| 2.1 Session Manager | ✅ COMPLETE | 0 | 0 |
-| 2.2 Waiter Discovery | ✅ COMPLETE | 1 | ~400 |
-| 2.3 Bar Search | ✅ COMPLETE | 1 (new) | ~250 |
-| 2.4 QR Handler | 🟡 50% | 0 | 0 |
-| 2.5 Business Agent | ⏳ PENDING | 0 | 0 |
-| 2.6 Testing | ⏳ PENDING | 0 | 0 |
-| **TOTAL** | **🟢 50%** | **2** | **~650** |
+| Task                 | Status      | Files Changed | Lines Added |
+| -------------------- | ----------- | ------------- | ----------- |
+| 2.1 Session Manager  | ✅ COMPLETE | 0             | 0           |
+| 2.2 Waiter Discovery | ✅ COMPLETE | 1             | ~400        |
+| 2.3 Bar Search       | ✅ COMPLETE | 1 (new)       | ~250        |
+| 2.4 QR Handler       | 🟡 50%      | 0             | 0           |
+| 2.5 Business Agent   | ⏳ PENDING  | 0             | 0           |
+| 2.6 Testing          | ⏳ PENDING  | 0             | 0           |
+| **TOTAL**            | **🟢 50%**  | **2**         | **~650**    |
 
 ---
 
@@ -114,12 +123,15 @@
 ## 📁 Files Created/Modified
 
 ### Created:
+
 - ✅ `supabase/functions/wa-agent-waiter/core/bar-search.ts` (250 lines)
 
 ### Modified:
+
 - ✅ `supabase/functions/wa-agent-waiter/core/waiter-agent.ts` (+400 lines)
 
 ### To Modify:
+
 - 🟡 `supabase/functions/wa-webhook/domains/business/deeplink.ts` (enhance existing)
 - ⏳ `packages/agents/src/agents/general/business-broker.agent.ts`
 
@@ -132,10 +144,11 @@
 **Entry Point:** User taps "Waiter AI" from home menu without QR code
 
 **Flow:**
+
 ```
 1. "How would you like to find your bar?"
    → 1️⃣ Share location
-   → 2️⃣ Type name  
+   → 2️⃣ Type name
    → 3️⃣ Scan QR
 
 2. If location shared:
@@ -155,6 +168,7 @@
 ```
 
 **Session Context Structure:**
+
 ```typescript
 {
   barId: "uuid",
@@ -180,4 +194,3 @@
 - ⏳ End-to-end flows tested
 
 **Status:** 3/6 complete (50%)
-

@@ -9,11 +9,13 @@
 ## 📊 URL ANALYSIS
 
 ### Your Provided URL:
+
 ```
 https://www.google.com/maps/search/pharmacy+kigali/@-1.967805,30.0514708,13z/data=!4m2!2m1!6e2?entry=ttu&g_ep=EgoyMDI1MTIwMi4wIKXMDSoASAFQAw%3D%3D
 ```
 
 **Parsed Details:**
+
 - **Search Term**: `pharmacy kigali`
 - **Center Coordinates**: `-1.967805, 30.0514708` (Kigali, Rwanda)
 - **Zoom Level**: `13z` (City-level view - ~10km radius)
@@ -21,10 +23,13 @@ https://www.google.com/maps/search/pharmacy+kigali/@-1.967805,30.0514708,13z/dat
 - **Estimated Results**: 60-100 pharmacies in visible area
 
 ### Comparison with Existing Scripts:
+
 The existing quick script uses:
+
 ```
 https://www.google.com/maps/search/pharmacy/@-2.1664214,30.1197577,12.64z
 ```
+
 - Different center point (south of your location)
 - Lower zoom (12.64z vs 13z)
 - Broader area coverage
@@ -60,6 +65,7 @@ python3 gmaps_scraper_v2.py \
 Save as: `scripts/scrape_my_pharmacy_url.sh`
 
 **Run it:**
+
 ```bash
 chmod +x scripts/scrape_my_pharmacy_url.sh
 ./scripts/scrape_my_pharmacy_url.sh
@@ -142,6 +148,7 @@ python3 gmaps_scraper_v2.py \
 ### ✅ What the Scraper Will Extract
 
 For each pharmacy:
+
 ```json
 {
   "name": "Kigali Pharmacy",
@@ -174,6 +181,7 @@ else:
 ```
 
 **Format Handling:**
+
 - `0788 767 816` → `+250788767816` ✅
 - `788 767 816` → `+250788767816` ✅
 - `+250 788 767 816` → `+250788767816` ✅
@@ -184,6 +192,7 @@ else:
 ### ✅ Duplicate Prevention
 
 **Algorithm** (Lines 313-318, 360-363):
+
 ```python
 # Generate unique key from name + city + address
 normalized_name = "kigali pharmacy".lower().replace(" ", "")
@@ -199,6 +208,7 @@ if key in existing_keys:
 ```
 
 **This means:**
+
 - Safe to run multiple times
 - No manual cleanup needed
 - Database stays clean
@@ -206,6 +216,7 @@ if key in existing_keys:
 ### ✅ Geolocation Extraction
 
 **From URL coordinates:**
+
 - Your URL center: `-1.967805, 30.0514708`
 - Each business gets its own precise lat/lng from Google Maps
 - Stored in `businesses.lat` and `businesses.lng` columns
@@ -217,13 +228,13 @@ if key in existing_keys:
 
 ### Scraping Metrics:
 
-| Metric | Estimated Value |
-|--------|-----------------|
-| **Total businesses found** | 80-120 pharmacies |
-| **With phone numbers** | 55-80 (65-70%) |
-| **Duplicates filtered** | 5-15 (if running after existing scrapes) |
-| **Final inserts** | 50-75 NEW pharmacies |
-| **Scraping time** | 10-15 minutes |
+| Metric                     | Estimated Value                          |
+| -------------------------- | ---------------------------------------- |
+| **Total businesses found** | 80-120 pharmacies                        |
+| **With phone numbers**     | 55-80 (65-70%)                           |
+| **Duplicates filtered**    | 5-15 (if running after existing scrapes) |
+| **Final inserts**          | 50-75 NEW pharmacies                     |
+| **Scraping time**          | 10-15 minutes                            |
 
 ### Output Example:
 
@@ -406,11 +417,13 @@ echo ""
 ```
 
 **Make it executable:**
+
 ```bash
 chmod +x scripts/scrape_kigali_pharmacies.sh
 ```
 
 **Run it:**
+
 ```bash
 ./scripts/scrape_kigali_pharmacies.sh
 ```
@@ -476,6 +489,7 @@ psql "$DATABASE_URL" -c "SELECT COUNT(*) FROM businesses WHERE category='pharmac
 ## ✅ FINAL CHECKLIST
 
 Before running:
+
 - [ ] Python 3 installed (`python3 --version`)
 - [ ] Dependencies installed (`pip3 install -r scripts/requirements-scraper.txt`)
 - [ ] ChromeDriver available (auto-installed by webdriver-manager)
@@ -484,6 +498,7 @@ Before running:
 - [ ] Internet connection stable
 
 After running:
+
 - [ ] Check console output for errors
 - [ ] Verify JSON file created
 - [ ] Query database for count

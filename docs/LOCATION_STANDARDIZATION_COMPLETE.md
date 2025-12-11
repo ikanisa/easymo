@@ -8,7 +8,8 @@
 
 ## What Was Implemented
 
-This implementation addresses all recommendations from the [Location Audit Report](./LOCATION_AUDIT_REPORT.md).
+This implementation addresses all recommendations from the
+[Location Audit Report](./LOCATION_AUDIT_REPORT.md).
 
 ### 1. Property Listings - PostGIS Migration ✅
 
@@ -16,13 +17,15 @@ This implementation addresses all recommendations from the [Location Audit Repor
 **Solution:** Added PostGIS geography column with auto-sync trigger
 
 **Changes:**
+
 - Added `location_geog GEOGRAPHY(Point, 4326)` column
 - Created `sync_property_location_geography()` trigger function
 - Backfilled existing data
 - Added GIST spatial index
 - Added coordinate validation constraints
 
-**Result:** 
+**Result:**
+
 - Property searches now use efficient PostGIS queries
 - Distance calculations are ~10x faster for large datasets
 - Spatial indexing enables sub-millisecond proximity queries
@@ -35,11 +38,13 @@ This implementation addresses all recommendations from the [Location Audit Repor
 **Solution:** Standardized on `lat`/`lng` with backwards compatibility
 
 **Changes:**
+
 - Added `lat`/`lng` columns to `driver_status` (kept old columns for compatibility)
 - Documented deprecated column names
 - Updated documentation to use standard names
 
 **Standard:**
+
 ```
 lat              DOUBLE PRECISION
 lng              DOUBLE PRECISION
@@ -57,9 +62,11 @@ address          TEXT (optional)
 **New RPC Functions:**
 
 #### `cache_user_location()`
+
 Caches user location with domain context and TTL.
 
 **Supports:**
+
 - `mobility` (2-hour TTL for drivers, 24h for passengers)
 - `jobs` (7-day TTL)
 - `real_estate` (7-day TTL)
@@ -67,9 +74,11 @@ Caches user location with domain context and TTL.
 - `general` (24-hour TTL, default)
 
 #### `get_recent_location()`
+
 Retrieves cached location by context with age filtering.
 
 **Result:**
+
 - Users don't re-enter locations across sessions
 - Context-specific TTLs optimize cache hit rates
 - Reduced unnecessary location prompts
@@ -84,15 +93,18 @@ Retrieves cached location by context with age filtering.
 **New RPC Function:**
 
 #### `find_nearby_items()`
+
 Auto-detects location columns and uses optimal query strategy.
 
 **Features:**
+
 - Automatically detects PostGIS geography columns
 - Falls back to Haversine formula if no geography column
 - Supports custom WHERE clauses
 - Returns items with distance
 
 **Example:**
+
 ```sql
 SELECT * FROM find_nearby_items(
   'businesses',  -- any table
@@ -110,17 +122,20 @@ SELECT * FROM find_nearby_items(
 **Improvements:**
 
 #### Properties: `search_properties_unified_v2()`
+
 - Now uses PostGIS geography if available
 - Falls back to Haversine for compatibility
 - Combined text + spatial search
 - Price, bedroom, property type filters
 
 #### Businesses: `search_businesses_ai()` (already optimal)
+
 - Uses PostGIS geography ✅
 - Full-text search ✅
 - Relevance scoring ✅
 
 #### Mobility: `match_drivers_for_trip_v2()` (already optimal)
+
 - Uses PostGIS geography ✅
 - Spatial indexing ✅
 
@@ -131,11 +146,13 @@ SELECT * FROM find_nearby_items(
 **Enhanced:** `supabase/functions/_shared/location-service/index.ts`
 
 **New Functions:**
+
 - `cacheLocationWithContext()` - Context-aware caching
 - `getCachedLocationByContext()` - Retrieve by context
 - `searchNearbyItems()` - Universal proximity search
 
 **New Domain Helpers:**
+
 - `MobilityLocation` - Driver/passenger location helpers
 - `JobsLocation` - Job search location helpers
 - `RealEstateLocation` - Property search helpers
@@ -148,6 +165,7 @@ SELECT * FROM find_nearby_items(
 **Updated:** `supabase/functions/_shared/location-config.ts`
 
 **New Exports:**
+
 - `cacheUserLocation()` - Direct RPC wrapper
 - `getRecentLocation()` - Fetch cached location
 - `findNearbyItems()` - Proximity search wrapper
@@ -158,6 +176,7 @@ SELECT * FROM find_nearby_items(
 ### 8. Comprehensive Documentation ✅
 
 **Created:**
+
 - `docs/LOCATION_IMPLEMENTATION_GUIDE.md` - Complete developer guide
   - Standard patterns
   - Code examples
@@ -165,6 +184,7 @@ SELECT * FROM find_nearby_items(
   - Troubleshooting
 
 **Updated:**
+
 - `docs/LOCATION_AUDIT_REPORT.md` - Original audit report
 
 ---
@@ -174,31 +194,34 @@ SELECT * FROM find_nearby_items(
 ### New Columns
 
 **property_listings:**
+
 ```sql
 location_geog GEOGRAPHY(Point, 4326)
 ```
 
 **driver_status:**
+
 ```sql
 lat  DOUBLE PRECISION
 lng  DOUBLE PRECISION
 ```
+
 (Note: Old `current_lat`/`current_lng` kept for backwards compatibility)
 
 ### New Indexes
 
 ```sql
 -- Property listings spatial index
-CREATE INDEX idx_property_listings_location_geog 
+CREATE INDEX idx_property_listings_location_geog
   ON property_listings USING GIST(location_geog);
 
 -- Recent locations context index
-CREATE INDEX idx_recent_locations_user_context 
+CREATE INDEX idx_recent_locations_user_context
   ON app.recent_locations(user_id, context);
 
 -- Recent locations active index
-CREATE INDEX idx_recent_locations_active 
-  ON app.recent_locations(user_id, expires_at) 
+CREATE INDEX idx_recent_locations_active
+  ON app.recent_locations(user_id, expires_at)
   WHERE expires_at > NOW();
 ```
 
@@ -235,16 +258,19 @@ CREATE INDEX idx_recent_locations_active
 ### Before vs After
 
 **Property Search (1000 listings, 10km radius):**
+
 - Before: ~500ms (Haversine sequential scan)
 - After: ~15ms (PostGIS with GIST index)
 - **Improvement: 33x faster**
 
 **Location Cache Hit Rate:**
+
 - Before: ~40% (mobility only)
 - After: ~75% (all domains)
 - **Improvement: 87% increase**
 
 **Database Query Count (typical session):**
+
 - Before: 12 location queries per user flow
 - After: 2-3 location queries (cache hits)
 - **Improvement: 75% reduction**
@@ -256,7 +282,7 @@ CREATE INDEX idx_recent_locations_active
 ### Cache Location
 
 ```typescript
-import { MobilityLocation } from '../_shared/location-service/index.ts';
+import { MobilityLocation } from "../_shared/location-service/index.ts";
 
 // Cache driver location (2-hour TTL)
 await MobilityLocation.cacheDriverLocation(supabase, driverId, {
@@ -268,7 +294,7 @@ await MobilityLocation.cacheDriverLocation(supabase, driverId, {
 ### Search Nearby Properties
 
 ```typescript
-import { RealEstateLocation } from '../_shared/location-service/index.ts';
+import { RealEstateLocation } from "../_shared/location-service/index.ts";
 
 const properties = await RealEstateLocation.searchNearbyProperties(supabase, {
   lat: -1.9536,
@@ -283,10 +309,10 @@ const properties = await RealEstateLocation.searchNearbyProperties(supabase, {
 ### Universal Search
 
 ```typescript
-import { searchNearbyItems } from '../_shared/location-service/index.ts';
+import { searchNearbyItems } from "../_shared/location-service/index.ts";
 
 const results = await searchNearbyItems(supabase, {
-  tableName: 'any_table_with_location',
+  tableName: "any_table_with_location",
   lat: -1.9536,
   lng: 30.0606,
   radiusKm: 5,
@@ -316,6 +342,7 @@ const results = await searchNearbyItems(supabase, {
 ### Manual Testing Steps
 
 1. **Test Property Search:**
+
    ```sql
    SELECT * FROM search_properties_unified_v2(
      p_lat := -1.9536,
@@ -325,6 +352,7 @@ const results = await searchNearbyItems(supabase, {
    ```
 
 2. **Test Location Cache:**
+
    ```sql
    SELECT cache_user_location(
      p_user_id := 'test-user-id',
@@ -332,7 +360,7 @@ const results = await searchNearbyItems(supabase, {
      p_lng := 30.0606,
      p_context := 'test'
    );
-   
+
    SELECT * FROM get_recent_location(
      p_user_id := 'test-user-id',
      p_context := 'test'
@@ -417,11 +445,13 @@ Track these metrics to measure impact:
 ## Support
 
 **Questions?** See:
+
 - [Location Implementation Guide](./LOCATION_IMPLEMENTATION_GUIDE.md)
 - [Location Audit Report](./LOCATION_AUDIT_REPORT.md)
 - [Ground Rules](./GROUND_RULES.md)
 
 **Issues?** Check:
+
 - PostGIS enabled: `SELECT postgis_version();`
 - Indexes created: `\d+ property_listings`
 - Functions exist: `\df cache_user_location`

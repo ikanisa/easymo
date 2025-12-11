@@ -1,4 +1,5 @@
 # easyMO Google Cloud Deployment - Session Report
+
 ## Date: 2025-12-07
 
 ## ✅ Completed
@@ -37,6 +38,7 @@
 **Problem**: Admin PWA uses pnpm workspace dependencies (`workspace:*`)
 
 The admin-app cannot be built in isolation because it depends on workspace packages:
+
 - `@easymo/commons`
 - `@easymo/ui`
 - `@easymo/video-agent-schema`
@@ -95,6 +97,7 @@ CMD ["node", "server.js"]
 ### Option 2: Use Existing Fly/Railway Deployment
 
 The admin-app is already deployed and working on other platforms. Consider:
+
 - Keep admin-app where it is for now
 - Deploy simpler services first (WhatsApp router, standalone services)
 - Circle back to admin-app with proper monorepo build setup
@@ -102,6 +105,7 @@ The admin-app is already deployed and working on other platforms. Consider:
 ### Option 3: Separate Dependencies
 
 Bundle dependencies into admin-app:
+
 - Copy built packages into admin-app
 - Update package.json to use local paths instead of workspace
 - Build as standalone
@@ -111,6 +115,7 @@ Bundle dependencies into admin-app:
 ## 📋 Next Steps (Choose One Path)
 
 ### Path A: Fix Admin Build (30-60 min)
+
 1. Create root-level Dockerfile for admin-app
 2. Update cloudbuild.yaml
 3. Test build
@@ -118,11 +123,13 @@ Bundle dependencies into admin-app:
 5. Configure IAP
 
 ### Path B: Deploy Simpler Services First (15-30 min)
+
 1. Start with WhatsApp Router (no workspace deps)
 2. Deploy Voice Bridge
 3. Circle back to admin-app
 
 ### Path C: Document Current State
+
 1. Keep existing deployment docs
 2. Note monorepo build complexity
 3. Recommend manual deployment for now
@@ -162,6 +169,5 @@ Then tackle admin-app monorepo build complexity.
 
 ---
 
-**Time Spent**: ~45 minutes
-**Status**: Infrastructure ready, encountering monorepo build complexity
+**Time Spent**: ~45 minutes **Status**: Infrastructure ready, encountering monorepo build complexity
 **Next Action**: Choose deployment path (A, B, or C above)

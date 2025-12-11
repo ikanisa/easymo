@@ -11,15 +11,18 @@
 ## What Was Fixed
 
 ### 1. ✅ pnpm Lockfile Corruption (CRITICAL)
+
 **Problem**: `ERR_PNPM_BROKEN_LOCKFILE: Cannot convert undefined or null to object`  
 **Root Cause**: Internal YAML structure corruption (not merge conflict)  
-**Solution**: 
+**Solution**:
+
 - Regenerated lockfile via `pnpm install --ignore-scripts`
 - Validated workspace packages build successfully
 - Verified admin-app type-checking works
 - **Result**: 26,761 lines, 884KB, lockfile version 9.0
 
 **Test**:
+
 ```bash
 pnpm install --frozen-lockfile  # ✅ PASSES
 pnpm --filter @va/shared build  # ✅ PASSES
@@ -28,9 +31,11 @@ pnpm --filter @easymo/ui build  # ✅ PASSES
 ```
 
 ### 2. ✅ Build Context Optimization
+
 **Created**: `.gcloudignore` (1.2KB)  
 **Impact**: Reduces Cloud Build upload size by ~80%  
-**Excludes**: 
+**Excludes**:
+
 - `node_modules/` (reinstalled in Dockerfile)
 - `.git/`, `.github/` (not needed for build)
 - Documentation files (except README.md)
@@ -38,18 +43,23 @@ pnpm --filter @easymo/ui build  # ✅ PASSES
 - Test files, logs, archives
 
 ### 3. ✅ Cloud Build Versioning
+
 **Updated**: `cloudbuild.admin.yaml`  
 **Added**: SHA-based image tagging
+
 ```yaml
 images:
   - europe-west1-docker.pkg.dev/easymoai/easymo-repo/admin:latest
   - europe-west1-docker.pkg.dev/easymoai/easymo-repo/admin:$SHORT_SHA
 ```
+
 **Benefit**: Rollback capability, audit trail
 
 ### 4. ✅ Automated Build + Deploy Pipeline
+
 **Created**: `cloudbuild.admin.deploy.yaml` (2.5KB)  
 **Features**:
+
 - ✅ Builds Docker image with multi-stage optimization
 - ✅ Pushes to Artifact Registry (both `:latest` and `:$SHORT_SHA`)
 - ✅ Deploys to Cloud Run service `easymo-admin-app`
@@ -60,8 +70,10 @@ images:
 - ✅ Resources: 1Gi RAM, 1 CPU, 0-10 instances
 
 ### 5. ✅ Deployment Automation
+
 **Created**: `scripts/deploy-admin-cloudrun.sh` (6.7KB, executable)  
 **Capabilities**:
+
 - ✅ Validates prerequisites (gcloud, auth, project)
 - ✅ Checks required APIs enabled
 - ✅ Verifies Secret Manager secrets exist
@@ -73,16 +85,20 @@ images:
 - ✅ Provides next steps summary
 
 ### 6. ✅ Documentation Updates
+
 **Updated**: `CLOUD_RUN_DEPLOYMENT.md`
+
 - ❌ Fixed: `us-central1` → `europe-west1`
 - ❌ Fixed: `--allow-unauthenticated` → `--no-allow-unauthenticated`
 - ✅ Added: Reference to admin-specific guide
 
 **Updated**: `GCP_DEPLOYMENT_SUMMARY.md`
+
 - ❌ Fixed: Admin port `3000` → `8080`
 - ❌ Fixed: Service name `easymo-admin` → `easymo-admin-app`
 
 **Created**: `docs/gcp/admin-cloudrun-deploy.md` (7.8KB)
+
 - ✅ Quick reference for admin deployment
 - ✅ Prerequisites checklist
 - ✅ Three deployment methods (script, Cloud Build, manual)
@@ -96,6 +112,7 @@ images:
 ## Files Changed/Created
 
 ### Modified (6 files)
+
 1. `pnpm-lock.yaml` - Regenerated (fixed corruption)
 2. `cloudbuild.admin.yaml` - Added SHA-based tagging
 3. `CLOUD_RUN_DEPLOYMENT.md` - Fixed region to europe-west1, internal-only access
@@ -104,6 +121,7 @@ images:
 6. `supabase/` - Pre-existing location caching migrations
 
 ### Created (4 files)
+
 1. `.gcloudignore` - Build context optimization
 2. `cloudbuild.admin.deploy.yaml` - Automated build + deploy
 3. `scripts/deploy-admin-cloudrun.sh` - Deployment automation
@@ -152,6 +170,7 @@ export SUPABASE_ANON_KEY="your-anon-key"
 ```
 
 **What it does**:
+
 1. Validates gcloud setup
 2. Enables required APIs
 3. Verifies secrets exist
@@ -202,17 +221,20 @@ gcloud run deploy easymo-admin-app \
 ## Verification Checklist
 
 ### ✅ Local Validation (Completed)
+
 - [x] pnpm lockfile regenerated
 - [x] `pnpm install --frozen-lockfile` passes
 - [x] Workspace packages build successfully
 - [x] admin-app type-checking works (some pre-existing type errors, non-blocking)
 
 ### 🔲 Cloud Build Validation (Ready to Test)
+
 - [ ] Cloud Build completes successfully (~10-15 minutes)
 - [ ] Image pushed to Artifact Registry
 - [ ] Both `:latest` and `:$SHORT_SHA` tags exist
 
 ### 🔲 Cloud Run Validation (Ready to Test)
+
 - [ ] Service deployed: `easymo-admin-app`
 - [ ] Region: `europe-west1`
 - [ ] Port: `8080`
@@ -223,12 +245,14 @@ gcloud run deploy easymo-admin-app \
 - [ ] Public env vars set correctly
 
 ### 🔲 Access Control Validation (Ready to Test)
+
 - [ ] Service returns 403 for unauthenticated requests
 - [ ] IAP configured (optional, for team access)
 - [ ] Authorized users can access service
 - [ ] No public access granted
 
 ### 🔲 Operational Validation (Post-Deploy)
+
 - [ ] Service logs visible: `gcloud run services logs tail easymo-admin-app --region=europe-west1`
 - [ ] Service health check passes
 - [ ] Admin panel UI loads
@@ -261,12 +285,14 @@ Use Method 1 (automated script) or Method 2 (Cloud Build direct).
 ### 4. Configure Access Control
 
 **Option A: IAP (Team-based)**
+
 1. Go to [IAP Console](https://console.cloud.google.com/security/iap?project=easymoai)
 2. Enable IAP for `easymo-admin-app`
 3. Add authorized users/groups
 4. Assign role: `IAP-secured Web App User`
 
 **Option B: Individual Access**
+
 ```bash
 gcloud run services add-iam-policy-binding easymo-admin-app \
   --region=europe-west1 \
@@ -362,21 +388,25 @@ gcloud run revisions list --service=easymo-admin-app --region=europe-west1
 ## Cost Optimization
 
 **Build**:
+
 - Machine: `E2_HIGHCPU_8` (fast builds, lower total cost)
 - Disk: `100GB` (adequate for monorepo)
 - Timeout: `1800s` (30 minutes max)
 
 **Runtime**:
+
 - Min instances: `0` → Scales to zero when idle (no cost)
 - Max instances: `10` → Prevents runaway costs
 - Memory: `1Gi` (right-sized for Next.js SSR)
 - CPU: `1` (adequate for admin traffic)
 
 **Storage**:
+
 - `.gcloudignore` reduces upload size by ~80%
 - Artifact Registry: Only 2 tags per build (latest + SHA)
 
 **Estimated Monthly Cost** (low-moderate usage):
+
 - Cloud Run: $0-10 (scales to zero)
 - Cloud Build: ~$0.003/build-minute
 - Artifact Registry: ~$0.10/GB/month
@@ -398,17 +428,20 @@ gcloud run revisions list --service=easymo-admin-app --region=europe-west1
 ## Support & Documentation
 
 **Primary Docs**:
+
 - `docs/gcp/admin-cloudrun-deploy.md` - Admin deployment quick reference
 - `CLOUD_RUN_DEPLOYMENT.md` - General Cloud Run guide
 - `GCP_DEPLOYMENT_SUMMARY.md` - Overall GCP architecture
 - `docs/GROUND_RULES.md` - Security and compliance rules
 
 **Key Scripts**:
+
 - `scripts/deploy-admin-cloudrun.sh` - Automated deployment
 - `cloudbuild.admin.deploy.yaml` - CI/CD pipeline
 - `Dockerfile.admin` - Multi-stage Docker build
 
 **GCP Resources**:
+
 - [Cloud Run Docs](https://cloud.google.com/run/docs)
 - [Secret Manager Docs](https://cloud.google.com/secret-manager/docs)
 - [IAP Docs](https://cloud.google.com/iap/docs)
@@ -423,7 +456,7 @@ gcloud run revisions list --service=easymo-admin-app --region=europe-west1
 ✅ **Security enforced** - Internal-only access, Secret Manager  
 ✅ **Documentation complete** - Step-by-step guides  
 ✅ **Region standardized** - All europe-west1  
-✅ **Versioning enabled** - SHA-based image tags  
+✅ **Versioning enabled** - SHA-based image tags
 
 **Status**: **READY FOR DEPLOYMENT** 🚀
 

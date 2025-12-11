@@ -17,6 +17,7 @@
 ## Overview
 
 The Waiter AI is a WhatsApp-based virtual waiter that handles:
+
 - 🍽️ Menu search and recommendations
 - 🛒 Cart management
 - 💳 MoMo payment processing
@@ -50,16 +51,16 @@ The Waiter AI is a WhatsApp-based virtual waiter that handles:
 
 ## Implementation Status
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Menu Search | ✅ Complete | Real DB queries with filters |
-| Cart Management | ✅ Complete | Session-based cart |
-| MoMo Payments | ✅ Complete | Integration working |
-| Kitchen Orders | ✅ Complete | Real-time tickets |
-| Table Reservations | ✅ Complete | Full booking system |
-| Loyalty Programs | ✅ Complete | Points and tiers |
-| Bar Manager App | 🟡 Partial | Desktop app in progress |
-| Waiter PWA | 🟡 Planned | Phase 3 roadmap |
+| Feature            | Status      | Notes                        |
+| ------------------ | ----------- | ---------------------------- |
+| Menu Search        | ✅ Complete | Real DB queries with filters |
+| Cart Management    | ✅ Complete | Session-based cart           |
+| MoMo Payments      | ✅ Complete | Integration working          |
+| Kitchen Orders     | ✅ Complete | Real-time tickets            |
+| Table Reservations | ✅ Complete | Full booking system          |
+| Loyalty Programs   | ✅ Complete | Points and tiers             |
+| Bar Manager App    | 🟡 Partial  | Desktop app in progress      |
+| Waiter PWA         | 🟡 Planned  | Phase 3 roadmap              |
 
 ---
 
@@ -98,7 +99,7 @@ npm test waiter
 ## Support
 
 For issues or questions, see:
+
 - [Architecture Documentation](./sessions/)
 - [App Documentation](./app/)
 - [Visual Diagrams](../architecture/diagrams/)
-

@@ -7,9 +7,12 @@
 
 ## 📊 Executive Summary
 
-The Real Estate domain has **4 separate agent implementations** that cause inconsistent behavior, confusing architecture, and maintenance overhead. This plan consolidates them into a single source of truth.
+The Real Estate domain has **4 separate agent implementations** that cause inconsistent behavior,
+confusing architecture, and maintenance overhead. This plan consolidates them into a single source
+of truth.
 
 ### Key Problems
+
 - 4 different system prompts → inconsistent AI behavior
 - 4 different tool sets → confusing for developers
 - Hardcoded fallback data → bad user experience
@@ -17,7 +20,9 @@ The Real Estate domain has **4 separate agent implementations** that cause incon
 - Different AI models → unpredictable costs/behavior
 
 ### Solution
+
 Consolidate into single `RealEstateAgent` class in `packages/agents/` with:
+
 - ✅ One system prompt
 - ✅ Unified tools
 - ✅ Proper error handling
@@ -48,6 +53,7 @@ Consolidate into single `RealEstateAgent` class in `packages/agents/` with:
    - Different instructions
 
 ### Shared Types ✅ EXCELLENT
+
 - `supabase/functions/_shared/agents/real-estate/types.ts`
 - 295 lines, well-documented
 - Complete state machine with 20+ keys
@@ -55,6 +61,7 @@ Consolidate into single `RealEstateAgent` class in `packages/agents/` with:
 - **Action:** Use as source of truth
 
 ### Edge Functions
+
 - `wa-webhook-property/` - ✅ Already correct, uses REAL_ESTATE_STATE_KEYS
 - `agent-property-rental/` - ❓ Review usage
 - `wa-webhook/domains/` - ⚠️ Update to use unified agent
@@ -62,9 +69,10 @@ Consolidate into single `RealEstateAgent` class in `packages/agents/` with:
 ## 🔴 Critical Issues
 
 ### Issue #1: Hardcoded Fallback Data
+
 ```typescript
 catch (err) {
-  return { 
+  return {
     listings: [
       { id: '1', title: 'Cozy Apartment...', price_monthly: 300000 },
       { id: '2', title: 'Luxury Villa...', price_monthly: 1000000 }
@@ -72,11 +80,14 @@ catch (err) {
   };
 }
 ```
+
 **Impact:** Users see fake data on errors  
 **Fix:** Return proper error response
 
 ### Issue #2: Multiple System Prompts
+
 Four different instruction sets:
+
 - "You are a multilingual WhatsApp real-estate concierge..."
 - "You are a multilingual real-estate concierge for Rwanda..."
 - "You are the Real Estate AI Agent for EasyMO..."
@@ -85,6 +96,7 @@ Four different instruction sets:
 **Fix:** Single source of truth
 
 ### Issue #3: Database Column Inconsistency
+
 - `property_listings.price_monthly`
 - `property_listings.price`
 - `listings.price_amount`
@@ -113,6 +125,7 @@ packages/agents/src/agents/property/
 ```
 
 #### Task 1.1: Extract System Prompt
+
 ```typescript
 // packages/agents/src/agents/property/prompts/system-prompt.ts
 export const REAL_ESTATE_SYSTEM_PROMPT = `
@@ -134,40 +147,44 @@ CORE CAPABILITIES:
 ```
 
 #### Task 1.2: Extract Tools
+
 ```typescript
 // packages/agents/src/agents/property/tools/search-listings.ts
-import type { Tool } from '../../../types/agent.types';
+import type { Tool } from "../../../types/agent.types";
 
 export const searchListingsTool: Tool = {
-  type: 'function',
+  type: "function",
   function: {
-    name: 'search_listings',
-    description: 'Search for properties in the database',
-    parameters: { /* ... */ },
+    name: "search_listings",
+    description: "Search for properties in the database",
+    parameters: {
+      /* ... */
+    },
     execute: async (params, context) => {
       // Unified implementation
       const { location, bedrooms, price_max } = params;
       const { supabase } = context;
-      
-      const { data, error } = await supabase.rpc('search_properties_unified', {
+
+      const { data, error } = await supabase.rpc("search_properties_unified", {
         p_location: location,
         p_bedrooms: bedrooms,
-        p_price_max: price_max
+        p_price_max: price_max,
       });
-      
+
       if (error) {
         throw new Error(`Search failed: ${error.message}`);
       }
-      
-      return { listings: data || [], source: 'database' };
-    }
-  }
+
+      return { listings: data || [], source: "database" };
+    },
+  },
 };
 ```
 
 ### Phase 2: Fix Critical Issues (Day 1, 4 hours)
 
 #### Task 2.1: Remove Hardcoded Fallback
+
 ```typescript
 // packages/agents/src/agents/property/real-estate.agent.ts
 catch (err) {
@@ -181,16 +198,17 @@ catch (err) {
 ```
 
 #### Task 2.2: Refactor Main Agent
+
 ```typescript
-import { BaseAgent } from '../base/agent.base';
-import { REAL_ESTATE_SYSTEM_PROMPT } from './prompts/system-prompt';
-import { defineTools } from './tools';
+import { BaseAgent } from "../base/agent.base";
+import { REAL_ESTATE_SYSTEM_PROMPT } from "./prompts/system-prompt";
+import { defineTools } from "./tools";
 
 export class RealEstateAgent extends BaseAgent {
-  name = 'real_estate_agent';
+  name = "real_estate_agent";
   instructions = REAL_ESTATE_SYSTEM_PROMPT;
-  model = 'gemini-1.5-flash';
-  
+  model = "gemini-1.5-flash";
+
   constructor(supabaseClient?: SupabaseClient) {
     super();
     this.supabase = supabaseClient ?? createDefaultClient();
@@ -202,22 +220,25 @@ export class RealEstateAgent extends BaseAgent {
 ### Phase 3: Update Consumers (Day 2, 4 hours)
 
 #### Task 3.1: Update wa-webhook
+
 ```typescript
 // supabase/functions/wa-webhook/domains/ai-agents/real_estate_agent.ts
 // Replace entire file with:
-export { RealEstateAgent } from '@easymo/agents/property';
+export { RealEstateAgent } from "@easymo/agents/property";
 ```
 
 #### Task 3.2: Update property/ai_agent.ts
+
 ```typescript
-import { RealEstateAgent } from '@easymo/agents/property';
-import { REAL_ESTATE_STATE_KEYS } from '../../_shared/agents/real-estate/types.ts';
+import { RealEstateAgent } from "@easymo/agents/property";
+import { REAL_ESTATE_STATE_KEYS } from "../../_shared/agents/real-estate/types.ts";
 
 const agent = new RealEstateAgent(supabase);
 // Use agent in handlers
 ```
 
 #### Task 3.3: Update OpenAI Definitions
+
 ```typescript
 // packages/ai/src/agents/openai/agent-definitions.ts
 import { REAL_ESTATE_SYSTEM_PROMPT } from '@easymo/agents/property/prompts';
@@ -236,10 +257,10 @@ real_estate: {
 -- supabase/migrations/20251211_standardize_property_columns.sql
 BEGIN;
 
-ALTER TABLE property_listings 
+ALTER TABLE property_listings
   ADD COLUMN IF NOT EXISTS price_amount NUMERIC(12,2);
 
-UPDATE property_listings 
+UPDATE property_listings
 SET price_amount = COALESCE(price_monthly, price, monthly_rent)
 WHERE price_amount IS NULL;
 
@@ -269,11 +290,11 @@ CREATE OR REPLACE FUNCTION search_properties_unified(
 ) AS $$
 BEGIN
   RETURN QUERY
-  SELECT 
+  SELECT
     pl.id, pl.title, pl.description, pl.location, pl.price_amount,
     pl.bedrooms, pl.bathrooms, pl.property_type, pl.listing_type,
     pl.amenities,
-    CASE 
+    CASE
       WHEN p_lat IS NOT NULL AND p_lng IS NOT NULL
       THEN ST_Distance(
         ST_MakePoint(pl.longitude, pl.latitude)::geography,
@@ -282,15 +303,15 @@ BEGIN
       ELSE NULL
     END as distance_km
   FROM property_listings pl
-  WHERE 
+  WHERE
     (p_location IS NULL OR pl.location ILIKE '%' || p_location || '%')
     AND (p_price_min IS NULL OR pl.price_amount >= p_price_min)
     AND (p_price_max IS NULL OR pl.price_amount <= p_price_max)
     AND (p_bedrooms IS NULL OR pl.bedrooms = p_bedrooms)
     AND (p_property_type IS NULL OR pl.property_type = p_property_type)
     AND (p_listing_type IS NULL OR pl.listing_type = p_listing_type)
-  ORDER BY 
-    CASE 
+  ORDER BY
+    CASE
       WHEN p_lat IS NOT NULL THEN distance_km
       ELSE pl.created_at
     END
@@ -328,24 +349,24 @@ mv docs/archive/deployment/PROPERTY_RENTAL_DEEP_SEARCH.md \
 
 ## 📊 Impact Assessment
 
-| Metric | Count |
-|--------|-------|
-| Files to Create | 7 |
-| Files to Modify | 5 |
-| Files to Delete | 5 |
-| Migrations | 1 |
-| Tests to Update | 3 |
+| Metric          | Count |
+| --------------- | ----- |
+| Files to Create | 7     |
+| Files to Modify | 5     |
+| Files to Delete | 5     |
+| Migrations      | 1     |
+| Tests to Update | 3     |
 
 ## 📈 Timeline
 
-| Phase | Duration | Priority |
-|-------|----------|----------|
-| Phase 1: Unified Structure | 4 hours | P0 |
-| Phase 2: Fix Critical Issues | 4 hours | P0 |
-| Phase 3: Update Consumers | 4 hours | P1 |
-| Phase 4: Database | 2 hours | P1 |
-| Phase 5: Clean Up | 2 hours | P2 |
-| **Total** | **16 hours** | **2 days** |
+| Phase                        | Duration     | Priority   |
+| ---------------------------- | ------------ | ---------- |
+| Phase 1: Unified Structure   | 4 hours      | P0         |
+| Phase 2: Fix Critical Issues | 4 hours      | P0         |
+| Phase 3: Update Consumers    | 4 hours      | P1         |
+| Phase 4: Database            | 2 hours      | P1         |
+| Phase 5: Clean Up            | 2 hours      | P2         |
+| **Total**                    | **16 hours** | **2 days** |
 
 ## 🔗 Related Files
 

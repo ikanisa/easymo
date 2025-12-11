@@ -8,7 +8,9 @@
 
 ## Summary
 
-Successfully created comprehensive TypeScript types and Zod validation schemas for member management in the SACCO vendor portal. All types match database function return signatures with runtime validation.
+Successfully created comprehensive TypeScript types and Zod validation schemas for member management
+in the SACCO vendor portal. All types match database function return signatures with runtime
+validation.
 
 ---
 
@@ -64,29 +66,29 @@ Successfully created comprehensive TypeScript types and Zod validation schemas f
 
 ### Member Types (17 total)
 
-| Type | Purpose | Matches DB Function |
-|------|---------|---------------------|
-| `Member` | Core entity | `app.members` table |
-| `MemberWithRelations` | With ikimina & accounts | API response |
-| `MemberSummary` | Profile + stats | `get_member_summary()` ✅ |
-| `MemberPaymentHistory` | Payment history | `get_member_payment_history()` ✅ |
-| `MemberTransaction` | Ledger view | `get_member_transactions()` ✅ |
-| `MemberActivity` | Activity timeline | `get_member_activity()` ✅ |
-| `MemberSearchResult` | Search results | `search_members()` ✅ |
-| `CreateMemberInput` | Create form | `create_member()` input ✅ |
-| `UpdateMemberInput` | Update form | `update_member()` input ✅ |
-| `BulkImportMember` | Import row | `bulk_import_members()` input ✅ |
-| `BulkImportResult` | Import result | `bulk_import_members()` output ✅ |
+| Type                   | Purpose                 | Matches DB Function               |
+| ---------------------- | ----------------------- | --------------------------------- |
+| `Member`               | Core entity             | `app.members` table               |
+| `MemberWithRelations`  | With ikimina & accounts | API response                      |
+| `MemberSummary`        | Profile + stats         | `get_member_summary()` ✅         |
+| `MemberPaymentHistory` | Payment history         | `get_member_payment_history()` ✅ |
+| `MemberTransaction`    | Ledger view             | `get_member_transactions()` ✅    |
+| `MemberActivity`       | Activity timeline       | `get_member_activity()` ✅        |
+| `MemberSearchResult`   | Search results          | `search_members()` ✅             |
+| `CreateMemberInput`    | Create form             | `create_member()` input ✅        |
+| `UpdateMemberInput`    | Update form             | `update_member()` input ✅        |
+| `BulkImportMember`     | Import row              | `bulk_import_members()` input ✅  |
+| `BulkImportResult`     | Import result           | `bulk_import_members()` output ✅ |
 
 ### Group Types (8 total)
 
-| Type | Purpose | Matches DB Function |
-|------|---------|---------------------|
-| `Group` | Core entity | `app.ikimina` table |
-| `GroupWithStats` | With member counts | API response |
-| `GroupMemberStats` | Group analytics | `get_group_member_stats()` ✅ |
-| `CreateGroupInput` | Create form | RPC input |
-| `UpdateGroupInput` | Update form | RPC input |
+| Type               | Purpose            | Matches DB Function           |
+| ------------------ | ------------------ | ----------------------------- |
+| `Group`            | Core entity        | `app.ikimina` table           |
+| `GroupWithStats`   | With member counts | API response                  |
+| `GroupMemberStats` | Group analytics    | `get_group_member_stats()` ✅ |
+| `CreateGroupInput` | Create form        | RPC input                     |
+| `UpdateGroupInput` | Update form        | RPC input                     |
 
 ---
 
@@ -113,7 +115,7 @@ date_of_birth: z.string().refine((val) => {
   const date = new Date(val);
   const age = now.getFullYear() - date.getFullYear();
   return age >= 18 && age <= 120;
-}, "Member must be at least 18 years old")
+}, "Member must be at least 18 years old");
 ```
 
 ### Name Validation
@@ -122,7 +124,7 @@ date_of_birth: z.string().refine((val) => {
 full_name: z.string()
   .min(2, "Name must be at least 2 characters")
   .max(100)
-  .regex(/^[a-zA-Z\s'-]+$/, "Name contains invalid characters")
+  .regex(/^[a-zA-Z\s'-]+$/, "Name contains invalid characters");
 ```
 
 ### Bulk Import Limits
@@ -130,7 +132,7 @@ full_name: z.string()
 ```typescript
 members: z.array(bulkImportMemberSchema)
   .min(1, "At least one member is required")
-  .max(500, "Maximum 500 members per import")
+  .max(500, "Maximum 500 members per import");
 ```
 
 ---
@@ -198,27 +200,27 @@ function MemberForm() {
 
 ### Database → TypeScript Mapping
 
-| Database Type | TypeScript Type | Example |
-|---------------|-----------------|---------|
-| `UUID` | `string` | `"550e8400-e29b-41d4-a716-446655440000"` |
-| `TEXT` | `string` | `"John Doe"` |
-| `INTEGER` | `number` | `50000` |
-| `BIGINT` | `number` | `1000000` |
-| `TIMESTAMPTZ` | `string` | `"2025-12-09T08:35:25.651Z"` |
-| `DATE` | `string` | `"1990-01-01"` |
-| `JSONB` | `Record<string, unknown>` or interface | `{ province: "Kigali" }` |
-| `ENUM` | Union type | `"ACTIVE" \| "INACTIVE" \| "SUSPENDED"` |
+| Database Type | TypeScript Type                        | Example                                  |
+| ------------- | -------------------------------------- | ---------------------------------------- |
+| `UUID`        | `string`                               | `"550e8400-e29b-41d4-a716-446655440000"` |
+| `TEXT`        | `string`                               | `"John Doe"`                             |
+| `INTEGER`     | `number`                               | `50000`                                  |
+| `BIGINT`      | `number`                               | `1000000`                                |
+| `TIMESTAMPTZ` | `string`                               | `"2025-12-09T08:35:25.651Z"`             |
+| `DATE`        | `string`                               | `"1990-01-01"`                           |
+| `JSONB`       | `Record<string, unknown>` or interface | `{ province: "Kigali" }`                 |
+| `ENUM`        | Union type                             | `"ACTIVE" \| "INACTIVE" \| "SUSPENDED"`  |
 
 ### Validation → Database Constraint Mapping
 
-| Validation | Database Constraint | Enforced By |
-|------------|---------------------|-------------|
-| Phone regex | Hash uniqueness | Zod + DB function |
-| National ID regex | Direct uniqueness | Zod + DB function |
-| UUID format | Type constraint | Zod + PostgreSQL |
-| Min age 18 | Business logic | Zod only |
-| Name characters | Input sanitization | Zod only |
-| Bulk limit 500 | Application logic | Zod only |
+| Validation        | Database Constraint | Enforced By       |
+| ----------------- | ------------------- | ----------------- |
+| Phone regex       | Hash uniqueness     | Zod + DB function |
+| National ID regex | Direct uniqueness   | Zod + DB function |
+| UUID format       | Type constraint     | Zod + PostgreSQL  |
+| Min age 18        | Business logic      | Zod only          |
+| Name characters   | Input sanitization  | Zod only          |
+| Bulk limit 500    | Application logic   | Zod only          |
 
 ---
 
@@ -315,16 +317,16 @@ import { createMemberSchema, createGroupSchema } from "@/lib/validations";
 
 ### Type-Database Alignment
 
-| Database Function | Return Type | TypeScript Type |
-|-------------------|-------------|-----------------|
-| `get_member_summary(uuid)` | `TABLE(...)` | `MemberSummary` ✅ |
-| `get_member_payment_history(uuid, int, int)` | `TABLE(...)` | `MemberPaymentHistory` ✅ |
-| `get_member_transactions(uuid, ...)` | `TABLE(...)` | `MemberTransaction` ✅ |
-| `get_member_activity(uuid, int)` | `TABLE(...)` | `MemberActivity` ✅ |
-| `search_members(uuid, text, int)` | `TABLE(...)` | `MemberSearchResult` ✅ |
-| `get_group_member_stats(uuid)` | `TABLE(...)` | `GroupMemberStats` ✅ |
-| `create_member(...)` | `TABLE(member_id, member_code, account_id)` | Function return ✅ |
-| `bulk_import_members(uuid, jsonb)` | `TABLE(total, success, errors, ...)` | `BulkImportResult` ✅ |
+| Database Function                            | Return Type                                 | TypeScript Type           |
+| -------------------------------------------- | ------------------------------------------- | ------------------------- |
+| `get_member_summary(uuid)`                   | `TABLE(...)`                                | `MemberSummary` ✅        |
+| `get_member_payment_history(uuid, int, int)` | `TABLE(...)`                                | `MemberPaymentHistory` ✅ |
+| `get_member_transactions(uuid, ...)`         | `TABLE(...)`                                | `MemberTransaction` ✅    |
+| `get_member_activity(uuid, int)`             | `TABLE(...)`                                | `MemberActivity` ✅       |
+| `search_members(uuid, text, int)`            | `TABLE(...)`                                | `MemberSearchResult` ✅   |
+| `get_group_member_stats(uuid)`               | `TABLE(...)`                                | `GroupMemberStats` ✅     |
+| `create_member(...)`                         | `TABLE(member_id, member_code, account_id)` | Function return ✅        |
+| `bulk_import_members(uuid, jsonb)`           | `TABLE(total, success, errors, ...)`        | `BulkImportResult` ✅     |
 
 **Verification**: All database function return types match TypeScript interfaces ✅
 
@@ -354,6 +356,7 @@ vendor-portal/
 ### Immediate (2 hours):
 
 1. **Create API routes** (use types + validations):
+
    ```bash
    vendor-portal/app/api/members/route.ts                # GET + POST
    vendor-portal/app/api/members/[id]/route.ts           # GET + PUT + DELETE

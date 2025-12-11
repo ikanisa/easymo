@@ -13,6 +13,7 @@
 **How**: Use existing deployed scraper (`gmaps_scraper_v2.py`)  
 **Output**: Insert to `businesses` table  
 **Rules Applied**:
+
 - ✅ Phone numbers required (+250XXXXXXXXX format)
 - ✅ Duplicates prevented (name + city + address matching)
 - ✅ Rwanda phone numbers only
@@ -29,6 +30,7 @@ chmod +x scripts/scrape_pharmacies_quick.sh
 ```
 
 This script will:
+
 1. Set environment variables ✓
 2. Check dependencies ✓
 3. Scrape Kigali pharmacies (50 max) ✓
@@ -41,6 +43,7 @@ This script will:
 ## 📋 What the Scraper Does
 
 ### Phone Number Validation (Line 286)
+
 ```python
 if business.get('phone') and business['phone'].startswith('+250') and len(business['phone']) == 13:
     businesses.append(business)  # ✅ Valid Rwanda phone
@@ -49,6 +52,7 @@ else:
 ```
 
 ### Duplicate Prevention (Lines 313-318, 360-363)
+
 ```python
 # Generate unique key from name + city + address
 key = hashlib.md5(f"{name}|{city}|{address}".lower().encode()).hexdigest()
@@ -60,6 +64,7 @@ if key in existing_keys:
 ```
 
 ### Phone Number Formatting (Lines 90-110)
+
 ```python
 # Auto-converts:
 "0788 767 816"   → "+250788767816"
@@ -72,6 +77,7 @@ if key in existing_keys:
 ## 📊 Expected Results
 
 ### Kigali Area
+
 - **URL**: `https://www.google.com/maps/search/pharmacy/@-2.1664214,30.1197577,12.64z`
 - **Expected**: 35-50 pharmacies with phones
 - **Limit**: 50 max
@@ -79,6 +85,7 @@ if key in existing_keys:
 - **City**: Kigali
 
 ### Nyamata
+
 - **URL**: `https://www.google.com/maps/search/pharmacy+nyamata/@-2.1974495,30.1536074,12z`
 - **Expected**: 20-30 pharmacies with phones
 - **Limit**: 30 max
@@ -86,6 +93,7 @@ if key in existing_keys:
 - **City**: Nyamata
 
 ### Total Expected
+
 - **Scraped**: 70-80 pharmacies
 - **With phones**: 55-70 (some won't have phone numbers listed)
 - **Inserted**: 50-65 (after duplicate filtering)
@@ -116,17 +124,20 @@ psql "postgresql://postgres:Pq0jyevTlfoa376P@db.lhbowpbcpwoiparwnwgt.supabase.co
 If you prefer to run manually:
 
 ### Step 1: Set Environment
+
 ```bash
 export SUPABASE_URL="https://lhbowpbcpwoiparwnwgt.supabase.co"
 export SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxoYm93cGJjcHdvaXBhcndud2d0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDU1ODEyNywiZXhwIjoyMDc2MTM0MTI3fQ.mcL3A7LLsyo7Y45hnBXLAYCbp7FpEAfXVRrZoC4CWqc"
 ```
 
 ### Step 2: Navigate to Scripts
+
 ```bash
 cd /Users/jeanbosco/workspace/easymo/scripts
 ```
 
 ### Step 3: Run Scraper
+
 ```bash
 # Kigali
 python3 gmaps_scraper_v2.py \
@@ -149,12 +160,12 @@ python3 gmaps_scraper_v2.py \
 
 ## 📄 Files Available
 
-| File | Location | Purpose |
-|------|----------|---------|
-| Main scraper | `scripts/gmaps_scraper_v2.py` | Core scraping logic |
-| Quick script | `scripts/scrape_pharmacies_quick.sh` | One-command execution |
-| Full guide | `PHARMACY_SCRAPING_PLAN.md` | Complete documentation |
-| This summary | `PHARMACY_SCRAPING_READY.md` | Quick reference |
+| File         | Location                             | Purpose                |
+| ------------ | ------------------------------------ | ---------------------- |
+| Main scraper | `scripts/gmaps_scraper_v2.py`        | Core scraping logic    |
+| Quick script | `scripts/scrape_pharmacies_quick.sh` | One-command execution  |
+| Full guide   | `PHARMACY_SCRAPING_PLAN.md`          | Complete documentation |
+| This summary | `PHARMACY_SCRAPING_READY.md`         | Quick reference        |
 
 ---
 

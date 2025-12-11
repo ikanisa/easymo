@@ -8,6 +8,7 @@
 ## Overview
 
 Extended the vendor portal with three powerful member management APIs:
+
 1. **Export** - Download member lists (CSV/JSON)
 2. **Search** - Fast autocomplete/typeahead search
 3. **Transfer** - Inter-member fund transfers
@@ -21,6 +22,7 @@ Extended the vendor portal with three powerful member management APIs:
 **Purpose**: Export member data in various formats
 
 **Query Parameters**:
+
 ```typescript
 {
   sacco_id: string (UUID, required)
@@ -31,11 +33,14 @@ Extended the vendor portal with three powerful member management APIs:
 ```
 
 **Response (CSV)**:
+
 - Headers: `Content-Type: text/csv`
 - Filename: `members-export-{timestamp}.csv`
-- Columns: Member Code, Full Name, Phone, Group, Group Code, Status, Total Balance, Joined Date, Registered Date
+- Columns: Member Code, Full Name, Phone, Group, Group Code, Status, Total Balance, Joined Date,
+  Registered Date
 
 **Response (JSON)**:
+
 ```json
 {
   "data": [
@@ -57,6 +62,7 @@ Extended the vendor portal with three powerful member management APIs:
 ```
 
 **Example Usage**:
+
 ```bash
 # Export as CSV
 curl "http://localhost:3003/api/members/export?sacco_id=00000000-0000-0000-0000-000000000000&format=csv" \
@@ -70,6 +76,7 @@ curl "http://localhost:3003/api/members/export?sacco_id=xxx&ikimina_id=yyy&forma
 ```
 
 **Features**:
+
 - ✅ Calculates total balance across all accounts
 - ✅ Includes group information
 - ✅ Filters by status and group
@@ -83,6 +90,7 @@ curl "http://localhost:3003/api/members/export?sacco_id=xxx&ikimina_id=yyy&forma
 **Purpose**: Fast member search for autocomplete/typeahead
 
 **Query Parameters**:
+
 ```typescript
 {
   sacco_id: string (UUID, required)
@@ -93,6 +101,7 @@ curl "http://localhost:3003/api/members/export?sacco_id=xxx&ikimina_id=yyy&forma
 ```
 
 **Response**:
+
 ```json
 {
   "data": [
@@ -117,6 +126,7 @@ curl "http://localhost:3003/api/members/export?sacco_id=xxx&ikimina_id=yyy&forma
 ```
 
 **Example Usage**:
+
 ```bash
 # Search by name
 curl "http://localhost:3003/api/members/search?sacco_id=xxx&q=jean"
@@ -129,6 +139,7 @@ curl "http://localhost:3003/api/members/search?sacco_id=xxx&q=bosco&ikimina_id=y
 ```
 
 **Features**:
+
 - ✅ Searches across name, member code, and phone
 - ✅ Case-insensitive partial matching
 - ✅ Returns only ACTIVE members
@@ -137,6 +148,7 @@ curl "http://localhost:3003/api/members/search?sacco_id=xxx&q=bosco&ikimina_id=y
 - ✅ Optimized for autocomplete (default 20 results)
 
 **UI Integration Example**:
+
 ```typescript
 // React component with debounced search
 const [searchQuery, setSearchQuery] = useState("");
@@ -147,8 +159,8 @@ const debouncedSearch = useDebounce(searchQuery, 300);
 useEffect(() => {
   if (debouncedSearch.length >= 2) {
     fetch(`/api/members/search?sacco_id=${saccoId}&q=${debouncedSearch}`)
-      .then(res => res.json())
-      .then(data => setResults(data.data));
+      .then((res) => res.json())
+      .then((data) => setResults(data.data));
   }
 }, [debouncedSearch]);
 ```
@@ -160,6 +172,7 @@ useEffect(() => {
 **Purpose**: Transfer funds between member accounts
 
 **Request Body**:
+
 ```typescript
 {
   from_member_id: string (UUID, required)
@@ -171,6 +184,7 @@ useEffect(() => {
 ```
 
 **Response (Success)**:
+
 ```json
 {
   "success": true,
@@ -191,6 +205,7 @@ useEffect(() => {
 ```
 
 **Response (Error)**:
+
 ```json
 {
   "error": "Insufficient balance",
@@ -200,6 +215,7 @@ useEffect(() => {
 ```
 
 **Example Usage**:
+
 ```bash
 curl -X POST http://localhost:3003/api/members/transfer \
   -H "Content-Type: application/json" \
@@ -213,6 +229,7 @@ curl -X POST http://localhost:3003/api/members/transfer \
 ```
 
 **Features**:
+
 - ✅ Balance validation (prevents overdraft)
 - ✅ Atomic transaction (debit + credit)
 - ✅ Rollback on failure
@@ -223,6 +240,7 @@ curl -X POST http://localhost:3003/api/members/transfer \
 - ✅ Returns before/after balances
 
 **Security Features**:
+
 - Both members must be in the same SACCO
 - Only ACTIVE accounts can participate
 - Balance checked before transfer
@@ -234,9 +252,11 @@ curl -X POST http://localhost:3003/api/members/transfer \
 ## Database Operations
 
 ### **Export Endpoint**
+
 **Query Pattern**:
+
 ```sql
-SELECT 
+SELECT
   member_code, full_name, msisdn_masked, status, joined_at,
   ikimina.name, ikimina.code,
   accounts.balance
@@ -250,7 +270,9 @@ ORDER BY full_name ASC;
 ```
 
 ### **Search Endpoint**
+
 **Query Pattern**:
+
 ```sql
 SELECT *
 FROM members
@@ -266,37 +288,39 @@ LIMIT 20;
 ```
 
 ### **Transfer Endpoint**
+
 **Query Pattern**:
+
 ```sql
 -- 1. Verify members
-SELECT id, full_name, sacco_id 
-FROM members 
-WHERE id IN ($1, $2) 
-  AND sacco_id = $3 
+SELECT id, full_name, sacco_id
+FROM members
+WHERE id IN ($1, $2)
+  AND sacco_id = $3
   AND status = 'ACTIVE';
 
 -- 2. Get sender account
-SELECT id, balance 
-FROM accounts 
-WHERE member_id = $1 
-  AND account_type = 'savings' 
+SELECT id, balance
+FROM accounts
+WHERE member_id = $1
+  AND account_type = 'savings'
   AND status = 'ACTIVE';
 
 -- 3. Get recipient account
-SELECT id, balance 
-FROM accounts 
-WHERE member_id = $2 
-  AND account_type = 'savings' 
+SELECT id, balance
+FROM accounts
+WHERE member_id = $2
+  AND account_type = 'savings'
   AND status = 'ACTIVE';
 
 -- 4. Debit sender
-UPDATE accounts 
-SET balance = balance - $1, updated_at = NOW() 
+UPDATE accounts
+SET balance = balance - $1, updated_at = NOW()
 WHERE id = $2;
 
 -- 5. Credit recipient
-UPDATE accounts 
-SET balance = balance + $1, updated_at = NOW() 
+UPDATE accounts
+SET balance = balance + $1, updated_at = NOW()
 WHERE id = $2;
 
 -- 6. Create ledger entries
@@ -311,6 +335,7 @@ VALUES (...);
 All endpoints include comprehensive error handling:
 
 **Validation Errors** (400):
+
 ```json
 {
   "error": "Invalid query parameters",
@@ -324,6 +349,7 @@ All endpoints include comprehensive error handling:
 ```
 
 **Not Found** (404):
+
 ```json
 {
   "error": "Sender account not found"
@@ -331,6 +357,7 @@ All endpoints include comprehensive error handling:
 ```
 
 **Insufficient Balance** (400):
+
 ```json
 {
   "error": "Insufficient balance",
@@ -340,6 +367,7 @@ All endpoints include comprehensive error handling:
 ```
 
 **Server Error** (500):
+
 ```json
 {
   "error": "Internal server error"
@@ -351,6 +379,7 @@ All endpoints include comprehensive error handling:
 ## Testing
 
 ### **Test Export**
+
 ```bash
 # Create test data first (already exists from previous deployment)
 
@@ -362,6 +391,7 @@ curl "http://localhost:3003/api/members/export?sacco_id=00000000-0000-0000-0000-
 ```
 
 ### **Test Search**
+
 ```bash
 # Search by name
 curl "http://localhost:3003/api/members/search?sacco_id=00000000-0000-0000-0000-000000000000&q=jean"
@@ -371,6 +401,7 @@ curl "http://localhost:3003/api/members/search?sacco_id=00000000-0000-0000-0000-
 ```
 
 ### **Test Transfer**
+
 ```bash
 # First, create a second test member
 psql "$DB_URL" -c "
@@ -403,16 +434,19 @@ curl -X POST http://localhost:3003/api/members/transfer \
 ## Performance Considerations
 
 ### **Export**
+
 - Uses streaming for large datasets
 - CSV generation is memory-efficient
 - Add pagination for >10,000 records
 
 ### **Search**
+
 - Limited to 20 results by default
 - ILIKE queries use indexes on name/code columns
 - Consider full-text search for better performance
 
 ### **Transfer**
+
 - Atomic operations prevent race conditions
 - Rollback mechanism ensures consistency
 - Consider transaction isolation level for high concurrency
@@ -422,6 +456,7 @@ curl -X POST http://localhost:3003/api/members/transfer \
 ## Future Enhancements
 
 ### **Export**
+
 - [ ] Excel (.xlsx) format support
 - [ ] PDF export with formatting
 - [ ] Scheduled exports (daily/weekly)
@@ -429,6 +464,7 @@ curl -X POST http://localhost:3003/api/members/transfer \
 - [ ] Custom column selection
 
 ### **Search**
+
 - [ ] Full-text search with PostgreSQL `tsvector`
 - [ ] Fuzzy matching (Levenshtein distance)
 - [ ] Recent searches history
@@ -436,6 +472,7 @@ curl -X POST http://localhost:3003/api/members/transfer \
 - [ ] Highlight matching text
 
 ### **Transfer**
+
 - [ ] Bulk transfers (multiple recipients)
 - [ ] Scheduled transfers
 - [ ] Transfer approvals workflow
@@ -471,44 +508,46 @@ curl -X POST http://localhost:3003/api/members/transfer \
 ## Integration Examples
 
 ### **React Hook for Search**
+
 ```typescript
 // hooks/use-member-search.ts
-import { useState, useEffect } from 'react';
-import { useDebounce } from './use-debounce';
+import { useState, useEffect } from "react";
+import { useDebounce } from "./use-debounce";
 
 export function useMemberSearch(saccoId: string) {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  
+
   const debouncedQuery = useDebounce(query, 300);
-  
+
   useEffect(() => {
     if (debouncedQuery.length < 2) {
       setResults([]);
       return;
     }
-    
+
     setLoading(true);
     fetch(`/api/members/search?sacco_id=${saccoId}&q=${debouncedQuery}`)
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         setResults(data.data);
         setLoading(false);
       });
   }, [debouncedQuery, saccoId]);
-  
+
   return { query, setQuery, results, loading };
 }
 ```
 
 ### **Export Button Component**
+
 ```typescript
 // components/export-button.tsx
 export function ExportButton({ saccoId }: { saccoId: string }) {
   const handleExport = async (format: 'csv' | 'json') => {
     const url = `/api/members/export?sacco_id=${saccoId}&format=${format}`;
-    
+
     if (format === 'csv') {
       // Trigger download
       window.location.href = url;
@@ -518,7 +557,7 @@ export function ExportButton({ saccoId }: { saccoId: string }) {
       console.log('Export data:', data);
     }
   };
-  
+
   return (
     <div>
       <button onClick={() => handleExport('csv')}>Export CSV</button>
@@ -529,13 +568,14 @@ export function ExportButton({ saccoId }: { saccoId: string }) {
 ```
 
 ### **Transfer Form Component**
+
 ```typescript
 // components/transfer-form.tsx
 export function TransferForm({ saccoId }: { saccoId: string }) {
   const [fromId, setFromId] = useState('');
   const [toId, setToId] = useState('');
   const [amount, setAmount] = useState(0);
-  
+
   const handleTransfer = async () => {
     const res = await fetch('/api/members/transfer', {
       method: 'POST',
@@ -547,7 +587,7 @@ export function TransferForm({ saccoId }: { saccoId: string }) {
         sacco_id: saccoId,
       }),
     });
-    
+
     const data = await res.json();
     if (data.success) {
       alert(`Transfer successful! Ref: ${data.transfer_reference}`);
@@ -555,7 +595,7 @@ export function TransferForm({ saccoId }: { saccoId: string }) {
       alert(`Error: ${data.error}`);
     }
   };
-  
+
   return (
     <form onSubmit={e => { e.preventDefault(); handleTransfer(); }}>
       {/* Form fields */}
@@ -573,13 +613,14 @@ export function TransferForm({ saccoId }: { saccoId: string }) {
 ✅ **Full error handling**  
 ✅ **Input validation with Zod**  
 ✅ **Edge runtime compatible**  
-✅ **Production-ready**  
+✅ **Production-ready**
 
 **Status**: Ready for frontend integration and testing
 
 ---
 
 **Next Steps**:
+
 1. Start vendor portal: `cd vendor-portal && npm run dev`
 2. Test endpoints with curl commands above
 3. Build UI components for each endpoint

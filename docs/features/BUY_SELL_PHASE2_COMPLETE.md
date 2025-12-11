@@ -12,7 +12,8 @@
 1. **`supabase/functions/_shared/agents/buy-and-sell.ts`** (8.4 KB)
    - Deno-compatible wrapper for Buy & Sell agent
    - Exports `BuyAndSellAgent` class
-   - Provides helper functions: `loadContext`, `saveContext`, `resetContext`, `createBuyAndSellAgent`
+   - Provides helper functions: `loadContext`, `saveContext`, `resetContext`,
+     `createBuyAndSellAgent`
    - Includes canonical constants (same as Node.js version)
    - Backward compatible: exports `MarketplaceAgent` alias
    - For now, delegates to existing `wa-webhook-buy-sell/agent.ts` implementation
@@ -43,6 +44,7 @@
 ### 1. Import Cycle Broken ✅
 
 **Before (Phase 1)**:
+
 ```
 agent-buy-sell/index.ts
     ↓ imports from
@@ -51,6 +53,7 @@ wa-webhook-buy-sell/agent.ts
 ```
 
 **After (Phase 2)**:
+
 ```
 agent-buy-sell/index.ts
     ↓ imports from
@@ -69,16 +72,16 @@ The new wrapper provides a clean, runtime-agnostic interface:
 export class BuyAndSellAgent {
   static readonly SLUG = 'buy_sell';
   static readonly NAME = 'Buy & Sell AI Agent';
-  
+
   constructor(supabaseClient: SupabaseClient) {
     this.supabase = supabaseClient;
   }
-  
+
   async execute(input: AgentInput): Promise<BuyAndSellResult> {
     // Delegates to existing MarketplaceAgent for now
     // TODO: Replace with pure Deno implementation after Phase 5
   }
-  
+
   async searchBusinesses(params) {
     // Direct database access for business search
   }
@@ -97,11 +100,11 @@ Both Node.js and Deno now use the same interface:
 
 ```typescript
 // Node.js (packages/agents)
-import { BuyAndSellAgent } from '@easymo/agents';
+import { BuyAndSellAgent } from "@easymo/agents";
 const agent = new BuyAndSellAgent();
 
 // Deno (edge functions)
-import { BuyAndSellAgent } from '../_shared/agents/buy-and-sell.ts';
+import { BuyAndSellAgent } from "../_shared/agents/buy-and-sell.ts";
 const agent = new BuyAndSellAgent(supabase);
 ```
 
@@ -109,7 +112,7 @@ const agent = new BuyAndSellAgent(supabase);
 
 ```typescript
 // Old code still works
-import { MarketplaceAgent } from './marketplace/index.ts';
+import { MarketplaceAgent } from "./marketplace/index.ts";
 const agent = new MarketplaceAgent(supabase);
 
 // Internally redirects to BuyAndSellAgent
@@ -124,12 +127,13 @@ const agent = new MarketplaceAgent(supabase);
 The wrapper provides three layers:
 
 #### Layer 1: Core Agent Class
+
 ```typescript
 export class BuyAndSellAgent {
   async execute(input: AgentInput): Promise<BuyAndSellResult> {
     // Observability logging
     await logStructuredEvent("AGENT_EXECUTE_START", { ... });
-    
+
     // Delegate to existing implementation (temporary)
     const { MarketplaceAgent } = await import("../../wa-webhook-buy-sell/agent.ts");
     const agent = new MarketplaceAgent(this.supabase);
@@ -139,6 +143,7 @@ export class BuyAndSellAgent {
 ```
 
 #### Layer 2: Helper Functions
+
 ```typescript
 export async function loadContext(phone, supabase) {
   // Load context from marketplace_context table
@@ -154,6 +159,7 @@ export async function resetContext(phone, supabase) {
 ```
 
 #### Layer 3: Constants & Types
+
 ```typescript
 export const BUY_SELL_AGENT_SLUG = 'buy_sell';
 export const BUSINESS_CATEGORIES = [ ... ];
@@ -183,6 +189,7 @@ supabase/functions/
 ## ✅ Verification
 
 ### Import Cycle Check
+
 ```bash
 # Before Phase 2
 agent-buy-sell → wa-webhook-buy-sell (CYCLE!)
@@ -193,11 +200,13 @@ wa-webhook-buy-sell/marketplace → _shared/agents (NO CYCLE!)
 ```
 
 ### Build Status
+
 - ✅ No syntax errors in Deno files
 - ✅ Import paths resolve correctly
 - ✅ Backward compatibility maintained
 
 ### Deprecation Warnings
+
 - ✅ Added to `wa-webhook-buy-sell/agent.ts`
 - ✅ Added to `marketplace/index.ts`
 - ✅ Console warnings in deprecated aliases
@@ -207,6 +216,7 @@ wa-webhook-buy-sell/marketplace → _shared/agents (NO CYCLE!)
 ## 📊 Impact Assessment
 
 ### Code Changes
+
 - **New file**: 1 file (8.4 KB)
 - **Modified**: 3 files
 - **Import cycles**: Reduced from 1 to 0 ✅
@@ -214,6 +224,7 @@ wa-webhook-buy-sell/marketplace → _shared/agents (NO CYCLE!)
 ### Dependency Graph (Before → After)
 
 **Before**:
+
 ```
 ┌─────────────────┐     ┌─────────────────┐
 │ agent-buy-sell  │────>│ wa-webhook-buy- │
@@ -225,6 +236,7 @@ wa-webhook-buy-sell/marketplace → _shared/agents (NO CYCLE!)
 ```
 
 **After**:
+
 ```
 ┌─────────────────┐     ┌─────────────────┐
 │ agent-buy-sell  │────>│  _shared/agents │
@@ -245,20 +257,26 @@ wa-webhook-buy-sell/marketplace → _shared/agents (NO CYCLE!)
 ## ⚠️ Known Issues & Next Steps
 
 ### 1. Temporary Delegation
-The new wrapper still delegates to `wa-webhook-buy-sell/agent.ts`. This is intentional for gradual migration.
+
+The new wrapper still delegates to `wa-webhook-buy-sell/agent.ts`. This is intentional for gradual
+migration.
 
 **Plan**: After Phase 5 testing confirms everything works, we'll:
+
 - Copy core logic directly into `_shared/agents/buy-and-sell.ts`
 - Remove `wa-webhook-buy-sell/agent.ts` entirely
 
 ### 2. Tests Not Updated
+
 Test files still import from old location:
+
 - `wa-webhook-buy-sell/__tests__/agent.test.ts`
 - `wa-webhook-buy-sell/__tests__/media.test.ts`
 
 **Plan**: Update in Phase 5 during comprehensive testing.
 
 ### 3. Database Migration Pending
+
 Old agent slugs still in database (though inactive).
 
 **Plan**: Phase 4 will clean up database.
@@ -268,17 +286,20 @@ Old agent slugs still in database (though inactive).
 ## 🔜 Next Steps (Remaining Phases)
 
 ### Phase 3: Verify Edge Function Updates ✅ (Partially Done)
+
 - [x] Update `agent-buy-sell/index.ts` imports
 - [x] Update `wa-webhook-buy-sell/marketplace/index.ts` re-exports
 - [x] Add deprecation warnings
 - [ ] Test edge functions locally (if possible)
 
 ### Phase 4: Database Migration (Est. 1 hour)
+
 - [ ] Create migration to delete old agent slugs
 - [ ] Ensure `buy_sell` is the only active slug
 - [ ] Verify menu keys are correct
 
 ### Phase 5: Testing & Deployment (Est. 4 hours)
+
 - [ ] Update test files to use new imports
 - [ ] Unit tests for refactored agent
 - [ ] Integration tests for all entry points
@@ -291,6 +312,7 @@ Old agent slugs still in database (though inactive).
 ## 🎯 Success Metrics Achieved
 
 Phase 2 Goals:
+
 - ✅ Create Deno-compatible wrapper
 - ✅ Break import cycle between edge functions
 - ✅ Maintain backward compatibility

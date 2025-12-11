@@ -8,12 +8,14 @@
 ## 🎉 Deployment Summary
 
 ### ✅ Database Migration Applied
+
 ```
 Migration: 20251127140000_farmer_ussd_payments.sql
 Status: SUCCESS
 ```
 
 **Created**:
+
 - ✅ Table: `farmer_payments` (13 columns, 7 indexes, 2 RLS policies)
 - ✅ Function: `get_farmer_payment_summary(phone)`
 - ✅ Function: `expire_pending_payments()`
@@ -21,6 +23,7 @@ Status: SUCCESS
 - ✅ Function: `get_listing_payments(listing_id)`
 
 ### ✅ Edge Function Deployed
+
 ```
 Function: wa-webhook-ai-agents
 Status: DEPLOYED
@@ -28,6 +31,7 @@ URL: https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions
 ```
 
 **Updated**:
+
 - ✅ Farmer Agent with USSD payment tools
 - ✅ System instructions emphasizing USSD-only policy
 - ✅ Two new AI tools: `initiate_ussd_payment`, `confirm_payment`
@@ -37,6 +41,7 @@ URL: https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions
 ## 🧪 Verification Tests
 
 ### Test 1: Database Schema ✅ PASSED
+
 ```sql
 ✓ Table farmer_payments created
 ✓ 7 indexes created
@@ -46,6 +51,7 @@ URL: https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions
 ```
 
 ### Test 2: Payment Creation ✅ PASSED
+
 ```sql
 Created payment: 7905d185-2b5d-48d7-893a-48d48cbddf55
 Buyer: +250788123456
@@ -56,6 +62,7 @@ Status: pending → completed
 ```
 
 ### Test 3: Payment Confirmation ✅ PASSED
+
 ```sql
 Reference: MP123456
 Status: completed
@@ -63,6 +70,7 @@ Completed at: 2025-11-27 14:10:00 UTC
 ```
 
 ### Test 4: Farmer Earnings Summary ✅ PASSED
+
 ```sql
 Total earnings: 15,000 RWF
 Completed payments: 1
@@ -75,6 +83,7 @@ Average transaction: 15,000 RWF
 ## 📊 Database Verification
 
 ### Table Structure
+
 ```
 farmer_payments (13 columns)
 ├── id (UUID, PRIMARY KEY)
@@ -93,6 +102,7 @@ farmer_payments (13 columns)
 ```
 
 ### Indexes (7 total)
+
 ```
 ✓ farmer_payments_pkey (PRIMARY KEY)
 ✓ farmer_payments_buyer_phone_idx
@@ -104,6 +114,7 @@ farmer_payments (13 columns)
 ```
 
 ### RLS Policies
+
 ```
 ✓ farmer_payments_service_all (service_role: ALL)
 ✓ farmer_payments_user_view (authenticated: SELECT own payments)
@@ -114,9 +125,11 @@ farmer_payments (13 columns)
 ## 🔧 AI Agent Tools
 
 ### Tool 1: `initiate_ussd_payment`
+
 **Purpose**: Generate USSD payment link for produce purchase
 
 **Input**:
+
 ```typescript
 {
   buyer_phone: "+250788123456",
@@ -130,6 +143,7 @@ farmer_payments (13 columns)
 ```
 
 **Output**:
+
 ```typescript
 {
   success: true,
@@ -143,9 +157,11 @@ farmer_payments (13 columns)
 ```
 
 ### Tool 2: `confirm_payment`
+
 **Purpose**: Confirm payment with USSD reference number
 
 **Input**:
+
 ```typescript
 {
   payment_id: "uuid",
@@ -155,6 +171,7 @@ farmer_payments (13 columns)
 ```
 
 **Output**:
+
 ```typescript
 {
   success: true,
@@ -169,16 +186,18 @@ farmer_payments (13 columns)
 ## 💬 Sample Conversation Flow
 
 ### Buyer Initiates Purchase
+
 ```
 Buyer: "I want to buy 50kg of maize"
 AI: "Found listing: Maize from Farmer Jean
      50 kg @ 300 RWF/kg = 15,000 RWF
-     
+
      Click to pay: tel:*182*8*1*15000#
      Or dial: *182*8*1*15000#"
 ```
 
 ### Buyer Pays via USSD
+
 ```
 [User clicks tel: link]
 Phone: "*182*8*1*15000#"
@@ -188,9 +207,10 @@ MTN SMS: "Transaction successful. Ref: MP123456"
 ```
 
 ### Buyer Confirms Payment
+
 ```
 Buyer: "PAID MP123456"
-AI: "✅ Payment confirmed! 
+AI: "✅ Payment confirmed!
      Farmer has been notified.
      You will be contacted for pickup."
 
@@ -206,15 +226,16 @@ AI: "✅ Payment confirmed!
 ## 📈 Analytics Queries
 
 ### Current System Status
+
 ```sql
 -- Total payments today
-SELECT COUNT(*) as total_payments, 
+SELECT COUNT(*) as total_payments,
        SUM(amount) as total_volume_rwf
-FROM farmer_payments 
+FROM farmer_payments
 WHERE created_at::date = CURRENT_DATE;
 
 -- Completion rate (last 7 days)
-SELECT 
+SELECT
   status,
   COUNT(*) as count,
   ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER(), 2) as pct
@@ -223,7 +244,7 @@ WHERE created_at > NOW() - INTERVAL '7 days'
 GROUP BY status;
 
 -- Top farmers by earnings
-SELECT 
+SELECT
   farmer_phone,
   COUNT(*) as sales,
   SUM(amount) as earnings
@@ -256,16 +277,19 @@ LIMIT 5;
 ## 🎯 Next Steps
 
 ### Immediate (Next Hour)
+
 1. ✅ Monitor initial transactions
 2. ✅ Check WhatsApp message formatting
 3. ✅ Verify tel: links work on Android/iOS
 
 ### Short-term (This Week)
+
 1. Set up cron job for `expire_pending_payments()` (every 10 minutes)
 2. Monitor payment success rate
 3. Gather farmer/buyer feedback
 
 ### Medium-term (This Month)
+
 1. Add payment analytics dashboard
 2. Implement payment reminders (15 min before expiry)
 3. Add support for Airtel Money & Tigo Cash
@@ -275,9 +299,10 @@ LIMIT 5;
 ## 🔍 Monitoring
 
 ### Key Metrics to Track
+
 ```sql
 -- Real-time payment status
-SELECT 
+SELECT
   status,
   COUNT(*) as count,
   SUM(amount) as total_rwf
@@ -299,6 +324,7 @@ WHERE status = 'pending'
 ```
 
 ### Alerts to Set Up
+
 - Payment pending > 25 minutes → Send reminder
 - Payment expired → Log for analysis
 - Unusually high payment amounts → Manual verification
@@ -309,6 +335,7 @@ WHERE status = 'pending'
 ## 🆘 Troubleshooting
 
 ### Issue: Payment not created
+
 ```sql
 -- Check table permissions
 SELECT * FROM pg_policies WHERE tablename = 'farmer_payments';
@@ -318,15 +345,17 @@ SELECT * FROM pg_policies WHERE tablename = 'farmer_payments';
 ```
 
 ### Issue: tel: link not working
+
 - Ensure proper URL encoding: `encodeURIComponent('*182*8*1*15000#')`
 - Test on both Android and iOS
 - Verify WhatsApp allows tel: links
 
 ### Issue: Payment confirmation fails
+
 ```sql
 -- Check payment exists and is pending
-SELECT * FROM farmer_payments 
-WHERE id = 'payment-uuid' 
+SELECT * FROM farmer_payments
+WHERE id = 'payment-uuid'
   AND status = 'pending'
   AND expires_at > NOW();
 ```

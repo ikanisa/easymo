@@ -11,15 +11,14 @@
 ### 1. NEVER Access Location Tables Directly
 
 ❌ **FORBIDDEN**:
+
 ```typescript
 // DO NOT DO THIS
-const { data } = await supabase
-  .from("recent_locations")
-  .select("*")
-  .eq("user_id", userId);
+const { data } = await supabase.from("recent_locations").select("*").eq("user_id", userId);
 ```
 
 ✅ **REQUIRED**:
+
 ```typescript
 // DO THIS INSTEAD
 import { getCachedLocation } from "../_shared/location-service/index.ts";
@@ -27,6 +26,7 @@ const location = await getCachedLocation(supabase, userId);
 ```
 
 **Why**: Direct table access bypasses:
+
 - Type safety
 - Observability logging
 - Business logic (TTL checks, favorites cascade)
@@ -36,29 +36,32 @@ const location = await getCachedLocation(supabase, userId);
 
 ### 2. Use Correct Table for Purpose
 
-| Purpose | Table | Service Function | TTL |
-|---------|-------|------------------|-----|
-| User's home address | `saved_locations` | `saveFavoriteLocation(..., "home")` | ∞ (persistent) |
-| User's work address | `saved_locations` | `saveFavoriteLocation(..., "work")` | ∞ (persistent) |
-| Last searched location | `recent_locations` | `cacheLocation(...)` | 24h default |
-| Temporary ride pickup | `recent_locations` | `cacheLocation(...)` | 24h default |
+| Purpose                | Table              | Service Function                    | TTL            |
+| ---------------------- | ------------------ | ----------------------------------- | -------------- |
+| User's home address    | `saved_locations`  | `saveFavoriteLocation(..., "home")` | ∞ (persistent) |
+| User's work address    | `saved_locations`  | `saveFavoriteLocation(..., "work")` | ∞ (persistent) |
+| Last searched location | `recent_locations` | `cacheLocation(...)`                | 24h default    |
+| Temporary ride pickup  | `recent_locations` | `cacheLocation(...)`                | 24h default    |
 
-**Rule**: If it's a **named favorite**, use `saved_locations`. If it's **temporary**, use `recent_locations`.
+**Rule**: If it's a **named favorite**, use `saved_locations`. If it's **temporary**, use
+`recent_locations`.
 
 ---
 
 ### 3. Always Use RPCs (Never Raw SQL in Edge Functions)
 
 ❌ **FORBIDDEN**:
+
 ```typescript
 // DO NOT DO THIS
 await supabase.rpc("execute_sql", {
   query: `INSERT INTO app.recent_locations (user_id, lat, lng) VALUES ($1, $2, $3)`,
-  params: [userId, lat, lng]
+  params: [userId, lat, lng],
 });
 ```
 
 ✅ **REQUIRED**:
+
 ```typescript
 // DO THIS INSTEAD
 await supabase.rpc("save_recent_location", {
@@ -68,11 +71,12 @@ await supabase.rpc("save_recent_location", {
   p_address: address,
   p_source: "mobility",
   p_context: "ride_request",
-  p_ttl_hours: 24
+  p_ttl_hours: 24,
 });
 ```
 
 **Why**: RPCs provide:
+
 - Parameter validation
 - Proper error handling
 - Atomic operations
@@ -83,11 +87,13 @@ await supabase.rpc("save_recent_location", {
 ### 4. Structured Logging Required
 
 ❌ **FORBIDDEN**:
+
 ```typescript
 console.log("Saved location for user", userId);
 ```
 
 ✅ **REQUIRED**:
+
 ```typescript
 import { logStructuredEvent } from "../_shared/observability.ts";
 
@@ -100,6 +106,7 @@ logStructuredEvent("location_cache_save", {
 ```
 
 **Required fields**:
+
 - `user_id` (masked in production logs)
 - `source` (e.g., "mobility", "insurance", "waiter")
 - `success` (boolean)
@@ -112,12 +119,14 @@ logStructuredEvent("location_cache_save", {
 **Timeline**: Dec 9, 2025 → Jan 6, 2026 (4 weeks)
 
 During this period:
+
 - ✅ `whatsapp_users.location_cache` column still exists (read-only)
 - ✅ Bridge function `updateLegacyLocationCache()` available
 - ⚠️ **All new code** must use `location-service`
 - ❌ **Do not drop** legacy columns yet
 
 **After Jan 6, 2026**:
+
 - 🗑️ Drop `whatsapp_users.location_cache` column
 - 🗑️ Remove bridge function
 - 🗑️ Archive `rides_saved_locations`, `user_favorites` tables
@@ -162,7 +171,7 @@ const correlationId = crypto.randomUUID();
 const cached = await cacheLocation(
   supabase,
   userId,
-  { lat: -1.9500, lng: 30.0900, address: "Kimironko Market" },
+  { lat: -1.95, lng: 30.09, address: "Kimironko Market" },
   "mobility",
   "ride_pickup",
   24 // hours
@@ -197,14 +206,14 @@ if (resolved) {
     favorite_kind: resolved.favoriteKind, // "home" (if favorite)
     correlation_id: correlationId,
   });
-  
+
   return resolved.location; // { lat, lng, address }
 } else {
   logStructuredEvent("location_prompt_required", {
     user_id: userId,
     correlation_id: correlationId,
   });
-  
+
   // Prompt user for location
 }
 ```
@@ -229,19 +238,17 @@ Before committing location-related code:
 ## 🚫 Common Mistakes
 
 ### Mistake 1: Using `from()` instead of RPCs
+
 ```typescript
 // ❌ WRONG
-const { data } = await supabase
-  .from("recent_locations")
-  .select("*")
-  .eq("user_id", userId)
-  .single();
+const { data } = await supabase.from("recent_locations").select("*").eq("user_id", userId).single();
 
 // ✅ CORRECT
 const cached = await getCachedLocation(supabase, userId);
 ```
 
 ### Mistake 2: Storing favorites in cache table
+
 ```typescript
 // ❌ WRONG (home is persistent, not temporary)
 await cacheLocation(supabase, userId, homeLocation, "mobility", "home");
@@ -251,6 +258,7 @@ await saveFavoriteLocation(supabase, userId, homeLocation, "home");
 ```
 
 ### Mistake 3: No error handling
+
 ```typescript
 // ❌ WRONG (what if RPC fails?)
 const location = await getCachedLocation(supabase, userId);
@@ -267,6 +275,7 @@ console.log(location.address);
 ```
 
 ### Mistake 4: Hardcoded TTL
+
 ```typescript
 // ❌ WRONG (magic number)
 await cacheLocation(supabase, userId, location, "mobility", "ride", 24);
@@ -305,6 +314,7 @@ If critical issues arise:
 4. **Within 24 hours**: Post-mortem and prevention plan
 
 **Rollback commands**:
+
 ```bash
 # Revert last migration
 supabase db reset
@@ -319,12 +329,14 @@ psql $DATABASE_URL < backup_2025_12_08.sql
 ## 📞 Support
 
 **Questions?** Check:
+
 1. This document
 2. `LOCATION_CONSOLIDATION_COMPLETE.md`
 3. `supabase/functions/_shared/location-service/index.ts` (source code + JSDoc)
 4. Slack: #easymo-dev
 
 **Found a bug?** Report with:
+
 - Correlation ID (from logs)
 - User ID (masked)
 - Expected vs actual behavior

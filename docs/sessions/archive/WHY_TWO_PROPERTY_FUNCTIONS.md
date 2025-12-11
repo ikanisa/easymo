@@ -9,9 +9,9 @@
 
 **They serve DIFFERENT purposes:**
 
-| Function | Purpose | Entry Point | Invocations |
-|----------|---------|-------------|-------------|
-| **wa-webhook-property** | WhatsApp webhook router | WhatsApp messages | 570 (2 days ago) |
+| Function                  | Purpose                  | Entry Point        | Invocations       |
+| ------------------------- | ------------------------ | ------------------ | ----------------- |
+| **wa-webhook-property**   | WhatsApp webhook router  | WhatsApp messages  | 570 (2 days ago)  |
 | **agent-property-rental** | AI conversational engine | Internal API calls | 134 (3 hours ago) |
 
 **Relationship:** `wa-webhook-property` **CALLS** `agent-property-rental` internally
@@ -25,6 +25,7 @@
 **Purpose:** Dedicated WhatsApp webhook handler for ALL property-related flows
 
 **What it does:**
+
 - ✅ Receives WhatsApp webhook events (button clicks, messages, locations)
 - ✅ Routes property menu selections (Find Property, Add Listing, My Listings)
 - ✅ Manages stateful conversations (multi-step forms)
@@ -36,6 +37,7 @@
 **Code Location:** `supabase/functions/wa-webhook-property/`
 
 **Example Flow:**
+
 ```
 WhatsApp User → Taps "Find Property" button
     ↓
@@ -55,6 +57,7 @@ Returns AI-generated results to user
 ```
 
 **State Management:**
+
 ```typescript
 // States managed by wa-webhook-property:
 - property_find_state (bedrooms, budget, location)
@@ -69,6 +72,7 @@ Returns AI-generated results to user
 **Purpose:** AI-powered property search and conversational agent
 
 **What it does:**
+
 - ✅ Uses OpenAI GPT-4o-mini for natural language understanding
 - ✅ Searches database for matching properties
 - ✅ Returns AI-formatted results
@@ -79,6 +83,7 @@ Returns AI-generated results to user
 **Code Location:** `supabase/functions/agent-property-rental/`
 
 **Example Request:**
+
 ```json
 POST /functions/v1/agent-property-rental
 {
@@ -94,6 +99,7 @@ POST /functions/v1/agent-property-rental
 ```
 
 **Example Response:**
+
 ```json
 {
   "success": true,
@@ -152,29 +158,28 @@ POST /functions/v1/agent-property-rental
 ### **wa-webhook-property calls agent-property-rental:**
 
 **File:** `supabase/functions/wa-webhook/domains/property/ai_agent.ts`
+
 ```typescript
 // Line ~140-160
-const response = await fetch(
-  `${Deno.env.get("SUPABASE_URL")}/functions/v1/agent-property-rental`,
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-    },
-    body: JSON.stringify({
-      userId: ctx.profileId,
-      action: "find",
-      rentalType: state.data.rentalType,
-      bedrooms: state.data.bedrooms,
-      maxBudget: state.data.maxBudget,
-      location: { latitude, longitude }
-    })
-  }
-);
+const response = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/agent-property-rental`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+  },
+  body: JSON.stringify({
+    userId: ctx.profileId,
+    action: "find",
+    rentalType: state.data.rentalType,
+    bedrooms: state.data.bedrooms,
+    maxBudget: state.data.maxBudget,
+    location: { latitude, longitude },
+  }),
+});
 ```
 
 **Also called from:**
+
 - `supabase/functions/wa-webhook/domains/property/rentals.ts`
 - `supabase/functions/wa-webhook/domains/ai-agents/integration.ts`
 
@@ -185,18 +190,21 @@ const response = await fetch(
 ### **Separation of Concerns:**
 
 **wa-webhook-property** = **Orchestration Layer**
+
 - Handles WhatsApp-specific logic
 - Manages UI flows (buttons, menus, states)
 - Collects user input step-by-step
 - Routes to appropriate handlers
 
 **agent-property-rental** = **Intelligence Layer**
+
 - Pure AI/search logic
 - Reusable by ANY service (not just WhatsApp)
 - Can be called from web app, mobile app, API, etc.
 - Isolated AI logic makes testing easier
 
 ### **Benefits:**
+
 ✅ **Modularity** - AI agent can be used outside WhatsApp  
 ✅ **Testability** - Test AI separately from WhatsApp flows  
 ✅ **Scalability** - AI agent can be scaled independently  
@@ -210,6 +218,7 @@ const response = await fetch(
 **NO - They should remain separate!**
 
 ### **Keep wa-webhook-property:**
+
 - WhatsApp webhook routing
 - Button/menu handling
 - State management
@@ -217,12 +226,14 @@ const response = await fetch(
 - My Listings management
 
 ### **Keep agent-property-rental:**
+
 - AI conversational search
 - OpenAI integration
 - Property matching logic
 - Natural language understanding
 
 ### **Why NOT consolidate:**
+
 ❌ Would mix WhatsApp logic with AI logic  
 ❌ AI agent wouldn't be reusable by other services  
 ❌ Harder to test and maintain  
@@ -232,14 +243,16 @@ const response = await fetch(
 
 ## 📊 Invocation Stats Explained
 
-| Function | Invocations | Why? |
-|----------|-------------|------|
-| wa-webhook-property | 570 | Every property-related WhatsApp message |
-| agent-property-rental | 134 | Only when AI search is triggered (subset of above) |
+| Function              | Invocations | Why?                                               |
+| --------------------- | ----------- | -------------------------------------------------- |
+| wa-webhook-property   | 570         | Every property-related WhatsApp message            |
+| agent-property-rental | 134         | Only when AI search is triggered (subset of above) |
 
-**Ratio:** ~4:1 means most WhatsApp interactions are button clicks, menu navigation, or state management that don't require AI search.
+**Ratio:** ~4:1 means most WhatsApp interactions are button clicks, menu navigation, or state
+management that don't require AI search.
 
 **Example non-AI interactions:**
+
 - Viewing "My Listings"
 - Clicking property type buttons
 - Navigating property menus

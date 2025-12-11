@@ -7,6 +7,7 @@
 ## 📦 What Was Built
 
 ### Core Application
+
 ✅ **Next.js 14 App** with TypeScript + Tailwind CSS  
 ✅ **Supabase Integration** for real-time data  
 ✅ **Gemini 2.0 Flash** AI menu extraction  
@@ -16,6 +17,7 @@
 ### Features Implemented
 
 #### 1. Order Queue Dashboard (`/`)
+
 - **Real-time Order Display** - Live updates via Supabase Realtime
 - **Status Workflow** - pending → preparing → confirmed → served
 - **Order Cards** - Show items, table, time, total
@@ -24,6 +26,7 @@
 - **Time Tracking** - Shows "5m ago", "1h 23m ago" etc.
 
 #### 2. AI Menu Upload (`/menu/upload`)
+
 - **Multi-Format Support**:
   - 📷 Images (JPG, PNG, WEBP, HEIC)
   - 📄 PDFs (single/multi-page)
@@ -38,6 +41,7 @@
 - **Category Grouping** - Items grouped by category
 
 #### 3. Menu Management (`/menu`)
+
 - **Browse All Items** - Grid view of menu
 - **Category Filters** - Filter by Cocktails, Beers, Food, etc.
 - **Availability Toggle** - One-click enable/disable
@@ -89,17 +93,20 @@ bar-manager-app/
 ## 🚀 Next Steps
 
 ### 1. Install Dependencies (5 min)
+
 ```bash
 cd bar-manager-app
 npm install
 ```
 
 ### 2. Configure Environment (2 min)
+
 ```bash
 cp .env.example .env.local
 ```
 
 Edit `.env.local`:
+
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
@@ -107,26 +114,32 @@ GEMINI_API_KEY=your-gemini-api-key
 ```
 
 ### 3. Set Bar ID (1 min)
+
 In browser console:
+
 ```javascript
-localStorage.setItem("bar_id", "your-bar-uuid")
+localStorage.setItem("bar_id", "your-bar-uuid");
 ```
 
 ### 4. Run Development Server (1 min)
+
 ```bash
 npm run dev
 ```
+
 Open http://localhost:3001
 
 ### 5. Test Features (10 min)
 
 #### Test Order Queue
+
 1. Create test order in Supabase
 2. Verify real-time display
 3. Click "Start Preparing" → "Mark Ready" → "Mark Served"
 4. Check notification appears
 
 #### Test AI Menu Upload
+
 1. Go to `/menu/upload`
 2. Drag & drop menu image/PDF
 3. Wait for AI extraction
@@ -136,6 +149,7 @@ Open http://localhost:3001
 7. Verify items appear in `/menu`
 
 #### Test Menu Management
+
 1. Go to `/menu`
 2. Toggle item availability
 3. Click Edit → modify → save
@@ -189,6 +203,7 @@ restaurant_menu_items (
 ## 🎯 Features Demonstrated
 
 ### AI Menu Extraction
+
 - **Multi-language support** - English, French, Kinyarwanda
 - **Smart categorization** - Auto-detects Cocktails, Beers, Food, etc.
 - **Price extraction** - Handles "5000 RWF", "5,000", "$5.00"
@@ -196,12 +211,14 @@ restaurant_menu_items (
 - **Error handling** - Graceful failures with retry
 
 ### Real-time Updates
+
 - **Instant order notifications** - Sound + desktop alert
 - **Live status sync** - Changes reflect immediately
 - **Multi-tab support** - Updates across all open tabs
 - **Auto-reconnect** - Handles network interruptions
 
 ### User Experience
+
 - **Drag & drop** - Intuitive file upload
 - **Progress indicators** - Shows upload/processing status
 - **Inline editing** - Edit items in review table
@@ -211,6 +228,7 @@ restaurant_menu_items (
 ## 🔧 Technical Highlights
 
 ### Gemini 2.0 Flash Integration
+
 ```typescript
 // Structured extraction prompt
 const MENU_EXTRACTION_PROMPT = `
@@ -222,44 +240,50 @@ Extract menu items with:
 5. currency (RWF, EUR, USD)
 6. confidence (0-1)
 ...
-`
+`;
 
 // Multi-format support
-parseMenuFromImage(base64, mimeType)  // Images
-parseMenuFromPDF(base64)              // PDFs
-parseMenuFromText(text)               // Text/CSV
+parseMenuFromImage(base64, mimeType); // Images
+parseMenuFromPDF(base64); // PDFs
+parseMenuFromText(text); // Text/CSV
 ```
 
 ### Supabase Realtime
+
 ```typescript
 supabase
   .channel("orders-realtime")
-  .on("postgres_changes", {
-    event: "INSERT",
-    schema: "public",
-    table: "orders",
-    filter: `bar_id=eq.${barId}`,
-  }, (payload) => {
-    // New order received
-    playNotificationSound()
-    showDesktopNotification("New Order!", `#${payload.new.order_code}`)
-  })
-  .subscribe()
+  .on(
+    "postgres_changes",
+    {
+      event: "INSERT",
+      schema: "public",
+      table: "orders",
+      filter: `bar_id=eq.${barId}`,
+    },
+    (payload) => {
+      // New order received
+      playNotificationSound();
+      showDesktopNotification("New Order!", `#${payload.new.order_code}`);
+    }
+  )
+  .subscribe();
 ```
 
 ### Desktop Notifications
+
 ```typescript
 // Request permission on load
-requestNotificationPermission()
+requestNotificationPermission();
 
 // Show notification with sound
 function showDesktopNotification(title, body) {
   new Notification(title, {
     body,
     icon: "/icons/icon-192.png",
-    requireInteraction: true  // Stays visible until clicked
-  })
-  playNotificationSound()  // Audio alert
+    requireInteraction: true, // Stays visible until clicked
+  });
+  playNotificationSound(); // Audio alert
 }
 ```
 
@@ -273,12 +297,14 @@ function showDesktopNotification(title, body) {
 ## 🎨 UI/UX Features
 
 ### Order Cards
+
 - **Color-coded status** - Yellow (pending), Blue (preparing), Green (ready)
 - **Time indicators** - "Just now", "5m ago", "1h 23m ago"
 - **Large action buttons** - Easy touch targets for kitchen staff
 - **Cancel option** - Always available with confirmation
 
 ### Menu Review Table
+
 - **Grouped by category** - Better organization
 - **Inline editing** - Click edit → modify → save
 - **Confidence badges** - Green (90%+), Yellow (70-89%), Red (<70%)
@@ -286,6 +312,7 @@ function showDesktopNotification(title, body) {
 - **Delete with confirmation** - Prevents accidents
 
 ### Upload UI
+
 - **Drag & drop zone** - Large target area
 - **File type indicators** - Shows supported formats
 - **Progress bar** - Visual feedback
@@ -343,16 +370,19 @@ Before deploying:
 ## 🆘 Troubleshooting
 
 ### No orders showing
+
 - Check `bar_id` in localStorage
 - Verify Realtime enabled for `orders` table
 - Check Supabase credentials in `.env.local`
 
 ### AI upload fails
+
 - Verify `GEMINI_API_KEY` in `.env.local`
 - Check file size <10MB
 - Try different file format
 
 ### Notifications not working
+
 - Click "Allow" when browser asks for permission
 - Check browser notification settings
 - Test with `showDesktopNotification("Test", "Test")`
@@ -365,4 +395,5 @@ Before deploying:
 **Dependencies:** Next.js 14, Supabase, Gemini AI, Tailwind CSS  
 **Next Step:** Install dependencies and test
 
-This implementation provides a solid foundation for the Bar Manager Desktop App with AI-powered menu upload. The code is production-ready and follows Next.js and React best practices.
+This implementation provides a solid foundation for the Bar Manager Desktop App with AI-powered menu
+upload. The code is production-ready and follows Next.js and React best practices.

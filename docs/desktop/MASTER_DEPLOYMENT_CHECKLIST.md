@@ -10,33 +10,34 @@ Status: ✅ Ready for Implementation
 
 ## 🔧 PRE-REQUISITES — Must Already Be in Place
 
-| Status | Item |
-|--------|------|
-| ✅ | CI/CD builds successfully on GitHub Actions |
-| ✅ | Versioning flow decided (SemVer: v1.0.0) |
-| ⬜ | CHANGELOG.md updated |
-| ✅ | Code-signing scripts created for macOS |
-| ⬜ | Code-signing working locally for macOS |
-| ⬜ | Code-signing working in CI for macOS |
-| ⬜ | Code-signing scripts created for Windows |
-| ⬜ | Packaging working for Linux (.AppImage / .deb) |
-| ⬜ | Download distribution point (GitHub Releases) |
+| Status | Item                                           |
+| ------ | ---------------------------------------------- |
+| ✅     | CI/CD builds successfully on GitHub Actions    |
+| ✅     | Versioning flow decided (SemVer: v1.0.0)       |
+| ⬜     | CHANGELOG.md updated                           |
+| ✅     | Code-signing scripts created for macOS         |
+| ⬜     | Code-signing working locally for macOS         |
+| ⬜     | Code-signing working in CI for macOS           |
+| ⬜     | Code-signing scripts created for Windows       |
+| ⬜     | Packaging working for Linux (.AppImage / .deb) |
+| ⬜     | Download distribution point (GitHub Releases)  |
 
 ---
 
 ## 🔑 CREDENTIALS & SECRETS — Required for Automated Builds
 
-| Platform | Secret | Status | Notes |
-|----------|--------|--------|-------|
-| macOS | `MACOS_CERT_P12` | ✅ Set | Base64 encoded .p12 |
-| macOS | `MACOS_CERT_PASSWORD` | ✅ Set | Unlocks .p12 |
-| macOS | `MACOS_CERT_IDENTITY` | ✅ Set | "Inhouse Dev Signing" |
-| Windows | `WIN_CERT_PFX` | ⬜ Pending | Base64 encoded .pfx |
-| Windows | `WIN_CERT_PASSWORD` | ⬜ Pending | Unlocks .pfx |
-| Windows | `WIN_CERT_SUBJECT` | ⬜ Pending | CN used by signtool |
-| Linux | N/A | ✅ | No signing required |
+| Platform | Secret                | Status     | Notes                 |
+| -------- | --------------------- | ---------- | --------------------- |
+| macOS    | `MACOS_CERT_P12`      | ✅ Set     | Base64 encoded .p12   |
+| macOS    | `MACOS_CERT_PASSWORD` | ✅ Set     | Unlocks .p12          |
+| macOS    | `MACOS_CERT_IDENTITY` | ✅ Set     | "Inhouse Dev Signing" |
+| Windows  | `WIN_CERT_PFX`        | ⬜ Pending | Base64 encoded .pfx   |
+| Windows  | `WIN_CERT_PASSWORD`   | ⬜ Pending | Unlocks .pfx          |
+| Windows  | `WIN_CERT_SUBJECT`    | ⬜ Pending | CN used by signtool   |
+| Linux    | N/A                   | ✅         | No signing required   |
 
 ### Optional (Future):
+
 - `SENTRY_AUTH_TOKEN` - Error tracking
 - `NOTARIZATION_APPLE_ID` - Apple notarization
 - `NOTARIZATION_TEAM_ID` - Apple notarization
@@ -45,19 +46,19 @@ Status: ✅ Ready for Implementation
 
 ## 📁 FILES & INFRASTRUCTURE — Must Exist in Repository
 
-| Category | Required Files | Status |
-|----------|---------------|--------|
-| macOS Signing Scripts | `scripts/sign_app.sh` | ✅ |
-| macOS Signing Scripts | `scripts/sign_all_apps.sh` | ✅ |
-| macOS Signing Scripts | `scripts/list_identities.sh` | ✅ |
-| Windows Signing | `scripts/sign_windows.ps1` | ⬜ |
-| CI/CD | `.github/workflows/desktop-build.yml` | ✅ |
-| CI/CD | `.github/workflows/desktop-release.yml` | ✅ |
-| Documentation | `docs/desktop/internal_mac_signing.md` | ✅ |
-| Documentation | `docs/desktop/windows_signing.md` | ⬜ |
-| Desktop App | `admin-app/electron/main.js` | ✅ |
-| Desktop Scripts | `admin-app/start-desktop.sh` | ✅ |
-| Build Outputs | `admin-app/dist/` | Auto-generated |
+| Category              | Required Files                          | Status         |
+| --------------------- | --------------------------------------- | -------------- |
+| macOS Signing Scripts | `scripts/sign_app.sh`                   | ✅             |
+| macOS Signing Scripts | `scripts/sign_all_apps.sh`              | ✅             |
+| macOS Signing Scripts | `scripts/list_identities.sh`            | ✅             |
+| Windows Signing       | `scripts/sign_windows.ps1`              | ⬜             |
+| CI/CD                 | `.github/workflows/desktop-build.yml`   | ✅             |
+| CI/CD                 | `.github/workflows/desktop-release.yml` | ✅             |
+| Documentation         | `docs/desktop/internal_mac_signing.md`  | ✅             |
+| Documentation         | `docs/desktop/windows_signing.md`       | ⬜             |
+| Desktop App           | `admin-app/electron/main.js`            | ✅             |
+| Desktop Scripts       | `admin-app/start-desktop.sh`            | ✅             |
+| Build Outputs         | `admin-app/dist/`                       | Auto-generated |
 
 ---
 
@@ -84,11 +85,9 @@ CI/CD pipeline automatically triggers:
   - Admin Panel app
   - Client/Staff Portal app (future)
   - Code-signed with `Inhouse Dev Signing`
-  
 - [ ] **Windows installer:**
   - MSI or NSIS installer
   - Code-signed with Windows certificate
-  
 - [ ] **Linux packages:**
   - AppImage (universal)
   - .deb package (Debian/Ubuntu)
@@ -121,12 +120,12 @@ chmod +x AdminPanel.AppImage
 
 Choose one or multiple methods:
 
-| Method | Recommended For | Setup Required |
-|--------|----------------|----------------|
-| **GitHub Releases** | Internal distribution + power users | Tag + upload artifacts |
-| **Private download portal** | Employees / controlled access | Web server + auth |
-| **Internal S3 / R2 / Supabase** | Corporate deployment | Cloud storage setup |
-| **Auto-update server** (future) | Automatic update prompts | Update server deployment |
+| Method                          | Recommended For                     | Setup Required           |
+| ------------------------------- | ----------------------------------- | ------------------------ |
+| **GitHub Releases**             | Internal distribution + power users | Tag + upload artifacts   |
+| **Private download portal**     | Employees / controlled access       | Web server + auth        |
+| **Internal S3 / R2 / Supabase** | Corporate deployment                | Cloud storage setup      |
+| **Auto-update server** (future) | Automatic update prompts            | Update server deployment |
 
 ### GitHub Releases (Recommended)
 
@@ -150,23 +149,23 @@ gh release create v1.0.0 \
 
 ## 🧪 FINAL QA BEFORE DISTRIBUTION
 
-| Status | Test | Platform |
-|--------|------|----------|
-| ⬜ | App opens without "unverified developer" block (right-click Open acceptable) | macOS |
-| ⬜ | All menu items work correctly | macOS |
-| ⬜ | Window resizing, minimizing, maximizing work | All |
-| ⬜ | Login/authentication works | All |
-| ⬜ | Dashboard loads and displays data | All |
-| ⬜ | Navigation between pages works | All |
-| ⬜ | API calls to Supabase backend succeed | All |
-| ⬜ | Role-based access control (Admin vs Client/Staff) | All |
-| ⬜ | Offline behavior (graceful errors) | All |
-| ⬜ | Version label in UI matches release version | All |
-| ⬜ | DevTools disabled in production build | All |
-| ⬜ | No console errors on startup | All |
-| ⬜ | Windows installer installs without SmartScreen block | Windows |
-| ⬜ | Linux AppImage runs with exec flag | Linux |
-| ⬜ | Auto-update tested (if enabled) | All |
+| Status | Test                                                                         | Platform |
+| ------ | ---------------------------------------------------------------------------- | -------- |
+| ⬜     | App opens without "unverified developer" block (right-click Open acceptable) | macOS    |
+| ⬜     | All menu items work correctly                                                | macOS    |
+| ⬜     | Window resizing, minimizing, maximizing work                                 | All      |
+| ⬜     | Login/authentication works                                                   | All      |
+| ⬜     | Dashboard loads and displays data                                            | All      |
+| ⬜     | Navigation between pages works                                               | All      |
+| ⬜     | API calls to Supabase backend succeed                                        | All      |
+| ⬜     | Role-based access control (Admin vs Client/Staff)                            | All      |
+| ⬜     | Offline behavior (graceful errors)                                           | All      |
+| ⬜     | Version label in UI matches release version                                  | All      |
+| ⬜     | DevTools disabled in production build                                        | All      |
+| ⬜     | No console errors on startup                                                 | All      |
+| ⬜     | Windows installer installs without SmartScreen block                         | Windows  |
+| ⬜     | Linux AppImage runs with exec flag                                           | Linux    |
+| ⬜     | Auto-update tested (if enabled)                                              | All      |
 
 ---
 
@@ -176,12 +175,15 @@ gh release create v1.0.0 \
 - [ ] Update internal documentation with download links
 - [ ] Remove old builds from shared folders (keep last 2 versions)
 - [ ] Log version & date in `RELEASES.md`:
+
   ```markdown
   ## v1.0.0 - 2024-12-02
+
   - Initial desktop release
   - Admin Panel for macOS, Windows, Linux
   - Code-signed for internal distribution
   ```
+
 - [ ] Collect feedback (bugs, crashes, UX issues)
 - [ ] Create issues for next sprint
 - [ ] Monitor error tracking (Sentry, if configured)
@@ -190,23 +192,23 @@ gh release create v1.0.0 \
 
 ## 💎 OPTIONAL UPGRADES (Future)
 
-| Upgrade | Value | Estimated Effort |
-|---------|-------|------------------|
-| **Apple Notarization** | Eliminates "right-click → Open" requirement | Medium (requires Apple Developer account) |
-| **Windows EV Certificate** | Removes SmartScreen warnings | Medium ($300-500/year) |
-| **Auto-Update System** | Users never download installers manually | High (backend + client integration) |
-| **Crash Reporting (Sentry)** | Automatic error tracking | Low (already configured for web) |
-| **Desktop Telemetry** | Understand feature usage | Medium (analytics integration) |
-| **License Management** | For commercial model | High (license server) |
-| **Multi-language Support** | International users | Medium (i18n setup) |
+| Upgrade                      | Value                                       | Estimated Effort                          |
+| ---------------------------- | ------------------------------------------- | ----------------------------------------- |
+| **Apple Notarization**       | Eliminates "right-click → Open" requirement | Medium (requires Apple Developer account) |
+| **Windows EV Certificate**   | Removes SmartScreen warnings                | Medium ($300-500/year)                    |
+| **Auto-Update System**       | Users never download installers manually    | High (backend + client integration)       |
+| **Crash Reporting (Sentry)** | Automatic error tracking                    | Low (already configured for web)          |
+| **Desktop Telemetry**        | Understand feature usage                    | Medium (analytics integration)            |
+| **License Management**       | For commercial model                        | High (license server)                     |
+| **Multi-language Support**   | International users                         | Medium (i18n setup)                       |
 
 ---
 
 ## 🏁 ONE-LINE VERSION (Quick Reference)
 
 ```
-Release = bump version → update changelog → push → CI builds & signs → 
-download artifacts → QA checklist → publish to GitHub Releases → 
+Release = bump version → update changelog → push → CI builds & signs →
+download artifacts → QA checklist → publish to GitHub Releases →
 announce internally → collect feedback
 ```
 
@@ -215,6 +217,7 @@ announce internally → collect feedback
 ## 📋 CURRENT STATUS
 
 ### ✅ Completed
+
 - macOS signing scripts created
 - GitHub secrets configured for macOS
 - Electron app enhanced with security features
@@ -222,9 +225,11 @@ announce internally → collect feedback
 - Internal signing documentation
 
 ### ⏳ In Progress
+
 - Local desktop app testing
 
 ### 🔜 Next Steps
+
 1. Test desktop app locally
 2. Create Windows signing scripts
 3. Set up Linux packaging
@@ -236,18 +241,22 @@ announce internally → collect feedback
 ## 🆘 TROUBLESHOOTING
 
 ### macOS: "App is damaged and can't be opened"
+
 **Cause:** Gatekeeper blocking app  
 **Solution:** Right-click → Open → Open
 
 ### Windows: "Windows protected your PC"
+
 **Cause:** SmartScreen blocking unsigned app  
 **Solution:** Click "More info" → "Run anyway"
 
 ### Linux: Permission denied
+
 **Cause:** AppImage not executable  
 **Solution:** `chmod +x AdminPanel.AppImage`
 
 ### CI Build fails
+
 **Cause:** Missing secrets or dependencies  
 **Solution:** Check GitHub Actions logs, verify secrets are set
 

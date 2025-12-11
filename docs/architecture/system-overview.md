@@ -46,6 +46,7 @@ WhatsApp Cloud API (Meta)
 **Purpose:** Central entry point and message router
 
 **Responsibilities:**
+
 - Webhook verification (GET requests)
 - Signature verification (HMAC-SHA256)
 - Message routing based on:
@@ -60,6 +61,7 @@ WhatsApp Cloud API (Meta)
 **Purpose:** User profile and wallet management
 
 **Responsibilities:**
+
 - Profile CRUD operations
 - Wallet balance management
 - Token transfers
@@ -67,6 +69,7 @@ WhatsApp Cloud API (Meta)
 - Language preferences
 
 **Database Tables:**
+
 - `profiles`
 - `wallets`
 - `wallet_transactions`
@@ -76,6 +79,7 @@ WhatsApp Cloud API (Meta)
 **Purpose:** Ride booking and transport services
 
 **Responsibilities:**
+
 - Nearby driver/passenger search
 - Trip scheduling
 - Trip lifecycle management
@@ -83,6 +87,7 @@ WhatsApp Cloud API (Meta)
 - Rating and feedback
 
 **Database Tables:**
+
 - `trips`
 - `trip_ratings`
 - `driver_verifications`
@@ -92,6 +97,7 @@ WhatsApp Cloud API (Meta)
 **Purpose:** Insurance document processing and claims
 
 **Responsibilities:**
+
 - Document upload handling
 - OCR processing
 - Insurance data extraction
@@ -99,6 +105,7 @@ WhatsApp Cloud API (Meta)
 - Claims status tracking
 
 **Database Tables:**
+
 - `insurance_leads`
 - `insurance_claims`
 - `insurance_media_queue`
@@ -179,4 +186,4 @@ Supabase Platform
   • PostgreSQL DB
 ```
 
-*Last Updated: 2025-12-02*
+_Last Updated: 2025-12-02_

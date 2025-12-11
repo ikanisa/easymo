@@ -6,26 +6,31 @@
 
 ## Executive Summary
 
-Successfully merged the **ibimina** SACCO management platform into **easymo** with the following restructure:
+Successfully merged the **ibimina** SACCO management platform into **easymo** with the following
+restructure:
 
 - **ibimina admin routes** → **easymo/admin-app/app/ibimina-admin** ✅
 - **ibimina staff routes** → **easymo/vendor-portal** (renamed from staff-admin) ✅
-- **ibimina packages** → **easymo/packages/ibimina-*** (7 packages) ✅
+- **ibimina packages** → **easymo/packages/ibimina-\*** (7 packages) ✅
 
 ## What Was Done
 
 ### Phase 1: Structure Preparation ✅
+
 1. ✅ Backed up existing vendor-portal to `vendor-portal.backup-*`
 2. ✅ Cloned ibimina repository to `/tmp/ibimina-source`
 3. ✅ Created new vendor-portal structure
 4. ✅ Copied shared packages
 
 ### Phase 2: Admin Routes Migration ✅
-1. ✅ Copied admin routes from `ibimina/apps/pwa/staff-admin/app/admin` to `admin-app/app/ibimina-admin`
+
+1. ✅ Copied admin routes from `ibimina/apps/pwa/staff-admin/app/admin` to
+   `admin-app/app/ibimina-admin`
 2. ✅ Updated all imports from `@ibimina/*` to `@easymo/ibimina-*`
 3. ✅ Added ibimina package dependencies to admin-app/package.json
 
 **Admin Routes Migrated:**
+
 - `/ibimina-admin/countries` - Country management
 - `/ibimina-admin/partners` - Partner/Organization management
 - `/ibimina-admin/telcos` - Telecom operator management
@@ -33,6 +38,7 @@ Successfully merged the **ibimina** SACCO management platform into **easymo** wi
 - `/ibimina-admin` - Admin dashboard
 
 ### Phase 3: Vendor Portal Setup ✅
+
 1. ✅ Copied complete staff-admin PWA to vendor-portal
 2. ✅ Removed admin routes (now in admin-app)
 3. ✅ Removed (main) route group
@@ -40,6 +46,7 @@ Successfully merged the **ibimina** SACCO management platform into **easymo** wi
 5. ✅ Updated all imports from `@ibimina/*` to `@easymo/ibimina-*`
 
 **Vendor Portal Routes:**
+
 - `/staff` - Staff dashboard (SACCO operations)
 - `/staff/onboarding` - Member onboarding
 - `/staff/allocations` - Share allocations
@@ -50,10 +57,11 @@ Successfully merged the **ibimina** SACCO management platform into **easymo** wi
 - `/settings` - Settings & preferences
 
 ### Phase 4: Shared Packages ✅
+
 Migrated and renamed 7 packages from `@ibimina/*` to `@easymo/ibimina-*`:
 
 1. ✅ `@easymo/ibimina-admin-core` - Admin core logic
-2. ✅ `@easymo/ibimina-config` - Environment configuration  
+2. ✅ `@easymo/ibimina-config` - Environment configuration
 3. ✅ `@easymo/ibimina-flags` - Feature flags
 4. ✅ `@easymo/ibimina-lib` - Shared utilities
 5. ✅ `@easymo/ibimina-locales` - i18n translations (Kinyarwanda, French, English)
@@ -61,6 +69,7 @@ Migrated and renamed 7 packages from `@ibimina/*` to `@easymo/ibimina-*`:
 7. ✅ `@easymo/ibimina-ui` - Shared UI components
 
 **Workspace Configuration:**
+
 - ✅ Updated `pnpm-workspace.yaml` to include `vendor-portal`
 - ✅ All package scopes updated
 - ✅ All import statements updated across 46+ files
@@ -68,6 +77,7 @@ Migrated and renamed 7 packages from `@ibimina/*` to `@easymo/ibimina-*`:
 ## Next Steps
 
 ### Phase 5: Database & Supabase Integration 🔄
+
 - [ ] Merge supabase migrations from ibimina to easymo
 - [ ] Copy edge functions (reconcile, etc.)
 - [ ] Update RLS policies for vendor portal
@@ -75,6 +85,7 @@ Migrated and renamed 7 packages from `@ibimina/*` to `@easymo/ibimina-*`:
 - [ ] Update database schema types
 
 ### Phase 6: Build & Testing ✅
+
 - [ ] Install dependencies: `pnpm install --frozen-lockfile`
 - [ ] Build shared packages: `pnpm --filter "@easymo/ibimina-*" build`
 - [ ] Build vendor-portal: `pnpm --filter @easymo/vendor-portal build`
@@ -88,12 +99,14 @@ Migrated and renamed 7 packages from `@ibimina/*` to `@easymo/ibimina-*`:
 Following `/docs/GROUND_RULES.md` requirements:
 
 ### Observability
+
 - [ ] Add structured logging with correlation IDs to vendor-portal routes
 - [ ] Add structured logging to admin routes
 - [ ] Implement event counters for key actions
 - [ ] Add PII masking for sensitive data
 
 ### Security
+
 - [x] No secrets in `NEXT_PUBLIC_*` or `VITE_*` vars
 - [ ] Verify webhook signatures (if applicable)
 - [ ] Implement rate limiting on public endpoints
@@ -101,29 +114,35 @@ Following `/docs/GROUND_RULES.md` requirements:
 - [ ] Add API key rotation procedures
 
 ### Data Integrity
+
 - [ ] Verify foreign key constraints in migrations
 - [ ] Use database transactions for multi-table operations
 - [ ] Implement audit trails for financial operations
 
 ### Performance
+
 - [ ] Add database indexes for high-traffic queries
 - [ ] Implement caching for frequently accessed data
 - [ ] Monitor and log slow queries
 
 ### Feature Flags
+
 - [ ] Gate new ibimina features behind flags (default OFF)
+
 ```bash
 FEATURE_VENDOR_PORTAL=false
 FEATURE_IBIMINA_ADMIN=false
 ```
 
 ### Health Checks
+
 - [ ] Add `/health` endpoint to vendor-portal
 - [ ] Add health checks for Supabase connection
 
 ## File Statistics
 
 ### Migration Volume
+
 - **Total files migrated**: ~2,000+ files
 - **Admin routes**: 12 files (countries, partners, telcos, invites)
 - **Staff routes**: 6 files + shared components
@@ -197,6 +216,7 @@ pnpm test
 ## Environment Variables
 
 ### Vendor Portal (.env)
+
 ```bash
 # Supabase (shared with ibimina)
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
@@ -212,7 +232,9 @@ FEATURE_IBIMINA_ADMIN=true
 ```
 
 ### Admin App (.env)
+
 Add ibimina admin access:
+
 ```bash
 FEATURE_IBIMINA_ADMIN=true
 ```
@@ -220,25 +242,30 @@ FEATURE_IBIMINA_ADMIN=true
 ## Known Issues & Considerations
 
 ### 1. Database Schema
+
 - **Action Required**: Merge ibimina Supabase migrations into easymo
 - **Location**: `/tmp/ibimina-source/supabase/migrations/`
 - **Risk**: Medium - RLS policies may conflict
 
 ### 2. Authentication
+
 - Both apps use Supabase auth
 - May need unified auth strategy or separate projects
 - **Decision Required**: Single Supabase project or separate?
 
 ### 3. Edge Functions
+
 - Ibimina has custom edge functions (reconcile, etc.)
 - **Action Required**: Copy to `easymo/supabase/functions/`
 
 ### 4. PWA Configuration
+
 - Vendor portal has PWA support (next-pwa, Capacitor)
 - Requires PWA build configuration
 - **Action Required**: Test PWA build and deployment
 
 ### 5. Localization
+
 - Ibimina supports Kinyarwanda, French, English
 - **Action Required**: Integrate with easymo i18n if exists
 
@@ -280,6 +307,7 @@ pnpm install --frozen-lockfile
 ## Documentation Updates
 
 After testing:
+
 - [ ] Update README.md with vendor-portal info
 - [ ] Document vendor-portal deployment
 - [ ] Update architecture diagrams
@@ -290,6 +318,6 @@ After testing:
 
 **Migration Lead**: AI Assistant  
 **Reviewed By**: Pending  
-**Approved By**: Pending  
+**Approved By**: Pending
 
 **Next Action**: Proceed to Phase 5 (Database merge) and Phase 6 (Build & Test)

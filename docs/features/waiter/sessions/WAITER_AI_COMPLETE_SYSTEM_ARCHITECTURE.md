@@ -24,9 +24,11 @@ The Waiter AI system has **3 main components**:
 ## Component 1: Customer Interface (WhatsApp) ✅ COMPLETE
 
 ### What It Is
+
 Customers interact with Waiter AI via WhatsApp chat
 
 ### User Journey
+
 ```
 1. Customer sends: "Show me the menu"
    → Waiter AI replies with menu categories
@@ -45,7 +47,9 @@ Customers interact with Waiter AI via WhatsApp chat
 ```
 
 ### Status
+
 ✅ **100% Complete**
+
 - WhatsApp webhook integration
 - Waiter AI agent (Gemini 2.5 Pro)
 - Menu search, cart, payments
@@ -56,13 +60,16 @@ Customers interact with Waiter AI via WhatsApp chat
 ## Component 2: Waiter AI Agent (Backend) ✅ COMPLETE
 
 ### What It Is
+
 AI agent that processes customer messages and manages orders
 
 ### Location
+
 - `supabase/functions/wa-webhook-ai-agents/ai-agents/waiter_agent.ts` (460+ lines)
 - `supabase/functions/waiter-ai-agent/index.ts` (825+ lines)
 
 ### Features Implemented ✅
+
 - ✅ Natural language understanding (Gemini 2.5 Pro + OpenAI GPT-4)
 - ✅ Menu search and recommendations
 - ✅ Shopping cart management
@@ -73,6 +80,7 @@ AI agent that processes customer messages and manages orders
 - ✅ Multi-language responses
 
 ### AI Tools (7 total)
+
 1. `search_menu` - Search menu items
 2. `add_to_cart` - Add items to cart
 3. `recommend_wine` - Wine pairings
@@ -82,12 +90,14 @@ AI agent that processes customer messages and manages orders
 7. `submit_feedback` - Customer ratings
 
 ### Database Integration
+
 - Creates orders in `orders` table
 - Stores cart in `draft_orders` table
 - Logs conversations in `waiter_conversations`
 - Manages payments in `payments` table
 
 ### Status
+
 ✅ **100% Complete**
 
 ---
@@ -95,10 +105,13 @@ AI agent that processes customer messages and manages orders
 ## Component 3: Bar Manager Desktop App ⚠️ NOT YET IMPLEMENTED
 
 ### What It Is
+
 Desktop application for restaurant/bar staff to manage orders
 
 ### Purpose
+
 Bar managers use this to:
+
 - **View incoming orders** from WhatsApp customers
 - **Update order status** (pending → preparing → ready → delivered)
 - **Manage menu** (add/edit/delete items, set prices, mark unavailable)
@@ -109,6 +122,7 @@ Bar managers use this to:
 ### Key Features Needed
 
 #### 1. Dashboard (Home Screen)
+
 ```
 Today's Summary:
 - New Orders: 12 🔔
@@ -133,6 +147,7 @@ Active Orders List:
 ```
 
 #### 2. Menu Management
+
 ```
 Menu Items:
 ┌─────────────────────────────────────┐
@@ -149,6 +164,7 @@ Menu Items:
 ```
 
 #### 3. Order Details
+
 ```
 Order #WA-001
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -173,6 +189,7 @@ Delivery: KN 5 Ave, Kigali
 ```
 
 #### 4. Real-time Notifications
+
 - 🔔 Sound alert when new order arrives
 - Desktop notification popup
 - Auto-refresh order list every 30 seconds
@@ -181,39 +198,45 @@ Delivery: KN 5 Ave, Kigali
 ### Technical Implementation
 
 #### Frontend
+
 - **Framework:** Next.js 15 (App Router)
 - **UI:** Tailwind CSS + shadcn/ui
 - **State:** React Context + Zustand
 - **Real-time:** Supabase Realtime subscriptions
 
 #### Desktop
+
 - **Framework:** Tauri 2.0
 - **Platform:** Windows, macOS, Linux
 - **Size:** ~8-12 MB
 
 #### Database Integration
+
 ```sql
 -- Subscribe to new orders
-SELECT * FROM orders 
-WHERE status = 'pending' 
+SELECT * FROM orders
+WHERE status = 'pending'
 AND restaurant_id = 'current_restaurant'
 ORDER BY created_at DESC;
 
 -- Update order status
-UPDATE orders 
+UPDATE orders
 SET status = 'preparing', updated_at = NOW()
 WHERE id = 'order_id';
 ```
 
 ### Status
+
 ⚠️ **NOT YET IMPLEMENTED**
 
 **What Exists:**
+
 - ✅ Database schema (all tables ready)
 - ✅ Architecture document created
 - ✅ UI mockups defined
 
 **What's Needed:**
+
 - ⚠️ Next.js app initialization
 - ⚠️ UI components implementation
 - ⚠️ Real-time subscriptions
@@ -228,14 +251,15 @@ WHERE id = 'order_id';
 ## 🗄️ Database Schema (Complete)
 
 ### Core Tables ✅
+
 ```sql
 -- Orders from WhatsApp customers
 orders (
-  id, 
-  customer_phone, 
+  id,
+  customer_phone,
   status,              -- pending, preparing, ready, delivered, cancelled
-  total, 
-  created_at, 
+  total,
+  created_at,
   restaurant_id,
   order_type,          -- dine_in, takeout, delivery
   delivery_address
@@ -243,21 +267,21 @@ orders (
 
 -- Order line items
 order_items (
-  id, 
-  order_id, 
-  menu_item_id, 
-  quantity, 
-  price, 
+  id,
+  order_id,
+  menu_item_id,
+  quantity,
+  price,
   special_instructions  -- "extra cheese", "no onions", etc.
 )
 
 -- Restaurant menu
 menu_items (
-  id, 
+  id,
   restaurant_id,
-  name, 
-  description, 
-  price, 
+  name,
+  description,
+  price,
   category,            -- starter, main, dessert, drink
   available,           -- true/false (in stock)
   preparation_time,    -- minutes
@@ -267,28 +291,28 @@ menu_items (
 
 -- Restaurant settings
 restaurants (
-  id, 
-  name, 
-  phone, 
-  address, 
+  id,
+  name,
+  phone,
+  address,
   payment_settings,    -- JSON: accepted methods, USSD codes
   operating_hours      -- JSON: hours per day
 )
 
 -- Staff authentication
 staff (
-  id, 
-  restaurant_id, 
-  name, 
-  email, 
+  id,
+  restaurant_id,
+  name,
+  email,
   role                 -- manager, waiter, kitchen
 )
 
 -- Payment tracking
 payments (
-  id, 
-  order_id, 
-  amount, 
+  id,
+  order_id,
+  amount,
   method,              -- momo, airtel, revolut, cash
   status,              -- pending, completed, failed
   transaction_id,
@@ -297,17 +321,17 @@ payments (
 
 -- Conversation history
 waiter_conversations (
-  id, 
-  customer_phone, 
-  language, 
+  id,
+  customer_phone,
+  language,
   created_at
 )
 
 waiter_messages (
-  id, 
-  conversation_id, 
+  id,
+  conversation_id,
   role,                -- user, assistant
-  content, 
+  content,
   timestamp
 )
 ```
@@ -323,7 +347,7 @@ Step 1: Customer Interaction (WhatsApp)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Customer: "Hi, show me your menu"
 
-Waiter AI (Gemini): 
+Waiter AI (Gemini):
 "Hello! 🍽️ Here are our menu categories:
 1️⃣ Starters - $5-10
 2️⃣ Mains - $12-25
@@ -341,10 +365,10 @@ Waiter AI:
 "Here are our pizzas:
 1️⃣ Pizza Margherita - $12.00
    Fresh tomatoes, mozzarella, basil
-   
+
 2️⃣ Pizza Pepperoni - $15.00
    Pepperoni, cheese, tomato sauce
-   
+
 3️⃣ Pizza Veggie - $13.00
    Bell peppers, mushrooms, olives"
 
@@ -455,7 +479,7 @@ Manager clicks: [Mark Delivered]
 Step 12: Feedback Request
 ━━━━━━━━━━━━━━━━━━━━━━━━
 Waiter AI (auto-message):
-"How was your order? 
+"How was your order?
 Rate us 1-5 stars ⭐"
 
 Customer: "5 stars, delicious!"
@@ -471,6 +495,7 @@ Waiter AI:
 ## 📁 File Locations
 
 ### Backend (Waiter AI Agent) ✅
+
 ```
 supabase/functions/
 ├── wa-webhook-ai-agents/
@@ -484,6 +509,7 @@ supabase/functions/
 ```
 
 ### Database ✅
+
 ```
 supabase/migrations/
 ├── 20251122082500_apply_intent_waiter.sql
@@ -493,6 +519,7 @@ supabase/migrations/
 ```
 
 ### Bar Manager App ⚠️ (Not Yet Implemented)
+
 ```
 bar-manager-app/
 ├── ARCHITECTURE.md                  ✅ (Created)
@@ -507,34 +534,36 @@ bar-manager-app/
 
 ### Component Status
 
-| Component | Status | Completeness |
-|-----------|--------|--------------|
-| **WhatsApp Interface** | ✅ Complete | 100% |
-| **Waiter AI Agent** | ✅ Complete | 100% |
-| **Database Schema** | ✅ Complete | 100% |
-| **Backend Integration** | ✅ Complete | 100% |
-| **Bar Manager Desktop App** | ⚠️ Not Started | 0% |
+| Component                   | Status         | Completeness |
+| --------------------------- | -------------- | ------------ |
+| **WhatsApp Interface**      | ✅ Complete    | 100%         |
+| **Waiter AI Agent**         | ✅ Complete    | 100%         |
+| **Database Schema**         | ✅ Complete    | 100%         |
+| **Backend Integration**     | ✅ Complete    | 100%         |
+| **Bar Manager Desktop App** | ⚠️ Not Started | 0%           |
 
 ### Feature Status
 
-| Feature | Backend | Frontend (Bar App) |
-|---------|---------|-------------------|
-| Menu Search | ✅ | ⚠️ |
-| Order Creation | ✅ | ⚠️ |
-| Order Status Updates | ✅ | ⚠️ |
-| Menu Management | ✅ (DB) | ⚠️ (UI) |
-| Real-time Notifications | ✅ (DB triggers) | ⚠️ (Desktop) |
-| Payment Processing | ✅ | ⚠️ |
-| Staff Authentication | ✅ (DB) | ⚠️ (UI) |
+| Feature                 | Backend          | Frontend (Bar App) |
+| ----------------------- | ---------------- | ------------------ |
+| Menu Search             | ✅               | ⚠️                 |
+| Order Creation          | ✅               | ⚠️                 |
+| Order Status Updates    | ✅               | ⚠️                 |
+| Menu Management         | ✅ (DB)          | ⚠️ (UI)            |
+| Real-time Notifications | ✅ (DB triggers) | ⚠️ (Desktop)       |
+| Payment Processing      | ✅               | ⚠️                 |
+| Staff Authentication    | ✅ (DB)          | ⚠️ (UI)            |
 
 ---
 
 ## 🎯 Next Steps
 
 ### Priority 1: Bar Manager Desktop App (MVP)
+
 **Estimated Time:** 2-3 days
 
 1. **Initialize Next.js app** (30 min)
+
    ```bash
    cd bar-manager-app
    pnpx create-next-app@latest . --typescript --tailwind --app
@@ -568,12 +597,14 @@ bar-manager-app/
    - Payment methods
 
 ### Priority 2: Polish & Testing (1 day)
+
 - Error handling
 - Loading states
 - Offline support
 - Cross-platform testing
 
 ### Priority 3: Advanced Features (Future)
+
 - Order analytics dashboard
 - Staff management
 - Inventory tracking
@@ -584,6 +615,7 @@ bar-manager-app/
 ## 📊 Summary
 
 **What You Have:**
+
 - ✅ Fully functional WhatsApp ordering system
 - ✅ AI agent handling customer conversations
 - ✅ Complete database schema
@@ -591,6 +623,7 @@ bar-manager-app/
 - ✅ Multi-language support
 
 **What You Need:**
+
 - ⚠️ Bar Manager Desktop App for staff to:
   - View incoming orders
   - Update order status
@@ -598,11 +631,13 @@ bar-manager-app/
   - Receive notifications
 
 **Current Workflow (Manual):**
+
 - Orders are created in database by Waiter AI
 - Bar staff must check database directly (Supabase dashboard)
 - No user-friendly interface for managing orders
 
 **Future Workflow (With Desktop App):**
+
 - Orders appear automatically in desktop app
 - Bar staff click buttons to update status
 - Customers get real-time updates via WhatsApp

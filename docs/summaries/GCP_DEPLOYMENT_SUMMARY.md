@@ -10,6 +10,7 @@
 ## 📋 What Was Created
 
 ### Documentation (9 files)
+
 1. **GCP_DEPLOYMENT_GUIDE.md** - Complete deployment guide (11.6 KB)
 2. **services-overview.md** - Service inventory and architecture
 3. **enable-apis.md** - API enablement instructions
@@ -21,12 +22,15 @@
 9. **whatsapp-webhooks-architecture.md** - Architecture decision (7.8 KB)
 
 ### Scripts (1 file)
+
 1. **deploy-all-services.sh** - Automated deployment script (5.8 KB)
 
 ### CI/CD (1 file)
+
 1. **gcp-deploy-services.yml** - GitHub Actions workflow (9.6 KB)
 
 ### Dockerfiles (1 file)
+
 1. **services/voice-gateway/Dockerfile** - Voice Gateway container
 
 **Total**: 12 files, ~45 KB documentation + automation
@@ -35,12 +39,12 @@
 
 ## 🏗️ Services to Deploy
 
-| Service | Cloud Run Name | Type | IAP | Memory | CPU | Port |
-|---------|---------------|------|-----|--------|-----|------|
-| Admin PWA | easymo-admin-app | Next.js | ✅ | 1Gi | 1 | 8080 |
-| Voice Bridge | easymo-voice-bridge | Node.js | ❌ | 512Mi | 1 | 8080 |
-| Voice Gateway | easymo-voice-gateway | Node.js | ❌ | 512Mi | 1 | 8080 |
-| Vendor Service | easymo-vendor-service | Express | ❌ | 256Mi | 1 | 8080 |
+| Service        | Cloud Run Name        | Type    | IAP | Memory | CPU | Port |
+| -------------- | --------------------- | ------- | --- | ------ | --- | ---- |
+| Admin PWA      | easymo-admin-app      | Next.js | ✅  | 1Gi    | 1   | 8080 |
+| Voice Bridge   | easymo-voice-bridge   | Node.js | ❌  | 512Mi  | 1   | 8080 |
+| Voice Gateway  | easymo-voice-gateway  | Node.js | ❌  | 512Mi  | 1   | 8080 |
+| Vendor Service | easymo-vendor-service | Express | ❌  | 256Mi  | 1   | 8080 |
 
 ---
 
@@ -105,43 +109,47 @@ chmod +x scripts/gcp/deploy-all-services.sh
 ## 🎯 Deployment Checklist
 
 ### Prerequisites
-- [  ] Google Cloud account with billing
-- [  ] gcloud CLI installed
-- [  ] Docker installed
-- [  ] GitHub account (for CI/CD)
+
+- [ ] Google Cloud account with billing
+- [ ] gcloud CLI installed
+- [ ] Docker installed
+- [ ] GitHub account (for CI/CD)
 
 ### Initial Setup
-- [  ] Enable Google Cloud APIs
-- [  ] Create Artifact Registry repository
-- [  ] Configure Docker authentication
-- [  ] Create Secret Manager secrets
+
+- [ ] Enable Google Cloud APIs
+- [ ] Create Artifact Registry repository
+- [ ] Configure Docker authentication
+- [ ] Create Secret Manager secrets
 
 ### Service Deployment
-- [  ] Deploy Admin PWA
-- [  ] Deploy Voice Bridge
-- [  ] Deploy Voice Gateway
-- [  ] Deploy Vendor Service
+
+- [ ] Deploy Admin PWA
+- [ ] Deploy Voice Bridge
+- [ ] Deploy Voice Gateway
+- [ ] Deploy Vendor Service
 
 ### Post-Deployment
-- [  ] Configure IAP for Admin
-- [  ] Set up secrets (OpenAI, Supabase)
-- [  ] Configure CI/CD (GitHub Actions)
-- [  ] Test all service endpoints
-- [  ] Set up monitoring and alerting
+
+- [ ] Configure IAP for Admin
+- [ ] Set up secrets (OpenAI, Supabase)
+- [ ] Configure CI/CD (GitHub Actions)
+- [ ] Test all service endpoints
+- [ ] Set up monitoring and alerting
 
 ---
 
 ## 💰 Cost Estimate
 
-| Service | Memory | CPU | Est. Cost/Month |
-|---------|--------|-----|-----------------|
-| Admin PWA | 1Gi | 1 | $15-30 |
-| Voice Bridge | 512Mi | 1 | $20-40 |
-| Voice Gateway | 512Mi | 1 | $15-30 |
-| Vendor Service | 256Mi | 1 | $5-10 |
-| **Total** | | | **$55-110/month** |
+| Service        | Memory | CPU | Est. Cost/Month   |
+| -------------- | ------ | --- | ----------------- |
+| Admin PWA      | 1Gi    | 1   | $15-30            |
+| Voice Bridge   | 512Mi  | 1   | $20-40            |
+| Voice Gateway  | 512Mi  | 1   | $15-30            |
+| Vendor Service | 256Mi  | 1   | $5-10             |
+| **Total**      |        |     | **$55-110/month** |
 
-*Based on moderate traffic. Actual costs depend on usage.*
+_Based on moderate traffic. Actual costs depend on usage._
 
 **Savings by keeping webhooks on Supabase**: $10-40/month
 
@@ -150,12 +158,14 @@ chmod +x scripts/gcp/deploy-all-services.sh
 ## 🔐 Required Secrets
 
 ### Google Cloud Secret Manager
+
 ```bash
 gcloud secrets create openai-api-key --replication-policy=automatic
 gcloud secrets create supabase-service-role-key --replication-policy=automatic
 ```
 
 ### GitHub Repository Secrets
+
 - `GCP_SA_KEY` - Service account JSON (base64)
 - `GCP_PROJECT_ID` - easymoai
 - `GCP_REGION` - europe-west1
@@ -169,6 +179,7 @@ gcloud secrets create supabase-service-role-key --replication-policy=automatic
 ## 📝 Environment Variables
 
 ### Admin PWA
+
 ```bash
 NODE_ENV=production
 NEXT_PUBLIC_SUPABASE_URL=https://lhbowpbcpwoiparwnwgt.supabase.co
@@ -177,6 +188,7 @@ SUPABASE_SERVICE_ROLE_KEY=<secret>
 ```
 
 ### Voice Bridge
+
 ```bash
 NODE_ENV=production
 PORT=8080
@@ -188,6 +200,7 @@ SUPABASE_SERVICE_ROLE_KEY=<secret>
 ```
 
 ### Voice Gateway
+
 ```bash
 NODE_ENV=production
 PORT=8080
@@ -201,6 +214,7 @@ SUPABASE_SERVICE_ROLE_KEY=<secret>
 ## 🧪 Testing
 
 ### Service Health Checks
+
 ```bash
 # Admin PWA
 curl https://easymo-admin-xxxxx-ew.a.run.app/api/health
@@ -213,6 +227,7 @@ curl https://easymo-voice-gateway-xxxxx-ew.a.run.app/health
 ```
 
 ### View Logs
+
 ```bash
 gcloud run services logs read easymo-voice-bridge --region europe-west1 --tail
 ```
@@ -222,11 +237,13 @@ gcloud run services logs read easymo-voice-bridge --region europe-west1 --tail
 ## 🔄 CI/CD
 
 ### Manual Deployment
+
 ```bash
 ./scripts/gcp/deploy-all-services.sh
 ```
 
 ### Automated Deployment (GitHub Actions)
+
 - Push to `main` branch → Auto-deploy changed services
 - Manual trigger → Deploy specific service via GitHub UI
 
@@ -236,7 +253,8 @@ gcloud run services logs read easymo-voice-bridge --region europe-west1 --tail
 
 - [GCP_DEPLOYMENT_GUIDE.md](docs/gcp/GCP_DEPLOYMENT_GUIDE.md) - Complete guide
 - [services-overview.md](docs/gcp/services-overview.md) - Service details
-- [whatsapp-webhooks-architecture.md](docs/gcp/whatsapp-webhooks-architecture.md) - Architecture decision
+- [whatsapp-webhooks-architecture.md](docs/gcp/whatsapp-webhooks-architecture.md) - Architecture
+  decision
 
 ---
 
@@ -253,12 +271,12 @@ gcloud run services logs read easymo-voice-bridge --region europe-west1 --tail
 
 ## ✅ Success Criteria
 
-- [  ] All 4 services deployed to Cloud Run
-- [  ] Admin PWA protected by IAP
-- [  ] Secrets configured in Secret Manager
-- [  ] CI/CD pipeline working
-- [  ] Health checks passing
-- [  ] Monitoring dashboards set up
+- [ ] All 4 services deployed to Cloud Run
+- [ ] Admin PWA protected by IAP
+- [ ] Secrets configured in Secret Manager
+- [ ] CI/CD pipeline working
+- [ ] Health checks passing
+- [ ] Monitoring dashboards set up
 
 ---
 

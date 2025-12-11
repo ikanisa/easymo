@@ -12,6 +12,7 @@
 This runbook covers deployment of all refactoring changes from Phases 2, 5, 6, and 7.
 
 **What Changed:**
+
 - 3 WhatsApp voice services consolidated to 1
 - 22 Supabase functions ready for deletion
 - Migration folders consolidated (4 → 1)
@@ -24,17 +25,20 @@ This runbook covers deployment of all refactoring changes from Phases 2, 5, 6, a
 ## ⚠️ Prerequisites
 
 ### Required Access
+
 - [ ] GitHub repository access (ikanisa/easymo)
 - [ ] Supabase project admin access
 - [ ] Staging environment access
 - [ ] Production deployment permissions (for final step)
 
 ### Required Credentials
+
 - [ ] `SUPABASE_PROJECT_REF` - Get from Supabase dashboard
 - [ ] `OPENAI_API_KEY` - For voice service
 - [ ] Docker/Kubernetes access - For service deployment
 
 ### Team Coordination
+
 - [ ] Notify team of deployment window
 - [ ] Schedule code review if needed
 - [ ] Coordinate staging environment usage
@@ -45,6 +49,7 @@ This runbook covers deployment of all refactoring changes from Phases 2, 5, 6, a
 ## 📋 Pre-Deployment Checklist
 
 ### 1. Local Environment Setup
+
 ```bash
 # Clone/pull latest
 git checkout main
@@ -59,6 +64,7 @@ pnpm install --frozen-lockfile
 ```
 
 ### 2. Review Changes
+
 ```bash
 # Review service consolidation
 ls -la services/ | grep -E "whatsapp|voice"
@@ -70,6 +76,7 @@ cat TECHNICAL_DEBT_CLEANUP_COMPLETE.md
 ```
 
 ### 3. Verify Service State
+
 ```bash
 # Check if whatsapp-media-server exists
 if [ -d "services/whatsapp-media-server" ]; then
@@ -126,6 +133,7 @@ ls -d services/*whatsapp* services/*voice* 2>/dev/null
 ```
 
 **Expected result:**
+
 ```
 services/voice-bridge          ✅ (kept - different purpose)
 services/voice-gateway         ✅ (kept - SIP gateway)
@@ -159,12 +167,14 @@ npm run build
 ```
 
 **If build fails:**
+
 1. Check for missing dependencies
 2. Verify tsconfig.json
 3. Check for broken imports
 4. Review build logs carefully
 
 **If build succeeds:**
+
 ```bash
 # Create .env if needed (copy from .env.example)
 cp .env.example .env
@@ -215,6 +225,7 @@ grep "whatsapp-media-server" docker-compose.voice-media.yml
 ```
 
 **Test Docker build:**
+
 ```bash
 # Build image
 docker-compose -f docker-compose.voice-media.yml build whatsapp-media-server
@@ -266,6 +277,7 @@ supabase functions list --project-ref $SUPABASE_PROJECT_REF | wc -l
 ```
 
 **If script fails:**
+
 - Check SUPABASE_PROJECT_REF is correct
 - Verify you have admin permissions
 - Check network connectivity
@@ -276,6 +288,7 @@ supabase functions list --project-ref $SUPABASE_PROJECT_REF | wc -l
 ### STEP 5: Deploy to Staging (30 min)
 
 **Prerequisites:**
+
 - Staging environment ready
 - Environment variables configured
 - Team notified
@@ -307,6 +320,7 @@ kubectl logs -f deployment/whatsapp-media-server
 ### STEP 6: Staging Validation (30 min)
 
 **Health Checks:**
+
 ```bash
 # Get staging URL (replace with your staging domain)
 STAGING_URL="https://staging.easymo.app"
@@ -344,6 +358,7 @@ curl $STAGING_URL/metrics
    - [ ] Check for any errors in logs
 
 **Validation Checklist:**
+
 - [ ] Service starts without errors
 - [ ] Health endpoint responds correctly
 - [ ] WhatsApp voice calls work end-to-end
@@ -359,6 +374,7 @@ curl $STAGING_URL/metrics
 **⚠️ ONLY proceed if staging validation passed 100%**
 
 **Pre-Production Checklist:**
+
 - [ ] Staging tests passed
 - [ ] Team approval obtained
 - [ ] Rollback plan ready
@@ -366,6 +382,7 @@ curl $STAGING_URL/metrics
 - [ ] On-call engineer available
 
 **Deploy:**
+
 ```bash
 # Same process as staging, but to production
 
@@ -387,6 +404,7 @@ curl $STAGING_URL/metrics
 ```
 
 **Post-Deployment Monitoring (1 hour):**
+
 ```bash
 # Monitor logs continuously
 tail -f /var/log/whatsapp-media-server/*.log
@@ -427,6 +445,7 @@ docker-compose -f docker-compose.voice-media.yml up -d
 ### If Issues Detected in Production
 
 **IMMEDIATE:**
+
 ```bash
 # Option 1: Route traffic back to old service (if blue-green)
 # Update load balancer / ingress to point to old service
@@ -440,6 +459,7 @@ docker-compose scale voice-media-bridge=1
 ```
 
 **Git Rollback:**
+
 ```bash
 # If you need to revert code changes
 git revert <commit-hash>
@@ -466,11 +486,13 @@ git push origin main
 ### Metrics to Monitor
 
 **Before Deployment (Baseline):**
+
 - Service count: 24 services
 - Function count: ~114 Supabase functions
 - Duplicated code: ~2,800 lines
 
 **After Deployment (Target):**
+
 - Service count: 22 services (-8.3%)
 - Function count: ~90-95 functions (-20%)
 - Duplicated code: 0 lines (-100%)
@@ -506,18 +528,21 @@ git push origin main
 ## 🎯 Post-Deployment Tasks
 
 ### Immediate (Within 24 hours)
+
 - [ ] Monitor service for stability
 - [ ] Review error logs
 - [ ] Confirm voice calls working
 - [ ] Validate OpenAI costs (no unexpected increase)
 
 ### Short-term (Within 1 week)
+
 - [ ] Remove old service directories permanently (if stable)
 - [ ] Update documentation
 - [ ] Archive old docker images
 - [ ] Clean up old environment variables
 
 ### Medium-term (Within 1 month)
+
 - [ ] Review performance improvements
 - [ ] Gather team feedback
 - [ ] Identify additional optimization opportunities
@@ -569,6 +594,7 @@ _________________________________________________
 ## ✅ Final Notes
 
 **What This Deployment Achieves:**
+
 - ✅ Cleaner architecture (24 → 22 services)
 - ✅ Reduced duplication (-2,800 lines)
 - ✅ Single voice service (easier maintenance)
@@ -576,17 +602,20 @@ _________________________________________________
 - ✅ Better documented codebase
 
 **Risk Mitigation:**
+
 - Everything is archived (easy rollback)
 - Comprehensive testing steps
 - Clear success criteria
 - Multiple rollback options
 
 **Time Investment:**
+
 - Staging deployment: ~2 hours
 - Production deployment: ~1 hour
 - Total: ~3 hours with monitoring
 
 **Recommended Execution:**
+
 - Best time: Business hours, weekday
 - Team: At least 2 people (deployer + reviewer)
 - Duration: Allow 4 hours for full cycle
@@ -596,4 +625,3 @@ _________________________________________________
 **Last Updated:** December 10, 2025  
 **Created by:** AI Assistant  
 **Status:** ✅ Ready for execution
-

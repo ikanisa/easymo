@@ -1,10 +1,13 @@
 # Identity-Aware Proxy (IAP) Setup Guide
 
-This guide walks you through configuring Google Cloud's Identity-Aware Proxy (IAP) to restrict access to your EasyMO admin PWA to authorized users only.
+This guide walks you through configuring Google Cloud's Identity-Aware Proxy (IAP) to restrict
+access to your EasyMO admin PWA to authorized users only.
 
 ## What is IAP?
 
-Identity-Aware Proxy (IAP) is a Google Cloud service that controls access to your cloud applications by verifying user identity and context. IAP sits in front of your application and enforces access policies **before** any request reaches your service.
+Identity-Aware Proxy (IAP) is a Google Cloud service that controls access to your cloud applications
+by verifying user identity and context. IAP sits in front of your application and enforces access
+policies **before** any request reaches your service.
 
 ### How IAP Works
 
@@ -32,7 +35,8 @@ User Request → IAP (Auth Check) → Allowed? → Your App
 Before setting up IAP, ensure you have:
 
 - [x] **Google Cloud Project** with billing enabled
-- [x] **Cloud Run or App Engine service** already deployed (see [CI/CD to Google Cloud Run](../README.md#cicd-to-google-cloud-run))
+- [x] **Cloud Run or App Engine service** already deployed (see
+      [CI/CD to Google Cloud Run](../README.md#cicd-to-google-cloud-run))
 - [x] **Custom domain** (optional but recommended for production)
 - [x] **Google Workspace** (for internal apps) or Gmail accounts (for external users)
 - [x] **Owner or Editor role** on the GCP project
@@ -45,7 +49,8 @@ IAP requires an OAuth 2.0 consent screen to authenticate users.
 
 #### For Internal Users (Google Workspace)
 
-1. Go to [APIs & Services → OAuth consent screen](https://console.cloud.google.com/apis/credentials/consent)
+1. Go to
+   [APIs & Services → OAuth consent screen](https://console.cloud.google.com/apis/credentials/consent)
 2. Select **Internal** user type (only available for Google Workspace organizations)
 3. Click **Create**
 4. Fill in required fields:
@@ -95,46 +100,47 @@ Or use the helper script:
 
    Cloud Run requires an HTTPS load balancer to use IAP:
 
-   a. Go to [Network Services → Load Balancing](https://console.cloud.google.com/net-services/loadbalancing)
-   
+   a. Go to
+   [Network Services → Load Balancing](https://console.cloud.google.com/net-services/loadbalancing)
+
    b. Click **Create Load Balancer** → **HTTPS Load Balancing** → **Start Configuration**
-   
+
    c. **Frontend Configuration**:
-      - Protocol: `HTTPS`
-      - IP: Create a new static IP
-      - Certificate: Create or select an SSL certificate for your domain
-   
+   - Protocol: `HTTPS`
+   - IP: Create a new static IP
+   - Certificate: Create or select an SSL certificate for your domain
+
    d. **Backend Configuration**:
-      - Backend type: `Serverless network endpoint group`
-      - Create a NEG pointing to your Cloud Run service
-      - Region: Match your Cloud Run region
-      - Enable **Cloud CDN** (optional)
-   
+   - Backend type: `Serverless network endpoint group`
+   - Create a NEG pointing to your Cloud Run service
+   - Region: Match your Cloud Run region
+   - Enable **Cloud CDN** (optional)
+
    e. Click **Create**
 
 2. **Enable IAP**
 
    a. Go to [Security → Identity-Aware Proxy](https://console.cloud.google.com/security/iap)
-   
+
    b. Find your load balancer backend service in the list
-   
+
    c. Toggle the **IAP** switch to **ON**
-   
+
    d. If prompted, configure the OAuth consent screen (already done in Step 1)
 
 3. **Add Authorized Users**
 
    a. Select your backend service (checkbox)
-   
+
    b. Click **Add Principal** in the right panel
-   
+
    c. Enter email addresses or groups:
-      - Individual: `admin@yourcompany.com`
-      - Group: `easymo-admins@yourcompany.com`
-      - Domain: `yourcompany.com` (all users in domain)
-   
+   - Individual: `admin@yourcompany.com`
+   - Group: `easymo-admins@yourcompany.com`
+   - Domain: `yourcompany.com` (all users in domain)
+
    d. Select role: **IAP-secured Web App User**
-   
+
    e. Click **Save**
 
 #### Option B: Via gcloud CLI
@@ -187,7 +193,8 @@ Or use the helper script:
 
 ### 4. Update Cloud Run Service (No Unauthenticated Access)
 
-Since IAP now handles authentication, update your Cloud Run service to **deny** unauthenticated access:
+Since IAP now handles authentication, update your Cloud Run service to **deny** unauthenticated
+access:
 
 ```bash
 gcloud run services update ${SERVICE_NAME} \
@@ -231,10 +238,10 @@ IAP passes user information to your app via headers. You can log these for audit
 
 ```typescript
 // Example: Reading IAP headers in your app
-const userEmail = request.headers['x-goog-authenticated-user-email'];
-const userId = request.headers['x-goog-authenticated-user-id'];
+const userEmail = request.headers["x-goog-authenticated-user-email"];
+const userId = request.headers["x-goog-authenticated-user-id"];
 
-console.log('IAP User:', userEmail?.replace('accounts.google.com:', ''));
+console.log("IAP User:", userEmail?.replace("accounts.google.com:", ""));
 ```
 
 **Headers Available:**
@@ -295,6 +302,7 @@ Instead of managing individual users, use Google Groups:
 **Cause**: No IAM bindings configured
 
 **Solution**:
+
 ```bash
 # Check current policy
 gcloud iap web get-iam-policy \
@@ -319,7 +327,8 @@ gcloud iap web add-iam-policy-binding \
 
 **Cause**: Cloud Run requires a load balancer for IAP
 
-**Solution**: Follow [Option A](#option-a-via-gcp-console-recommended-for-first-time-setup) to create a load balancer with serverless NEG
+**Solution**: Follow [Option A](#option-a-via-gcp-console-recommended-for-first-time-setup) to
+create a load balancer with serverless NEG
 
 ### Users see "403 Forbidden" after signing in
 
@@ -331,7 +340,8 @@ gcloud iap web add-iam-policy-binding \
 
 **Cause**: Cloud Run service allows unauthenticated access
 
-**Solution**: 
+**Solution**:
+
 ```bash
 gcloud run services update ${SERVICE_NAME} \
   --region=${REGION} \
@@ -343,7 +353,8 @@ gcloud run services update ${SERVICE_NAME} \
 1. **Always use `--no-allow-unauthenticated`** on Cloud Run when using IAP
 2. **Use Google Groups** instead of individual users for easier management
 3. **Enable Cloud Logging** to audit access attempts
-4. **Verify JWT tokens** in your app for critical operations (see [IAP JWT verification](https://cloud.google.com/iap/docs/signed-headers-howto))
+4. **Verify JWT tokens** in your app for critical operations (see
+   [IAP JWT verification](https://cloud.google.com/iap/docs/signed-headers-howto))
 5. **Rotate OAuth client secrets** periodically
 6. **Use custom domains** (not `.run.app`) for production
 7. **Monitor IAP metrics** in Cloud Monitoring

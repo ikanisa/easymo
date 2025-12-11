@@ -98,6 +98,7 @@ NOTICE:  Final state: 1 active agent(s), 2 active menu item(s)
 ```
 
 If you see WARNING messages:
+
 - **"Some menu items are missing"** - The required menu items don't exist (needs manual fix)
 - **"Expected exactly 1 active Buy & Sell agent"** - Multiple agents still active (investigate)
 - **"Expected exactly 2 active menu items"** - Menu items count is wrong (investigate)
@@ -120,15 +121,17 @@ supabase db push
 
 ### Issue: "Expected 1 agent but found 0"
 
-**Solution**: The buy_sell agent was never created. The migration will create it automatically via `INSERT ... ON CONFLICT`.
+**Solution**: The buy_sell agent was never created. The migration will create it automatically via
+`INSERT ... ON CONFLICT`.
 
 ### Issue: "Expected 2 menu items but found 0 or 1"
 
-**Solution**: Menu items are missing. Check if migration `20251210085100_split_buy_sell_and_chat_agent.sql` was applied:
+**Solution**: Menu items are missing. Check if migration
+`20251210085100_split_buy_sell_and_chat_agent.sql` was applied:
 
 ```sql
 -- Check menu items
-SELECT * FROM whatsapp_home_menu_items 
+SELECT * FROM whatsapp_home_menu_items
 WHERE key IN ('buy_sell_categories', 'business_broker_agent');
 
 -- If missing, they should be created by that migration
@@ -141,11 +144,13 @@ WHERE key IN ('buy_sell_categories', 'business_broker_agent');
 This migration deletes data, so rollback requires restore from backup.
 
 **Before running in production**:
+
 1. Take a database snapshot/backup
 2. Test on staging first
 3. Verify all tests pass
 
 **If you need to rollback**:
+
 ```bash
 # Restore from backup
 pg_restore -d $DATABASE_URL backup_file.dump
@@ -158,14 +163,17 @@ pg_restore -d $DATABASE_URL backup_file.dump
 ## 📊 What Gets Changed
 
 ### Tables Modified
+
 - `ai_agents` - Deletes 3-4 rows, ensures 1 active
 - `whatsapp_home_menu_items` - Deletes 5+ old entries
 
 ### Data Deleted
+
 - Agent slugs: `buy_and_sell`, `business_broker`, `marketplace`, `broker`
 - Menu keys: `buy_and_sell_agent`, `marketplace_agent`, `broker_agent`, etc.
 
 ### Data Preserved
+
 - Agent slug: `buy_sell` (kept and activated)
 - Menu keys: `buy_sell_categories`, `business_broker_agent` (kept)
 
@@ -174,6 +182,7 @@ pg_restore -d $DATABASE_URL backup_file.dump
 ## 🎯 Success Criteria
 
 After migration succeeds:
+
 - ✅ Exactly 1 active Buy & Sell agent (slug: `buy_sell`)
 - ✅ Exactly 2 active menu items
 - ✅ No old agent slugs remain
@@ -185,6 +194,7 @@ After migration succeeds:
 ## 📞 Support
 
 If you encounter issues:
+
 1. Check the migration output for NOTICE/WARNING messages
 2. Run verification queries (see above)
 3. Check application logs for agent lookup errors

@@ -6,7 +6,8 @@
 
 ## Overview
 
-The WhatsApp pipeline is the **single unified entry point** for all user interactions with EasyMO agents. It handles message normalization, routing, intent parsing, and response delivery.
+The WhatsApp pipeline is the **single unified entry point** for all user interactions with EasyMO
+agents. It handles message normalization, routing, intent parsing, and response delivery.
 
 **Design Principle:** One webhook to rule them all - no more per-feature handlers.
 
@@ -83,6 +84,7 @@ The WhatsApp pipeline is the **single unified entry point** for all user interac
 **File:** `supabase/functions/wa-webhook-ai-agents/index.ts`
 
 **Responsibilities:**
+
 - Verify WhatsApp webhook signature
 - Extract message data from payload
 - Generate correlation ID for tracing
@@ -94,6 +96,7 @@ The WhatsApp pipeline is the **single unified entry point** for all user interac
 **File:** `supabase/functions/_shared/agent-orchestrator.ts`
 
 **Responsibilities:**
+
 - Route messages to correct agent
 - Load agent configuration
 - Invoke LLM for intent parsing
@@ -103,18 +106,23 @@ The WhatsApp pipeline is the **single unified entry point** for all user interac
 ### 3. Database Tables
 
 #### whatsapp_users
+
 Normalized WhatsApp user registry
 
 #### whatsapp_conversations
+
 Active conversation contexts per user
 
 #### whatsapp_messages
+
 Message history with correlation IDs
 
 #### ai_agent_intents
+
 Parsed user intentions with extracted parameters
 
 #### ai_agent_match_events
+
 Match/notification triggers
 
 ---
@@ -124,7 +132,7 @@ Match/notification triggers
 **User:** "I'm looking for driver jobs in Kigali"
 
 1. **Webhook receives** WhatsApp payload
-2. **Normalize** → Insert into whatsapp_* tables
+2. **Normalize** → Insert into whatsapp\_\* tables
 3. **Route** → Determine active agent (Jobs)
 4. **Parse** → LLM extracts `{ intent_type: "search_jobs", role: "driver", location: "Kigali" }`
 5. **Apply** → Query job_listings, return results
@@ -152,6 +160,7 @@ Match/notification triggers
 ## Monitoring
 
 **Key Metrics:**
+
 - Requests/min per agent
 - Latency (parsing, DB, total)
 - Error rate per intent type

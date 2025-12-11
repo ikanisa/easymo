@@ -2,7 +2,8 @@
 
 ## Overview
 
-This guide covers deploying the EasyMO admin-app (Next.js 15 SSR) to Google Cloud Run as an internal-only application.
+This guide covers deploying the EasyMO admin-app (Next.js 15 SSR) to Google Cloud Run as an
+internal-only application.
 
 ## Architecture
 
@@ -127,33 +128,34 @@ gcloud run services describe easymo-admin-app \
 
 ## Environment Variables Reference
 
-> **Complete Guide:** See [ENV_VARS_QUICK_REF.md](./ENV_VARS_QUICK_REF.md) for detailed environment variable configuration, security rules, and troubleshooting.
+> **Complete Guide:** See [ENV_VARS_QUICK_REF.md](./ENV_VARS_QUICK_REF.md) for detailed environment
+> variable configuration, security rules, and troubleshooting.
 
 ### Required Public Variables (Client-side Safe)
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | `https://xxxxx.supabase.co` |
+| Variable                        | Description            | Example                                   |
+| ------------------------------- | ---------------------- | ----------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase project URL   | `https://xxxxx.supabase.co`               |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
 
 ### Required Server-side Secrets
 
-| Variable | Description | Source |
-|----------|-------------|--------|
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key | Secret Manager |
-| `EASYMO_ADMIN_TOKEN` | Admin API authentication token | Secret Manager |
-| `ADMIN_SESSION_SECRET` | Session encryption key (32+ chars) | Secret Manager |
+| Variable                    | Description                        | Source         |
+| --------------------------- | ---------------------------------- | -------------- |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key          | Secret Manager |
+| `EASYMO_ADMIN_TOKEN`        | Admin API authentication token     | Secret Manager |
+| `ADMIN_SESSION_SECRET`      | Session encryption key (32+ chars) | Secret Manager |
 
 ### Optional Microservice URLs
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `NEXT_PUBLIC_AGENT_CORE_URL` | Agent core service endpoint | - |
-| `NEXT_PUBLIC_VOICE_BRIDGE_API_URL` | Voice bridge API endpoint | - |
-| `NEXT_PUBLIC_MARKETPLACE_RANKING_URL` | Ranking service endpoint | - |
-| `NEXT_PUBLIC_MARKETPLACE_VENDOR_URL` | Vendor service endpoint | - |
-| `NEXT_PUBLIC_MARKETPLACE_BUYER_URL` | Buyer service endpoint | - |
-| `NEXT_PUBLIC_WALLET_SERVICE_URL` | Wallet service endpoint | - |
+| Variable                              | Description                 | Default |
+| ------------------------------------- | --------------------------- | ------- |
+| `NEXT_PUBLIC_AGENT_CORE_URL`          | Agent core service endpoint | -       |
+| `NEXT_PUBLIC_VOICE_BRIDGE_API_URL`    | Voice bridge API endpoint   | -       |
+| `NEXT_PUBLIC_MARKETPLACE_RANKING_URL` | Ranking service endpoint    | -       |
+| `NEXT_PUBLIC_MARKETPLACE_VENDOR_URL`  | Vendor service endpoint     | -       |
+| `NEXT_PUBLIC_MARKETPLACE_BUYER_URL`   | Buyer service endpoint      | -       |
+| `NEXT_PUBLIC_WALLET_SERVICE_URL`      | Wallet service endpoint     | -       |
 
 ## Supabase Configuration
 
@@ -161,6 +163,7 @@ After deployment, configure Supabase to allow traffic from Cloud Run:
 
 1. Go to **Supabase Dashboard → Authentication → URL Configuration**
 2. Add Cloud Run URL to **Redirect URLs**:
+
    ```
    https://easymo-admin-app-xxxxx-uc.a.run.app/**
    ```
@@ -187,6 +190,7 @@ gcloud run services logs tail easymo-admin-app \
 ### Metrics
 
 Available in Cloud Console:
+
 - Request count
 - Request latency
 - Container instance count
@@ -197,7 +201,8 @@ Available in Cloud Console:
 
 Cloud Run automatically performs health checks on port 8080. Next.js handles this internally.
 
-**Note**: For admin-specific deployment guide with automated script, see [docs/gcp/admin-cloudrun-deploy.md](docs/gcp/admin-cloudrun-deploy.md).
+**Note**: For admin-specific deployment guide with automated script, see
+[docs/gcp/admin-cloudrun-deploy.md](docs/gcp/admin-cloudrun-deploy.md).
 
 ## Troubleshooting
 
@@ -206,6 +211,7 @@ Cloud Run automatically performs health checks on port 8080. Next.js handles thi
 **Problem**: `Cannot find '@easymo/commons'`
 
 **Solution**: Ensure shared packages are built in the Dockerfile:
+
 ```dockerfile
 RUN pnpm --filter @va/shared build && \
     pnpm --filter @easymo/commons build && \
@@ -218,11 +224,13 @@ RUN pnpm --filter @va/shared build && \
 **Problem**: Container exits immediately
 
 **Solution**: Check logs for environment variable issues:
+
 ```bash
 gcloud run services logs read easymo-admin-app --region europe-west1 --limit 50
 ```
 
 Common causes:
+
 - Missing required environment variables
 - Invalid Supabase credentials
 - Session secret too short (<32 chars)
@@ -231,7 +239,8 @@ Common causes:
 
 **Problem**: Users get 403 after IAP is enabled
 
-**Solution**: 
+**Solution**:
+
 1. Verify user has **IAP-secured Web App User** role
 2. Check IAP is enabled for the service
 3. Verify service account has Secret Manager access
@@ -241,6 +250,7 @@ Common causes:
 **Problem**: Container can't access secrets
 
 **Solution**:
+
 ```bash
 # Check secret exists
 gcloud secrets describe supabase-service-role
@@ -257,7 +267,7 @@ gcloud secrets add-iam-policy-binding supabase-service-role \
 
 ## Security Best Practices
 
-1. **Never use service role key in NEXT_PUBLIC_* variables**
+1. **Never use service role key in NEXT*PUBLIC*\* variables**
    - Validated by `scripts/assert-no-service-role-in-client.mjs` during build
    - Service role key must only be in Secret Manager
 
@@ -311,15 +321,15 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - id: auth
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
-      
+
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy easymo-admin-app \
@@ -351,11 +361,14 @@ gcloud run services update-traffic easymo-admin-app \
 ## Support
 
 For issues:
+
 1. Check Cloud Run logs: `gcloud run services logs tail easymo-admin-app --region europe-west1`
-2. Verify environment variables: `gcloud run services describe easymo-admin-app --region europe-west1`
+2. Verify environment variables:
+   `gcloud run services describe easymo-admin-app --region europe-west1`
 3. Test locally with Docker first
 4. Review [docs/GROUND_RULES.md](./docs/GROUND_RULES.md) for security compliance
-5. See [docs/gcp/admin-cloudrun-deploy.md](docs/gcp/admin-cloudrun-deploy.md) for admin-specific deployment
+5. See [docs/gcp/admin-cloudrun-deploy.md](docs/gcp/admin-cloudrun-deploy.md) for admin-specific
+   deployment
 
 ## Additional Resources
 

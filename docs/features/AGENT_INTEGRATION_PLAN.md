@@ -6,9 +6,10 @@
 ## Current Status
 
 ### ✅ Already Integrated
+
 - `wa-webhook-core` - Main routing hub
 - `wa-webhook-buy-sell` - Buy/Sell workflow (has embedded AI - needs separation)
-- `wa-webhook-property` - Property workflow  
+- `wa-webhook-property` - Property workflow
 - `wa-webhook-jobs` - Jobs workflow
 - `wa-webhook-waiter` - Waiter workflow
 - `wa-agent-waiter` - Waiter AI agent (registered)
@@ -17,6 +18,7 @@
 - `wa-agent-call-center` - Call center AI agent (registered)
 
 ### ⚠️ Needs Integration
+
 1. **agent-property-rental** - Not in route-config.ts
 2. **wa-webhook-buy-sell AI separation** - AI agent mixed with workflow
 3. **Production deployment** - All agents need deployment verification
@@ -24,9 +26,11 @@
 ## Integration Tasks
 
 ### Task 1: Add agent-property-rental to Routing
+
 **File**: `supabase/functions/_shared/route-config.ts`
 
 Add to `ROUTING_CONFIG`:
+
 ```typescript
 {
   service: "agent-property-rental",
@@ -37,43 +41,52 @@ Add to `ROUTING_CONFIG`:
 ```
 
 Add to `ROUTED_SERVICES`:
+
 ```typescript
 "agent-property-rental",
 ```
 
 Add to `STATE_SERVICE_PATTERNS`:
+
 ```typescript
 { patterns: ["property_agent_", "rental_agent_"], service: "agent-property-rental" },
 ```
 
 ### Task 2: Separate Buy/Sell AI Agent from Workflow
-**Current**: wa-webhook-buy-sell has both workflow AND AI agent mixed
-**Goal**: Strict separation
 
-**Option A**: Create new `agent-buy-sell` function
-**Option B**: Use feature flag to switch between workflow/agent modes in wa-webhook-buy-sell
+**Current**: wa-webhook-buy-sell has both workflow AND AI agent mixed **Goal**: Strict separation
+
+**Option A**: Create new `agent-buy-sell` function **Option B**: Use feature flag to switch between
+workflow/agent modes in wa-webhook-buy-sell
 
 **Recommendation**: Option A for clean separation
 
 ### Task 3: Verify Agent Endpoints
+
 All agents must follow pattern:
+
 ```
 https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/{agent-name}
 ```
 
 Verify:
-- ✅ `agent-property-rental` 
+
+- ✅ `agent-property-rental`
 - ✅ `wa-webhook-property`
 - ✅ `wa-webhook-jobs`
 - ⚠️ `wa-webhook-waiter` vs `wa-agent-waiter` (name conflict?)
 
 ### Task 4: Update wa-webhook-core Router
+
 Ensure router correctly routes to:
+
 - WhatsApp workflows for structured interactions
 - AI agents for conversational mode
 
 ### Task 5: Add Observability (GROUND_RULES)
+
 All agents must have:
+
 - Structured logging with correlation IDs
 - Event metrics
 - PII masking
@@ -99,14 +112,16 @@ supabase/functions/
 
 ## Strict Separation Rules
 
-### WhatsApp Workflows (wa-webhook-*)
+### WhatsApp Workflows (wa-webhook-\*)
+
 - Menu-driven interactions
 - Button-based navigation
 - List selections
 - Quick replies
 - Structured data collection
 
-### AI Agents (agent-* or wa-agent-*)
+### AI Agents (agent-_ or wa-agent-_)
+
 - Natural language conversations
 - OpenAI integration
 - Context-aware responses
@@ -114,7 +129,9 @@ supabase/functions/
 - NO menu systems
 
 ### Integration Point
+
 `wa-webhook-core` routes based on:
+
 1. User preference (workflow vs agent)
 2. Keywords/menu selection
 3. Session state

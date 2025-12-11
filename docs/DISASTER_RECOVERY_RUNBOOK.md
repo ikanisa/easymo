@@ -11,12 +11,12 @@
 
 ### Emergency Contacts
 
-| Role | Contact | Availability |
-|------|---------|--------------|
-| On-Call Engineer | +254-XXX-XXXX | 24/7 |
-| Platform Lead | platform@easymo.com | 8am-6pm EAT |
-| Database Admin | dba@easymo.com | On-call rotation |
-| Security Team | security@easymo.com | 24/7 |
+| Role               | Contact              | Availability     |
+| ------------------ | -------------------- | ---------------- |
+| On-Call Engineer   | +254-XXX-XXXX        | 24/7             |
+| Platform Lead      | platform@easymo.com  | 8am-6pm EAT      |
+| Database Admin     | dba@easymo.com       | On-call rotation |
+| Security Team      | security@easymo.com  | 24/7             |
 | Incident Commander | incidents@easymo.com | On-call rotation |
 
 ### Critical URLs
@@ -38,6 +38,7 @@ https://supabase.com/dashboard      # Supabase Dashboard
 ```
 
 ### Service Status Dashboard
+
 ```bash
 # Check all services
 curl https://status.easymo.com/api/health
@@ -95,6 +96,7 @@ https://status.easymo.com/whatsapp-webhook
 **Symptoms**: All services down, no traffic
 
 **Diagnosis**:
+
 ```bash
 # Check GCP infrastructure
 gcloud compute instances list --project=easymo-prod
@@ -109,6 +111,7 @@ psql -h db.easymo.com -U admin -d production -c "SELECT 1"
 ```
 
 **Recovery Steps**:
+
 ```bash
 # 1. Check cluster health
 kubectl cluster-info
@@ -131,6 +134,7 @@ watch -n 5 'kubectl top pods -n production'
 ```
 
 **Rollback**:
+
 ```bash
 # If deployment caused outage, rollback
 kubectl rollout undo deployment/whatsapp-webhook -n production
@@ -144,6 +148,7 @@ kubectl rollout status deployment/whatsapp-webhook -n production
 **Symptoms**: 500 errors, "connection refused", timeout errors
 
 **Diagnosis**:
+
 ```bash
 # Check Supabase status
 curl https://status.supabase.com/api/v2/status.json
@@ -153,12 +158,13 @@ kubectl exec -it deployment/agent-core -n production -- \
   psql -h db.supabase.co -U postgres -d production -c "SELECT now()"
 
 # Check replication lag
-SELECT client_addr, state, sync_state, 
+SELECT client_addr, state, sync_state,
        pg_wal_lsn_diff(pg_current_wal_lsn(), sent_lsn) AS lag
 FROM pg_stat_replication;
 ```
 
 **Recovery Steps**:
+
 ```bash
 # 1. Failover to read replica (if available)
 # Update connection string to point to replica
@@ -178,6 +184,7 @@ psql -c "SELECT COUNT(*) FROM whatsapp_messages WHERE created_at > NOW() - INTER
 ```
 
 **Data Loss Prevention**:
+
 ```bash
 # Point-in-time recovery (PITR)
 # Supabase allows recovery to any point in last 7 days
@@ -195,6 +202,7 @@ psql -c "SELECT COUNT(*) FROM whatsapp_messages WHERE created_at > NOW() - INTER
 **Symptoms**: Messages not delivered, webhook timeouts, 524 errors
 
 **Diagnosis**:
+
 ```bash
 # Check webhook pod health
 kubectl get pods -l app=whatsapp-webhook -n production
@@ -208,6 +216,7 @@ curl -I https://graph.facebook.com/v18.0/me/messages
 ```
 
 **Recovery Steps**:
+
 ```bash
 # 1. Scale up pods if overwhelmed
 kubectl scale deployment/whatsapp-webhook -n production --replicas=5
@@ -227,6 +236,7 @@ kubectl scale deployment/whatsapp-webhook-worker -n production --replicas=10
 ```
 
 **WhatsApp Business API Issues**:
+
 ```bash
 # Check Meta API status
 curl https://www.metastatus.com/api/v2/components.json | jq '.components[] | select(.name | contains("WhatsApp"))'
@@ -248,6 +258,7 @@ curl -X POST \
 **Symptoms**: AI responses timeout, 503 errors, agent not responding
 
 **Diagnosis**:
+
 ```bash
 # Check agent-core logs
 kubectl logs -f deployment/agent-core -n production | grep ERROR
@@ -255,7 +266,7 @@ kubectl logs -f deployment/agent-core -n production | grep ERROR
 # Check OpenAI API status
 curl https://status.openai.com/api/v2/status.json
 
-# Check Google AI status  
+# Check Google AI status
 curl https://status.cloud.google.com/incidents.json
 
 # Check circuit breaker
@@ -264,6 +275,7 @@ kubectl exec -it deployment/agent-core -n production -- \
 ```
 
 **Recovery Steps**:
+
 ```bash
 # 1. Check API key validity
 kubectl get secret ai-provider-keys -n production -o jsonpath='{.data.OPENAI_API_KEY}' | base64 -d
@@ -292,6 +304,7 @@ curl -X POST https://api.easymo.com/ai/test \
 **Symptoms**: Calls not connecting, audio issues, Twilio errors
 
 **Diagnosis**:
+
 ```bash
 # Check voice-bridge logs
 kubectl logs -f deployment/voice-bridge -n production
@@ -305,6 +318,7 @@ kubectl exec -it deployment/voice-bridge -n production -- \
 ```
 
 **Recovery Steps**:
+
 ```bash
 # 1. Restart voice-bridge
 kubectl rollout restart deployment/voice-bridge -n production
@@ -331,6 +345,7 @@ curl -X POST https://api.easymo.com/calls/outbound \
 **Symptoms**: 429 errors, users blocked
 
 **Recovery**:
+
 ```bash
 # Check current rate limits
 curl https://api.easymo.com/internal/rate-limit/status
@@ -352,6 +367,7 @@ kubectl exec -it deployment/voice-bridge -n production -- \
 **Symptoms**: "Circuit breaker open" errors, services failing fast
 
 **Recovery**:
+
 ```bash
 # Check circuit breaker state
 curl https://api.easymo.com/internal/circuit-breaker/metrics | jq '.["agent-core-api"]'
@@ -372,11 +388,13 @@ watch -n 2 'curl -s https://api.easymo.com/internal/circuit-breaker/metrics | jq
 ### Restore from Backup
 
 **Daily Backups** (Automated):
+
 - Location: GCS bucket `gs://easymo-prod-backups/supabase/`
 - Retention: 30 days
 - Schedule: Daily at 02:00 UTC
 
 **Recovery Steps**:
+
 ```bash
 # 1. List available backups
 gsutil ls gs://easymo-prod-backups/supabase/
@@ -401,6 +419,7 @@ psql -h db.supabase.co -U postgres -d production < /tmp/backup-2025-11-29.sql
 **Available for**: Last 7 days (Supabase Pro plan)
 
 **Steps**:
+
 1. Navigate to Supabase Dashboard > Database > Backups
 2. Click "Point in Time Recovery"
 3. Select exact timestamp (e.g., "2025-11-29 08:45:23")
@@ -481,7 +500,7 @@ curl https://prometheus.easymo.com/api/v1/query?query=rate(http_requests_total{s
 
 # 4. Check data consistency
 psql -d production -c "
-  SELECT 
+  SELECT
     COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '5 min') as recent_records,
     COUNT(*) FILTER (WHERE created_at IS NULL) as null_timestamps
   FROM voice_calls
@@ -489,7 +508,7 @@ psql -d production -c "
 
 # 5. Verify integrations
 # - WhatsApp webhook receiving
-# - Twilio calls working  
+# - Twilio calls working
 # - OpenAI API responding
 # - Payment gateway active
 ```
@@ -500,12 +519,12 @@ psql -d production -c "
 
 ### Incident Severity
 
-| Level | Description | Response Time | Escalation |
-|-------|-------------|---------------|------------|
-| P0 | Complete outage | < 5 min | Immediate - all hands |
-| P1 | Partial outage | < 15 min | Senior engineer |
-| P2 | Degraded performance | < 1 hour | On-call engineer |
-| P3 | Minor issue | < 4 hours | Next business day |
+| Level | Description          | Response Time | Escalation            |
+| ----- | -------------------- | ------------- | --------------------- |
+| P0    | Complete outage      | < 5 min       | Immediate - all hands |
+| P1    | Partial outage       | < 15 min      | Senior engineer       |
+| P2    | Degraded performance | < 1 hour      | On-call engineer      |
+| P3    | Minor issue          | < 4 hours     | Next business day     |
 
 ### Escalation Path
 
@@ -528,11 +547,8 @@ psql -d production -c "
 ```markdown
 # Incident Post-Mortem - [INCIDENT ID]
 
-**Date**: 2025-11-29
-**Duration**: 45 minutes
-**Severity**: P0
-**Services Affected**: whatsapp-webhook, agent-core
-**Impact**: 10,000 users unable to send messages
+**Date**: 2025-11-29 **Duration**: 45 minutes **Severity**: P0 **Services Affected**:
+whatsapp-webhook, agent-core **Impact**: 10,000 users unable to send messages
 
 ## Timeline
 
@@ -574,6 +590,7 @@ Database connection pool configured for 20 connections, but peak load reached 35
 ### Suspected Breach
 
 **Immediate Actions**:
+
 ```bash
 # 1. Rotate all API keys
 kubectl create secret generic ai-provider-keys \
@@ -623,6 +640,7 @@ watch -n 5 'kubectl top pods -n production'
 **Last Review**: 2025-11-29
 
 **Update Triggers**:
+
 - New service deployed
 - Infrastructure change
 - Post-incident learnings
@@ -635,16 +653,19 @@ watch -n 5 'kubectl top pods -n production'
 ## 🎯 Success Metrics
 
 **Recovery Time Objectives (RTO)**:
+
 - P0 incidents: < 1 hour
 - P1 incidents: < 4 hours
 - P2 incidents: < 24 hours
 
 **Recovery Point Objectives (RPO)**:
+
 - Database: < 15 minutes (PITR)
 - File storage: < 1 hour (backup frequency)
 - Configuration: < 5 minutes (GitOps)
 
 **Targets**:
+
 - Uptime: 99.9% (< 43 minutes downtime/month)
 - MTTR (Mean Time to Recovery): < 30 minutes
 - MTBF (Mean Time Between Failures): > 720 hours (30 days)
@@ -653,4 +674,4 @@ watch -n 5 'kubectl top pods -n production'
 
 **END OF RUNBOOK**
 
-*For questions or updates, contact: platform@easymo.com*
+_For questions or updates, contact: platform@easymo.com_

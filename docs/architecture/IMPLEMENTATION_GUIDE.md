@@ -6,11 +6,14 @@
 
 ## Executive Summary
 
-This guide provides a phased approach to refactor the EasyMO codebase from fragmented webhook handlers to a unified, WhatsApp-first, AI-agent-centric architecture. The refactoring maintains backward compatibility and production stability through feature flags and gradual migration.
+This guide provides a phased approach to refactor the EasyMO codebase from fragmented webhook
+handlers to a unified, WhatsApp-first, AI-agent-centric architecture. The refactoring maintains
+backward compatibility and production stability through feature flags and gradual migration.
 
 ## Prerequisites
 
 Before starting:
+
 - ✅ Review `docs/architecture/agents-map.md` - Understand current state
 - ✅ Review `docs/architecture/whatsapp-pipeline.md` - Understand target architecture
 - ✅ Review `docs/architecture/profile-and-wallet.md` - Understand Profile module
@@ -23,6 +26,7 @@ Before starting:
 **Time**: 1 week
 
 Outputs:
+
 - `docs/architecture/agents-map.md` - Complete inventory
 - `docs/architecture/whatsapp-pipeline.md` - Pipeline design
 - `docs/architecture/profile-and-wallet.md` - Profile design
@@ -36,19 +40,22 @@ Outputs:
 ### 2.1 Create Core Pipeline Components (Week 1)
 
 #### Task 2.1.1: Event Normalizer
+
 **File**: `supabase/functions/wa-webhook/pipeline/normalizer.ts`
 
 **Purpose**: Normalize WhatsApp events → `whatsapp_users`, `whatsapp_messages`
 
 **Key Functions**:
+
 ```typescript
-async function normalizeWhatsAppEvent(payload, correlationId): Promise<NormalizedEvent>
-function validateWhatsAppSignature(payload, signature, secret): boolean
+async function normalizeWhatsAppEvent(payload, correlationId): Promise<NormalizedEvent>;
+function validateWhatsAppSignature(payload, signature, secret): boolean;
 ```
 
 **Schema Updates**: None needed (tables exist)
 
 **Testing**:
+
 ```bash
 # Unit tests
 deno test supabase/functions/wa-webhook/pipeline/normalizer.test.ts
@@ -68,17 +75,20 @@ deno test supabase/functions/wa-webhook/pipeline/normalizer.test.ts
 ---
 
 #### Task 2.1.2: Agent Detector
+
 **File**: `supabase/functions/wa-webhook/pipeline/agent-detector.ts`
 
 **Purpose**: Detect active agent from menu selection or context
 
 **Key Functions**:
+
 ```typescript
-async function detectAgent(userId, content, correlationId): Promise<AgentConfig | null>
-async function getOrCreateConversation(userId, agentId): Promise<Conversation>
+async function detectAgent(userId, content, correlationId): Promise<AgentConfig | null>;
+async function getOrCreateConversation(userId, agentId): Promise<Conversation>;
 ```
 
 **Logic**:
+
 1. Check for active conversation with agent
 2. Check for menu number (1-9)
 3. Check for agent keywords
@@ -87,6 +97,7 @@ async function getOrCreateConversation(userId, agentId): Promise<Conversation>
 **Schema Updates**: None needed
 
 **Testing**:
+
 ```bash
 # Test cases:
 - Menu selection "1️⃣" → waiter agent
@@ -100,17 +111,20 @@ async function getOrCreateConversation(userId, agentId): Promise<Conversation>
 ---
 
 #### Task 2.1.3: Agent Runtime
+
 **File**: `supabase/functions/wa-webhook/pipeline/agent-runtime.ts`
 
 **Purpose**: Call LLM with agent config + conversation context
 
 **Key Functions**:
+
 ```typescript
-async function runAgent(agent, user, conversation, message): Promise<AgentResponse>
-async function buildAgentContext(agent, user, conversation): Promise<AgentContext>
+async function runAgent(agent, user, conversation, message): Promise<AgentResponse>;
+async function buildAgentContext(agent, user, conversation): Promise<AgentContext>;
 ```
 
 **LLM Integration**:
+
 - OpenAI GPT-4 for primary
 - Gemini as fallback
 - Structured function calling
@@ -118,6 +132,7 @@ async function buildAgentContext(agent, user, conversation): Promise<AgentContex
 **Schema Updates**: None needed
 
 **Testing**:
+
 ```bash
 # Test cases:
 - Waiter agent responds to "I want pizza"
@@ -131,17 +146,20 @@ async function buildAgentContext(agent, user, conversation): Promise<AgentContex
 ---
 
 #### Task 2.1.4: Intent Parser
+
 **File**: `supabase/functions/wa-webhook/pipeline/intent-parser.ts`
 
 **Purpose**: Parse LLM response → structured `ai_agent_intents`
 
 **Key Functions**:
+
 ```typescript
-async function parseIntent(agentResponse, conversation): Promise<ParsedIntent>
-async function storeIntent(intent): Promise<string> // Returns intent ID
+async function parseIntent(agentResponse, conversation): Promise<ParsedIntent>;
+async function storeIntent(intent): Promise<string>; // Returns intent ID
 ```
 
 **Intent Schema** (already exists in DB):
+
 ```typescript
 interface ParsedIntent {
   conversation_id: string;
@@ -153,13 +171,14 @@ interface ParsedIntent {
   summary: string;
   structured_payload: any;
   confidence: number;
-  status: 'pending';
+  status: "pending";
 }
 ```
 
 **Schema Updates**: None needed
 
 **Testing**:
+
 ```bash
 # Test cases:
 - "Order pizza and fries" → order_food intent with items
@@ -172,18 +191,21 @@ interface ParsedIntent {
 ---
 
 #### Task 2.1.5: Apply Intent Service
+
 **File**: `services/agent-core/src/apply-intent/index.ts`
 
 **Purpose**: Poll `ai_agent_intents`, update domain tables
 
 **Key Functions**:
+
 ```typescript
-async function processIntents(): void // Background worker
-async function applyIntent(intent): Promise<ApplyResult>
-function getIntentHandler(agentId, intentType): IntentHandler
+async function processIntents(): void; // Background worker
+async function applyIntent(intent): Promise<ApplyResult>;
+function getIntentHandler(agentId, intentType): IntentHandler;
 ```
 
 **Intent Handlers**:
+
 - `handlers/waiter/order-food.ts` → Insert into `orders`
 - `handlers/jobs/find-job.ts` → Search `job_posts`, create matches
 - `handlers/rides/book-trip.ts` → Insert into `trips`, match driver
@@ -192,6 +214,7 @@ function getIntentHandler(agentId, intentType): IntentHandler
 **Schema Updates**: None needed
 
 **Testing**:
+
 ```bash
 # Integration tests
 pnpm --filter @easymo/agent-core test
@@ -210,17 +233,20 @@ pnpm --filter @easymo/agent-core test
 ---
 
 #### Task 2.1.6: Reply Generator
+
 **File**: `supabase/functions/wa-webhook/pipeline/reply-generator.ts`
 
 **Purpose**: Format agent response for WhatsApp, send message
 
 **Key Functions**:
+
 ```typescript
-async function generateReply(agentResponse, conversation): Promise<WhatsAppMessage>
-async function sendWhatsAppMessage(phoneNumber, message): Promise<string>
+async function generateReply(agentResponse, conversation): Promise<WhatsAppMessage>;
+async function sendWhatsAppMessage(phoneNumber, message): Promise<string>;
 ```
 
 **Message Formatting**:
+
 - Add emoji numbers for options
 - Use interactive buttons/lists when appropriate
 - Keep messages concise (1-2 sentences)
@@ -228,6 +254,7 @@ async function sendWhatsAppMessage(phoneNumber, message): Promise<string>
 **Schema Updates**: None needed
 
 **Testing**:
+
 ```bash
 # Test cases:
 - Format text reply with emoji options
@@ -243,70 +270,76 @@ async function sendWhatsAppMessage(phoneNumber, message): Promise<string>
 ### 2.2 Integration & Testing (Week 2)
 
 #### Task 2.2.1: End-to-End Pipeline Test
+
 **File**: `supabase/functions/wa-webhook/pipeline/integration.test.ts`
 
 **Test Flow**:
+
 ```typescript
-describe('Unified Pipeline', () => {
-  it('should process waiter order end-to-end', async () => {
+describe("Unified Pipeline", () => {
+  it("should process waiter order end-to-end", async () => {
     // 1. Send WhatsApp message: "I want pizza"
-    const event = await sendTestMessage('+250788123456', 'I want pizza');
-    
+    const event = await sendTestMessage("+250788123456", "I want pizza");
+
     // 2. Verify normalization
     const message = await getWhatsAppMessage(event.messageId);
     expect(message).toBeDefined();
-    
+
     // 3. Verify agent detection
     const conversation = await getConversation(event.userId);
     expect(conversation.agent_id).toBe(waiterAgentId);
-    
+
     // 4. Verify intent creation
     const intent = await waitForIntent(conversation.id);
-    expect(intent.intent_type).toBe('order_food');
-    
+    expect(intent.intent_type).toBe("order_food");
+
     // 5. Verify intent application
     await waitForIntentApplied(intent.id);
     const order = await getOrder(intent.structured_payload.orderId);
     expect(order).toBeDefined();
-    
+
     // 6. Verify reply sent
     const reply = await getLatestReply(event.userId);
-    expect(reply.body).toContain('order');
+    expect(reply.body).toContain("order");
   });
 });
 ```
 
-**Run**: `deno test --allow-env --allow-net supabase/functions/wa-webhook/pipeline/integration.test.ts`
+**Run**:
+`deno test --allow-env --allow-net supabase/functions/wa-webhook/pipeline/integration.test.ts`
 
 ---
 
 #### Task 2.2.2: Feature Flag Implementation
+
 **File**: `supabase/functions/wa-webhook/config.ts`
 
 **Flags**:
+
 ```typescript
 export const FEATURES = {
-  UNIFIED_WEBHOOK: Deno.env.get('FEATURE_UNIFIED_WEBHOOK') === 'true',
-  UNIFIED_NORMALIZER: Deno.env.get('FEATURE_UNIFIED_NORMALIZER') === 'true',
-  AGENT_DETECTION: Deno.env.get('FEATURE_AGENT_DETECTION') === 'true',
-  AGENT_RUNTIME: Deno.env.get('FEATURE_AGENT_RUNTIME') === 'true',
-  INTENT_PARSING: Deno.env.get('FEATURE_INTENT_PARSING') === 'true',
-  APPLY_INTENT: Deno.env.get('FEATURE_APPLY_INTENT') === 'true',
-  REPLY_GENERATION: Deno.env.get('FEATURE_REPLY_GENERATION') === 'true',
-  
+  UNIFIED_WEBHOOK: Deno.env.get("FEATURE_UNIFIED_WEBHOOK") === "true",
+  UNIFIED_NORMALIZER: Deno.env.get("FEATURE_UNIFIED_NORMALIZER") === "true",
+  AGENT_DETECTION: Deno.env.get("FEATURE_AGENT_DETECTION") === "true",
+  AGENT_RUNTIME: Deno.env.get("FEATURE_AGENT_RUNTIME") === "true",
+  INTENT_PARSING: Deno.env.get("FEATURE_INTENT_PARSING") === "true",
+  APPLY_INTENT: Deno.env.get("FEATURE_APPLY_INTENT") === "true",
+  REPLY_GENERATION: Deno.env.get("FEATURE_REPLY_GENERATION") === "true",
+
   // Per-agent flags
-  WAITER_AGENT: Deno.env.get('FEATURE_WAITER_AGENT') === 'true',
-  FARMER_AGENT: Deno.env.get('FEATURE_FARMER_AGENT') === 'true',
-  BROKER_AGENT: Deno.env.get('FEATURE_BROKER_AGENT') === 'true',
-  REAL_ESTATE_AGENT: Deno.env.get('FEATURE_REAL_ESTATE_AGENT') === 'true',
-  JOBS_AGENT: Deno.env.get('FEATURE_JOBS_AGENT') === 'true',
-  SALES_SDR_AGENT: Deno.env.get('FEATURE_SALES_SDR_AGENT') === 'true',
-  RIDES_AGENT: Deno.env.get('FEATURE_RIDES_AGENT') === 'true',
-  INSURANCE_AGENT: Deno.env.get('FEATURE_INSURANCE_AGENT') === 'true',
+  WAITER_AGENT: Deno.env.get("FEATURE_WAITER_AGENT") === "true",
+  FARMER_AGENT: Deno.env.get("FEATURE_FARMER_AGENT") === "true",
+  BROKER_AGENT: Deno.env.get("FEATURE_BROKER_AGENT") === "true",
+  REAL_ESTATE_AGENT: Deno.env.get("FEATURE_REAL_ESTATE_AGENT") === "true",
+  JOBS_AGENT: Deno.env.get("FEATURE_JOBS_AGENT") === "true",
+  SALES_SDR_AGENT: Deno.env.get("FEATURE_SALES_SDR_AGENT") === "true",
+  RIDES_AGENT: Deno.env.get("FEATURE_RIDES_AGENT") === "true",
+  INSURANCE_AGENT: Deno.env.get("FEATURE_INSURANCE_AGENT") === "true",
 };
 ```
 
 **Usage**:
+
 ```typescript
 if (FEATURES.UNIFIED_WEBHOOK) {
   return await processUnifiedPipeline(req);
@@ -322,6 +355,7 @@ if (FEATURES.UNIFIED_WEBHOOK) {
 #### Week 3: Canary Deployment
 
 **Steps**:
+
 1. Deploy with all feature flags OFF
 2. Enable `FEATURE_UNIFIED_NORMALIZER` for 1% of traffic
 3. Monitor logs, metrics, errors
@@ -329,6 +363,7 @@ if (FEATURES.UNIFIED_WEBHOOK) {
 5. Enable full pipeline for test users only
 
 **Monitoring**:
+
 ```sql
 -- Query success rate
 SELECT
@@ -351,6 +386,7 @@ WHERE created_at > NOW() - INTERVAL '1 hour';
 #### Week 4: Full Migration
 
 **Steps**:
+
 1. Enable all feature flags
 2. Route all traffic through unified pipeline
 3. Keep old webhooks running (no deletion yet)
@@ -358,6 +394,7 @@ WHERE created_at > NOW() - INTERVAL '1 hour';
 5. If stable, proceed to Phase 3
 
 **Success Criteria**:
+
 - [ ] Error rate < 1%
 - [ ] p95 latency < 4s
 - [ ] Intent application success rate > 95%
@@ -375,6 +412,7 @@ WHERE created_at > NOW() - INTERVAL '1 hour';
 ### 3.1 Create Profile Package (Week 1)
 
 #### Task 3.1.1: Package Setup
+
 ```bash
 mkdir -p packages/profile/src/{wallet,stuff,locations,qr,helpers}
 cd packages/profile
@@ -382,6 +420,7 @@ pnpm init
 ```
 
 **package.json**:
+
 ```json
 {
   "name": "@easymo/profile",
@@ -402,19 +441,30 @@ pnpm init
 ---
 
 #### Task 3.1.2: Wallet Module
+
 **Files**:
+
 - `packages/profile/src/wallet/balance.ts`
 - `packages/profile/src/wallet/transactions.ts`
 - `packages/profile/src/wallet/cashout.ts`
 - `packages/profile/src/wallet/tokens.ts`
 
 **APIs**:
+
 ```typescript
-export async function getWalletBalance(userId: string): Promise<WalletBalance>
-export async function getTransactionHistory(userId: string, limit: number): Promise<Transaction[]>
-export async function requestCashout(userId: string, amount: number, momoNumber: string): Promise<CashoutRequest>
-export async function earnTokens(userId: string, ruleId: string, metadata: any): Promise<TokenEarn>
-export async function useTokens(userId: string, amount: number, orderId?: string): Promise<TokenUse>
+export async function getWalletBalance(userId: string): Promise<WalletBalance>;
+export async function getTransactionHistory(userId: string, limit: number): Promise<Transaction[]>;
+export async function requestCashout(
+  userId: string,
+  amount: number,
+  momoNumber: string
+): Promise<CashoutRequest>;
+export async function earnTokens(userId: string, ruleId: string, metadata: any): Promise<TokenEarn>;
+export async function useTokens(
+  userId: string,
+  amount: number,
+  orderId?: string
+): Promise<TokenUse>;
 ```
 
 **Tests**: `packages/profile/src/wallet/*.test.ts`
@@ -422,7 +472,9 @@ export async function useTokens(userId: string, amount: number, orderId?: string
 ---
 
 #### Task 3.1.3: My Stuff Module
+
 **Files**:
+
 - `packages/profile/src/stuff/businesses.ts`
 - `packages/profile/src/stuff/vehicles.ts`
 - `packages/profile/src/stuff/properties.ts`
@@ -432,12 +484,13 @@ export async function useTokens(userId: string, amount: number, orderId?: string
 - `packages/profile/src/stuff/trips.ts`
 
 **API Pattern** (generic):
+
 ```typescript
 export async function getMyStuff(
   userId: string,
-  category: 'businesses' | 'vehicles' | 'properties' | 'jobs' | 'listings' | 'policies' | 'trips',
+  category: "businesses" | "vehicles" | "properties" | "jobs" | "listings" | "policies" | "trips",
   options?: { limit?: number; offset?: number }
-): Promise<{ items: EntitySummary[]; total: number; agentSlug: string }>
+): Promise<{ items: EntitySummary[]; total: number; agentSlug: string }>;
 ```
 
 **Tests**: `packages/profile/src/stuff/*.test.ts`
@@ -445,17 +498,23 @@ export async function getMyStuff(
 ---
 
 #### Task 3.1.4: Saved Locations Module
+
 **Files**:
+
 - `packages/profile/src/locations/saved.ts`
 - `packages/profile/src/locations/recent.ts`
 
 **APIs**:
+
 ```typescript
-export async function getSavedLocations(userId: string): Promise<SavedLocation[]>
-export async function saveLocation(userId: string, data: SaveLocationData): Promise<SavedLocation>
-export async function updateLocation(locationId: string, data: Partial<SaveLocationData>): Promise<SavedLocation>
-export async function deleteLocation(locationId: string): Promise<void>
-export async function getRecentLocations(userId: string, limit: number): Promise<SavedLocation[]>
+export async function getSavedLocations(userId: string): Promise<SavedLocation[]>;
+export async function saveLocation(userId: string, data: SaveLocationData): Promise<SavedLocation>;
+export async function updateLocation(
+  locationId: string,
+  data: Partial<SaveLocationData>
+): Promise<SavedLocation>;
+export async function deleteLocation(locationId: string): Promise<void>;
+export async function getRecentLocations(userId: string, limit: number): Promise<SavedLocation[]>;
 ```
 
 **Tests**: `packages/profile/src/locations/*.test.ts`
@@ -465,10 +524,12 @@ export async function getRecentLocations(userId: string, limit: number): Promise
 ### 3.2 Migrate Wallet Functions (Week 2)
 
 #### Task 3.2.1: Consolidate MoMo Functions
+
 **Current**: `momo-allocator/`, `momo-charge/`, `momo-webhook/`  
 **Target**: Use `@easymo/profile` package
 
 **Steps**:
+
 1. Update functions to call `@easymo/profile` APIs
 2. Test with feature flag
 3. Deprecate old implementations
@@ -476,16 +537,19 @@ export async function getRecentLocations(userId: string, limit: number): Promise
 ---
 
 #### Task 3.2.2: Consolidate QR Functions
+
 **Current**: `qr-resolve/`, `qr_info/`  
 **Target**: Use `@easymo/profile` package
 
 ---
 
 #### Task 3.2.3: Remove wa-webhook-wallet
+
 **Current**: Separate webhook handler  
 **Target**: Use main `wa-webhook` with Profile menu
 
 **Steps**:
+
 1. Add Profile menu item (9) to agent detector
 2. Route Profile flows through main webhook
 3. Deprecate `wa-webhook-wallet/`
@@ -495,13 +559,19 @@ export async function getRecentLocations(userId: string, limit: number): Promise
 ### 3.3 Agent Helper APIs (Week 3)
 
 #### Task 3.3.1: Create Helper Endpoints
+
 **File**: `packages/profile/src/helpers/agent-context.ts`
 
 **APIs** (internal only, not exposed publicly):
+
 ```typescript
-export async function getUserPreferences(userId: string): Promise<UserPreferences>
-export async function getRecentEntities(userId: string, category: string, limit: number): Promise<any[]>
-export async function getUserContext(userId: string, agentSlug: string): Promise<AgentUserContext>
+export async function getUserPreferences(userId: string): Promise<UserPreferences>;
+export async function getRecentEntities(
+  userId: string,
+  category: string,
+  limit: number
+): Promise<any[]>;
+export async function getUserContext(userId: string, agentSlug: string): Promise<AgentUserContext>;
 ```
 
 **Security**: Only callable by agent-core service (validate service token)
@@ -509,13 +579,15 @@ export async function getUserContext(userId: string, agentSlug: string): Promise
 ---
 
 #### Task 3.3.2: Integration with Agent Runtime
+
 **Update**: `supabase/functions/wa-webhook/pipeline/agent-runtime.ts`
 
 **Change**:
+
 ```typescript
 async function buildAgentContext(agent, user, conversation) {
   const userContext = await getUserContext(user.id, agent.slug);
-  
+
   return {
     agent,
     user,
@@ -647,14 +719,14 @@ For each agent, complete:
 
 ## Timeline Summary
 
-| Phase | Duration | Status |
-|-------|----------|--------|
-| Phase 1: Foundation | 1 week | ✅ Complete |
-| Phase 2: Unified Pipeline | 4 weeks | 🚧 Not Started |
-| Phase 3: Profile Extraction | 3 weeks | ⏸️ Not Started |
-| Phase 4: Agent Migration | 8 weeks | ⏸️ Not Started |
-| Phase 5: Cleanup | 3 weeks | ⏸️ Not Started |
-| **Total** | **19 weeks (~4.5 months)** | |
+| Phase                       | Duration                   | Status         |
+| --------------------------- | -------------------------- | -------------- |
+| Phase 1: Foundation         | 1 week                     | ✅ Complete    |
+| Phase 2: Unified Pipeline   | 4 weeks                    | 🚧 Not Started |
+| Phase 3: Profile Extraction | 3 weeks                    | ⏸️ Not Started |
+| Phase 4: Agent Migration    | 8 weeks                    | ⏸️ Not Started |
+| Phase 5: Cleanup            | 3 weeks                    | ⏸️ Not Started |
+| **Total**                   | **19 weeks (~4.5 months)** |                |
 
 ---
 

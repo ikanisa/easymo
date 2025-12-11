@@ -7,29 +7,32 @@
 ## ✅ Completed Tasks
 
 ### 1. Database Scripts Applied ✅
+
 - ✅ Audit log schema created successfully
 - ✅ Audit log table with RLS policies
 - ✅ Indexes for efficient querying
-- ⚠️  Audit triggers attempted (some tables don't exist in local DB)
+- ⚠️ Audit triggers attempted (some tables don't exist in local DB)
 - ✅ RLS audit run successfully
 - ✅ Local Supabase environment ready
 
 **Result**: Audit infrastructure is live in local database
 
 ### 2. Rate Limiting Expanded ✅
+
 Applied to additional critical endpoints:
 
-| Endpoint | Limit | Status |
-|----------|-------|--------|
-| momo-webhook | 50 req/min | ✅ Previous |
-| agent-chat | 30 req/min | ✅ Previous |
-| wa-webhook-core | Custom | ✅ Pre-existing |
-| revolut-webhook | 50 req/min | ✅ NEW |
-| momo-allocator | 50 req/min | ✅ NEW |
+| Endpoint        | Limit      | Status          |
+| --------------- | ---------- | --------------- |
+| momo-webhook    | 50 req/min | ✅ Previous     |
+| agent-chat      | 30 req/min | ✅ Previous     |
+| wa-webhook-core | Custom     | ✅ Pre-existing |
+| revolut-webhook | 50 req/min | ✅ NEW          |
+| momo-allocator  | 50 req/min | ✅ NEW          |
 
 **Progress**: 5/80 endpoints protected (6.25%)
 
 ### 3. Wallet Service Test Infrastructure ✅
+
 - ✅ Created `test/unit/transfer.test.ts`
 - ✅ Implemented P0 critical test structure:
   - Double-entry bookkeeping tests
@@ -40,6 +43,7 @@ Applied to additional critical endpoints:
   - Transaction atomicity placeholders
 
 **Status**: Test framework ready, needs:
+
 - vitest installation
 - Real wallet service integration
 - Database fixtures
@@ -48,13 +52,13 @@ Applied to additional critical endpoints:
 
 ### Week 1 (P0) Overall: 20% Complete (11/56 hours)
 
-| Task | Hours | Status | Progress |
-|------|-------|--------|----------|
-| Infrastructure | 4h | ✅ Complete | 100% |
-| Rate Limiting | 6h | 🟡 In Progress | 6.25% (5/80) |
-| Database Scripts | 2h | ✅ Complete | 100% (local) |
-| Wallet Tests | 3h | 🟡 Framework Ready | 10% |
-| RLS Audit | 0h | ✅ Scripts Ready | Pending prod |
+| Task             | Hours | Status             | Progress     |
+| ---------------- | ----- | ------------------ | ------------ |
+| Infrastructure   | 4h    | ✅ Complete        | 100%         |
+| Rate Limiting    | 6h    | 🟡 In Progress     | 6.25% (5/80) |
+| Database Scripts | 2h    | ✅ Complete        | 100% (local) |
+| Wallet Tests     | 3h    | 🟡 Framework Ready | 10%          |
+| RLS Audit        | 0h    | ✅ Scripts Ready   | Pending prod |
 
 **Completed This Session**: 5 hours  
 **Remaining Week 1**: 45 hours
@@ -79,7 +83,9 @@ Applied to additional critical endpoints:
 ## 🔜 Next Steps
 
 ### Immediate (Next Session)
+
 1. **Install Vitest in Wallet Service**
+
    ```bash
    cd services/wallet-service
    pnpm install vitest @vitest/coverage-v8 --save-dev
@@ -98,6 +104,7 @@ Applied to additional critical endpoints:
    - Target: 30% coverage
 
 ### Week 1 Completion
+
 4. **Apply to Production Database**
    - Run audit log schema on prod
    - Apply triggers to production tables
@@ -112,13 +119,16 @@ Applied to additional critical endpoints:
 ## 📝 Files Modified
 
 **Rate Limiting**:
+
 - `supabase/functions/revolut-webhook/index.ts` ✅
 - `supabase/functions/momo-allocator/index.ts` ✅
 
 **Testing**:
+
 - `services/wallet-service/test/unit/transfer.test.ts` ✅ NEW
 
 **Documentation**:
+
 - `docs/production-readiness/SESSION_3_SUMMARY.md` ✅ NEW
 
 ## 🎓 Lessons Learned
@@ -141,16 +151,19 @@ Applied to additional critical endpoints:
 ## 💡 Recommendations
 
 **SHORT TERM**:
+
 1. Create script to batch-apply rate limiting
 2. Install vitest and run first test suite
 3. Document RLS requirements for production tables
 
 **MEDIUM TERM**:
+
 1. Automate rate limiting with AST transformation
 2. Create comprehensive test fixtures
 3. Set up continuous coverage monitoring
 
 **LONG TERM**:
+
 1. Consider rate limiting at CDN/edge level
 2. Implement adaptive rate limits
 3. Add rate limit analytics dashboard

@@ -9,6 +9,7 @@
 ## 🎯 Overview
 
 The Waiter AI Desktop App is a cross-platform application built with:
+
 - **Frontend:** Next.js 15 + React 18 + TypeScript
 - **Desktop Framework:** Tauri 2.0 (Rust + WebView)
 - **AI:** OpenAI GPT-4 + Gemini 2.5 Pro
@@ -22,6 +23,7 @@ The Waiter AI Desktop App is a cross-platform application built with:
 ### Required Software
 
 #### 1. Node.js & pnpm
+
 ```bash
 # Already installed ✅
 node --version  # Should be 20+
@@ -29,6 +31,7 @@ pnpm --version  # Should be 10+
 ```
 
 #### 2. Rust (for Tauri)
+
 ```bash
 # Install Rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -41,12 +44,14 @@ cargo --version
 #### 3. Platform-Specific Dependencies
 
 **macOS:**
+
 ```bash
 # Install Xcode Command Line Tools (if not already installed)
 xcode-select --install
 ```
 
 **Windows:**
+
 ```bash
 # Install Microsoft Visual Studio C++ Build Tools
 # Download from: https://visualstudio.microsoft.com/downloads/
@@ -54,6 +59,7 @@ xcode-select --install
 ```
 
 **Linux (Ubuntu/Debian):**
+
 ```bash
 sudo apt update
 sudo apt install libwebkit2gtk-4.1-dev \
@@ -69,7 +75,7 @@ sudo apt install libwebkit2gtk-4.1-dev \
 
 ---
 
-##  🚀 Quick Start
+## 🚀 Quick Start
 
 ### Option 1: Development Mode (Recommended First)
 
@@ -115,6 +121,7 @@ pnpm desktop:build
 After running `pnpm desktop:build`, you'll find:
 
 ### macOS
+
 ```
 src-tauri/target/release/bundle/macos/
 ├── Waiter AI.app           # Application bundle
@@ -123,6 +130,7 @@ src-tauri/target/release/bundle/macos/
 ```
 
 ### Windows
+
 ```
 src-tauri/target/release/bundle/msi/
 ├── Waiter AI_1.0.0_x64_en-US.msi      # Installer
@@ -130,6 +138,7 @@ src-tauri/target/release/bundle/msi/
 ```
 
 ### Linux
+
 ```
 src-tauri/target/release/bundle/
 ├── deb/
@@ -143,6 +152,7 @@ src-tauri/target/release/bundle/
 ## 🔧 Configuration
 
 ### Tauri Configuration
+
 **File:** `src-tauri/tauri.conf.json`
 
 ```json
@@ -151,18 +161,21 @@ src-tauri/target/release/bundle/
   "version": "1.0.0",
   "identifier": "dev.easymo.waiter",
   "app": {
-    "windows": [{
-      "title": "Waiter AI - Restaurant Ordering Assistant",
-      "width": 1200,
-      "height": 800,
-      "minWidth": 800,
-      "minHeight": 600
-    }]
+    "windows": [
+      {
+        "title": "Waiter AI - Restaurant Ordering Assistant",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 600
+      }
+    ]
   }
 }
 ```
 
 ### Environment Variables
+
 **File:** `.env.local`
 
 ```bash
@@ -177,13 +190,15 @@ NEXT_PUBLIC_RESTAURANT_ID=00000000-0000-0000-0000-000000000001
 OPENAI_API_KEY=sk-...
 ```
 
-**Security Note:** Desktop apps bundle environment variables into the binary. Use Tauri's secure storage for sensitive data in production.
+**Security Note:** Desktop apps bundle environment variables into the binary. Use Tauri's secure
+storage for sensitive data in production.
 
 ---
 
 ## 🎨 Desktop Features
 
 ### Auto-Start (Optional)
+
 Enable app to start on system boot:
 
 ```rust
@@ -202,6 +217,7 @@ fn main() {
 ```
 
 ### System Tray
+
 App runs in system tray with menu:
 
 ```rust
@@ -214,15 +230,16 @@ App runs in system tray with menu:
 ```
 
 ### Native Notifications
+
 Desktop notifications for order updates:
 
 ```typescript
 // In your Next.js app
-import { sendNotification } from '@tauri-apps/plugin-notification';
+import { sendNotification } from "@tauri-apps/plugin-notification";
 
 await sendNotification({
-  title: 'Order Confirmed',
-  body: 'Your order #WA-2025-001 is being prepared'
+  title: "Order Confirmed",
+  body: "Your order #WA-2025-001 is being prepared",
 });
 ```
 
@@ -231,10 +248,12 @@ await sendNotification({
 ## 📊 Build Times & Sizes
 
 ### Development Build
+
 - **Time:** ~3-5 minutes (first time), ~30 seconds (incremental)
 - **Size:** N/A (runs in dev mode)
 
 ### Production Build
+
 - **Time:** ~10-15 minutes (first time), ~5 minutes (incremental)
 - **Size:**
   - macOS: ~8-12 MB (.app), ~10-15 MB (.dmg)
@@ -248,9 +267,11 @@ await sendNotification({
 ## 🐛 Troubleshooting
 
 ### Issue 1: Rust not found
+
 **Error:** `cargo: command not found`
 
 **Solution:**
+
 ```bash
 # Install Rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -258,24 +279,30 @@ source $HOME/.cargo/env
 ```
 
 ### Issue 2: Build fails on macOS
+
 **Error:** `xcode-select: error: tool 'xcodebuild' requires Xcode`
 
 **Solution:**
+
 ```bash
 # Install Command Line Tools
 xcode-select --install
 ```
 
 ### Issue 3: WebKit2GTK not found (Linux)
+
 **Error:** `Package webkit2gtk-4.1 was not found`
 
 **Solution:**
+
 ```bash
 sudo apt install libwebkit2gtk-4.1-dev
 ```
 
 ### Issue 4: Build is slow
+
 **Optimization:**
+
 ```bash
 # Use release mode with optimizations
 pnpm tauri build --release
@@ -289,7 +316,9 @@ pnpm tauri build --debug
 ## 🚢 Distribution
 
 ### macOS
+
 1. **Code Signing (Required for distribution)**
+
 ```bash
 # Sign with Apple Developer certificate
 codesign --deep --force --verify --verbose --sign "Developer ID Application: Your Name" "Waiter AI.app"
@@ -303,7 +332,9 @@ xcrun notarytool submit "Waiter AI.dmg" --apple-id your@email.com --password app
    - Or distribute via Mac App Store
 
 ### Windows
+
 1. **Code Signing (Optional but recommended)**
+
 ```bash
 # Sign with code signing certificate
 signtool sign /f certificate.pfx /p password /tr http://timestamp.digicert.com "Waiter AI.exe"
@@ -314,6 +345,7 @@ signtool sign /f certificate.pfx /p password /tr http://timestamp.digicert.com "
    - Or use Microsoft Store
 
 ### Linux
+
 1. **No signing required**
 2. **Distribution**
    - Publish .deb to apt repository
@@ -324,6 +356,7 @@ signtool sign /f certificate.pfx /p password /tr http://timestamp.digicert.com "
 ## 📱 Auto-Updates
 
 ### Configure Update Server
+
 **File:** `src-tauri/tauri.conf.json`
 
 ```json
@@ -338,6 +371,7 @@ signtool sign /f certificate.pfx /p password /tr http://timestamp.digicert.com "
 ```
 
 ### Generate Update Keys
+
 ```bash
 # Generate signing keys
 pnpm tauri signer generate -w ~/.tauri/waiter-ai.key
@@ -347,6 +381,7 @@ pnpm tauri signer generate -w ~/.tauri/waiter-ai.key
 ```
 
 ### Create Update
+
 ```bash
 # Build new version
 pnpm desktop:build
@@ -360,12 +395,14 @@ pnpm tauri signer sign path/to/bundle --private-key ~/.tauri/waiter-ai.key
 ## ✅ Pre-Launch Checklist
 
 ### Code
+
 - [x] All features working
 - [x] Build succeeds without errors
 - [x] Environment variables configured
 - [x] Icons prepared (32x32, 128x128, 256x256)
 
 ### Testing
+
 - [ ] Test on macOS
 - [ ] Test on Windows
 - [ ] Test on Linux
@@ -373,6 +410,7 @@ pnpm tauri signer sign path/to/bundle --private-key ~/.tauri/waiter-ai.key
 - [ ] Test auto-updates (if enabled)
 
 ### Distribution
+
 - [ ] Code signing certificate obtained (macOS/Windows)
 - [ ] App notarized (macOS)
 - [ ] Privacy policy prepared
@@ -384,13 +422,16 @@ pnpm tauri signer sign path/to/bundle --private-key ~/.tauri/waiter-ai.key
 ## 🎯 Next Steps
 
 ### Immediate (Today)
+
 1. **Install Rust**
+
    ```bash
    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
    source $HOME/.cargo/env
    ```
 
 2. **Test in Development Mode**
+
    ```bash
    cd /Users/jeanbosco/workspace/easymo-/waiter-pwa
    pnpm desktop:dev
@@ -399,7 +440,9 @@ pnpm tauri signer sign path/to/bundle --private-key ~/.tauri/waiter-ai.key
 3. **Verify all features work**
 
 ### Short-term (This Week)
+
 1. **Create Production Build**
+
    ```bash
    pnpm desktop:build
    ```
@@ -409,6 +452,7 @@ pnpm tauri signer sign path/to/bundle --private-key ~/.tauri/waiter-ai.key
 3. **Prepare distribution**
 
 ### Long-term (Next Month)
+
 1. Set up auto-updates
 2. Obtain code signing certificates
 3. Create installer landing page

@@ -6,11 +6,11 @@ Welcome to the EasyMO WhatsApp Webhook development team!
 
 ### Required Tools
 
-| Tool | Version | Installation |
-|------|---------|--------------|
-| Deno | 1.38+ | https://deno.land/#installation |
-| Supabase CLI | 1.100+ | `npm install -g supabase` |
-| Git | 2.30+ | https://git-scm.com/downloads |
+| Tool         | Version | Installation                    |
+| ------------ | ------- | ------------------------------- |
+| Deno         | 1.38+   | https://deno.land/#installation |
+| Supabase CLI | 1.100+  | `npm install -g supabase`       |
+| Git          | 2.30+   | https://git-scm.com/downloads   |
 
 ### Recommended VS Code Extensions
 
@@ -89,6 +89,7 @@ git checkout -b feature/your-feature-name
 ### 2. Make Changes
 
 Follow coding standards:
+
 - Use TypeScript strict mode
 - Add JSDoc comments
 - Follow existing patterns
@@ -113,6 +114,7 @@ git commit -m "feat: add your feature description"
 ```
 
 Follow conventional commits:
+
 - `feat:` New feature
 - `fix:` Bug fix
 - `docs:` Documentation
@@ -165,4 +167,4 @@ curl "http://localhost:54321/functions/v1/wa-webhook-core?hub.mode=subscribe&hub
 3. [ ] Complete your first PR
 4. [ ] Shadow an on-call rotation
 
-*Welcome aboard! 🚀*
+_Welcome aboard! 🚀_

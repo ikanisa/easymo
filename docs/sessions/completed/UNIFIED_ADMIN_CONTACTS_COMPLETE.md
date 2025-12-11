@@ -5,13 +5,16 @@
 
 ## Summary
 
-Converted `insurance_admin_contacts` table into a **unified source of truth** for ALL admin, support, and contact-related information across the entire repository. Eliminated all hardcoded phone numbers and placeholder contacts.
+Converted `insurance_admin_contacts` table into a **unified source of truth** for ALL admin,
+support, and contact-related information across the entire repository. Eliminated all hardcoded
+phone numbers and placeholder contacts.
 
 ## What Changed
 
 ### 1. Database Migration (`20251210143000_unify_admin_support_contacts.sql`)
 
 **Added Columns**:
+
 - `category` - Categorizes contacts by purpose:
   - `support` - General help/support contacts
   - `admin_auth` - Admin authentication (who can access admin features)
@@ -21,12 +24,15 @@ Converted `insurance_admin_contacts` table into a **unified source of truth** fo
 - `priority` - Sorting within category (lower = higher priority)
 
 **Created RPC Function**:
+
 ```sql
 get_admin_contacts(p_category TEXT, p_channel TEXT)
 ```
+
 Returns filtered contacts by category and channel.
 
 **Migrated Hardcoded Numbers**:
+
 - `+250788767816` → Admin Team 1 (admin_auth)
 - `+35677186193` → Admin Team 2 (admin_auth)
 - `+250795588248` → Admin Team 3 (admin_auth)
@@ -57,21 +63,19 @@ getSupportContactString(supabase, category): Promise<string>
 ### 3. Files Updated - Admin Authentication
 
 Removed hardcoded `DEFAULT_ADMIN_NUMBERS` array from:
+
 - ✅ `supabase/functions/wa-webhook/flows/admin/auth.ts`
 - ✅ `supabase/functions/wa-webhook-mobility/flows/admin/auth.ts`
 - ✅ `supabase/functions/_shared/wa-webhook-shared/flows/admin/auth.ts`
 
 **Before**:
+
 ```typescript
-const DEFAULT_ADMIN_NUMBERS = [
-  "+250788767816",
-  "+35677186193", 
-  "+250795588248",
-  "+35699742524",
-];
+const DEFAULT_ADMIN_NUMBERS = ["+250788767816", "+35677186193", "+250795588248", "+35699742524"];
 ```
 
 **After**:
+
 ```typescript
 import { getAdminAuthNumbers } from "../../../_shared/admin-contacts.ts";
 
@@ -83,7 +87,7 @@ const numbers = await getAdminAuthNumbers(ctx.supabase);
 
 ✅ `supabase/functions/wa-webhook-insurance/insurance/ins_handler.ts`  
 ✅ `supabase/functions/wa-webhook/domains/insurance/ins_handler.ts`  
-✅ `supabase/functions/wa-webhook-core/handlers/help-support.ts`  
+✅ `supabase/functions/wa-webhook-core/handlers/help-support.ts`
 
 These files were already fetching from `insurance_admin_contacts` table.
 
@@ -110,13 +114,13 @@ CREATE TABLE insurance_admin_contacts (
 
 ```sql
 -- Active contacts by category
-CREATE INDEX idx_insurance_admin_contacts_category 
-  ON insurance_admin_contacts(category, is_active) 
+CREATE INDEX idx_insurance_admin_contacts_category
+  ON insurance_admin_contacts(category, is_active)
   WHERE is_active = true;
 
 -- Active contacts general
-CREATE INDEX idx_insurance_admin_contacts_active 
-  ON insurance_admin_contacts(is_active) 
+CREATE INDEX idx_insurance_admin_contacts_active
+  ON insurance_admin_contacts(is_active)
   WHERE is_active = true;
 ```
 
@@ -137,12 +141,9 @@ const isAdmin = adminNumbers.has(normalizedPhone);
 ```typescript
 import { getSupportContactString } from "../_shared/admin-contacts.ts";
 
-const supportLink = await getSupportContactString(ctx.supabase, 'support');
+const supportLink = await getSupportContactString(ctx.supabase, "support");
 
-await sendText(
-  userPhone,
-  `❌ Transfer failed.\n\nContact support: ${supportLink}`
-);
+await sendText(userPhone, `❌ Transfer failed.\n\nContact support: ${supportLink}`);
 ```
 
 ### Show Help/Support Contacts
@@ -151,12 +152,12 @@ await sendText(
 import { getAdminContacts, buildContactMessage } from "../_shared/admin-contacts.ts";
 
 const contacts = await getAdminContacts(ctx.supabase, {
-  category: 'support',
-  channel: 'whatsapp',
+  category: "support",
+  channel: "whatsapp",
 });
 
 const message = buildContactMessage(contacts, {
-  title: '🆘 *Help & Support*',
+  title: "🆘 *Help & Support*",
   includeAI: true,
 });
 
@@ -167,12 +168,12 @@ await sendText(userPhone, message);
 
 ```typescript
 const insuranceContacts = await getAdminContacts(ctx.supabase, {
-  category: 'insurance',
-  channel: 'whatsapp',
+  category: "insurance",
+  channel: "whatsapp",
 });
 
 const message = buildContactMessage(insuranceContacts, {
-  title: '🏥 *Motor Insurance Support*',
+  title: "🏥 *Motor Insurance Support*",
 });
 ```
 
@@ -182,15 +183,15 @@ const message = buildContactMessage(insuranceContacts, {
 
 ```sql
 -- Add support contact
-INSERT INTO insurance_admin_contacts 
+INSERT INTO insurance_admin_contacts
   (channel, destination, display_name, category, priority, display_order, is_active)
-VALUES 
+VALUES
   ('whatsapp', '+250788999888', 'Support Team Lead', 'support', 10, 1, true);
 
 -- Add admin auth number
-INSERT INTO insurance_admin_contacts 
+INSERT INTO insurance_admin_contacts
   (channel, destination, display_name, category, priority, display_order, is_active)
-VALUES 
+VALUES
   ('whatsapp', '+250799888777', 'New Admin', 'admin_auth', 10, 5, true);
 ```
 
@@ -214,7 +215,7 @@ WHERE destination = '+250788999888';
 ### View Contacts by Category
 
 ```sql
-SELECT 
+SELECT
   category,
   display_name,
   destination,
@@ -229,13 +230,13 @@ ORDER BY category, priority, display_order;
 
 ## Contact Categories
 
-| Category | Purpose | Example Use Cases |
-|----------|---------|-------------------|
-| `support` | General help | Error messages, user help requests |
-| `admin_auth` | Admin verification | Who can access admin features |
-| `insurance` | Insurance support | Motor insurance claims, help |
-| `general` | General inquiries | General questions, info |
-| `escalation` | Urgent issues | Critical failures, emergencies |
+| Category     | Purpose            | Example Use Cases                  |
+| ------------ | ------------------ | ---------------------------------- |
+| `support`    | General help       | Error messages, user help requests |
+| `admin_auth` | Admin verification | Who can access admin features      |
+| `insurance`  | Insurance support  | Motor insurance claims, help       |
+| `general`    | General inquiries  | General questions, info            |
+| `escalation` | Urgent issues      | Critical failures, emergencies     |
 
 ## Priority System
 
@@ -244,6 +245,7 @@ ORDER BY category, priority, display_order;
 - Example: priority 1 shows before priority 100
 
 **Suggested Priorities**:
+
 - `1-10` - Critical/urgent contacts
 - `10-50` - Primary contacts
 - `50-100` - Secondary contacts
@@ -259,7 +261,7 @@ ORDER BY category, priority, display_order;
 ✅ **Prioritized** - Control which contacts show first  
 ✅ **Multi-Channel** - WhatsApp, email, phone, SMS  
 ✅ **Cached** - 5-minute cache for performance  
-✅ **Fallback Safe** - Graceful degradation if no contacts  
+✅ **Fallback Safe** - Graceful degradation if no contacts
 
 ## Deployment Checklist
 
@@ -279,12 +281,12 @@ ORDER BY category, priority, display_order;
 Created:
   ✅ supabase/migrations/20251210143000_unify_admin_support_contacts.sql
   ✅ supabase/functions/_shared/admin-contacts.ts
-  
+
 Modified:
   ✅ supabase/functions/wa-webhook/flows/admin/auth.ts
   ✅ supabase/functions/wa-webhook-mobility/flows/admin/auth.ts
   ✅ supabase/functions/_shared/wa-webhook-shared/flows/admin/auth.ts
-  
+
 Already Correct (No Changes):
   ✅ supabase/functions/wa-webhook-insurance/insurance/ins_handler.ts
   ✅ supabase/functions/wa-webhook/domains/insurance/ins_handler.ts
@@ -322,6 +324,7 @@ SELECT * FROM get_admin_contacts('admin_auth', 'whatsapp');
 ✅ **Added categorization for different use cases**  
 ✅ **Created reusable utility functions**  
 ✅ **Updated all admin authentication to use table**  
-✅ **Ready for deployment**  
+✅ **Ready for deployment**
 
-The system is now **100% database-driven** for all admin/support contacts. No more hardcoded numbers anywhere!
+The system is now **100% database-driven** for all admin/support contacts. No more hardcoded numbers
+anywhere!

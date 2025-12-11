@@ -5,6 +5,7 @@
 The `recent_locations` table **DOES NOT EXIST** in production database!
 
 This was discovered when the migration failed with:
+
 ```
 ERROR: relation "public.recent_locations" does not exist
 ```
@@ -20,6 +21,7 @@ ERROR: relation "public.recent_locations" does not exist
 Updated migration `20251209180000_fix_location_caching_functions.sql` to:
 
 ### 1. CREATE `recent_locations` table (NEW)
+
 ```sql
 CREATE TABLE IF NOT EXISTS public.recent_locations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -36,6 +38,7 @@ CREATE TABLE IF NOT EXISTS public.recent_locations (
 ```
 
 ### 2. Added indexes
+
 - idx_recent_locations_user
 - idx_recent_locations_expires
 - idx_recent_locations_user_expires (composite)
@@ -43,12 +46,14 @@ CREATE TABLE IF NOT EXISTS public.recent_locations (
 - idx_recent_locations_source
 
 ### 3. Added RLS policies
+
 - user can SELECT own locations
 - user can INSERT own locations
 - user can DELETE own locations
 - service_role has full access
 
 ### 4. Kept everything else
+
 - `saved_locations` table creation (NEW)
 - All 8 RPC functions
 - All helper functions
@@ -56,6 +61,7 @@ CREATE TABLE IF NOT EXISTS public.recent_locations (
 ## Index Fix
 
 Also fixed invalid index that was causing error:
+
 ```sql
 -- BEFORE (ERROR - now() not immutable):
 CREATE INDEX ... WHERE expires_at > now();
@@ -67,6 +73,7 @@ CREATE INDEX ... ON recent_locations(user_id, expires_at);
 ## Next Steps
 
 Run the deployment again:
+
 ```bash
 cd /Users/jeanbosco/workspace/easymo
 supabase db push
@@ -74,8 +81,9 @@ supabase db push
 ```
 
 The migration should now succeed and create:
+
 1. `recent_locations` table (with indexes and RLS)
-2. `saved_locations` table (with indexes and RLS)  
+2. `saved_locations` table (with indexes and RLS)
 3. All 8 RPC functions
 
 ## Verification After Deployment
@@ -103,6 +111,7 @@ SELECT save_recent_location(
 ## Impact
 
 This fix ensures:
+
 - ✅ Location caching will ACTUALLY work for the first time
 - ✅ 30-minute cache will prevent repeated location requests
 - ✅ Saved favorites (home/work) will be persistent
@@ -112,17 +121,18 @@ This fix ensures:
 ## Files Changed
 
 Modified:
+
 - `supabase/migrations/20251209180000_fix_location_caching_functions.sql`
   - Added CREATE TABLE for recent_locations
   - Fixed index definition
   - Added RLS policies
 
 Updated:
+
 - `LOCATION_CACHING_IMPLEMENTATION_COMPLETE.md`
   - Added critical finding section
   - Documented production database state
 
 ---
 
-**Status**: Migration fixed and ready to deploy
-**Action Required**: Run `supabase db push` again
+**Status**: Migration fixed and ready to deploy **Action Required**: Run `supabase db push` again

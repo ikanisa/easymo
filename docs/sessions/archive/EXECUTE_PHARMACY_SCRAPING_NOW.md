@@ -16,6 +16,7 @@ chmod +x scripts/scrape_your_pharmacy_url.sh
 ```
 
 **That's it!** The script will:
+
 1. ✅ Set environment variables automatically
 2. ✅ Check dependencies (install if missing)
 3. ✅ Scrape your URL with optimal settings
@@ -28,6 +29,7 @@ chmod +x scripts/scrape_your_pharmacy_url.sh
 ## 📊 What Will Happen
 
 ### Phase 1: Setup (30 seconds)
+
 ```
 === Kigali Pharmacy Scraper (YOUR URL) ===
 
@@ -48,6 +50,7 @@ Continue? (y/n)
 Press `y` and Enter
 
 ### Phase 2: Scraping (10-15 minutes)
+
 ```
 Starting scrape...
 
@@ -78,6 +81,7 @@ Found 92 businesses
 ```
 
 ### Phase 3: Database Update (1-2 minutes)
+
 ```
 📤 Updating Supabase...
   Loaded 15 existing businesses
@@ -95,6 +99,7 @@ Errors: 0
 ```
 
 ### Phase 4: Completion
+
 ```
 === SCRAPING COMPLETE ===
 
@@ -112,9 +117,11 @@ View results:
 ## 📋 Files Created
 
 ### 1. Execution Script
+
 **Location**: `scripts/scrape_your_pharmacy_url.sh`  
 **Purpose**: One-command scraping  
 **Features**:
+
 - Auto environment setup
 - Dependency checking
 - Progress display
@@ -122,9 +129,11 @@ View results:
 - Result verification
 
 ### 2. Documentation
+
 **Location**: `PHARMACY_SCRAPING_YOUR_URL.md`  
 **Purpose**: Complete execution plan  
 **Contents**:
+
 - URL analysis
 - Expected results
 - Feature breakdown
@@ -132,9 +141,11 @@ View results:
 - Safety features
 
 ### 3. Output JSON (after running)
+
 **Location**: `scripts/kigali_pharmacies_TIMESTAMP.json`  
 **Purpose**: Scraped data backup  
 **Format**:
+
 ```json
 [
   {
@@ -161,6 +172,7 @@ View results:
 ## ✅ Safety Features
 
 ### 1. Phone Number Validation
+
 ```python
 # Only Rwanda numbers: +250XXXXXXXXX (exactly 13 characters)
 if phone.startswith('+250') and len(phone) == 13:
@@ -170,11 +182,13 @@ else:
 ```
 
 **Auto-formatting:**
+
 - `0788 767 816` → `+250788767816`
 - `788 767 816` → `+250788767816`
 - `+250788767816` → `+250788767816`
 
 ### 2. Duplicate Prevention
+
 ```python
 # Hash of: name + city + address
 key = "kigali pharmacy|kigali|kn 4 ave"
@@ -187,12 +201,14 @@ else:
 ```
 
 ### 3. Error Handling
+
 - Individual business failures don't stop scraper
 - Continues to next business
 - Logs all errors
 - Final stats show success/failure counts
 
 ### 4. Dry-Run Available
+
 ```bash
 # Test without inserting to database
 python3 scripts/gmaps_scraper_v2.py \
@@ -236,21 +252,22 @@ psql "$DATABASE_URL" -c "SELECT COUNT(*) FROM businesses WHERE category='pharmac
 
 ## 📊 Expected Metrics
 
-| Metric | Value |
-|--------|-------|
-| **URL Coverage** | ~10km radius from central Kigali |
-| **Total businesses found** | 80-120 pharmacies |
-| **With valid phone numbers** | 55-80 (65-70%) |
-| **Already in database** | 5-15 (if ran before) |
-| **New inserts** | 50-75 |
-| **Scraping time** | 10-15 minutes |
-| **Database update time** | 1-2 minutes |
+| Metric                       | Value                            |
+| ---------------------------- | -------------------------------- |
+| **URL Coverage**             | ~10km radius from central Kigali |
+| **Total businesses found**   | 80-120 pharmacies                |
+| **With valid phone numbers** | 55-80 (65-70%)                   |
+| **Already in database**      | 5-15 (if ran before)             |
+| **New inserts**              | 50-75                            |
+| **Scraping time**            | 10-15 minutes                    |
+| **Database update time**     | 1-2 minutes                      |
 
 ---
 
 ## 🎯 Alternative Options
 
 ### Option 1: See the Browser (Debug Mode)
+
 Remove `--headless` to watch scraping:
 
 ```bash
@@ -264,6 +281,7 @@ python3 gmaps_scraper_v2.py \
 ```
 
 ### Option 2: Dry Run First
+
 Test without database insert:
 
 ```bash
@@ -281,6 +299,7 @@ cat preview.json | jq '.[] | {name, phone, rating}'
 ```
 
 ### Option 3: Smaller Batch
+
 Start with fewer results:
 
 ```bash
@@ -296,52 +315,63 @@ python3 gmaps_scraper_v2.py \
 ## 🛠️ Troubleshooting
 
 ### Issue: Dependencies not installed
+
 ```
 Error: selenium not installed
 ```
+
 **Fix:**
+
 ```bash
 pip3 install -r scripts/requirements-scraper.txt
 ```
 
 ### Issue: ChromeDriver not found
+
 ```
 Error: 'chromedriver' executable needs to be in PATH
 ```
+
 **Fix:** Script auto-installs via webdriver-manager. Just ensure Python packages installed.
 
 ### Issue: No businesses found
+
 ```
 Found 0 businesses
 ```
+
 **Fix:**
+
 - Check URL is correct
 - Remove `--headless` to see browser
 - Google may have changed HTML (contact for scraper update)
 
 ### Issue: All duplicates
+
 ```
 Inserted: 0
 Duplicates: 68
 ```
+
 **This is normal!** Means pharmacies already in database. Script working correctly.
 
 ---
 
 ## 📚 Documentation
 
-| Document | Purpose |
-|----------|---------|
-| `PHARMACY_SCRAPING_YOUR_URL.md` | Full execution plan (this URL) |
-| `GMAPS_SCRAPER_START_HERE.md` | General scraper guide |
-| `scripts/README_SCRAPER.md` | Technical documentation |
-| `PHARMACY_SCRAPING_READY.md` | Previous pharmacy scraping plan |
+| Document                        | Purpose                         |
+| ------------------------------- | ------------------------------- |
+| `PHARMACY_SCRAPING_YOUR_URL.md` | Full execution plan (this URL)  |
+| `GMAPS_SCRAPER_START_HERE.md`   | General scraper guide           |
+| `scripts/README_SCRAPER.md`     | Technical documentation         |
+| `PHARMACY_SCRAPING_READY.md`    | Previous pharmacy scraping plan |
 
 ---
 
 ## ✅ Pre-Flight Checklist
 
 Before running:
+
 - [ ] Python 3 installed (`python3 --version`)
 - [ ] Git repo at `/Users/jeanbosco/workspace/easymo`
 - [ ] Internet connection stable
@@ -349,6 +379,7 @@ Before running:
 - [ ] Database accessible
 
 After running:
+
 - [ ] Check console for errors
 - [ ] Verify JSON file created
 - [ ] Query database for count

@@ -26,15 +26,16 @@ cat certificate.txt
 
 ### 2. Add Secrets to GitHub
 
-Go to your repository: **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
+Go to your repository: **Settings** → **Secrets and variables** → **Actions** → **New repository
+secret**
 
 Add these three secrets:
 
-| Secret Name | Value |
-|-------------|-------|
-| `MACOS_CERTIFICATE_BASE64` | Contents of `certificate.txt` |
+| Secret Name                  | Value                            |
+| ---------------------------- | -------------------------------- |
+| `MACOS_CERTIFICATE_BASE64`   | Contents of `certificate.txt`    |
 | `MACOS_CERTIFICATE_PASSWORD` | Password you used when exporting |
-| `KEYCHAIN_PASSWORD` | Any random 32-character password |
+| `KEYCHAIN_PASSWORD`          | Any random 32-character password |
 
 **Security:** Delete `InhouseDevSigning.p12` and `certificate.txt` after adding secrets!
 
@@ -47,6 +48,7 @@ rm InhouseDevSigning.p12 certificate.txt
 The workflow file is already in `.github/workflows/macos-signing.yml`.
 
 It will automatically run when:
+
 - ✅ You push a version tag (e.g., `v1.0.0`)
 - ✅ You manually trigger it (Actions tab → macOS Code Signing → Run workflow)
 - ✅ You modify signing scripts in a PR (validation only)
@@ -62,6 +64,7 @@ It will automatically run when:
 5. Click **Run workflow** button
 
 The workflow will:
+
 - ✅ Build both apps (Admin Panel + Client Portal)
 - ✅ Sign them with your certificate
 - ✅ Verify signatures
@@ -86,13 +89,17 @@ After workflow completes:
 ## Workflow Jobs
 
 ### Job 1: validate-scripts
+
 Runs on every PR that touches signing scripts:
+
 - Checks script permissions
 - Validates bash syntax
 - Runs test suite
 
 ### Job 2: sign-apps
+
 Runs on tags or manual trigger:
+
 - Imports signing certificate
 - Builds both apps
 - Signs with `scripts/sign_all_apps.sh`
@@ -101,7 +108,9 @@ Runs on tags or manual trigger:
 - Uploads artifacts
 
 ### Job 3: notarize (Optional)
+
 **Disabled by default.** Enable when you have Apple Developer ID:
+
 - Submits apps to Apple for notarization
 - Staples notarization ticket to DMG
 
@@ -143,6 +152,7 @@ In `.github/workflows/macos-signing.yml`, change line 89:
 ```
 
 And line 93:
+
 ```yaml
 env:
   SIGNING_IDENTITY: "Developer ID Application: Your Company (TEAMID)"
@@ -153,10 +163,11 @@ env:
 In `.github/workflows/macos-signing.yml`, change line 165:
 
 ```yaml
-if: false  # Change to: if: true
+if: false # Change to: if: true
 ```
 
 Add new secrets:
+
 - `APPLE_ID` - Your Apple ID email
 - `APPLE_APP_SPECIFIC_PASSWORD` - Generate at appleid.apple.com
 - `APPLE_TEAM_ID` - Your Apple Developer Team ID
@@ -187,6 +198,7 @@ Test the workflow locally before pushing:
 **Problem:** Certificate wasn't imported correctly.
 
 **Solution:**
+
 1. Verify secrets are set correctly
 2. Check certificate password matches
 3. Ensure base64 encoding is clean (no line breaks)
@@ -196,6 +208,7 @@ Test the workflow locally before pushing:
 **Problem:** Build step didn't create the app at expected path.
 
 **Solution:**
+
 1. Update app paths in workflow (lines 78, 84)
 2. Match paths in `scripts/sign_all_apps.sh`
 
@@ -204,6 +217,7 @@ Test the workflow locally before pushing:
 **Problem:** Certificate is invalid or expired.
 
 **Solution:**
+
 1. Check certificate validity: `security find-identity -v`
 2. Re-export certificate
 3. Update GitHub secret
@@ -213,6 +227,7 @@ Test the workflow locally before pushing:
 **Problem:** Push didn't match trigger conditions.
 
 **Solution:**
+
 - Use `git push --tags` for tag triggers
 - Use workflow_dispatch for manual runs
 - Check `paths:` filters match your changes
@@ -230,20 +245,20 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   build-and-sign:
     uses: ./.github/workflows/macos-signing.yml
     secrets: inherit
-  
+
   create-release:
     needs: build-and-sign
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
-      
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
@@ -254,6 +269,7 @@ jobs:
 ```
 
 Now every version tag automatically:
+
 1. Builds apps
 2. Signs them
 3. Creates DMG files
@@ -264,6 +280,7 @@ Now every version tag automatically:
 ## Security Best Practices
 
 ✅ **DO:**
+
 - Store certificates in GitHub Secrets (encrypted)
 - Use app-specific passwords for Apple ID
 - Rotate certificates every 2-3 years
@@ -271,6 +288,7 @@ Now every version tag automatically:
 - Limit repository access to trusted team members
 
 ❌ **DON'T:**
+
 - Commit .p12 files to git
 - Share certificate passwords in Slack/email
 - Use production certificates in public repos
@@ -284,6 +302,6 @@ Now every version tag automatically:
 ✅ **Secure certificate storage in GitHub Secrets**  
 ✅ **DMG creation for easy distribution**  
 ✅ **Notarization ready for Apple Developer ID**  
-✅ **Full validation in PRs**  
+✅ **Full validation in PRs**
 
 Your CI/CD pipeline now handles code signing automatically! 🚀

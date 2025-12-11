@@ -3,6 +3,7 @@
 ## 🎯 What to Do Next
 
 ### RECOMMENDED: Test & Deploy
+
 ```bash
 # 1. Push migrations
 cd /Users/jeanbosco/workspace/easymo
@@ -23,18 +24,19 @@ vercel deploy --prod
 
 ## 📚 Documentation Files Created
 
-| File | Purpose |
-|------|---------|
-| `PHASE_3_COMPLETE_SUMMARY.md` | **START HERE** - Full summary |
-| `PHASE_3D_MEMBER_UI_STATUS.md` | UI components status |
-| `PHASE_3_VISUAL_ROADMAP.txt` | Visual ASCII roadmap |
-| `PHASE_3_QUICK_REF.md` | **THIS FILE** - Quick commands |
+| File                           | Purpose                        |
+| ------------------------------ | ------------------------------ |
+| `PHASE_3_COMPLETE_SUMMARY.md`  | **START HERE** - Full summary  |
+| `PHASE_3D_MEMBER_UI_STATUS.md` | UI components status           |
+| `PHASE_3_VISUAL_ROADMAP.txt`   | Visual ASCII roadmap           |
+| `PHASE_3_QUICK_REF.md`         | **THIS FILE** - Quick commands |
 
 ---
 
 ## 🧪 Quick Test Commands
 
 ### Test Database Functions
+
 ```sql
 -- Create test member
 SELECT * FROM app.create_member(
@@ -52,6 +54,7 @@ SELECT * FROM app.get_member_summary('member-uuid'::uuid);
 ```
 
 ### Test API Endpoints
+
 ```bash
 # List members
 curl "http://localhost:3000/api/members?sacco_id=xxx&status=ACTIVE&limit=10"
@@ -83,24 +86,29 @@ curl -X DELETE http://localhost:3000/api/members/{member-id}
 ## 📂 Key Files to Know
 
 ### Database
+
 - `supabase/migrations/20251209200000_member_management_functions.sql` - Operations
 - `supabase/migrations/20251209200001_member_analytics.sql` - Analytics
 
 ### Types
+
 - `vendor-portal/types/member.ts` - Member types
 - `vendor-portal/types/group.ts` - Group types
 
 ### Validation
+
 - `vendor-portal/lib/validations/member.ts` - Member schemas
 - `vendor-portal/lib/validations/group.ts` - Group schemas
 
 ### API Routes
+
 - `vendor-portal/app/api/members/route.ts` - List/Create
 - `vendor-portal/app/api/members/[id]/route.ts` - Get/Update/Delete
 - `vendor-portal/app/api/members/import/route.ts` - Bulk import
 - `vendor-portal/app/api/groups/route.ts` - Groups API
 
 ### UI Pages (Pre-existing)
+
 - `vendor-portal/app/(dashboard)/members/page.tsx` - Members list
 - `vendor-portal/app/(dashboard)/members/new/page.tsx` - Create form
 - `vendor-portal/app/(dashboard)/members/[id]/page.tsx` - Member detail
@@ -112,15 +120,19 @@ curl -X DELETE http://localhost:3000/api/members/{member-id}
 ## 🔧 Common Issues
 
 ### Issue: "Member code already exists"
+
 **Solution**: Member codes are auto-generated. Don't provide one.
 
 ### Issue: "Duplicate phone number"
+
 **Solution**: Check if member exists with `search_members()` first.
 
 ### Issue: "Cannot deactivate member with balance"
+
 **Solution**: Transfer or withdraw balance before deactivating.
 
 ### Issue: "SACCO_ID hardcoded"
+
 **Solution**: TODO - Replace with session-based value in production.
 
 ---
@@ -142,18 +154,21 @@ curl -X DELETE http://localhost:3000/api/members/{member-id}
 ## 🚀 Next Steps (Choose One)
 
 ### Option A: Testing & Deployment (Recommended)
+
 1. Push migrations to database
 2. Test all endpoints
 3. Test UI flows
 4. Deploy to production
 
 ### Option B: Phase 3E - Groups UI
+
 1. Group detail page
 2. Group statistics
 3. Member management within group
 4. Group settings
 
 ### Option C: Phase 4 - Payment Matching
+
 1. SMS webhook integration
 2. Automatic matching
 3. Manual review interface
@@ -164,6 +179,7 @@ curl -X DELETE http://localhost:3000/api/members/{member-id}
 ## 📞 Support
 
 **Questions?**
+
 - Read `PHASE_3_COMPLETE_SUMMARY.md` for full details
 - Check `PHASE_3_VISUAL_ROADMAP.txt` for architecture
 - Review individual file comments for specifics

@@ -6,7 +6,10 @@
 
 ## Overview
 
-This review identifies critical fragmentation in EasyMO's user authentication and identity management across multiple systems, databases, and authentication mechanisms. The current architecture creates security vulnerabilities, poor user experience, and significant maintenance overhead.
+This review identifies critical fragmentation in EasyMO's user authentication and identity
+management across multiple systems, databases, and authentication mechanisms. The current
+architecture creates security vulnerabilities, poor user experience, and significant maintenance
+overhead.
 
 ## Key Findings
 
@@ -20,6 +23,7 @@ This review identifies critical fragmentation in EasyMO's user authentication an
 - **Legacy Admin** → Actor-based authorization (ENV variables)
 
 **Impact:**
+
 - SACCO manager cannot use WhatsApp + admin panel with same identity
 - No cross-system user tracking or audit trail
 - Impossible to implement unified GDPR account deletion
@@ -29,17 +33,20 @@ This review identifies critical fragmentation in EasyMO's user authentication an
 **Problem:** Two incompatible role type systems in production:
 
 **System A** - `app_role` enum (7 roles):
+
 ```
-SYSTEM_ADMIN, SACCO_MANAGER, SACCO_STAFF, SACCO_VIEWER, 
+SYSTEM_ADMIN, SACCO_MANAGER, SACCO_STAFF, SACCO_VIEWER,
 DISTRICT_MANAGER, MFI_MANAGER, MFI_STAFF
 ```
 
 **System B** - `UserRole` type (3 roles):
+
 ```typescript
-type UserRole = 'user' | 'admin' | 'staff'
+type UserRole = "user" | "admin" | "staff";
 ```
 
 **Impact:**
+
 - No canonical role definition
 - Permission checks inconsistent across services
 - Cannot reliably enforce role-based access control (RBAC)
@@ -48,14 +55,15 @@ type UserRole = 'user' | 'admin' | 'staff'
 
 **Four Different Auth Mechanisms:**
 
-| Mechanism | Used By | Security Level | Issues |
-|-----------|---------|----------------|---------|
-| Supabase Auth (email/password) | Admin Staff | Medium | ✅ Standard OAuth2/JWT |
-| WhatsApp Implicit Auth | WhatsApp Users | Low | ❌ Phone trust only, no verification |
-| Service-to-Service JWT | Microservices | Medium | ⚠️ Manual rotation, no key management |
-| Actor Authorization | Legacy Admin | Low | ❌ ENV variable hardcoding |
+| Mechanism                      | Used By        | Security Level | Issues                                |
+| ------------------------------ | -------------- | -------------- | ------------------------------------- |
+| Supabase Auth (email/password) | Admin Staff    | Medium         | ✅ Standard OAuth2/JWT                |
+| WhatsApp Implicit Auth         | WhatsApp Users | Low            | ❌ Phone trust only, no verification  |
+| Service-to-Service JWT         | Microservices  | Medium         | ⚠️ Manual rotation, no key management |
+| Actor Authorization            | Legacy Admin   | Low            | ❌ ENV variable hardcoding            |
 
 **Impact:**
+
 - Inconsistent security posture
 - Complex testing and maintenance
 - No unified session management
@@ -90,9 +98,12 @@ type UserRole = 'user' | 'admin' | 'staff'
 ## Critical Issues Requiring Immediate Action
 
 ### Issue #1: Dual Identity Problem
-**Scenario:** A SACCO manager who is also a WhatsApp user cannot use both systems with unified identity.
+
+**Scenario:** A SACCO manager who is also a WhatsApp user cannot use both systems with unified
+identity.
 
 **Current State:**
+
 - WhatsApp identity: Phone number in `public.profiles`
 - Admin panel: Email in `public.users` via Supabase Auth
 - No linking between identities
@@ -100,18 +111,22 @@ type UserRole = 'user' | 'admin' | 'staff'
 **Consequence:** User must maintain separate accounts, cannot access admin features via WhatsApp.
 
 ### Issue #2: No GDPR-Compliant Deletion
+
 **Problem:** User requests account deletion ("right to be forgotten").
 
 **Current Blocker:** Data scattered across:
+
 - Supabase `public.profiles`, `public.users`
 - Agent-Core Prisma database
 - Transaction logs across microservices
 - No unified deletion workflow
 
 ### Issue #3: Brute Force Vulnerability
+
 **Problem:** Login endpoints have no rate limiting.
 
 **Attack Surface:**
+
 - `/auth/v1/token` (Supabase Auth)
 - Admin panel login
 - Service-to-service token endpoints
@@ -220,22 +235,26 @@ type UserRole = 'user' | 'admin' | 'staff'
 ## Files Analyzed
 
 ### Authentication Implementation
+
 - `admin-app/lib/auth/credentials.ts` - Actor authorization
 - `admin-app/lib/auth/is-admin-user.ts` - Admin role checking
 - `vendor-portal/lib/auth/service.ts` - Profile federation
 - `packages/commons/src/service-auth.ts` - Service JWT implementation
 
 ### Schema Definitions
+
 - `packages/ibimina-supabase-schemas/src/database.types.ts` - `app_role` enum
 - `packages/supabase-schemas/src/enums.ts` - `UserRole` type
 - `packages/db/prisma/schema.prisma` - Agent-Core models
 
 ### Database Migrations
+
 - `supabase/migrations/ibimina/20251007111647_*.sql` - `public.users` table
 - `supabase/migrations/ibimina/20251015190000_*.sql` - `members_app_profiles`
 - `supabase/migrations/ibimina/20251103175923_*.sql` - `user_profiles`
 
 ### Edge Functions
+
 - `supabase/functions/admin-users/` - User provisioning
 - `supabase/functions/invite-user/` - User invitations
 - `supabase/functions/debug-auth-users/` - Auth debugging
@@ -245,6 +264,7 @@ type UserRole = 'user' | 'admin' | 'staff'
 **Title:** Add canonical role system to unify role definitions
 
 **Scope:**
+
 ```
 packages/auth/
 ├── package.json
@@ -257,6 +277,7 @@ packages/auth/
 ```
 
 **Benefits:**
+
 - Single source of truth for roles
 - Type-safe role checking
 - Permission framework for RBAC
@@ -267,17 +288,20 @@ packages/auth/
 ## Metrics & Success Criteria
 
 ### Security Metrics
+
 - ✅ Zero hardcoded credentials in code
 - ✅ 100% of auth endpoints rate-limited
 - ✅ All privileged actions logged with correlation IDs
 - ✅ PII masking coverage >95%
 
 ### User Experience Metrics
+
 - ✅ Single identity for WhatsApp + admin access
 - ✅ MFA enrollment >80% for privileged users
 - ✅ Account deletion <24hr turnaround
 
 ### Engineering Metrics
+
 - ✅ Role definition conflicts resolved
 - ✅ Auth test coverage >90%
 - ✅ Zero duplicate auth logic across services
@@ -285,16 +309,19 @@ packages/auth/
 ## Dependencies & Risks
 
 ### Technical Dependencies
+
 - Redis cluster for rate limiting (existing infrastructure)
 - Database migrations for schema updates
 - Coordination across 3 teams (Admin, WhatsApp, Agent-Core)
 
 ### Migration Risks
+
 - Existing users must be migrated to new role system
 - Backward compatibility during transition period
 - Potential service downtime during auth system updates
 
 ### Mitigation Strategies
+
 - Feature flags for gradual rollout
 - Dual-write during migration period
 - Comprehensive testing in staging environment
@@ -310,14 +337,18 @@ packages/auth/
 
 ## Conclusion
 
-The EasyMO authentication architecture requires urgent attention to address security vulnerabilities and identity fragmentation. The recommended phased approach prioritizes immediate security fixes while planning for long-term architectural improvements.
+The EasyMO authentication architecture requires urgent attention to address security vulnerabilities
+and identity fragmentation. The recommended phased approach prioritizes immediate security fixes
+while planning for long-term architectural improvements.
 
 **Estimated Effort:**
+
 - Immediate fixes: 2 weeks (1 engineer)
 - Short-term improvements: 1 month (1-2 engineers)
 - Long-term unified architecture: 3-6 months (2-3 engineers)
 
 **ROI:**
+
 - Reduced security incidents
 - Improved user experience (unified identity)
 - Lower maintenance costs (consolidated auth logic)

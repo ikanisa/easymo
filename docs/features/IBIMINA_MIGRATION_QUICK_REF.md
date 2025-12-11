@@ -29,6 +29,7 @@ pnpm --filter @easymo/admin-app dev      # http://localhost:3000
 ### Admin Routes (in admin-app)
 
 Access at `http://localhost:3000/ibimina-admin/`:
+
 - `/ibimina-admin/countries` - Country management
 - `/ibimina-admin/partners` - Partner orgs
 - `/ibimina-admin/telcos` - Telecom operators
@@ -37,6 +38,7 @@ Access at `http://localhost:3000/ibimina-admin/`:
 ### Vendor Portal Routes
 
 Access at `http://localhost:3100/`:
+
 - `/staff` - SACCO operations dashboard
 - `/staff/onboarding` - Member onboarding
 - `/staff/allocations` - Share allocations
@@ -60,6 +62,7 @@ All in `packages/ibimina-*`:
 ### Environment Variables
 
 **Vendor Portal** (`.env`):
+
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbG...

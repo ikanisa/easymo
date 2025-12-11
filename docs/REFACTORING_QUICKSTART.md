@@ -1,11 +1,13 @@
 # World-Class Repository Refactoring - Quick Start
 
 ## 🎯 Objective
+
 Transform the EasyMO repository into a world-class, maintainable codebase.
 
 ## 📊 Current Status
 
 **Phase 1: Root Directory Cleanup** ✅ **COMPLETE**
+
 - Cleaned root directory (removed backups)
 - Created refactoring script infrastructure
 - Established quality gates
@@ -15,18 +17,20 @@ Transform the EasyMO repository into a world-class, maintainable codebase.
 ### For Contributors
 
 1. **Check root directory is clean:**
+
    ```bash
    ./scripts/refactor/check-root-directory.sh
    ```
 
 2. **Analyze current state:**
+
    ```bash
    # Edge functions
    ./scripts/refactor/phase2-analyze-functions.sh
-   
+
    # Packages
    ./scripts/refactor/phase3-analyze-packages.sh
-   
+
    # Configuration
    ./scripts/refactor/phase4-analyze-config.sh
    ```
@@ -34,6 +38,7 @@ Transform the EasyMO repository into a world-class, maintainable codebase.
 ### For Maintainers
 
 1. **Track progress:**
+
    ```bash
    cat docs/REFACTORING_PROGRESS.md
    ```
@@ -75,15 +80,18 @@ Transform the EasyMO repository into a world-class, maintainable codebase.
 ### Phase 2: Edge Function Consolidation (Priority: 🔴 CRITICAL)
 
 **Current State:** 121 functions  
-**Target:** 80-90 functions  
+**Target:** 80-90 functions
 
 **Actions:**
+
 1. Remove 3 `.archived` directories:
+
    ```bash
    rm -rf supabase/functions/*.archived
    ```
 
 2. Create function inventory:
+
    ```bash
    ./scripts/refactor/phase2-analyze-functions.sh > docs/FUNCTION_INVENTORY.md
    ```
@@ -93,9 +101,10 @@ Transform the EasyMO repository into a world-class, maintainable codebase.
 ### Phase 3: Package Consolidation (Priority: 🟡 HIGH)
 
 **Current State:** 35 packages  
-**Target:** ~20 packages  
+**Target:** ~20 packages
 
 **Merge Candidates:**
+
 - **Localization:** locales, localization, ibimina-locales → `localization/`
 - **UI:** ui, ibimina-ui → `ui/`
 - **AI:** ai, ai-core, agents, agent-config → `ai/`
@@ -105,13 +114,13 @@ Transform the EasyMO repository into a world-class, maintainable codebase.
 
 ## 🎯 Success Metrics
 
-| Metric | Baseline | Target | Current | Status |
-|--------|----------|--------|---------|--------|
-| Root files | 45 | <20 | 43 | 🟡 Good |
-| Edge functions | 121 | 80-90 | 121 | 🔴 TODO |
-| Packages | 35 | ~20 | 35 | 🔴 TODO |
-| Hardcoded values | Unknown | 0 | TBD | 📋 Pending |
-| Root clean check | ❌ | ✅ | ✅ | ✅ **PASS** |
+| Metric           | Baseline | Target | Current | Status      |
+| ---------------- | -------- | ------ | ------- | ----------- |
+| Root files       | 45       | <20    | 43      | 🟡 Good     |
+| Edge functions   | 121      | 80-90  | 121     | 🔴 TODO     |
+| Packages         | 35       | ~20    | 35      | 🔴 TODO     |
+| Hardcoded values | Unknown  | 0      | TBD     | 📋 Pending  |
+| Root clean check | ❌       | ✅     | ✅      | ✅ **PASS** |
 
 ## 🛠️ Key Scripts
 
@@ -153,12 +162,15 @@ docs/
 ## 🚨 Rules
 
 ### Root Directory Rules
+
 **Only these file types allowed in root:**
+
 - Config files (package.json, tsconfig.json, etc.)
 - Build files (Dockerfile, Makefile, etc.)
 - Documentation (README.md, CHANGELOG.md, etc.)
 
 **NOT allowed:**
+
 - ❌ Scripts (.sh files) → Move to `scripts/`
 - ❌ SQL files → Move to `scripts/db/`
 - ❌ Data files (.csv, .json) → Move to `scripts/data/`
@@ -168,6 +180,7 @@ docs/
 ## 🤝 Contributing
 
 When adding files:
+
 1. **Scripts** → `scripts/{deploy,db,data,utility,ci,refactor}/`
 2. **Docs** → `docs/{architecture,deployment,development,features,runbooks}/`
 3. **Code** → Appropriate package in `packages/` or app directory

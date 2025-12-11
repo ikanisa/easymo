@@ -97,7 +97,7 @@ BEGIN
 
   UPDATE public.wallet_accounts SET tokens = tokens - v_amount, updated_at = timezone('utc', now())
   WHERE profile_id = v_sender RETURNING tokens INTO v_sender_tokens;
-  
+
   UPDATE public.wallet_accounts SET tokens = tokens + v_amount, updated_at = timezone('utc', now())
   WHERE profile_id = v_recipient RETURNING tokens INTO v_recipient_tokens;
 
@@ -130,10 +130,13 @@ SELECT * FROM wallet_transfer_tokens(
 ### Step 5: Test in WhatsApp
 
 Send to your WhatsApp bot:
+
 ```
 wallet
 ```
+
 Then:
+
 ```
 Transfer → Select partner → Type "100"
 ```
@@ -145,6 +148,7 @@ Should see: **"✅ Sent 100 tokens to [Partner Name]"**
 ## ⏱️ Why Manual?
 
 Tried automated methods:
+
 - ❌ `supabase db push` - Authentication failed
 - ❌ PostgREST RPC - No `query()` function endpoint
 - ❌ Direct `psql` - No database password available
@@ -170,11 +174,13 @@ Tried automated methods:
 ## 📊 After Applying
 
 Monitor logs:
+
 ```bash
 supabase functions logs wa-webhook-profile --tail
 ```
 
 Look for:
+
 - ✅ `WALLET_TRANSFER_SUCCESS`
 - ✅ `WALLET_TRANSFER_RPC_RESPONSE`
 

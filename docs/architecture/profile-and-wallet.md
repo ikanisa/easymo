@@ -39,6 +39,7 @@ Profile & Wallet is the **ONLY non-agent workflow** in EasyMO. It provides struc
 **Withdraw:** Cash out to MoMo (min 1000 tokens, 5% fee)
 
 ### Business Rules
+
 - 1 token = 1 RWF
 - Max 10 transactions/day
 - Withdraw min: 1000 tokens
@@ -50,37 +51,44 @@ Profile & Wallet is the **ONLY non-agent workflow** in EasyMO. It provides struc
 **Rule:** View in Profile; modify via agent conversation
 
 ### A. My Businesses 🏪
-*Agent: Business Broker*  
+
+_Agent: Business Broker_  
 **Table:** `business_listings`  
 **Actions:** View details, launch agent to edit
 
 ### B. My Vehicles 🚗
-*Agents: Rides, Insurance*  
+
+_Agents: Rides, Insurance_  
 **Table:** `vehicles`  
 **Actions:** View, update insurance, offer rides
 
 ### C. My Properties 🏠
-*Agent: Real Estate*  
+
+_Agent: Real Estate_  
 **Table:** `properties`  
 **Actions:** View inquiries, launch agent to modify
 
 ### D. My Job Posts 💼
-*Agent: Jobs*  
+
+_Agent: Jobs_  
 **Table:** `job_listings`  
 **Actions:** View applications, edit via agent
 
 ### E. My Listings 🌾
-*Agent: Farmer*  
+
+_Agent: Farmer_  
 **Table:** `produce_listings`  
 **Actions:** View matches, edit via agent
 
 ### F. My Policies 🛡️
-*Agent: Insurance*  
+
+_Agent: Insurance_  
 **Table:** `insurance_policies`  
 **Actions:** View coverage, renew via agent
 
 ### G. My Trips 🚗
-*Agent: Rides*  
+
+_Agent: Rides_  
 **Table:** `trips`  
 **Actions:** View history, book again via agent
 
@@ -91,6 +99,7 @@ Profile & Wallet is the **ONLY non-agent workflow** in EasyMO. It provides struc
 **Why:** Save once, all agents reuse it
 
 **Example:**
+
 ```
 Rides agent: "Where from?
              1️⃣ Home (Gikondo)
@@ -99,6 +108,7 @@ Rides agent: "Where from?
 ```
 
 **Table:**
+
 ```sql
 CREATE TABLE user_saved_locations (
   user_id uuid REFERENCES whatsapp_users(id),
@@ -109,6 +119,7 @@ CREATE TABLE user_saved_locations (
 ```
 
 **Agent Usage:**
+
 ```sql
 -- Inside apply_intent_rides()
 SELECT latitude, longitude
@@ -183,6 +194,7 @@ CREATE POLICY wallet_balances_user_read ON wallet_balances
 - Owned entities → "Edit your listing" vs "Create new"
 
 **Example:**
+
 ```
 Real Estate agent: "Looking near:
                    1️⃣ Home
@@ -196,16 +208,16 @@ Real Estate agent: "Looking near:
 
 ```typescript
 // Test wallet balance
-test('GET /api/wallet/balance', async () => {
-  const res = await fetch('/api/wallet/balance', { headers: { auth: token } });
+test("GET /api/wallet/balance", async () => {
+  const res = await fetch("/api/wallet/balance", { headers: { auth: token } });
   expect(res.json().tokenBalance).toBeGreaterThanOrEqual(0);
 });
 
 // Test saved location usage
-test('Rides agent uses saved Home', async () => {
-  await saveLocation(userId, 'home', { lat: -1.9536, lon: 30.1047 });
+test("Rides agent uses saved Home", async () => {
+  await saveLocation(userId, "home", { lat: -1.9536, lon: 30.1047 });
   const intent = await parseIntent(ridesAgent, "Ride from Home");
-  expect(intent.extracted_params.origin).toBe('saved_location_home');
+  expect(intent.extracted_params.origin).toBe("saved_location_home");
 });
 ```
 
@@ -214,6 +226,7 @@ test('Rides agent uses saved Home', async () => {
 ## Monitoring
 
 **Key Metrics:**
+
 - Users with saved locations: 75%
 - Avg saved locations/user: 2.3
 - Daily token transactions: 2,300

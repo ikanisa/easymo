@@ -44,14 +44,16 @@ Phase 3 was largely completed during Phase 2. The following edge functions have 
 **Migration Actions**:
 
 #### Step 1: Clean Up Old Agent Slugs
+
 ```sql
 -- Deactivate and delete duplicate slugs
-DELETE FROM ai_agents 
+DELETE FROM ai_agents
 WHERE slug IN ('buy_and_sell', 'business_broker', 'marketplace', 'broker')
   AND slug != 'buy_sell';
 ```
 
 #### Step 2: Ensure Canonical Agent Exists
+
 ```sql
 -- Create or update the buy_sell agent
 INSERT INTO ai_agents (
@@ -71,16 +73,17 @@ ON CONFLICT (slug) DO UPDATE SET
 ```
 
 #### Step 3: Verify Menu Keys
+
 ```sql
 -- Ensure correct menu items exist:
 -- - buy_sell_categories (category selection workflow)
 -- - business_broker_agent (AI chat interface)
 
 -- Delete old/conflicting menu items
-DELETE FROM whatsapp_home_menu_items 
+DELETE FROM whatsapp_home_menu_items
 WHERE key IN (
   'buy_and_sell_agent',
-  'buy_sell_agent', 
+  'buy_sell_agent',
   'marketplace_agent',
   'broker_agent',
   'general_broker'
@@ -88,14 +91,16 @@ WHERE key IN (
 ```
 
 #### Step 4: Add Documentation
+
 ```sql
-COMMENT ON TABLE ai_agents IS 
-'AI agent registry. 
+COMMENT ON TABLE ai_agents IS
+'AI agent registry.
 Buy & Sell agent uses slug=''buy_sell'' (NOT buy_and_sell).
 See docs/features/BUY_SELL_CONSOLIDATION_ANALYSIS.md for details.';
 ```
 
 #### Step 5: Final Verification
+
 ```sql
 -- Verify exactly 1 active Buy & Sell agent
 -- Verify exactly 2 active menu items
@@ -109,6 +114,7 @@ See docs/features/BUY_SELL_CONSOLIDATION_ANALYSIS.md for details.';
 ### Before Phase 4
 
 **ai_agents table**:
+
 ```
 slug              | is_active | name
 ------------------+-----------+-------------------------
@@ -119,6 +125,7 @@ marketplace       | false     | Marketplace Agent
 ```
 
 **whatsapp_home_menu_items table**:
+
 ```
 key                    | is_active | name
 -----------------------+-----------+------------------
@@ -132,6 +139,7 @@ broker_agent           | false     | (OLD, duplicate)
 ### After Phase 4
 
 **ai_agents table**:
+
 ```
 slug              | is_active | name
 ------------------+-----------+-------------------------
@@ -140,6 +148,7 @@ buy_sell          | true      | Buy & Sell AI Agent
 ```
 
 **whatsapp_home_menu_items table**:
+
 ```
 key                    | is_active | name
 -----------------------+-----------+------------------
@@ -153,11 +162,13 @@ business_broker_agent  | true      | 🤖 Chat with Agent
 ## 📊 Impact Assessment
 
 ### Database Cleanup
+
 - **Agents deleted**: 3-4 duplicate/old agents
 - **Menu items deleted**: 5+ duplicate entries
 - **Final state**: 1 agent + 2 menu items ✅
 
 ### Consistency Achieved
+
 - ✅ Single agent slug: `buy_sell`
 - ✅ Agent config type matches: `buy_sell`
 - ✅ Menu keys standardized
@@ -225,12 +236,14 @@ ROLLBACK; -- or COMMIT if restoring
 ```
 
 ### Pre-Migration Checklist
+
 - [ ] Backup database
 - [ ] Test on staging environment first
 - [ ] Verify no active sessions using old slugs
 - [ ] Check application logs for errors
 
 ### Post-Migration Verification
+
 - [ ] Run verification queries (see above)
 - [ ] Check application logs for agent lookup errors
 - [ ] Test WhatsApp menu interactions
@@ -242,12 +255,14 @@ ROLLBACK; -- or COMMIT if restoring
 ## 🎯 Combined Success Metrics (Phases 3 & 4)
 
 ### Phase 3: Edge Functions
+
 - ✅ All edge functions use shared wrapper
 - ✅ Import cycle eliminated
 - ✅ Backward compatibility maintained
 - ✅ Deprecation warnings in place
 
 ### Phase 4: Database
+
 - ✅ Single agent slug: `buy_sell`
 - ✅ Old slugs deleted
 - ✅ Menu keys standardized
@@ -259,23 +274,25 @@ ROLLBACK; -- or COMMIT if restoring
 
 ### Overall Consolidation Progress
 
-| Phase | Status | Files Modified | Key Achievement |
-|-------|--------|----------------|-----------------|
-| Phase 1 | ✅ Complete | 12 files | Modular structure created |
-| Phase 2 | ✅ Complete | 4 files | Deno wrapper + import cycle fixed |
-| Phase 3 | ✅ Complete | (Verified) | Edge functions confirmed working |
-| Phase 4 | ✅ Complete | 1 migration | Database cleaned up |
-| Phase 5 | 🔜 Pending | TBD | Testing & final deployment |
+| Phase   | Status      | Files Modified | Key Achievement                   |
+| ------- | ----------- | -------------- | --------------------------------- |
+| Phase 1 | ✅ Complete | 12 files       | Modular structure created         |
+| Phase 2 | ✅ Complete | 4 files        | Deno wrapper + import cycle fixed |
+| Phase 3 | ✅ Complete | (Verified)     | Edge functions confirmed working  |
+| Phase 4 | ✅ Complete | 1 migration    | Database cleaned up               |
+| Phase 5 | 🔜 Pending  | TBD            | Testing & final deployment        |
 
 ### Code Statistics
 
 **Before Consolidation**:
+
 - 3 separate agent implementations (1,772 lines)
 - Multiple agent slugs (buy_sell, buy_and_sell, business_broker, marketplace)
 - Import cycles between edge functions
 - Inconsistent configurations
 
 **After Phases 1-4**:
+
 - 1 primary implementation + 1 Deno wrapper (clean separation)
 - 1 agent slug (buy_sell)
 - 0 import cycles ✅
@@ -288,23 +305,27 @@ ROLLBACK; -- or COMMIT if restoring
 ### Testing Plan
 
 #### 1. Unit Tests
+
 - [ ] Test modular tools (search-businesses, search-products, etc.)
 - [ ] Test config constants
 - [ ] Test type definitions
 
 #### 2. Integration Tests
+
 - [ ] Test Node.js agent (`packages/agents`)
 - [ ] Test Deno wrapper (`_shared/agents/buy-and-sell.ts`)
 - [ ] Test admin app re-export
 - [ ] Test edge function endpoints
 
 #### 3. E2E Tests on Staging
+
 - [ ] WhatsApp category selection flow
 - [ ] WhatsApp AI chat flow
 - [ ] Admin panel interactions
 - [ ] API endpoint calls
 
 #### 4. Deployment
+
 - [ ] Deploy database migration to staging
 - [ ] Deploy edge functions to staging
 - [ ] Monitor for 24-48 hours
@@ -312,6 +333,7 @@ ROLLBACK; -- or COMMIT if restoring
 - [ ] Monitor production for 48 hours
 
 #### 5. Cleanup
+
 - [ ] Remove deprecated `wa-webhook-buy-sell/agent.ts` (after confirming wrapper works)
 - [ ] Update test files to use new imports
 - [ ] Remove legacy tool definitions from `buy-and-sell.agent.ts`
@@ -341,9 +363,10 @@ ROLLBACK; -- or COMMIT if restoring
 
 ## 🎉 Milestone Achieved
 
-**80% Complete!** 
+**80% Complete!**
 
 We've successfully:
+
 - ✅ Created modular structure (Phase 1)
 - ✅ Built Deno wrapper (Phase 2)
 - ✅ Updated edge functions (Phase 3)

@@ -9,6 +9,7 @@
 ## Quick Deploy Commands
 
 ### 1. Deploy Database Migration (Already Applied)
+
 ```bash
 export SUPABASE_DB_URL="postgresql://postgres:Pq0jyevTlfoa376P@db.lhbowpbcpwoiparwnwgt.supabase.co:5432/postgres"
 
@@ -19,6 +20,7 @@ psql "$SUPABASE_DB_URL" -c "SELECT proname, pg_get_function_arguments(oid) FROM 
 ```
 
 ### 2. Deploy WhatsApp Agents
+
 ```bash
 cd /Users/jeanbosco/workspace/easymo
 export SUPABASE_ACCESS_TOKEN="sbp_500607f0d078e919aa24f179473291544003a035"
@@ -28,6 +30,7 @@ export SUPABASE_ACCESS_TOKEN="sbp_500607f0d078e919aa24f179473291544003a035"
 ```
 
 **Or manual deployment:**
+
 ```bash
 cd supabase/functions
 
@@ -50,6 +53,7 @@ supabase functions deploy wa-agent-call-center --no-verify-jwt
 ```
 
 ### 3. Start Vendor Portal (Local)
+
 ```bash
 cd /Users/jeanbosco/workspace/easymo
 
@@ -59,6 +63,7 @@ pnpm --filter @easymo/vendor-portal dev
 ```
 
 ### 4. Start Admin App (Local)
+
 ```bash
 # Add FEATURE_IBIMINA_ADMIN=true to .env
 pnpm --filter @easymo/admin-app dev
@@ -70,11 +75,13 @@ pnpm --filter @easymo/admin-app dev
 ## What's Been Deployed
 
 ### ✅ Database
+
 - [x] Location cache fix applied (function overloading resolved)
 - [x] 27 Ibimina tables created
 - [x] All migrations synced
 
 ### ⏳ Edge Functions (Ready to Deploy)
+
 - [ ] wa-webhook-core (router)
 - [ ] wa-webhook-mobility (with location fix)
 - [ ] 4 WhatsApp workflows
@@ -82,6 +89,7 @@ pnpm --filter @easymo/admin-app dev
 - [ ] 40 Ibimina functions
 
 ### ✅ Applications (Ready to Run)
+
 - [x] Vendor portal code deployed
 - [x] Admin app with ibimina routes
 - [x] All packages built
@@ -91,6 +99,7 @@ pnpm --filter @easymo/admin-app dev
 ## Deployment Checklist
 
 ### Pre-Deployment
+
 - [x] Code pushed to main (commit: 3867addc)
 - [x] Database migration applied
 - [x] Location cache fix verified
@@ -98,12 +107,14 @@ pnpm --filter @easymo/admin-app dev
 - [x] Documentation complete
 
 ### Deploy Now
+
 - [ ] Run `./deploy-whatsapp-agents.sh`
 - [ ] Verify health endpoints
 - [ ] Test wa-webhook-core routing
 - [ ] Configure WhatsApp webhook URL
 
 ### Post-Deployment
+
 - [ ] Monitor logs for errors
 - [ ] Test location sharing
 - [ ] Test agent routing
@@ -142,6 +153,7 @@ https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-agent-call-center
 ## Verification Commands
 
 ### Test Location Cache Fix
+
 ```bash
 # Should work without PGRST203 error
 curl -X POST https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook-mobility \
@@ -165,11 +177,13 @@ curl -X POST https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook-mo
 ```
 
 ### Test Core Router
+
 ```bash
 curl https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook-core/health
 ```
 
 ### Test Agent Routing
+
 ```bash
 curl -X POST https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook-core \
   -H "Content-Type: application/json" \
@@ -192,16 +206,19 @@ curl -X POST https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook-co
 ## Latest Fixes Included
 
 ### 1. Location Cache (Commit: 3867addc)
+
 - ✅ Fixed PGRST203 function overloading error
 - ✅ Dropped duplicate `update_user_location_cache` function
 - ✅ Location saves now work correctly
 
 ### 2. WhatsApp Agent Integration
+
 - ✅ agent-property-rental added to routing
 - ✅ Strict workflow/agent separation
 - ✅ All 10 services configured
 
 ### 3. Ibimina Integration
+
 - ✅ 27 database tables created
 - ✅ Vendor portal ready
 - ✅ Admin routes integrated
@@ -212,6 +229,7 @@ curl -X POST https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook-co
 ## Known Issues
 
 ### 1. Trip Matching Shows "No Drivers"
+
 **Status**: ✅ Working as expected  
 **Reason**: No driver trips in database (only passenger trips)  
 **Solution**: Normal - wait for drivers or create test data
@@ -223,11 +241,13 @@ See: `TRIP_MATCHING_RESOLUTION.md` for details
 ## Next Steps
 
 1. **Deploy agents** (5 minutes):
+
    ```bash
    ./deploy-whatsapp-agents.sh
    ```
 
 2. **Start vendor portal** (1 minute):
+
    ```bash
    pnpm --filter @easymo/vendor-portal dev
    ```

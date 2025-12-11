@@ -56,10 +56,10 @@ All agent metadata now comes from a single source:
 
 ```typescript
 // config.ts
-export const BUY_SELL_AGENT_SLUG = 'buy_sell';
-export const BUY_SELL_AGENT_NAME = 'Buy & Sell AI Agent';
-export const BUY_SELL_AGENT_TYPE = 'buy_sell';
-export const BUY_SELL_DEFAULT_MODEL = 'gemini-1.5-flash';
+export const BUY_SELL_AGENT_SLUG = "buy_sell";
+export const BUY_SELL_AGENT_NAME = "Buy & Sell AI Agent";
+export const BUY_SELL_AGENT_TYPE = "buy_sell";
+export const BUY_SELL_DEFAULT_MODEL = "gemini-1.5-flash";
 export const DEFAULT_SEARCH_RADIUS_KM = 10;
 export const DEFAULT_SEARCH_LIMIT = 5;
 // ... and more
@@ -104,13 +104,14 @@ export class MarketplaceAgent extends BuyAndSellAgent {
 ### 5. Admin App Simplification
 
 **Before** (139 lines):
+
 ```typescript
 export class BuyAndSellAgent extends AgentExecutor {
   constructor() {
     super({
-      model: 'gpt-4o-mini',
+      model: "gpt-4o-mini",
       systemPrompt: BUY_AND_SELL_SYSTEM_PROMPT,
-      tools: ['database_query', 'google_maps', 'search_grounding'],
+      tools: ["database_query", "google_maps", "search_grounding"],
     });
   }
   // ... 100+ lines of methods
@@ -118,12 +119,10 @@ export class BuyAndSellAgent extends AgentExecutor {
 ```
 
 **After** (~40 lines):
+
 ```typescript
 // Re-export from consolidated agent
-export { 
-  BuyAndSellAgent, 
-  runBuyAndSellAgent 
-} from '@easymo/agents';
+export { BuyAndSellAgent, runBuyAndSellAgent } from "@easymo/agents";
 
 export const buyAndSellAgent = new BuyAndSellAgent();
 ```
@@ -133,15 +132,18 @@ export const buyAndSellAgent = new BuyAndSellAgent();
 ## ✅ Verification
 
 ### Build Status
+
 - ✅ `@va/shared` builds successfully
 - ✅ `@easymo/commons` builds successfully
 - ✅ No linting errors in modified files
 
 ### Lint Status
+
 - ✅ No new linting issues introduced
 - ✅ All existing code passes linting
 
 ### Documentation
+
 - ✅ Created 3 comprehensive docs in `docs/features/`:
   - `BUY_SELL_CONSOLIDATION_ANALYSIS.md` (comprehensive analysis)
   - `BUY_SELL_REFACTORING_GUIDE.md` (step-by-step guide)
@@ -152,21 +154,25 @@ export const buyAndSellAgent = new BuyAndSellAgent();
 ## 🔜 Next Steps (Remaining Phases)
 
 ### Phase 2: Create Deno Wrapper (Est. 2 hours)
+
 - [ ] Create `supabase/functions/_shared/agents/buy-and-sell.ts`
 - [ ] Ensure Deno compatibility
 - [ ] Add helper function `createBuyAndSellAgent()`
 
 ### Phase 3: Update Edge Functions (Est. 2 hours)
+
 - [ ] Update `supabase/functions/agent-buy-sell/index.ts` to use shared wrapper
 - [ ] Update `supabase/functions/wa-webhook-buy-sell/index.ts` to use shared wrapper
 - [ ] Break import cycle between edge functions
 
 ### Phase 4: Database Migration (Est. 1 hour)
+
 - [ ] Create migration to delete old agent slugs
 - [ ] Ensure `buy_sell` is the only active slug
 - [ ] Verify menu keys are correct
 
 ### Phase 5: Testing & Deployment (Est. 4 hours)
+
 - [ ] Unit tests for refactored agent
 - [ ] Integration tests for all entry points
 - [ ] E2E tests on staging
@@ -177,16 +183,19 @@ export const buyAndSellAgent = new BuyAndSellAgent();
 ## 📊 Impact Assessment
 
 ### Code Reduction
+
 - **admin-app/marketplace-agent.ts**: 139 lines → ~40 lines (71% reduction)
 - **Duplication eliminated**: No more 3 separate implementations
 
 ### Maintainability
+
 - ✅ Single source of truth for agent logic
 - ✅ Modular structure easier to navigate
 - ✅ Constants prevent typos and inconsistencies
 - ✅ Backward compatibility prevents breaking changes
 
 ### Consistency
+
 - ✅ Agent slug `buy_sell` now consistent everywhere
 - ✅ Agent type in config matches database
 - ✅ All tools use same RPC function names
@@ -196,14 +205,19 @@ export const buyAndSellAgent = new BuyAndSellAgent();
 ## ⚠️ Known Issues
 
 ### 1. Legacy Code Still Present
-The refactored `buy-and-sell.agent.ts` still contains the old inline tool definitions as a fallback. These can be removed after Phase 5 testing confirms the new structure works.
+
+The refactored `buy-and-sell.agent.ts` still contains the old inline tool definitions as a fallback.
+These can be removed after Phase 5 testing confirms the new structure works.
 
 ### 2. Edge Functions Not Yet Updated
+
 The edge functions still use the old separate implementations:
+
 - `wa-webhook-buy-sell/agent.ts` (1,086 lines) - needs Deno wrapper
 - `agent-buy-sell/index.ts` - imports from wrong location
 
 ### 3. Database Not Yet Migrated
+
 Old agent slugs still exist in the database (though inactive).
 
 ---
@@ -211,6 +225,7 @@ Old agent slugs still exist in the database (though inactive).
 ## 🎯 Success Metrics Achieved
 
 Phase 1 Goals:
+
 - ✅ Create modular directory structure
 - ✅ Extract configuration constants
 - ✅ Extract system prompt
@@ -233,6 +248,7 @@ Phase 1 Goals:
 ## 📞 Contact
 
 For questions about this refactoring, see:
+
 - **Full Analysis**: `docs/features/BUY_SELL_CONSOLIDATION_ANALYSIS.md`
 - **Implementation Guide**: `docs/features/BUY_SELL_REFACTORING_GUIDE.md`
 - **Quick Reference**: `docs/features/BUY_SELL_QUICK_REFERENCE.md`

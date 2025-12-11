@@ -12,14 +12,14 @@ For all desktop platforms: **macOS** (Admin Panel + Client/Staff Portal), **Wind
 
 ## 📋 Quick Navigation
 
-| Section | Time Required |
-|---------|---------------|
-| [Pre-Release Requirements](#-pre-release-requirements) | One-time setup |
-| [Credentials & Secrets](#-credentials--secrets) | 15 min (first time) |
-| [Release Workflow](#-release-workflow) | 30 min per release |
-| [QA Checklist](#-qa-checklist) | 15 min per release |
-| [Distribution](#-distribution-options) | 10 min per release |
-| [Post-Release](#-post-release-steps) | 30 min per release |
+| Section                                                | Time Required       |
+| ------------------------------------------------------ | ------------------- |
+| [Pre-Release Requirements](#-pre-release-requirements) | One-time setup      |
+| [Credentials & Secrets](#-credentials--secrets)        | 15 min (first time) |
+| [Release Workflow](#-release-workflow)                 | 30 min per release  |
+| [QA Checklist](#-qa-checklist)                         | 15 min per release  |
+| [Distribution](#-distribution-options)                 | 10 min per release  |
+| [Post-Release](#-post-release-steps)                   | 30 min per release  |
 
 **Total time per release:** ~1.5 hours (after initial setup)
 
@@ -31,16 +31,16 @@ For all desktop platforms: **macOS** (Admin Panel + Client/Staff Portal), **Wind
 
 ### Infrastructure Checklist
 
-| Status | Item | Verification | Priority |
-|--------|------|--------------|----------|
-| ☐ | **CI/CD builds successfully on GitHub Actions** | Check latest workflow run | 🔴 Critical |
-| ☐ | **Versioning strategy documented** | SemVer (v1.4.2) | 🔴 Critical |
-| ☐ | **CHANGELOG.md exists** | `cat CHANGELOG.md` | 🔴 Critical |
-| ☐ | **macOS code-signing works locally** | `./scripts/test_signing_workflow.sh` | 🔴 Critical |
-| ☐ | **macOS code-signing works in CI** | Check workflow logs | 🔴 Critical |
-| ☐ | **Windows code-signing configured** | `signtool verify YourApp.exe` | 🟡 High |
-| ☐ | **Linux packaging working** | Test `.AppImage` build | 🟢 Medium |
-| ☐ | **Distribution point ready** | GitHub Releases or portal | 🔴 Critical |
+| Status | Item                                            | Verification                         | Priority    |
+| ------ | ----------------------------------------------- | ------------------------------------ | ----------- |
+| ☐      | **CI/CD builds successfully on GitHub Actions** | Check latest workflow run            | 🔴 Critical |
+| ☐      | **Versioning strategy documented**              | SemVer (v1.4.2)                      | 🔴 Critical |
+| ☐      | **CHANGELOG.md exists**                         | `cat CHANGELOG.md`                   | 🔴 Critical |
+| ☐      | **macOS code-signing works locally**            | `./scripts/test_signing_workflow.sh` | 🔴 Critical |
+| ☐      | **macOS code-signing works in CI**              | Check workflow logs                  | 🔴 Critical |
+| ☐      | **Windows code-signing configured**             | `signtool verify YourApp.exe`        | 🟡 High     |
+| ☐      | **Linux packaging working**                     | Test `.AppImage` build               | 🟢 Medium   |
+| ☐      | **Distribution point ready**                    | GitHub Releases or portal            | 🔴 Critical |
 
 ---
 
@@ -52,13 +52,14 @@ For all desktop platforms: **macOS** (Admin Panel + Client/Staff Portal), **Wind
 
 #### macOS Signing (Already Configured ✅)
 
-| Secret Name | Value | Status |
-|-------------|-------|--------|
-| `MACOS_CERTIFICATE_BASE64` | Base64-encoded .p12 | ✅ Set |
-| `MACOS_CERTIFICATE_PASSWORD` | .p12 password | ✅ Set |
-| `KEYCHAIN_PASSWORD` | Random 32-char string | ✅ Set |
+| Secret Name                  | Value                 | Status |
+| ---------------------------- | --------------------- | ------ |
+| `MACOS_CERTIFICATE_BASE64`   | Base64-encoded .p12   | ✅ Set |
+| `MACOS_CERTIFICATE_PASSWORD` | .p12 password         | ✅ Set |
+| `KEYCHAIN_PASSWORD`          | Random 32-char string | ✅ Set |
 
 **Verify:**
+
 ```bash
 ./scripts/check_certificate.sh
 ```
@@ -67,13 +68,14 @@ For all desktop platforms: **macOS** (Admin Panel + Client/Staff Portal), **Wind
 
 #### Windows Signing (TODO: Create)
 
-| Secret Name | Value | How to Get |
-|-------------|-------|------------|
-| `WIN_CERTIFICATE_BASE64` | Base64 .pfx file | Export from cert store |
-| `WIN_CERTIFICATE_PASSWORD` | .pfx password | From export |
-| `WIN_CERT_SUBJECT_NAME` | "EasyMO Inc" | Certificate CN |
+| Secret Name                | Value            | How to Get             |
+| -------------------------- | ---------------- | ---------------------- |
+| `WIN_CERTIFICATE_BASE64`   | Base64 .pfx file | Export from cert store |
+| `WIN_CERTIFICATE_PASSWORD` | .pfx password    | From export            |
+| `WIN_CERT_SUBJECT_NAME`    | "EasyMO Inc"     | Certificate CN         |
 
 **Create Windows signing docs:**
+
 ```bash
 # TODO: Create docs/windows_signing.md
 # Similar to docs/internal_mac_signing.md but for Windows
@@ -100,6 +102,7 @@ git status  # Should be clean
 ```
 
 **✓ Checklist:**
+
 - ☐ On `main` branch
 - ☐ Working tree clean
 - ☐ Up to date with remote
@@ -111,6 +114,7 @@ git status  # Should be clean
 **Files to modify:**
 
 1. **Root `package.json`:**
+
    ```json
    {
      "version": "1.4.2"
@@ -118,6 +122,7 @@ git status  # Should be clean
    ```
 
 2. **Admin app `admin-app/package.json`:**
+
    ```json
    {
      "version": "1.4.2"
@@ -132,6 +137,7 @@ git status  # Should be clean
    ```
 
 **Quick update script:**
+
 ```bash
 # Update all at once
 pnpm version 1.4.2 --no-git-tag-version
@@ -140,6 +146,7 @@ cd client-portal && pnpm version 1.4.2 --no-git-tag-version && cd ..
 ```
 
 **✓ Checklist:**
+
 - ☐ Root package.json = 1.4.2
 - ☐ Admin app package.json = 1.4.2
 - ☐ Client app package.json = 1.4.2
@@ -154,21 +161,26 @@ cd client-portal && pnpm version 1.4.2 --no-git-tag-version && cd ..
 ## [1.4.2] - 2025-12-02
 
 ### Added
+
 - New feature: X
 - Enhancement: Y
 
 ### Fixed
+
 - Bug: Z causing crashes
 - Performance: Improved load time
 
 ### Changed
+
 - Updated dependency A to v2.0
 
 ### Security
+
 - Fixed vulnerability in package B
 ```
 
 **✓ Checklist:**
+
 - ☐ Version header added
 - ☐ Date is today
 - ☐ Changes documented (Added/Fixed/Changed/Security)
@@ -198,6 +210,7 @@ git push origin v1.4.2
 ```
 
 **✓ Checklist:**
+
 - ☐ Changes committed
 - ☐ Tag created (annotated with `-a`)
 - ☐ Commit pushed to `main`
@@ -218,11 +231,13 @@ git push origin v1.4.2
    - ✓ `build-linux` (Linux) - if configured
 
 **Expected duration:**
+
 - macOS: ~5 min
 - Windows: ~8 min
 - Linux: ~3 min
 
 **If build fails:**
+
 ```bash
 # Check logs for errors
 # Common issues:
@@ -239,6 +254,7 @@ git push origin v1.4.2
 ```
 
 **✓ Checklist:**
+
 - ☐ All jobs started
 - ☐ All jobs completed ✓
 - ☐ No red X failures
@@ -254,17 +270,21 @@ After all jobs complete:
 3. Download:
 
 **macOS (from existing workflow):**
+
 - `admin-panel-signed.zip`
 - `client-portal-signed.zip`
 - `dmg-installers.zip` (contains .dmg files)
 
 **Windows (when configured):**
+
 - `windows-installers.zip`
 
 **Linux (when configured):**
+
 - `linux-packages.zip` (.AppImage, .deb, .rpm)
 
 **Extract locally:**
+
 ```bash
 mkdir release-v1.4.2
 cd release-v1.4.2
@@ -274,6 +294,7 @@ unzip ~/Downloads/dmg-installers.zip
 ```
 
 **✓ Checklist:**
+
 - ☐ All artifacts downloaded
 - ☐ Files extracted
 - ☐ No corruption (files open correctly)
@@ -302,6 +323,7 @@ open ClientPortal.app
 ```
 
 **What to check:**
+
 - ☐ Apps launch without crash
 - ☐ No "unverified developer" error (or right-click → Open works)
 - ☐ Version in About dialog = v1.4.2
@@ -326,6 +348,7 @@ signtool verify /pa /v "EasyMO-Admin-Setup.exe"
 ```
 
 **What to check:**
+
 - ☐ Installer signature valid
 - ☐ Install completes without errors
 - ☐ App launches from Start Menu
@@ -349,6 +372,7 @@ easymo-admin
 ```
 
 **What to check:**
+
 - ☐ AppImage runs with exec permission
 - ☐ .deb installs without dependency errors
 - ☐ App appears in menu
@@ -363,36 +387,36 @@ easymo-admin
 
 ### Critical Tests (Must Pass)
 
-| Status | Test | Platform | Pass/Fail |
-|--------|------|----------|-----------|
-| ☐ | **App launches** | macOS Admin | _____ |
-| ☐ | **App launches** | macOS Client | _____ |
-| ☐ | **App launches** | Windows | _____ |
-| ☐ | **App launches** | Linux | _____ |
-| ☐ | **Login works** | All platforms | _____ |
-| ☐ | **Version correct** | All platforms | _____ |
-| ☐ | **Signature valid** | macOS + Windows | _____ |
-| ☐ | **No crashes on idle** | All (5 min idle) | _____ |
+| Status | Test                   | Platform         | Pass/Fail |
+| ------ | ---------------------- | ---------------- | --------- |
+| ☐      | **App launches**       | macOS Admin      | **\_**    |
+| ☐      | **App launches**       | macOS Client     | **\_**    |
+| ☐      | **App launches**       | Windows          | **\_**    |
+| ☐      | **App launches**       | Linux            | **\_**    |
+| ☐      | **Login works**        | All platforms    | **\_**    |
+| ☐      | **Version correct**    | All platforms    | **\_**    |
+| ☐      | **Signature valid**    | macOS + Windows  | **\_**    |
+| ☐      | **No crashes on idle** | All (5 min idle) | **\_**    |
 
 ### Feature Tests
 
-| Status | Feature | Expected Behavior |
-|--------|---------|-------------------|
-| ☐ | **Dashboard loads** | Shows recent data |
-| ☐ | **Search works** | Returns results |
-| ☐ | **Navigation** | All screens accessible |
-| ☐ | **Forms submit** | Data saves correctly |
-| ☐ | **Offline mode** | Graceful degradation |
-| ☐ | **Real-time updates** | Data syncs (if applicable) |
+| Status | Feature               | Expected Behavior          |
+| ------ | --------------------- | -------------------------- |
+| ☐      | **Dashboard loads**   | Shows recent data          |
+| ☐      | **Search works**      | Returns results            |
+| ☐      | **Navigation**        | All screens accessible     |
+| ☐      | **Forms submit**      | Data saves correctly       |
+| ☐      | **Offline mode**      | Graceful degradation       |
+| ☐      | **Real-time updates** | Data syncs (if applicable) |
 
 ### Performance Tests
 
-| Metric | Target | Actual | Pass/Fail |
-|--------|--------|--------|-----------|
-| **Launch time** | <3 seconds | _____ sec | _____ |
-| **Login time** | <2 seconds | _____ sec | _____ |
-| **Memory (idle)** | <200 MB | _____ MB | _____ |
-| **CPU (idle)** | <5% | _____ % | _____ |
+| Metric            | Target     | Actual     | Pass/Fail |
+| ----------------- | ---------- | ---------- | --------- |
+| **Launch time**   | <3 seconds | **\_** sec | **\_**    |
+| **Login time**    | <2 seconds | **\_** sec | **\_**    |
+| **Memory (idle)** | <200 MB    | **\_** MB  | **\_**    |
+| **CPU (idle)**    | <5%        | **\_** %   | **\_**    |
 
 **If any critical test fails:** DO NOT PUBLISH. Fix and re-release.
 
@@ -410,35 +434,41 @@ easymo-admin
    - **Tag:** v1.4.2 (select existing)
    - **Title:** `EasyMO Desktop v1.4.2`
    - **Description:**
+
      ```markdown
      ## What's New in v1.4.2
-     
+
      ### Added
+
      - Feature X
-     
+
      ### Fixed
+
      - Bug Y
-     
+
      ## Downloads
-     
+
      ### macOS
+
      - [Admin Panel (.dmg)](uploaded file)
      - [Client/Staff Portal (.dmg)](uploaded file)
-     
+
      ### Windows
+
      - [Admin Panel Installer](uploaded file)
      - [Client/Staff Portal Installer](uploaded file)
-     
+
      ### Linux
+
      - [AppImage](uploaded file)
      - [.deb Package](uploaded file)
-     
+
      ## Installation
-     
+
      **macOS:** Double-click .dmg, drag to Applications  
      **Windows:** Run .exe installer  
-     **Linux:** `chmod +x *.AppImage` and run  
-     
+     **Linux:** `chmod +x *.AppImage` and run
+
      See [docs/installation.md](link) for details.
      ```
 
@@ -451,6 +481,7 @@ easymo-admin
    - ☐ Click "Publish release"
 
 **Benefits:**
+
 - ✅ Version control
 - ✅ Automatic changelog
 - ✅ Download statistics
@@ -465,6 +496,7 @@ easymo-admin
 **Setup:**
 
 1. Upload to Supabase Storage / S3 / R2:
+
    ```bash
    # Example: Supabase
    supabase storage create desktop-apps
@@ -472,6 +504,7 @@ easymo-admin
    ```
 
 2. Create download page (Next.js / static):
+
    ```tsx
    // downloads.tsx
    export default function Downloads() {
@@ -481,10 +514,10 @@ easymo-admin
          <h2>macOS</h2>
          <a href="/api/download/admin-macos">Admin Panel</a>
          <a href="/api/download/client-macos">Client Portal</a>
-         
+
          <h2>Windows</h2>
          <a href="/api/download/admin-windows">Admin Panel</a>
-         
+
          <h2>Linux</h2>
          <a href="/api/download/admin-linux">AppImage</a>
        </div>
@@ -495,6 +528,7 @@ easymo-admin
 3. Add authentication (if needed)
 
 **Benefits:**
+
 - ✅ Full control
 - ✅ Analytics
 - ✅ Access control
@@ -525,6 +559,7 @@ EOF
 ```
 
 **Benefits:**
+
 - ✅ No internet required
 - ✅ Fast downloads
 - ✅ Corporate-friendly
@@ -538,6 +573,7 @@ EOF
 #### 1. Announce Release
 
 **Slack/Teams message:**
+
 ```
 🎉 EasyMO Desktop v1.4.2 is now available!
 
@@ -556,6 +592,7 @@ Questions? Ask in #easymo-support
 ```
 
 **✓ Checklist:**
+
 - ☐ Slack/Teams announcement posted
 - ☐ Support team notified
 - ☐ Internal wiki updated
@@ -573,9 +610,10 @@ Questions? Ask in #easymo-support
 
 **Released by:** [Your Name]  
 **Build time:** 12 minutes  
-**Platforms:** macOS, Windows, Linux  
+**Platforms:** macOS, Windows, Linux
 
 **Artifacts:**
+
 - AdminPanel-macOS.dmg (48.2 MB)
 - ClientPortal-macOS.dmg (47.8 MB)
 - AdminPanel-Windows.exe (82.1 MB)
@@ -591,6 +629,7 @@ Questions? Ask in #easymo-support
 ```
 
 **✓ Checklist:**
+
 - ☐ RELEASES.md updated
 - ☐ Build metadata logged
 - ☐ GitHub Release link added
@@ -611,6 +650,7 @@ rm -rf /SharedDrive/EasyMO/v1.4.0/
 ```
 
 **✓ Checklist:**
+
 - ☐ Old builds removed from shared drives
 - ☐ GitHub releases cleaned up (archived, not deleted)
 - ☐ Storage usage acceptable
@@ -622,12 +662,14 @@ rm -rf /SharedDrive/EasyMO/v1.4.0/
 #### 4. Monitor for Issues
 
 **Check:**
+
 - ☐ Slack #support for bug reports
 - ☐ Email support@easymo.com
 - ☐ Sentry (if configured) for crash reports
 - ☐ GitHub Issues
 
 **If bugs found:**
+
 ```bash
 # Create issue immediately
 gh issue create \
@@ -641,6 +683,7 @@ gh issue create \
 #### 5. Collect Feedback
 
 **Create Slack thread:**
+
 ```
 📊 How's v1.4.2 working for you?
 
@@ -652,6 +695,7 @@ Reply in thread 👇
 ```
 
 **✓ Checklist:**
+
 - ☐ Feedback mechanism created
 - ☐ Responses tracked
 - ☐ Issues logged in GitHub
@@ -663,17 +707,20 @@ Reply in thread 👇
 #### 6. Plan Next Release
 
 **Review:**
+
 - Bug reports from v1.4.2
 - Feature requests from users
 - Performance metrics
 - Competitive analysis
 
 **Update roadmap:**
+
 - **v1.4.3** (hotfix): Critical bugs
 - **v1.5.0** (minor): New features
 - **v2.0.0** (major): Breaking changes
 
 **✓ Checklist:**
+
 - ☐ Bugs triaged and prioritized
 - ☐ Features planned for next sprint
 - ☐ Team aligned on roadmap
@@ -685,32 +732,32 @@ Reply in thread 👇
 
 ### High Priority (Do Next)
 
-| Upgrade | Impact | Effort | Cost |
-|---------|--------|--------|------|
-| **Apple Notarization** | No more "right-click → Open" | 1 day | $99/year |
-| **Auto-Update System** | Users auto-update | 2 weeks | Free |
-| **Crash Reporting (Sentry)** | Track errors automatically | 1 day | Free tier |
-| **Windows EV Cert** | No SmartScreen warnings | Purchase | $500/year |
+| Upgrade                      | Impact                       | Effort   | Cost      |
+| ---------------------------- | ---------------------------- | -------- | --------- |
+| **Apple Notarization**       | No more "right-click → Open" | 1 day    | $99/year  |
+| **Auto-Update System**       | Users auto-update            | 2 weeks  | Free      |
+| **Crash Reporting (Sentry)** | Track errors automatically   | 1 day    | Free tier |
+| **Windows EV Cert**          | No SmartScreen warnings      | Purchase | $500/year |
 
 ---
 
 ### Medium Priority
 
-| Upgrade | Impact | Effort |
-|---------|--------|--------|
-| **Desktop Telemetry** | Understand usage | 1 week |
-| **In-App Feedback** | Users report bugs in-app | 3 days |
-| **Multi-Language** | Reach more users | 3 weeks |
+| Upgrade               | Impact                   | Effort  |
+| --------------------- | ------------------------ | ------- |
+| **Desktop Telemetry** | Understand usage         | 1 week  |
+| **In-App Feedback**   | Users report bugs in-app | 3 days  |
+| **Multi-Language**    | Reach more users         | 3 weeks |
 
 ---
 
 ### Low Priority
 
-| Upgrade | Impact | Effort |
-|---------|--------|--------|
-| **Custom Installer Themes** | Branding | 2 days |
-| **Portable Versions** | No install required | 1 day |
-| **Windows/Mac App Stores** | Wider distribution | 2 weeks |
+| Upgrade                     | Impact              | Effort  |
+| --------------------------- | ------------------- | ------- |
+| **Custom Installer Themes** | Branding            | 2 days  |
+| **Portable Versions**       | No install required | 1 day   |
+| **Windows/Mac App Stores**  | Wider distribution  | 2 weeks |
 
 ---
 
@@ -721,6 +768,7 @@ Reply in thread 👇
 **Symptom:** macOS refuses to open app.
 
 **Solution:**
+
 ```bash
 # Remove quarantine attribute
 xattr -cr AdminPanel.app
@@ -736,6 +784,7 @@ xattr -cr AdminPanel.app
 **Symptom:** Windows blocks installer.
 
 **User Solution:**
+
 1. Click "More info"
 2. Click "Run anyway"
 
@@ -746,15 +795,18 @@ xattr -cr AdminPanel.app
 ### Issue: CI Build Fails
 
 **Diagnosis:**
+
 1. Check GitHub Actions logs
 2. Look for error messages
 
 **Common causes:**
+
 - Missing GitHub Secrets
 - Invalid certificate
 - Build configuration error
 
 **Solution:**
+
 ```bash
 # Test locally first
 ./scripts/test_signing_workflow.sh
@@ -773,21 +825,24 @@ xattr -cr AdminPanel.app
 # Release v1.4.2 Checklist
 
 **Date:** 2025-12-02  
-**Released By:** [Your Name]  
+**Released By:** [Your Name]
 
 ## Pre-Release
+
 - [ ] Version updated in package.json
 - [ ] CHANGELOG.md updated
 - [ ] Tests passing
 - [ ] Code committed to main
 
 ## Build
+
 - [ ] Tag created: v1.4.2
 - [ ] Tag pushed
 - [ ] CI/CD completed ✓
 - [ ] Artifacts downloaded
 
 ## QA
+
 - [ ] macOS Admin tested ✓
 - [ ] macOS Client tested ✓
 - [ ] Windows tested ✓
@@ -795,20 +850,23 @@ xattr -cr AdminPanel.app
 - [ ] All signatures valid ✓
 
 ## Distribution
+
 - [ ] GitHub Release published
 - [ ] Download portal updated
 - [ ] Team notified
 
 ## Post-Release
+
 - [ ] Slack announcement
 - [ ] RELEASES.md updated
 - [ ] Old builds cleaned up
 - [ ] Feedback collected
 
 ## Metrics
-- Build time: __ min
-- Download count (week 1): __
-- Issues reported: __
+
+- Build time: \_\_ min
+- Download count (week 1): \_\_
+- Issues reported: \_\_
 - Rollback needed: Yes/No
 ```
 
@@ -823,24 +881,24 @@ A release is successful when:
 ✅ QA checklist 100% complete  
 ✅ Zero critical bugs in first 24 hours  
 ✅ >80% adoption in first week  
-✅ Positive user feedback  
+✅ Positive user feedback
 
 ---
 
 ## 📞 Support Contacts
 
-| Issue Type | Contact | Channel |
-|------------|---------|---------|
-| **Build failures** | DevOps Team | #devops Slack |
-| **Signing issues** | Security Team | security@easymo.com |
-| **User bugs** | Support Team | #support Slack |
-| **Feature requests** | Product Team | #product Slack |
+| Issue Type           | Contact       | Channel             |
+| -------------------- | ------------- | ------------------- |
+| **Build failures**   | DevOps Team   | #devops Slack       |
+| **Signing issues**   | Security Team | security@easymo.com |
+| **User bugs**        | Support Team  | #support Slack      |
+| **Feature requests** | Product Team  | #product Slack      |
 
 ---
 
 **Last Updated:** 2025-12-02  
 **Version:** 1.0.0  
-**Next Review:** After 3 releases  
+**Next Review:** After 3 releases
 
 ---
 

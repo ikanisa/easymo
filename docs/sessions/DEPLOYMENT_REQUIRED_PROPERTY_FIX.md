@@ -27,6 +27,7 @@ cd /Users/jeanbosco/workspace/easymo
 ```
 
 This script will:
+
 - Deploy `wa-webhook-property`
 - Deploy `wa-webhook-core`
 - Verify deployment
@@ -63,6 +64,7 @@ cd /Users/jeanbosco/workspace/easymo
 **When prompted**, type `y` to continue.
 
 This will deploy:
+
 - ✅ wa-webhook-core
 - ✅ wa-webhook-property
 - ✅ wa-webhook-buy-sell
@@ -119,11 +121,12 @@ After deployment, check logs:
 # Watch property webhook logs
 supabase functions logs wa-webhook-property --tail
 
-# Watch core router logs  
+# Watch core router logs
 supabase functions logs wa-webhook-core --tail
 ```
 
 **Look for:**
+
 - ✅ "PROPERTY WEBHOOK RECEIVED" logs
 - ✅ Successful routing from core → property
 - ❌ Any errors
@@ -133,11 +136,13 @@ supabase functions logs wa-webhook-core --tail
 ## ⚠️ Why I Couldn't Deploy
 
 The execution environment has a system-level issue:
+
 ```
 Error: posix_spawnp failed
 ```
 
 This prevents me from running ANY bash commands including:
+
 - `supabase` CLI
 - `curl`
 - `chmod`

@@ -83,11 +83,11 @@ CREATE INDEX idx_my_new_table_location_geog
   WHERE location_geog IS NOT NULL;
 
 -- 5. Document the columns
-COMMENT ON COLUMN my_new_table.lat IS 
+COMMENT ON COLUMN my_new_table.lat IS
   'Latitude (WGS84). Auto-synced to location_geog.';
-COMMENT ON COLUMN my_new_table.lng IS 
+COMMENT ON COLUMN my_new_table.lng IS
   'Longitude (WGS84). Auto-synced to location_geog.';
-COMMENT ON COLUMN my_new_table.location_geog IS 
+COMMENT ON COLUMN my_new_table.location_geog IS
   'PostGIS geography. Auto-populated from lat/lng. Use for spatial queries.';
 
 COMMIT;
@@ -96,12 +96,14 @@ COMMIT;
 ### Column Naming Standard
 
 ✅ **Use these names:**
+
 - `lat` (DOUBLE PRECISION)
 - `lng` (DOUBLE PRECISION)
 - `location_geog` (GEOGRAPHY)
 - `address` (TEXT, optional)
 
 ❌ **Avoid these deprecated names:**
+
 - `latitude` / `longitude` (use lat/lng)
 - `current_lat` / `current_lng` (use lat/lng)
 - `pickup_lat` / `dropoff_lat` (OK for trips domain specifics)
@@ -129,6 +131,7 @@ SELECT cache_user_location(
 ```
 
 **Parameters:**
+
 - `p_user_id` (UUID): User ID
 - `p_lat` (DOUBLE PRECISION): Latitude
 - `p_lng` (DOUBLE PRECISION): Longitude
@@ -154,6 +157,7 @@ SELECT * FROM get_recent_location(
 ```
 
 **Returns:**
+
 ```
 lat            | DOUBLE PRECISION
 lng            | DOUBLE PRECISION
@@ -183,12 +187,14 @@ SELECT * FROM find_nearby_items(
 ```
 
 **Returns:**
+
 ```
 item_data      | JSONB          -- Full row as JSON
 distance_km    | DOUBLE PRECISION
 ```
 
 **Auto-detection:**
+
 - Tries to use PostGIS geography column first
 - Falls back to Haversine formula on lat/lng
 - Supports custom WHERE clauses
@@ -241,7 +247,7 @@ import {
   JobsLocation,
   RealEstateLocation,
   MarketplaceLocation,
-} from '../_shared/location-service/index.ts';
+} from "../_shared/location-service/index.ts";
 ```
 
 ### Basic Operations
@@ -250,15 +256,20 @@ import {
 
 ```typescript
 // General caching
-const locationId = await cacheLocationWithContext(supabase, userId, {
-  lat: -1.9536,
-  lng: 30.0606,
-  address: 'Kigali Convention Centre',
-}, {
-  context: 'jobs',
-  source: 'user_input',
-  ttlHours: 24,
-});
+const locationId = await cacheLocationWithContext(
+  supabase,
+  userId,
+  {
+    lat: -1.9536,
+    lng: 30.0606,
+    address: "Kigali Convention Centre",
+  },
+  {
+    context: "jobs",
+    source: "user_input",
+    ttlHours: 24,
+  }
+);
 ```
 
 #### Retrieve Cached Location
@@ -267,8 +278,8 @@ const locationId = await cacheLocationWithContext(supabase, userId, {
 const cachedLocation = await getCachedLocationByContext(
   supabase,
   userId,
-  'jobs', // context
-  60      // max age in minutes
+  "jobs", // context
+  60 // max age in minutes
 );
 
 if (cachedLocation) {
@@ -281,7 +292,7 @@ if (cachedLocation) {
 
 ```typescript
 const results = await searchNearbyItems(supabase, {
-  tableName: 'businesses',
+  tableName: "businesses",
   lat: -1.9536,
   lng: 30.0606,
   radiusKm: 5,
@@ -289,7 +300,7 @@ const results = await searchNearbyItems(supabase, {
   limit: 20,
 });
 
-results.forEach(result => {
+results.forEach((result) => {
   console.log(`${result.item.name} - ${result.distance_km.toFixed(2)}km away`);
 });
 ```
@@ -301,7 +312,7 @@ results.forEach(result => {
 ### Mobility (Rides/Drivers)
 
 ```typescript
-import { MobilityLocation } from '../_shared/location-service/index.ts';
+import { MobilityLocation } from "../_shared/location-service/index.ts";
 
 // Cache driver location
 await MobilityLocation.cacheDriverLocation(supabase, driverId, {
@@ -310,22 +321,19 @@ await MobilityLocation.cacheDriverLocation(supabase, driverId, {
 });
 
 // Get recent driver location (2 hour TTL)
-const driverLocation = await MobilityLocation.getCachedDriverLocation(
-  supabase,
-  driverId
-);
+const driverLocation = await MobilityLocation.getCachedDriverLocation(supabase, driverId);
 ```
 
 ### Jobs
 
 ```typescript
-import { JobsLocation } from '../_shared/location-service/index.ts';
+import { JobsLocation } from "../_shared/location-service/index.ts";
 
 // Cache job search location (7 day TTL)
 await JobsLocation.cacheSearchLocation(supabase, userId, {
   lat: -1.9536,
   lng: 30.0606,
-  address: 'Kigali',
+  address: "Kigali",
 });
 
 // Search nearby jobs (50km radius)
@@ -340,13 +348,13 @@ const nearbyJobs = await JobsLocation.searchNearbyJobs(
 ### Real Estate
 
 ```typescript
-import { RealEstateLocation } from '../_shared/location-service/index.ts';
+import { RealEstateLocation } from "../_shared/location-service/index.ts";
 
 // Cache property search location
 await RealEstateLocation.cacheSearchLocation(supabase, userId, {
   lat: -1.9536,
   lng: 30.0606,
-  address: 'Kimironko, Kigali',
+  address: "Kimironko, Kigali",
 });
 
 // Search nearby properties with filters
@@ -357,15 +365,15 @@ const properties = await RealEstateLocation.searchNearbyProperties(supabase, {
   priceMin: 100000,
   priceMax: 500000,
   bedrooms: 2,
-  propertyType: 'apartment',
-  listingType: 'rent',
+  propertyType: "apartment",
+  listingType: "rent",
 });
 ```
 
 ### Marketplace (Businesses)
 
 ```typescript
-import { MarketplaceLocation } from '../_shared/location-service/index.ts';
+import { MarketplaceLocation } from "../_shared/location-service/index.ts";
 
 // Cache search location
 await MarketplaceLocation.cacheSearchLocation(supabase, userId, {
@@ -376,10 +384,10 @@ await MarketplaceLocation.cacheSearchLocation(supabase, userId, {
 // Search businesses with natural language
 const businesses = await MarketplaceLocation.searchNearbyBusinesses(
   supabase,
-  'pharmacy', // query
-  -1.9536,    // lat
-  30.0606,    // lng
-  5           // radiusKm
+  "pharmacy", // query
+  -1.9536, // lat
+  30.0606, // lng
+  5 // radiusKm
 );
 ```
 
@@ -418,16 +426,18 @@ CREATE INDEX idx_existing_table_location_geog
 #### 2. Update Code
 
 **Before:**
+
 ```typescript
 // Manual Haversine distance calculation
 const distance = calculateHaversineDistance(point1, point2);
 ```
 
 **After:**
+
 ```typescript
 // Use PostGIS via RPC
 const results = await searchNearbyItems(supabase, {
-  tableName: 'existing_table',
+  tableName: "existing_table",
   lat: point.lat,
   lng: point.lng,
   radiusKm: 10,
@@ -437,12 +447,13 @@ const results = await searchNearbyItems(supabase, {
 #### 3. Update Search Functions
 
 **Before:**
+
 ```sql
 -- Manual Haversine formula
-SELECT *, 
+SELECT *,
   (6371 * acos(
-    cos(radians(p_lat)) * cos(radians(lat)) * 
-    cos(radians(lng) - radians(p_lng)) + 
+    cos(radians(p_lat)) * cos(radians(lat)) *
+    cos(radians(lng) - radians(p_lng)) +
     sin(radians(p_lat)) * sin(radians(lat))
   )) AS distance_km
 FROM existing_table
@@ -450,6 +461,7 @@ HAVING distance_km <= p_radius_km;
 ```
 
 **After:**
+
 ```sql
 -- Use PostGIS
 SELECT *,
@@ -523,6 +535,7 @@ COMMIT;
 ### Issue: "function st_distance does not exist"
 
 **Solution:** PostGIS extension not enabled. Run:
+
 ```sql
 CREATE EXTENSION IF NOT EXISTS postgis;
 ```
@@ -530,14 +543,16 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 ### Issue: "Invalid coordinates"
 
 **Solution:** Check validation constraints:
+
 - Latitude: -90 to 90
 - Longitude: -180 to 180
 
 ### Issue: Slow proximity queries
 
 **Solution:** Check for spatial index:
+
 ```sql
-CREATE INDEX IF NOT EXISTS idx_table_geog 
+CREATE INDEX IF NOT EXISTS idx_table_geog
   ON table_name USING GIST(location_geog);
 ```
 

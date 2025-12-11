@@ -8,7 +8,8 @@
 
 ## What Was Accomplished
 
-Phase 1 delivered comprehensive architectural planning and documentation for refactoring EasyMO to a WhatsApp-first, AI-agent-centric system.
+Phase 1 delivered comprehensive architectural planning and documentation for refactoring EasyMO to a
+WhatsApp-first, AI-agent-centric system.
 
 ### Documents Created
 
@@ -69,12 +70,14 @@ Phase 1 delivered comprehensive architectural planning and documentation for ref
 ### Strong Foundation ✅
 
 **Database Schema**:
+
 - ✅ All agent tables exist and are comprehensive
 - ✅ WhatsApp tables properly structured
 - ✅ 6 agents pre-populated with data
 - ✅ Comprehensive indexing for performance
 
 **Existing Infrastructure**:
+
 - ✅ Keyword-based routing implemented
 - ✅ State management in conversations
 - ✅ Observability framework in place
@@ -83,18 +86,21 @@ Phase 1 delivered comprehensive architectural planning and documentation for ref
 ### Areas for Consolidation ⚠️
 
 **Fragmented Webhooks**:
+
 - 7 separate webhook handlers
 - Duplicate logic across handlers
 - Inconsistent error handling
 - Different timeout configurations
 
 **Legacy Agent Implementations**:
+
 - `waiter-ai-agent/` - needs consolidation
 - `job-board-ai-agent/` - needs consolidation
 - `agent-property-rental/` - needs consolidation
 - Multiple wizard-style flows
 
 **Scattered Profile Logic**:
+
 - Wallet functions spread across 6+ edge functions
 - QR code logic duplicated
 - "My Stuff" views not implemented
@@ -121,11 +127,12 @@ All user interactions route through a single entry point:
 ### Unified Pipeline (6 Stages)
 
 ```
-WhatsApp → [1] Normalize → [2] Detect Agent → [3] LLM Runtime → 
+WhatsApp → [1] Normalize → [2] Detect Agent → [3] LLM Runtime →
 [4] Parse Intent → [5] Apply Intent → [6] Generate Reply → WhatsApp
 ```
 
 Each stage:
+
 - Has clear input/output contracts
 - Includes comprehensive error handling
 - Logs structured events with correlation IDs
@@ -139,13 +146,13 @@ Each stage:
 
 ### Timeline: 19 Weeks (~4.5 Months)
 
-| Phase | Weeks | Key Deliverables |
-|-------|-------|------------------|
-| 1. Foundation | 1 | ✅ Architecture docs |
-| 2. Unified Pipeline | 4 | Event normalizer, agent detector, runtime, intent parser, apply service, reply generator |
-| 3. Profile Extraction | 3 | @easymo/profile package, wallet module, My Stuff views, agent helpers |
-| 4. Agent Migration | 7 | All 7 AI agents using unified pipeline (mobility/insurance handled via workflows) |
-| 5. Cleanup & Launch | 3 | Remove legacy code, comprehensive tests, production deployment |
+| Phase                 | Weeks | Key Deliverables                                                                         |
+| --------------------- | ----- | ---------------------------------------------------------------------------------------- |
+| 1. Foundation         | 1     | ✅ Architecture docs                                                                     |
+| 2. Unified Pipeline   | 4     | Event normalizer, agent detector, runtime, intent parser, apply service, reply generator |
+| 3. Profile Extraction | 3     | @easymo/profile package, wallet module, My Stuff views, agent helpers                    |
+| 4. Agent Migration    | 7     | All 7 AI agents using unified pipeline (mobility/insurance handled via workflows)        |
+| 5. Cleanup & Launch   | 3     | Remove legacy code, comprehensive tests, production deployment                           |
 
 ### Agent Migration Order
 
@@ -167,6 +174,7 @@ Each stage:
 All changes gated behind feature flags (default: false):
 
 **Pipeline Flags**:
+
 - `FEATURE_UNIFIED_WEBHOOK` - Master toggle
 - `FEATURE_UNIFIED_NORMALIZER` - Stage 1
 - `FEATURE_AGENT_DETECTION` - Stage 2
@@ -176,6 +184,7 @@ All changes gated behind feature flags (default: false):
 - `FEATURE_REPLY_GENERATION` - Stage 6
 
 **Agent Flags**:
+
 - `FEATURE_WAITER_AGENT`
 - `FEATURE_FARMER_AGENT`
 - `FEATURE_BROKER_AGENT`
@@ -191,7 +200,7 @@ All changes gated behind feature flags (default: false):
 **Week 2**: Enable normalizer for 1% of traffic  
 **Week 3**: Increase to 10%  
 **Week 4**: Increase to 50%  
-**Week 5**: Enable 100% + monitor for 1 week  
+**Week 5**: Enable 100% + monitor for 1 week
 
 ### Rollback Strategy
 
@@ -202,6 +211,7 @@ All changes gated behind feature flags (default: false):
 ### Monitoring
 
 **Metrics** (tracked per stage):
+
 - Request count
 - Success/failure rate
 - Latency (p50, p95, p99)
@@ -210,6 +220,7 @@ All changes gated behind feature flags (default: false):
 - Database query performance
 
 **Alerts**:
+
 - Error rate > 1%
 - P95 latency > 4s
 - Intent application failures > 5%
@@ -260,6 +271,7 @@ All changes gated behind feature flags (default: false):
 ### Documents to Reference
 
 When starting Phase 2:
+
 1. **Start here**: `QUICK_START.md` - Day 1 setup
 2. **Detailed tasks**: `IMPLEMENTATION_GUIDE.md` - Phase 2, Week 1
 3. **Architecture**: `whatsapp-pipeline.md` - Normalizer specs
@@ -268,23 +280,27 @@ When starting Phase 2:
 ### Team Responsibilities
 
 **Backend Engineers**:
+
 - Implement pipeline stages
 - Create intent handlers
 - Write integration tests
 - Deploy with feature flags
 
 **Frontend Engineers** (later phases):
+
 - Profile module UI
 - "My Stuff" views
 - Admin panel updates
 
 **DevOps**:
+
 - Feature flag infrastructure
 - Monitoring setup
 - Gradual rollout automation
 - Alerting configuration
 
 **QA**:
+
 - Test plan execution
 - Load testing
 - Security testing
@@ -323,6 +339,7 @@ When starting Phase 2:
 ### Documentation
 
 All documents in `docs/architecture/`:
+
 - `agents-map.md` - Inventory & mapping
 - `whatsapp-pipeline.md` - Pipeline design
 - `profile-and-wallet.md` - Profile module design
@@ -332,18 +349,22 @@ All documents in `docs/architecture/`:
 ### Existing Code References
 
 **Database Schema**:
+
 - `supabase/migrations/20251121184617_ai_agent_ecosystem_whatsapp_first.sql`
 - `supabase/migrations/20251121192657_ai_agents_comprehensive_data_part*.sql`
 
 **Current Webhook**:
+
 - `supabase/functions/wa-webhook/index.ts`
 - `supabase/functions/wa-webhook/router.ts`
 
 **Agent Examples**:
+
 - `supabase/functions/waiter-ai-agent/` (most complete)
 - `supabase/functions/job-board-ai-agent/`
 
 **Ground Rules**:
+
 - `docs/GROUND_RULES.md`
 
 ---

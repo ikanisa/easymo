@@ -7,21 +7,27 @@
 ## ⚡ 3-Minute Quick Start
 
 ### 1. Run Security Audit
+
 ```bash
 ./scripts/security/audit-env-files.sh
 ```
+
 **Expected**: ⚠️ Will flag secrets in .env files (that's ok, they're gitignored)
 
 ### 2. Verify Dependencies
+
 ```bash
 ./scripts/verify/workspace-deps.sh
 ```
+
 **Expected**: ✅ All workspace dependencies correct
 
 ### 3. Preview Cleanup (Safe!)
+
 ```bash
 ./scripts/maintenance/cleanup-root-directory.sh --dry-run
 ```
+
 **Expected**: Shows 50+ files that would be organized
 
 ---
@@ -29,6 +35,7 @@
 ## 📋 What Was Done (2025-11-27)
 
 ### ✅ Completed
+
 - [x] **Admin-app consolidation** - admin-app-v2 deprecated
 - [x] **Security infrastructure** - Automated secret detection
 - [x] **Cleanup automation** - Root directory organization
@@ -36,9 +43,10 @@
 - [x] **Dependency verification** - Workspace protocol checking
 
 ### 📁 New Files
+
 ```
 ✨ scripts/verify/workspace-deps.sh
-✨ scripts/security/audit-env-files.sh  
+✨ scripts/security/audit-env-files.sh
 ✨ scripts/maintenance/cleanup-root-directory.sh
 ✨ vitest.shared.ts
 ✨ tsconfig.apps.json
@@ -50,6 +58,7 @@
 ## 🎯 What To Do Next
 
 ### Option A: Review & Apply Cleanup (Recommended First)
+
 ```bash
 # 1. See what would change
 ./scripts/maintenance/cleanup-root-directory.sh --dry-run
@@ -65,9 +74,11 @@ git commit -m "refactor: organize root directory structure"
 ```
 
 ### Option B: Continue Refactoring Tasks
+
 See `REFACTORING_PROGRESS.md` for the full plan.
 
 **Next Priority Tasks:**
+
 1. Create media-utils package (Task 3.2)
 2. Migrate Jest to Vitest (Task 3.3)
 3. Align TypeScript versions (Task 3.4)
@@ -76,12 +87,12 @@ See `REFACTORING_PROGRESS.md` for the full plan.
 
 ## 📚 Documentation
 
-| Document | Purpose |
-|----------|---------|
-| `REFACTORING_PROGRESS.md` | Overall progress & task list |
-| `scripts/README.md` | Script documentation & usage |
-| `SESSION_COMPLETE_REFACTORING_2025-11-27.md` | Detailed session summary |
-| This file | Quick reference |
+| Document                                     | Purpose                      |
+| -------------------------------------------- | ---------------------------- |
+| `REFACTORING_PROGRESS.md`                    | Overall progress & task list |
+| `scripts/README.md`                          | Script documentation & usage |
+| `SESSION_COMPLETE_REFACTORING_2025-11-27.md` | Detailed session summary     |
+| This file                                    | Quick reference              |
 
 ---
 

@@ -7,6 +7,7 @@
 ## 🎯 The Problem
 
 **4 separate agent implementations** causing:
+
 - Inconsistent AI behavior
 - Hardcoded fake data on errors
 - Maintenance overhead
@@ -18,10 +19,10 @@
 
 ## 🔗 Key Documents
 
-| Document | Purpose | Lines |
-|----------|---------|-------|
-| [INVESTIGATION_REPORT.md](./INVESTIGATION_REPORT.md) | Complete findings & analysis | 400+ |
-| [CONSOLIDATION_PLAN.md](./CONSOLIDATION_PLAN.md) | Implementation roadmap | 360 |
+| Document                                             | Purpose                      | Lines |
+| ---------------------------------------------------- | ---------------------------- | ----- |
+| [INVESTIGATION_REPORT.md](./INVESTIGATION_REPORT.md) | Complete findings & analysis | 400+  |
+| [CONSOLIDATION_PLAN.md](./CONSOLIDATION_PLAN.md)     | Implementation roadmap       | 360   |
 
 ## 🚀 Quick Start
 
@@ -40,15 +41,15 @@
 
 ## 📊 Quick Stats
 
-| Metric | Value |
-|--------|-------|
-| Agent Implementations | 4 → 1 |
-| System Prompts | 4 → 1 |
-| Estimated Effort | 16 hours (2 days) |
-| Files to Create | 7 |
-| Files to Modify | 5 |
-| Files to Delete | 5 |
-| Priority | 🔴 CRITICAL |
+| Metric                | Value             |
+| --------------------- | ----------------- |
+| Agent Implementations | 4 → 1             |
+| System Prompts        | 4 → 1             |
+| Estimated Effort      | 16 hours (2 days) |
+| Files to Create       | 7                 |
+| Files to Modify       | 5                 |
+| Files to Delete       | 5                 |
+| Priority              | 🔴 CRITICAL       |
 
 ## 🔴 Critical Issues
 
@@ -65,17 +66,18 @@
 
 ## 🎯 Implementation Phases
 
-| Phase | Tasks | Duration | Priority |
-|-------|-------|----------|----------|
-| 1 | Unified Structure | 4 hours | P0 |
-| 2 | Fix Critical Issues | 4 hours | P0 |
-| 3 | Update Consumers | 4 hours | P1 |
-| 4 | Database | 2 hours | P1 |
-| 5 | Clean Up | 2 hours | P2 |
+| Phase | Tasks               | Duration | Priority |
+| ----- | ------------------- | -------- | -------- |
+| 1     | Unified Structure   | 4 hours  | P0       |
+| 2     | Fix Critical Issues | 4 hours  | P0       |
+| 3     | Update Consumers    | 4 hours  | P1       |
+| 4     | Database            | 2 hours  | P1       |
+| 5     | Clean Up            | 2 hours  | P2       |
 
 ## 📁 Key Files
 
 ### Current Implementations (4)
+
 ```
 packages/agents/src/agents/property/real-estate.agent.ts
 supabase/functions/wa-webhook/domains/ai-agents/real_estate_agent.ts
@@ -84,11 +86,13 @@ packages/ai/src/agents/openai/agent-definitions.ts
 ```
 
 ### Source of Truth
+
 ```
 supabase/functions/_shared/agents/real-estate/types.ts  ← State management
 ```
 
 ### Target Structure
+
 ```
 packages/agents/src/agents/property/
 ├── real-estate.agent.ts        # Main agent (refactored)
@@ -111,11 +115,11 @@ packages/agents/src/agents/property/
 
 ## ⚠️ Risks & Mitigation
 
-| Risk | Mitigation |
-|------|------------|
-| Breaking integrations | Keep backwards compatibility in state keys |
-| Database migration issues | Test in staging first, use COALESCE |
-| Feature regressions | Comprehensive tests, gradual rollout |
+| Risk                      | Mitigation                                 |
+| ------------------------- | ------------------------------------------ |
+| Breaking integrations     | Keep backwards compatibility in state keys |
+| Database migration issues | Test in staging first, use COALESCE        |
+| Feature regressions       | Comprehensive tests, gradual rollout       |
 
 ## 📅 Timeline
 
@@ -136,6 +140,7 @@ packages/agents/src/agents/property/
 ## 📞 Questions?
 
 See detailed documentation:
+
 - [INVESTIGATION_REPORT.md](./INVESTIGATION_REPORT.md) - Full analysis
 - [CONSOLIDATION_PLAN.md](./CONSOLIDATION_PLAN.md) - Implementation guide
 

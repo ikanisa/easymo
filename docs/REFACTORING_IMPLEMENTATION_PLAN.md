@@ -1,4 +1,5 @@
 # EasyMO Refactoring - Implementation Execution Plan
+
 **Created:** December 10, 2025  
 **Status:** Phase 2 Partial, Phase 3 Ready  
 **Branch:** `main`
@@ -8,13 +9,15 @@
 ## 📊 Current Reality Check
 
 ### Actual Metrics (as of Dec 10, 2025)
-| Metric | Documented | Actual | Delta | Status |
-|--------|-----------|--------|-------|--------|
-| Edge Functions | 117 | **112** | -5 | ✅ Better than expected |
-| Packages | 33 | **35** | +2 | 🟡 Slightly more |
-| Root Files | 44 | 44 | 0 | ✅ Stable |
+
+| Metric         | Documented | Actual  | Delta | Status                  |
+| -------------- | ---------- | ------- | ----- | ----------------------- |
+| Edge Functions | 117        | **112** | -5    | ✅ Better than expected |
+| Packages       | 33         | **35**  | +2    | 🟡 Slightly more        |
+| Root Files     | 44         | 44      | 0     | ✅ Stable               |
 
 ### What's Already Done ✅
+
 1. **Phase 1:** Root cleanup complete
 2. **Phase 2 Partial:**
    - ✅ Admin functions consolidated → `admin-api`
@@ -30,6 +33,7 @@
 ## 🎯 Recommended Execution Strategy
 
 ### Strategy A: **Quick Wins Only** (Recommended)
+
 **Timeline:** 2-3 days  
 **Risk:** Low  
 **Impact:** Medium
@@ -64,11 +68,13 @@ Focus on **low-risk, high-value consolidations**:
 ---
 
 ### Strategy B: **Comprehensive (Original Plan)**
+
 **Timeline:** 18-28 days  
 **Risk:** High  
 **Impact:** High
 
 Execute all phases as documented:
+
 - Phase 2: Functions (8 days) - 27-37 functions saved
 - Phase 3: Packages (8 days) - 11-13 packages saved
 - Phase 4: Config (3 days)
@@ -77,6 +83,7 @@ Execute all phases as documented:
 - Phase 7: Docs (2 days)
 
 **Risk Factors:**
+
 - Production webhook changes (Phase 2)
 - Import hell (Phase 3)
 - Testing complexity
@@ -87,16 +94,19 @@ Execute all phases as documented:
 ## 🚀 Recommended Next Actions
 
 ### Immediate (Today)
+
 1. **Decision:** Choose Strategy A (quick wins) or Strategy B (comprehensive)
 2. **Create branch:** `refactor/phase3-packages`
 3. **Execute Phase 3A:** Merge `@easymo/types` → `@easymo/commons`
 
 ### This Week
+
 - Complete Phase 3A, 3B (types + shared → commons)
 - Test builds thoroughly
 - Merge to main
 
 ### Next Week (Optional)
+
 - Phase 3C: Localization consolidation
 - Phase 7: Documentation cleanup
 
@@ -105,12 +115,14 @@ Execute all phases as documented:
 ## 📋 Phase 3A: Detailed Execution Steps
 
 ### Step 1: Backup & Branch
+
 ```bash
 git checkout -b refactor/phase3-packages
 git push -u origin refactor/phase3-packages
 ```
 
 ### Step 2: Analyze Dependencies
+
 ```bash
 # Already done - found:
 # - 13 imports of @easymo/types
@@ -119,6 +131,7 @@ git push -u origin refactor/phase3-packages
 ```
 
 ### Step 3: Create Unified Structure
+
 ```bash
 # Create new structure in @easymo/commons
 mkdir -p packages/commons/src/types/ai-agents
@@ -126,6 +139,7 @@ mkdir -p packages/commons/src/utils
 ```
 
 ### Step 4: Migrate @easymo/types
+
 ```bash
 # Copy type files
 cp packages/types/src/ai-agents/* packages/commons/src/types/ai-agents/
@@ -136,6 +150,7 @@ cp packages/types/src/index.ts packages/commons/src/types/index.ts
 ```
 
 ### Step 5: Update Imports (13 files)
+
 ```bash
 # Find all imports
 grep -r "from '@easymo/types'" --include="*.ts" --include="*.tsx" -l .
@@ -145,12 +160,14 @@ grep -r "from '@easymo/types'" --include="*.ts" --include="*.tsx" -l .
 ```
 
 ### Step 6: Update pnpm-workspace.yaml
+
 ```yaml
 # Remove: packages/types
 # Keep: packages/commons
 ```
 
 ### Step 7: Test Build
+
 ```bash
 pnpm install
 pnpm --filter @easymo/commons build
@@ -159,6 +176,7 @@ pnpm exec vitest run
 ```
 
 ### Step 8: Archive Old Package
+
 ```bash
 mkdir -p .archive/packages
 mv packages/types .archive/packages/types-$(date +%Y%m%d)
@@ -169,12 +187,14 @@ mv packages/types .archive/packages/types-$(date +%Y%m%d)
 ## ⚠️ Risk Assessment
 
 ### Phase 3A Risks: **LOW**
+
 - ✅ Only type definitions (no runtime code)
 - ✅ Only 13 imports to update
 - ✅ Clear separation of concerns
 - ⚠️ Build must pass after changes
 
 ### Mitigation:
+
 1. Create feature branch
 2. Update imports incrementally
 3. Test build after each change
@@ -186,6 +206,7 @@ mv packages/types .archive/packages/types-$(date +%Y%m%d)
 ## 📈 Success Metrics
 
 ### After Phase 3A (Quick Win)
+
 - ✅ Packages: 35 → 34 (-1)
 - ✅ Build passes
 - ✅ Tests pass
@@ -193,6 +214,7 @@ mv packages/types .archive/packages/types-$(date +%Y%m%d)
 - ✅ Import statements updated
 
 ### After Strategy A Complete
+
 - 🎯 Packages: 35 → 31 (-4)
 - 🎯 Documentation organized
 - 🎯 CI stable
@@ -203,6 +225,7 @@ mv packages/types .archive/packages/types-$(date +%Y%m%d)
 ## 🔄 Rollback Plan
 
 If issues arise:
+
 ```bash
 # Restore archived package
 cp -r .archive/packages/types-YYYYMMDD packages/types
@@ -218,6 +241,7 @@ pnpm build
 ---
 
 ## 📚 Related Documents
+
 - `docs/REFACTORING_PROGRESS.md` - Overall tracker
 - `docs/PHASE2_CONSOLIDATION_PLAN.md` - Function consolidation
 - `docs/PHASE3_PACKAGE_MERGE_PLAN.md` - Package consolidation
@@ -228,6 +252,7 @@ pnpm build
 ## 🎯 Decision Required
 
 **Question:** Should we proceed with:
+
 - **Option A:** Quick Wins (2-3 days, low risk, 4 packages saved)
 - **Option B:** Comprehensive (18-28 days, higher risk, all phases)
 - **Option C:** Pause and focus on other priorities

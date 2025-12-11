@@ -8,7 +8,8 @@
 
 ## Executive Summary
 
-Complete member management system for SACCO vendor portal including database functions, TypeScript types, API routes, and UI components. **Zero duplication achieved.**
+Complete member management system for SACCO vendor portal including database functions, TypeScript
+types, API routes, and UI components. **Zero duplication achieved.**
 
 **Single Source of Truth:** `app.members` table with atomic member+account creation.
 
@@ -19,37 +20,44 @@ Complete member management system for SACCO vendor portal including database fun
 ### ✅ COMPLETED (100%)
 
 #### 1. Database Layer
+
 - ✅ 12 member management functions
-- ✅ 5 analytics functions  
+- ✅ 5 analytics functions
 - ✅ PII protection (hash + mask)
 - ✅ Atomic transactions
 - ✅ Proper migrations with BEGIN/COMMIT
 
 **Files:**
+
 - `supabase/migrations/20251209200000_member_management_functions.sql`
 - `supabase/migrations/20251209200001_member_analytics.sql`
 
 #### 2. TypeScript Types
+
 - ✅ 11 member interfaces
 - ✅ 7 group interfaces
 - ✅ Form input types
 - ✅ API response types
 
 **Files:**
+
 - `vendor-portal/types/member.ts` (11,224 bytes)
 - `vendor-portal/types/group.ts` (5,169 bytes)
 
 #### 3. Validation Schemas
+
 - ✅ Rwanda phone regex
 - ✅ National ID validation (16 digits)
 - ✅ Zod schemas for all inputs
 - ✅ Custom error messages
 
 **Files:**
+
 - `vendor-portal/lib/validations/member.ts` (11,016 bytes)
 - `vendor-portal/lib/validations/group.ts` (6,268 bytes)
 
 #### 4. API Routes (13 endpoints)
+
 ```
 ✅ GET    /api/members              (list with filters)
 ✅ POST   /api/members              (create)
@@ -67,6 +75,7 @@ Complete member management system for SACCO vendor portal including database fun
 ```
 
 #### 5. Client Hooks
+
 - ✅ `useMembers()` - List with filters
 - ✅ `useMember(id)` - Detail fetch
 - ✅ `useCreateMember()` - Create mutation
@@ -74,16 +83,19 @@ Complete member management system for SACCO vendor portal including database fun
 - ✅ `useImportMembers()` - Bulk import
 
 **Files:**
+
 - `vendor-portal/lib/api/members.ts` (1,873 bytes)
 - `vendor-portal/lib/hooks/use-members.ts`
 
 #### 6. UI Components
+
 - ✅ Members table
 - ✅ Import wizard
 - ✅ Base page structure
 - ⏳ Form components (optional - API fully functional)
 
 **Files:**
+
 - `vendor-portal/app/(dashboard)/members/page.tsx`
 - `vendor-portal/app/(dashboard)/members/components/members-table.tsx`
 - `vendor-portal/app/(dashboard)/members/components/import-wizard.tsx`
@@ -93,6 +105,7 @@ Complete member management system for SACCO vendor portal including database fun
 ## Database Functions Reference
 
 ### Member CRUD
+
 ```sql
 -- Create member with account (atomic)
 SELECT * FROM app.create_member(
@@ -127,6 +140,7 @@ SELECT app.transfer_member_group('member-uuid', 'new-group-uuid', true);
 ```
 
 ### Analytics
+
 ```sql
 -- Member summary (profile + stats)
 SELECT * FROM app.get_member_summary('member-uuid');
@@ -151,6 +165,7 @@ SELECT * FROM app.get_member_activity('member-uuid', 20);
 ## API Examples
 
 ### Create Member
+
 ```bash
 curl -X POST http://localhost:3000/api/members \
   -H "Content-Type: application/json" \
@@ -167,6 +182,7 @@ curl -X POST http://localhost:3000/api/members \
 ```
 
 ### Bulk Import
+
 ```bash
 curl -X POST http://localhost:3000/api/members/import \
   -H "Content-Type: application/json" \
@@ -180,11 +196,13 @@ curl -X POST http://localhost:3000/api/members/import \
 ```
 
 ### List Members
+
 ```bash
 GET /api/members?sacco_id=uuid&status=ACTIVE&search=mugisha&limit=20&offset=0
 ```
 
 ### Get Member Detail
+
 ```bash
 GET /api/members/{member-uuid}
 # Returns: profile + total_balance + payment stats + last_payment_date
@@ -195,17 +213,20 @@ GET /api/members/{member-uuid}
 ## Security Features
 
 ### PII Protection ✅
+
 - Phone numbers stored as **SHA-256 hash** (`msisdn_hash`)
-- Display format: **masked** (`msisdn_masked` = "078****567")
+- Display format: **masked** (`msisdn_masked` = "078\*\*\*\*567")
 - National ID stored plaintext (required for KYC)
 - Email stored plaintext (used for communications)
 
 ### Duplicate Prevention ✅
+
 - Phone number uniqueness enforced per SACCO
 - National ID uniqueness enforced per SACCO
 - Member code auto-generated (format: `MBR-{SACCO}-{SEQ}`)
 
 ### Soft Delete ✅
+
 - `deactivate_member()` sets `status = 'INACTIVE'`
 - Requires zero balance across all accounts
 - Deactivation reason stored in metadata
@@ -216,6 +237,7 @@ GET /api/members/{member-uuid}
 ## Data Model
 
 ### Member Lifecycle
+
 ```
 1. CREATE → app.create_member()
    ├─ Generate member_code (MBR-XXX-00001)
@@ -241,6 +263,7 @@ GET /api/members/{member-uuid}
 ```
 
 ### Database Schema
+
 ```
 app.members (central registry)
   ├─> app.accounts (FK: member_id) - financial accounts
@@ -258,6 +281,7 @@ status: member_status            -- ACTIVE|INACTIVE|SUSPENDED|DELETED
 ## Validation Rules
 
 ### Rwanda-Specific
+
 ```typescript
 // Phone: 07X XXX XXXX or +250 7X XXX XXXX
 const rwandaPhoneRegex = /^(\+?250)?0?7[2389]\d{7}$/;
@@ -270,6 +294,7 @@ date_of_birth: Must result in age >= 18
 ```
 
 ### Business Rules
+
 - Full name: 2-100 characters, letters/spaces only
 - Email: Optional but must be valid if provided
 - Gender: Optional, enum ['male', 'female', 'other']
@@ -281,21 +306,25 @@ date_of_birth: Must result in age >= 18
 ## Avoided Duplication ✅
 
 ### 1. Member Phone Storage
+
 **Found:** Multiple potential approaches  
 **Chose:** Single canonical method (hash + mask)  
 **Avoided:** Plaintext storage, inconsistent masking
 
 ### 2. Payment Matching
+
 **Found:** Existing `app.payments` table  
 **Chose:** Reused with `status = 'matched'`  
 **Avoided:** Creating new payment tracking table
 
 ### 3. Group Terminology
+
 **Found:** Inconsistency (group vs ikimina)  
 **Chose:** Database uses `ikimina`, UI shows "Groups"  
 **Avoided:** Duplicate tables for same concept
 
 ### 4. Account Creation
+
 **Found:** Potential for orphaned accounts  
 **Chose:** Atomic creation in `create_member()`  
 **Avoided:** Separate account creation step
@@ -305,6 +334,7 @@ date_of_birth: Must result in age >= 18
 ## Testing Checklist
 
 ### Database ✅
+
 - [x] Migrations apply cleanly
 - [x] Functions return expected types
 - [x] Duplicate prevention works
@@ -312,6 +342,7 @@ date_of_birth: Must result in age >= 18
 - [x] Analytics queries perform well
 
 ### API ✅
+
 - [x] Create member returns 201
 - [x] Duplicate phone returns 409
 - [x] Invalid data returns 400
@@ -319,6 +350,7 @@ date_of_birth: Must result in age >= 18
 - [x] Bulk import reports errors correctly
 
 ### Validation ✅
+
 - [x] Rwanda phone format accepted
 - [x] Invalid phone rejected
 - [x] National ID format validated
@@ -330,12 +362,14 @@ date_of_birth: Must result in age >= 18
 ## Performance Considerations
 
 ### Optimizations
+
 - `msisdn_hash` indexed for fast phone lookup
 - `member_code` indexed for search
 - Pagination support in all list endpoints
 - Analytics functions use aggregates (not row-by-row)
 
 ### Limits
+
 - List members: Max 100 per page
 - Bulk import: Max 500 members
 - Search results: Max 50 results
@@ -346,6 +380,7 @@ date_of_birth: Must result in age >= 18
 ## Next Steps
 
 ### Deployment
+
 ```bash
 # 1. Apply migrations
 supabase db push
@@ -361,6 +396,7 @@ SELECT * FROM app.get_member_summary('test-member-uuid');
 ```
 
 ### Optional Enhancements
+
 1. Member photo upload (Supabase Storage)
 2. SMS welcome message on registration
 3. Advanced filters UI component
@@ -372,20 +408,24 @@ SELECT * FROM app.get_member_summary('test-member-uuid');
 ## Files Summary
 
 ### Database (2 files, ~800 lines SQL)
+
 - `supabase/migrations/20251209200000_member_management_functions.sql`
 - `supabase/migrations/20251209200001_member_analytics.sql`
 
 ### TypeScript (4 files, ~30KB)
+
 - `vendor-portal/types/member.ts`
 - `vendor-portal/types/group.ts`
 - `vendor-portal/lib/validations/member.ts`
 - `vendor-portal/lib/validations/group.ts`
 
 ### API (13 route files)
+
 - `/api/members/*` (6 routes)
 - `/api/groups/*` (3 routes)
 
 ### UI (5+ component files)
+
 - Members list page
 - Member detail page
 - Create/edit forms
@@ -413,7 +453,8 @@ SELECT * FROM app.get_member_summary('test-member-uuid');
 
 **Phase 3: Member Management is PRODUCTION READY.**
 
-All database functions, API routes, and client hooks are fully implemented and tested. UI components are functional with optional polish pending.
+All database functions, API routes, and client hooks are fully implemented and tested. UI components
+are functional with optional polish pending.
 
 **The system is ready for real-world use.**
 

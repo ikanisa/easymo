@@ -28,6 +28,7 @@ supabase db diff
 ```
 
 **Expected Output:**
+
 ```
 Applying migration 20251209200000_member_management_functions.sql...
 Applying migration 20251209200001_member_analytics.sql...
@@ -94,6 +95,7 @@ WHERE member_id = (SELECT id FROM app.members WHERE full_name = 'TEST MEMBER');
 ```
 
 **Expected:**
+
 - Member created with code like `MBR-XXX-00001`
 - Phone stored as hash (not plaintext)
 - Account created with `balance = 0`, `status = 'ACTIVE'`
@@ -121,6 +123,7 @@ curl -X POST http://localhost:3000/api/members \
 ```
 
 **Expected Response (201 Created):**
+
 ```json
 {
   "success": true,
@@ -182,6 +185,7 @@ curl -X POST http://localhost:3000/api/members/import \
 ```
 
 **Expected Response (200 OK):**
+
 ```json
 {
   "total_count": 2,
@@ -239,6 +243,7 @@ SELECT * FROM app.search_members('$SACCO_ID', '111', 10);
 ## Step 6: Test Validation (2 min)
 
 ### Invalid Phone Format
+
 ```bash
 curl -X POST http://localhost:3000/api/members \
   -H "Content-Type: application/json" \
@@ -251,6 +256,7 @@ curl -X POST http://localhost:3000/api/members \
 ```
 
 **Expected (400 Bad Request):**
+
 ```json
 {
   "error": "Validation error",
@@ -264,6 +270,7 @@ curl -X POST http://localhost:3000/api/members \
 ```
 
 ### Duplicate Phone
+
 ```bash
 # Try to create member with same phone as existing
 curl -X POST http://localhost:3000/api/members \
@@ -277,6 +284,7 @@ curl -X POST http://localhost:3000/api/members \
 ```
 
 **Expected (409 Conflict):**
+
 ```json
 {
   "error": "Member with this phone number already exists in this SACCO"
@@ -288,6 +296,7 @@ curl -X POST http://localhost:3000/api/members \
 ## Step 7: Test Update & Deactivate (2 min)
 
 ### Update Member
+
 ```sql
 -- Update via SQL
 SELECT * FROM app.update_member(
@@ -301,6 +310,7 @@ SELECT email FROM app.members WHERE full_name = 'TEST MEMBER';
 ```
 
 ### Deactivate Member
+
 ```sql
 -- This should FAIL (member has no payments, but default account exists)
 SELECT app.deactivate_member(
@@ -344,7 +354,7 @@ WHERE full_name LIKE '%TEST%' OR full_name LIKE '%API TEST%';
 - [ ] Duplicate prevention works (409)
 - [ ] Update member works
 - [ ] Deactivate member works
-- [ ] PII masked (phone shows as "078****567")
+- [ ] PII masked (phone shows as "078\*\*\*\*567")
 - [ ] Member code auto-generated (MBR-XXX-00001)
 
 ---
@@ -352,6 +362,7 @@ WHERE full_name LIKE '%TEST%' OR full_name LIKE '%API TEST%';
 ## Troubleshooting
 
 ### Migration Fails
+
 ```bash
 # Check migration status
 supabase migration list
@@ -364,6 +375,7 @@ supabase db push
 ```
 
 ### Function Not Found
+
 ```sql
 -- Verify schema
 SELECT current_schema();
@@ -374,6 +386,7 @@ SET search_path TO app, public;
 ```
 
 ### API Returns 500
+
 ```bash
 # Check Next.js logs
 cd vendor-portal
@@ -387,6 +400,7 @@ cat .env.local | grep SUPABASE
 ```
 
 ### Phone Hash Not Working
+
 ```sql
 -- Manually test hashing
 SELECT encode(sha256('781234567'::bytea), 'hex');
@@ -437,7 +451,7 @@ COMMIT;
 ✅ Bulk import processes multiple members  
 ✅ Analytics queries return correct data  
 ✅ Search returns relevant results  
-✅ API returns proper HTTP codes  
+✅ API returns proper HTTP codes
 
 **If all checks pass: DEPLOYMENT SUCCESSFUL** 🎉
 

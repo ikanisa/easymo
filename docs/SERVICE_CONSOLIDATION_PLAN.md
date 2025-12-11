@@ -1,12 +1,12 @@
 # Service Consolidation Plan
-**Date:** December 10, 2025
-**Current:** 24 services
-**Target:** 15-18 services
-**Reduction:** 6-9 services
+
+**Date:** December 10, 2025 **Current:** 24 services **Target:** 15-18 services **Reduction:** 6-9
+services
 
 ## Voice/Media Services Analysis (5 → 2)
 
 ### Current Services
+
 ```
 services/
 ├── voice-bridge/           # Voice handling
@@ -17,7 +17,9 @@ services/
 ```
 
 ### Analysis Required
+
 ### voice-bridge
+
 ```json
 {
   "name": "@easymo/voice-bridge",
@@ -37,6 +39,7 @@ services/
 ```
 
 ### voice-gateway
+
 ```json
 {
   "name": "@easymo/voice-gateway",
@@ -56,37 +59,27 @@ services/
 ```
 
 ### voice-media-bridge
+
 ```json
 {
   "name": "@easymo/voice-media-bridge",
   "description": "WebRTC media bridge between WhatsApp and OpenAI Realtime API",
-  "dependencies": [
-    "@types/node",
-    "dotenv",
-    "express",
-    "pino",
-    "ws"
-  ]
+  "dependencies": ["@types/node", "dotenv", "express", "pino", "ws"]
 }
 ```
 
 ### voice-media-server
+
 ```json
 {
   "name": "@easymo/voice-media-server",
   "description": "WebRTC media server for WhatsApp calls bridged to OpenAI Realtime API",
-  "dependencies": [
-    "@roamhq/wrtc",
-    "@supabase/supabase-js",
-    "dotenv",
-    "express",
-    "pino",
-    "ws"
-  ]
+  "dependencies": ["@roamhq/wrtc", "@supabase/supabase-js", "dotenv", "express", "pino", "ws"]
 }
 ```
 
 ### whatsapp-voice-bridge
+
 ```json
 {
   "name": "@easymo/whatsapp-voice-bridge",
@@ -103,25 +96,28 @@ services/
 }
 ```
 
-
 ## Consolidation Analysis
 
 ### Identified Duplicates
 
 #### Group 1: WhatsApp Voice Bridges (3 → 1)
+
 **Overlapping services:**
+
 - `voice-media-bridge` - WhatsApp to OpenAI bridge
 - `voice-media-server` - WhatsApp WebRTC media server
 - `whatsapp-voice-bridge` - WhatsApp voice to OpenAI bridge
 
 **All three:**
+
 - Use WebRTC (`wrtc` or `@roamhq/wrtc`)
 - Bridge WhatsApp calls to OpenAI Realtime API
 - Use WebSocket (`ws`)
 - Use Express
 - Use Pino logging
 
-**Recommendation:** 
+**Recommendation:**
+
 ```
 CONSOLIDATE → @easymo/whatsapp-media-server
 - Merge all three into single service
@@ -130,10 +126,12 @@ CONSOLIDATE → @easymo/whatsapp-media-server
 ```
 
 #### Group 2: Voice Infrastructure (2 services - KEEP SEPARATE)
+
 - `voice-bridge` - General voice handling (no SIP)
 - `voice-gateway` - SIP/WebRTC telephony gateway (uses @easymo/google-speech)
 
 **Recommendation:** **KEEP SEPARATE**
+
 - Different protocols (SIP vs general)
 - voice-gateway has specialized dependencies (Google Speech)
 - Serve different purposes
@@ -141,14 +139,18 @@ CONSOLIDATE → @easymo/whatsapp-media-server
 ## Other Service Analysis
 
 ### OpenAI Services (2 services)
+
 #### openai-deep-research-service
+
 ```json
 {
   "name": "@easymo/openai-deep-research",
   "description": "OpenAI Deep Research service for autonomous web intelligence"
 }
 ```
+
 #### openai-responses-service
+
 ```json
 {
   "name": "@easymo/openai-responses-service",
@@ -157,6 +159,7 @@ CONSOLIDATE → @easymo/whatsapp-media-server
 ```
 
 **Analysis:**
+
 - `openai-deep-research-service` - Deep research tasks
 - `openai-responses-service` - Response generation
 
@@ -165,20 +168,22 @@ CONSOLIDATE → @easymo/whatsapp-media-server
 ## Summary
 
 ### Immediate Consolidation Opportunities
-| Group | Current | Target | Savings |
-|-------|---------|--------|---------|
-| WhatsApp Voice Bridges | 3 | 1 | -2 services |
-| **TOTAL** | **24** | **22** | **-2 services** |
+
+| Group                  | Current | Target | Savings         |
+| ---------------------- | ------- | ------ | --------------- |
+| WhatsApp Voice Bridges | 3       | 1      | -2 services     |
+| **TOTAL**              | **24**  | **22** | **-2 services** |
 
 ### Conservative Approach
+
 - Focus on clear duplicates only
 - WhatsApp voice bridges are obvious consolidation
 - Keep specialized services separate (SIP gateway, research, etc.)
 
 ### Next Steps
+
 1. Create unified `whatsapp-media-server` structure
 2. Migrate code from 3 services
 3. Update docker-compose files
 4. Test thoroughly
 5. Archive old services
-

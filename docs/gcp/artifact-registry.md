@@ -1,6 +1,7 @@
 # Artifact Registry Setup – easyMO
 
 ## Project Information
+
 - **GCP Project**: `easymoai`
 - **Region**: `europe-west1` (Belgium – closest to Rwanda/East Africa)
 - **Repository Name**: `easymo-repo`
@@ -11,6 +12,7 @@
 ## Prerequisites
 
 ### 1. Install gcloud CLI
+
 ```bash
 # macOS
 brew install google-cloud-sdk
@@ -19,6 +21,7 @@ brew install google-cloud-sdk
 ```
 
 ### 2. Authenticate & Set Project
+
 ```bash
 # Login to GCP
 gcloud auth login
@@ -32,6 +35,7 @@ gcloud config get-value project
 ```
 
 ### 3. Configure Docker for Artifact Registry
+
 ```bash
 # Authenticate Docker to Artifact Registry
 gcloud auth configure-docker europe-west1-docker.pkg.dev
@@ -61,6 +65,7 @@ gcloud services list --enabled | grep -E '(artifact|run|iap|build)'
 ```
 
 Expected output:
+
 ```
 artifactregistry.googleapis.com    Artifact Registry API
 cloudbuild.googleapis.com          Cloud Build API
@@ -84,6 +89,7 @@ gcloud artifacts repositories list --location=europe-west1
 ```
 
 Expected output:
+
 ```
 REPOSITORY    FORMAT  LOCATION       ...
 easymo-repo   DOCKER  europe-west1   ...
@@ -94,27 +100,28 @@ easymo-repo   DOCKER  europe-west1   ...
 ## Image Naming Convention
 
 All images follow this pattern:
+
 ```
 europe-west1-docker.pkg.dev/easymoai/easymo-repo/<SERVICE_NAME>:<TAG>
 ```
 
 ### Service Images
 
-| Service | Image URL |
-|---------|-----------|
-| Admin PWA | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/admin:latest` |
-| Vendor Portal | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/vendor:latest` |
-| Client PWA | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/client:latest` |
-| Voice Bridge | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/voice-bridge:latest` |
-| WA Router | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/wa-router:latest` |
-| Agent Core | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/agent-core:latest` |
-| Voice Media Server | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/voice-media:latest` |
+| Service            | Image URL                                                                    |
+| ------------------ | ---------------------------------------------------------------------------- |
+| Admin PWA          | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/admin:latest`              |
+| Vendor Portal      | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/vendor:latest`             |
+| Client PWA         | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/client:latest`             |
+| Voice Bridge       | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/voice-bridge:latest`       |
+| WA Router          | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/wa-router:latest`          |
+| Agent Core         | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/agent-core:latest`         |
+| Voice Media Server | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/voice-media:latest`        |
 | Voice Media Bridge | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/voice-media-bridge:latest` |
-| WhatsApp Voice | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/whatsapp-voice:latest` |
-| Mobility | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/mobility:latest` |
-| Ranking | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/ranking:latest` |
-| Wallet | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/wallet:latest` |
-| Video | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/video:latest` |
+| WhatsApp Voice     | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/whatsapp-voice:latest`     |
+| Mobility           | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/mobility:latest`           |
+| Ranking            | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/ranking:latest`            |
+| Wallet             | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/wallet:latest`             |
+| Video              | `europe-west1-docker.pkg.dev/easymoai/easymo-repo/video:latest`              |
 
 ---
 
@@ -155,6 +162,7 @@ gcloud builds submit \
 ```
 
 Cloud Build benefits:
+
 - Faster (runs in GCP, no upload time)
 - Build logs in Cloud Logging
 - Integrates with GitHub triggers
@@ -196,6 +204,7 @@ echo "Image: ${IMAGE}"
 ```
 
 Usage:
+
 ```bash
 chmod +x scripts/gcp-build-push.sh
 ./scripts/gcp-build-push.sh admin admin-app/Dockerfile
@@ -226,16 +235,19 @@ echo "✅ All images built and pushed!"
 ## View & Manage Images
 
 ### List all images
+
 ```bash
 gcloud artifacts docker images list ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}
 ```
 
 ### View specific image tags
+
 ```bash
 gcloud artifacts docker tags list ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/admin
 ```
 
 ### Delete old images
+
 ```bash
 # Delete specific tag
 gcloud artifacts docker images delete ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/admin:old-tag
@@ -254,6 +266,7 @@ gcloud artifacts docker images list ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REP
 ### For CI/CD Service Account
 
 Create a service account for GitHub Actions:
+
 ```bash
 # Create service account
 gcloud iam service-accounts create github-actions-easymo \
@@ -286,13 +299,16 @@ rm github-actions-key.json
 ## Costs & Cleanup
 
 ### Storage Costs
+
 - First 0.5 GB/month: **Free**
 - Beyond 0.5 GB: **$0.10/GB/month**
 
 Estimate: ~50 images × 200 MB avg = 10 GB = **~$1/month**
 
 ### Cleanup Old Images
+
 Set up lifecycle policy (auto-delete images older than 30 days):
+
 ```bash
 # Create policy file: cleanup-policy.json
 {
@@ -317,18 +333,22 @@ gcloud artifacts repositories set-cleanup-policies easymo-repo \
 ## Troubleshooting
 
 ### Docker authentication issues
+
 ```bash
 gcloud auth configure-docker europe-west1-docker.pkg.dev
 gcloud auth login
 ```
 
 ### Permission denied
+
 ```bash
 gcloud auth application-default login
 ```
 
 ### Build fails with "context too large"
+
 Add `.gcloudignore` (similar to `.dockerignore`):
+
 ```
 node_modules/
 .git/
@@ -348,5 +368,6 @@ coverage/
 4. Deploy to Cloud Run (see [cloud-run-services.md](./cloud-run-services.md))
 
 See:
+
 - [enable-apis.md](./enable-apis.md) - Full API enablement checklist
 - [ci-cd.md](./ci-cd.md) - GitHub Actions automation

@@ -24,14 +24,17 @@ curl http://localhost:3003/api/health
 ## Files Created
 
 ### Migrations (3)
+
 - `20251209190000_create_app_schema_sacco_tables.sql` - Core schema
 - `20251209190001_add_sacco_webhook_support.sql` - Webhook integration
 - `20251209190002_sacco_payment_functions.sql` - Database functions
 
 ### Edge Function (1)
+
 - `supabase/functions/momo-sms-webhook/matchers/sacco.ts`
 
 ### API Routes (7)
+
 - `/api/health` - Health check
 - `/api/payments` - List payments
 - `/api/payments/[id]` - Single payment
@@ -40,6 +43,7 @@ curl http://localhost:3003/api/health
 - `/api/stats` - Dashboard stats
 
 ### Types (2)
+
 - `vendor-portal/types/payment.ts`
 - `vendor-portal/types/api.ts`
 
@@ -91,7 +95,7 @@ curl "http://localhost:3003/api/members?sacco_id=<uuid>&search=Jean"
 ```typescript
 // For member import: hash last 9 digits
 const phone = "0781234567";
-const normalized = phone.replace(/\D/g, '').slice(-9); // "781234567"
+const normalized = phone.replace(/\D/g, "").slice(-9); // "781234567"
 const hash = sha256(normalized); // Store in members.msisdn_hash
 ```
 
@@ -131,7 +135,7 @@ WHERE sacco_id = '<uuid>' AND status = 'unmatched'
 ORDER BY received_at DESC;
 
 -- Check recent payments
-SELECT 
+SELECT
   p.amount,
   p.status,
   p.created_at,
@@ -144,7 +148,7 @@ ORDER BY p.created_at DESC
 LIMIT 10;
 
 -- Member balances
-SELECT 
+SELECT
   m.member_code,
   m.full_name,
   a.account_type,
@@ -161,18 +165,20 @@ SELECT * FROM app.get_payment_stats('<sacco-uuid>', 30);
 ## Troubleshooting
 
 ### SMS not matching?
+
 ```sql
 -- Check if member exists
-SELECT * FROM app.members 
-WHERE sacco_id = '<uuid>' 
+SELECT * FROM app.members
+WHERE sacco_id = '<uuid>'
 AND msisdn_hash = encode(sha256('781234567'::bytea), 'hex');
 
 -- Check SMS parsing
-SELECT parsed_data FROM app.sms_inbox 
+SELECT parsed_data FROM app.sms_inbox
 WHERE id = '<sms-uuid>';
 ```
 
 ### Webhook not receiving?
+
 ```sql
 -- Verify webhook registration
 SELECT * FROM public.momo_webhook_endpoints

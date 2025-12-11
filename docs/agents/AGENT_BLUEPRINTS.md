@@ -8,19 +8,21 @@
 
 ## Overview
 
-This document provides detailed blueprints for the **7 official AI agents** in the EasyMO WhatsApp-first platform. Rides and Insurance AI agents have been removed in favor of WhatsApp workflows.
+This document provides detailed blueprints for the **7 official AI agents** in the EasyMO
+WhatsApp-first platform. Rides and Insurance AI agents have been removed in favor of WhatsApp
+workflows.
 
 ### Official Agents
 
-| # | Slug | Name | Autonomy |
-|---|------|------|----------|
-| 1 | `farmer` | Farmer AI Agent | suggest |
-| 2 | `sales_cold_caller` | Sales/Marketing Cold Caller AI Agent | handoff |
-| 3 | `jobs` | Jobs AI Agent | suggest |
-| 4 | `waiter` | Waiter AI Agent | suggest |
-| 5 | `real_estate` | Real Estate AI Agent | suggest |
-| 6 | `buy_and_sell` | Buy & Sell AI Agent | suggest |
-| 7 | `support` | Support AI Agent | auto |
+| #   | Slug                | Name                                 | Autonomy |
+| --- | ------------------- | ------------------------------------ | -------- |
+| 1   | `farmer`            | Farmer AI Agent                      | suggest  |
+| 2   | `sales_cold_caller` | Sales/Marketing Cold Caller AI Agent | handoff  |
+| 3   | `jobs`              | Jobs AI Agent                        | suggest  |
+| 4   | `waiter`            | Waiter AI Agent                      | suggest  |
+| 5   | `real_estate`       | Real Estate AI Agent                 | suggest  |
+| 6   | `buy_and_sell`      | Buy & Sell AI Agent                  | suggest  |
+| 7   | `support`           | Support AI Agent                     | auto     |
 
 Each blueprint includes:
 
@@ -37,7 +39,8 @@ Each blueprint includes:
 
 ### Surfaces & Routing
 
-**Entry Point**: WhatsApp Business Cloud API → Supabase Edge Function webhook → Orchestrator → agent by intent
+**Entry Point**: WhatsApp Business Cloud API → Supabase Edge Function webhook → Orchestrator → agent
+by intent
 
 **Persistence**:
 
@@ -318,26 +321,31 @@ Polite leasing and sales coordinator for properties.
 
 #### Persona
 
-WhatsApp-first "Buy & Sell Concierge" that helps users find products, services, and nearby businesses. Two modes:
+WhatsApp-first "Buy & Sell Concierge" that helps users find products, services, and nearby
+businesses. Two modes:
 
 - **User-facing**: Friendly shopper's assistant
 - **Vendor-facing**: Professional sourcing/broker assistant
 
-**Note**: This agent consolidates capabilities from the former `marketplace` agent (pharmacy, hardware, shop) and `business_broker` agent (business brokerage, legal intake).
+**Note**: This agent consolidates capabilities from the former `marketplace` agent (pharmacy,
+hardware, shop) and `business_broker` agent (business brokerage, legal intake).
 
 #### Primary Tasks
 
-1. **Concierge Search**: Understand free-text requests, extract product/service details, budget, quantity, urgency
+1. **Concierge Search**: Understand free-text requests, extract product/service details, budget,
+   quantity, urgency
 2. **Business Discovery**: Search nearby businesses using tags/metadata and location
 3. **Vendor Outreach**: With user consent, contact vendors via WhatsApp to check stock/availability
 4. **Response Aggregation**: Collect vendor replies, filter to confirmed matches, present shortlist
-5. **Product Commerce**: Find products, check availability, place orders across all retail categories
+5. **Product Commerce**: Find products, check availability, place orders across all retail
+   categories
 6. **Order Fulfillment**: Track delivery, handle substitutions, process payments
 
 #### Tools
 
 - `search_businesses_with_tags` - Search businesses by category, tags, metadata, and location
-- `create_vendor_inquiries_and_message_vendors` - Message vendors on behalf of user (requires consent)
+- `create_vendor_inquiries_and_message_vendors` - Message vendors on behalf of user (requires
+  consent)
 - `get_vendor_inquiry_updates` - Check and parse vendor replies
 - `log_user_feedback_on_vendor` - Record feedback to update vendor quality scores
 - `search_supabase` - Products, inventory, businesses
@@ -353,12 +361,14 @@ WhatsApp-first "Buy & Sell Concierge" that helps users find products, services, 
 #### Guardrails
 
 **Concierge guardrails:**
+
 - **explicit_consent_required**: True - NEVER contact vendors without user permission
 - **max_vendors_per_inquiry**: 5 - Don't spam vendors
 - **vendor_message_limit**: 4 lines per message
 - **reply_timeout_minutes**: 2 - How long to wait for vendor replies
 
 **Commerce guardrails (from marketplace):**
+
 - **medical_advice**: Forbidden
 - **pharmacist_review_required**: True for Rx items
 - **age_restricted**: Handoff for restricted products
@@ -366,6 +376,7 @@ WhatsApp-first "Buy & Sell Concierge" that helps users find products, services, 
 - **substitution_policy**: "brand→generic→none"
 
 **Business brokerage guardrails (from business_broker):**
+
 - **advice**: Forbidden (no legal, tax, or financial advice)
 - **sensitive_topics_handoff**: True
 - **pii_minimization**: True
@@ -391,6 +402,7 @@ WhatsApp-first "Buy & Sell Concierge" that helps users find products, services, 
 #### Example Flows
 
 **Laptop Search with Vendor Outreach:**
+
 ```
 User: "I need a laptop for school under 400k near Remera"
 Agent: Extracts: laptop, budget 400k, location Remera
@@ -405,6 +417,7 @@ Agent: "Here are 2 shops that confirmed they have laptops under 400k:
 ```
 
 **Pharmacy Search:**
+
 ```
 User: "I need paracetamol 500mg, 2 strips near Kacyiru"
 Agent: Extracts: paracetamol 500mg, quantity 2 strips, location Kacyiru
@@ -414,7 +427,7 @@ User: Confirms
 Agent: Messages pharmacies, collects replies
 Agent: "CityCare Pharmacy (400m) has it: 1,500 RWF/strip
         [Chat CityCare]
-        
+
         ⚠️ Follow your doctor's prescription and pharmacist's guidance."
 ```
 
@@ -426,7 +439,8 @@ Agent: "CityCare Pharmacy (400m) has it: 1,500 RWF/strip
 
 Customer support and front-door triage concierge. Helpful, efficient routing and problem-solving.
 
-**Note**: This agent consolidates capabilities from the former `concierge-router` and `support-handoff` agents.
+**Note**: This agent consolidates capabilities from the former `concierge-router` and
+`support-handoff` agents.
 
 #### Primary Tasks
 
@@ -470,39 +484,39 @@ Customer support and front-door triage concierge. Helpful, efficient routing and
 
 When migrating from the old agent system, use this mapping:
 
-| Old Slug | New Slug | Notes |
-|----------|----------|-------|
-| `concierge-router` | `support` | Merged into Support |
-| `waiter-ai` | `waiter` | Renamed |
-| `mobility-orchestrator` | N/A | Replaced by WhatsApp mobility workflows |
-| `pharmacy-agent` | `buy_and_sell` | Merged into Buy & Sell |
-| `hardware-agent` | `buy_and_sell` | Merged into Buy & Sell |
-| `shop-agent` | `buy_and_sell` | Merged into Buy & Sell |
-| `marketplace` | `buy_and_sell` | Merged into Buy & Sell |
-| `business_broker` | `buy_and_sell` | Merged into Buy & Sell |
-| `insurance-agent` | N/A | Replaced by WhatsApp insurance workflows |
-| `property-agent` | `real_estate` | Renamed |
-| `legal-intake` | `buy_and_sell` | Merged into Buy & Sell |
-| `payments-agent` | N/A | Internal utility (not agent) |
-| `marketing-sales` | `sales_cold_caller` | Renamed |
-| `sora-video` | N/A | Removed |
-| `support-handoff` | `support` | Merged into Support |
-| `locops` | N/A | Internal utility (not agent) |
-| `analytics-risk` | N/A | Internal utility (not agent) |
+| Old Slug                | New Slug            | Notes                                    |
+| ----------------------- | ------------------- | ---------------------------------------- |
+| `concierge-router`      | `support`           | Merged into Support                      |
+| `waiter-ai`             | `waiter`            | Renamed                                  |
+| `mobility-orchestrator` | N/A                 | Replaced by WhatsApp mobility workflows  |
+| `pharmacy-agent`        | `buy_and_sell`      | Merged into Buy & Sell                   |
+| `hardware-agent`        | `buy_and_sell`      | Merged into Buy & Sell                   |
+| `shop-agent`            | `buy_and_sell`      | Merged into Buy & Sell                   |
+| `marketplace`           | `buy_and_sell`      | Merged into Buy & Sell                   |
+| `business_broker`       | `buy_and_sell`      | Merged into Buy & Sell                   |
+| `insurance-agent`       | N/A                 | Replaced by WhatsApp insurance workflows |
+| `property-agent`        | `real_estate`       | Renamed                                  |
+| `legal-intake`          | `buy_and_sell`      | Merged into Buy & Sell                   |
+| `payments-agent`        | N/A                 | Internal utility (not agent)             |
+| `marketing-sales`       | `sales_cold_caller` | Renamed                                  |
+| `sora-video`            | N/A                 | Removed                                  |
+| `support-handoff`       | `support`           | Merged into Support                      |
+| `locops`                | N/A                 | Internal utility (not agent)             |
+| `analytics-risk`        | N/A                 | Internal utility (not agent)             |
 
 ---
 
 ## KPIs by Agent
 
-| Agent | Key Metrics |
-|-------|-------------|
-| Farmer | Listing completion, match success, transaction rate |
-| Sales Cold Caller | Lead qualification, CTR, opt-out rate |
-| Jobs | Job fill rate, application rate, time to hire |
-| Waiter | Order cycle time, payment success %, CSAT |
-| Real Estate | Viewing rate, deposit conversion, time-to-lease |
-| Buy & Sell | Order completion, delivery success, business match rate, fill rate |
-| Support | Routing accuracy, first response time, resolution rate |
+| Agent             | Key Metrics                                                        |
+| ----------------- | ------------------------------------------------------------------ |
+| Farmer            | Listing completion, match success, transaction rate                |
+| Sales Cold Caller | Lead qualification, CTR, opt-out rate                              |
+| Jobs              | Job fill rate, application rate, time to hire                      |
+| Waiter            | Order cycle time, payment success %, CSAT                          |
+| Real Estate       | Viewing rate, deposit conversion, time-to-lease                    |
+| Buy & Sell        | Order completion, delivery success, business match rate, fill rate |
+| Support           | Routing accuracy, first response time, resolution rate             |
 
 ---
 

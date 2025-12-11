@@ -5,40 +5,44 @@
 
 ## Summary
 
-The insurance support contacts **are already pulling dynamically** from the `insurance_admin_contacts` table. No hardcoded phone numbers exist in the code.
+The insurance support contacts **are already pulling dynamically** from the
+`insurance_admin_contacts` table. No hardcoded phone numbers exist in the code.
 
 ## Current Implementation
 
 ### Code Location
 
 **File 1**: `supabase/functions/wa-webhook-insurance/insurance/ins_handler.ts`
+
 ```typescript
 const { data: contacts } = await ctx.supabase
-  .from('insurance_admin_contacts')
-  .select('id, channel, destination, display_name, is_active')
-  .eq('is_active', true)
-  .order('created_at');
+  .from("insurance_admin_contacts")
+  .select("id, channel, destination, display_name, is_active")
+  .eq("is_active", true)
+  .order("created_at");
 
 // Filter WhatsApp contacts
-const whatsappContacts = contacts.filter((c: any) => 
-  String(c.channel || '').toLowerCase() === 'whatsapp'
+const whatsappContacts = contacts.filter(
+  (c: any) => String(c.channel || "").toLowerCase() === "whatsapp"
 );
 
 // Build dynamic WhatsApp links
 const contactLinks = whatsappContacts
   .map((c: any) => {
-    const phone = c.destination.replace(/[^0-9]/g, '');
+    const phone = c.destination.replace(/[^0-9]/g, "");
     const whatsappUrl = `https://wa.me/${phone}`;
     return `• *${c.display_name}*\n  ${whatsappUrl}`;
   })
-  .join('\n\n');
+  .join("\n\n");
 
-const message = `🏥 *Motor Insurance Support*\n\n` +
+const message =
+  `🏥 *Motor Insurance Support*\n\n` +
   `Contact our insurance team for help:\n\n${contactLinks}\n\n` +
   `_Tap any link above to start chatting on WhatsApp._`;
 ```
 
 **File 2**: `supabase/functions/wa-webhook/domains/insurance/ins_handler.ts`
+
 - Same implementation as above
 - Also includes AI assistant option
 
@@ -61,9 +65,10 @@ CREATE TABLE insurance_admin_contacts (
 
 ### Migration Note
 
-⚠️ **Column Name Discrepancy**: 
+⚠️ **Column Name Discrepancy**:
 
 The archived migration `20251207134800_ensure_insurance_admin_contacts.sql` uses:
+
 - `contact_type` instead of `channel`
 - `contact_value` instead of `destination`
 
@@ -75,11 +80,11 @@ The archived migration `20251207134800_ensure_insurance_admin_contacts.sql` uses
 
 ```sql
 -- View current contacts
-SELECT 
+SELECT
   id,
   channel,
-  destination, 
-  display_name, 
+  destination,
+  display_name,
   display_order,
   is_active
 FROM insurance_admin_contacts
@@ -87,10 +92,10 @@ ORDER BY display_order;
 
 -- Add new contact
 INSERT INTO insurance_admin_contacts (
-  channel, 
-  destination, 
-  display_name, 
-  display_order, 
+  channel,
+  destination,
+  display_name,
+  display_order,
   is_active
 ) VALUES (
   'whatsapp',
@@ -130,6 +135,7 @@ WHERE id = 'your-uuid-here';
 4. Or click on existing row to edit
 
 **Fields to fill**:
+
 - `channel`: `whatsapp` (or `email`, `phone`)
 - `destination`: `+250XXXXXXXXX` (full phone number with country code)
 - `display_name`: `Insurance Support Team 1`
@@ -143,7 +149,7 @@ WHERE id = 'your-uuid-here';
 ✅ **Enable/Disable** - Use `is_active` flag instead of deleting  
 ✅ **Custom Order** - Control display order with `display_order`  
 ✅ **Real-Time** - Changes take effect immediately (no deployment)  
-✅ **Fallback** - Shows friendly message if no contacts available  
+✅ **Fallback** - Shows friendly message if no contacts available
 
 ## Testing
 
@@ -179,11 +185,11 @@ Tap any link above to start chatting on WhatsApp.
 -- Check how many active WhatsApp contacts
 SELECT COUNT(*) as active_whatsapp_contacts
 FROM insurance_admin_contacts
-WHERE is_active = true 
+WHERE is_active = true
   AND channel = 'whatsapp';
 
 -- See what users will see
-SELECT 
+SELECT
   display_order,
   display_name,
   destination,
@@ -201,24 +207,26 @@ WHERE is_active = false;
 ## Best Practices
 
 ### DO:
+
 ✅ Use `is_active = false` to temporarily disable contacts  
 ✅ Set meaningful `display_name` (what users see)  
 ✅ Include country code in `destination` (+250...)  
 ✅ Set `display_order` to control sequence  
-✅ Test after adding/updating contacts  
+✅ Test after adding/updating contacts
 
 ### DON'T:
+
 ❌ Delete contacts (use `is_active = false` instead)  
 ❌ Use same `display_order` for multiple active contacts  
 ❌ Forget country code in phone numbers  
 ❌ Leave `destination` blank  
-❌ Use special characters in phone numbers (code strips them)  
+❌ Use special characters in phone numbers (code strips them)
 
 ## Migration Status
 
 **Current**: Contacts are in archived migration  
 **Schema**: May use `contact_type`/`contact_value` instead of `channel`/`destination`  
-**Code Expects**: `channel` and `destination` columns  
+**Code Expects**: `channel` and `destination` columns
 
 **If table doesn't exist or has wrong columns**, run this migration:
 
@@ -239,8 +247,8 @@ CREATE TABLE insurance_admin_contacts (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_insurance_admin_contacts_active 
-  ON insurance_admin_contacts(is_active) 
+CREATE INDEX idx_insurance_admin_contacts_active
+  ON insurance_admin_contacts(is_active)
   WHERE is_active = true;
 
 ALTER TABLE insurance_admin_contacts ENABLE ROW LEVEL SECURITY;
@@ -260,6 +268,6 @@ COMMIT;
 ✅ **No code changes needed** - Already dynamic  
 ✅ **Just update database table** - Changes are instant  
 ✅ **Fully functional** - Working in production  
-✅ **Easy to maintain** - Add/edit/disable via SQL or dashboard  
+✅ **Easy to maintain** - Add/edit/disable via SQL or dashboard
 
 The system is **already configured correctly**. Simply manage contacts through the database table.

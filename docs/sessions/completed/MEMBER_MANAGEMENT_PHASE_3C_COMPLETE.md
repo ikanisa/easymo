@@ -8,16 +8,20 @@
 
 ## Summary
 
-Successfully created core reusable UI components for member management in the SACCO vendor portal. All components integrate with Phase 3A database functions, Phase 3B API routes, and use proper TypeScript typing.
+Successfully created core reusable UI components for member management in the SACCO vendor portal.
+All components integrate with Phase 3A database functions, Phase 3B API routes, and use proper
+TypeScript typing.
 
 ---
 
 ## UI Components Created: 3
 
 ### 1. **MemberForm Component**
+
 **Path**: `vendor-portal/app/(dashboard)/members/components/member-form.tsx`
 
 **Features**:
+
 - ✅ Full name, phone, national ID, email, gender, date of birth inputs
 - ✅ Group selection dropdown
 - ✅ Client-side validation (Rwanda phone format, National ID, email)
@@ -27,6 +31,7 @@ Successfully created core reusable UI components for member management in the SA
 - ✅ Integration with `/api/members` POST and PUT endpoints
 
 **Validation Rules**:
+
 - Phone: Rwanda format `/^(\+?250)?0?7[2389]\d{7}$/`
 - National ID: 16 digits `/^[12]\d{15}$/`
 - Email: Standard email validation
@@ -34,9 +39,11 @@ Successfully created core reusable UI components for member management in the SA
 - Date of birth: Must be 18+ years old
 
 ### 2. **MemberCard Component**
+
 **Path**: `vendor-portal/app/(dashboard)/members/components/member-card.tsx`
 
 **Features**:
+
 - ✅ Avatar with initials
 - ✅ Status badge (ACTIVE/INACTIVE/SUSPENDED)
 - ✅ Contact information display (phone, email)
@@ -48,9 +55,11 @@ Successfully created core reusable UI components for member management in the SA
 - ✅ Responsive card layout with hover effects
 
 ### 3. **MemberFilters Component**
+
 **Path**: `vendor-portal/app/(dashboard)/members/components/member-filters.tsx`
 
 **Filter Options**:
+
 - ✅ Search (by name, code, phone)
 - ✅ Status filter (ACTIVE, INACTIVE, SUSPENDED, all)
 - ✅ Group filter (dropdown of all groups)
@@ -63,9 +72,11 @@ Successfully created core reusable UI components for member management in the SA
 ## Pages Updated: 1
 
 ### **New Member Page**
+
 **Path**: `vendor-portal/app/(dashboard)/members/new/page.tsx`
 
 **Changes**:
+
 - ✅ Replaced inline form with reusable MemberForm component
 - ✅ Added group fetching logic
 - ✅ Added Card wrapper for better UI
@@ -75,13 +86,13 @@ Successfully created core reusable UI components for member management in the SA
 
 ## 📦 Files Summary
 
-| File | Purpose | Status |
-|------|---------|--------|
-| `member-form.tsx` | Create/Update member form | ✅ Created |
-| `member-card.tsx` | Member card display | ✅ Created |
-| `member-filters.tsx` | Filter controls | ✅ Created |
-| `index.ts` | Component exports | ✅ Updated |
-| `new/page.tsx` | New member page | ✅ Updated |
+| File                 | Purpose                   | Status     |
+| -------------------- | ------------------------- | ---------- |
+| `member-form.tsx`    | Create/Update member form | ✅ Created |
+| `member-card.tsx`    | Member card display       | ✅ Created |
+| `member-filters.tsx` | Filter controls           | ✅ Created |
+| `index.ts`           | Component exports         | ✅ Updated |
+| `new/page.tsx`       | New member page           | ✅ Updated |
 
 ---
 
@@ -94,56 +105,68 @@ Successfully created core reusable UI components for member management in the SA
 5. **Member Activity Timeline**
 
 ---
+
 ```typescript
 // Body: UpdateMemberInput (validated with Zod)
 // Returns: { success: true, data: Member, message: string }
 // Status: 200 OK | 404 Not Found | 409 Conflict
 ```
+
 - Calls `update_member()` database function
 - Validates duplicate phone/NID
 - Returns updated member
 
 #### 5. **DELETE /api/members/[id]** - Deactivate member
+
 ```typescript
 // Query param: reason (optional)
 // Returns: { success: true, message: string }
 // Status: 200 OK | 400 Bad Request | 404 Not Found
 ```
+
 - Calls `deactivate_member()` database function
 - Requires zero balance
 - Soft delete (sets status to INACTIVE)
 
 #### 6. **GET /api/members/[id]/accounts** - Member accounts
+
 ```typescript
 // Returns: { data: MemberAccount[] }
 ```
+
 - Lists all accounts for a member
 - Ordered by created_at DESC
 
 #### 7. **GET /api/members/[id]/payments** - Payment history
+
 ```typescript
 // Query params: limit, offset
 // Returns: { data: MemberPaymentHistory[], pagination: {...} }
 ```
+
 - Calls `get_member_payment_history()` function
 - Includes running balance
 - Pagination support
 
 #### 8. **GET /api/members/[id]/transactions** - Ledger transactions
+
 ```typescript
 // Query params: account_type, from_date, to_date, limit, offset
 // Returns: { data: MemberTransaction[], pagination: {...} }
 ```
+
 - Calls `get_member_transactions()` function
 - Filter by account type, date range
 - Includes balance_after
 
 #### 9. **POST /api/members/import** - Bulk import
+
 ```typescript
 // Body: { sacco_id, members: BulkImportMember[] } (max 500)
 // Returns: { success, total_count, success_count, error_count, errors }
 // Status: 201 Created | 207 Multi-Status (partial success)
 ```
+
 - Calls `bulk_import_members()` function
 - Returns detailed error report for failures
 - Max 500 members per request
@@ -151,56 +174,68 @@ Successfully created core reusable UI components for member management in the SA
 ### Group Management (3 routes)
 
 #### 10. **GET /api/groups** - List groups
+
 ```typescript
 // Query params: sacco_id, search, type, status, limit, offset, sort_by, sort_order
 // Returns: { data: GroupWithStats[], pagination: {...} }
 ```
+
 - Filters by type (ASCA, ROSCA, VSLA, SACCO)
 - Filters by status (ACTIVE, INACTIVE, DISSOLVED)
 - Includes member_count and total_savings
 - Full-text search on name and code
 
 #### 11. **POST /api/groups** - Create group
+
 ```typescript
 // Body: CreateGroupInput (validated with Zod)
 // Returns: { success: true, data: Group, message: string }
 // Status: 201 Created
 ```
+
 - Auto-generates group code (ASC-0001, ROS-0002, etc.)
 - Sets status to ACTIVE
 - Returns created group
 
 #### 12. **GET /api/groups/[id]** - Group details
+
 ```typescript
 // Returns: { group: Group, stats: GroupMemberStats, members: Member[] }
 ```
+
 - Calls `get_group_member_stats()` function
 - Includes top 10 recent members
 - Returns group statistics
 
 #### 13. **PUT /api/groups/[id]** - Update group
+
 ```typescript
 // Body: UpdateGroupInput (validated with Zod)
 // Returns: { success: true, data: Group, message: string }
 // Status: 200 OK | 404 Not Found
 ```
+
 - Updates group details
 - Returns updated group
 
 #### 14. **DELETE /api/groups/[id]** - Dissolve group
+
 ```typescript
 // Returns: { success: true, message: string }
 // Status: 200 OK | 400 Bad Request | 404 Not Found
 ```
+
 - Checks for active members (blocks if > 0)
 - Soft delete (sets status to DISSOLVED)
 - Sets end_date to now
 
 #### 15. **GET /api/groups/[id]/members** - Group members
+
 ```typescript
 // Query params: status, limit, offset
 // Returns: { data: MemberWithRelations[], pagination: {...} }
 ```
+
 - Lists all members in a group
 - Filters by status
 - Includes total_balance for each member
@@ -211,11 +246,13 @@ Successfully created core reusable UI components for member management in the SA
 ## API Features
 
 ### ✅ Validation
+
 - **Runtime validation** with Zod schemas
 - **Type-safe** request/response contracts
 - **Descriptive error messages** with field-level details
 
 ### ✅ Error Handling
+
 - **400 Bad Request** - Validation errors (Zod)
 - **404 Not Found** - Resource not found
 - **409 Conflict** - Duplicate phone/NID
@@ -223,16 +260,19 @@ Successfully created core reusable UI components for member management in the SA
 - **207 Multi-Status** - Partial success (bulk import)
 
 ### ✅ Pagination
+
 - Consistent pagination across all list endpoints
 - `{ total, limit, offset, has_more }` metadata
 - Configurable limits (1-100)
 
 ### ✅ Performance
+
 - **Edge runtime** - Fast cold starts
 - **Efficient queries** - Uses database functions where possible
 - **Selective joins** - Only fetches required relations
 
 ### ✅ Security
+
 - **Server-side only** - Uses service client
 - **PII protection** - Phone masking, hashing
 - **Validation** - All inputs validated
@@ -245,6 +285,7 @@ Successfully created core reusable UI components for member management in the SA
 ### Create Member
 
 **Request**:
+
 ```bash
 POST /api/members
 Content-Type: application/json
@@ -262,6 +303,7 @@ Content-Type: application/json
 ```
 
 **Response** (201 Created):
+
 ```json
 {
   "success": true,
@@ -272,9 +314,7 @@ Content-Type: application/json
     "msisdn_masked": "078****567",
     "status": "ACTIVE",
     "ikimina": { "id": "...", "name": "Twisungane", "code": "TWS" },
-    "accounts": [
-      { "id": "...", "account_type": "savings", "balance": 0, "currency": "RWF" }
-    ]
+    "accounts": [{ "id": "...", "account_type": "savings", "balance": 0, "currency": "RWF" }]
   },
   "message": "Member MBR-TWS-00001 created successfully"
 }
@@ -283,11 +323,13 @@ Content-Type: application/json
 ### List Members
 
 **Request**:
+
 ```bash
 GET /api/members?sacco_id=550e8400-e29b-41d4-a716-446655440000&search=john&limit=10&offset=0
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "data": [
@@ -315,6 +357,7 @@ GET /api/members?sacco_id=550e8400-e29b-41d4-a716-446655440000&search=john&limit
 ### Bulk Import
 
 **Request**:
+
 ```bash
 POST /api/members/import
 Content-Type: application/json
@@ -329,6 +372,7 @@ Content-Type: application/json
 ```
 
 **Response** (201 Created):
+
 ```json
 {
   "success": true,
@@ -341,6 +385,7 @@ Content-Type: application/json
 ```
 
 **Response** (207 Multi-Status - Partial Success):
+
 ```json
 {
   "success": true,
