@@ -41,10 +41,10 @@ import {
   routeDriverAction,
 } from "./handlers/driver_response.ts";
 import {
-  driverInsuranceStateKey,
-  parseInsuranceState,
-  handleInsuranceCertificateUpload,
-} from "./handlers/driver_insurance.ts";
+  vehiclePlateStateKey,
+  parsePlateState,
+  handleVehiclePlateInput,
+} from "./handlers/vehicle_plate.ts";
 // Payment handlers
 import {
   handlePaymentConfirmation,
@@ -465,10 +465,6 @@ serve(async (req: Request): Promise<Response> => {
         // Driver Verification Handlers
         else if (id === IDS.VERIFY_LICENSE) {
           handled = await startLicenseVerification(ctx);
-        } else if (id === IDS.VERIFY_INSURANCE) {
-          // Redirect to existing insurance handler
-          const { ensureDriverInsurance } = await import("./handlers/driver_insurance.ts");
-          handled = await ensureDriverInsurance(ctx, { type: "nearby_passengers" });
         } else if (id === IDS.VERIFY_STATUS) {
           handled = await showVerificationMenu(ctx);
         }
@@ -537,34 +533,12 @@ serve(async (req: Request): Promise<Response> => {
       }
     }
 
-    // C. Handle Image/Document Messages (Insurance & License Upload)
+    // C. Handle Image/Document Messages (License Upload only - insurance removed)
     else if ((message.type === "image" || message.type === "document")) {
       const mediaId = (message.image as any)?.id || (message.document as any)?.id;
       const mimeType = (message.image as any)?.mime_type || (message.document as any)?.mime_type || "image/jpeg";
       
-      if (mediaId && state?.key === driverInsuranceStateKey) {
-        logEvent("MOBILITY_INSURANCE_UPLOAD", { mediaId, mimeType });
-        
-        const resumeData = parseInsuranceState(state.data);
-        if (resumeData) {
-          const result = await handleInsuranceCertificateUpload(ctx, resumeData, mediaId, mimeType);
-          
-          if (result.success && result.resumeData) {
-            // Resume the original flow after successful upload
-            if (result.resumeData.type === "go_online") {
-              handled = await startGoOnline(ctx);
-            } else if (result.resumeData.type === "nearby_passengers") {
-              handled = await handleSeePassengers(ctx);
-            } else if (result.resumeData.type === "schedule_role") {
-              handled = await startScheduleTrip(ctx, state as any);
-            } else {
-              handled = true;
-            }
-          } else {
-            handled = true;
-          }
-        }
-      } else if (mediaId && state?.key === VERIFICATION_STATES.LICENSE_UPLOAD) {
+      if (mediaId && state?.key === VERIFICATION_STATES.LICENSE_UPLOAD) {
         logEvent("MOBILITY_LICENSE_UPLOAD", { mediaId, mimeType });
         handled = await handleLicenseUpload(ctx, mediaId, mimeType);
       }
@@ -575,8 +549,39 @@ serve(async (req: Request): Promise<Response> => {
       const text = (message.text as any)?.body?.toLowerCase() ?? "";
       const rawText = (message.text as any)?.body ?? "";
       
+      // Vehicle plate registration input
+      if (state?.key === vehiclePlateStateKey) {
+        const resumeData = parsePlateState(state.data);
+        if (resumeData) {
+          const error = await handleVehiclePlateInput(ctx, resumeData, rawText);
+          if (error) {
+            // Validation failed, show error
+            await sendButtonsMessage(
+              ctx,
+              `⚠️ ${error}\n\nPlease try again:`,
+              [{ id: IDS.HOME, title: "← Cancel" }],
+            );
+            handled = true;
+          } else {
+            // Success! Clear state and resume flow
+            await clearState(ctx.supabase, ctx.profileId!);
+            await sendText(ctx.from, `✅ Vehicle registered! Plate: ${rawText.toUpperCase()}`);
+            
+            // Resume the original flow
+            if (resumeData.type === "go_online") {
+              handled = await startGoOnline(ctx);
+            } else if (resumeData.type === "nearby_passengers") {
+              handled = await handleSeePassengers(ctx);
+            } else if (resumeData.type === "schedule_role") {
+              handled = await startScheduleTrip(ctx, state as any);
+            } else {
+              handled = true;
+            }
+          }
+        }
+      }
       // Payment transaction reference input
-      if (state?.key === PAYMENT_STATES.CONFIRMATION) {
+      else if (state?.key === PAYMENT_STATES.CONFIRMATION) {
         handled = await processTransactionReference(ctx, rawText, { data: state.data as unknown as PaymentState });
       }
       // Check for menu selection keys first

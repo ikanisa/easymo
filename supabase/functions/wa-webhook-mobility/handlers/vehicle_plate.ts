@@ -1,12 +1,15 @@
 import type { RouterContext } from "../types.ts";
 import type { SupabaseClient } from "../deps.ts";
-import { ensureDriverInsurance } from "./driver_insurance.ts";
+import { setState } from "../state/store.ts";
+import { sendButtonsMessage } from "../utils/reply.ts";
+import { IDS } from "../wa/ids.ts";
 
 const PLATE_STATE_KEY = "vehicle_plate_register";
 
 type ResumeState =
   | { type: "schedule_role"; roleId: string }
-  | { type: "nearby_passengers" };
+  | { type: "nearby_passengers" }
+  | { type: "go_online" };
 
 type PlateStateData = ResumeState;
 
@@ -54,14 +57,41 @@ export async function updateVehiclePlate(
   if (error) throw error;
 }
 
+/**
+ * Ensure driver has a vehicle plate registered
+ * Simplified flow: just prompt for plate number, no insurance certificate
+ */
 export async function ensureVehiclePlate(
   ctx: RouterContext,
   resume: ResumeState,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+  
+  // Check if user already has a vehicle plate
   const existing = await getVehiclePlate(ctx.supabase, ctx.profileId);
   if (existing) return true;
-  return await ensureDriverInsurance(ctx, resume as any);
+  
+  // Prompt for vehicle plate
+  await setState(ctx.supabase, ctx.profileId, {
+    key: PLATE_STATE_KEY,
+    data: resume,
+  });
+  
+  await sendButtonsMessage(
+    ctx,
+    "🚗 *Register Your Vehicle*\n\n" +
+    "Please enter your vehicle number plate.\n\n" +
+    "📋 *Examples:*\n" +
+    "• RAB 123 C (car)\n" +
+    "• RA 123 B (moto)\n" +
+    "• RAC 456 A (truck)\n\n" +
+    "Type your plate number below:",
+    [
+      { id: IDS.HOME, title: "← Cancel" },
+    ],
+  );
+  
+  return false;
 }
 
 export const vehiclePlateStateKey = PLATE_STATE_KEY;
@@ -77,6 +107,9 @@ export function parsePlateState(
     return { type, roleId };
   }
   if (type === "nearby_passengers") {
+    return { type };
+  }
+  if (type === "go_online") {
     return { type };
   }
   return null;
