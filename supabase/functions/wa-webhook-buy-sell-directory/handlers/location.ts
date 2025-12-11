@@ -27,6 +27,8 @@ interface DirectoryState {
 
 const RESULTS_PER_PAGE = 9;
 const SEARCH_RADIUS_KM = 10;
+/** Extra results to fetch for checking if more exist */
+const PAGINATION_BUFFER = 10;
 
 /**
  * Handle user selecting a category from the list
@@ -153,7 +155,7 @@ export async function handleLocationShared(
         p_longitude: longitude,
         p_category_key: state.selectedCategory,
         p_radius_km: SEARCH_RADIUS_KM,
-        p_limit: RESULTS_PER_PAGE + 10, // Fetch extra to check if more exist
+        p_limit: RESULTS_PER_PAGE + PAGINATION_BUFFER,
       }
     );
 

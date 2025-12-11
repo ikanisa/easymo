@@ -99,19 +99,31 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
     priority: 1,
   },
   {
-    // Legacy service - redirects to directory service
+    /**
+     * Legacy Buy & Sell service - DEPRECATED
+     * 
+     * This service is deprecated and traffic should be routed to wa-webhook-buy-sell-directory.
+     * The empty keywords and menuKeys arrays ensure this service is not directly accessible
+     * via keyword matching or menu selections. Only state-based routing or explicit redirects
+     * should route to this service (which will then redirect to the new directory service).
+     */
     service: "wa-webhook-buy-sell",
-    keywords: [],
-    menuKeys: [],
+    keywords: [], // Intentionally empty - deprecated service
+    menuKeys: [],  // Intentionally empty - deprecated service
     priority: 99,
     deprecated: true,
     redirectTo: "wa-webhook-buy-sell-directory",
   },
   {
-    // Legacy agent-buy-sell endpoint
+    /**
+     * Legacy agent-buy-sell endpoint
+     * 
+     * This endpoint is still active for AI processing but menu routing now goes through
+     * wa-webhook-buy-sell-agent. Direct access is intentionally disabled via empty arrays.
+     */
     service: "agent-buy-sell",
-    keywords: [],
-    menuKeys: [],
+    keywords: [], // Intentionally empty - access via wa-webhook-buy-sell-agent
+    menuKeys: [],  // Intentionally empty - access via wa-webhook-buy-sell-agent
     priority: 99,
   },
   {

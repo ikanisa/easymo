@@ -11,6 +11,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent } from "../../_shared/observability.ts";
 import { ensureProfile, getState, setState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import { sendText, sendButtons } from "../../_shared/wa-webhook-shared/wa/client.ts";
+import { getCountryCode, mapCountryCode } from "../../_shared/phone-utils.ts";
 
 interface DirectoryState {
   selectedCategory: string;
@@ -25,6 +26,8 @@ interface DirectoryState {
 
 const RESULTS_PER_PAGE = 9;
 const SEARCH_RADIUS_KM = 10;
+/** Extra results to fetch for checking if more exist */
+const PAGINATION_BUFFER = 10;
 
 /**
  * Handle "Show More" button for business results pagination
@@ -69,7 +72,7 @@ export async function handleShowMore(userPhone: string): Promise<void> {
         p_longitude: state.longitude,
         p_category_key: state.selectedCategory,
         p_radius_km: SEARCH_RADIUS_KM,
-        p_limit: currentOffset + RESULTS_PER_PAGE + 10,
+        p_limit: currentOffset + RESULTS_PER_PAGE + PAGINATION_BUFFER,
       }
     );
 
@@ -184,10 +187,9 @@ export async function handleNewSearch(userPhone: string): Promise<void> {
 
     // Show categories list
     const { showDirectoryCategories } = await import("./categories.ts");
-    const { getCountryCode } = await import("../../_shared/phone-utils.ts");
     
     const countryCode = getCountryCode(userPhone);
-    const userCountry = mapCountry(countryCode);
+    const userCountry = mapCountryCode(countryCode);
     
     await showDirectoryCategories(userPhone, userCountry);
   } catch (error) {
@@ -195,11 +197,4 @@ export async function handleNewSearch(userPhone: string): Promise<void> {
       error: error instanceof Error ? error.message : String(error),
     }, "error");
   }
-}
-
-function mapCountry(countryCode: string | null): string {
-  if (!countryCode) return "RW";
-  const code = countryCode.toUpperCase();
-  if (["RW", "BI", "CD", "TZ", "MT"].includes(code)) return code;
-  return "RW";
 }

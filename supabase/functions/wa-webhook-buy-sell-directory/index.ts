@@ -21,7 +21,7 @@ import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import { claimEvent } from "../_shared/wa-webhook-shared/state/idempotency.ts";
-import { getCountryCode } from "../_shared/phone-utils.ts";
+import { getCountryCode, mapCountryCode } from "../_shared/phone-utils.ts";
 import {
   ensureProfile,
   getState,
@@ -176,7 +176,7 @@ serve(async (req: Request): Promise<Response> => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const userCountry = mapCountry(getCountryCode(userPhone));
+    const userCountry = mapCountryCode(getCountryCode(userPhone));
 
     // === HANDLE INTERACTIVE LIST SELECTIONS ===
     if (message.type === "interactive" && message.interactive?.list_reply?.id) {
@@ -327,17 +327,6 @@ serve(async (req: Request): Promise<Response> => {
 // =====================================================
 // HELPER FUNCTIONS
 // =====================================================
-
-function mapCountry(countryCode: string | null): string {
-  switch (countryCode) {
-    case "250":
-      return "RW";
-    case "356":
-      return "MT";
-    default:
-      return "RW";
-  }
-}
 
 function extractWhatsAppMessage(payload: unknown): {
   from: string;

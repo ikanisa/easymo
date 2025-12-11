@@ -20,7 +20,7 @@ import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { sendText, sendButtons } from "../_shared/wa-webhook-shared/wa/client.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import { claimEvent } from "../_shared/wa-webhook-shared/state/idempotency.ts";
-import { getCountryCode } from "../_shared/phone-utils.ts";
+import { getCountryCode, mapCountryCode } from "../_shared/phone-utils.ts";
 import {
   ensureProfile,
   getState,
@@ -177,7 +177,7 @@ serve(async (req: Request): Promise<Response> => {
     );
 
     const profile = await ensureProfile(supabase, userPhone);
-    const userCountry = mapCountry(getCountryCode(userPhone));
+    const userCountry = mapCountryCode(getCountryCode(userPhone));
 
     // === HANDLE EXIT COMMANDS ===
     const lower = text.toLowerCase();
@@ -455,17 +455,6 @@ async function forwardToAIAgent(
       "error",
     );
     return { success: false };
-  }
-}
-
-function mapCountry(countryCode: string | null): string {
-  switch (countryCode) {
-    case "250":
-      return "RW";
-    case "356":
-      return "MT";
-    default:
-      return "RW";
   }
 }
 
