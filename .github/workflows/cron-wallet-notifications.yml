@@ -1,0 +1,58 @@
+name: Process Wallet Notifications
+
+# This workflow processes queued wallet notifications
+# Runs every 5 minutes (GitHub Actions limitation - can't run every 1 minute)
+# For production, use an external cron service like cron-job.org
+
+on:
+  schedule:
+    # Runs every 5 minutes (minimum for GitHub Actions)
+    - cron: '*/5 * * * *'
+  
+  workflow_dispatch:  # Allow manual trigger
+    inputs:
+      reason:
+        description: 'Reason for manual trigger'
+        required: false
+        default: 'Manual notification processing'
+
+jobs:
+  process-notifications:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Process wallet notification queue
+        run: |
+          echo "Processing wallet notifications..."
+          
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wallet-notifications \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{}')
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+          
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $BODY"
+          
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ Error: Function returned HTTP $HTTP_CODE"
+            exit 1
+          fi
+          
+          echo "✅ Notifications processed successfully"
+      
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Wallet Notifications Processing" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Time**: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "- **Trigger**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "- **Reason**: ${{ github.event.inputs.reason }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
