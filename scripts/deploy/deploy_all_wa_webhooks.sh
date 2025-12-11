@@ -85,16 +85,7 @@ else
 fi
 echo ""
 
-echo "📦 [2/9] Deploying wa-webhook-unified (fallback handler)..."
-if supabase functions deploy wa-webhook-unified --no-verify-jwt; then
-  echo "   ✅ wa-webhook-unified deployed successfully"
-else
-  echo "   ❌ Failed to deploy wa-webhook-unified"
-  exit 1
-fi
-echo ""
-
-echo "📦 [3/9] Deploying wa-webhook-jobs (job marketplace)..."
+echo "📦 [2/9] Deploying wa-webhook-jobs (job marketplace)..."
 if supabase functions deploy wa-webhook-jobs --no-verify-jwt; then
   echo "   ✅ wa-webhook-jobs deployed successfully"
 else

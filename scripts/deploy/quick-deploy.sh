@@ -17,7 +17,6 @@ supabase link --project-ref "$SUPABASE_PROJECT_REF"
 # 3. Deploy edge functions
 echo "Deploying edge functions..."
 supabase functions deploy wa-webhook --project-ref "$SUPABASE_PROJECT_REF"
-supabase functions deploy wa-webhook-unified --project-ref "$SUPABASE_PROJECT_REF"
 supabase functions deploy wa-webhook-core --project-ref "$SUPABASE_PROJECT_REF"
 supabase functions deploy dlq-processor --project-ref "$SUPABASE_PROJECT_REF"
 

@@ -70,7 +70,7 @@ echo ""
 supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
 # Deploy functions
-FUNCTIONS=("wa-webhook" "wa-webhook-unified" "wa-webhook-core" "dlq-processor")
+FUNCTIONS=("wa-webhook" "wa-webhook-core" "dlq-processor")
 
 for func in "${FUNCTIONS[@]}"; do
     if [ -d "supabase/functions/$func" ]; then

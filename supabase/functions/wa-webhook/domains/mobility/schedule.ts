@@ -42,7 +42,7 @@ import {
 } from "./vehicle_plate.ts";
 
 // Use centralized config from MOBILITY_CONFIG - imported from rpc/mobility.ts
-const TRIP_MATCHING_WINDOW_MINUTES = MOBILITY_CONFIG.TRIP_MATCHING_WINDOW_MINUTES;
+
 const REQUIRED_RADIUS_METERS = MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS;
 const DEFAULT_TIMEZONE = "Africa/Kigali";
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -1101,7 +1101,7 @@ async function fetchMatches(
       options.limit,
       options.preferDropoff,
       options.radiusMeters,
-      TRIP_MATCHING_WINDOW_MINUTES,
+      
     )
     : await matchPassengersForTrip(
       ctx.supabase,
@@ -1109,7 +1109,7 @@ async function fetchMatches(
       options.limit,
       options.preferDropoff,
       options.radiusMeters,
-      TRIP_MATCHING_WINDOW_MINUTES,
+      
     );
   return sortMatches(matches, { prioritize: "time" }).slice(0, 9);
 }

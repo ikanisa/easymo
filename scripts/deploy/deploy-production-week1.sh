@@ -101,14 +101,6 @@ else
     print_warning "wa-webhook deployment failed"
 fi
 
-# Deploy wa-webhook-unified
-echo "Deploying wa-webhook-unified..."
-if supabase functions deploy wa-webhook-unified; then
-    print_status "wa-webhook-unified deployed"
-else
-    print_warning "wa-webhook-unified deployment failed"
-fi
-
 # Deploy wa-webhook-core
 echo "Deploying wa-webhook-core..."
 if supabase functions deploy wa-webhook-core; then
@@ -144,13 +136,6 @@ else
         print_status "wa-webhook health check passed"
     else
         print_warning "wa-webhook health check failed"
-    fi
-    
-    # Check wa-webhook-unified
-    if curl -s -f "${SUPABASE_URL}/functions/v1/wa-webhook-unified/health" > /dev/null 2>&1; then
-        print_status "wa-webhook-unified health check passed"
-    else
-        print_warning "wa-webhook-unified health check failed"
     fi
     
     # Check wa-webhook-core

@@ -1,16 +1,13 @@
 /**
  * Webhook Traffic Router
  * 
- * Gradually routes webhook traffic to wa-webhook-unified for safe migration.
+ * Routes webhook traffic to domain-specific webhooks.
  * 
  * Features:
- * - Configurable percentage-based routing
  * - Domain detection (jobs, marketplace, property)
  * - Comprehensive logging for monitoring
  * - Automatic fallback to legacy webhooks
  * - Real-time metrics collection
- * 
- * Week 6 Implementation - Traffic Migration
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
@@ -74,7 +71,7 @@ function determineDomain(payload: any): string {
 async function logRouting(data: {
   webhookName: string;
   domain: string;
-  routedTo: 'unified' | 'legacy' | 'error';
+  routedTo: 'legacy' | 'error';
   fromNumber?: string;
   messageId?: string;
   responseTimeMs: number;
@@ -136,21 +133,17 @@ serve(async (req: Request): Promise<Response> => {
       Math.random() * 100 < config.percentage;
     
     let targetWebhook: string;
-    let routedTo: 'unified' | 'legacy';
+    let routedTo: 'legacy';
     
-    if (shouldRoute) {
-      targetWebhook = 'wa-webhook-unified';
-      routedTo = 'unified';
+    // Route to domain-specific webhooks
+    if (domain === 'buy_sell') {
+      targetWebhook = 'wa-webhook-buy-sell';
+    } else if (domain === 'ai_marketplace') {
+      targetWebhook = 'wa-agent-call-center';
     } else {
-      if (domain === 'buy_sell') {
-        targetWebhook = 'wa-webhook-buy-sell';
-      } else if (domain === 'ai_marketplace') {
-        targetWebhook = 'wa-agent-call-center';
-      } else {
-        targetWebhook = domain === 'unknown' ? 'wa-webhook' : `wa-webhook-${domain}`;
-      }
-      routedTo = 'legacy';
+      targetWebhook = domain === 'unknown' ? 'wa-webhook' : `wa-webhook-${domain}`;
     }
+    routedTo = 'legacy';
     
     const baseUrl = Deno.env.get('SUPABASE_URL');
     const targetUrl = `${baseUrl}/functions/v1/${targetWebhook}`;

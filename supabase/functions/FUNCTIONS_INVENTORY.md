@@ -24,12 +24,10 @@
 - **wa-webhook-ai-agents** - 🔄 Consolidate (Week 5-7) (32 commits)
 - **wa-webhook-core** - ✅ Active (41 commits)
 - **wa-webhook-insurance** - 🔒 PROTECTED (Production) (45 commits)
-- **wa-webhook-jobs** - 🔄 Consolidate (Week 5-7) (17 commits)
-- **wa-webhook-marketplace** - 🔄 Consolidate (Week 5-7) (24 commits)
+- **wa-webhook-jobs** - ✅ Active (17 commits)
 - **wa-webhook-mobility** - 🔒 PROTECTED (Production) (80 commits)
 - **wa-webhook-profile** - 🔒 PROTECTED (Production) (42 commits)
-- **wa-webhook-property** - 🔄 Consolidate (Week 5-7) (18 commits)
-- **wa-webhook-unified** - ✅ Active (19 commits)
+- **wa-webhook-property** - ✅ Active (18 commits)
 
 ### Admin APIs (8 functions)
 

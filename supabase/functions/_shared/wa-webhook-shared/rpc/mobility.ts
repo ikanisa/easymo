@@ -155,14 +155,12 @@ export async function matchDriversForTrip(
   limit = MOBILITY_CONFIG.MAX_RESULTS_LIMIT,
   preferDropoff = false,
   radiusMeters?: number,
-  windowMinutes = MOBILITY_CONFIG.TRIP_MATCHING_WINDOW_MINUTES,
 ) {
   const { data, error } = await client.rpc("match_drivers_for_trip_v2", {
     _trip_id: tripId,
     _limit: limit,
     _prefer_dropoff: preferDropoff,
     _radius_m: radiusMeters ?? null,
-    _window_minutes: windowMinutes,
   } as Record<string, unknown>);
   if (error) throw error;
   return (data ?? []) as MatchResult[];
@@ -174,14 +172,12 @@ export async function matchPassengersForTrip(
   limit = MOBILITY_CONFIG.MAX_RESULTS_LIMIT,
   preferDropoff = false,
   radiusMeters?: number,
-  windowMinutes = MOBILITY_CONFIG.TRIP_MATCHING_WINDOW_MINUTES,
 ) {
   const { data, error } = await client.rpc("match_passengers_for_trip_v2", {
     _trip_id: tripId,
     _limit: limit,
     _prefer_dropoff: preferDropoff,
     _radius_m: radiusMeters ?? null,
-    _window_minutes: windowMinutes,
   } as Record<string, unknown>);
   if (error) throw error;
   return (data ?? []) as MatchResult[];

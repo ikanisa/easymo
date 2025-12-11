@@ -26,20 +26,13 @@ else
     exit 1
 fi
 
-# 2. Check base agent imports AgentConfigLoader
+# 2. Check agent infrastructure exists
 echo ""
-echo "2️⃣  Checking wa-webhook-unified base agent imports..."
-if grep -q "AgentConfigLoader" supabase/functions/wa-webhook-unified/agents/base-agent.ts; then
-    echo -e "${GREEN}✅ AgentConfigLoader imported${NC}"
+echo "2️⃣  Checking agent infrastructure..."
+if [ -d "supabase/functions/wa-webhook-ai-agents" ]; then
+    echo -e "${GREEN}✅ wa-webhook-ai-agents exists${NC}"
 else
-    echo -e "${RED}❌ AgentConfigLoader not imported${NC}"
-    exit 1
-fi
-
-if grep -q "buildPromptAsync" supabase/functions/wa-webhook-unified/agents/base-agent.ts; then
-    echo -e "${GREEN}✅ buildPromptAsync() method exists${NC}"
-else
-    echo -e "${RED}❌ buildPromptAsync() method missing${NC}"
+    echo -e "${RED}❌ wa-webhook-ai-agents directory missing${NC}"
     exit 1
 fi
 
@@ -86,7 +79,7 @@ echo "📋 Next Steps:"
 echo "   1. Apply migration:    supabase db push"
 echo "   2. Verify agents:      psql \$DATABASE_URL -c \"SELECT slug, name, is_active FROM ai_agents WHERE is_active = true;\""
 echo "   3. Test webhook:       Send test WhatsApp message"
-echo "   4. Check logs:         supabase functions logs wa-webhook-unified"
+echo "   4. Check logs:         supabase functions logs wa-webhook-ai-agents"
 echo ""
 echo "📚 Documentation: See AGENT_DATABASE_FIXES_DEPLOYED.md"
 echo ""

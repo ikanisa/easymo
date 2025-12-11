@@ -73,16 +73,17 @@ export async function insertTrip(
     throw new Error("Invalid coordinates: lat must be [-90,90], lng must be [-180,180]");
   }
 
-  // For scheduled trips, use longer expiry (7 days) or default 30 minutes for intent
-  const isScheduled = params.scheduledAt !== undefined;
-  const expiryMs = isScheduled ? 7 * 24 * 60 * 60 * 1000 : TRIP_EXPIRY_MS;
-  const expires = new Date(Date.now() + expiryMs).toISOString();
-  
-  const scheduledAtStr = params.scheduledAt 
+  // Calculate travel time: when the trip is supposed to happen
+  const travelTime = params.scheduledAt
     ? (params.scheduledAt instanceof Date 
-        ? params.scheduledAt.toISOString() 
-        : params.scheduledAt)
-    : null;
+        ? params.scheduledAt 
+        : new Date(params.scheduledAt))
+    : new Date(); // NOW for immediate trips
+
+  // Trip expires 30 minutes AFTER the travel time (not from creation time!)
+  const expiresAt = new Date(travelTime.getTime() + TRIP_EXPIRY_MS);
+  
+  const scheduledAtStr = params.scheduledAt ? travelTime.toISOString() : null;
 
   const { data, error } = await client
     .from("trips") // Canonical table
@@ -90,13 +91,13 @@ export async function insertTrip(
       user_id: params.userId,
       role: params.role,
       vehicle_type: params.vehicleType,
-      kind: isScheduled ? "scheduled" : "request_intent",
+      kind: params.scheduledAt ? "scheduled" : "request_intent",
       pickup_lat: params.lat,
       pickup_lng: params.lng,
       pickup_text: params.pickupText ?? null,
       scheduled_for: scheduledAtStr,
       status: "open",
-      expires_at: expires,
+      expires_at: expiresAt.toISOString(),
       metadata: params.recurrence ? { recurrence: params.recurrence } : {},
     })
     .select("id")
@@ -159,14 +160,12 @@ export async function matchDriversForTrip(
   limit = 9,
   preferDropoff = false,
   radiusMeters?: number,
-  windowMinutes = 30, // 30-minute window for real-time matching
 ) {
   const { data, error } = await client.rpc("match_drivers_for_trip_v2", {
     _trip_id: tripId,
     _limit: limit,
     _prefer_dropoff: preferDropoff,
     _radius_m: radiusMeters ?? null,
-    _window_minutes: windowMinutes,
   } as Record<string, unknown>);
   if (error) throw error;
   return (data ?? []) as MatchResult[];
@@ -178,14 +177,12 @@ export async function matchPassengersForTrip(
   limit = 9,
   preferDropoff = false,
   radiusMeters?: number,
-  windowMinutes = 30, // 30-minute window for real-time matching
 ) {
   const { data, error } = await client.rpc("match_passengers_for_trip_v2", {
     _trip_id: tripId,
     _limit: limit,
     _prefer_dropoff: preferDropoff,
     _radius_m: radiusMeters ?? null,
-    _window_minutes: windowMinutes,
   } as Record<string, unknown>);
   if (error) throw error;
   return (data ?? []) as MatchResult[];
