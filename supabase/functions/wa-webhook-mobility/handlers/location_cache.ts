@@ -5,11 +5,13 @@
  * location data is fresh enough for nearby matching.
  */
 
+import { LOCATION_CONFIG } from "../../_shared/location-config.ts";
+
 /**
  * Default cache duration in minutes
  * Location data older than this will be considered stale
  */
-export const LOCATION_CACHE_MINUTES = 30;
+export const LOCATION_CACHE_MINUTES = LOCATION_CONFIG.CACHE_TTL_MINUTES;
 
 /**
  * Check if a cached location timestamp is still valid

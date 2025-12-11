@@ -2,10 +2,11 @@ import type { FlowExchangeRequest, FlowExchangeResponse } from "../../types.ts";
 import { supabase } from "../../config.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
 import { recordAdminAudit } from "./audit.ts";
+import { LOCATION_CONFIG } from "../../../_shared/location-config.ts";
 
 const OPEN_LIMIT = 9;
 const MATCH_LIMIT = 9;
-const MATCH_RADIUS_METERS = 10000;
+const MATCH_RADIUS_METERS = LOCATION_CONFIG.MOBILITY_RADIUS_METERS;
 const ALLOWED_STATUS = new Set([
   "open",
   "expired",

@@ -1,9 +1,10 @@
 // Location caching utilities for mobility handlers
-// Implements 30-minute location memory to avoid repeated location requests
+// Uses centralized configuration from LOCATION_CONFIG
 
 import type { SupabaseClient } from "../deps.ts";
+import { LOCATION_CONFIG } from "../../_shared/location-config.ts";
 
-const LOCATION_CACHE_MINUTES = 30;
+const LOCATION_CACHE_MINUTES = LOCATION_CONFIG.CACHE_TTL_MINUTES;
 
 export interface CachedLocation {
   lat: number;

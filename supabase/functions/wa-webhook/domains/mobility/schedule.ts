@@ -41,11 +41,9 @@ import {
   updateStoredVehicleType,
 } from "./vehicle_plate.ts";
 
-// Use centralized config for consistency
+// Use centralized config from MOBILITY_CONFIG - imported from rpc/mobility.ts
 const DEFAULT_WINDOW_DAYS = MOBILITY_CONFIG.DEFAULT_WINDOW_DAYS;
 const REQUIRED_RADIUS_METERS = MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS;
-const DEFAULT_WINDOW_DAYS = 2;  // 48-hour window to match DB default
-const REQUIRED_RADIUS_METERS = 10_000;
 const DEFAULT_TIMEZONE = "Africa/Kigali";
 const DAY_MS = 24 * 60 * 60 * 1000;
 

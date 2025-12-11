@@ -6,6 +6,7 @@
 import { assertEquals, assertExists } from "https://deno.land/std@0.203.0/testing/asserts.ts";
 import { createTestSuite } from "../../_shared/testing/test-utils.ts";
 import { TEST_USERS, TEST_LOCATIONS, TEST_TRIPS } from "../../_shared/testing/fixtures.ts";
+import { LOCATION_CONFIG } from "../../_shared/location-config.ts";
 
 // ============================================================================
 // NEARBY DRIVERS/PASSENGERS WORKFLOW TESTS
@@ -76,7 +77,7 @@ nearbySuite.test("returns zero distance for same location", () => {
 });
 
 nearbySuite.test("filters drivers by search radius", () => {
-  const DEFAULT_RADIUS_KM = 5;
+  const DEFAULT_RADIUS_KM = LOCATION_CONFIG.MARKETPLACE_RADIUS_METERS / 1000; // 5km
   const drivers = [
     { id: "d1", distance: 2 },
     { id: "d2", distance: 4 },

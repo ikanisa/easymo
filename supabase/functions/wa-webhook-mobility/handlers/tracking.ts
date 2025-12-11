@@ -10,6 +10,7 @@ import { resolveLanguage } from "../i18n/language.ts";
 import { t } from "../i18n/translator.ts";
 import { notifyPassenger } from "./trip_notifications.ts";
 import { sendText } from "../wa/client.ts";
+import { LOCATION_CONFIG } from "../../_shared/location-config.ts";
 
 // ============================================================================
 // TYPES
@@ -128,7 +129,7 @@ export async function updateDriverLocation(
     }
 
     // 4. Validate location freshness (reject stale locations)
-    const MAX_LOCATION_AGE_MS = 5 * 60 * 1000; // 5 minutes
+    const MAX_LOCATION_AGE_MS = LOCATION_CONFIG.MAX_LOCATION_AGE_MS; // 5 minutes
     const locationTimestamp = Date.now(); // Use current time for WebAPI Location type
     const locationAge = 0; // Assume fresh for now
     
