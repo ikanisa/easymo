@@ -1,0 +1,35 @@
+{
+  "name": "@easymo/location",
+  "version": "1.0.0",
+  "description": "Centralized location service - SINGLE SOURCE OF TRUTH for all location operations",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "dev": "tsc --watch"
+  },
+  "keywords": [
+    "location",
+    "geolocation",
+    "postgis",
+    "coordinates",
+    "distance",
+    "proximity"
+  ],
+  "author": "EasyMO Platform Team",
+  "license": "UNLICENSED",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}
