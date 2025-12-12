@@ -14,7 +14,7 @@ const cors Headers = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-type JobType = "expired" | "expired-intents" | "mobility-intents" | "data-retention";
+type JobType = "expired" | "expired-intents" | "mobility-intents" | "data-retention" | "expired-trips";
 
 async function cleanupExpired() {
   const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24 hours ago
@@ -52,6 +52,22 @@ async function cleanupMobilityIntents() {
 
   if (error) throw error;
   return { deleted: data?.length ?? 0, job: "mobility-intents" };
+}
+
+async function cleanupExpiredTrips() {
+  // Call database function to mark expired trips
+  const { data, error } = await supabase.rpc('cleanup_expired_trips');
+  
+  if (error) throw error;
+  
+  // data is array with single object: { expired_count, oldest_trip_age_minutes, cleanup_timestamp }
+  const result = data?.[0] || { expired_count: 0, oldest_trip_age_minutes: 0 };
+  
+  return {
+    expired: result.expired_count,
+    oldestAgeMinutes: result.oldest_trip_age_minutes,
+    job: "expired-trips",
+  };
 }
 
 async function runDataRetention() {
@@ -92,7 +108,10 @@ serve(async (req: Request): Promise<Response> => {
     
     if (!jobType) {
       return new Response(
-        JSON.stringify({ error: "jobType required", available: ["expired", "expired-intents", "mobility-intents", "data-retention"] }),
+        JSON.stringify({ 
+          error: "jobType required", 
+          available: ["expired", "expired-intents", "mobility-intents", "data-retention", "expired-trips"] 
+        }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -108,6 +127,9 @@ serve(async (req: Request): Promise<Response> => {
         break;
       case "mobility-intents":
         result = await cleanupMobilityIntents();
+        break;
+      case "expired-trips":
+        result = await cleanupExpiredTrips();
         break;
       case "data-retention":
         result = await runDataRetention();
