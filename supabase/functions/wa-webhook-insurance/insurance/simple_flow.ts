@@ -1,207 +1,99 @@
 /**
  * Simplified Insurance Flow
- * - NO OCR processing
- * - Direct file forwarding to admins
- * - Simple chat connection
+ * - Just provides contact information to users
+ * - No document uploads, no OCR, no forwarding
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
-import { sendText, sendDocument, sendImage } from "../../_shared/wa-webhook-shared/wa/client.ts";
+
 import { logStructuredEvent } from "../../_shared/observability.ts";
 
 interface InsuranceAdmin {
   wa_id: string;
   display_name: string;
-  is_active: boolean;
 }
 
 /**
- * Fetch all active insurance admin contacts
+ * Fetch the primary insurance admin contact
+ * Returns the first active contact or a fallback
  */
-async function getInsuranceAdmins(supabase: SupabaseClient): Promise<InsuranceAdmin[]> {
+async function getInsuranceAdminContact(supabase: SupabaseClient): Promise<InsuranceAdmin | null> {
   const { data, error } = await supabase
     .from("insurance_admin_contacts")
-    .select("contact_value, display_name, is_active")
+    .select("contact_value, display_name")
     .eq("contact_type", "whatsapp")
     .eq("category", "insurance")
     .eq("is_active", true)
-    .order("display_order", { ascending: true });
+    .order("display_order", { ascending: true })
+    .limit(1)
+    .maybeSingle();
 
   if (error) {
     await logStructuredEvent("INSURANCE_ADMIN_FETCH_ERROR", { error: error.message }, "error");
-    return [];
+    return null;
   }
 
-  return (data || []).map(row => ({
-    wa_id: row.contact_value.replace("+", ""),
-    display_name: row.display_name,
-    is_active: row.is_active
-  }));
+  if (!data) {
+    return null;
+  }
+
+  return {
+    wa_id: data.contact_value.replace(/^\+/, ""), // Strip leading + (e.g., "+250788..." → "250788...") for WhatsApp API
+    display_name: data.display_name || "Insurance Team"
+  };
 }
 
 /**
- * Handle certificate/carte jaune upload - forward directly to admins
+ * Get insurance contact message - simple text with admin WhatsApp contact
  */
-export async function handleDocumentUpload(
-  supabase: SupabaseClient,
-  userWaId: string,
-  userName: string,
-  documentType: "certificate" | "carte_jaune",
-  mediaId: string,
-  mediaUrl: string,
-  mimeType: string
-): Promise<{ success: boolean; message: string }> {
-  
+export async function getInsuranceContactMessage(supabase: SupabaseClient): Promise<string> {
   const correlationId = crypto.randomUUID();
-  await logStructuredEvent("INSURANCE_DOC_UPLOAD_START", {
-    correlationId,
-    userWaId,
-    documentType,
-    mediaId
-  });
+  await logStructuredEvent("INSURANCE_CONTACT_REQUEST", { correlationId });
 
   try {
-    const admins = await getInsuranceAdmins(supabase);
+    const admin = await getInsuranceAdminContact(supabase);
     
-    if (admins.length === 0) {
-      await logStructuredEvent("INSURANCE_NO_ADMINS", { correlationId }, "error");
-      return {
-        success: false,
-        message: "No insurance team members available. Please try again later."
-      };
+    if (!admin) {
+      // Fallback message if no admin contact is configured
+      return `📞 *Insurance Services*
+
+For insurance services, please contact our insurance team directly.
+
+We'll be happy to guide you through the process and answer all your questions.`;
     }
 
-    const documentLabel = documentType === "certificate" 
-      ? "Insurance Certificate" 
-      : "Carte Jaune (Yellow Card)";
-    
-    const adminNotificationText = `🔔 NEW INSURANCE REQUEST
+    const waLink = `https://wa.me/${admin.wa_id}`;
+    const phoneFormatted = admin.wa_id.startsWith("250") 
+      ? `+${admin.wa_id}` 
+      : admin.wa_id;
 
-📄 Document: ${documentLabel}
-👤 From: ${userName}
-📱 WhatsApp: wa.me/${userWaId}
-🕐 Time: ${new Date().toLocaleString("en-RW", { timeZone: "Africa/Kigali" })}
+    return `📞 *Insurance Services*
 
-Please review the attached document and contact the user.`;
+For insurance services, please contact our insurance agent directly:
 
-    const results = await Promise.allSettled(
-      admins.map(async (admin) => {
-        await sendText(admin.wa_id, adminNotificationText);
-        
-        if (mimeType.startsWith("image/")) {
-          await sendImage(admin.wa_id, mediaUrl, `${documentLabel} from ${userName}`);
-        } else {
-          await sendDocument(admin.wa_id, mediaUrl, `${documentLabel}_${userWaId}.pdf`);
-        }
-        
-        return admin.wa_id;
-      })
-    );
+👤 *${admin.display_name}*
+📱 WhatsApp: ${waLink}
+☎️ Phone: ${phoneFormatted}
 
-    const successful = results.filter(r => r.status === "fulfilled").length;
-    const failed = results.filter(r => r.status === "rejected").length;
+Our agent will guide you through the process and answer all your questions about:
+• Motor insurance
+• Insurance certificates
+• Carte Jaune (Yellow Card)
+• Claims and renewals
 
-    await logStructuredEvent("INSURANCE_DOC_FORWARDED", {
-      correlationId,
-      documentType,
-      adminCount: admins.length,
-      successful,
-      failed
-    });
-
-    await supabase.from("insurance_requests_simple").insert({
-      user_wa_id: userWaId,
-      user_name: userName,
-      document_type: documentType,
-      media_id: mediaId,
-      status: "forwarded",
-      admins_notified: successful,
-      created_at: new Date().toISOString()
-    });
-
-    return {
-      success: true,
-      message: `✅ Your ${documentLabel} has been received!\n\nOur insurance team (${successful} members) has been notified and will contact you shortly via WhatsApp.\n\nReference: INS-${Date.now().toString(36).toUpperCase()}`
-    };
+Tap the link above or call directly!`;
 
   } catch (error) {
-    await logStructuredEvent("INSURANCE_DOC_UPLOAD_ERROR", {
+    await logStructuredEvent("INSURANCE_CONTACT_ERROR", {
       correlationId,
       error: error instanceof Error ? error.message : String(error)
     }, "error");
     
-    return {
-      success: false,
-      message: "Sorry, something went wrong. Please try again or contact us directly."
-    };
-  }
-}
+    // Return a fallback message
+    return `📞 *Insurance Services*
 
-/**
- * Handle "Chat with Team" request - notify admins with user contact
- */
-export async function handleChatRequest(
-  supabase: SupabaseClient,
-  userWaId: string,
-  userName: string
-): Promise<{ success: boolean; message: string }> {
-  
-  const correlationId = crypto.randomUUID();
-  await logStructuredEvent("INSURANCE_CHAT_REQUEST_START", { correlationId, userWaId });
+For insurance services, please contact our insurance team.
 
-  try {
-    const admins = await getInsuranceAdmins(supabase);
-    
-    if (admins.length === 0) {
-      return {
-        success: false,
-        message: "No insurance team members available. Please try again later."
-      };
-    }
-
-    const chatNotificationText = `💬 INSURANCE CHAT REQUEST
-
-👤 User: ${userName}
-📱 WhatsApp: wa.me/${userWaId}
-🕐 Time: ${new Date().toLocaleString("en-RW", { timeZone: "Africa/Kigali" })}
-
-User wants to chat about insurance. Please message them directly.`;
-
-    const results = await Promise.allSettled(
-      admins.map(admin => sendText(admin.wa_id, chatNotificationText))
-    );
-
-    const successful = results.filter(r => r.status === "fulfilled").length;
-
-    await logStructuredEvent("INSURANCE_CHAT_NOTIFIED", {
-      correlationId,
-      adminCount: admins.length,
-      successful
-    });
-
-    await supabase.from("insurance_requests_simple").insert({
-      user_wa_id: userWaId,
-      user_name: userName,
-      document_type: "chat_request",
-      status: "forwarded",
-      admins_notified: successful,
-      created_at: new Date().toISOString()
-    });
-
-    return {
-      success: true,
-      message: `✅ Our insurance team has been notified!\n\n${successful} team member(s) will message you shortly via WhatsApp.\n\nPlease keep this chat open.`
-    };
-
-  } catch (error) {
-    await logStructuredEvent("INSURANCE_CHAT_REQUEST_ERROR", {
-      correlationId,
-      error: error instanceof Error ? error.message : String(error)
-    }, "error");
-    
-    return {
-      success: false,
-      message: "Sorry, something went wrong. Please try again."
-    };
+We apologize for the inconvenience. Please try again later.`;
   }
 }

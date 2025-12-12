@@ -1,39 +1,30 @@
 // wa-webhook-insurance - Dedicated Insurance Microservice
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js";
+
+import { WEBHOOK_CONFIG } from "../_shared/config/webhooks.ts";
 import { logStructuredEvent, scrubPII } from "../_shared/observability.ts";
-import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 // Phase 2: Enhanced security modules
 import { createSecurityMiddleware } from "../_shared/security/middleware.ts";
-import type { 
-  RouterContext, 
-  WhatsAppWebhookPayload, 
-  RawWhatsAppMessage,
-  WhatsAppTextMessage,
-  WhatsAppInteractiveMessage,
-} from "../_shared/wa-webhook-shared/types.ts";
-import type { SupportedLanguage } from "../_shared/wa-webhook-shared/i18n/language.ts";
-import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
-import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
-import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
-import { WEBHOOK_CONFIG } from "../_shared/config/webhooks.ts";
-
-// Insurance domain imports
-import { startInsurance, handleInsuranceMedia, handleInsuranceListSelection } from "./insurance/index.ts";
 import {
   evaluateMotorInsuranceGate,
   recordMotorInsuranceHidden,
   sendMotorInsuranceBlockedMessage,
 } from "../_shared/wa-webhook-shared/domains/insurance/gate.ts";
-import {
-  startClaimFlow,
-  handleClaimType,
-  handleClaimDescription,
-  handleClaimDocuments,
-  handleClaimSubmit,
-  handleClaimStatus,
-  CLAIM_STATES
-} from "./insurance/claims.ts";
+import type { SupportedLanguage } from "../_shared/wa-webhook-shared/i18n/language.ts";
+import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
+import type { 
+  RawWhatsAppMessage,
+  RouterContext, 
+  WhatsAppInteractiveMessage,
+  WhatsAppTextMessage,
+  WhatsAppWebhookPayload, 
+} from "../_shared/wa-webhook-shared/types.ts";
+import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
+import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
+// Insurance domain imports
+import { handleInsuranceListSelection, startInsurance } from "./insurance/index.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -211,7 +202,8 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // Idempotency: skip duplicate webhook messages recently processed
-    const messageId = (message as any)?.id;
+    // RawWhatsAppMessage has an optional id field
+    const messageId = (message as RawWhatsAppMessage)?.id;
     if (messageId) {
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       const { data: processed } = await supabase
@@ -262,7 +254,7 @@ serve(async (req: Request): Promise<Response> => {
 
     logEvent("INSURANCE_STATE", { state: state.key });
 
-    // Route based on message type
+    // Route based on message type - simplified: just show contact info
     let handled = false;
 
     try {
@@ -284,18 +276,15 @@ serve(async (req: Request): Promise<Response> => {
         }
       }
 
-      // Handle media (images/documents)
-      if (!handled && (message.type === "image" || message.type === "document")) {
-        handled = await handleInsuranceMedia(ctx, message, state);
-      }
-
-      // Handle text messages
+      // Handle text messages - simplified routing
       if (!handled && message.type === "text") {
         handled = await handleInsuranceText(ctx, message, state);
       }
 
+      // For any other message type (including media), just show contact info
       if (!handled) {
-        logEvent("INSURANCE_UNHANDLED", { type: message.type }, "debug");
+        logEvent("INSURANCE_UNHANDLED_SHOWING_CONTACT", { type: message.type }, "debug");
+        handled = await startInsurance(ctx, state);
       }
     } catch (handlerError) {
       logEvent("INSURANCE_HANDLER_ERROR", { 
@@ -432,45 +421,20 @@ async function handleInsuranceText(
   const text = textMessage.text?.body?.trim().toLowerCase();
   if (!text) return false;
 
-  // Handle claims-related keywords
-  if (text === "claim" || text === "file claim" || text.startsWith("claim ")) {
-    if (text.startsWith("claim status")) {
-      const claimRef = text.replace("claim status", "").trim();
-      return await handleClaimStatus(ctx, claimRef || undefined);
-    }
-    return await startClaimFlow(ctx);
-  }
-
-  // Handle "done" for document upload completion
-  if (text === "done" && state.key === CLAIM_STATES.DOCUMENTS) {
-    return await handleClaimSubmit(ctx);
-  }
-
-  // Handle claim description input
-  if (state.key === CLAIM_STATES.DESCRIPTION) {
-    return await handleClaimDescription(ctx, text);
-  }
-
-  // Check for menu selection keys first
-  if (text === IDS.INSURANCE_AGENT || text === "insurance") {
+  // Check for insurance-related keywords
+  if (text === IDS.INSURANCE_AGENT || text === "insurance" || 
+      ["assurance", "cover", "claim"].includes(text)) {
     await startInsurance(ctx, state);
     return true;
   }
 
-  // Handle insurance-related keywords
-  if (["assurance", "cover"].includes(text)) {
+  // If in any insurance state, show contact info
+  if (state.key?.startsWith("ins_") || state.key === "insurance_menu" || state.key === "insurance_upload") {
     await startInsurance(ctx, state);
     return true;
   }
 
-  // If in insurance state, handle accordingly
-  if (state.key?.startsWith("ins_") || state.key === "insurance_upload") {
-    await startInsurance(ctx, state);
-    return true;
-  }
-
-  // Fallback: Show home menu for any unhandled text
-  // This provides better UX - any free text returns user to home menu
+  // For any unhandled text in insurance context, return to home
   const { sendHomeMenu } = await import("../_shared/wa-webhook-shared/flows/home.ts");
   await sendHomeMenu(ctx);
   return true;
