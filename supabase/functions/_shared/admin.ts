@@ -1,7 +1,7 @@
 import {
   createClient,
   type SupabaseClient,
-} from "https://esm.sh/@supabase/supabase-js.76.1";
+} from "@supabase/supabase-js";
 import { getEnv, requireEnv } from "./env.ts";
 import { withRequestInstrumentation } from "./observability.ts";
 
