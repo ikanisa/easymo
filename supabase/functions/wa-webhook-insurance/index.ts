@@ -1,30 +1,30 @@
 // wa-webhook-insurance - Dedicated Insurance Microservice
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js";
+
+import { WEBHOOK_CONFIG } from "../_shared/config/webhooks.ts";
 import { logStructuredEvent, scrubPII } from "../_shared/observability.ts";
-import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 // Phase 2: Enhanced security modules
 import { createSecurityMiddleware } from "../_shared/security/middleware.ts";
-import type { 
-  RouterContext, 
-  WhatsAppWebhookPayload, 
-  RawWhatsAppMessage,
-  WhatsAppTextMessage,
-  WhatsAppInteractiveMessage,
-} from "../_shared/wa-webhook-shared/types.ts";
-import type { SupportedLanguage } from "../_shared/wa-webhook-shared/i18n/language.ts";
-import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
-import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
-import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
-import { WEBHOOK_CONFIG } from "../_shared/config/webhooks.ts";
-
-// Insurance domain imports
-import { startInsurance, handleInsuranceListSelection } from "./insurance/index.ts";
 import {
   evaluateMotorInsuranceGate,
   recordMotorInsuranceHidden,
   sendMotorInsuranceBlockedMessage,
 } from "../_shared/wa-webhook-shared/domains/insurance/gate.ts";
+import type { SupportedLanguage } from "../_shared/wa-webhook-shared/i18n/language.ts";
+import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
+import type { 
+  RawWhatsAppMessage,
+  RouterContext, 
+  WhatsAppInteractiveMessage,
+  WhatsAppTextMessage,
+  WhatsAppWebhookPayload, 
+} from "../_shared/wa-webhook-shared/types.ts";
+import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
+import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
+// Insurance domain imports
+import { handleInsuranceListSelection,startInsurance } from "./insurance/index.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -202,7 +202,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // Idempotency: skip duplicate webhook messages recently processed
-    const messageId = (message as any)?.id;
+    const messageId = (message as RawWhatsAppMessage)?.id;
     if (messageId) {
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       const { data: processed } = await supabase
@@ -296,7 +296,7 @@ serve(async (req: Request): Promise<Response> => {
       const { sendText } = await import("../_shared/wa-webhook-shared/wa/client.ts");
       try {
         await sendText(ctx.from, "Sorry, something went wrong. Please try again.");
-      } catch (_sendError) {
+      } catch {
         // Ignore send errors - already logged main error
       }
       return respond({ success: false, error: "handler_error" });

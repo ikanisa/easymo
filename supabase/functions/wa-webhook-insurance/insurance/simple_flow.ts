@@ -5,6 +5,7 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
+
 import { logStructuredEvent } from "../../_shared/observability.ts";
 
 interface InsuranceAdmin {

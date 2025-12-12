@@ -2,12 +2,12 @@
  * Simplified Insurance - Just show contact info
  */
 
-import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
-import { clearState } from "../../_shared/wa-webhook-shared/state/store.ts";
-import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
-import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import { sendHomeMenu } from "../../_shared/wa-webhook-shared/flows/home.ts";
+import { clearState } from "../../_shared/wa-webhook-shared/state/store.ts";
+import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
+import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
+import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 import { getInsuranceContactMessage } from "./simple_flow.ts";
 
 type InsuranceState = { key: string; data?: Record<string, unknown> };
