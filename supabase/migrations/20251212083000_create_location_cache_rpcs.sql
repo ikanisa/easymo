@@ -22,6 +22,13 @@
 BEGIN;
 
 -- ============================================================================
+-- DROP EXISTING FUNCTIONS IF THEY HAVE DIFFERENT SIGNATURES
+-- ============================================================================
+DROP FUNCTION IF EXISTS public.update_user_location_cache(uuid, numeric, numeric);
+DROP FUNCTION IF EXISTS public.update_user_location_cache(uuid, double precision, double precision);
+DROP FUNCTION IF EXISTS public.get_cached_location(uuid, integer);
+
+-- ============================================================================
 -- UPDATE USER LOCATION CACHE
 -- ============================================================================
 -- Saves user's location to recent_locations table
