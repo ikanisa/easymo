@@ -47,7 +47,7 @@ export const LOCATION_CONFIG = {
   LONGITUDE_MAX: 180,
   
   // Trip/Match configuration
-  TRIP_EXPIRY_MINUTES: 90,                  // Trip request expiration
+  TRIP_EXPIRY_MINUTES: 30,                  // Trip request expiration (aligned with mobility matching window)
   MAX_MATCHES_TO_RETURN: 20,                // Max matching results
   MIN_MATCH_SCORE: 20,                      // Minimum match score threshold
   

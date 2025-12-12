@@ -14,11 +14,11 @@ export const LOCATION_CONFIG = {
   DEFAULT_SEARCH_RADIUS_METERS: 15000, // 15km
   
   // Location freshness thresholds (minutes)
-  FRESH_LOCATION_THRESHOLD_MINUTES: 60,  // Changed from 30 to 60
+  FRESH_LOCATION_THRESHOLD_MINUTES: 30,  // Must match mobility matching window
   STALE_LOCATION_THRESHOLD_MINUTES: 120,
   
-  // Cache TTL
-  CACHE_TTL_MINUTES: 60, // Changed from 30 to 60
+  // Cache TTL (must match TRIP_MATCHING_WINDOW_MINUTES for accurate matching)
+  CACHE_TTL_MINUTES: 30,
   
   // Coordinate validation
   LATITUDE_MIN: -90,

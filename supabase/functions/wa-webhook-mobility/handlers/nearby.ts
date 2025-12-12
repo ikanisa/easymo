@@ -911,7 +911,8 @@ async function runMatchingFallback(
       mode: state.mode,
       pickup: `${pickup.lat.toFixed(4)},${pickup.lng.toFixed(4)}`,
       radiusMeters,
-      expiresIn: "90 min",
+      expiresIn: "30 min",
+      windowMinutes: MOBILITY_CONFIG.TRIP_MATCHING_WINDOW_MINUTES,
     });
 
     if (dropoff) {
@@ -945,13 +946,16 @@ async function runMatchingFallback(
       });
     }
 
+    // Use explicit window minutes from config
+    const TRIP_MATCHING_WINDOW_MINUTES = MOBILITY_CONFIG.TRIP_MATCHING_WINDOW_MINUTES;
+
     // Log RPC call parameters for debugging
     await logStructuredEvent("MATCHES_CALL", {
       flow: "nearby",
       mode: state.mode,
       vehicle: state.vehicle,
       radius_m: radiusMeters,
-      
+      window_minutes: TRIP_MATCHING_WINDOW_MINUTES,
       tripId: tempTripId,
       pickup_lat: pickup.lat,
       pickup_lng: pickup.lng,
@@ -968,7 +972,7 @@ async function runMatchingFallback(
         max,
         Boolean(dropoff),
         radiusMeters,
-        
+        TRIP_MATCHING_WINDOW_MINUTES,
       )
       : await matchPassengersForTrip(
         ctx.supabase,
@@ -976,7 +980,7 @@ async function runMatchingFallback(
         max,
         false,
         radiusMeters,
-        
+        TRIP_MATCHING_WINDOW_MINUTES,
       );
 
     // Log detailed match results for debugging

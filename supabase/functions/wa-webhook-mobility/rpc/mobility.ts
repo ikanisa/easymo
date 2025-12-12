@@ -160,12 +160,14 @@ export async function matchDriversForTrip(
   limit = 9,
   preferDropoff = false,
   radiusMeters?: number,
+  windowMinutes?: number,
 ) {
   const { data, error } = await client.rpc("match_drivers_for_trip_v2", {
     _trip_id: tripId,
     _limit: limit,
     _prefer_dropoff: preferDropoff,
     _radius_m: radiusMeters ?? null,
+    _window_minutes: windowMinutes ?? 30,
   } as Record<string, unknown>);
   if (error) throw error;
   return (data ?? []) as MatchResult[];
@@ -177,12 +179,14 @@ export async function matchPassengersForTrip(
   limit = 9,
   preferDropoff = false,
   radiusMeters?: number,
+  windowMinutes?: number,
 ) {
   const { data, error } = await client.rpc("match_passengers_for_trip_v2", {
     _trip_id: tripId,
     _limit: limit,
     _prefer_dropoff: preferDropoff,
     _radius_m: radiusMeters ?? null,
+    _window_minutes: windowMinutes ?? 30,
   } as Record<string, unknown>);
   if (error) throw error;
   return (data ?? []) as MatchResult[];

@@ -1118,20 +1118,25 @@ export async function fetchMatches(
     radiusMeters: number;
   },
 ): Promise<MatchResult[]> {
+  // Use explicit window minutes (scheduled trips use 30 min window too)
+  const windowMinutes = 30;
+  
   const matches = state.role === "passenger"
     ? await matchDriversForTrip(
       ctx.supabase,
       state.tripId!,
       options.limit,
       options.preferDropoff,
-      options.radiusMeters
+      options.radiusMeters,
+      windowMinutes,
     )
     : await matchPassengersForTrip(
       ctx.supabase,
       state.tripId!,
       options.limit,
       options.preferDropoff,
-      options.radiusMeters
+      options.radiusMeters,
+      windowMinutes,
     );
   return sortMatches(matches, { prioritize: "time" }).slice(0, 9);
 }
