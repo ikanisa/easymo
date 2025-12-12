@@ -189,7 +189,7 @@ export async function startScheduleTrip(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
   await setState(ctx.supabase, ctx.profileId, {
-    key: "schedule_role",
+    key: "mobility_schedule_role",
     data: {},
   });
   await sendListMessage(

@@ -384,6 +384,27 @@ serve(async (req: Request): Promise<Response> => {
           handled = await routeDriverAction(ctx, id);
         }
         
+        // Share easyMO
+        else if (id === IDS.SHARE_EASYMO) {
+          if (ctx.profileId) {
+            const { data: link } = await ctx.supabase
+              .from("referral_links")
+              .select("code")
+              .eq("user_id", ctx.profileId)
+              .eq("active", true)
+              .single();
+            
+            const referralCode = link?.code || ctx.profileId.slice(0, 8);
+            const shareUrl = `https://wa.me/250788346193?text=Join%20me%20on%20easyMO!%20Use%20code%20${referralCode}`;
+            
+            await sendText(
+              ctx.from,
+              `🔗 *Share easyMO with friends!*\n\nYour referral link:\n${shareUrl}\n\nShare this link and earn tokens when friends join! 🎉`
+            );
+            handled = true;
+          }
+        }
+        
         // Schedule Flows
         else if (id === IDS.SCHEDULE_TRIP) {
           handled = await startScheduleTrip(ctx, state as any);
