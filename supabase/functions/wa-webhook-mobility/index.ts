@@ -427,6 +427,7 @@ serve(async (req: Request): Promise<Response> => {
            handled = await handleScheduleSavedLocationSelection(ctx, state.data as any, id);
         
         // Driver Verification Handlers
+        }
         else if (id === IDS.VERIFY_LICENSE) {
           handled = await startLicenseVerification(ctx);
         } else if (id === IDS.VERIFY_STATUS) {
