@@ -366,7 +366,8 @@ serve(async (req: Request): Promise<Response> => {
           handled = await startNearbySavedLocationPicker(ctx, state.data as any);
         } else if (id.startsWith("FAV::") && state?.key === STATE_KEYS.MOBILITY.LOCATION_SAVED_PICKER && state.data?.source === "nearby") {
           handled = await handleNearbySavedLocationSelection(ctx, state.data as any, id);
-        } else if ((id.startsWith("RECENT_SEARCH::") || id === "SHARE_NEW_LOCATION") && state?.key === STATE_KEYS.MOBILITY.NEARBY_SELECT) {
+        } else if (id.startsWith("RECENT_SEARCH::") && state?.key === STATE_KEYS.MOBILITY.NEARBY_SELECT) {
+          // Handle recent search selection (removed SHARE_NEW_LOCATION option)
           handled = await handleRecentSearchSelection(ctx, id);
         } else if (id === "USE_CURRENT_LOCATION" && state?.key === STATE_KEYS.MOBILITY.LOCATION_SAVED_PICKER) {
           handled = await handleNearbySavedLocationSelection(ctx, state.data as any, id);

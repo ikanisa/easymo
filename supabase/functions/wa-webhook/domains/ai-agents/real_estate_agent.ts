@@ -8,7 +8,7 @@
  * Direct usage of the unified agent is preferred.
  */
 
-import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js";
 
 // Note: In a production Deno environment, we would import from the unified package.
 // For now, we re-export the essential types and provide a compatibility layer.

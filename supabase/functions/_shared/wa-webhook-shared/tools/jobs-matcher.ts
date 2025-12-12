@@ -3,7 +3,7 @@
  * Searches job_listings table with semantic matching and creates match events for AI agent
  */
 
-import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 
 export interface JobSearchParams {
   query?: string; // Natural language search query

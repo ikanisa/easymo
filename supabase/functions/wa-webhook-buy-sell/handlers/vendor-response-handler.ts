@@ -7,7 +7,7 @@
  * @see docs/GROUND_RULES.md for observability requirements
  */
 
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { logStructuredEvent } from "../../_shared/observability.ts";
 import { VendorOutreachService } from "../services/vendor-outreach.ts";
 

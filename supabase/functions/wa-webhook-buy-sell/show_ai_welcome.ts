@@ -3,7 +3,7 @@
  * Replaces category-based browsing with conversational search
  */
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
 import { sendText, sendButtons } from "../_shared/wa-webhook-shared/wa/client.ts";
 import { ensureProfile, setState } from "../_shared/wa-webhook-shared/state/store.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";

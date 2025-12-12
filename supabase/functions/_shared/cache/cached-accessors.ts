@@ -3,7 +3,7 @@
  * High-level caching for common data access patterns
  */
 
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { profileCache, stateCache, configCache, locationCache } from "./memory-cache.ts";
 import { logStructuredEvent } from "../observability/index.ts";
 

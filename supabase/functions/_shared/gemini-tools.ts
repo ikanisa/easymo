@@ -10,7 +10,7 @@
  * All tools remain grounded in EasyMO data - Gemini is a processing engine, not a data source.
  */
 
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { GeminiProvider } from "./llm-provider-gemini.ts";
 import { logStructuredEvent, logError, recordMetric } from "./observability.ts";
 

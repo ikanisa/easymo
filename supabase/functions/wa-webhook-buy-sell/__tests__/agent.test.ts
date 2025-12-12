@@ -23,7 +23,7 @@ import {
   BUSINESS_CATEGORIES,
   EMOJI_NUMBERS,
 } from "../agent.ts";
-import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 
 // Type for mock Supabase client that satisfies the minimum interface needed for testing
 interface MockSupabaseClient {

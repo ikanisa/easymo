@@ -3,7 +3,7 @@
  * Used across all microservices for consistent health reporting
  */
 
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 
 export type HealthStatus = "healthy" | "degraded" | "unhealthy";
 

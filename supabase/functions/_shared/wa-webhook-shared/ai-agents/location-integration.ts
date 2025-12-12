@@ -8,7 +8,7 @@
  * @see supabase/functions/_shared/location/location-service.ts for new implementation
  */
 
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { LocationService, type LocationResult as UnifiedLocationResult } from "../../location/index.ts";
 import { sendText } from "../wa/client.ts";
 

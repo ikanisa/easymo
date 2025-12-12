@@ -5,7 +5,7 @@
  * - Simple chat connection
  */
 
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { sendText, sendDocument, sendImage } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
 

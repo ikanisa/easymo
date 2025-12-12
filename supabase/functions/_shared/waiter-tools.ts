@@ -5,7 +5,7 @@
  * restaurant data, manage orders, and provide recommendations.
  */
 
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js';
 
 export interface WaiterToolContext {
   supabase: SupabaseClient;

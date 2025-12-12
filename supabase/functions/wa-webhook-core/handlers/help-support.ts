@@ -3,7 +3,7 @@
  * Handles user requests for help/support by showing insurance admin contacts
  */
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
 import { logStructuredEvent } from "../../_shared/observability.ts";
 import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 

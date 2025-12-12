@@ -260,19 +260,7 @@ export async function handleRecentSearchSelection(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
 
-  // Handle "Share New Location" option
-  if (selectionId === "SHARE_NEW_LOCATION") {
-    const state = await ctx.supabase
-      .from("user_state")
-      .select("data")
-      .eq("user_id", ctx.profileId)
-      .eq("key", "mobility_nearby_select")
-      .single();
-
-    const mode = state.data?.data?.mode || "drivers";
-    await sendVehicleSelector(ctx, mode);
-    return true;
-  }
+  // Removed SHARE_NEW_LOCATION handler - no longer using that button
 
   // Parse coordinates from selection ID: "RECENT_SEARCH::0::lat,lng"
   if (!selectionId.startsWith("RECENT_SEARCH::")) {
@@ -811,16 +799,12 @@ async function showRecentSearches(
       };
     }));
 
-    // Add option to share new location
-    rows.push({
-      id: "SHARE_NEW_LOCATION",
-      title: t(ctx.locale, "mobility.nearby.new_location"),
-      description: t(ctx.locale, "mobility.nearby.new_location.desc"),
-    });
+    // Removed confusing "Share New Location" button option
+    // Users share location naturally via attachment menu
 
     await sendListMessage(ctx, {
       title: t(ctx.locale, "mobility.nearby.recent_searches") || "Recent Searches",
-      body: t(ctx.locale, "mobility.nearby.recent_searches.body") || "Quick search from a recent location, or share a new one:",
+      body: t(ctx.locale, "mobility.nearby.recent_searches.body") || "Quick search from a recent location:",
       rows,
       buttonText: t(ctx.locale, "common.buttons.choose") || "Choose",
     });

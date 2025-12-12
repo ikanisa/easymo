@@ -8,7 +8,7 @@
  * Part of: Platform cleanup - standardize deduplication across webhooks
  */
 
-import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 
 export interface DeduplicationResult {
   isDuplicate: boolean;

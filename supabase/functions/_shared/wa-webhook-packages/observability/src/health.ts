@@ -1,6 +1,6 @@
 // Health check utilities
 
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 
 export interface HealthCheckResult {
   status: "healthy" | "unhealthy";

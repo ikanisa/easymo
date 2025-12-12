@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
 import { serveWithObservability } from "../_shared/observability.ts";
 
 const corsHeaders = {

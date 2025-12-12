@@ -8,7 +8,7 @@
  * - Knowledge transfer
  */
 
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js';
 import type { AgentResponse } from './base-agent.ts';
 
 export interface AgentCapability {

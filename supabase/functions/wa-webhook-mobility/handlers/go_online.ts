@@ -50,17 +50,10 @@ export async function startGoOnline(ctx: RouterContext): Promise<boolean> {
     });
   }
   
-  buttons.push({
-    id: IDS.SHARE_NEW_LOCATION,
-    title: t(ctx.locale, "mobility.go_online.share_new", {
-      defaultValue: "Share Current Location",
-    }),
-  });
-
-  await sendButtonsMessage(
-    ctx,
-    t(ctx.locale, "mobility.go_online.prompt"),
-    buttons,
+  // Removed confusing "Share Current Location" button - users share via attachment menu
+  await sendText(
+    ctx.from,
+    t(ctx.locale, "mobility.go_online.prompt") + "\n\n" + t(ctx.locale, "location.share.instructions"),
   );
 
   return true;
@@ -142,9 +135,15 @@ export async function handleGoOnlineLocation(
       vehicleType: vehicleType || "unknown",
     });
 
+    // Clear state after success
+    await clearState(ctx.supabase, ctx.profileId);
+
+    // Enhanced success message with 30-minute duration
+    const successMessage = `✅ *You're now LIVE!*\n\n🚗 You'll receive ride offers for the next *30 minutes*.\n\nPassengers nearby can discover you now. Good luck! 🎉`;
+    
     await sendButtonsMessage(
       ctx,
-      t(ctx.locale, "mobility.go_online.success"),
+      successMessage,
       homeOnly(),
     );
 

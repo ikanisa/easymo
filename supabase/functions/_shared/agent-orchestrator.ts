@@ -11,7 +11,7 @@
  * - Executes tools with validation and logging
  */
 
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { AgentConfigLoader, type AgentConfig } from "./agent-config-loader.ts";
 import { ToolExecutor } from "./tool-executor.ts";
 

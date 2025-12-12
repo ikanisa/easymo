@@ -7,7 +7,7 @@
  * @see docs/GROUND_RULES.md for observability requirements
  */
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js';
 import { logStructuredEvent } from '../observability.ts';
 
 const supabase = createClient(

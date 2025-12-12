@@ -11,7 +11,7 @@
  * @module location-handler
  */
 
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { logStructuredEvent } from "../../_shared/observability.ts";
 import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import type { WhatsAppMessage } from "../../_shared/wa-webhook-shared/types.ts";

@@ -9,7 +9,7 @@
  * @see docs/GROUND_RULES.md - Observability requirements
  */
 
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { logStructuredEvent, recordMetric } from "../../observability.ts";
 import type { BarInfo, BarDiscoveryResult } from "./types.ts";
 

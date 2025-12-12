@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
 import { postToLedger } from "../_shared/ledger.ts";
 import { encryptField, hashField, maskMsisdn } from "../_shared/crypto.ts";
 import { writeAuditLog } from "../_shared/audit.ts";

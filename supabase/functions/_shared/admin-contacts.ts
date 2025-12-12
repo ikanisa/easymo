@@ -3,7 +3,7 @@
  * Single source of truth for all admin/support contact information
  */
 
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 
 export interface AdminContact {
   id: string;

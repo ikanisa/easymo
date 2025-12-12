@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
 import { validateHmacRequest } from "../_shared/auth.ts";
 import { recordMetric } from "../_shared/metrics.ts";
 import { requireEnv } from "../_shared/mod.ts";

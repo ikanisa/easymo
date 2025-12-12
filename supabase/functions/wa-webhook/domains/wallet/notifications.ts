@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.76.1";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js.76.1";
 import { sendText } from "../../wa/client.ts";
 
 export async function notifyWalletTransferRecipient(

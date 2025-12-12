@@ -3,7 +3,7 @@
  * Provides type-safe state transitions with validation
  */
 
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { logStructuredEvent } from "../observability.ts";
 import { STATE_KEYS, TIMEOUTS } from "../config/constants.ts";
 

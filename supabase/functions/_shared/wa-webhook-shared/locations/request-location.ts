@@ -18,7 +18,7 @@
  *   const result = await requestLocationWithCache(ctx, "mobility");
  */
 
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { 
   getShareLocationPrompt, 
   getUseLastLocationButton,

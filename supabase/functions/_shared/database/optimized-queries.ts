@@ -3,7 +3,7 @@
  * Pre-built optimized queries for common operations
  */
 
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { query } from "./query-builder.ts";
 import { getCachedProfile } from "../cache/index.ts";
 import { logStructuredEvent } from "../observability/index.ts";

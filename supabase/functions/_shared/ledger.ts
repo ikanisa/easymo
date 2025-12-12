@@ -18,7 +18,7 @@
  * @module ledger
  */
 
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 
 type AnyClient = SupabaseClient<any, any, any>;
 

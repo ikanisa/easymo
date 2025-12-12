@@ -10,7 +10,7 @@
  * @see docs/GROUND_RULES.md for observability requirements
  */
 
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { logStructuredEvent, logError, recordMetric } from "./observability.ts";
 import { OpenAIProvider } from "./llm-provider-openai.ts";
 import { GeminiProvider } from "./llm-provider-gemini.ts";

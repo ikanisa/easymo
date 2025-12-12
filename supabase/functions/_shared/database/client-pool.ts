@@ -3,7 +3,7 @@
  * Manages Supabase client instances for optimal connection reuse
  */
 
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { getEnv } from "../config/index.ts";
 import { logStructuredEvent } from "../observability/index.ts";
 

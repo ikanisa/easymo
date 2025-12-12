@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
 import { validateHmacRequest } from "../_shared/auth.ts";
 import { parseWithRegex, parseWithOpenAI } from "../_shared/sms-parser.ts";
 import { parseWithGemini, geminiToStandardFormat } from "../_shared/gemini-parser.ts";

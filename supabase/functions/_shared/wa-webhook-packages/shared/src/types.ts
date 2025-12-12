@@ -1,6 +1,6 @@
 // Common types shared across all wa-webhook microservices
 
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 
 export interface RouterContext {
   supabase: SupabaseClient;

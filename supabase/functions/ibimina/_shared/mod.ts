@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
 import { createHmac, timingSafeEqual } from "node:crypto";
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
 export type AnyClient = SupabaseClient<any, any, any>;
 

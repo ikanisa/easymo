@@ -5,7 +5,7 @@
  */
 
 import { assertEquals, assertExists, assertRejects } from "https://deno.land/std@0.224.0/testing/asserts.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js.39.0";
 import { createHmac } from "https://deno.land/std@0.224.0/node/crypto.ts";
 import {
   WEBHOOK_TIMEOUT_MS,

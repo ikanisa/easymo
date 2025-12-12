@@ -7,7 +7,7 @@
  * Logs all executions for monitoring
  */
 
-import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import type { AgentTool } from "./agent-config-loader.ts";
 
 export interface ToolExecutionContext {

@@ -7,7 +7,7 @@
  * @module location/location-service
  */
 
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { LOCATION_CONFIG } from "../location-config.ts";
 import type {
   LocationConfig,

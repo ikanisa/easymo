@@ -3,7 +3,7 @@
  * Uses proper state management via chat_state table
  */
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { ensureProfile, getState, setState } from "../_shared/wa-webhook-shared/state/store.ts";

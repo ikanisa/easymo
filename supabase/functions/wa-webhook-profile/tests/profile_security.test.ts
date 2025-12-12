@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
 
 // Mock Supabase client for testing

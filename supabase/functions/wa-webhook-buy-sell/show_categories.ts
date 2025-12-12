@@ -4,7 +4,7 @@
  * Shows 9 categories per page with "Show More" option
  */
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
 import { sendList, sendButtons } from "../_shared/wa-webhook-shared/wa/client.ts";
 import { ensureProfile, getState, setState } from "../_shared/wa-webhook-shared/state/store.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";

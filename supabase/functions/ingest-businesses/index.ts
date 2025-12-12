@@ -1,4 +1,4 @@
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createClient } from "jsr:@supabase/supabase-js";
 import { logStructuredEvent } from "../_shared/observability.ts";
 
 const corsHeaders = {

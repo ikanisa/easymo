@@ -5,7 +5,7 @@
  * Provides caching and fallback to hardcoded configs
  */
 
-import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { Redis } from "https://esm.sh/@upstash/redis@1.28.1";
 
 export interface AgentPersona {

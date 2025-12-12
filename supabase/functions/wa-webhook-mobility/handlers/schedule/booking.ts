@@ -365,8 +365,11 @@ export async function handleScheduleLocation(
   // Save location to cache and history
   await saveUserLocation(ctx, coords, 'mobility');
   
+  // Acknowledge pickup location received
+  await sendText(ctx.from, "✅ Pickup location saved!");
+  
   await setState(ctx.supabase, ctx.profileId, {
-    key: "schedule_dropoff",
+    key: "mobility_schedule_dropoff",
     data: {
       role: state.role,
       vehicle: state.vehicle,
@@ -378,13 +381,13 @@ export async function handleScheduleLocation(
   try {
     await sendButtonsMessage(
       ctx,
-      t(ctx.locale, "schedule.dropoff.prompt", {
+      t(ctx.locale, "schedule.dropoff.instructions", {
         instructions: t(ctx.locale, "location.share.instructions"),
       }),
       shareDropoffButtons(ctx),
     );
   } catch (e) {
-    const fallbackBody = t(ctx.locale, "schedule.dropoff.prompt", {
+    const fallbackBody = t(ctx.locale, "schedule.dropoff.instructions", {
       instructions: t(ctx.locale, "location.share.instructions"),
     });
     try { await sendText(ctx.from, fallbackBody); } catch (_) { /* noop */ }
@@ -400,6 +403,13 @@ export async function handleScheduleDropoff(
   if (!ctx.profileId || !state.role || !state.vehicle) {
     return false;
   }
+  
+  // Save dropoff location
+  await saveUserLocation(ctx, coords, 'mobility');
+  
+  // Acknowledge dropoff received
+  await sendText(ctx.from, "✅ Drop-off location saved!");
+  
   if (!state.tripId) {
     if (!state.origin) {
       await sendText(ctx.from, t(ctx.locale, "schedule.pickup.missing"));

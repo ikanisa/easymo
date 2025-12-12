@@ -12,7 +12,7 @@
  * @see docs/GROUND_RULES.md for error handling requirements
  */
 
-import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { logStructuredEvent, logError, recordMetric } from "./observability.ts";
 import { 
   WebhookError, 

@@ -10,7 +10,7 @@
  * @see docs/features/BUY_SELL_CONSOLIDATION_ANALYSIS.md
  */
 
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { logStructuredEvent } from "../observability.ts";
 import { LOCATION_CONFIG } from "../location-config.ts";
 

@@ -1,6 +1,6 @@
 // wa-webhook-insurance - Dedicated Insurance Microservice
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
 import { logStructuredEvent, scrubPII } from "../_shared/observability.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 // Phase 2: Enhanced security modules

@@ -5,7 +5,7 @@
  * Full marketplace functionality will be implemented in a future release.
  */
 
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { logStructuredEvent } from "../_shared/observability.ts";
 
 export interface MarketplaceMessage {

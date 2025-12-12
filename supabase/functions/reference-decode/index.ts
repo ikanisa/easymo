@@ -7,7 +7,7 @@
  * Supports both new format (with country) and legacy format (without country).
  */
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js.39.0";
 import { corsHeaders } from "../_shared/http.ts";
 import { serveWithObservability } from "../_shared/observability.ts";
 

@@ -8,7 +8,7 @@
  * @see docs/GROUND_RULES.md - Observability requirements
  */
 
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { logStructuredEvent, recordMetric, scrubPII } from "../../observability.ts";
 import {
   REAL_ESTATE_STATE_KEYS,

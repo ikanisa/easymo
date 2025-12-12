@@ -23,7 +23,7 @@
  */
 
 import { logStructuredEvent, recordMetric } from "../_shared/observability.ts";
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { DualAIProvider } from "../wa-agent-waiter/core/providers/dual-ai-provider.ts";
 import { AgentConfigLoader } from "../_shared/agent-config-loader.ts";
 

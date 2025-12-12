@@ -3,7 +3,7 @@
  * Prompt users to save trip destinations as saved locations
  */
 
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { checkDuplicateLocation } from "./deduplication.ts";
 import { getAddressOrCoords } from "./geocoding.ts";
 

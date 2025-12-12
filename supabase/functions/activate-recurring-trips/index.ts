@@ -2,7 +2,7 @@
 // Can be called manually for testing or by cron
 // Deno runtime
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { createClient } from "https://esm.sh/@supabase/supabase-js.39.3";
 import { corsHeaders } from "../_shared/cors.ts";
 
 interface ActivationResult {

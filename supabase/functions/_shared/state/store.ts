@@ -3,7 +3,7 @@
  * Simple state storage and retrieval
  */
 
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import type { UserState, StateUpdate } from "../types/context.ts";
 import { TIMEOUTS } from "../config/constants.ts";
 import { logStructuredEvent } from "../observability.ts";

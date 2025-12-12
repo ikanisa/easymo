@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { sendTextMessage, sendButtonsMessage, sendListMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
 import { logStructuredEvent, recordMetric, maskPII } from "../_shared/observability.ts";
 import { formatPaymentInstructions, generateMoMoUSSDCode } from "./payment.ts";

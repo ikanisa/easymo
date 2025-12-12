@@ -3,7 +3,7 @@
  * Uses Gemini 2.5 Pro for agricultural services and marketplace
  */
 
-import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js";
 import { GoogleGenerativeAI } from "npm:@google/generative-ai";
 import { sendText } from "../../wa/client.ts";
 import { RouterContext } from "../../types.ts";

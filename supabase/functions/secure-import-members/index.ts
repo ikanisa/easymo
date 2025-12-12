@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
 import { encryptField, hashField, maskMsisdn, maskNationalId } from "../_shared/crypto.ts";
 import { enforceRateLimit } from "../_shared/rate-limit.ts";
 import { writeAuditLog } from "../_shared/audit.ts";

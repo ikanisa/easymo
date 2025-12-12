@@ -3,7 +3,7 @@
  * Generates vector embeddings for semantic search using OpenAI or Gemini
  */
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");

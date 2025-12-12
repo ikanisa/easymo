@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
 import { corsHeaders } from "../_shared/http.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { requireEmbedding } from "../_shared/openaiGuard.ts";

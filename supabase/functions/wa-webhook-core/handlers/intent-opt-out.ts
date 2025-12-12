@@ -6,7 +6,7 @@
  * - SUBSCRIBE text message (opt back in)
  */
 
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js';
 import { logStructuredEvent } from '../../_shared/observability.ts';
 
 const WA_ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN');
