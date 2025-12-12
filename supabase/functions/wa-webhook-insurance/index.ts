@@ -202,6 +202,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // Idempotency: skip duplicate webhook messages recently processed
+    // RawWhatsAppMessage has an optional id field
     const messageId = (message as RawWhatsAppMessage)?.id;
     if (messageId) {
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
@@ -296,7 +297,7 @@ serve(async (req: Request): Promise<Response> => {
       const { sendText } = await import("../_shared/wa-webhook-shared/wa/client.ts");
       try {
         await sendText(ctx.from, "Sorry, something went wrong. Please try again.");
-      } catch {
+      } catch (_sendError) {
         // Ignore send errors - already logged main error
       }
       return respond({ success: false, error: "handler_error" });

@@ -38,7 +38,7 @@ async function getInsuranceAdminContact(supabase: SupabaseClient): Promise<Insur
   }
 
   return {
-    wa_id: data.contact_value.replace(/^\+/, ""), // Remove leading + for WhatsApp API format
+    wa_id: data.contact_value.replace(/^\+/, ""), // Strip leading + (e.g., "+250788..." → "250788...") for WhatsApp API
     display_name: data.display_name || "Insurance Team"
   };
 }
