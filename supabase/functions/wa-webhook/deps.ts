@@ -13,7 +13,7 @@ export const serve = serveMock ?? Deno.serve;
 import {
   createClient as createClientReal,
   type SupabaseClient,
-} from "https://esm.sh/@supabase/supabase-js.76.1";
+} from "@supabase/supabase-js";
 
 export { createClientReal as createClient };
 export type { SupabaseClient };

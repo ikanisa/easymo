@@ -1,5 +1,5 @@
 import type { RouterContext } from "../types.ts";
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js.76.1";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { logStructuredEvent } from "../observe/log.ts";
 
 export interface TokenAllocationResult {

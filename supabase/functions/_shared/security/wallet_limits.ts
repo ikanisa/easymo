@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js.76.1";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface TransferLimits {
   dailyLimit: number;
