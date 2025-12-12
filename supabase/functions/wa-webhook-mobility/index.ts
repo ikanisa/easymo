@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "./deps.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
-import { getState, setState } from "./state/store.ts";
+import { getState, setState, clearState } from "./state/store.ts";
 import {
   handleSeeDrivers,
   handleSeePassengers,
@@ -46,13 +46,6 @@ import {
   handleVehiclePlateInput,
 } from "./handlers/vehicle_plate.ts";
 // Payment handlers
-import {
-  handlePaymentConfirmation,
-  processTransactionReference,
-  handleSkipPayment,
-  PAYMENT_STATES,
-  type PaymentState,
-} from "./handlers/trip_payment.ts";
 
 // Verification handlers
 import {
@@ -61,34 +54,10 @@ import {
   handleLicenseUpload,
   VERIFICATION_STATES,
 } from "./handlers/driver_verification.ts";
-// ============================================================================
-// TRIP LIFECYCLE HANDLERS - DISABLED
-// ============================================================================
-// Status: Cannot be re-enabled without major refactoring
-// Reason: References dropped table `mobility_trip_matches` (removed in migration 20251209093000)
-// Architecture: System now uses simplified trips-only approach with direct WhatsApp links
-// 
-// TODO: Redesign handlers to work with current architecture
-// - Remove dependencies on mobility_trip_matches table
-// - Update to use simplified trips table
-// - Implement with direct WhatsApp communication
-// - Add comprehensive tests before re-enabling
-// 
-// See: REFACTORING_ASSESSMENT.md Part 3 for detailed analysis
-// ============================================================================
-import {
-  startDriverTracking,
-  updateDriverLocation,
-  stopDriverTracking,
-  getTripProgress,
-} from "./handlers/tracking.ts";
-import {
-  calculateFareEstimate,
-} from "./handlers/fare.ts";
 import type { RouterContext, WhatsAppWebhookPayload, RawWhatsAppMessage } from "./types.ts";
 import { IDS } from "./wa/ids.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
-import { sendListMessage } from "./utils/reply.ts";
+import { sendListMessage, sendButtonsMessage } from "./utils/reply.ts";
 import { recordLastLocation } from "./locations/favorites.ts";
 import { sendLocation, sendText } from "./wa/client.ts";
 import { t } from "./i18n/translator.ts";
@@ -106,7 +75,6 @@ const STATE_KEYS = {
     SCHEDULE_DROPOFF: "mobility_schedule_dropoff",
     SCHEDULE_TIME: "mobility_schedule_time",
     SCHEDULE_RECURRENCE: "mobility_schedule_recurrence",
-    TRIP_IN_PROGRESS: "mobility_trip_in_progress",
   },
 } as const;
 
@@ -457,51 +425,6 @@ serve(async (req: Request): Promise<Response> => {
            handled = await startScheduleSavedLocationPicker(ctx, state.data as any, "dropoff");
         } else if (id.startsWith("FAV::") && state?.key === STATE_KEYS.MOBILITY.LOCATION_SAVED_PICKER && state.data?.source === "schedule") {
            handled = await handleScheduleSavedLocationSelection(ctx, state.data as any, id);
-         }        else if (id === IDS.TRIP_START || id === IDS.TRIP_ARRIVED || id === IDS.TRIP_PICKED_UP || 
-                 id === IDS.TRIP_COMPLETE || id.startsWith(IDS.TRIP_CANCEL_PREFIX) || id.startsWith(IDS.RATE_PREFIX)) {
-          await sendText(
-            ctx.from,
-            "🚧 *Trip Management Temporarily Unavailable*\n\n" +
-            "We're upgrading our trip management system.\n" +
-            "This feature will be back online shortly.\n\n" +
-            "✅ Nearby matching still works\n" +
-            "✅ Driver/passenger lists available\n" +
-            "✅ Schedule features active\n\n" +
-            "Thank you for your patience!"
-          );
-          handled = true;
-        }
-        /* COMMENTED OUT - Re-enable after handler split
-        else if (id === IDS.TRIP_START && state?.data?.matchId) {
-          const matchId = String(state.data.matchId);
-          handled = await handleTripStart(ctx, matchId);
-        } else if (id === IDS.TRIP_ARRIVED && state?.data?.tripId) {
-          const tripId = String(state.data.tripId);
-          handled = await handleTripArrivedAtPickup(ctx, tripId);
-        } else if (id === IDS.TRIP_PICKED_UP && state?.data?.tripId) {
-          const tripId = String(state.data.tripId);
-          handled = await handleTripPickedUp(ctx, tripId);
-        } else if (id === IDS.TRIP_COMPLETE && state?.data?.tripId) {
-          const tripId = String(state.data.tripId);
-          handled = await handleTripComplete(ctx, tripId);
-        } else if (id.startsWith(IDS.TRIP_CANCEL_PREFIX + "::")) {
-          const tripId = id.replace(IDS.TRIP_CANCEL_PREFIX + "::", "");
-          const initiator = state?.data?.role === "passenger" ? "passenger" : "driver";
-          handled = await handleTripCancel(ctx, tripId, "user", initiator);
-        } else if (id.startsWith(IDS.RATE_PREFIX + "::")) {
-          const parts = id.split("::");
-          const tripId = parts[1];
-          const rating = parseInt(parts[2]);
-          handled = await handleTripRate(ctx, tripId, rating);
-        }
-        */
-        
-        // Payment Handlers
-        else if (id === IDS.TRIP_PAYMENT_PAID && state?.key === PAYMENT_STATES.PENDING) {
-          handled = await handlePaymentConfirmation(ctx, { data: state.data as unknown as PaymentState });
-        } else if (id === IDS.TRIP_PAYMENT_SKIP && state?.key === PAYMENT_STATES.PENDING) {
-          handled = await handleSkipPayment(ctx, { data: state.data as unknown as PaymentState });
-        }
         
         // Driver Verification Handlers
         else if (id === IDS.VERIFY_LICENSE) {
@@ -510,38 +433,6 @@ serve(async (req: Request): Promise<Response> => {
           handled = await showVerificationMenu(ctx);
         }
         
-        // Real-Time Tracking
-        else if (id === IDS.UPDATE_LOCATION && state?.data?.tripId) {
-          const tripId = state.data.tripId;
-          // Location will come from location message, just acknowledge
-          handled = true;
-        } else if (id === IDS.VIEW_DRIVER_LOCATION && state?.data?.tripId) {
-          const tripId = String(state.data.tripId);
-          const progress = await getTripProgress(ctx, tripId);
-          if (progress?.driverLocation) {
-            await sendLocation(ctx.from, {
-              latitude: progress.driverLocation.latitude,
-              longitude: progress.driverLocation.longitude,
-              name: "Driver live location",
-              address: progress.eta
-                ? `ETA ~${progress.eta.durationMinutes} min`
-                : undefined,
-            });
-            if (progress.eta) {
-              await sendText(
-                ctx.from,
-                `🚗 Driver is en route. ETA: ${progress.eta.durationMinutes} min.`,
-              );
-            }
-            handled = true;
-          } else {
-            await sendText(
-              ctx.from,
-              "⚠️ We couldn't fetch the driver's live location. Please try again shortly.",
-            );
-            handled = true;
-          }
-        }
       }
     }
 
@@ -555,14 +446,8 @@ serve(async (req: Request): Promise<Response> => {
           logStructuredEvent("WARNING", { data: "mobility.record_location_fail", e });
         });
 
-        // Real-time tracking location updates
-        if (state?.key === STATE_KEYS.MOBILITY.TRIP_IN_PROGRESS && state?.data?.tripId && state?.data?.role === "driver") {
-          const tripId = String(state.data.tripId);
-          const coordinates = { latitude: coords.lat, longitude: coords.lng };
-          handled = await updateDriverLocation(ctx, tripId, coordinates);
-        }
         // Existing location handlers
-        else if (state?.key === STATE_KEYS.MOBILITY.NEARBY_LOCATION) {
+        if (state?.key === STATE_KEYS.MOBILITY.NEARBY_LOCATION) {
           handled = await handleNearbyLocation(ctx, state.data as any, coords);
         } else if (state?.key === STATE_KEYS.MOBILITY.GO_ONLINE) {
           handled = await handleGoOnlineLocation(ctx, coords);
@@ -620,10 +505,6 @@ serve(async (req: Request): Promise<Response> => {
             }
           }
         }
-      }
-      // Payment transaction reference input
-      else if (state?.key === PAYMENT_STATES.CONFIRMATION) {
-        handled = await processTransactionReference(ctx, rawText, { data: state.data as unknown as PaymentState });
       }
       // Check for menu selection keys first
       else if (text === "rides_agent" || text === "rides") {

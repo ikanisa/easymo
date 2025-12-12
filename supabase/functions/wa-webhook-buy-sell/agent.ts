@@ -28,7 +28,8 @@ import { DualAIProvider } from "../wa-agent-waiter/core/providers/dual-ai-provid
 import { AgentConfigLoader } from "../_shared/agent-config-loader.ts";
 
 // Re-export shared types
-export type { MarketplaceContext } from "./types.ts";
+export type { BuyAndSellContext as MarketplaceContext } from "../_shared/agents/buy-and-sell.ts";
+import { BUSINESS_CATEGORIES } from "../_shared/agents/buy-and-sell.ts";
 
 // =====================================================
 // CONFIGURATION
@@ -41,13 +42,7 @@ const AI_MAX_TOKENS = parseInt(Deno.env.get("MARKETPLACE_AI_MAX_TOKENS") || "102
 // BUSINESS CATEGORIES
 // =====================================================
 
-export const BUSINESS_CATEGORIES = [
-  { code: "pharmacy", name: "Pharmacies", icon: "💊", description: "Pharmacies and medical supplies" },
-  { code: "salon", name: "Salons & Barbers", icon: "💇", description: "Hair salons, barber shops, beauty services" },
-  { code: "restaurant", name: "Restaurants", icon: "🍽️", description: "Restaurants, cafes, and food services" },
-  { code: "supermarket", name: "Supermarkets", icon: "🛒", description: "Supermarkets and grocery stores" },
-  { code: "hardware", name: "Hardware Stores", icon: "🔧", description: "Hardware stores and construction supplies" },
-  { code: "bank", name: "Banks & Finance", icon: "🏦", description: "Banks, microfinance, and mobile money" },
+export { BUSINESS_CATEGORIES };
   { code: "hospital", name: "Hospitals & Clinics", icon: "🏥", description: "Hospitals, clinics, and health centers" },
   { code: "hotel", name: "Hotels & Lodging", icon: "🏨", description: "Hotels, guesthouses, and accommodations" },
   { code: "transport", name: "Transport & Logistics", icon: "🚗", description: "Transport services, taxis, and delivery" },

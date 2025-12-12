@@ -8,7 +8,7 @@
 
 import { logStructuredEvent } from "../_shared/observability.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
-import type { MarketplaceContext } from "./types.ts";
+import type { BuyAndSellContext as MarketplaceContext } from "../_shared/agents/buy-and-sell.ts";
 
 const WA_PHONE_ID = Deno.env.get("WA_PHONE_NUMBER_ID") || "";
 const WA_ACCESS_TOKEN = Deno.env.get("WA_ACCESS_TOKEN") || "";

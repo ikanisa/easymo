@@ -28,15 +28,15 @@ import {
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 import { callAI } from "./ai-provider.ts";
 
-// Malta phone validation per GROUND_RULES.md
+// Phone validation (Rwanda + Malta)
+const RWANDA_PHONE_REGEX = /^\+250\d{9}$/;
 const MALTA_PHONE_REGEX = /^\+356\d{8}$/;
 
 /**
- * Validate Malta phone number format (+356xxxxxxxx)
- * Per GROUND_RULES.md: Malta phone format support required
+ * Validate phone number format (Rwanda or Malta)
  */
-function isValidMaltaPhone(phone: string): boolean {
-  return MALTA_PHONE_REGEX.test(phone);
+export function isValidPhone(phone: string): boolean {
+  return RWANDA_PHONE_REGEX.test(phone) || MALTA_PHONE_REGEX.test(phone);
 }
 
 interface WaiterContext {
