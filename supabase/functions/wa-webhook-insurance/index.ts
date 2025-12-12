@@ -24,7 +24,7 @@ import type {
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 // Insurance domain imports
-import { handleInsuranceListSelection,startInsurance } from "./insurance/index.ts";
+import { handleInsuranceListSelection, startInsurance } from "./insurance/index.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
