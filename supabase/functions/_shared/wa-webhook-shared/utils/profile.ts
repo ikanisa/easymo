@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js.86.0";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.1";
 import { ensureProfile as ensureProfileRecord } from "../state/store.ts";
 
 export type ProfileResult = {
