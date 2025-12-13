@@ -42,26 +42,26 @@ CREATE POLICY "service_role_all_admin_contacts" ON public.admin_contacts
 CREATE POLICY "authenticated_read_admin_contacts" ON public.admin_contacts
   FOR SELECT TO authenticated USING (true);
 
--- auth_qr_sessions: Service role full, users can only see their own
+-- auth_qr_sessions: Service role full, staff can see their own sessions
 CREATE POLICY "service_role_all_auth_qr_sessions" ON public.auth_qr_sessions
   TO service_role USING (true) WITH CHECK (true);
 
-CREATE POLICY "users_read_own_qr_sessions" ON public.auth_qr_sessions
+CREATE POLICY "staff_read_own_qr_sessions" ON public.auth_qr_sessions
   FOR SELECT TO authenticated 
-  USING (user_id = auth.uid());
+  USING (staff_id = auth.uid());
 
-CREATE POLICY "users_insert_own_qr_sessions" ON public.auth_qr_sessions
+CREATE POLICY "staff_insert_own_qr_sessions" ON public.auth_qr_sessions
   FOR INSERT TO authenticated 
-  WITH CHECK (user_id = auth.uid());
+  WITH CHECK (staff_id = auth.uid());
 
--- staff_devices: Service role full, users manage their own devices
+-- staff_devices: Service role full, staff manage their own devices
 CREATE POLICY "service_role_all_staff_devices" ON public.staff_devices
   TO service_role USING (true) WITH CHECK (true);
 
-CREATE POLICY "users_manage_own_devices" ON public.staff_devices
+CREATE POLICY "staff_manage_own_devices" ON public.staff_devices
   TO authenticated 
-  USING (user_id = auth.uid())
-  WITH CHECK (user_id = auth.uid());
+  USING (staff_id = auth.uid())
+  WITH CHECK (staff_id = auth.uid());
 
 -- auth_logs: Service role full, users can read their own logs
 CREATE POLICY "service_role_all_auth_logs" ON public.auth_logs
@@ -106,13 +106,13 @@ CREATE POLICY "service_role_all_reconciliation_runs" ON public.reconciliation_ru
 CREATE POLICY "service_role_all_reconciliation_exceptions" ON public.reconciliation_exceptions
   TO service_role USING (true) WITH CHECK (true);
 
--- payments: Service role full, users can read their own payments
+-- payments: Service role full, members can read their own payments
 CREATE POLICY "service_role_all_payments" ON public.payments
   TO service_role USING (true) WITH CHECK (true);
 
-CREATE POLICY "users_read_own_payments" ON public.payments
+CREATE POLICY "members_read_own_payments" ON public.payments
   FOR SELECT TO authenticated 
-  USING (user_id = auth.uid() OR payer_id = auth.uid() OR payee_id = auth.uid());
+  USING (member_id IN (SELECT id FROM public.members WHERE phone_number = (SELECT phone FROM auth.users WHERE id = auth.uid())));
 
 -- settlements: Service role only (sensitive financial data)
 CREATE POLICY "service_role_all_settlements" ON public.settlements
