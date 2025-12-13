@@ -3,14 +3,21 @@ import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
 /**
  * QR Code Handler
  * 
- * NOTE: QR Code functionality is handled by _shared/flows/momo/qr.ts
- * This file is a placeholder for future QR-related profile features
+ * MoMo QR Code functionality is handled by shared flows in:
+ * `_shared/wa-webhook-shared/flows/momo/qr.ts`
  * 
- * The main MoMo QR flow is imported in index.ts:
- * - startMomoQr: Displays QR code menu
- * - handleMomoButton: Handles QR code actions
+ * The main index.ts properly imports and routes to these functions:
+ * - startMomoQr: Displays QR code menu options
+ * - handleMomoButton: Handles QR code action buttons  
  * - handleMomoText: Processes phone number input for QR generation
+ * 
+ * This file exists to re-export these functions for convenience and documentation.
+ * The actual implementation is in the shared flows to avoid duplication across services.
  */
 
-// Re-export the MoMo QR functions for convenience
-export { startMomoQr, handleMomoButton, handleMomoText } from "../../_shared/wa-webhook-shared/flows/momo/qr.ts";
+// Re-export the MoMo QR functions from shared flows
+export { 
+  startMomoQr, 
+  handleMomoButton, 
+  handleMomoText 
+} from "../../_shared/wa-webhook-shared/flows/momo/qr.ts";

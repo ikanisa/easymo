@@ -10,6 +10,9 @@ export const PROFILE_STATE_HOME = "profile_home";
  * Hard-coded Profile Menu Items
  * Simple, fast, no database queries required
  * Rwanda-only for now (as per requirements)
+ * 
+ * NOTE: Wallet is handled by wa-webhook-wallet service (accessed via main menu)
+ * QR Code uses shared MoMo QR flow
  */
 const PROFILE_MENU_ITEMS = [
   {
@@ -17,12 +20,6 @@ const PROFILE_MENU_ITEMS = [
     icon: "✏️",
     title: "Edit Profile",
     description: "Update name & language",
-  },
-  {
-    id: IDS.WALLET,
-    icon: "💎",
-    title: "Wallet & Tokens",
-    description: "Balance, transfers, earn",
   },
   {
     id: IDS.MOMO_QR,

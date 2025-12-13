@@ -1,27 +1,22 @@
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
-import { sendButtonsMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
-import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 
 /**
- * Wallet Handler
+ * Wallet Handler Documentation
  * 
- * NOTE: Wallet functionality is handled by wa-webhook-wallet service
- * This handler provides information and redirects to the wallet service
+ * NOTE: Wallet functionality is NOT handled by wa-webhook-profile service.
+ * 
+ * This microservice (wa-webhook-profile) focuses on personal profile features:
+ * - Edit profile (name, language)
+ * - Saved locations  
+ * - QR code generation
+ * 
+ * Wallet features (balance, transfers, earn tokens) are accessed through
+ * the main menu, which routes to wa-webhook-wallet service.
+ * 
+ * This file exists for documentation purposes to clarify the service boundary.
+ * No wallet functionality is implemented here.
  */
 
-export async function showWalletInfo(ctx: RouterContext): Promise<boolean> {
-  // Wallet is now handled by wa-webhook-wallet service
-  // This is just a placeholder in case direct access is needed
-  
-  await sendButtonsMessage(
-    ctx,
-    "💎 *Wallet & Tokens*\n\n" +
-    "The wallet feature has been moved to a dedicated service.\n\n" +
-    "To access your wallet, send 'wallet' or 'tokens' in the main menu.",
-    [
-      { id: IDS.BACK_MENU, title: "← Back to Menu" },
-    ]
-  );
-  
-  return true;
-}
+// Wallet is handled by wa-webhook-wallet service
+// Users access it through: Main Menu → "Wallet & Tokens" → wa-webhook-wallet
+
