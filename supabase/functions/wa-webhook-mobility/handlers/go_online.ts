@@ -96,7 +96,10 @@ export async function handleGoOnlineLocation(
           lng: coords.lng,
         });
       } catch (tripError) {
-        console.error("Failed to create driver trip:", tripError);
+        await logStructuredEvent("DRIVER_TRIP_CREATE_FAILED", {
+          userId: ctx.profileId,
+          error: tripError instanceof Error ? tripError.message : String(tripError),
+        }, "error");
         // Continue even if trip creation fails
       }
 
@@ -110,7 +113,10 @@ export async function handleGoOnlineLocation(
           expiresInMinutes: 30,
         });
       } catch (intentError) {
-        console.error("Failed to save go_online intent:", intentError);
+        await logStructuredEvent("DRIVER_INTENT_SAVE_FAILED", {
+          userId: ctx.profileId,
+          error: intentError instanceof Error ? intentError.message : String(intentError),
+        }, "error");
       }
 
       // Also try to update driver_status table if it exists
@@ -123,8 +129,7 @@ export async function handleGoOnlineLocation(
           _vehicle_type: vehicleType,
         });
       } catch (error) {
-        // Ignore if function doesn't exist yet
-        console.warn("update_driver_status not available");
+        // Ignore if function doesn't exist yet - this is expected during migration
       }
     }
 
@@ -150,7 +155,10 @@ export async function handleGoOnlineLocation(
     await clearState(ctx.supabase, ctx.profileId);
     return true;
   } catch (error) {
-    console.error("go_online.location_save_fail", error);
+    await logStructuredEvent("GO_ONLINE_LOCATION_SAVE_FAILED", {
+      userId: ctx.profileId,
+      error: error instanceof Error ? error.message : String(error),
+    }, "error");
     await sendText(ctx.from, t(ctx.locale, "mobility.nearby.error"));
     return true;
   }
@@ -175,7 +183,10 @@ export async function handleGoOnlineUseCached(
     const coords = { lat: cached.lat, lng: cached.lng };
     return await handleGoOnlineLocation(ctx, coords);
   } catch (error) {
-    console.error("go_online.use_cached_fail", error);
+    await logStructuredEvent("GO_ONLINE_USE_CACHED_FAILED", {
+      userId: ctx.profileId,
+      error: error instanceof Error ? error.message : String(error),
+    }, "error");
     await sendText(ctx.from, t(ctx.locale, "mobility.nearby.error"));
     return true;
   }
@@ -195,8 +206,7 @@ export async function handleGoOffline(ctx: RouterContext): Promise<boolean> {
         _online: false,
       });
     } catch (error) {
-      // Function might not exist, ignore
-      console.warn("update_driver_status failed (function may not exist)");
+      // Function might not exist, ignore - expected during migration
     }
 
     await logStructuredEvent("DRIVER_WENT_OFFLINE", {
@@ -211,7 +221,10 @@ export async function handleGoOffline(ctx: RouterContext): Promise<boolean> {
 
     return true;
   } catch (error) {
-    console.error("go_offline.fail", error);
+    await logStructuredEvent("GO_OFFLINE_FAILED", {
+      userId: ctx.profileId,
+      error: error instanceof Error ? error.message : String(error),
+    }, "error");
     await sendText(ctx.from, t(ctx.locale, "mobility.nearby.error"));
     return true;
   }
