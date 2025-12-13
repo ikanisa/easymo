@@ -71,6 +71,9 @@ jobs:
       - name: Assert no service role in client env
         run: node scripts/assert-no-service-role-in-client.mjs
 
+      - name: Check for deprecated functions in deployment scripts
+        run: node scripts/checks/deprecated-functions-guard.mjs
+
       - name: Verify workspace dependencies
         run: bash scripts/verify/workspace-deps.sh
 

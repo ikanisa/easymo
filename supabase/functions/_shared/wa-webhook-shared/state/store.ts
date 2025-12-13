@@ -10,11 +10,19 @@ type ProfileRecord = {
   locale: string | null;
 };
 
-type WhatsAppUserRecord = {
+type UserRecord = {
   id: string;
-  phone_number: string;
-  display_name: string | null;
-  preferred_language: string | null;
+  phone: string;
+  name: string | null;
+  language: string;
+  country: string;
+  tokens: number;
+  ref_code: string | null;
+  referred_by: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  last_seen_at: string | null;
 };
 
 const WA_NUMBER_REGEX = /^\+\d{8,15}$/;
@@ -72,156 +80,49 @@ export async function ensureProfile(
     throw error;
   }
 
-  // NEW AI AGENT FLOW: Use whatsapp_users table
-  // 1. Check if WhatsApp user exists
-  const { data: waUser, error: waUserError } = await client
-    .from("whatsapp_users")
-    .select("id, phone_number, preferred_language")
-    .eq("phone_number", normalized)
-    .maybeSingle();
-
-  if (waUserError && waUserError.code !== "PGRST116") {
-    await logStructuredEvent("WHATSAPP_USER_QUERY_ERROR", {
-      masked_phone: maskMsisdn(normalized),
-      error: waUserError.message,
-      error_code: waUserError.code,
-    });
-    throw waUserError;
-  }
-
-  let waUserId: string;
-  let userLanguage: string | null = null;
-
-  if (waUser) {
-    // User exists
-    waUserId = waUser.id;
-    userLanguage = waUser.preferred_language;
-    
-    await logStructuredEvent("WHATSAPP_USER_FOUND", {
-      masked_phone: maskMsisdn(normalized),
-      user_id: waUserId,
-    });
-  } else {
-    // Create new WhatsApp user
-    const { data: newWaUser, error: createError } = await client
-      .from("whatsapp_users")
-      .insert({
-        phone_number: normalized,
-        preferred_language: locale || "en",
-        user_roles: ["guest"],
-      })
-      .select("id")
-      .single();
-
-    if (createError) {
-      await logStructuredEvent("WHATSAPP_USER_CREATE_ERROR", {
-        masked_phone: maskMsisdn(normalized),
-        error: createError.message,
-        error_code: createError.code,
-      });
-      throw createError;
-    }
-
-    waUserId = newWaUser.id;
-    userLanguage = locale || "en";
-
-    await logStructuredEvent("WHATSAPP_USER_CREATED", {
-      masked_phone: maskMsisdn(normalized),
-      user_id: waUserId,
-    });
-  }
-
-  // LEGACY COMPATIBILITY: Maintain profiles table for backward compatibility
-  // Use whatsapp_users.id as the user_id for profiles table
-  
-  // 1. Check if profile already exists
-  const { data: existing } = await client
-    .from("profiles")
-    .select("user_id, whatsapp_e164, locale")
-    .eq("whatsapp_e164", normalized)
-    .maybeSingle();
-
-  if (existing) {
-    await logStructuredEvent("PROFILE_FOUND_EXISTING", {
-      masked_phone: maskMsisdn(normalized),
-      user_id: existing.user_id,
-      wa_user_id: waUserId,
-    });
-    return existing as ProfileRecord;
-  }
-
-  // 2. Create new profile using whatsapp_users.id as user_id
-  // This maintains backward compatibility without requiring auth.admin API
-  let newProfile: any = null;
+  // NEW SIMPLIFIED SCHEMA: Use users table with get_or_create_user function
   try {
-    const upsert = await client
-      .from("profiles")
-      .upsert(
-        {
-          user_id: waUserId, // Use WhatsApp user ID directly
-          whatsapp_e164: normalized,
-          locale: userLanguage || locale || "en",
-          role: "buyer",
-        },
-        { onConflict: "whatsapp_e164" }
-      )
-      .select("user_id, whatsapp_e164, locale")
-      .single();
-    newProfile = upsert.data;
-    if (upsert.error) throw upsert.error;
-  } catch (profileError: any) {
-    // Fallback path when unique index/constraint is missing on whatsapp_e164
-    await logStructuredEvent("PROFILE_UPSERT_FAILED", {
-      masked_phone: maskMsisdn(normalized),
-      error: profileError?.message ?? String(profileError),
-      error_code: profileError?.code ?? null,
-    });
-    // Try to update by whatsapp_e164; if no row updated, insert
-    try {
-      const upd = await client
-        .from("profiles")
-        .update({ user_id: waUserId, locale: userLanguage || locale || "en", role: "buyer" })
-        .eq("whatsapp_e164", normalized)
-        .select("user_id, whatsapp_e164, locale");
-      if (upd.error) throw upd.error;
-      const updCount = Array.isArray(upd.data) ? upd.data.length : 0;
-      if (updCount === 0) {
-        const ins = await client
-          .from("profiles")
-          .insert({ user_id: waUserId, whatsapp_e164: normalized, locale: userLanguage || locale || "en", role: "buyer" })
-          .select("user_id, whatsapp_e164, locale")
-          .single();
-        newProfile = ins.data;
-      } else {
-        const sel = await client
-          .from("profiles")
-          .select("user_id, whatsapp_e164, locale")
-          .eq("whatsapp_e164", normalized)
-          .single();
-        newProfile = sel.data;
-      }
-    } catch (_fallbackErr) {
-      // Non-blocking: profile creation failed but whatsapp_user exists
-      await logStructuredEvent("PROFILE_CREATION_SKIPPED", {
-        masked_phone: maskMsisdn(normalized),
-        wa_user_id: waUserId,
-        reason: "Using whatsapp_users table as primary source",
+    const defaultCountry = Deno.env.get("DEFAULT_COUNTRY") || "RW";
+    const { data: user, error: userError } = await client
+      .rpc("get_or_create_user", {
+        p_phone: normalized,
+        p_name: null,
+        p_language: locale || "en",
+        p_country: defaultCountry,
       });
-      return {
-        user_id: waUserId,
-        whatsapp_e164: normalized,
-        locale: userLanguage || locale || "en",
-      } as ProfileRecord;
+
+    if (userError) {
+      await logStructuredEvent("USER_GET_OR_CREATE_ERROR", {
+        masked_phone: maskMsisdn(normalized),
+        error: userError.message,
+        error_code: userError.code,
+      });
+      throw userError;
     }
+
+    if (!user) {
+      throw new Error("get_or_create_user returned null");
+    }
+
+    await logStructuredEvent("USER_ENSURED", {
+      masked_phone: maskMsisdn(normalized),
+      user_id: user.id,
+      language: user.language,
+    });
+
+    // Return in ProfileRecord format for backward compatibility
+    return {
+      user_id: user.id,
+      whatsapp_e164: user.phone,
+      locale: user.language,
+    } as ProfileRecord;
+  } catch (error) {
+    await logStructuredEvent("USER_ENSURE_ERROR", {
+      masked_phone: maskMsisdn(normalized),
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
   }
-  
-  await logStructuredEvent("PROFILE_ENSURED", {
-    masked_phone: maskMsisdn(normalized),
-    user_id: newProfile.user_id,
-    wa_user_id: waUserId,
-  });
-  
-  return newProfile as ProfileRecord;
 }
 
 export async function getState(
