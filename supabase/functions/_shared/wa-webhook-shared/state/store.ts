@@ -82,12 +82,13 @@ export async function ensureProfile(
 
   // NEW SIMPLIFIED SCHEMA: Use users table with get_or_create_user function
   try {
+    const defaultCountry = Deno.env.get("DEFAULT_COUNTRY") || "RW";
     const { data: user, error: userError } = await client
       .rpc("get_or_create_user", {
         p_phone: normalized,
         p_name: null,
         p_language: locale || "en",
-        p_country: "RW",
+        p_country: defaultCountry,
       });
 
     if (userError) {

@@ -155,7 +155,7 @@ DECLARE
 BEGIN
   -- Normalize phone number (ensure E.164 format)
   p_phone := TRIM(p_phone);
-  IF NOT p_phone ~ '^\+\d{8,15}$' THEN
+  IF NOT p_phone ~ '^\+\d{10,15}$' THEN
     RAISE EXCEPTION 'Invalid phone number format. Expected E.164 format: %', p_phone;
   END IF;
   
@@ -360,7 +360,7 @@ BEGIN
     format('Share your code: %s (You have %s referrals)', v_ref_code, v_referral_count) as description,
     10 as reward_tokens,
     v_ref_code as referral_code,
-    format('Join EasyMO with my code: %s', v_ref_code) as share_text;
+    format('Join us with my code: %s', v_ref_code) as share_text;
 END;
 $$;
 
