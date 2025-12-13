@@ -147,52 +147,55 @@ export async function updateStateData<TData = unknown>(
 // ============================================================================
 
 /**
- * Ensure user profile exists
+ * Get or create user by phone
  */
-export async function ensureProfile(
+export async function getOrCreateUser(
   supabase: SupabaseClient,
-  waId: string
+  phone: string,
+  language: string = "en"
 ): Promise<{ user_id: string; language: string } | null> {
   try {
-    // Try to find existing profile
-    const { data: existing } = await supabase
-      .from("profiles")
-      .select("user_id, language")
-      .eq("whatsapp_e164", waId)
-      .maybeSingle();
-
-    if (existing) {
-      return existing;
-    }
-
-    // Create new profile
-    const userId = crypto.randomUUID();
-    const { data: created, error } = await supabase
-      .from("profiles")
-      .insert({
-        user_id: userId,
-        whatsapp_e164: waId,
-        language: "en",
-        created_at: new Date().toISOString(),
-      })
-      .select("user_id, language")
-      .single();
+    const { data: user, error } = await supabase
+      .rpc("get_or_create_user", {
+        p_phone: phone,
+        p_name: null,
+        p_language: language,
+        p_country: "RW",
+      });
 
     if (error) {
-      logStructuredEvent("PROFILE_CREATE_ERROR", {
-        waId,
+      logStructuredEvent("USER_GET_OR_CREATE_ERROR", {
+        phone,
         error: error.message,
       }, "error");
       return null;
     }
 
-    logStructuredEvent("PROFILE_CREATED", { userId, waId });
-    return created;
+    if (!user) {
+      return null;
+    }
+
+    logStructuredEvent("USER_ENSURED", { userId: user.id, phone });
+    return {
+      user_id: user.id,
+      language: user.language,
+    };
   } catch (error) {
-    logStructuredEvent("PROFILE_ENSURE_ERROR", {
-      waId,
+    logStructuredEvent("USER_ENSURE_ERROR", {
+      phone,
       error: error instanceof Error ? error.message : String(error),
     }, "error");
     return null;
   }
+}
+
+/**
+ * Ensure user profile exists (legacy compatibility wrapper)
+ * @deprecated Use getOrCreateUser instead
+ */
+export async function ensureProfile(
+  supabase: SupabaseClient,
+  waId: string
+): Promise<{ user_id: string; language: string } | null> {
+  return getOrCreateUser(supabase, waId);
 }
