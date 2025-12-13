@@ -20,8 +20,8 @@ interface InsuranceAdmin {
 async function getInsuranceAdminContact(supabase: SupabaseClient): Promise<InsuranceAdmin | null> {
   const { data, error } = await supabase
     .from("insurance_admin_contacts")
-    .select("contact_value, display_name")
-    .eq("contact_type", "whatsapp")
+    .select("destination, display_name")
+    .eq("channel", "whatsapp")
     .eq("category", "insurance")
     .eq("is_active", true)
     .order("display_order", { ascending: true })
@@ -38,7 +38,7 @@ async function getInsuranceAdminContact(supabase: SupabaseClient): Promise<Insur
   }
 
   return {
-    wa_id: data.contact_value.replace(/^\+/, ""), // Strip leading + (e.g., "+250788..." → "250788...") for WhatsApp API
+    wa_id: data.destination.replace(/^\+/, ""), // Strip leading + (e.g., "+250788..." → "250788...") for WhatsApp API
     display_name: data.display_name || "Insurance Team"
   };
 }
