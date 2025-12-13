@@ -486,7 +486,7 @@ All tools **MUST** return:
 - Never collect card PANs
 - Server-side only
 
-**Implementation**: Edge function `momo-allocator`
+**Implementation**: USSD `tel:` mobile money (no MoMo API)
 
 ---
 
@@ -980,7 +980,6 @@ consent.
 | ocr_extract                         | ✅             | ocr-processor         | Complete |
 | price_insurance                     | ❌             | TBD                   | Planned  |
 | generate_pdf                        | ❌             | TBD                   | Planned  |
-| momo_charge                         | ✅             | momo-allocator        | Complete |
 | property_search                     | ✅             | agent-property-rental | Complete |
 | schedule_viewing                    | ⚠️             | agent-property-rental | Partial  |
 | case_intake                         | ❌             | TBD                   | Planned  |

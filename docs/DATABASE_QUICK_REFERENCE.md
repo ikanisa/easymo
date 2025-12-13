@@ -71,7 +71,7 @@ await supabase.rpc("log_audit_event", {
 ```typescript
 await supabase.rpc("log_audit_event", {
   p_actor_type: "service",
-  p_actor_identifier: "matching-service",
+  p_actor_identifier: "mobility-orchestrator",
   p_action: "driver_matched",
   p_resource_type: "trip",
   p_resource_id: tripId,

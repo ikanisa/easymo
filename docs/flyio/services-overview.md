@@ -220,11 +220,10 @@ These will remain on their current platforms:
 
 ### 4.2 Other Microservices (Evaluate Later)
 
-- `video-orchestrator` - May not be production-critical yet
 - `openai-deep-research-service` - Low usage
 - `openai-responses-service` - Low usage
 - `wallet-service` - NestJS service, evaluate based on usage
-- `vendor-service`, `buyer-service` - May consolidate
+- `buyer-service` - May consolidate
 
 ---
 

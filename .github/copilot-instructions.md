@@ -88,8 +88,8 @@ Scans for exposed secrets via `tools/scripts/check-client-secrets.mjs`.
 │   ├── db/              # @easymo/db - Prisma (Agent-Core DB)
 │   ├── messaging/       # @easymo/messaging - Kafka
 │   └── shared/          # @va/shared - TS types
-├── services/             # 12 microservices: agent-core, voice-bridge, wallet-service,
-│                         # ranking-service, vendor-service, buyer-service, etc.
+├── services/             # 10 microservices: agent-core, voice-bridge, wallet-service,
+│                         # ranking-service, buyer-service, tracking-service, etc.
 ├── src/                  # Vite React: lib/ (adapter.*.ts, types.ts), components/, pages/
 ├── station-app/          # Station operator UI
 ├── supabase/

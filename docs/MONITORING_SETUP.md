@@ -266,11 +266,6 @@ scrape_configs:
     static_configs:
       - targets: ["localhost:4401"]
 
-  # Vendor Service
-  - job_name: "vendor-service"
-    static_configs:
-      - targets: ["localhost:4402"]
-
   # Agent Core
   - job_name: "agent-core"
     static_configs:

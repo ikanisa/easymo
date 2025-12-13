@@ -212,7 +212,6 @@ docker-compose -f docker-compose.agent-core.yml up -d
 # Verify health
 curl http://localhost:4400/health  # wallet-service
 curl http://localhost:4401/health  # ranking-service
-curl http://localhost:4402/health  # vendor-service
 ```
 
 ### Redis Recovery

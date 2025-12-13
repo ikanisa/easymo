@@ -179,12 +179,8 @@ Located in `services/`
 
 5. **voice-bridge** (Express)
    - Voice call handling
-   - Twilio integration
+   - SIP Trunk integration (MTN and telecoms - **NOT Twilio**)
    - Located: `services/voice-bridge/`
-
-6. **video-orchestrator** (Express)
-   - Video call coordination
-   - Located: `services/video-orchestrator/`
 
 ### 4. Shared Packages Layer
 

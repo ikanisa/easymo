@@ -83,10 +83,10 @@ netlify deploy --prod --dir=admin-app/.next
 - `wa-webhook-*` - WhatsApp webhook handlers (8 functions)
 - `admin-*` - Admin API endpoints (5 functions)
 - `agents/*` - AI agent endpoints (6 agents)
-- `momo-webhook` - Mobile money webhook
-- `revolut-webhook` - Revolut payment webhook
 - `business-lookup`, `bars-lookup` - Public APIs
 - 60+ more specialized functions
+
+**Note:** All payment processing uses USSD `tel:` mobile money (no MoMo API, no Revolut).
 
 **Deploy:**
 

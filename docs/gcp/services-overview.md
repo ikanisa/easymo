@@ -152,16 +152,9 @@
 - **Type**: `worker`
 - **Dockerfile**: ✅ Exists
 
-### 13. Video Orchestrator
+### 13. Buyer/Profile Services
 
-- **Name**: `easymo-video`
-- **Path**: `/services/video-orchestrator`
-- **Type**: `public_api`
-- **Dockerfile**: ✅ Exists
-
-### 14. Buyer/Vendor/Profile Services
-
-- **Paths**: `/services/{buyer-service,vendor-service,profile}`
+- **Paths**: `/services/{buyer-service,profile}`
 - **Type**: `public_api`
 - **Dockerfiles**: ✅ Exist
 

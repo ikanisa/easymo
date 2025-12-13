@@ -178,8 +178,7 @@ Consider migration if:
 2. **Vendor Portal** (`easymo-vendor`) - Onboarded vendor management
 3. **Voice Bridge** (`easymo-voice-bridge`) - WebRTC/SIP voice calls
 4. **Voice Gateway** (`easymo-voice-gateway`) - OpenAI Realtime integration
-5. **Vendor Service** (`easymo-vendor-service`) - Vendor API
-6. **Agent Core** - Multi-agent orchestration (if needed)
+5. **Agent Core** - Multi-agent orchestration (if needed)
 
 ### Services on Supabase Edge Functions
 

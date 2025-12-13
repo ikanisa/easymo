@@ -17,12 +17,11 @@ Complete guide for deploying EasyMO services to Google Cloud Run.
 
 EasyMO deploys multiple services to Google Cloud Run:
 
-| Service                   | Type        | IAP    | Image                   |
-| ------------------------- | ----------- | ------ | ----------------------- |
-| **easymo-admin**          | Next.js PWA | ✅ Yes | `admin:latest`          |
-| **easymo-voice-bridge**   | Node.js API | ❌ No  | `voice-bridge:latest`   |
-| **easymo-voice-gateway**  | Node.js API | ❌ No  | `voice-gateway:latest`  |
-| **easymo-vendor-service** | Express API | ❌ No  | `vendor-service:latest` |
+| Service                  | Type        | IAP    | Image                  |
+| ------------------------ | ----------- | ------ | ---------------------- |
+| **easymo-admin**         | Next.js PWA | ✅ Yes | `admin:latest`         |
+| **easymo-voice-bridge**  | Node.js API | ❌ No  | `voice-bridge:latest`  |
+| **easymo-voice-gateway** | Node.js API | ❌ No  | `voice-gateway:latest` |
 
 **Architecture**: Hybrid approach
 
@@ -161,11 +160,6 @@ gcloud run services update easymo-voice-bridge \
 # Voice Gateway
 gcloud run services update easymo-voice-gateway \
   --update-secrets OPENAI_API_KEY=openai-api-key:latest,SUPABASE_SERVICE_ROLE_KEY=supabase-service-role-key:latest \
-  --region $REGION
-
-# Vendor Service
-gcloud run services update easymo-vendor-service \
-  --update-secrets SUPABASE_SERVICE_ROLE_KEY=supabase-service-role-key:latest \
   --region $REGION
 ```
 

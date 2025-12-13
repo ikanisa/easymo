@@ -227,8 +227,8 @@ VALUES ('whatsapp', '+250XXXXXXXXX', 'Admin Name', 4, true);
   relays audio to the OpenAI Realtime API, emits Kafka telemetry, and exposes a
   `/analytics/live-calls` snapshot consumed by the admin console. `services/sip-ingress`
   normalises SIP webhook events with Redis-backed idempotency. ⚠️ **Note:** We do NOT use Twilio - see [Prohibited Services](#-prohibited-services-critical---do-not-use).
-- **Marketplace & wallet services**: new microservices (`wallet-service`,
-  `ranking-service`, `vendor-service`, `buyer-service`, `broker-orchestrator`)
+- **Marketplace & wallet services**: microservices (`wallet-service`,
+  `ranking-service`, `buyer-service`)
   coordinate intents → quotes → purchases and double-entry ledger postings.
 - **Admin console upgrades**: the Next.js panel now ships dedicated surfaces for
   live call monitoring, lead management (opt-in/tag updates via Agent-Core), and
@@ -745,13 +745,12 @@ gcloud run services update YOUR_SERVICE \
    quotes/purchases.
 6. Bring up dependencies with `docker compose -f docker-compose.agent-core.yml up`.
    This runs Postgres, Redis, Kafka, and dev instances for voice bridge, SIP
-   ingress, wallet, ranking, vendor, buyer, WhatsApp bot, broker orchestrator,
+   ingress, wallet, ranking, buyer, WhatsApp bot,
    and Agent-Core.  Each service can also be launched individually via
    `pnpm --filter @easymo/<service> start:dev`.
 7. Run the acceptance suites when wiring integrations:  
    `pnpm --filter @easymo/wallet-service test`,  
    `pnpm --filter @easymo/ranking-service test`,  
-   `pnpm --filter @easymo/vendor-service test`,  
    `pnpm --filter @easymo/buyer-service test`, and  
    `pnpm --filter @easymo/agent-core test`.  Tests cover payment helpers
    (USSD mobile money / Revolut - **NOT MoMo API**), opt-out flows, intent/quote ranking, and ledger

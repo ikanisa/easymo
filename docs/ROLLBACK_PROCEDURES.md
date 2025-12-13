@@ -171,7 +171,6 @@ kubectl rollout status deployment/agent-core -n easymo-prod
 # Rollback in reverse order of deployment
 kubectl rollout undo deployment/ranking-service -n easymo-prod
 kubectl rollout undo deployment/wallet-service -n easymo-prod
-kubectl rollout undo deployment/vendor-service -n easymo-prod
 kubectl rollout undo deployment/buyer-service -n easymo-prod
 kubectl rollout undo deployment/station-service -n easymo-prod
 kubectl rollout undo deployment/driver-service -n easymo-prod
@@ -190,7 +189,7 @@ kubectl get pods -n easymo-prod
 
 ```bash
 # Check health endpoints
-for service in agent-core ranking-service wallet-service vendor-service; do
+for service in agent-core ranking-service wallet-service buyer-service; do
   echo "Checking $service..."
   curl -s https://api.easymo.com/health/$service | jq ".status"
 done
