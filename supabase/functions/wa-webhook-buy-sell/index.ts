@@ -1,22 +1,20 @@
 /**
- * WhatsApp Buy & Sell Directory - Structured Flow (Simplified)
+ * WhatsApp Buy & Sell - Pure AI Agent Conversation
  *
- * SINGLE RESPONSIBILITY: Category browsing → Location → Nearby businesses
+ * SINGLE RESPONSIBILITY: AI-powered conversational marketplace assistant
  * 
  * Scope:
- * - Show categories from buy_sell_categories table
- * - Handle category selection
- * - Request and process location sharing
- * - Search nearby businesses (search_businesses_nearby RPC)
- * - Pagination controls (Show More)
+ * - Welcome new users with AI agent introduction
+ * - Pass all messages to AI agent for natural language processing
+ * - Handle location sharing for nearby business search
+ * - Manage user's business listings (My Businesses)
  * - WhatsApp deep links (wa.me/{phone})
  * 
- * NOT IN SCOPE (Moved to agent-buy-sell):
- * - AI chat / natural language queries
- * - Agent forwarding
- * - Session timeout management
- * - Marketplace payments
- * - Listings management
+ * Flow:
+ * 1. User taps "Buy and Sell" → AI welcomes them
+ * 2. User sends any message → AI agent handles it
+ * 3. AI can search businesses, create listings, handle inquiries conversationally
+ * 4. No structured category workflow - pure natural language
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -26,20 +24,9 @@ import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import { claimEvent } from "../_shared/wa-webhook-shared/state/idempotency.ts";
 import { extractWhatsAppMessage } from "./utils/index.ts";
-import {
-  handleCategorySelection,
-  handleLocationShared,
-} from "./handle_category.ts";
-import {
-  handleNewSearch,
-  handleShowMore,
-} from "./handle_pagination.ts";
-import {
-  handleShowMoreCategories,
-  showBuySellCategories,
-} from "./show_categories.ts";
-import { getCountryCode } from "../_shared/phone-utils.ts";
-import { clearState } from "../_shared/wa-webhook-shared/state/store.ts";
+import { MarketplaceAgent, WELCOME_MESSAGE } from "./agent.ts";
+import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
+import type { BuyAndSellContext } from "../_shared/agents/buy-and-sell.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -65,7 +52,7 @@ serve(async (req: Request): Promise<Response> => {
     headers.set("Content-Type", "application/json");
     headers.set("X-Request-ID", requestId);
     headers.set("X-Correlation-ID", correlationId);
-    headers.set("X-Service", "wa-webhook-buy-sell-directory");
+    headers.set("X-Service", "wa-webhook-buy-sell");
     return new Response(JSON.stringify(body), { ...init, headers });
   };
 
@@ -88,8 +75,8 @@ serve(async (req: Request): Promise<Response> => {
     if (!mode && !token) {
       return respond({
         status: "healthy",
-        service: "wa-webhook-buy-sell-directory",
-        scope: "category_browsing_only",
+        service: "wa-webhook-buy-sell",
+        scope: "ai_agent_conversation",
         timestamp: new Date().toISOString(),
       });
     }
@@ -186,7 +173,7 @@ serve(async (req: Request): Promise<Response> => {
       }
     }
 
-    logStructuredEvent("BUY_SELL_DIR_MESSAGE_RECEIVED", {
+    logStructuredEvent("BUY_SELL_MESSAGE_RECEIVED", {
       from: userPhone,
       type: message.type,
       hasLocation: !!message.location,
@@ -195,17 +182,7 @@ serve(async (req: Request): Promise<Response> => {
 
     // === INTERACTIVE HANDLERS ===
 
-    // Category selection (interactive list)
-    if (message.type === "interactive" && message.interactive?.list_reply?.id) {
-      const selectedId = message.interactive.list_reply.id;
-
-      if (selectedId.startsWith("category_")) {
-        await handleCategorySelection(userPhone, selectedId);
-        return respond({ success: true, message: "category_selection_sent" });
-      }
-    }
-
-    // Button replies (pagination + common actions)
+    // Button replies (common actions + My Business management)
     if (message.type === "interactive" && message.interactive?.button_reply?.id) {
       const buttonId = message.interactive.button_reply.id;
 
@@ -224,25 +201,9 @@ serve(async (req: Request): Promise<Response> => {
             profileId: profile.user_id,
             locale: (profile.language || "en") as any,
             supabase,
-          }, "wa-webhook-buy-sell-directory");
+          }, "wa-webhook-buy-sell");
         }
         return respond({ success: true, message: "share_button_handled" });
-      }
-
-      // Pagination buttons
-      if (buttonId === "buy_sell_show_more") {
-        await handleShowMore(userPhone);
-        return respond({ success: true, message: "show_more_processed" });
-      }
-
-      if (buttonId === "buy_sell_show_more_categories") {
-        await handleShowMoreCategories(userPhone);
-        return respond({ success: true, message: "show_more_categories_processed" });
-      }
-
-      if (buttonId === "buy_sell_new_search") {
-        await handleNewSearch(userPhone);
-        return respond({ success: true, message: "new_search_requested" });
       }
 
       // === MY BUSINESSES MANAGEMENT ===
@@ -411,14 +372,29 @@ serve(async (req: Request): Promise<Response> => {
 
     // === LOCATION HANDLER ===
 
-    // Location sharing (structured flow)
+    // Location sharing - pass to AI agent with location context
     if (message.type === "location" && message.location) {
-      await handleLocationShared(
-        userPhone,
-        message.location.latitude,
-        message.location.longitude,
-      );
-      return respond({ success: true, message: "location_processed" });
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("user_id, language")
+        .eq("whatsapp_number", userPhone)
+        .maybeSingle();
+
+      if (profile) {
+        // Load or create context with location
+        const context: BuyAndSellContext = await MarketplaceAgent.loadContext(userPhone, supabase);
+        context.location = {
+          lat: message.location.latitude,
+          lng: message.location.longitude,
+        };
+        
+        // Process location with agent
+        const agent = new MarketplaceAgent(supabase, correlationId);
+        const response = await agent.process("I shared my location", context);
+        
+        await sendText(userPhone, response.message);
+        return respond({ success: true, message: "location_processed_by_agent" });
+      }
     }
 
     // === TEXT HANDLERS ===
@@ -500,39 +476,63 @@ serve(async (req: Request): Promise<Response> => {
       }
     }
 
-    // Home/menu commands → show categories
+    // === AI AGENT PROCESSING ===
+    
+    // Check if this is a first-time user or new session (no conversation history)
+    const context: BuyAndSellContext = await MarketplaceAgent.loadContext(userPhone, supabase);
+    const isNewSession = !context.conversationHistory || context.conversationHistory.length === 0;
+    
+    // Home/menu/reset commands → show welcome message and reset context
     const lower = text.toLowerCase();
     if (
       !text ||
       lower === "menu" ||
       lower === "home" ||
-      lower === "buy" ||
-      lower === "sell" ||
-      lower === "categories" ||
+      lower === "start" ||
       lower === "stop" ||
-      lower === "exit"
+      lower === "exit" ||
+      lower === "reset"
     ) {
-      const userCountry = mapCountry(getCountryCode(userPhone));
-      await showBuySellCategories(userPhone, userCountry);
+      // Reset conversation context
+      await MarketplaceAgent.resetContext(userPhone, supabase);
+      
+      // Send welcome message
+      await sendText(userPhone, WELCOME_MESSAGE);
       
       const duration = Date.now() - startTime;
-      recordMetric("buy_sell_directory.message.processed", 1, {
+      recordMetric("buy_sell.welcome_shown", 1, {
         duration_ms: duration,
+        isNewSession,
       });
       
-      return respond({ success: true, message: "categories_shown" });
+      return respond({ success: true, message: "welcome_shown" });
     }
-
-    // Fallback: Show categories (default action for any unrecognized text)
-    const userCountry = mapCountry(getCountryCode(userPhone));
-    await showBuySellCategories(userPhone, userCountry);
+    
+    // For new sessions with actual text, show welcome first then process
+    if (isNewSession && text) {
+      await sendText(userPhone, WELCOME_MESSAGE);
+      
+      await logStructuredEvent("BUY_SELL_WELCOME_NEW_USER", {
+        from: `***${userPhone.slice(-4)}`,
+        firstMessage: text.slice(0, 50),
+        correlationId,
+      });
+    }
+    
+    // Process message with AI agent
+    const agent = new MarketplaceAgent(supabase, correlationId);
+    const response = await agent.process(text, context);
+    
+    // Send response to user
+    await sendText(userPhone, response.message);
 
     const duration = Date.now() - startTime;
-    recordMetric("buy_sell_directory.message.processed", 1, {
+    recordMetric("buy_sell.agent_message.processed", 1, {
       duration_ms: duration,
+      action: response.action,
     });
 
-    return respond({ success: true });
+    return respond({ success: true, action: response.action });
   } catch (error) {
     const duration = Date.now() - startTime;
     
@@ -541,7 +541,7 @@ serve(async (req: Request): Promise<Response> => {
     const errorStack = error instanceof Error ? error.stack : undefined;
     
     logStructuredEvent(
-      "BUY_SELL_DIR_ERROR",
+      "BUY_SELL_ERROR",
       {
         error: errorMessage,
         stack: errorStack,
@@ -552,19 +552,8 @@ serve(async (req: Request): Promise<Response> => {
       "error",
     );
 
-    recordMetric("buy_sell_directory.message.error", 1);
+    recordMetric("buy_sell.message.error", 1);
 
     return respond({ error: errorMessage }, { status: 500 });
   }
 });
-
-function mapCountry(countryCode: string | null): string {
-  switch (countryCode) {
-    case "250":
-      return "RW";
-    case "356":
-      return "MT";
-    default:
-      return "RW";
-  }
-}
