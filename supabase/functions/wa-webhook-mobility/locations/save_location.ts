@@ -2,6 +2,7 @@
 import type { RouterContext } from "../types.ts";
 import { saveLocationToCache } from "./cache.ts";
 import { saveRecentLocation, type RecentSource } from "./recent.ts";
+import { logStructuredEvent } from "../observe/log.ts";
 
 /**
  * Save location to both cache (30-min TTL) and recent_locations (history)
@@ -16,7 +17,6 @@ export async function saveUserLocation(
   source: RecentSource = 'mobility',
 ): Promise<void> {
   if (!ctx.profileId) {
-    console.warn('saveUserLocation: No profileId, skipping save');
     return;
   }
 
@@ -27,7 +27,11 @@ export async function saveUserLocation(
     // Save to recent_locations table (for "Use Last Location" button)
     await saveRecentLocation(ctx, coords, source);
   } catch (error) {
-    console.error('save_user_location_fail', error);
+    await logStructuredEvent("SAVE_USER_LOCATION_FAILED", {
+      userId: ctx.profileId,
+      source,
+      error: error instanceof Error ? error.message : String(error),
+    });
     // Don't throw - we don't want to fail the search if cache save fails
   }
 }

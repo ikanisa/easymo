@@ -1,4 +1,5 @@
 import type { RouterContext } from "../types.ts";
+import { logStructuredEvent } from "../observe/log.ts";
 
 const TTL_MINUTES = 30;
 
@@ -24,7 +25,10 @@ export async function saveRecentLocation(
       context,
     });
   } catch (err) {
-    console.error('recent_locations.insert_fail', err);
+    await logStructuredEvent("RECENT_LOCATIONS_INSERT_FAILED", {
+      userId: ctx.profileId,
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 }
 
@@ -49,7 +53,10 @@ export async function getRecentLocation(
       return { lat: data[0].lat as number, lng: data[0].lng as number };
     }
   } catch (err) {
-    console.error('recent_locations.query_fail', err);
+    await logStructuredEvent("RECENT_LOCATIONS_QUERY_FAILED", {
+      userId: ctx.profileId,
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
   return null;
 }
@@ -69,7 +76,11 @@ export async function recordRecentActivity(
       details,
     });
   } catch (err) {
-    console.error('recent_activities.insert_fail', err);
+    await logStructuredEvent("RECENT_ACTIVITIES_INSERT_FAILED", {
+      userId: ctx.profileId,
+      activityType,
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 }
 
