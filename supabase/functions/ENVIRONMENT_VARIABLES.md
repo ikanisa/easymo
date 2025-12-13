@@ -13,10 +13,10 @@
 
 ## AI Provider Variables (At least one required for AI features)
 
-| Variable | Description |
-|----------|-------------|
-| `OPENAI_API_KEY` | OpenAI API key for GPT models and OCR |
-| `GEMINI_API_KEY` | Google Gemini API key for vision/OCR |
+| Variable | Alternatives | Description |
+|----------|-------------|-------------|
+| `OPENAI_API_KEY` | - | OpenAI API key for GPT models and OCR |
+| `GEMINI_API_KEY` | `API_KEY` | Google Gemini API key for vision/OCR and AI agent features |
 
 ## Optional Variables
 
@@ -25,6 +25,17 @@
 | `UPSTASH_REDIS_URL` | Redis URL for rate limiting | Disabled |
 | `UPSTASH_REDIS_TOKEN` | Redis token | Disabled |
 | `WA_ALLOW_UNSIGNED_WEBHOOKS` | Skip signature verification | `false` |
+| `WA_WEBHOOK_VERIFY_TOKEN` | Webhook verification token for inbound messages | None |
+
+## Buy & Sell Agent Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `GEMINI_API_KEY` | Google Gemini API key for AI agent features | Yes |
+| `WHATSAPP_BRIDGE_API_KEY` | API key for authenticating broadcast requests | Yes |
+| `WA_TEMPLATE_VENDOR_OUTREACH` | WhatsApp template name for vendor outreach | No (default: `vendor_outreach`) |
+| `WA_PHONE_ID` | WhatsApp Phone Number ID | Yes |
+| `WA_TOKEN` | WhatsApp API access token | Yes |
 
 ## Setting Secrets
 
@@ -40,6 +51,12 @@ supabase secrets set WA_TOKEN=EAAx...
 supabase secrets set WA_APP_SECRET=abc123...
 supabase secrets set WA_VERIFY_TOKEN=your-verify-token
 supabase secrets set OPENAI_API_KEY=sk-...
+
+# Buy & Sell Agent secrets
+supabase secrets set GEMINI_API_KEY=your-gemini-key
+supabase secrets set WHATSAPP_BRIDGE_API_KEY=your-bridge-api-key
+supabase secrets set WA_WEBHOOK_VERIFY_TOKEN=your-webhook-token
+supabase secrets set WA_TEMPLATE_VENDOR_OUTREACH=vendor_outreach
 ```
 
 ## Diagnostic Endpoint
