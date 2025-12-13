@@ -14,17 +14,37 @@ import {
 } from "../_shared/wa-webhook-shared/domains/insurance/gate.ts";
 import type { SupportedLanguage } from "../_shared/wa-webhook-shared/i18n/language.ts";
 import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
-import type { 
+import type {
   RawWhatsAppMessage,
-  RouterContext, 
+  RouterContext,
   WhatsAppInteractiveMessage,
   WhatsAppTextMessage,
-  WhatsAppWebhookPayload, 
+  WhatsAppWebhookPayload,
 } from "../_shared/wa-webhook-shared/types.ts";
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 // Insurance domain imports
-import { handleInsuranceListSelection, startInsurance } from "./insurance/index.ts";
+import {
+  handleInsuranceListSelection,
+  startInsurance,
+} from "./insurance/index.ts";
+
+function formatUnknownError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  if (typeof error === "object" && error !== null) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim().length > 0) {
+      return message;
+    }
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return String(error);
+    }
+  }
+  return String(error);
+}
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -35,7 +55,11 @@ const insuranceConfig = WEBHOOK_CONFIG.insurance;
 
 const security = createSecurityMiddleware("wa-webhook-insurance", {
   maxBodySize: insuranceConfig.maxBodySize,
-  rateLimit: { enabled: false, limit: insuranceConfig.rateLimit, windowSeconds: insuranceConfig.rateWindow },
+  rateLimit: {
+    enabled: false,
+    limit: insuranceConfig.rateLimit,
+    windowSeconds: insuranceConfig.rateWindow,
+  },
 });
 
 serve(async (req: Request): Promise<Response> => {
@@ -133,9 +157,19 @@ serve(async (req: Request): Promise<Response> => {
         sample: hash ? `${hash.slice(0, 6)}…${hash.slice(-4)}` : null,
       };
     })();
-    const appSecret = Deno.env.get("WHATSAPP_APP_SECRET") ?? Deno.env.get("WA_APP_SECRET");
-    const allowUnsigned = (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() === "true";
+    const appSecret = Deno.env.get("WHATSAPP_APP_SECRET") ??
+      Deno.env.get("WA_APP_SECRET");
+    const runtimeEnv =
+      (Deno.env.get("APP_ENV") ?? Deno.env.get("NODE_ENV") ?? "development")
+        .toLowerCase();
+    const allowUnsigned = runtimeEnv !== "production" &&
+      runtimeEnv !== "prod" &&
+      (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() ===
+        "true";
     const internalForward = req.headers.get("x-wa-internal-forward") === "true";
+    const allowInternalForward =
+      (Deno.env.get("WA_ALLOW_INTERNAL_FORWARD") ?? "false").toLowerCase() ===
+        "true";
 
     if (!appSecret) {
       logEvent("INSURANCE_AUTH_CONFIG_ERROR", { reason: "missing_app_secret" });
@@ -145,7 +179,11 @@ serve(async (req: Request): Promise<Response> => {
     let isValidSignature = false;
     if (signature) {
       try {
-        isValidSignature = await verifyWebhookSignature(rawBody, signature, appSecret);
+        isValidSignature = await verifyWebhookSignature(
+          rawBody,
+          signature,
+          appSecret,
+        );
         if (isValidSignature) {
           logEvent("INSURANCE_SIGNATURE_VALID", {
             signatureHeader,
@@ -154,15 +192,19 @@ serve(async (req: Request): Promise<Response> => {
         }
       } catch (err) {
         logEvent("INSURANCE_SIGNATURE_ERROR", {
-          error: err instanceof Error ? err.message : String(err),
+          error: formatUnknownError(err),
         });
       }
     }
 
     if (!isValidSignature) {
-      if (allowUnsigned || internalForward) {
+      if (allowUnsigned || (internalForward && allowInternalForward)) {
         logEvent("INSURANCE_AUTH_BYPASS", {
-          reason: internalForward ? "internal_forward" : signature ? "signature_mismatch" : "no_signature",
+          reason: internalForward
+            ? "internal_forward"
+            : signature
+            ? "signature_mismatch"
+            : "no_signature",
           signatureHeader,
           signatureMethod: signatureMeta.method,
           signatureSample: signatureMeta.sample,
@@ -185,7 +227,9 @@ serve(async (req: Request): Promise<Response> => {
       payload = rawBody ? JSON.parse(rawBody) : {} as WhatsAppWebhookPayload;
     } catch (parseError) {
       logEvent("INSURANCE_PAYLOAD_INVALID_JSON", {
-        error: parseError instanceof Error ? parseError.message : String(parseError),
+        error: parseError instanceof Error
+          ? parseError.message
+          : String(parseError),
       });
       return respond({ error: "invalid_payload" }, { status: 400 });
     }
@@ -231,7 +275,9 @@ serve(async (req: Request): Promise<Response> => {
         .then(
           () => {},
           (insertError: Error) => {
-            logEvent("INSURANCE_IDEMPOTENCY_INSERT_FAILED", { error: insertError.message }, "warn");
+            logEvent("INSURANCE_IDEMPOTENCY_INSERT_FAILED", {
+              error: insertError.message,
+            }, "warn");
           },
         );
     }
@@ -244,7 +290,10 @@ serve(async (req: Request): Promise<Response> => {
     if (!gate.allowed) {
       await recordMotorInsuranceHidden(ctx, gate, "menu");
       await sendMotorInsuranceBlockedMessage(ctx);
-      return respond({ success: false, blocked: true, reason: "feature_gate" }, { status: 403 });
+      return respond(
+        { success: false, blocked: true, reason: "feature_gate" },
+        { status: 403 },
+      );
     }
 
     // Get user state
@@ -262,7 +311,7 @@ serve(async (req: Request): Promise<Response> => {
       if (message.type === "interactive") {
         const interactiveMessage = message as WhatsAppInteractiveMessage;
         const interactiveType = interactiveMessage.interactive?.type;
-        
+
         if (interactiveType === "button_reply") {
           const buttonId = interactiveMessage.interactive?.button_reply?.id;
           if (buttonId) {
@@ -283,20 +332,29 @@ serve(async (req: Request): Promise<Response> => {
 
       // For any other message type (including media), just show contact info
       if (!handled) {
-        logEvent("INSURANCE_UNHANDLED_SHOWING_CONTACT", { type: message.type }, "debug");
+        logEvent(
+          "INSURANCE_UNHANDLED_SHOWING_CONTACT",
+          { type: message.type },
+          "debug",
+        );
         handled = await startInsurance(ctx, state);
       }
     } catch (handlerError) {
-      logEvent("INSURANCE_HANDLER_ERROR", { 
-        error: handlerError instanceof Error ? handlerError.message : String(handlerError),
+      logEvent("INSURANCE_HANDLER_ERROR", {
+        error: formatUnknownError(handlerError),
         stack: handlerError instanceof Error ? handlerError.stack : undefined,
         messageType: message.type,
         from: scrubPII(ctx.from),
       }, "error");
       // Send error message to user
-      const { sendText } = await import("../_shared/wa-webhook-shared/wa/client.ts");
+      const { sendText } = await import(
+        "../_shared/wa-webhook-shared/wa/client.ts"
+      );
       try {
-        await sendText(ctx.from, "Sorry, something went wrong. Please try again.");
+        await sendText(
+          ctx.from,
+          "Sorry, something went wrong. Please try again.",
+        );
       } catch (_sendError) {
         // Ignore send errors - already logged main error
       }
@@ -304,24 +362,25 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     return respond({ success: true, handled });
-
   } catch (error) {
     logEvent("INSURANCE_ERROR", {
-      error: error instanceof Error ? error.message : String(error),
+      error: formatUnknownError(error),
     });
-    
+
     return respond(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : "Unknown error" 
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 });
 
 // Helper functions
-function getFirstMessage(payload: WhatsAppWebhookPayload): RawWhatsAppMessage | null {
+function getFirstMessage(
+  payload: WhatsAppWebhookPayload,
+): RawWhatsAppMessage | null {
   for (const entry of payload.entry ?? []) {
     for (const change of entry.changes ?? []) {
       const messages = change.value?.messages;
@@ -343,7 +402,9 @@ async function buildContext(
   const from = message.from;
 
   // Auto-create profile if needed
-  const { ensureProfile } = await import("../_shared/wa-webhook-shared/utils/profile.ts");
+  const { ensureProfile } = await import(
+    "../_shared/wa-webhook-shared/utils/profile.ts"
+  );
   const profile = await ensureProfile(supabase, from);
 
   return {
@@ -361,31 +422,46 @@ async function handleInsuranceButton(
 ): Promise<boolean> {
   // Handle Share easyMO button (auto-appended by reply.ts)
   if (buttonId === IDS.SHARE_EASYMO || buttonId === "share_easymo") {
-    const { handleShareEasyMOButton } = await import("../_shared/wa-webhook-shared/utils/share-button-handler.ts");
+    const { handleShareEasyMOButton } = await import(
+      "../_shared/wa-webhook-shared/utils/share-button-handler.ts"
+    );
     return await handleShareEasyMOButton(ctx, "wa-webhook-insurance");
   }
 
   // Handle back/home buttons
   if (buttonId === IDS.BACK_HOME || buttonId === "back_menu") {
-    const { sendHomeMenu } = await import("../_shared/wa-webhook-shared/flows/home.ts");
+    const { sendHomeMenu } = await import(
+      "../_shared/wa-webhook-shared/flows/home.ts"
+    );
     await sendHomeMenu(ctx);
     return true;
   }
-  
+
   // Handle insurance button selections
-  if (buttonId.startsWith("ins_") || buttonId === IDS.INSURANCE_AGENT || buttonId === "insurance" || buttonId === IDS.INSURANCE_SUBMIT || buttonId === IDS.INSURANCE_HELP || buttonId === IDS.MOTOR_INSURANCE_UPLOAD) {
+  if (
+    buttonId.startsWith("ins_") || buttonId === IDS.INSURANCE_AGENT ||
+    buttonId === "insurance" || buttonId === IDS.INSURANCE_SUBMIT ||
+    buttonId === IDS.INSURANCE_HELP || buttonId === IDS.MOTOR_INSURANCE_UPLOAD
+  ) {
     // Handle new simplified flow buttons
-    if (buttonId === IDS.INSURANCE_SEND_CERTIFICATE || buttonId === IDS.INSURANCE_SEND_CARTE_JAUNE || buttonId === IDS.INSURANCE_CHAT_TEAM) {
+    if (
+      buttonId === IDS.INSURANCE_SEND_CERTIFICATE ||
+      buttonId === IDS.INSURANCE_SEND_CARTE_JAUNE ||
+      buttonId === IDS.INSURANCE_CHAT_TEAM
+    ) {
       return await handleInsuranceListSelection(ctx, state, buttonId);
     }
     // If it's a specific action like submit or help, delegate to list selection handler
-    if (buttonId === IDS.INSURANCE_SUBMIT || buttonId === IDS.INSURANCE_HELP || buttonId === IDS.MOTOR_INSURANCE_UPLOAD) {
+    if (
+      buttonId === IDS.INSURANCE_SUBMIT || buttonId === IDS.INSURANCE_HELP ||
+      buttonId === IDS.MOTOR_INSURANCE_UPLOAD
+    ) {
       return await handleInsuranceListSelection(ctx, state, buttonId);
     }
     await startInsurance(ctx, state);
     return true;
   }
-  
+
   return false;
 }
 
@@ -395,13 +471,24 @@ async function handleInsuranceList(
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
   // Handle insurance list selections
-  if (listId.startsWith("ins_") || listId === IDS.INSURANCE_AGENT || listId === "insurance" || listId === IDS.INSURANCE_SUBMIT || listId === IDS.INSURANCE_HELP || listId === IDS.MOTOR_INSURANCE_UPLOAD) {
+  if (
+    listId.startsWith("ins_") || listId === IDS.INSURANCE_AGENT ||
+    listId === "insurance" || listId === IDS.INSURANCE_SUBMIT ||
+    listId === IDS.INSURANCE_HELP || listId === IDS.MOTOR_INSURANCE_UPLOAD
+  ) {
     // Handle new simplified flow list selections
-    if (listId === IDS.INSURANCE_SEND_CERTIFICATE || listId === IDS.INSURANCE_SEND_CARTE_JAUNE || listId === IDS.INSURANCE_CHAT_TEAM) {
+    if (
+      listId === IDS.INSURANCE_SEND_CERTIFICATE ||
+      listId === IDS.INSURANCE_SEND_CARTE_JAUNE ||
+      listId === IDS.INSURANCE_CHAT_TEAM
+    ) {
       return await handleInsuranceListSelection(ctx, state, listId);
     }
     // If it's a specific action like submit or help, handle the selection
-    if (listId === IDS.INSURANCE_SUBMIT || listId === IDS.INSURANCE_HELP || listId === IDS.MOTOR_INSURANCE_UPLOAD) {
+    if (
+      listId === IDS.INSURANCE_SUBMIT || listId === IDS.INSURANCE_HELP ||
+      listId === IDS.MOTOR_INSURANCE_UPLOAD
+    ) {
       return await handleInsuranceListSelection(ctx, state, listId);
     }
     // Otherwise show the menu
@@ -422,25 +509,32 @@ async function handleInsuranceText(
   if (!text) return false;
 
   // Check for insurance-related keywords
-  if (text === IDS.INSURANCE_AGENT || text === "insurance" || 
-      ["assurance", "cover", "claim"].includes(text)) {
+  if (
+    text === IDS.INSURANCE_AGENT || text === "insurance" ||
+    ["assurance", "cover", "claim"].includes(text)
+  ) {
     await startInsurance(ctx, state);
     return true;
   }
 
   // If in any insurance state, show contact info
-  if (state.key?.startsWith("ins_") || state.key === "insurance_menu" || state.key === "insurance_upload") {
+  if (
+    state.key?.startsWith("ins_") || state.key === "insurance_menu" ||
+    state.key === "insurance_upload"
+  ) {
     await startInsurance(ctx, state);
     return true;
   }
 
   // For any unhandled text in insurance context, return to home
-  const { sendHomeMenu } = await import("../_shared/wa-webhook-shared/flows/home.ts");
+  const { sendHomeMenu } = await import(
+    "../_shared/wa-webhook-shared/flows/home.ts"
+  );
   await sendHomeMenu(ctx);
   return true;
 }
 
-logStructuredEvent("SERVICE_STARTED", { 
+logStructuredEvent("SERVICE_STARTED", {
   service: "wa-webhook-insurance",
   version: "1.1.0",
 });

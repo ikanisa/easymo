@@ -4,9 +4,10 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
-import type { UserState, StateUpdate } from "../types/context.ts";
+import type { StateUpdate, UserState } from "../types/context.ts";
 import { TIMEOUTS } from "../config/constants.ts";
 import { logStructuredEvent } from "../observability.ts";
+import { ensureProfile as ensureWebhookProfile } from "../wa-webhook-shared/state/store.ts";
 
 // ============================================================================
 // STATE OPERATIONS
@@ -17,7 +18,7 @@ import { logStructuredEvent } from "../observability.ts";
  */
 export async function getState<TData = unknown>(
   supabase: SupabaseClient,
-  userId: string
+  userId: string,
 ): Promise<UserState<TData> | null> {
   try {
     const { data, error } = await supabase
@@ -57,7 +58,7 @@ export async function getState<TData = unknown>(
 export async function setState<TData = unknown>(
   supabase: SupabaseClient,
   userId: string,
-  update: StateUpdate<TData>
+  update: StateUpdate<TData>,
 ): Promise<boolean> {
   try {
     const ttl = update.ttlSeconds ?? TIMEOUTS.STATE_TTL_SECONDS;
@@ -98,7 +99,7 @@ export async function setState<TData = unknown>(
  */
 export async function clearState(
   supabase: SupabaseClient,
-  userId: string
+  userId: string,
 ): Promise<boolean> {
   try {
     const { error } = await supabase
@@ -130,7 +131,7 @@ export async function clearState(
 export async function updateStateData<TData = unknown>(
   supabase: SupabaseClient,
   userId: string,
-  dataUpdater: (currentData: TData) => TData
+  dataUpdater: (currentData: TData) => TData,
 ): Promise<boolean> {
   const currentState = await getState<TData>(supabase, userId);
   if (!currentState) return false;
@@ -152,33 +153,22 @@ export async function updateStateData<TData = unknown>(
 export async function getOrCreateUser(
   supabase: SupabaseClient,
   phone: string,
-  language: string = "en"
+  language: string = "en",
 ): Promise<{ user_id: string; language: string } | null> {
   try {
-    const { data: user, error } = await supabase
-      .rpc("get_or_create_user", {
-        p_phone: phone,
-        p_name: null,
-        p_language: language,
-        p_country: "RW",
-      });
+    const profile = await ensureWebhookProfile(
+      supabase as any,
+      phone,
+      language as any,
+    );
 
-    if (error) {
-      logStructuredEvent("USER_GET_OR_CREATE_ERROR", {
-        phone,
-        error: error.message,
-      }, "error");
-      return null;
-    }
-
-    if (!user) {
-      return null;
-    }
-
-    logStructuredEvent("USER_ENSURED", { userId: user.id, phone });
+    logStructuredEvent("USER_ENSURED", {
+      userId: profile.user_id,
+      phone: `***${phone.slice(-4)}`,
+    });
     return {
-      user_id: user.id,
-      language: user.language,
+      user_id: profile.user_id,
+      language: profile.locale ?? language,
     };
   } catch (error) {
     logStructuredEvent("USER_ENSURE_ERROR", {
@@ -195,7 +185,7 @@ export async function getOrCreateUser(
  */
 export async function ensureProfile(
   supabase: SupabaseClient,
-  waId: string
+  waId: string,
 ): Promise<{ user_id: string; language: string } | null> {
   return getOrCreateUser(supabase, waId);
 }

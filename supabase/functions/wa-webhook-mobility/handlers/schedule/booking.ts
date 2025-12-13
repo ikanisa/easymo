@@ -16,7 +16,7 @@ import { getAppConfig } from "../../utils/app_config.ts";
 import { waChatLink } from "../../utils/links.ts";
 import { maskPhone } from "../../flows/support.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
-import { timeAgo, safeRowTitle } from "../../utils/text.ts";
+import { safeRowTitle, timeAgo } from "../../utils/text.ts";
 import { sendText } from "../../wa/client.ts";
 import {
   buildButtons,
@@ -41,7 +41,7 @@ import {
 } from "../../locations/favorites.ts";
 import { buildSaveRows } from "../../locations/save.ts";
 import { sortMatches } from "../../../_shared/wa-webhook-shared/utils/sortMatches.ts";
-import { 
+import {
   getCachedLocation,
   hasAnyRecentLocation,
 } from "../../locations/cache.ts";
@@ -175,7 +175,7 @@ export type ScheduleSavedPickerState = {
 };
 
 function getMatchTimestamp(match: MatchResult): string | null {
-  return match.matched_at ?? match.created_at ?? null;
+  return match.created_at ?? null;
 }
 
 function timestampMs(match: MatchResult): number {
@@ -225,19 +225,25 @@ export async function handleScheduleRole(
       roleId: id,
     });
     if (!ready) return true;
-    
+
     // Check cache first (30 min TTL)
     const cached = await getCachedLocation(ctx.supabase, ctx.profileId);
     if (cached && cached.isValid) {
       // Use cached location directly, skip prompt
       const vehicle = storedVehicle ?? "veh_moto";
-      await setState(ctx.supabase, ctx.profileId, { key: "schedule_location", data: { role, vehicle } });
-      return await handleScheduleLocation(ctx, { role, vehicle }, { lat: cached.lat, lng: cached.lng });
+      await setState(ctx.supabase, ctx.profileId, {
+        key: "mobility_schedule_location",
+        data: { role, vehicle },
+      });
+      return await handleScheduleLocation(ctx, { role, vehicle }, {
+        lat: cached.lat,
+        lng: cached.lng,
+      });
     }
 
     if (storedVehicle) {
       await setState(ctx.supabase, ctx.profileId, {
-        key: "schedule_location",
+        key: "mobility_schedule_location",
         data: { role, vehicle: storedVehicle },
       });
       await sendButtonsMessage(
@@ -252,13 +258,20 @@ export async function handleScheduleRole(
     const cached = await getCachedLocation(ctx.supabase, ctx.profileId);
     if (cached && cached.isValid && storedVehicle) {
       // Use cached location directly, skip prompt
-      await setState(ctx.supabase, ctx.profileId, { key: "schedule_location", data: { role, vehicle: storedVehicle } });
-      return await handleScheduleLocation(ctx, { role, vehicle: storedVehicle }, { lat: cached.lat, lng: cached.lng });
+      await setState(ctx.supabase, ctx.profileId, {
+        key: "mobility_schedule_location",
+        data: { role, vehicle: storedVehicle },
+      });
+      return await handleScheduleLocation(
+        ctx,
+        { role, vehicle: storedVehicle },
+        { lat: cached.lat, lng: cached.lng },
+      );
     }
-    
+
     if (storedVehicle) {
       await setState(ctx.supabase, ctx.profileId, {
-        key: "schedule_location",
+        key: "mobility_schedule_location",
         data: { role, vehicle: storedVehicle },
       });
       await sendButtonsMessage(
@@ -317,7 +330,7 @@ export async function handleScheduleVehicle(
   const vehicleType = vehicleFromId(vehicleId);
   await updateStoredVehicleType(ctx.supabase, ctx.profileId, vehicleType);
   await setState(ctx.supabase, ctx.profileId, {
-    key: "schedule_location",
+    key: "mobility_schedule_location",
     data: {
       role: state.role,
       vehicle: vehicleType,
@@ -334,7 +347,9 @@ export async function handleScheduleVehicle(
       }),
     );
   } catch (e) {
-    try { await sendText(ctx.from, body); } catch (_) { /* noop */ }
+    try {
+      await sendText(ctx.from, body);
+    } catch (_) { /* noop */ }
   }
   return true;
 }
@@ -361,13 +376,13 @@ export async function handleScheduleLocation(
   coords: { lat: number; lng: number },
 ): Promise<boolean> {
   if (!ctx.profileId || !state.role || !state.vehicle) return false;
-  
+
   // Save location to cache and history
-  await saveUserLocation(ctx, coords, 'mobility');
-  
+  await saveUserLocation(ctx, coords, "mobility");
+
   // Acknowledge pickup location received
   await sendText(ctx.from, "✅ Pickup location saved!");
-  
+
   await setState(ctx.supabase, ctx.profileId, {
     key: "mobility_schedule_dropoff",
     data: {
@@ -390,7 +405,9 @@ export async function handleScheduleLocation(
     const fallbackBody = t(ctx.locale, "schedule.dropoff.instructions", {
       instructions: t(ctx.locale, "location.share.instructions"),
     });
-    try { await sendText(ctx.from, fallbackBody); } catch (_) { /* noop */ }
+    try {
+      await sendText(ctx.from, fallbackBody);
+    } catch (_) { /* noop */ }
   }
   return true;
 }
@@ -403,13 +420,13 @@ export async function handleScheduleDropoff(
   if (!ctx.profileId || !state.role || !state.vehicle) {
     return false;
   }
-  
+
   // Save dropoff location
-  await saveUserLocation(ctx, coords, 'mobility');
-  
+  await saveUserLocation(ctx, coords, "mobility");
+
   // Acknowledge dropoff received
   await sendText(ctx.from, "✅ Drop-off location saved!");
-  
+
   if (!state.tripId) {
     if (!state.origin) {
       await sendText(ctx.from, t(ctx.locale, "schedule.pickup.missing"));
@@ -444,18 +461,18 @@ export async function handleScheduleDropoff(
     const radiusMeters = radiusMetersForDropoff;
     const max = config.max_results ?? 9;
 
-  const matches = await fetchMatches(ctx, context, {
+    const matches = await fetchMatches(ctx, context, {
       preferDropoff: true,
       limit: max,
       radiusMeters,
     });
 
-  await deliverMatches(ctx, context, matches, {
+    await deliverMatches(ctx, context, matches, {
       messagePrefix: t(ctx.locale, "schedule.dropoff.saved"),
       radiusMeters,
     });
-  return true;
-} catch (error) {
+    return true;
+  } catch (error) {
     console.error("mobility.schedule_dropoff_fail", error);
     await logStructuredEvent("MATCHES_ERROR", {
       flow: "schedule",
@@ -488,13 +505,17 @@ async function storeLastScheduleContext(
 ): Promise<void> {
   try {
     const { data, error } = await ctx.supabase
-      .from('profiles')
-      .select('metadata')
-      .eq('user_id', ctx.profileId!)
+      .from("profiles")
+      .select("metadata")
+      .eq("user_id", ctx.profileId!)
       .maybeSingle();
-    if (error && error.code !== 'PGRST116') return;
-    const root = (data?.metadata && typeof data.metadata === 'object') ? { ...(data!.metadata as any) } : {};
-    const mobility = (root.mobility && typeof root.mobility === 'object') ? { ...root.mobility } : {};
+    if (error && error.code !== "PGRST116") return;
+    const root = (data?.metadata && typeof data.metadata === "object")
+      ? { ...(data!.metadata as any) }
+      : {};
+    const mobility = (root.mobility && typeof root.mobility === "object")
+      ? { ...root.mobility }
+      : {};
     mobility.schedule = {
       last: {
         role: state.role,
@@ -503,10 +524,13 @@ async function storeLastScheduleContext(
         origin: state.origin ?? null,
         dropoff: state.dropoff ?? null,
         capturedAt: new Date().toISOString(),
-      }
+      },
     };
     root.mobility = mobility;
-    await ctx.supabase.from('profiles').update({ metadata: root }).eq('user_id', ctx.profileId!);
+    await ctx.supabase.from("profiles").update({ metadata: root }).eq(
+      "user_id",
+      ctx.profileId!,
+    );
   } catch (_) { /* noop */ }
 }
 
@@ -517,7 +541,7 @@ async function requestScheduleTime(
   if (!ctx.profileId) return false;
   const serializedState: Record<string, unknown> = { ...state };
   await setState(ctx.supabase, ctx.profileId, {
-    key: "schedule_time_select",
+    key: "mobility_schedule_time",
     data: serializedState,
   });
 
@@ -688,24 +712,28 @@ export async function startScheduleSavedLocationPicker(
   const body = favorites.length
     ? baseBody
     : `${baseBody}\n\n${t(ctx.locale, "location.saved.list.empty")}`;
-  
+
   // Check for cached location (last 30 minutes)
   const rows: Array<{ id: string; title: string; description?: string }> = [];
   const lastLoc = await readLastLocation(ctx);
   if (lastLoc && lastLoc.capturedAt) {
     const capturedTime = new Date(lastLoc.capturedAt);
     const now = new Date();
-    const minutesAgo = Math.floor((now.getTime() - capturedTime.getTime()) / (1000 * 60));
-    
+    const minutesAgo = Math.floor(
+      (now.getTime() - capturedTime.getTime()) / (1000 * 60),
+    );
+
     if (minutesAgo <= 30) {
       rows.push({
         id: "USE_CURRENT_LOCATION",
         title: "📍 Current Location",
-        description: `Last updated ${minutesAgo} min${minutesAgo === 1 ? '' : 's'} ago`,
+        description: `Last updated ${minutesAgo} min${
+          minutesAgo === 1 ? "" : "s"
+        } ago`,
       });
     }
   }
-  
+
   rows.push(
     ...favorites.map((fav) => scheduleFavoriteToRow(fav)),
     ...buildSaveRows(ctx),
@@ -715,7 +743,7 @@ export async function startScheduleSavedLocationPicker(
       description: t(ctx.locale, "common.back_to_menu.description"),
     },
   );
-  
+
   await sendListMessage(
     ctx,
     {
@@ -736,7 +764,7 @@ export async function handleScheduleSavedLocationSelection(
   selectionId: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
-  
+
   // Handle "Use Current Location"
   if (selectionId === "USE_CURRENT_LOCATION") {
     const lastLoc = await readLastLocation(ctx);
@@ -751,7 +779,7 @@ export async function handleScheduleSavedLocationSelection(
       );
       return true;
     }
-    
+
     const coords = { lat: lastLoc.lat, lng: lastLoc.lng };
     if (pickerState.stage === "pickup") {
       return await handleScheduleLocation(
@@ -766,7 +794,7 @@ export async function handleScheduleSavedLocationSelection(
       coords,
     );
   }
-  
+
   const favorite = await getFavoriteById(ctx, selectionId);
   if (!favorite) {
     await sendButtonsMessage(
@@ -793,7 +821,6 @@ export async function handleScheduleSavedLocationSelection(
     coords,
   );
 }
-
 
 function formatTime(date: Date): string {
   return date.toTimeString().slice(0, 5); // HH:MM
@@ -902,12 +929,12 @@ export async function createTripAndDeliverMatches(
       })
       : t(ctx.locale, "schedule.trip.created");
 
-  await deliverMatches(ctx, context, matches, {
-    messagePrefix,
-    radiusMeters,
-  });
-  await storeLastScheduleContext(ctx, context);
-  return true;
+    await deliverMatches(ctx, context, matches, {
+      messagePrefix,
+      radiusMeters,
+    });
+    await storeLastScheduleContext(ctx, context);
+    return true;
   } catch (error) {
     console.error("mobility.schedule_create_fail", error);
     await logStructuredEvent("MATCHES_ERROR", {
@@ -977,31 +1004,35 @@ async function sharePickupButtons(
   options: { allowChange?: boolean } = {},
 ): Promise<ButtonSpec[]> {
   const buttons: ButtonSpec[] = [];
-  
+
   // Check if user has recent location for "Use Last Location" button
-  const hasRecent = ctx.profileId ? await hasAnyRecentLocation(ctx.supabase, ctx.profileId) : false;
-  
+  const hasRecent = ctx.profileId
+    ? await hasAnyRecentLocation(ctx.supabase, ctx.profileId)
+    : false;
+
   if (hasRecent) {
-    const { getUseLastLocationButton } = await import("../../../_shared/wa-webhook-shared/locations/messages.ts");
+    const { getUseLastLocationButton } = await import(
+      "../../../_shared/wa-webhook-shared/locations/messages.ts"
+    );
     const button = getUseLastLocationButton(ctx.locale);
     buttons.push({
       id: IDS.USE_LAST_LOCATION,
       title: button.title,
     });
   }
-  
+
   if (role === "driver" && options.allowChange) {
     buttons.push({
       id: IDS.MOBILITY_CHANGE_VEHICLE,
       title: t(ctx.locale, "mobility.nearby.change_vehicle"),
     });
   }
-  
+
   buttons.push({
     id: IDS.LOCATION_SAVED_LIST,
     title: t(ctx.locale, "location.saved.button"),
   });
-  
+
   const [primary, ...rest] = buttons;
   return buildButtons(primary, ...rest);
 }
@@ -1026,7 +1057,7 @@ async function promptScheduleVehicleSelection(
 ): Promise<void> {
   if (!ctx.profileId) return;
   await setState(ctx.supabase, ctx.profileId, {
-    key: "schedule_vehicle",
+    key: "mobility_schedule_vehicle",
     data: { role },
   });
   await sendListMessage(
@@ -1045,9 +1076,13 @@ async function promptScheduleVehicleSelection(
 }
 
 export function kmToMeters(km: number | null | undefined): number {
-  if (!km || Number.isNaN(km)) return MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS;
+  if (!km || Number.isNaN(km)) {
+    return MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS;
+  }
   const meters = Math.round(km * 1000);
-  if (!Number.isFinite(meters) || meters <= 0) return MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS;
+  if (!Number.isFinite(meters) || meters <= 0) {
+    return MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS;
+  }
   return Math.min(
     Math.max(meters, MOBILITY_CONFIG.DEFAULT_SEARCH_RADIUS_METERS),
     MOBILITY_CONFIG.MAX_SEARCH_RADIUS_METERS,
@@ -1130,7 +1165,7 @@ export async function fetchMatches(
 ): Promise<MatchResult[]> {
   // Use explicit window minutes (scheduled trips use 30 min window too)
   const windowMinutes = 30;
-  
+
   const matches = state.role === "passenger"
     ? await matchDriversForTrip(
       ctx.supabase,
@@ -1167,7 +1202,7 @@ export async function deliverMatches(
   const rows = matches.map((match) => buildScheduleRow(ctx, match));
 
   await setState(ctx.supabase, ctx.profileId!, {
-    key: "schedule_results",
+    key: "mobility_schedule_results",
     data: {
       ...state,
       rows: rows.map((r) => r.state),
@@ -1189,56 +1224,6 @@ export async function deliverMatches(
     return;
   }
 
-  // Notify drivers when a passenger schedules a trip
-  if (state.role === 'passenger') {
-    try {
-      const topDrivers = matches.slice(0, 9);
-      const { sendButtonsMessage } = await import("../../utils/reply.ts");
-      const passengerName = (await ctx.supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('user_id', ctx.profileId!)
-        .maybeSingle()).data?.full_name ?? 'A passenger';
-      for (const d of topDrivers) {
-        if (!d.whatsapp_e164) continue;
-        // Quiet hours
-        const quiet = await isDriverQuiet(ctx.supabase, d.creator_user_id).catch(() => false);
-        if (quiet) continue;
-        const acceptId = `RIDE_ACCEPT::${state.tripId}`;
-        try {
-          await sendButtonsMessage(
-            { ...ctx, from: d.whatsapp_e164, profileId: d.creator_user_id },
-            `🚖 New scheduled trip!\n\nPassenger: ${passengerName}\nDistance: ${typeof d.distance_km === 'number' ? `${d.distance_km.toFixed(1)} km` : 'nearby'}\n\nAccept this ride?`,
-            [{ id: acceptId, title: '✅ Accept Ride' }]
-          );
-        } catch (e) {
-          try {
-            const { sendTemplate } = await import("../../wa/client.ts");
-            const tpl = Deno.env.get('WA_DRIVER_NOTIFY_TEMPLATE') ?? 'ride_notify';
-            const lang = Deno.env.get('WA_TEMPLATE_LANG') ?? 'en';
-            const compact = `New scheduled trip near you. Passenger: ${passengerName}.`;
-            await sendTemplate(d.whatsapp_e164, { name: tpl, language: lang, bodyParameters: [{ type: 'text', text: compact }] });
-          } catch (tplErr) {
-            const { sendText } = await import("../../wa/client.ts");
-            await sendText(d.whatsapp_e164, `🚖 New scheduled trip. Passenger: ${passengerName}. Reply ACCEPT to confirm.`);
-          }
-        }
-        try {
-          await ctx.supabase.from('trip_notifications').insert({ trip_id: state.tripId, recipient_id: d.creator_user_id, status: 'sent' });
-        } catch (error: unknown) {
-          console.error(JSON.stringify({
-            event: "TRIP_NOTIFICATION_INSERT_FAILED",
-            error: error instanceof Error ? error.message : String(error),
-            tripId: state.tripId,
-            recipientId: d.creator_user_id
-          }));
-        }
-      }
-    } catch (e) {
-      console.warn('schedule.notify_drivers_warn', e);
-    }
-  }
-
   await sendListWithActions(
     ctx,
     {
@@ -1254,35 +1239,6 @@ export async function deliverMatches(
   );
 }
 
-async function isDriverQuiet(client: any, driverId: string): Promise<boolean> {
-  try {
-    const { data } = await client
-      .from('profiles')
-      .select('metadata')
-      .eq('user_id', driverId)
-      .maybeSingle();
-    const meta = (data?.metadata && typeof data.metadata === 'object') ? (data!.metadata as any) : {};
-    const quiet = meta?.driver?.quiet;
-    if (!quiet?.enabled) return false;
-    const tz = quiet.tz || 'Africa/Kigali';
-    const now = new Date();
-    const hours = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: tz }).format(now);
-    const toMinutes = (hhmm: string) => {
-      const [h, m] = hhmm.split(':').map((x: string) => parseInt(x, 10));
-      return h * 60 + (m || 0);
-    };
-    const cur = toMinutes(hours);
-    const start = toMinutes(String(quiet.start || '22:00'));
-    const end = toMinutes(String(quiet.end || '06:00'));
-    if (start <= end) {
-      return cur >= start && cur < end;
-    }
-    return cur >= start || cur < end;
-  } catch (_) {
-    return false;
-  }
-}
-
 export function matchActionButtons(_state: ScheduleState): ButtonSpec[] {
   return [];
 }
@@ -1294,11 +1250,13 @@ function buildScheduleRow(
   row: { id: string; title: string; description?: string };
   state: ScheduleRow;
 } {
-  const masked = maskPhone(match.whatsapp_e164 ?? "");
+  const masked = maskPhone(match.phone ?? "");
   // WhatsApp requires non-empty title - use ref code if phone is empty
   const refShort = (match.ref_code ?? "").slice(0, 8);
   const rawTitle = masked || refShort || `Match ${match.trip_id.slice(0, 8)}`;
-  const title = safeRowTitle(rawTitle.trim() || `Ref ${match.trip_id.slice(0, 8)}`);
+  const title = safeRowTitle(
+    rawTitle.trim() || `Ref ${match.trip_id.slice(0, 8)}`,
+  );
   const distanceLabel = typeof match.distance_km === "number"
     ? toDistanceLabel(match.distance_km)
     : null;
@@ -1323,7 +1281,7 @@ function buildScheduleRow(
     },
     state: {
       id: rowId,
-      whatsapp: match.whatsapp_e164 ?? "",
+      whatsapp: match.phone ?? "",
       ref: match.ref_code ?? "---",
       tripId: match.trip_id,
     },

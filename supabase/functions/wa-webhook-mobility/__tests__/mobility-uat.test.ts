@@ -3,9 +3,16 @@
  * Comprehensive User Acceptance Testing for mobility/ride workflows
  */
 
-import { assertEquals, assertExists } from "https://deno.land/std@0.203.0/testing/asserts.ts";
+import {
+  assertEquals,
+  assertExists,
+} from "https://deno.land/std@0.203.0/testing/asserts.ts";
 import { createTestSuite } from "../../_shared/testing/test-utils.ts";
-import { TEST_USERS, TEST_LOCATIONS, TEST_TRIPS } from "../../_shared/testing/fixtures.ts";
+import {
+  TEST_LOCATIONS,
+  TEST_TRIPS,
+  TEST_USERS,
+} from "../../_shared/testing/fixtures.ts";
 import { LOCATION_CONFIG } from "../../_shared/location-config.ts";
 
 // ============================================================================
@@ -16,28 +23,36 @@ const nearbySuite = createTestSuite("Mobility UAT - Nearby Search");
 
 nearbySuite.test("validates vehicle type selection", () => {
   const VEHICLE_TYPES = ["moto", "cab", "lifan", "truck", "others"];
-  
+
   const validateVehicleType = (type: string): boolean => {
     const normalizedType = type.replace("veh_", "");
     return VEHICLE_TYPES.includes(normalizedType);
   };
 
   assertEquals(validateVehicleType("moto"), true, "Should accept moto");
-  assertEquals(validateVehicleType("veh_cab"), true, "Should accept prefixed cab");
+  assertEquals(
+    validateVehicleType("veh_cab"),
+    true,
+    "Should accept prefixed cab",
+  );
   assertEquals(validateVehicleType("bicycle"), false, "Should reject bicycle");
   assertEquals(validateVehicleType("plane"), false, "Should reject plane");
 });
 
 nearbySuite.test("calculates distance between coordinates", () => {
-  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+  const calculateDistance = (
+    lat1: number,
+    lng1: number,
+    lat2: number,
+    lng2: number,
+  ): number => {
     const R = 6371; // Earth's radius in km
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLng/2) * Math.sin(dLng/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
 
@@ -45,24 +60,32 @@ nearbySuite.test("calculates distance between coordinates", () => {
     TEST_LOCATIONS.kigaliCenter.lat,
     TEST_LOCATIONS.kigaliCenter.lng,
     TEST_LOCATIONS.kimironko.lat,
-    TEST_LOCATIONS.kimironko.lng
+    TEST_LOCATIONS.kimironko.lng,
   );
-  
+
   assertEquals(distance > 0, true, "Distance should be positive");
-  assertEquals(distance < 50, true, "Distance within Kigali should be under 50km");
+  assertEquals(
+    distance < 50,
+    true,
+    "Distance within Kigali should be under 50km",
+  );
 });
 
 nearbySuite.test("returns zero distance for same location", () => {
-  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+  const calculateDistance = (
+    lat1: number,
+    lng1: number,
+    lat2: number,
+    lng2: number,
+  ): number => {
     if (lat1 === lat2 && lng1 === lng2) return 0;
     const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLng/2) * Math.sin(dLng/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
 
@@ -70,9 +93,9 @@ nearbySuite.test("returns zero distance for same location", () => {
     TEST_LOCATIONS.kigaliCenter.lat,
     TEST_LOCATIONS.kigaliCenter.lng,
     TEST_LOCATIONS.kigaliCenter.lat,
-    TEST_LOCATIONS.kigaliCenter.lng
+    TEST_LOCATIONS.kigaliCenter.lng,
   );
-  
+
   assertEquals(distance, 0, "Same location should have zero distance");
 });
 
@@ -85,8 +108,12 @@ nearbySuite.test("filters drivers by search radius", () => {
     { id: "d4", distance: 10 },
   ];
 
-  const nearbyDrivers = drivers.filter(d => d.distance <= DEFAULT_RADIUS_KM);
-  assertEquals(nearbyDrivers.length, 2, "Should only return drivers within 5km");
+  const nearbyDrivers = drivers.filter((d) => d.distance <= DEFAULT_RADIUS_KM);
+  assertEquals(
+    nearbyDrivers.length,
+    2,
+    "Should only return drivers within 5km",
+  );
 });
 
 nearbySuite.test("requires location for nearby search", () => {
@@ -103,7 +130,7 @@ const scheduleSuite = createTestSuite("Mobility UAT - Schedule Trip");
 
 scheduleSuite.test("validates role selection", () => {
   const VALID_ROLES = ["driver", "passenger"];
-  
+
   const validateRole = (role: string): boolean => {
     return VALID_ROLES.includes(role.toLowerCase());
   };
@@ -115,26 +142,39 @@ scheduleSuite.test("validates role selection", () => {
 });
 
 scheduleSuite.test("validates future date for scheduling", () => {
-  const validateScheduleTime = (date: Date): { valid: boolean; error?: string } => {
+  const validateScheduleTime = (
+    date: Date,
+  ): { valid: boolean; error?: string } => {
     const now = new Date();
     const minAdvance = 15 * 60 * 1000; // 15 minutes
-    
+
     if (date.getTime() < now.getTime() + minAdvance) {
-      return { valid: false, error: "Schedule must be at least 15 minutes in the future" };
+      return {
+        valid: false,
+        error: "Schedule must be at least 15 minutes in the future",
+      };
     }
     return { valid: true };
   };
 
   const pastDate = new Date(Date.now() - 3600000);
-  assertEquals(validateScheduleTime(pastDate).valid, false, "Should reject past dates");
+  assertEquals(
+    validateScheduleTime(pastDate).valid,
+    false,
+    "Should reject past dates",
+  );
 
   const futureDate = new Date(Date.now() + 3600000);
-  assertEquals(validateScheduleTime(futureDate).valid, true, "Should accept future dates");
+  assertEquals(
+    validateScheduleTime(futureDate).valid,
+    true,
+    "Should accept future dates",
+  );
 });
 
 scheduleSuite.test("validates recurrence options", () => {
   const VALID_RECURRENCE = ["once", "daily", "weekdays", "weekly"];
-  
+
   const validateRecurrence = (option: string): boolean => {
     return VALID_RECURRENCE.includes(option.toLowerCase());
   };
@@ -168,14 +208,14 @@ scheduleSuite.test("requires pickup location", () => {
 const goOnlineSuite = createTestSuite("Mobility UAT - Go Online");
 
 goOnlineSuite.test("requires driver to share location", () => {
-  const state = { key: "go_online_prompt", data: {} };
+  const state = { key: "mobility_go_online", data: {} };
   const hasLocation = state.data && "lat" in state.data && "lng" in state.data;
   assertEquals(hasLocation, false, "Should prompt for location");
 });
 
 goOnlineSuite.test("allows using cached location if recent", () => {
   const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
-  
+
   const isCacheValid = (lastUpdated: Date): boolean => {
     return Date.now() - lastUpdated.getTime() < CACHE_TTL_MS;
   };
@@ -200,12 +240,23 @@ goOnlineSuite.test("validates driver has insurance", () => {
     return { valid: missing.length === 0, missing };
   };
 
-  const completeDriver = { insurance_verified: true, license_verified: true, vehicle_plate: "RAB 123A" };
+  const completeDriver = {
+    insurance_verified: true,
+    license_verified: true,
+    vehicle_plate: "RAB 123A",
+  };
   assertEquals(validateDriverRequirements(completeDriver).valid, true);
 
-  const incompleteDriver = { insurance_verified: false, license_verified: true, vehicle_plate: "RAB 123A" };
+  const incompleteDriver = {
+    insurance_verified: false,
+    license_verified: true,
+    vehicle_plate: "RAB 123A",
+  };
   assertEquals(validateDriverRequirements(incompleteDriver).valid, false);
-  assertEquals(validateDriverRequirements(incompleteDriver).missing.includes("insurance"), true);
+  assertEquals(
+    validateDriverRequirements(incompleteDriver).missing.includes("insurance"),
+    true,
+  );
 });
 
 // ============================================================================
@@ -233,39 +284,64 @@ const VALID_TRANSITIONS: Record<TripStatusType, TripStatusType[]> = {
 };
 
 tripLifecycleSuite.test("validates open to matched transition", () => {
-  const isValid = VALID_TRANSITIONS[TripStatus.OPEN].includes(TripStatus.MATCHED);
+  const isValid = VALID_TRANSITIONS[TripStatus.OPEN].includes(
+    TripStatus.MATCHED,
+  );
   assertEquals(isValid, true);
 });
 
 tripLifecycleSuite.test("validates open cannot go directly to completed", () => {
-  const isValid = VALID_TRANSITIONS[TripStatus.OPEN].includes(TripStatus.COMPLETED);
+  const isValid = VALID_TRANSITIONS[TripStatus.OPEN].includes(
+    TripStatus.COMPLETED,
+  );
   assertEquals(isValid, false);
 });
 
 tripLifecycleSuite.test("validates matched to in_progress transition", () => {
-  const isValid = VALID_TRANSITIONS[TripStatus.MATCHED].includes(TripStatus.IN_PROGRESS);
+  const isValid = VALID_TRANSITIONS[TripStatus.MATCHED].includes(
+    TripStatus.IN_PROGRESS,
+  );
   assertEquals(isValid, true);
 });
 
 tripLifecycleSuite.test("validates in_progress to completed transition", () => {
-  const isValid = VALID_TRANSITIONS[TripStatus.IN_PROGRESS].includes(TripStatus.COMPLETED);
+  const isValid = VALID_TRANSITIONS[TripStatus.IN_PROGRESS].includes(
+    TripStatus.COMPLETED,
+  );
   assertEquals(isValid, true);
 });
 
 tripLifecycleSuite.test("validates completed is terminal state", () => {
   const hasTransitions = VALID_TRANSITIONS[TripStatus.COMPLETED].length > 0;
-  assertEquals(hasTransitions, false, "Completed should have no outgoing transitions");
+  assertEquals(
+    hasTransitions,
+    false,
+    "Completed should have no outgoing transitions",
+  );
 });
 
 tripLifecycleSuite.test("validates cancelled is terminal state", () => {
   const hasTransitions = VALID_TRANSITIONS[TripStatus.CANCELLED].length > 0;
-  assertEquals(hasTransitions, false, "Cancelled should have no outgoing transitions");
+  assertEquals(
+    hasTransitions,
+    false,
+    "Cancelled should have no outgoing transitions",
+  );
 });
 
 tripLifecycleSuite.test("all non-terminal states can transition to cancelled", () => {
-  assertEquals(VALID_TRANSITIONS[TripStatus.OPEN].includes(TripStatus.CANCELLED), true);
-  assertEquals(VALID_TRANSITIONS[TripStatus.MATCHED].includes(TripStatus.CANCELLED), true);
-  assertEquals(VALID_TRANSITIONS[TripStatus.IN_PROGRESS].includes(TripStatus.CANCELLED), true);
+  assertEquals(
+    VALID_TRANSITIONS[TripStatus.OPEN].includes(TripStatus.CANCELLED),
+    true,
+  );
+  assertEquals(
+    VALID_TRANSITIONS[TripStatus.MATCHED].includes(TripStatus.CANCELLED),
+    true,
+  );
+  assertEquals(
+    VALID_TRANSITIONS[TripStatus.IN_PROGRESS].includes(TripStatus.CANCELLED),
+    true,
+  );
 });
 
 // ============================================================================
@@ -288,18 +364,25 @@ fareSuite.test("calculates base fare correctly", () => {
       lifan: 300,
       truck: 500,
     };
-    
+
     const base = baseFares[vehicleType] || 500;
     const perKm = perKmRates[vehicleType] || 200;
     return Math.round(base + (distanceKm * perKm));
   };
 
-  assertEquals(calculateFare(5, "moto"), 1500, "5km moto: 500 + (5*200) = 1500");
+  assertEquals(
+    calculateFare(5, "moto"),
+    1500,
+    "5km moto: 500 + (5*200) = 1500",
+  );
   assertEquals(calculateFare(5, "cab"), 3000, "5km cab: 1000 + (5*400) = 3000");
 });
 
 fareSuite.test("applies minimum fare", () => {
-  const applyMinFare = (calculatedFare: number, vehicleType: string): number => {
+  const applyMinFare = (
+    calculatedFare: number,
+    vehicleType: string,
+  ): number => {
     const minFares: Record<string, number> = {
       moto: 300,
       cab: 500,
@@ -311,7 +394,11 @@ fareSuite.test("applies minimum fare", () => {
   };
 
   assertEquals(applyMinFare(200, "moto"), 300, "Should apply minimum fare");
-  assertEquals(applyMinFare(1000, "moto"), 1000, "Should not reduce fare above minimum");
+  assertEquals(
+    applyMinFare(1000, "moto"),
+    1000,
+    "Should not reduce fare above minimum",
+  );
 });
 
 fareSuite.test("handles invalid vehicle type gracefully", () => {
@@ -323,7 +410,11 @@ fareSuite.test("handles invalid vehicle type gracefully", () => {
     return baseFares[vehicleType] ?? 500; // Default to moto fare
   };
 
-  assertEquals(calculateFare("invalid"), 500, "Should default to base fare for invalid type");
+  assertEquals(
+    calculateFare("invalid"),
+    500,
+    "Should default to base fare for invalid type",
+  );
 });
 
 // ============================================================================
@@ -334,7 +425,7 @@ const verificationSuite = createTestSuite("Mobility UAT - Driver Verification");
 
 verificationSuite.test("validates license document types", () => {
   const VALID_MIME_TYPES = ["image/jpeg", "image/png", "application/pdf"];
-  
+
   const validateMimeType = (mimeType: string): boolean => {
     return VALID_MIME_TYPES.includes(mimeType);
   };
@@ -354,8 +445,8 @@ verificationSuite.test("validates license upload state", () => {
   };
 
   const isUploadState = (state: string): boolean => {
-    return state === VERIFICATION_STATES.LICENSE_UPLOAD || 
-           state === VERIFICATION_STATES.INSURANCE_UPLOAD;
+    return state === VERIFICATION_STATES.LICENSE_UPLOAD ||
+      state === VERIFICATION_STATES.INSURANCE_UPLOAD;
   };
 
   assertEquals(isUploadState(VERIFICATION_STATES.LICENSE_UPLOAD), true);
@@ -393,8 +484,16 @@ paymentSuite.test("validates transaction reference format", () => {
   };
 
   assertEquals(validateTransactionRef("ABC12345678"), true);
-  assertEquals(validateTransactionRef("SHORT"), false, "Should reject too short");
-  assertEquals(validateTransactionRef("INVALID REF!"), false, "Should reject special chars");
+  assertEquals(
+    validateTransactionRef("SHORT"),
+    false,
+    "Should reject too short",
+  );
+  assertEquals(
+    validateTransactionRef("INVALID REF!"),
+    false,
+    "Should reject special chars",
+  );
 });
 
 paymentSuite.test("allows skipping payment", () => {
@@ -445,16 +544,24 @@ const trackingSuite = createTestSuite("Mobility UAT - Real-Time Tracking");
 
 trackingSuite.test("validates location update frequency", () => {
   const MIN_UPDATE_INTERVAL_MS = 10000; // 10 seconds
-  
+
   const shouldUpdate = (lastUpdate: Date): boolean => {
     return Date.now() - lastUpdate.getTime() >= MIN_UPDATE_INTERVAL_MS;
   };
 
   const recentUpdate = new Date(Date.now() - 5000); // 5 sec ago
-  assertEquals(shouldUpdate(recentUpdate), false, "Should not update too frequently");
+  assertEquals(
+    shouldUpdate(recentUpdate),
+    false,
+    "Should not update too frequently",
+  );
 
   const oldUpdate = new Date(Date.now() - 15000); // 15 sec ago
-  assertEquals(shouldUpdate(oldUpdate), true, "Should allow update after interval");
+  assertEquals(
+    shouldUpdate(oldUpdate),
+    true,
+    "Should allow update after interval",
+  );
 });
 
 trackingSuite.test("calculates ETA correctly", () => {
@@ -473,7 +580,11 @@ trackingSuite.test("handles driver location not available", () => {
     eta: null,
   };
 
-  assertEquals(progress.driverLocation, null, "Should handle null driver location");
+  assertEquals(
+    progress.driverLocation,
+    null,
+    "Should handle null driver location",
+  );
 });
 
 // ============================================================================
@@ -483,7 +594,9 @@ trackingSuite.test("handles driver location not available", () => {
 const errorHandlingSuite = createTestSuite("Mobility UAT - Error Handling");
 
 errorHandlingSuite.test("handles invalid payload gracefully", () => {
-  const validatePayload = (rawBody: string): { valid: boolean; payload?: object } => {
+  const validatePayload = (
+    rawBody: string,
+  ): { valid: boolean; payload?: object } => {
     try {
       const payload = JSON.parse(rawBody);
       return { valid: true, payload };
@@ -493,7 +606,7 @@ errorHandlingSuite.test("handles invalid payload gracefully", () => {
   };
 
   assertEquals(validatePayload('{"valid": true}').valid, true);
-  assertEquals(validatePayload('invalid json').valid, false);
+  assertEquals(validatePayload("invalid json").valid, false);
 });
 
 errorHandlingSuite.test("handles missing sender gracefully", () => {
@@ -507,18 +620,34 @@ errorHandlingSuite.test("handles missing sender gracefully", () => {
     }],
   };
 
-  const from = (payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0] as any)?.from;
+  const from = (payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0] as any)
+    ?.from;
   assertEquals(from, undefined, "Should detect missing sender");
 });
 
 errorHandlingSuite.test("validates signature verification", () => {
-  const validateSignature = (hasSignature: boolean, allowUnsigned: boolean): boolean => {
+  const validateSignature = (
+    hasSignature: boolean,
+    allowUnsigned: boolean,
+  ): boolean => {
     return hasSignature || allowUnsigned;
   };
 
-  assertEquals(validateSignature(true, false), true, "Should allow with valid signature");
-  assertEquals(validateSignature(false, true), true, "Should allow unsigned when permitted");
-  assertEquals(validateSignature(false, false), false, "Should reject unsigned when not permitted");
+  assertEquals(
+    validateSignature(true, false),
+    true,
+    "Should allow with valid signature",
+  );
+  assertEquals(
+    validateSignature(false, true),
+    true,
+    "Should allow unsigned when permitted",
+  );
+  assertEquals(
+    validateSignature(false, false),
+    false,
+    "Should reject unsigned when not permitted",
+  );
 });
 
 console.log("✅ Mobility UAT tests loaded");
