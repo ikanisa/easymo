@@ -264,7 +264,175 @@ END;
 $$;
 
 -- ============================================================================
--- 4. COMMENTS FOR DOCUMENTATION
+-- 4. WALLET RPC FUNCTIONS (for backward compatibility with existing code)
+-- ============================================================================
+
+-- Get wallet summary (tokens balance)
+CREATE OR REPLACE FUNCTION public.wallet_summary(
+  _profile_id UUID
+)
+RETURNS TABLE (
+  balance_minor INTEGER,
+  pending_minor INTEGER,
+  currency TEXT,
+  tokens INTEGER
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    0 as balance_minor,  -- No cash balance in simplified schema
+    0 as pending_minor,  -- No pending balance
+    'TOK'::TEXT as currency,
+    COALESCE(u.tokens, 0) as tokens
+  FROM public.users u
+  WHERE u.id = _profile_id;
+END;
+$$;
+
+-- Get recent wallet transactions (simplified - returns empty for now)
+CREATE OR REPLACE FUNCTION public.wallet_transactions_recent(
+  _profile_id UUID,
+  _limit INTEGER DEFAULT 10
+)
+RETURNS TABLE (
+  id UUID,
+  amount_minor INTEGER,
+  currency TEXT,
+  direction TEXT,
+  description TEXT,
+  occurred_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- In simplified schema, we don't track transaction history
+  -- Return empty set for backward compatibility
+  RETURN;
+END;
+$$;
+
+-- Get wallet earn actions (referral info)
+CREATE OR REPLACE FUNCTION public.wallet_earn_actions(
+  _profile_id UUID,
+  _limit INTEGER DEFAULT 10
+)
+RETURNS TABLE (
+  id UUID,
+  title TEXT,
+  description TEXT,
+  reward_tokens INTEGER,
+  referral_code TEXT,
+  share_text TEXT
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_ref_code TEXT;
+  v_referral_count INTEGER;
+BEGIN
+  -- Get user's referral code
+  SELECT u.ref_code INTO v_ref_code
+  FROM public.users u
+  WHERE u.id = _profile_id;
+  
+  IF v_ref_code IS NULL THEN
+    RETURN;
+  END IF;
+  
+  -- Count referrals
+  SELECT COUNT(*) INTO v_referral_count
+  FROM public.users
+  WHERE referred_by = _profile_id;
+  
+  -- Return referral action
+  RETURN QUERY
+  SELECT
+    _profile_id as id,
+    'Invite friends' as title,
+    format('Share your code: %s (You have %s referrals)', v_ref_code, v_referral_count) as description,
+    10 as reward_tokens,
+    v_ref_code as referral_code,
+    format('Join EasyMO with my code: %s', v_ref_code) as share_text;
+END;
+$$;
+
+-- Get wallet redeem options (empty for now)
+CREATE OR REPLACE FUNCTION public.wallet_redeem_options(
+  _profile_id UUID
+)
+RETURNS TABLE (
+  id UUID,
+  title TEXT,
+  description TEXT,
+  cost_tokens INTEGER,
+  instructions TEXT
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- No redeem options in simplified schema yet
+  RETURN;
+END;
+$$;
+
+-- Get top promoters by referral count
+CREATE OR REPLACE FUNCTION public.wallet_top_promoters(
+  _limit INTEGER DEFAULT 10
+)
+RETURNS TABLE (
+  display_name TEXT,
+  whatsapp TEXT,
+  tokens INTEGER
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    COALESCE(u.name, 'User') as display_name,
+    u.phone as whatsapp,
+    u.tokens
+  FROM public.users u
+  WHERE u.is_active = true
+  ORDER BY u.tokens DESC
+  LIMIT _limit;
+END;
+$$;
+
+-- List token partners (empty for now)
+CREATE OR REPLACE FUNCTION public.wallet_list_token_partners(
+  _limit INTEGER DEFAULT 20
+)
+RETURNS TABLE (
+  id UUID,
+  name TEXT,
+  whatsapp_e164 TEXT,
+  category TEXT
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- No token partners in simplified schema
+  RETURN;
+END;
+$$;
+
+-- ============================================================================
+-- 5. COMMENTS FOR DOCUMENTATION
 -- ============================================================================
 
 COMMENT ON TABLE public.users IS 'Simplified user table - single source of truth for user profiles';

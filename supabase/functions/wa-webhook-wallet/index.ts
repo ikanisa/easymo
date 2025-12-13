@@ -70,12 +70,12 @@ serve(async (req: Request): Promise<Response> => {
   // Health check
   if (url.pathname === "/health" || url.pathname.endsWith("/health")) {
     try {
-      const { error } = await supabase.from("wallet_accounts").select("id").limit(1);
+      const { error } = await supabase.from("users").select("id").limit(1);
       return respond({
         status: error ? "unhealthy" : "healthy",
         service: SERVICE_NAME,
         timestamp: new Date().toISOString(),
-        checks: { database: error ? "disconnected" : "connected", table: "wallet_accounts" },
+        checks: { database: error ? "disconnected" : "connected", table: "users" },
         version: SERVICE_VERSION,
       }, { status: error ? 503 : 200 });
     } catch (err) {
