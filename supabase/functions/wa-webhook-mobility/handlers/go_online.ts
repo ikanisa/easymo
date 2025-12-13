@@ -5,13 +5,10 @@ import type { RouterContext } from "../types.ts";
 import { clearState, setState } from "../state/store.ts";
 import { t } from "../i18n/translator.ts";
 import { IDS } from "../wa/ids.ts";
-import { sendText, sendButtons } from "../wa/client.ts";
-import { sendButtonsMessage, homeOnly } from "../utils/reply.ts";
+import { sendText } from "../wa/client.ts";
+import { homeOnly, sendButtonsMessage } from "../utils/reply.ts";
 import { logStructuredEvent } from "../observe/log.ts";
-import {
-  getCachedLocation,
-  saveLocationToCache,
-} from "../locations/cache.ts";
+import { getCachedLocation, saveLocationToCache } from "../locations/cache.ts";
 import { getStoredVehicleType } from "./vehicle_plate.ts";
 import { ensureVehiclePlate } from "./vehicle_plate.ts";
 import { timeAgo } from "../utils/text.ts";
@@ -34,26 +31,31 @@ export async function startGoOnline(ctx: RouterContext): Promise<boolean> {
 
   // Check if driver has cached location
   const cached = await getCachedLocation(ctx.supabase, ctx.profileId);
-  
+
   await setState(ctx.supabase, ctx.profileId, {
-    key: "go_online_prompt",
+    key: "mobility_go_online",
     data: {},
   });
 
-  const buttons = [];
-  
   if (cached && cached.isValid) {
     const timeAgoText = timeAgo(cached.cachedAt);
-    buttons.push({
-      id: IDS.USE_CACHED_LOCATION,
-      title: `📍 ${timeAgoText} ago`,
-    });
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "mobility.go_online.prompt") + "\n\n" +
+        t(ctx.locale, "location.share.instructions"),
+      [
+        { id: IDS.USE_CACHED_LOCATION, title: `📍 ${timeAgoText} ago` },
+        ...homeOnly(),
+      ],
+      { emoji: "🟢" },
+    );
+    return true;
   }
-  
-  // Removed confusing "Share Current Location" button - users share via attachment menu
+
   await sendText(
     ctx.from,
-    t(ctx.locale, "mobility.go_online.prompt") + "\n\n" + t(ctx.locale, "location.share.instructions"),
+    t(ctx.locale, "mobility.go_online.prompt") + "\n\n" +
+      t(ctx.locale, "location.share.instructions"),
   );
 
   return true;
@@ -74,7 +76,7 @@ export async function handleGoOnlineLocation(
 
     // Get driver's vehicle type
     const vehicleType = await getStoredVehicleType(ctx.supabase, ctx.profileId);
-    
+
     // CRITICAL FIX: Create a trip record so driver is visible in matching
     if (vehicleType) {
       try {
@@ -88,7 +90,7 @@ export async function handleGoOnlineLocation(
           radiusMeters: 15000, // 15km radius (increased for better match rate)
           pickupText: "Driver online",
         });
-        
+
         await logStructuredEvent("DRIVER_TRIP_CREATED", {
           userId: ctx.profileId,
           vehicleType,
@@ -136,11 +138,10 @@ export async function handleGoOnlineLocation(
     });
 
     // Clear state after success
-    await clearState(ctx.supabase, ctx.profileId);
-
     // Enhanced success message with 30-minute duration
-    const successMessage = `✅ *You're now LIVE!*\n\n🚗 You'll receive ride offers for the next *30 minutes*.\n\nPassengers nearby can discover you now. Good luck! 🎉`;
-    
+    const successMessage =
+      `✅ *You're now LIVE!*\n\n🚗 You'll receive ride offers for the next *30 minutes*.\n\nPassengers nearby can discover you now. Good luck! 🎉`;
+
     await sendButtonsMessage(
       ctx,
       successMessage,
@@ -166,9 +167,12 @@ export async function handleGoOnlineUseCached(
 
   try {
     const cached = await getCachedLocation(ctx.supabase, ctx.profileId);
-    
+
     if (!cached || !cached.isValid) {
-      await sendText(ctx.from, t(ctx.locale, "mobility.location_cache.expired"));
+      await sendText(
+        ctx.from,
+        t(ctx.locale, "mobility.location_cache.expired"),
+      );
       return await startGoOnline(ctx);
     }
 

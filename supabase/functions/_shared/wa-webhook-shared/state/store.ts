@@ -10,21 +10,6 @@ type ProfileRecord = {
   locale: string | null;
 };
 
-type UserRecord = {
-  id: string;
-  phone: string;
-  name: string | null;
-  language: string;
-  country: string;
-  tokens: number;
-  ref_code: string | null;
-  referred_by: string | null;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  last_seen_at: string | null;
-};
-
 const WA_NUMBER_REGEX = /^\+\d{8,15}$/;
 const ALLOWED_PREFIXES = (Deno.env.get("WA_ALLOWED_MSISDN_PREFIXES") ?? "")
   .split(",")
@@ -62,14 +47,215 @@ function maskMsisdn(msisdn: string): string {
   return `***${digits.slice(-4)}`;
 }
 
+function formatUnknownError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  if (typeof error === "object" && error !== null) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim().length > 0) {
+      return message;
+    }
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return String(error);
+    }
+  }
+  return String(error);
+}
+
+async function findAuthUserIdByPhone(
+  client = supabase,
+  phone: string,
+): Promise<string | null> {
+  try {
+    const { data, error } = await client
+      .schema("auth")
+      .from("users")
+      .select("id")
+      .eq("phone", phone)
+      .maybeSingle();
+    if (error) return null;
+    return data?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function findAuthUserIdByPhoneViaAdminList(
+  client = supabase,
+  phone: string,
+): Promise<string | null> {
+  try {
+    const perPage = 200;
+    for (let page = 1; page <= 10; page++) {
+      const { data, error } = await client.auth.admin.listUsers({
+        page,
+        perPage,
+      } as any);
+      if (error) return null;
+
+      const users = (data as any)?.users as
+        | Array<{ id: string; phone?: string | null }>
+        | undefined;
+      if (!users?.length) return null;
+
+      const match = users.find((user) => user.phone === phone);
+      if (match?.id) return match.id;
+
+      if (users.length < perPage) return null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function getOrCreateAuthUserId(
+  client = supabase,
+  phoneE164: string,
+): Promise<string> {
+  const existing = await findAuthUserIdByPhone(client, phoneE164);
+  if (existing) return existing;
+
+  const { data: created, error: createError } = await client.auth.admin
+    .createUser({
+      phone: phoneE164,
+      phone_confirm: true,
+      user_metadata: { source: "whatsapp" },
+    });
+
+  if (!createError && created?.user?.id) return created.user.id;
+
+  // If creation failed because the user already exists (or any transient issue),
+  // try to resolve the existing user id via other strategies.
+  const retry = await findAuthUserIdByPhone(client, phoneE164);
+  if (retry) return retry;
+
+  const viaList = await findAuthUserIdByPhoneViaAdminList(client, phoneE164);
+  if (viaList) return viaList;
+
+  if (createError) throw createError;
+  throw new Error("Failed to resolve auth user id");
+}
+
+async function findProfileUserIdByColumn(
+  client = supabase,
+  column: string,
+  value: string,
+): Promise<string | null> {
+  const { data, error } = await client
+    .from("profiles")
+    .select("user_id")
+    .eq(column, value)
+    .maybeSingle();
+
+  if (error?.code === "42703") return null; // missing column
+  if (error && error.code !== "PGRST116") throw error;
+  return (data as any)?.user_id ?? null;
+}
+
+async function loadProfileLocale(
+  client = supabase,
+  userId: string,
+): Promise<string | null> {
+  const selectors = ["language", "locale"];
+  for (const selector of selectors) {
+    const { data, error } = await client
+      .from("profiles")
+      .select(selector)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (error?.code === "42703") continue;
+    if (error && error.code !== "PGRST116") throw error;
+    const value = (data as any)?.[selector];
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value.trim();
+    }
+  }
+  return null;
+}
+
+async function ensureProfileRowExists(
+  client = supabase,
+  userId: string,
+): Promise<void> {
+  const { error } = await client
+    .from("profiles")
+    .upsert({ user_id: userId }, { onConflict: "user_id" });
+  if (!error) return;
+
+  if (error.code === "42P10") {
+    const { data: existing, error: selectError } = await client
+      .from("profiles")
+      .select("user_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (selectError && selectError.code !== "PGRST116") throw selectError;
+
+    if (existing) return;
+
+    const { error: insertError } = await client
+      .from("profiles")
+      .insert({ user_id: userId });
+    if (insertError) throw insertError;
+    return;
+  }
+
+  throw error;
+}
+
+async function tryUpdateProfile(
+  client = supabase,
+  userId: string,
+  patch: Record<string, unknown>,
+): Promise<boolean> {
+  const { error } = await client
+    .from("profiles")
+    .update(patch)
+    .eq("user_id", userId);
+  if (!error) return true;
+  if (error.code === "42703") return false;
+  throw error;
+}
+
+async function loadChatStateRow(
+  client = supabase,
+  userId: string,
+): Promise<unknown> {
+  const orderColumns = ["updated_at", "last_updated"];
+  for (const column of orderColumns) {
+    const { data, error } = await client
+      .from("chat_state")
+      .select("state")
+      .eq("user_id", userId)
+      .order(column, { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error?.code === "42703") continue;
+    if (error && error.code !== "PGRST116") throw error;
+    return (data as any)?.state;
+  }
+
+  const { data, error } = await client
+    .from("chat_state")
+    .select("state")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error && error.code !== "PGRST116") throw error;
+  return (data as any)?.state;
+}
+
 export async function ensureProfile(
   client = supabase,
   whatsapp: string,
   locale?: SupportedLanguage,
 ): Promise<ProfileRecord> {
-  let normalized: string;
+  let normalizedE164: string;
+  let digits: string;
   try {
-    normalized = normalizeWhatsAppNumber(whatsapp);
+    normalizedE164 = normalizeWhatsAppNumber(whatsapp);
+    digits = normalizedE164.replace(/^\+/, "");
   } catch (error) {
     if (error instanceof InvalidWhatsAppNumberError) {
       await logStructuredEvent("INVALID_WHATSAPP_NUMBER", {
@@ -80,46 +266,99 @@ export async function ensureProfile(
     throw error;
   }
 
-  // NEW SIMPLIFIED SCHEMA: Use users table with get_or_create_user function
   try {
-    const defaultCountry = Deno.env.get("DEFAULT_COUNTRY") || "RW";
-    const { data: user, error: userError } = await client
-      .rpc("get_or_create_user", {
-        p_phone: normalized,
-        p_name: null,
-        p_language: locale || "en",
-        p_country: defaultCountry,
-      });
+    const desiredLocale = locale ?? null;
 
-    if (userError) {
-      await logStructuredEvent("USER_GET_OR_CREATE_ERROR", {
-        masked_phone: maskMsisdn(normalized),
-        error: userError.message,
-        error_code: userError.code,
-      });
-      throw userError;
+    // 1) Prefer existing profile (avoid auth calls)
+    const lookupCandidates: Array<{ column: string; value: string }> = [
+      { column: "whatsapp_number", value: digits },
+      { column: "wa_id", value: digits },
+      { column: "whatsapp_e164", value: normalizedE164 },
+      { column: "phone_number", value: normalizedE164 },
+      { column: "phone_e164", value: normalizedE164 },
+      { column: "whatsapp_number", value: normalizedE164 },
+      { column: "wa_id", value: normalizedE164 },
+    ];
+
+    let existingUserId: string | null = null;
+    for (const candidate of lookupCandidates) {
+      const found = await findProfileUserIdByColumn(
+        client,
+        candidate.column,
+        candidate.value,
+      );
+      if (found) {
+        existingUserId = found;
+        break;
+      }
     }
 
-    if (!user) {
-      throw new Error("get_or_create_user returned null");
+    if (existingUserId) {
+      const storedLocale = await loadProfileLocale(client, existingUserId);
+      const effectiveLocale = desiredLocale ?? storedLocale ?? "en";
+
+      if (desiredLocale && storedLocale !== desiredLocale) {
+        const updated = await tryUpdateProfile(client, existingUserId, {
+          language: desiredLocale,
+        });
+        if (!updated) {
+          await tryUpdateProfile(client, existingUserId, {
+            locale: desiredLocale,
+          });
+        }
+      }
+
+      await logStructuredEvent("PROFILE_ENSURED", {
+        masked_phone: maskMsisdn(normalizedE164),
+        user_id: existingUserId,
+        locale: effectiveLocale,
+      });
+
+      return {
+        user_id: existingUserId,
+        whatsapp_e164: normalizedE164,
+        locale: effectiveLocale,
+      };
     }
 
-    await logStructuredEvent("USER_ENSURED", {
-      masked_phone: maskMsisdn(normalized),
-      user_id: user.id,
-      language: user.language,
+    // 2) Create or reuse auth user for this phone, then ensure profile row exists
+    const userId = await getOrCreateAuthUserId(client, normalizedE164);
+    await ensureProfileRowExists(client, userId);
+
+    // 3) Best-effort: persist phone mapping across known column variants
+    await tryUpdateProfile(client, userId, { whatsapp_number: digits });
+    await tryUpdateProfile(client, userId, { wa_id: digits });
+    await tryUpdateProfile(client, userId, { whatsapp_e164: normalizedE164 });
+    await tryUpdateProfile(client, userId, { phone_number: normalizedE164 });
+    await tryUpdateProfile(client, userId, { phone_e164: normalizedE164 });
+
+    // 4) Best-effort: persist preferred language across known column variants
+    const effectiveLocale = desiredLocale ??
+      (await loadProfileLocale(client, userId)) ?? "en";
+    if (desiredLocale) {
+      const updated = await tryUpdateProfile(client, userId, {
+        language: desiredLocale,
+      });
+      if (!updated) {
+        await tryUpdateProfile(client, userId, { locale: desiredLocale });
+      }
+    }
+
+    await logStructuredEvent("PROFILE_CREATED", {
+      masked_phone: maskMsisdn(normalizedE164),
+      user_id: userId,
+      locale: effectiveLocale,
     });
 
-    // Return in ProfileRecord format for backward compatibility
     return {
-      user_id: user.id,
-      whatsapp_e164: user.phone,
-      locale: user.language,
-    } as ProfileRecord;
+      user_id: userId,
+      whatsapp_e164: normalizedE164,
+      locale: effectiveLocale,
+    };
   } catch (error) {
     await logStructuredEvent("USER_ENSURE_ERROR", {
-      masked_phone: maskMsisdn(normalized),
-      error: error instanceof Error ? error.message : String(error),
+      masked_phone: maskMsisdn(normalizedE164),
+      error: formatUnknownError(error),
     });
     throw error;
   }
@@ -129,16 +368,7 @@ export async function getState(
   client = supabase,
   userId: string,
 ): Promise<ChatState> {
-  // Be resilient to accidental duplicates by taking the latest row
-  const { data, error } = await client
-    .from("chat_state")
-    .select("state")
-    .eq("user_id", userId)
-    .order("last_updated", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error && error.code !== "PGRST116") throw error;
-  const raw = (data as any)?.state;
+  const raw = await loadChatStateRow(client, userId);
   if (!raw) return { key: "home", data: {} };
   if (typeof raw === "string") return { key: raw, data: {} };
   if (typeof raw === "object" && raw !== null) {
@@ -155,65 +385,51 @@ export async function setState(
   userId: string,
   state: ChatState,
 ): Promise<void> {
-  // Prefer upsert with conflict on user_id when the constraint exists
-  try {
+  const nowIso = new Date().toISOString();
+  const base = { user_id: userId, state };
+
+  const candidates: Array<Record<string, unknown>> = [
+    { ...base, state_key: state.key, updated_at: nowIso },
+    { ...base, state_key: state.key, last_updated: nowIso },
+    { ...base, updated_at: nowIso },
+    { ...base, last_updated: nowIso },
+    base,
+  ];
+
+  for (const payload of candidates) {
     const { error } = await client
       .from("chat_state")
-      .upsert({ user_id: userId, state, last_updated: new Date().toISOString() }, { onConflict: "user_id" });
-    if (error) throw error;
-    return;
-  } catch (err: any) {
-    // If it's a duplicate key error, the upsert should have worked but didn't
-    // This means the constraint might not exist or there's a different issue
-    // Try update-or-insert pattern instead
-    const nowIso = new Date().toISOString();
-    const { data, error } = await client
-      .from("chat_state")
-      .select("id")
-      .eq("user_id", userId)
-      .order("last_updated", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (error && error.code !== "PGRST116") throw error;
-    if (data?.id) {
-      // Update existing record
-      const { error: updErr } = await client
+      .upsert(payload, { onConflict: "user_id" });
+    if (!error) return;
+    if (error.code === "42703") continue; // missing column
+    if (error.code === "42P10") {
+      // No unique constraint on user_id: update-or-insert fallback
+      const { data: existing, error: selectError } = await client
         .from("chat_state")
-        .update({ state, last_updated: nowIso })
-        .eq("id", data.id);
-      if (updErr) throw updErr;
-    } else {
-      // Insert new record, but handle duplicate key gracefully
-      const { error: insErr } = await client
-        .from("chat_state")
-        .insert({ user_id: userId, state, last_updated: nowIso });
-      
-      // If we get a duplicate key error here, it means a race condition occurred
-      // Try one more time with update
-      if (insErr && insErr.code === "23505") {
-        const { data: retryData } = await client
+        .select("user_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (selectError && selectError.code !== "PGRST116") throw selectError;
+
+      if (existing) {
+        const { error: updateError } = await client
           .from("chat_state")
-          .select("id")
-          .eq("user_id", userId)
-          .order("last_updated", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        
-        if (retryData?.id) {
-          const { error: retryUpdErr } = await client
-            .from("chat_state")
-            .update({ state, last_updated: nowIso })
-            .eq("id", retryData.id);
-          if (retryUpdErr) throw retryUpdErr;
-        } else {
-          // Still can't find it, throw the original error
-          throw insErr;
-        }
-      } else if (insErr) {
-        throw insErr;
+          .update(payload)
+          .eq("user_id", userId);
+        if (updateError) throw updateError;
+        return;
       }
+
+      const { error: insertError } = await client.from("chat_state").insert(
+        payload,
+      );
+      if (insertError) throw insertError;
+      return;
     }
+    throw error;
   }
+
+  throw new Error("Unable to persist chat state (schema mismatch)");
 }
 
 export async function clearState(

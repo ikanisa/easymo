@@ -1,4 +1,9 @@
-import type { MatchResult } from "../rpc/mobility.ts";
+export type SortableMatch = {
+  trip_id?: string | null;
+  distance_km?: number | null;
+  matched_at?: string | null;
+  created_at?: string | null;
+};
 
 /**
  * Sort strategy for match results.
@@ -18,14 +23,14 @@ export interface SortMatchesOptions {
 /**
  * Get the timestamp from a match result, preferring matched_at over created_at.
  */
-function getMatchTimestamp(match: MatchResult): string | null {
+function getMatchTimestamp(match: SortableMatch): string | null {
   return match.matched_at ?? match.created_at ?? null;
 }
 
 /**
  * Convert a match's timestamp to milliseconds for comparison.
  */
-function timestampMs(match: MatchResult): number {
+function timestampMs(match: SortableMatch): number {
   const timestamp = getMatchTimestamp(match);
   return timestamp ? Date.parse(timestamp) : 0;
 }
@@ -33,7 +38,7 @@ function timestampMs(match: MatchResult): number {
 /**
  * Get the distance from a match, returning MAX_SAFE_INTEGER if not available.
  */
-function getDistance(match: MatchResult): number {
+function getDistance(match: SortableMatch): number {
   return typeof match.distance_km === "number"
     ? match.distance_km
     : Number.MAX_SAFE_INTEGER;
@@ -55,10 +60,10 @@ function getDistance(match: MatchResult): number {
  * // Sort by time (for scheduled flows)
  * const sorted = sortMatches(matches, { prioritize: 'time' });
  */
-export function sortMatches(
-  matches: MatchResult[],
+export function sortMatches<T extends SortableMatch>(
+  matches: T[],
   options: SortMatchesOptions = {},
-): MatchResult[] {
+): T[] {
   const { prioritize = "distance" } = options;
 
   return matches.sort((a, b) => {
@@ -92,7 +97,7 @@ export function sortMatches(
  * Comparator function for sorting by distance first.
  * Can be used directly with Array.sort().
  */
-export function compareByDistance(a: MatchResult, b: MatchResult): number {
+export function compareByDistance<T extends SortableMatch>(a: T, b: T): number {
   const distA = getDistance(a);
   const distB = getDistance(b);
   if (distA !== distB) return distA - distB;
@@ -108,7 +113,7 @@ export function compareByDistance(a: MatchResult, b: MatchResult): number {
  * Comparator function for sorting by time first.
  * Can be used directly with Array.sort().
  */
-export function compareByTime(a: MatchResult, b: MatchResult): number {
+export function compareByTime<T extends SortableMatch>(a: T, b: T): number {
   const timeA = timestampMs(a);
   const timeB = timestampMs(b);
   if (timeB !== timeA) return timeB - timeA;

@@ -67,31 +67,31 @@ export async function ensureVehiclePlate(
   resume: ResumeState,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
-  
+
   // Check if user already has a vehicle plate
   const existing = await getVehiclePlate(ctx.supabase, ctx.profileId);
   if (existing) return true;
-  
+
   // Prompt for vehicle plate
   await setState(ctx.supabase, ctx.profileId, {
     key: PLATE_STATE_KEY,
     data: resume,
   });
-  
+
   await sendButtonsMessage(
     ctx,
     "🚗 *Register Your Vehicle*\n\n" +
-    "Please enter your vehicle number plate.\n\n" +
-    "📋 *Examples:*\n" +
-    "• RAB 123 C (car)\n" +
-    "• RA 123 B (moto)\n" +
-    "• RAC 456 A (truck)\n\n" +
-    "Type your plate number below:",
+      "Please enter your vehicle number plate.\n\n" +
+      "📋 *Examples:*\n" +
+      "• RAB 123 C (car)\n" +
+      "• RA 123 B (moto)\n" +
+      "• RAC 456 A (truck)\n\n" +
+      "Type your plate number below:",
     [
-      { id: IDS.HOME, title: "← Cancel" },
+      { id: IDS.BACK_MENU, title: "← Cancel" },
     ],
   );
-  
+
   return false;
 }
 
@@ -122,16 +122,16 @@ export async function handleVehiclePlateInput(
   value: string,
 ): Promise<string | null> {
   if (!ctx.profileId) return "Missing profile";
-  
+
   const normalized = normalizePlate(value);
   if (!normalized) {
     return "Plate must be 4-10 letters/numbers. Example: RAA123C.";
   }
-  
+
   if (!isPlateFormatValid(normalized)) {
     return "Invalid plate format. Please use letters and numbers only.";
   }
-  
+
   await updateVehiclePlate(ctx.supabase, ctx.profileId, normalized);
   return null;
 }

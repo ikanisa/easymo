@@ -1,9 +1,9 @@
 import type { RouterContext } from "../../types.ts";
-import { setState, clearState } from "../../state/store.ts";
+import { clearState, setState } from "../../state/store.ts";
 import { IDS } from "../../wa/ids.ts";
 import { getAppConfig } from "../../utils/app_config.ts";
 import { t } from "../../i18n/translator.ts";
-import { sendButtonsMessage } from "../../utils/reply.ts";
+import { homeOnly, sendButtonsMessage } from "../../utils/reply.ts";
 import { sendText } from "../../wa/client.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
 import { maskPhone } from "../../flows/support.ts";
@@ -80,7 +80,7 @@ export async function requestScheduleDropoff(
     return false;
   }
   await setState(ctx.supabase, ctx.profileId, {
-    key: "schedule_dropoff",
+    key: "mobility_schedule_dropoff",
     data: { ...state },
   });
   try {
@@ -95,7 +95,9 @@ export async function requestScheduleDropoff(
     const fallbackBody = t(ctx.locale, "schedule.dropoff.instructions", {
       instructions: t(ctx.locale, "location.share.instructions"),
     });
-    try { await sendText(ctx.from, fallbackBody); } catch (_) {
+    try {
+      await sendText(ctx.from, fallbackBody);
+    } catch (_) {
       // noop
     }
   }
@@ -125,9 +127,9 @@ export async function handleScheduleResultSelection(
         id: IDS.SCHEDULE_REFRESH_RESULTS,
         title: t(ctx.locale, "common.buttons.refresh"),
       },
+      ...homeOnly(),
     ],
   );
-  await clearState(ctx.supabase, ctx.profileId);
   return true;
 }
 
