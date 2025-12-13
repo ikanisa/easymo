@@ -115,20 +115,10 @@ serve(async (req: Request): Promise<Response> => {
       messageText = `Location: ${message.location?.latitude}, ${message.location?.longitude}`;
     }
 
-    // Upsert user (ensure user exists)
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .upsert(
-        {
-          phone: from,
-          last_active_at: new Date().toISOString(),
-        },
-        {
-          onConflict: "phone",
-        }
-      )
-      .select()
-      .single();
+    // Get or create WhatsApp user
+    const { data: userData, error: userError } = await supabase.rpc("get_or_create_user", {
+      p_phone: from,
+    });
 
     if (userError) {
       await logStructuredEvent("USER_UPSERT_FAILED", {

@@ -156,7 +156,7 @@ CREATE POLICY "service_role_manage_whatsapp_business_replies" ON public.whatsapp
 
 CREATE TABLE IF NOT EXISTS public.sourcing_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID,
+  user_id UUID REFERENCES public.whatsapp_users(id) ON DELETE SET NULL,
   intent_json JSONB,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
   created_at TIMESTAMPTZ DEFAULT now()
@@ -211,7 +211,7 @@ CREATE POLICY "service_role_manage_candidate_vendors" ON public.candidate_vendor
 
 CREATE TABLE IF NOT EXISTS public.jobs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID,
+  user_id UUID REFERENCES public.whatsapp_users(id) ON DELETE SET NULL,
   type TEXT NOT NULL,
   payload_json JSONB,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
@@ -239,7 +239,7 @@ CREATE POLICY "service_role_manage_jobs" ON public.jobs
 
 CREATE TABLE IF NOT EXISTS public.conversations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID UNIQUE,
+  user_id UUID UNIQUE REFERENCES public.whatsapp_users(id) ON DELETE CASCADE,
   state_json JSONB DEFAULT '{"step": "COLLECT_INTENT"}'::jsonb,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
@@ -261,7 +261,7 @@ CREATE POLICY "service_role_manage_conversations" ON public.conversations
 
 CREATE TABLE IF NOT EXISTS public.inbound_messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID,
+  user_id UUID REFERENCES public.whatsapp_users(id) ON DELETE SET NULL,
   type TEXT,
   text TEXT,
   media_url TEXT,
@@ -287,7 +287,7 @@ CREATE POLICY "service_role_manage_inbound_messages" ON public.inbound_messages
 
 CREATE TABLE IF NOT EXISTS public.user_locations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID,
+  user_id UUID REFERENCES public.whatsapp_users(id) ON DELETE CASCADE,
   lat NUMERIC,
   lng NUMERIC,
   label TEXT,
