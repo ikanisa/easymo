@@ -1,9 +1,9 @@
 /**
  * AI Agent Orchestrator - Core Logic
- * 
+ *
  * Manages WhatsApp message routing to appropriate AI agents,
  * intent parsing, and domain action execution.
- * 
+ *
  * NOW WITH DATABASE-DRIVEN CONFIGURATION & TOOL EXECUTION:
  * - Loads personas, system instructions, tools, tasks, KBs from database
  * - Caches configs for 5 minutes to reduce DB load
@@ -11,9 +11,13 @@
  * - Executes tools with validation and logging
  */
 
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
-import { AgentConfigLoader, type AgentConfig } from "./agent-config-loader.ts";
+import {
+  createClient,
+  SupabaseClient,
+} from "https://esm.sh/@supabase/supabase-js";
+import { type AgentConfig, AgentConfigLoader } from "./agent-config-loader.ts";
 import { ToolExecutor } from "./tool-executor.ts";
+import { ensureProfile } from "./wa-webhook-shared/state/store.ts";
 
 // Types from our schema
 interface WhatsAppMessage {
@@ -55,7 +59,7 @@ export class AgentOrchestrator {
    */
   async processMessage(message: WhatsAppMessage): Promise<void> {
     const correlationId = crypto.randomUUID();
-    
+
     console.log(JSON.stringify({
       event: "AGENT_MESSAGE_RECEIVED",
       correlationId,
@@ -65,10 +69,14 @@ export class AgentOrchestrator {
 
     // 1. Get or create WhatsApp user
     const user = await this.getOrCreateUser(message.from);
-    
+
     // 2. Handle location messages - Save to cache for 30 minutes
     if (message.type === "location" && message.location) {
-      await this.saveLocationToCache(user.id, message.location.latitude, message.location.longitude);
+      await this.saveLocationToCache(
+        user.id,
+        message.location.latitude,
+        message.location.longitude,
+      );
       console.log(JSON.stringify({
         event: "LOCATION_CACHED",
         correlationId,
@@ -77,44 +85,56 @@ export class AgentOrchestrator {
         lng: message.location.longitude,
       }));
     }
-    
+
     // 3. Determine which agent to route to (based on context or default)
     const agentSlug = await this.determineAgent(user.id, message.body);
-    
+
     // 4. Get or create chat session for session persistence
-    const sessionId = await this.getOrCreateChatSession(message.from, agentSlug, user.id);
-    
+    const sessionId = await this.getOrCreateChatSession(
+      message.from,
+      agentSlug,
+      user.id,
+    );
+
     // 5. Get or create conversation (for existing workflow compatibility)
     const context = await this.getOrCreateConversation(user.id, agentSlug);
-    
+
     // 6. Store the message in session history
-    await this.addMessageToSession(sessionId, "user", message.body || "[Location shared]");
-    
+    await this.addMessageToSession(
+      sessionId,
+      "user",
+      message.body || "[Location shared]",
+    );
+
     // 7. Store the message
     const messageId = await this.storeMessage(context.conversationId, message);
-    
+
     // 8. Get conversation history for context
     const conversationHistory = await this.getSessionHistory(sessionId);
-    
+
     // 9. Parse intent from message with conversation context
-    const intent = await this.parseIntent(message.body || "location_shared", context, conversationHistory);
-    
+    const intent = await this.parseIntent(
+      message.body || "location_shared",
+      context,
+      conversationHistory,
+    );
+
     // 10. Store intent
     const intentId = await this.storeIntent(
       context,
       messageId,
-      intent
+      intent,
     );
-    
+
     // 11. Execute agent action based on intent
     await this.executeAgentAction(context, intentId, intent);
-    
+
     // 12. Send response back to user and get the response text for session history
     const responseText = await this.sendResponse(context, intent);
-    
+
     // 13. Store response in session history
     await this.addMessageToSession(sessionId, "assistant", responseText);
-    
+
     console.log(JSON.stringify({
       event: "AGENT_MESSAGE_PROCESSED",
       correlationId,
@@ -131,27 +151,38 @@ export class AgentOrchestrator {
   private async getOrCreateChatSession(
     userPhone: string,
     agentType: string,
-    userId?: string
+    userId?: string,
   ): Promise<string> {
     try {
       // Try using the RPC function
-      const { data, error } = await this.supabase.rpc("get_or_create_agent_session", {
-        p_user_phone: userPhone,
-        p_agent_type: agentType,
-        p_user_id: userId || null,
-        p_agent_id: null
-      });
-      
+      const { data, error } = await this.supabase.rpc(
+        "get_or_create_agent_session",
+        {
+          p_user_phone: userPhone,
+          p_agent_type: agentType,
+          p_user_id: userId || null,
+          p_agent_id: null,
+        },
+      );
+
       if (error) {
         console.warn("Failed to get/create session via RPC:", error.message);
         // Fallback to direct query
-        return await this.fallbackGetOrCreateSession(userPhone, agentType, userId);
+        return await this.fallbackGetOrCreateSession(
+          userPhone,
+          agentType,
+          userId,
+        );
       }
-      
+
       return data;
     } catch (error) {
       console.warn("Session RPC error:", error);
-      return await this.fallbackGetOrCreateSession(userPhone, agentType, userId);
+      return await this.fallbackGetOrCreateSession(
+        userPhone,
+        agentType,
+        userId,
+      );
     }
   }
 
@@ -161,7 +192,7 @@ export class AgentOrchestrator {
   private async fallbackGetOrCreateSession(
     userPhone: string,
     agentType: string,
-    userId?: string
+    userId?: string,
   ): Promise<string> {
     // Check for existing active session
     const { data: existing } = await this.supabase
@@ -172,7 +203,7 @@ export class AgentOrchestrator {
       .eq("status", "active")
       .gt("expires_at", new Date().toISOString())
       .single();
-    
+
     if (existing) {
       // Update last_message_at
       await this.supabase
@@ -181,7 +212,7 @@ export class AgentOrchestrator {
         .eq("id", existing.id);
       return existing.id;
     }
-    
+
     // Create new session
     const { data: newSession } = await this.supabase
       .from("agent_chat_sessions")
@@ -189,11 +220,11 @@ export class AgentOrchestrator {
         user_phone: userPhone,
         user_id: userId || null,
         agent_type: agentType,
-        status: "active"
+        status: "active",
       })
       .select("id")
       .single();
-    
+
     return newSession?.id || crypto.randomUUID();
   }
 
@@ -203,7 +234,7 @@ export class AgentOrchestrator {
   private async addMessageToSession(
     sessionId: string,
     role: "user" | "assistant" | "system",
-    content: string
+    content: string,
   ): Promise<void> {
     try {
       // Try using the RPC function
@@ -211,7 +242,7 @@ export class AgentOrchestrator {
         p_session_id: sessionId,
         p_role: role,
         p_content: content,
-        p_metadata: {}
+        p_metadata: {},
       });
     } catch (error) {
       // Fallback: update directly
@@ -220,20 +251,20 @@ export class AgentOrchestrator {
         .select("conversation_history")
         .eq("id", sessionId)
         .single();
-      
+
       if (session) {
         const history = session.conversation_history || [];
         history.push({
           role,
           content,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
-        
+
         await this.supabase
           .from("agent_chat_sessions")
-          .update({ 
+          .update({
             conversation_history: history,
-            last_message_at: new Date().toISOString()
+            last_message_at: new Date().toISOString(),
           })
           .eq("id", sessionId);
       }
@@ -243,13 +274,15 @@ export class AgentOrchestrator {
   /**
    * Get session conversation history
    */
-  private async getSessionHistory(sessionId: string): Promise<Array<{ role: string; content: string }>> {
+  private async getSessionHistory(
+    sessionId: string,
+  ): Promise<Array<{ role: string; content: string }>> {
     try {
       const { data } = await this.supabase.rpc("get_agent_conversation", {
         p_session_id: sessionId,
-        p_limit: 10
+        p_limit: 10,
       });
-      
+
       return data?.messages || [];
     } catch (error) {
       // Fallback: query directly
@@ -258,11 +291,11 @@ export class AgentOrchestrator {
         .select("conversation_history")
         .eq("id", sessionId)
         .single();
-      
+
       if (session?.conversation_history) {
         return session.conversation_history.slice(-10);
       }
-      
+
       return [];
     }
   }
@@ -291,6 +324,14 @@ export class AgentOrchestrator {
       .single();
 
     return { id: newUser!.id, preferredLanguage: newUser!.language };
+  private async getOrCreateUser(
+    phoneNumber: string,
+  ): Promise<{ id: string; preferredLanguage: string }> {
+    const profile = await ensureProfile(this.supabase, phoneNumber);
+    return {
+      id: profile.user_id,
+      preferredLanguage: profile.locale ?? "en",
+    };
   }
 
   /**
@@ -300,15 +341,15 @@ export class AgentOrchestrator {
   private async saveLocationToCache(
     userId: string,
     lat: number,
-    lng: number
+    lng: number,
   ): Promise<void> {
     try {
-      const { error } = await this.supabase.rpc('update_user_location_cache', {
+      const { error } = await this.supabase.rpc("update_user_location_cache", {
         _user_id: userId,
         _lat: lat,
         _lng: lng,
       });
-      
+
       if (error) {
         console.error(JSON.stringify({
           event: "LOCATION_CACHE_SAVE_FAILED",
@@ -332,7 +373,10 @@ export class AgentOrchestrator {
    * - Keywords in message
    * - User context/roles
    */
-  private async determineAgent(userId: string, messageBody: string): Promise<string> {
+  private async determineAgent(
+    userId: string,
+    messageBody: string,
+  ): Promise<string> {
     // Check for active conversation
     const { data: activeConv } = await this.supabase
       .from("whatsapp_conversations")
@@ -349,21 +393,27 @@ export class AgentOrchestrator {
 
     // Keyword-based routing
     const lowerBody = messageBody.toLowerCase();
-    
+
     // Rides keywords (highest priority - time-sensitive) → rides workflow
-    if (lowerBody.includes("ride") || lowerBody.includes("driver") || lowerBody.includes("passenger") || 
-        lowerBody.includes("pick") || lowerBody.includes("drop") || lowerBody.includes("take me") ||
-        lowerBody.includes("need transport") || lowerBody.includes("going to")) {
+    if (
+      lowerBody.includes("ride") || lowerBody.includes("driver") ||
+      lowerBody.includes("passenger") ||
+      lowerBody.includes("pick") || lowerBody.includes("drop") ||
+      lowerBody.includes("take me") ||
+      lowerBody.includes("need transport") || lowerBody.includes("going to")
+    ) {
       return "rides";
     }
-    
+
     // Insurance keywords → insurance workflow
-    if (lowerBody.includes("insurance") || lowerBody.includes("certificate") || 
-        lowerBody.includes("carte jaune") || lowerBody.includes("policy") || 
-        lowerBody.includes("cover") || lowerBody.includes("insure")) {
+    if (
+      lowerBody.includes("insurance") || lowerBody.includes("certificate") ||
+      lowerBody.includes("carte jaune") || lowerBody.includes("policy") ||
+      lowerBody.includes("cover") || lowerBody.includes("insure")
+    ) {
       return "insurance";
     }
-    
+
     // All other queries → buy_sell agent (marketplace, business, general support)
     return "buy_sell";
   }
@@ -373,7 +423,7 @@ export class AgentOrchestrator {
    */
   private async getOrCreateConversation(
     userId: string,
-    agentSlug: string
+    agentSlug: string,
   ): Promise<AgentContext> {
     // Get agent
     const { data: agent } = await this.supabase
@@ -440,7 +490,7 @@ export class AgentOrchestrator {
    */
   private async storeMessage(
     conversationId: string,
-    message: WhatsAppMessage
+    message: WhatsAppMessage,
   ): Promise<string> {
     const { data } = await this.supabase
       .from("whatsapp_messages")
@@ -466,11 +516,11 @@ export class AgentOrchestrator {
   private async parseIntent(
     messageBody: string,
     context: AgentContext,
-    conversationHistory?: Array<{ role: string; content: string }>
+    conversationHistory?: Array<{ role: string; content: string }>,
   ): Promise<ParsedIntent> {
     // Load agent configuration from database
     const config = await this.configLoader.loadAgentConfig(context.agentSlug);
-    
+
     // Log what we loaded
     console.log(JSON.stringify({
       event: "INTENT_PARSING_WITH_CONFIG",
@@ -480,20 +530,20 @@ export class AgentOrchestrator {
       toolsCount: config.tools.length,
       loadedFrom: config.loadedFrom,
     }));
-    
+
     // Use system instructions if available
     const systemInstructions = config.systemInstructions?.instructions || null;
     const guardrails = config.systemInstructions?.guardrails || null;
-    
+
     // Use simple keyword matching with conversation context
     // (Production would use LLM with full conversation history + system instructions)
     const intent = await this.simpleIntentParse(
-      messageBody, 
-      context.agentSlug, 
+      messageBody,
+      context.agentSlug,
       conversationHistory,
-      config
+      config,
     );
-    
+
     return intent;
   }
 
@@ -505,21 +555,28 @@ export class AgentOrchestrator {
     messageBody: string,
     agentSlug: string,
     conversationHistory?: Array<{ role: string; content: string }>,
-    config?: AgentConfig
+    config?: AgentConfig,
   ): Promise<ParsedIntent> {
     const lowerBody = messageBody.toLowerCase();
-    
+
     // Use conversation history for context (e.g., follow-up questions)
-    const hasRecentContext = conversationHistory && conversationHistory.length > 0;
-    const lastAssistantMessage = conversationHistory?.filter(m => m.role === "assistant").pop()?.content || "";
+    const hasRecentContext = conversationHistory &&
+      conversationHistory.length > 0;
+    const lastAssistantMessage =
+      conversationHistory?.filter((m) => m.role === "assistant").pop()
+        ?.content || "";
 
     switch (agentSlug) {
       case "buy_sell":
         // Marketplace and business queries
-        if (lowerBody.includes("buy") || lowerBody.includes("find") || lowerBody.includes("search")) {
+        if (
+          lowerBody.includes("buy") || lowerBody.includes("find") ||
+          lowerBody.includes("search")
+        ) {
           return {
             type: "search_products",
-            summary: `User searching for products or businesses: ${messageBody}`,
+            summary:
+              `User searching for products or businesses: ${messageBody}`,
             structuredPayload: { query: messageBody },
             confidence: 0.85,
           };
@@ -532,7 +589,10 @@ export class AgentOrchestrator {
             confidence: 0.80,
           };
         }
-        if (lowerBody.includes("business") || lowerBody.includes("shop") || lowerBody.includes("service")) {
+        if (
+          lowerBody.includes("business") || lowerBody.includes("shop") ||
+          lowerBody.includes("service")
+        ) {
           return {
             type: "search_business",
             summary: `User searching for businesses: ${messageBody}`,
@@ -541,9 +601,12 @@ export class AgentOrchestrator {
           };
         }
         break;
-      
+
       case "rides":
-        if (lowerBody.includes("need") && (lowerBody.includes("ride") || lowerBody.includes("driver"))) {
+        if (
+          lowerBody.includes("need") &&
+          (lowerBody.includes("ride") || lowerBody.includes("driver"))
+        ) {
           return {
             type: "find_driver",
             summary: `User needs a ride: ${messageBody}`,
@@ -551,7 +614,10 @@ export class AgentOrchestrator {
             confidence: 0.90,
           };
         }
-        if (lowerBody.includes("passenger") || lowerBody.includes("looking for") || lowerBody.includes("empty seats")) {
+        if (
+          lowerBody.includes("passenger") ||
+          lowerBody.includes("looking for") || lowerBody.includes("empty seats")
+        ) {
           return {
             type: "find_passenger",
             summary: `Driver looking for passengers: ${messageBody}`,
@@ -559,7 +625,10 @@ export class AgentOrchestrator {
             confidence: 0.85,
           };
         }
-        if (lowerBody.includes("schedule") || lowerBody.includes("book") || lowerBody.includes("tomorrow")) {
+        if (
+          lowerBody.includes("schedule") || lowerBody.includes("book") ||
+          lowerBody.includes("tomorrow")
+        ) {
           return {
             type: "schedule_trip",
             summary: `User wants to schedule a trip: ${messageBody}`,
@@ -576,9 +645,12 @@ export class AgentOrchestrator {
           };
         }
         break;
-      
+
       case "insurance":
-        if (lowerBody.includes("upload") || lowerBody.includes("send") || lowerBody.includes("certificate") || lowerBody.includes("carte jaune")) {
+        if (
+          lowerBody.includes("upload") || lowerBody.includes("send") ||
+          lowerBody.includes("certificate") || lowerBody.includes("carte jaune")
+        ) {
           return {
             type: "submit_documents",
             summary: `User wants to submit insurance documents`,
@@ -586,7 +658,10 @@ export class AgentOrchestrator {
             confidence: 0.90,
           };
         }
-        if (lowerBody.includes("quote") || lowerBody.includes("new") || lowerBody.includes("how much") || lowerBody.includes("cost")) {
+        if (
+          lowerBody.includes("quote") || lowerBody.includes("new") ||
+          lowerBody.includes("how much") || lowerBody.includes("cost")
+        ) {
           return {
             type: "get_quote",
             summary: `User wants insurance quote: ${messageBody}`,
@@ -594,7 +669,10 @@ export class AgentOrchestrator {
             confidence: 0.85,
           };
         }
-        if (lowerBody.includes("renew") || lowerBody.includes("extend") || lowerBody.includes("expir")) {
+        if (
+          lowerBody.includes("renew") || lowerBody.includes("extend") ||
+          lowerBody.includes("expir")
+        ) {
           return {
             type: "renew_policy",
             summary: `User wants to renew insurance policy`,
@@ -602,7 +680,10 @@ export class AgentOrchestrator {
             confidence: 0.90,
           };
         }
-        if (lowerBody.includes("status") || lowerBody.includes("check") || lowerBody.includes("progress")) {
+        if (
+          lowerBody.includes("status") || lowerBody.includes("check") ||
+          lowerBody.includes("progress")
+        ) {
           return {
             type: "track_status",
             summary: `User checking insurance status`,
@@ -626,7 +707,7 @@ export class AgentOrchestrator {
    */
   private extractJobSearchParams(message: string): Record<string, unknown> {
     const params: Record<string, unknown> = {};
-    
+
     // Extract location
     const locationMatch = message.match(/in\s+(\w+)/i);
     if (locationMatch) {
@@ -650,43 +731,48 @@ export class AgentOrchestrator {
     return params;
   }
 
-
-
   /**
    * Extract ride parameters from message
    */
   private extractRideParams(message: string): Record<string, unknown> {
     const params: Record<string, unknown> = {};
-    
+
     // Extract locations (from X to Y)
-    const fromToMatch = message.match(/from\s+([^to]+?)\s+to\s+(.+?)(?:\s|$|,|\.)/i);
+    const fromToMatch = message.match(
+      /from\s+([^to]+?)\s+to\s+(.+?)(?:\s|$|,|\.)/i,
+    );
     if (fromToMatch) {
       params.pickup_address = fromToMatch[1].trim();
       params.dropoff_address = fromToMatch[2].trim();
     }
-    
+
     // Extract "take me to X" pattern
     const takeMeMatch = message.match(/take\s+me\s+to\s+(.+?)(?:\s|$|,|\.)/i);
     if (takeMeMatch) {
       params.dropoff_address = takeMeMatch[1].trim();
     }
-    
+
     // Extract time indicators
-    if (message.toLowerCase().includes("now") || message.toLowerCase().includes("immediately")) {
+    if (
+      message.toLowerCase().includes("now") ||
+      message.toLowerCase().includes("immediately")
+    ) {
       params.scheduled_at = null;
       params.urgent = true;
     }
-    
+
     if (message.toLowerCase().includes("tomorrow")) {
       params.scheduled_at = "tomorrow";
     }
-    
+
     // Extract time (e.g., "at 3pm", "3:00")
-    const timeMatch = message.match(/(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+    const timeMatch = message.match(
+      /(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i,
+    );
     if (timeMatch) {
       params.scheduled_time = timeMatch[0].trim();
     }
-    
+
     return params;
   }
 
@@ -695,13 +781,15 @@ export class AgentOrchestrator {
    */
   private extractInsuranceParams(message: string): Record<string, unknown> {
     const params: Record<string, unknown> = {};
-    
+
     // Extract vehicle info
-    const plateMatch = message.match(/(?:plate|number|registration)\s*:?\s*([A-Z0-9]+)/i);
+    const plateMatch = message.match(
+      /(?:plate|number|registration)\s*:?\s*([A-Z0-9]+)/i,
+    );
     if (plateMatch) {
       params.vehicle_identifier = plateMatch[1];
     }
-    
+
     // Extract vehicle type
     const lowerMsg = message.toLowerCase();
     if (lowerMsg.includes("car") || lowerMsg.includes("vehicle")) {
@@ -711,14 +799,16 @@ export class AgentOrchestrator {
     } else if (lowerMsg.includes("truck")) {
       params.vehicle_type = "truck";
     }
-    
+
     // Extract insurance type
     if (lowerMsg.includes("third party") || lowerMsg.includes("tiers")) {
       params.insurance_type = "third_party";
-    } else if (lowerMsg.includes("comprehensive") || lowerMsg.includes("tous risques")) {
+    } else if (
+      lowerMsg.includes("comprehensive") || lowerMsg.includes("tous risques")
+    ) {
       params.insurance_type = "comprehensive";
     }
-    
+
     return params;
   }
 
@@ -728,7 +818,7 @@ export class AgentOrchestrator {
   private async storeIntent(
     context: AgentContext,
     messageId: string,
-    intent: ParsedIntent
+    intent: ParsedIntent,
   ): Promise<string> {
     const { data } = await this.supabase
       .from("ai_agent_intents")
@@ -758,7 +848,7 @@ export class AgentOrchestrator {
   private async executeAgentAction(
     context: AgentContext,
     intentId: string,
-    intent: ParsedIntent
+    intent: ParsedIntent,
   ): Promise<void> {
     console.log(JSON.stringify({
       event: "EXECUTING_AGENT_ACTION",
@@ -771,8 +861,8 @@ export class AgentOrchestrator {
     const config = await this.configLoader.loadAgentConfig(context.agentSlug);
 
     // Find tool that matches the intent type
-    const tool = config.tools.find(t => 
-      t.name === intent.type || 
+    const tool = config.tools.find((t) =>
+      t.name === intent.type ||
       t.name.includes(intent.type) ||
       intent.type.includes(t.name)
     );
@@ -789,7 +879,7 @@ export class AgentOrchestrator {
       const result = await this.toolExecutor.executeTool(
         tool,
         intent.structuredPayload,
-        toolContext
+        toolContext,
       );
 
       console.log(JSON.stringify({
@@ -815,7 +905,7 @@ export class AgentOrchestrator {
       console.log(JSON.stringify({
         event: "NO_TOOL_FOUND_USING_LEGACY",
         intentType: intent.type,
-        availableTools: config.tools.map(t => t.name),
+        availableTools: config.tools.map((t) => t.name),
       }));
 
       await this.executeLegacyAgentAction(context, intentId, intent);
@@ -837,7 +927,7 @@ export class AgentOrchestrator {
   private async executeLegacyAgentAction(
     context: AgentContext,
     intentId: string,
-    intent: ParsedIntent
+    intent: ParsedIntent,
   ): Promise<void> {
     switch (context.agentSlug) {
       case "buy_sell":
@@ -855,23 +945,13 @@ export class AgentOrchestrator {
     }
   }
 
-
-
-
-
-
-
-
-
-
-
   /**
    * Rides agent actions
    */
   private async executeRidesAgentAction(
     context: AgentContext,
     intentId: string,
-    intent: ParsedIntent
+    intent: ParsedIntent,
   ): Promise<void> {
     console.log(JSON.stringify({
       event: "RIDES_ACTION_REQUESTED",
@@ -882,15 +962,19 @@ export class AgentOrchestrator {
     if (intent.type === "find_driver") {
       // Create ride request
       // Query driver_status for online drivers nearby
-      const { findNearbyDrivers, createDriverMatchEvents, formatDriversForWhatsApp } = await import(
+      const {
+        findNearbyDrivers,
+        createDriverMatchEvents,
+        formatDriversForWhatsApp,
+      } = await import(
         "../wa-webhook-shared/tools/rides-matcher.ts"
       );
-      
+
       const { drivers, total } = await findNearbyDrivers(
         this.supabase,
-        intent.structuredPayload as any
+        intent.structuredPayload as any,
       );
-      
+
       // Create match events for compatible drivers
       await createDriverMatchEvents(
         this.supabase,
@@ -898,9 +982,9 @@ export class AgentOrchestrator {
         context.agentId,
         context.conversationId,
         drivers,
-        intent.structuredPayload as any
+        intent.structuredPayload as any,
       );
-      
+
       console.log(JSON.stringify({
         event: "DRIVER_MATCHES_CREATED",
         driverCount: drivers.length,
@@ -920,13 +1004,13 @@ export class AgentOrchestrator {
       const { createTripRequest } = await import(
         "../wa-webhook-shared/tools/rides-matcher.ts"
       );
-      
+
       const { tripId, error } = await createTripRequest(
         this.supabase,
         context.userId,
-        intent.structuredPayload as any
+        intent.structuredPayload as any,
       );
-      
+
       if (tripId) {
         console.log(JSON.stringify({
           event: "SCHEDULED_TRIP_CREATED",
@@ -946,13 +1030,16 @@ export class AgentOrchestrator {
         .in("status", ["pending", "scheduled", "matched"])
         .order("created_at", { ascending: false })
         .limit(1);
-      
+
       if (activeTrips && activeTrips.length > 0) {
         await this.supabase
           .from("trips")
-          .update({ status: "cancelled", cancelled_at: new Date().toISOString() })
+          .update({
+            status: "cancelled",
+            cancelled_at: new Date().toISOString(),
+          })
           .eq("id", activeTrips[0].id);
-        
+
         console.log(JSON.stringify({
           event: "TRIP_CANCELLED",
           tripId: activeTrips[0].id,
@@ -967,7 +1054,7 @@ export class AgentOrchestrator {
   private async executeInsuranceAgentAction(
     context: AgentContext,
     intentId: string,
-    intent: ParsedIntent
+    intent: ParsedIntent,
   ): Promise<void> {
     console.log(JSON.stringify({
       event: "INSURANCE_ACTION_REQUESTED",
@@ -993,18 +1080,19 @@ export class AgentOrchestrator {
         user_id: context.userId,
         vehicle_type: intent.structuredPayload.vehicle_type || "car",
         vehicle_identifier: intent.structuredPayload.vehicle_identifier,
-        insurance_type: intent.structuredPayload.insurance_type || "third_party",
+        insurance_type: intent.structuredPayload.insurance_type ||
+          "third_party",
         status: "pending",
         requested_at: new Date().toISOString(),
         metadata: intent.structuredPayload,
       };
-      
+
       const { data, error } = await this.supabase
         .from("insurance_quote_requests")
         .insert(quoteData)
         .select("id")
         .single();
-      
+
       if (data) {
         console.log(JSON.stringify({
           event: "INSURANCE_QUOTE_CREATED",
@@ -1023,10 +1111,10 @@ export class AgentOrchestrator {
         .eq("status", "active")
         .order("expiry_date", { ascending: true })
         .limit(1);
-      
+
       if (existingPolicies && existingPolicies.length > 0) {
         const policy = existingPolicies[0];
-        
+
         // Create renewal request
         await this.supabase
           .from("insurance_quote_requests")
@@ -1038,7 +1126,7 @@ export class AgentOrchestrator {
             requested_at: new Date().toISOString(),
             metadata: { policy_number: policy.policy_number },
           });
-        
+
         console.log(JSON.stringify({
           event: "INSURANCE_RENEWAL_REQUESTED",
           policyId: policy.id,
@@ -1055,7 +1143,7 @@ export class AgentOrchestrator {
         .eq("user_id", context.userId)
         .order("requested_at", { ascending: false })
         .limit(5);
-      
+
       console.log(JSON.stringify({
         event: "INSURANCE_STATUS_CHECKED",
         quoteCount: quotes?.length || 0,
@@ -1070,7 +1158,7 @@ export class AgentOrchestrator {
    */
   private async sendResponse(
     context: AgentContext,
-    intent: ParsedIntent
+    intent: ParsedIntent,
   ): Promise<string> {
     // Get agent persona for tone/style
     const { data: persona } = await this.supabase
@@ -1102,7 +1190,7 @@ export class AgentOrchestrator {
       intentType: intent.type,
       responseLength: responseText.length,
     }));
-    
+
     return responseText;
   }
 
@@ -1111,63 +1199,72 @@ export class AgentOrchestrator {
    */
   private generateResponse(
     intent: ParsedIntent,
-    persona: { role_name: string; tone_style: string } | null
+    persona: { role_name: string; tone_style: string } | null,
   ): string {
     const roleName = persona?.role_name || "Assistant";
 
     switch (intent.type) {
       case "search_business":
         return `🏢 Searching local businesses...\n\n` +
-               `Finding matches for: ${intent.structuredPayload.query}\n\n` +
-               `Stand by for results! 📍`;
-      
+          `Finding matches for: ${intent.structuredPayload.query}\n\n` +
+          `Stand by for results! 📍`;
+
       // Rides agent responses
       case "find_driver":
         return `🚗 Finding a driver for you...\n\n` +
-               `Pickup: ${intent.structuredPayload.pickup_address || "Your location"}\n` +
-               `Drop-off: ${intent.structuredPayload.dropoff_address || "Not specified"}\n\n` +
-               `Searching nearby drivers... ⏱️`;
-      
+          `Pickup: ${
+            intent.structuredPayload.pickup_address || "Your location"
+          }\n` +
+          `Drop-off: ${
+            intent.structuredPayload.dropoff_address || "Not specified"
+          }\n\n` +
+          `Searching nearby drivers... ⏱️`;
+
       case "find_passenger":
         return `👥 Looking for passengers along your route...\n\n` +
-               `I'll find people going the same way! 🚙`;
-      
+          `I'll find people going the same way! 🚙`;
+
       case "schedule_trip":
         return `📅 Scheduling your trip...\n\n` +
-               `Time: ${intent.structuredPayload.scheduled_time || intent.structuredPayload.scheduled_at}\n` +
-               `I'll confirm the details soon! ⏰`;
-      
+          `Time: ${
+            intent.structuredPayload.scheduled_time ||
+            intent.structuredPayload.scheduled_at
+          }\n` +
+          `I'll confirm the details soon! ⏰`;
+
       case "cancel_trip":
         return `❌ Canceling your trip...\n\n` +
-               `I'll update the status and notify the other party. 📱`;
-      
+          `I'll update the status and notify the other party. 📱`;
+
       // Insurance agent responses
       case "submit_documents":
         return `📄 Ready to receive your documents!\n\n` +
-               `Please send:\n` +
-               `1️⃣ Insurance certificate\n` +
-               `2️⃣ Carte jaune\n` +
-               `3️⃣ Vehicle photos (optional)\n\n` +
-               `Send them one by one, I'll confirm each! ✅`;
-      
+          `Please send:\n` +
+          `1️⃣ Insurance certificate\n` +
+          `2️⃣ Carte jaune\n` +
+          `3️⃣ Vehicle photos (optional)\n\n` +
+          `Send them one by one, I'll confirm each! ✅`;
+
       case "get_quote":
         return `💰 Creating your insurance quote request...\n\n` +
-               `Vehicle: ${intent.structuredPayload.vehicle_type || "Not specified"}\n` +
-               `Type: ${intent.structuredPayload.insurance_type || "Standard"}\n\n` +
-               `A partner will contact you within 24 hours! 📞`;
-      
+          `Vehicle: ${
+            intent.structuredPayload.vehicle_type || "Not specified"
+          }\n` +
+          `Type: ${intent.structuredPayload.insurance_type || "Standard"}\n\n` +
+          `A partner will contact you within 24 hours! 📞`;
+
       case "renew_policy":
         return `🔄 Initiating policy renewal...\n\n` +
-               `I'll check your existing policy and prepare the renewal.\n` +
-               `You'll hear from us soon! 📋`;
-      
+          `I'll check your existing policy and prepare the renewal.\n` +
+          `You'll hear from us soon! 📋`;
+
       case "track_status":
         return `📊 Checking your insurance status...\n\n` +
-               `Let me pull up your requests... 🔍`;
-      
+          `Let me pull up your requests... 🔍`;
+
       default:
         return `I understand you said: "${intent.summary}"\n\n` +
-               `How can I help you today? 😊`;
+          `How can I help you today? 😊`;
     }
   }
 }

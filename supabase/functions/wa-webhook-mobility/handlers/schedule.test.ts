@@ -8,8 +8,15 @@
 Deno.env.set("SUPABASE_URL", "http://localhost:54321");
 Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key");
 
-import { assertEquals, assertExists } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import { describe, it, beforeEach } from "https://deno.land/std@0.208.0/testing/bdd.ts";
+import {
+  assertEquals,
+  assertExists,
+} from "https://deno.land/std@0.208.0/assert/mod.ts";
+import {
+  beforeEach,
+  describe,
+  it,
+} from "https://deno.land/std@0.208.0/testing/bdd.ts";
 
 // Mock types
 type MockContext = {
@@ -52,7 +59,11 @@ class MockSupabaseClient {
         gte: (column: string, value: unknown) => ({
           order: (column: string, options?: { ascending?: boolean }) => ({
             limit: (count: number) => ({
-              then: async (resolve: (value: { data: unknown[] | null; error: Error | null }) => void) => {
+              then: async (
+                resolve: (
+                  value: { data: unknown[] | null; error: Error | null },
+                ) => void,
+              ) => {
                 const data = this.mockData[table]?.slice(0, count) || [];
                 resolve({ data, error: this.mockErrors[table] || null });
               },
@@ -121,7 +132,7 @@ describe("Schedule Handlers - Trip Scheduling", () => {
   describe("Role Selection", () => {
     it("should accept driver role", () => {
       const validRoles = ["driver", "passenger"];
-      
+
       assertEquals(validRoles.includes("driver"), true);
       assertEquals(validRoles.includes("passenger"), true);
     });
@@ -129,8 +140,8 @@ describe("Schedule Handlers - Trip Scheduling", () => {
     it("should reject invalid roles", () => {
       const invalidRoles = ["rider", "customer", ""];
       const validRoles = ["driver", "passenger"];
-      
-      invalidRoles.forEach(role => {
+
+      invalidRoles.forEach((role) => {
         assertEquals(validRoles.includes(role), false);
       });
     });
@@ -138,14 +149,14 @@ describe("Schedule Handlers - Trip Scheduling", () => {
     it("should require insurance for driver role", async () => {
       const role: string = "driver";
       const requiresInsurance = role === "driver";
-      
+
       assertEquals(requiresInsurance, true);
     });
 
     it("should not require insurance for passenger role", () => {
       const role: string = "passenger";
       const requiresInsurance = role === "driver";
-      
+
       assertEquals(requiresInsurance, false);
     });
   });
@@ -153,8 +164,8 @@ describe("Schedule Handlers - Trip Scheduling", () => {
   describe("Vehicle Selection", () => {
     it("should accept valid vehicle types", () => {
       const validVehicles = ["sedan", "suv", "motorcycle", "bus", "truck"];
-      
-      validVehicles.forEach(vehicle => {
+
+      validVehicles.forEach((vehicle) => {
         assertEquals(typeof vehicle, "string");
         assertEquals(vehicle.length > 0, true);
       });
@@ -163,7 +174,7 @@ describe("Schedule Handlers - Trip Scheduling", () => {
     it("should allow changing vehicle selection", () => {
       let selectedVehicle = "sedan";
       selectedVehicle = "suv";
-      
+
       assertEquals(selectedVehicle, "suv");
     });
   });
@@ -176,10 +187,9 @@ describe("Schedule Handlers - Trip Scheduling", () => {
         address: "KN 3 Ave, Kigali",
       };
 
-      const isValid = 
-        pickupCoords.latitude >= -90 && 
+      const isValid = pickupCoords.latitude >= -90 &&
         pickupCoords.latitude <= 90 &&
-        pickupCoords.longitude >= -180 && 
+        pickupCoords.longitude >= -180 &&
         pickupCoords.longitude <= 180;
 
       assertEquals(isValid, true);
@@ -193,10 +203,9 @@ describe("Schedule Handlers - Trip Scheduling", () => {
         address: "KG 9 Ave, Kigali",
       };
 
-      const isValid = 
-        dropoffCoords.latitude >= -90 && 
+      const isValid = dropoffCoords.latitude >= -90 &&
         dropoffCoords.latitude <= 90 &&
-        dropoffCoords.longitude >= -180 && 
+        dropoffCoords.longitude >= -180 &&
         dropoffCoords.longitude <= 180;
 
       assertEquals(isValid, true);
@@ -205,14 +214,14 @@ describe("Schedule Handlers - Trip Scheduling", () => {
     it("should allow skipping dropoff for drivers", () => {
       const role = "driver";
       const dropoffOptional = role === "driver";
-      
+
       assertEquals(dropoffOptional, true);
     });
 
     it("should require dropoff for passengers", () => {
       const role = "passenger";
       const dropoffRequired = role === "passenger";
-      
+
       assertEquals(dropoffRequired, true);
     });
   });
@@ -220,22 +229,28 @@ describe("Schedule Handlers - Trip Scheduling", () => {
   describe("Time Selection", () => {
     it("should accept 'now' as valid time", () => {
       const timeOption = "now";
-      const validOptions = ["now", "in_30_min", "in_1_hour", "in_2_hours", "custom"];
-      
+      const validOptions = [
+        "now",
+        "in_30_min",
+        "in_1_hour",
+        "in_2_hours",
+        "custom",
+      ];
+
       assertEquals(validOptions.includes(timeOption), true);
     });
 
     it("should accept future time selections", () => {
       const futureTime = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
       const now = new Date();
-      
+
       assertEquals(futureTime > now, true);
     });
 
     it("should reject past times", () => {
       const pastTime = new Date(Date.now() - 60 * 60 * 1000); // 1 hour ago
       const now = new Date();
-      
+
       assertEquals(pastTime < now, true); // This would be invalid
     });
 
@@ -243,7 +258,7 @@ describe("Schedule Handlers - Trip Scheduling", () => {
       const scheduledTime = new Date(Date.now() + 24 * 60 * 60 * 1000); // Tomorrow
       const now = new Date();
       const isValid = scheduledTime > now;
-      
+
       assertEquals(isValid, true);
     });
   });
@@ -251,30 +266,54 @@ describe("Schedule Handlers - Trip Scheduling", () => {
   describe("Recurrence Selection", () => {
     it("should accept one-time trip", () => {
       const recurrence = "once";
-      const validRecurrences = ["once", "daily", "weekdays", "weekly", "monthly"];
-      
+      const validRecurrences = [
+        "once",
+        "daily",
+        "weekdays",
+        "weekly",
+        "monthly",
+      ];
+
       assertEquals(validRecurrences.includes(recurrence), true);
     });
 
     it("should accept daily recurrence", () => {
       const recurrence = "daily";
-      const validRecurrences = ["once", "daily", "weekdays", "weekly", "monthly"];
-      
+      const validRecurrences = [
+        "once",
+        "daily",
+        "weekdays",
+        "weekly",
+        "monthly",
+      ];
+
       assertEquals(validRecurrences.includes(recurrence), true);
     });
 
     it("should accept weekdays recurrence", () => {
       const recurrence = "weekdays";
-      const validRecurrences = ["once", "daily", "weekdays", "weekly", "monthly"];
-      
+      const validRecurrences = [
+        "once",
+        "daily",
+        "weekdays",
+        "weekly",
+        "monthly",
+      ];
+
       assertEquals(validRecurrences.includes(recurrence), true);
     });
 
     it("should reject invalid recurrence patterns", () => {
       const invalidRecurrences = ["hourly", "yearly", ""];
-      const validRecurrences = ["once", "daily", "weekdays", "weekly", "monthly"];
-      
-      invalidRecurrences.forEach(recurrence => {
+      const validRecurrences = [
+        "once",
+        "daily",
+        "weekdays",
+        "weekly",
+        "monthly",
+      ];
+
+      invalidRecurrences.forEach((recurrence) => {
         assertEquals(validRecurrences.includes(recurrence), false);
       });
     });
@@ -295,7 +334,10 @@ describe("Schedule Handlers - Trip Scheduling", () => {
         status: "active",
       };
 
-      mockClient.setMockData("scheduled_trips", [{ id: "trip-uuid", ...tripData }]);
+      mockClient.setMockData("scheduled_trips", [{
+        id: "trip-uuid",
+        ...tripData,
+      }]);
 
       const result = await mockClient
         .from("scheduled_trips")
@@ -323,7 +365,10 @@ describe("Schedule Handlers - Trip Scheduling", () => {
         status: "active",
       };
 
-      mockClient.setMockData("scheduled_trips", [{ id: "trip-uuid", ...tripData }]);
+      mockClient.setMockData("scheduled_trips", [{
+        id: "trip-uuid",
+        ...tripData,
+      }]);
 
       const result = await mockClient
         .from("scheduled_trips")
@@ -344,7 +389,8 @@ describe("Schedule Handlers - Trip Scheduling", () => {
         {
           user_id: userId,
           status: "verified",
-          policy_expiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          policy_expiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+            .toISOString(),
         },
       ];
 
@@ -365,7 +411,7 @@ describe("Schedule Handlers - Trip Scheduling", () => {
       const expiryDate = new Date(Date.now() - 24 * 60 * 60 * 1000); // Yesterday
       const now = new Date();
       const isExpired = expiryDate < now;
-      
+
       assertEquals(isExpired, true);
     });
 
@@ -373,7 +419,7 @@ describe("Schedule Handlers - Trip Scheduling", () => {
       const expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
       const now = new Date();
       const isValid = expiryDate > now;
-      
+
       assertEquals(isValid, true);
     });
   });
@@ -431,14 +477,16 @@ describe("Schedule Handlers - Trip Scheduling", () => {
           id: "trip-1",
           user_id: "test-user-id",
           role: "passenger",
-          scheduled_time: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+          scheduled_time: new Date(Date.now() + 2 * 60 * 60 * 1000)
+            .toISOString(),
           status: "active",
         },
         {
           id: "trip-2",
           user_id: "test-user-id",
           role: "passenger",
-          scheduled_time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          scheduled_time: new Date(Date.now() + 24 * 60 * 60 * 1000)
+            .toISOString(),
           status: "active",
         },
       ];
@@ -465,12 +513,12 @@ describe("Schedule Handlers - State Transitions", () => {
   it("should follow complete state flow", () => {
     const stateFlow = [
       "home",
-      "schedule_role",
-      "schedule_vehicle",
-      "schedule_location",
-      "schedule_dropoff",
-      "schedule_time_select",
-      "schedule_recur",
+      "mobility_schedule_role",
+      "mobility_schedule_vehicle",
+      "mobility_schedule_location",
+      "mobility_schedule_dropoff",
+      "mobility_schedule_time",
+      "mobility_schedule_recurrence",
       "home",
     ];
 
@@ -482,7 +530,7 @@ describe("Schedule Handlers - State Transitions", () => {
   it("should handle insurance interrupt for drivers", () => {
     const role = "driver";
     const hasInsurance = false;
-    
+
     if (role === "driver" && !hasInsurance) {
       const nextState = "driver_insurance_upload";
       assertEquals(nextState, "driver_insurance_upload");
@@ -491,12 +539,12 @@ describe("Schedule Handlers - State Transitions", () => {
 
   it("should allow back navigation", () => {
     const backTransitions = {
-      schedule_role: "home",
-      schedule_vehicle: "schedule_role",
-      schedule_location: "schedule_vehicle",
+      mobility_schedule_role: "home",
+      mobility_schedule_vehicle: "mobility_schedule_role",
+      mobility_schedule_location: "mobility_schedule_vehicle",
     };
 
-    assertEquals(backTransitions.schedule_role, "home");
+    assertEquals(backTransitions.mobility_schedule_role, "home");
   });
 });
 
@@ -530,8 +578,16 @@ describe("Schedule Handlers - Error Handling", () => {
       // Missing vehicle_type, pickup coords, etc.
     };
 
-    const requiredFields = ["user_id", "role", "vehicle_type", "pickup_lat", "pickup_lng"];
-    const hasAllFields = requiredFields.every(field => field in incompleteData);
+    const requiredFields = [
+      "user_id",
+      "role",
+      "vehicle_type",
+      "pickup_lat",
+      "pickup_lng",
+    ];
+    const hasAllFields = requiredFields.every((field) =>
+      field in incompleteData
+    );
 
     assertEquals(hasAllFields, false);
   });
@@ -545,9 +601,9 @@ describe("Schedule Handlers - Business Logic", () => {
     const distance = 10; // km
     const baseFare = 1000; // RWF
     const perKm = 500; // RWF
-    
+
     const estimatedFare = baseFare + (distance * perKm);
-    
+
     assertEquals(estimatedFare, 6000);
   });
 
@@ -566,13 +622,15 @@ describe("Schedule Handlers - Business Logic", () => {
   it("should enforce recurrence rules for daily trips", () => {
     const recurrence = "daily";
     const scheduledTime = new Date();
-    
+
     // Daily trips should repeat every 24 hours
-    const nextOccurrence = new Date(scheduledTime.getTime() + 24 * 60 * 60 * 1000);
-    
+    const nextOccurrence = new Date(
+      scheduledTime.getTime() + 24 * 60 * 60 * 1000,
+    );
+
     const timeDiff = nextOccurrence.getTime() - scheduledTime.getTime();
     const hoursDiff = timeDiff / (60 * 60 * 1000);
-    
+
     assertEquals(hoursDiff, 24);
   });
 });

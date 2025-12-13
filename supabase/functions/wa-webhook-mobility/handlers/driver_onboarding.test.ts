@@ -5,10 +5,10 @@ Deno.env.set("WA_TOKEN", "token");
 Deno.env.set("WA_APP_SECRET", "secret");
 Deno.env.set("WA_VERIFY_TOKEN", "verify");
 
-import type { RouterContext } from "../../types.ts";
+import type { RouterContext } from "../types.ts";
 
-const { IDS } = await import("../../wa/ids.ts");
-const waClient = await import("../../wa/client.ts");
+const { IDS } = await import("../wa/ids.ts");
+const waClient = await import("../wa/client.ts");
 const nearby = await import("./nearby.ts");
 const schedule = await import("./schedule.ts");
 
@@ -243,7 +243,7 @@ Deno.test("handleScheduleRole skips selection when driver defaults exist", async
       | undefined;
     assertEquals(first?.interactive?.type, "button");
     assertEquals(supabase.stateHistory.at(-1), {
-      key: "schedule_location",
+      key: "mobility_schedule_location",
       data: { role: "driver", vehicle: "moto" },
     });
   } finally {
@@ -272,7 +272,7 @@ Deno.test("handleScheduleVehicle updates stored vehicle type for driver", async 
       | undefined;
     assertEquals(first?.interactive?.type, "button");
     assertEquals(supabase.stateHistory.at(-1), {
-      key: "schedule_location",
+      key: "mobility_schedule_location",
       data: { role: "driver", vehicle: "lifan" },
     });
   } finally {

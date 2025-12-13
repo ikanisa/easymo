@@ -1,6 +1,6 @@
 /**
  * AI Agent Tool Executor
- * 
+ *
  * Executes tools loaded from database configurations
  * Supports multiple tool types: db, http, external, momo, etc.
  * Validates inputs against JSON schemas
@@ -47,7 +47,7 @@ export class ToolExecutor {
   async executeTool(
     tool: AgentTool,
     inputs: Record<string, unknown>,
-    context: ToolExecutionContext
+    context: ToolExecutionContext,
   ): Promise<ToolExecutionResult> {
     const startTime = Date.now();
 
@@ -63,12 +63,14 @@ export class ToolExecutor {
       // 1. Validate inputs against schema
       const validationResult = this.validateInputs(inputs, tool.input_schema);
       if (!validationResult.valid) {
-        throw new Error(`Invalid inputs: ${validationResult.errors.join(", ")}`);
+        throw new Error(
+          `Invalid inputs: ${validationResult.errors.join(", ")}`,
+        );
       }
 
       // 2. Execute based on tool type or tool name
       let result: unknown;
-      
+
       // Check for specific tool names first
       if (tool.name === "get_weather") {
         result = await this.executeWeatherTool(tool, inputs);
@@ -114,7 +116,14 @@ export class ToolExecutor {
       const executionTime = Date.now() - startTime;
 
       // 3. Log successful execution
-      await this.logExecution(tool, inputs, result, context, executionTime, true);
+      await this.logExecution(
+        tool,
+        inputs,
+        result,
+        context,
+        executionTime,
+        true,
+      );
 
       console.log(JSON.stringify({
         event: "TOOL_EXECUTION_SUCCESS",
@@ -131,10 +140,20 @@ export class ToolExecutor {
       };
     } catch (error) {
       const executionTime = Date.now() - startTime;
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error
+        ? error.message
+        : String(error);
 
       // Log failed execution
-      await this.logExecution(tool, inputs, null, context, executionTime, false, errorMessage);
+      await this.logExecution(
+        tool,
+        inputs,
+        null,
+        context,
+        executionTime,
+        false,
+        errorMessage,
+      );
 
       console.error(JSON.stringify({
         event: "TOOL_EXECUTION_FAILED",
@@ -158,7 +177,7 @@ export class ToolExecutor {
    */
   private validateInputs(
     inputs: Record<string, unknown>,
-    schema: Record<string, unknown>
+    schema: Record<string, unknown>,
   ): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
@@ -176,7 +195,7 @@ export class ToolExecutor {
       if (properties[key]) {
         const expectedType = properties[key].type;
         const actualType = typeof value;
-        
+
         // Simple type validation
         if (expectedType === "string" && actualType !== "string") {
           errors.push(`Field ${key} should be string, got ${actualType}`);
@@ -202,7 +221,7 @@ export class ToolExecutor {
   private async executeDbTool(
     tool: AgentTool,
     inputs: Record<string, unknown>,
-    context: ToolExecutionContext
+    context: ToolExecutionContext,
   ): Promise<unknown> {
     const config = tool.config;
     const tableName = config.table as string;
@@ -215,79 +234,73 @@ export class ToolExecutor {
     switch (tool.name) {
       case "search_jobs":
         return await this.searchJobs(inputs);
-      
+
       case "search_properties":
         return await this.searchProperties(inputs);
-      
+
       case "search_menu_supabase":
         return await this.searchMenu(inputs);
-      
+
       case "search_businesses":
         return await this.searchBusinessDirectory(inputs);
-      
+
       case "search_produce":
         return await this.searchProduce(inputs);
-      
+
       case "lookup_loyalty":
         return await this.lookupLoyalty(inputs);
-      
+
       // Marketplace tools
       case "search_listings":
         return await this.searchMarketplaceListings(inputs);
-      
+
       case "create_listing":
         return await this.createMarketplaceListing(inputs, context);
-      
-      case "search_businesses":
-        return await this.searchBusinessDirectory(inputs);
-      
+
       case "search_suppliers":
         return await this.searchSuppliers(inputs, context);
-      
+
       case "get_nearby_listings":
         return await this.getNearbyListings(inputs, context);
-      
+
       // Support tools
       case "get_user_info":
         return await this.getUserInfo(inputs, context);
-      // Support agent tools
-      case "get_user_info":
-        return await this.getUserInfo(context);
-      
+
       case "check_wallet_balance":
         return await this.checkWalletBalance(context);
-      
+
       case "create_support_ticket":
         return await this.createSupportTicket(inputs, context);
-      
+
       case "search_faq":
         return await this.searchFaq(inputs);
-      
+
       // Rides agent tools
       case "search_drivers":
       case "find_nearby_drivers":
         return await this.findNearbyDrivers(inputs, context);
-      
+
       case "request_ride":
         return await this.requestRide(inputs, context);
-      
+
       case "get_fare_estimate":
         return await this.getFareEstimate(inputs);
-      
+
       case "track_ride":
         return await this.trackRide(inputs);
-      
+
       // Insurance agent tools
       case "get_motor_quote":
       case "calculate_quote":
         return await this.calculateInsuranceQuote(inputs, context);
-      
+
       case "check_policy_status":
         return await this.checkPolicyStatus(inputs);
-      
+
       case "submit_claim":
         return await this.submitInsuranceClaim(inputs, context);
-      
+
       default:
         // Generic table query
         return await this.genericTableQuery(tableName, inputs);
@@ -297,7 +310,9 @@ export class ToolExecutor {
   /**
    * Search marketplace listings
    */
-  private async searchMarketplaceListings(inputs: Record<string, unknown>): Promise<unknown> {
+  private async searchMarketplaceListings(
+    inputs: Record<string, unknown>,
+  ): Promise<unknown> {
     const query = inputs.query as string || "";
     const category = inputs.category as string;
     const priceMin = inputs.price_min as number;
@@ -316,7 +331,9 @@ export class ToolExecutor {
     if (query) {
       // Escape special characters for LIKE queries to prevent injection
       const sanitizedQuery = this.sanitizeSearchQuery(query);
-      dbQuery = dbQuery.or(`product_name.ilike.%${sanitizedQuery}%,description.ilike.%${sanitizedQuery}%`);
+      dbQuery = dbQuery.or(
+        `product_name.ilike.%${sanitizedQuery}%,description.ilike.%${sanitizedQuery}%`,
+      );
     }
 
     if (category) {
@@ -335,7 +352,9 @@ export class ToolExecutor {
       dbQuery = dbQuery.eq("condition", condition);
     }
 
-    const { data, error } = await dbQuery.order("created_at", { ascending: false });
+    const { data, error } = await dbQuery.order("created_at", {
+      ascending: false,
+    });
 
     if (error) {
       console.error("Marketplace search error:", error);
@@ -349,16 +368,19 @@ export class ToolExecutor {
 
     return {
       count: data?.length || 0,
-      listings: data?.map(l => ({
+      listings: data?.map((l) => ({
         id: l.id,
         title: l.product_name,
-        description: l.description?.slice(0, 100) + (l.description?.length > 100 ? "..." : ""),
+        description: l.description?.slice(0, 100) +
+          (l.description?.length > 100 ? "..." : ""),
         price: `${l.price} RWF`,
         category: l.category,
         condition: l.condition,
         location: l.location,
         // Mask seller phone for privacy
-        seller_contact: l.seller_phone ? `wa.me/${this.formatPhoneForWhatsApp(l.seller_phone)}` : null,
+        seller_contact: l.seller_phone
+          ? `wa.me/${this.formatPhoneForWhatsApp(l.seller_phone)}`
+          : null,
         photos: l.photos?.slice(0, 3),
       })) || [],
     };
@@ -370,20 +392,104 @@ export class ToolExecutor {
   private sanitizeSearchQuery(query: string): string {
     // Escape special characters used in PostgreSQL LIKE patterns
     return query
-      .replace(/\\/g, '\\\\')  // Escape backslashes first
-      .replace(/%/g, '\\%')    // Escape percent
-      .replace(/_/g, '\\_')    // Escape underscore
-      .replace(/'/g, "''")     // Escape single quotes
-      .slice(0, 100);          // Limit length to prevent DoS
+      .replace(/\\/g, "\\\\") // Escape backslashes first
+      .replace(/%/g, "\\%") // Escape percent
+      .replace(/_/g, "\\_") // Escape underscore
+      .replace(/'/g, "''") // Escape single quotes
+      .slice(0, 100); // Limit length to prevent DoS
   }
 
   /**
    * Format phone number for WhatsApp URL (remove non-digit characters except leading +)
    */
   private formatPhoneForWhatsApp(phone: string): string {
-    if (!phone) return '';
+    if (!phone) return "";
     // Keep only digits, removing + prefix and any other characters
-    return phone.replace(/[^0-9]/g, '');
+    return phone.replace(/[^0-9]/g, "");
+  }
+
+  private async maybeSelectProfileColumn(
+    userId: string,
+    column: string,
+  ): Promise<unknown | null> {
+    const { data, error } = await this.supabase
+      .from("profiles")
+      .select(column)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (!error) {
+      return (data as any)?.[column] ?? null;
+    }
+
+    const code = (error as any)?.code as string | undefined;
+    if (code === "42703" || code === "PGRST205" || code === "PGRST116") {
+      return null;
+    }
+    throw error;
+  }
+
+  private async tryUpdateProfile(
+    userId: string,
+    patch: Record<string, unknown>,
+  ): Promise<boolean> {
+    const { error } = await this.supabase
+      .from("profiles")
+      .update(patch)
+      .eq("user_id", userId);
+
+    if (!error) return true;
+    const code = (error as any)?.code as string | undefined;
+    if (code === "42703" || code === "PGRST205") return false;
+    throw error;
+  }
+
+  private async getUserPhoneForContact(userId: string): Promise<string | null> {
+    const columns = [
+      "whatsapp_e164",
+      "phone_number",
+      "phone_e164",
+      "whatsapp_number",
+      "wa_id",
+    ];
+
+    for (const column of columns) {
+      const value = await this.maybeSelectProfileColumn(userId, column);
+      if (typeof value === "string" && value.trim().length > 0) {
+        return value.trim();
+      }
+    }
+
+    try {
+      const { data, error } = await this.supabase.auth.admin.getUserById(
+        userId,
+      );
+      if (error) return null;
+      const phone = (data as any)?.user?.phone;
+      if (typeof phone === "string" && phone.trim().length > 0) {
+        return phone.trim();
+      }
+    } catch {
+      // Ignore auth lookup failures; caller can proceed without phone.
+    }
+
+    return null;
+  }
+
+  private async getUserLanguage(userId: string): Promise<string | null> {
+    const columns = ["language", "locale", "preferred_language"];
+    for (const column of columns) {
+      const value = await this.maybeSelectProfileColumn(userId, column);
+      if (typeof value === "string" && value.trim().length > 0) {
+        return value.trim();
+      }
+    }
+    return null;
+  }
+
+  private async getProfileCreatedAt(userId: string): Promise<string | null> {
+    const value = await this.maybeSelectProfileColumn(userId, "created_at");
+    return typeof value === "string" ? value : null;
   }
 
   /**
@@ -391,7 +497,7 @@ export class ToolExecutor {
    */
   private async createMarketplaceListing(
     inputs: Record<string, unknown>,
-    context: ToolExecutionContext
+    context: ToolExecutionContext,
   ): Promise<unknown> {
     const title = inputs.title as string;
     const description = inputs.description as string;
@@ -407,6 +513,8 @@ export class ToolExecutor {
       .select("phone")
       .eq("id", context.userId)
       .single();
+    // Get user's phone number for seller contact (schema-flexible)
+    const sellerPhone = await this.getUserPhoneForContact(context.userId);
 
     const { data, error } = await this.supabase
       .from("marketplace_listings")
@@ -419,6 +527,7 @@ export class ToolExecutor {
         location,
         negotiable,
         seller_phone: user?.phone,
+        seller_phone: sellerPhone,
         status: "active",
       })
       .select("id")
@@ -435,7 +544,8 @@ export class ToolExecutor {
     return {
       success: true,
       listing_id: data?.id,
-      message: `Your listing "${title}" has been created successfully! Buyers can now find it in the marketplace.`,
+      message:
+        `Your listing "${title}" has been created successfully! Buyers can now find it in the marketplace.`,
     };
   }
 
@@ -444,26 +554,34 @@ export class ToolExecutor {
    */
   private async getNearbyListings(
     inputs: Record<string, unknown>,
-    context: ToolExecutionContext
+    context: ToolExecutionContext,
   ): Promise<unknown> {
     const category = inputs.category as string;
     const radiusKm = (inputs.radius_km as number) || 10;
     const limit = (inputs.limit as number) || 10;
 
     // Get user's cached location
-    const { data: user } = await this.supabase
-      .from("whatsapp_users")
-      .select("location_cache")
-      .eq("id", context.userId)
-      .single();
+    const { data: locationRow } = await this.supabase
+      .from("recent_locations")
+      .select("lat, lng, expires_at")
+      .eq("user_id", context.userId)
+      .order("captured_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    if (!user?.location_cache) {
+    const isExpired = locationRow?.expires_at
+      ? Date.parse(locationRow.expires_at) <= Date.now()
+      : true;
+
+    if (!locationRow || isExpired) {
       return {
         success: false,
         needs_location: true,
-        message: "Please share your location first to find nearby listings. Send your GPS location via WhatsApp.",
+        message:
+          "Please share your location first to find nearby listings. Send your GPS location via WhatsApp.",
       };
     }
+    const userLocation = { lat: locationRow.lat, lng: locationRow.lng };
 
     // For now, return a simple search without PostGIS distance calculation
     // In production, this would use a proper geospatial query
@@ -480,37 +598,39 @@ export class ToolExecutor {
       dbQuery = dbQuery.eq("category", category);
     }
 
-    const { data, error } = await dbQuery.order("created_at", { ascending: false });
+    const { data, error } = await dbQuery.order("created_at", {
+      ascending: false,
+    });
 
     if (error) {
       console.error("Nearby listings error:", error);
       return {
         count: 0,
         listings: [],
-        user_location: user.location_cache,
+        user_location: userLocation,
       };
     }
 
     return {
       count: data?.length || 0,
-      listings: data?.map(l => ({
+      listings: data?.map((l) => ({
         id: l.id,
         title: l.product_name,
         price: `${l.price} RWF`,
         category: l.category,
         location: l.location,
       })) || [],
-      user_location: user.location_cache,
+      user_location: userLocation,
       search_radius_km: radiusKm,
     };
   }
 
   /**
-   * Get user information from whatsapp_users table
+   * Get user information from profiles table
    */
   private async getUserInfo(
     _inputs: Record<string, unknown>,
-    context: ToolExecutionContext
+    context: ToolExecutionContext,
   ): Promise<unknown> {
     // Security: Always use context.userId, never allow user to query other users' info
     const userId = context.userId;
@@ -534,14 +654,21 @@ export class ToolExecutor {
       `)
       .eq("id", userId)
       .single();
+    const phone = await this.getUserPhoneForContact(userId);
+    const language = (await this.getUserLanguage(userId)) ?? "en";
+    const memberSince = await this.getProfileCreatedAt(userId);
 
-    if (error) {
-      console.error("Get user info error:", error);
-      return {
-        success: false,
-        error: "User not found or access denied",
-      };
-    }
+    const { data: locationRow } = await this.supabase
+      .from("recent_locations")
+      .select("expires_at")
+      .eq("user_id", userId)
+      .order("captured_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const hasLocation = locationRow?.expires_at
+      ? Date.parse(locationRow.expires_at) > Date.now()
+      : false;
 
     return {
       success: true,
@@ -551,6 +678,12 @@ export class ToolExecutor {
         language: data.language,
         member_since: data.created_at,
         has_location: !!data.location_cache,
+        id: userId,
+        phone: phone ? this.maskPhoneNumber(phone) : null,
+        language,
+        roles: [],
+        member_since: memberSince,
+        has_location: hasLocation,
       },
     };
   }
@@ -568,7 +701,7 @@ export class ToolExecutor {
    */
   private async createSupportTicket(
     inputs: Record<string, unknown>,
-    context: ToolExecutionContext
+    context: ToolExecutionContext,
   ): Promise<unknown> {
     const issueType = inputs.issue_type as string;
     const description = inputs.description as string;
@@ -584,7 +717,9 @@ export class ToolExecutor {
 
     // Validate priority
     const validPriorities = ["low", "medium", "high", "urgent"];
-    const normalizedPriority = validPriorities.includes(priority) ? priority : "medium";
+    const normalizedPriority = validPriorities.includes(priority)
+      ? priority
+      : "medium";
 
     // Map issue_type to category (support_tickets uses 'category' column)
     const categoryMapping: Record<string, string> = {
@@ -598,17 +733,26 @@ export class ToolExecutor {
     const category = categoryMapping[issueType] || "other";
 
     try {
-      // First, check if user has a profile
-      // Note: profiles table uses 'user_id' as primary key
-      const { data: profile } = await this.supabase
+      // In most schemas, ticket.profile_id references the auth user id.
+      // Best-effort: ensure a profiles row exists for downstream tooling.
+      let profileId = context.userId;
+      const { data: profile, error: profileLookupError } = await this.supabase
         .from("profiles")
         .select("user_id")
         .eq("user_id", context.userId)
-        .single();
+        .maybeSingle();
 
-      let profileId: string;
+      const lookupCode = (profileLookupError as any)?.code as
+        | string
+        | undefined;
+      if (
+        profileLookupError && lookupCode !== "PGRST116" &&
+        lookupCode !== "PGRST205"
+      ) {
+        throw profileLookupError;
+      }
 
-      if (profile) {
+      if (profile?.user_id) {
         profileId = profile.user_id;
       } else {
         // Try to create a minimal profile for the user if needed
@@ -649,6 +793,40 @@ export class ToolExecutor {
         }
 
         profileId = newProfile.user_id;
+        try {
+          const { error: upsertError } = await this.supabase
+            .from("profiles")
+            .upsert({ user_id: context.userId }, { onConflict: "user_id" });
+          const upsertCode = (upsertError as any)?.code as string | undefined;
+          if (
+            upsertError && upsertCode !== "42P10" && upsertCode !== "PGRST205"
+          ) {
+            throw upsertError;
+          }
+
+          const phoneValue = await this.getUserPhoneForContact(context.userId);
+          if (phoneValue) {
+            await this.tryUpdateProfile(context.userId, {
+              whatsapp_e164: phoneValue,
+            });
+            await this.tryUpdateProfile(context.userId, {
+              phone_number: phoneValue,
+            });
+            await this.tryUpdateProfile(context.userId, {
+              phone_e164: phoneValue,
+            });
+            const digits = phoneValue.replace(/[^0-9]/g, "");
+            await this.tryUpdateProfile(context.userId, {
+              whatsapp_number: digits,
+            });
+            await this.tryUpdateProfile(context.userId, { wa_id: digits });
+          }
+        } catch (profileEnsureError) {
+          console.error(
+            "Support ticket profile ensure error:",
+            profileEnsureError,
+          );
+        }
       }
 
       const ticketData = {
@@ -687,13 +865,17 @@ export class ToolExecutor {
         priority: data.priority,
         status: data.status,
         created_at: data.created_at,
-        message: `Support ticket created successfully. Ticket ID: ${data.id.slice(0, 8)}. Our team will review your issue and respond soon.`,
+        message: `Support ticket created successfully. Ticket ID: ${
+          data.id.slice(0, 8)
+        }. Our team will review your issue and respond soon.`,
       };
     } catch (error) {
       console.error("Support ticket creation error:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to create support ticket",
+        error: error instanceof Error
+          ? error.message
+          : "Failed to create support ticket",
       };
     }
   }
@@ -713,7 +895,9 @@ export class ToolExecutor {
       .limit(10);
 
     if (query) {
-      dbQuery = dbQuery.or(`title.ilike.%${query}%,description.ilike.%${query}%`);
+      dbQuery = dbQuery.or(
+        `title.ilike.%${query}%,description.ilike.%${query}%`,
+      );
     }
 
     if (location) {
@@ -733,7 +917,9 @@ export class ToolExecutor {
   /**
    * Search properties database
    */
-  private async searchProperties(inputs: Record<string, unknown>): Promise<unknown> {
+  private async searchProperties(
+    inputs: Record<string, unknown>,
+  ): Promise<unknown> {
     const location = inputs.location as string;
     const minPrice = inputs.min_price as number;
     const maxPrice = inputs.max_price as number;
@@ -783,7 +969,9 @@ export class ToolExecutor {
       .limit(20);
 
     if (query) {
-      dbQuery = dbQuery.or(`name.ilike.%${query}%,description.ilike.%${query}%`);
+      dbQuery = dbQuery.or(
+        `name.ilike.%${query}%,description.ilike.%${query}%`,
+      );
     }
 
     // Apply filters
@@ -806,7 +994,9 @@ export class ToolExecutor {
   /**
    * Search business directory
    */
-  private async searchBusinessDirectory(inputs: Record<string, unknown>): Promise<unknown> {
+  private async searchBusinessDirectory(
+    inputs: Record<string, unknown>,
+  ): Promise<unknown> {
     const query = inputs.query as string || "";
     const category = inputs.category as string;
     const location = inputs.location as string;
@@ -818,7 +1008,9 @@ export class ToolExecutor {
       .limit(15);
 
     if (query) {
-      dbQuery = dbQuery.or(`name.ilike.%${query}%,description.ilike.%${query}%`);
+      dbQuery = dbQuery.or(
+        `name.ilike.%${query}%,description.ilike.%${query}%`,
+      );
     }
 
     if (category) {
@@ -838,7 +1030,9 @@ export class ToolExecutor {
   /**
    * Search produce listings
    */
-  private async searchProduce(inputs: Record<string, unknown>): Promise<unknown> {
+  private async searchProduce(
+    inputs: Record<string, unknown>,
+  ): Promise<unknown> {
     const query = inputs.query as string || "";
     const category = inputs.category as string;
 
@@ -849,7 +1043,9 @@ export class ToolExecutor {
       .limit(10);
 
     if (query) {
-      dbQuery = dbQuery.or(`name.ilike.%${query}%,description.ilike.%${query}%`);
+      dbQuery = dbQuery.or(
+        `name.ilike.%${query}%,description.ilike.%${query}%`,
+      );
     }
 
     if (category) {
@@ -865,7 +1061,9 @@ export class ToolExecutor {
   /**
    * Lookup loyalty points
    */
-  private async lookupLoyalty(inputs: Record<string, unknown>): Promise<unknown> {
+  private async lookupLoyalty(
+    inputs: Record<string, unknown>,
+  ): Promise<unknown> {
     const phone = inputs.phone as string;
 
     const { data, error } = await this.supabase
@@ -883,9 +1081,10 @@ export class ToolExecutor {
    */
   private async searchSuppliers(
     inputs: Record<string, unknown>,
-    context: ToolExecutionContext
+    context: ToolExecutionContext,
   ): Promise<unknown> {
-    const productQuery = inputs.product_query as string || inputs.query as string;
+    const productQuery = inputs.product_query as string ||
+      inputs.query as string;
     const quantity = inputs.quantity as number || 1;
     const unit = inputs.unit as string;
     let userLat = inputs.user_lat as number;
@@ -904,7 +1103,7 @@ export class ToolExecutor {
         .select("lat, lng")
         .eq("user_id", context.userId)
         .single();
-      
+
       if (profile?.lat && profile?.lng) {
         userLat = profile.lat;
         userLng = profile.lng;
@@ -912,13 +1111,16 @@ export class ToolExecutor {
     }
 
     // Search preferred suppliers using the RPC function
-    const { data, error } = await this.supabase.rpc("search_preferred_suppliers", {
-      p_product_query: productQuery,
-      p_user_lat: userLat || null,
-      p_user_lng: userLng || null,
-      p_radius_km: radiusKm,
-      p_limit: 5
-    });
+    const { data, error } = await this.supabase.rpc(
+      "search_preferred_suppliers",
+      {
+        p_product_query: productQuery,
+        p_user_lat: userLat || null,
+        p_user_lng: userLng || null,
+        p_radius_km: radiusKm,
+        p_limit: 5,
+      },
+    );
 
     if (error) {
       console.error("Error searching preferred suppliers:", error);
@@ -929,24 +1131,25 @@ export class ToolExecutor {
     const formattedResults = data?.map((supplier: any) => {
       const benefits = supplier.benefits || [];
       const benefitsText = benefits.map((b: any) => {
-        if (b.type === 'discount') {
+        if (b.type === "discount") {
           return `✅ ${b.discount_percent}% discount for EasyMO users`;
-        } else if (b.type === 'free_delivery') {
+        } else if (b.type === "free_delivery") {
           return `✅ Free delivery over ${b.min_order} RWF`;
-        } else if (b.type === 'cashback') {
+        } else if (b.type === "cashback") {
           return `✅ ${b.discount_percent}% cashback`;
         }
         return `✅ ${b.name}`;
-      }).join('\n');
+      }).join("\n");
 
       const totalPrice = (supplier.price_per_unit || 0) * quantity;
-      
+
       // Calculate discount if applicable
       let discountedPrice = totalPrice;
-      const discountBenefit = benefits.find((b: any) => b.type === 'discount');
+      const discountBenefit = benefits.find((b: any) => b.type === "discount");
       if (discountBenefit && totalPrice >= (discountBenefit.min_order || 0)) {
         const discount = totalPrice * (discountBenefit.discount_percent / 100);
-        discountedPrice = totalPrice - Math.min(discount, discountBenefit.max_discount_amount || discount);
+        discountedPrice = totalPrice -
+          Math.min(discount, discountBenefit.max_discount_amount || discount);
       }
 
       return {
@@ -955,7 +1158,7 @@ export class ToolExecutor {
         discounted_price: discountedPrice,
         benefits_text: benefitsText,
         has_discount: discountedPrice < totalPrice,
-        savings: totalPrice - discountedPrice
+        savings: totalPrice - discountedPrice,
       };
     }) || [];
 
@@ -965,7 +1168,9 @@ export class ToolExecutor {
       product_query: productQuery,
       quantity,
       unit,
-      search_location: userLat && userLng ? { lat: userLat, lng: userLng } : null
+      search_location: userLat && userLng
+        ? { lat: userLat, lng: userLng }
+        : null,
     };
   }
 
@@ -974,7 +1179,7 @@ export class ToolExecutor {
    */
   private async genericTableQuery(
     tableName: string,
-    inputs: Record<string, unknown>
+    inputs: Record<string, unknown>,
   ): Promise<unknown> {
     const { data, error } = await this.supabase
       .from(tableName)
@@ -991,7 +1196,7 @@ export class ToolExecutor {
   private async executeHttpTool(
     tool: AgentTool,
     inputs: Record<string, unknown>,
-    context: ToolExecutionContext
+    context: ToolExecutionContext,
   ): Promise<unknown> {
     const config = tool.config;
     const endpoint = config.endpoint as string;
@@ -1022,12 +1227,13 @@ export class ToolExecutor {
   private async executeDeepSearchTool(
     tool: AgentTool,
     inputs: Record<string, unknown>,
-    context: ToolExecutionContext
+    context: ToolExecutionContext,
   ): Promise<unknown> {
     const query = inputs.query as string;
-    const domains = (inputs.domains as string[]) || ["marketplace", "jobs", "properties"];
+    const domains = (inputs.domains as string[]) ||
+      ["marketplace", "jobs", "properties"];
     const useWeb = inputs.useWeb as boolean || false;
-    
+
     if (!query) {
       return {
         results: [],
@@ -1050,7 +1256,7 @@ export class ToolExecutor {
             minSimilarity: 0.7,
           },
           supabaseUrl,
-          supabaseKey
+          supabaseKey,
         );
 
         if (results.length > 0) {
@@ -1074,8 +1280,9 @@ export class ToolExecutor {
       }
 
       // Fallback to web search if no local results or useWeb=true
-      const searchApiKey = Deno.env.get("SERPER_API_KEY") || Deno.env.get("TAVILY_API_KEY");
-      
+      const searchApiKey = Deno.env.get("SERPER_API_KEY") ||
+        Deno.env.get("TAVILY_API_KEY");
+
       if (!searchApiKey) {
         return {
           query,
@@ -1102,7 +1309,7 @@ export class ToolExecutor {
       }
 
       const data = await response.json();
-      
+
       return {
         query,
         source: "web",
@@ -1129,7 +1336,7 @@ export class ToolExecutor {
   private async executeMoMoTool(
     tool: AgentTool,
     inputs: Record<string, unknown>,
-    context: ToolExecutionContext
+    context: ToolExecutionContext,
   ): Promise<unknown> {
     const phone = inputs.phone as string;
     const amount = inputs.amount as number;
@@ -1152,7 +1359,7 @@ export class ToolExecutor {
 
       if (!momoApiKey || !momoUserId) {
         console.warn("MoMo API not configured");
-        
+
         // Store pending transaction in database for manual processing
         await this.supabase.from("payment_transactions").insert({
           user_id: context.userId,
@@ -1174,7 +1381,8 @@ export class ToolExecutor {
           currency,
           reference,
           status: "pending_manual",
-          message: "Payment request recorded. Our team will process it manually and contact you shortly.",
+          message:
+            "Payment request recorded. Our team will process it manually and contact you shortly.",
         };
       }
 
@@ -1190,7 +1398,8 @@ export class ToolExecutor {
           headers: {
             "Authorization": `Bearer ${momoApiKey}`,
             "X-Reference-Id": transactionId,
-            "X-Target-Environment": Deno.env.get("MOMO_ENVIRONMENT") || "sandbox",
+            "X-Target-Environment": Deno.env.get("MOMO_ENVIRONMENT") ||
+              "sandbox",
             "Ocp-Apim-Subscription-Key": momoSubscriptionKey || "",
             "Content-Type": "application/json",
           },
@@ -1205,11 +1414,13 @@ export class ToolExecutor {
             payerMessage: `Payment for easyMO - ${reference}`,
             payeeNote: `easyMO transaction ${reference}`,
           }),
-        }
+        },
       );
 
       if (!response.ok) {
-        throw new Error(`MoMo API error: ${response.status} ${await response.text()}`);
+        throw new Error(
+          `MoMo API error: ${response.status} ${await response.text()}`,
+        );
       }
 
       // Store transaction in database
@@ -1235,11 +1446,12 @@ export class ToolExecutor {
         currency,
         reference,
         status: "pending",
-        message: `Payment request sent to ${phone}. Please approve on your phone.`,
+        message:
+          `Payment request sent to ${phone}. Please approve on your phone.`,
       };
     } catch (error) {
       console.error("MoMo payment error:", error);
-      
+
       // Store failed transaction for audit
       await this.supabase.from("payment_transactions").insert({
         user_id: context.userId,
@@ -1271,17 +1483,26 @@ export class ToolExecutor {
   private async executeLocationTool(
     tool: AgentTool,
     inputs: Record<string, unknown>,
-    context: ToolExecutionContext
+    context: ToolExecutionContext,
   ): Promise<unknown> {
-    // Get user's cached location
-    const { data: userLocation } = await this.supabase
-      .from("whatsapp_users")
-      .select("location_cache")
-      .eq("id", context.userId)
-      .single();
+    const { data: locationRow } = await this.supabase
+      .from("recent_locations")
+      .select("lat, lng, expires_at")
+      .eq("user_id", context.userId)
+      .order("captured_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const isExpired = locationRow?.expires_at
+      ? Date.parse(locationRow.expires_at) <= Date.now()
+      : true;
+
+    const userLocation = !locationRow || isExpired
+      ? null
+      : { lat: locationRow.lat, lng: locationRow.lng };
 
     return {
-      userLocation: userLocation?.location_cache,
+      userLocation,
       inputs,
     };
   }
@@ -1292,7 +1513,7 @@ export class ToolExecutor {
   private async executeExternalTool(
     tool: AgentTool,
     inputs: Record<string, unknown>,
-    context: ToolExecutionContext
+    context: ToolExecutionContext,
   ): Promise<unknown> {
     // Placeholder for external API integrations
     return {
@@ -1308,7 +1529,7 @@ export class ToolExecutor {
   private async executeWhatsAppTool(
     tool: AgentTool,
     inputs: Record<string, unknown>,
-    context: ToolExecutionContext
+    context: ToolExecutionContext,
   ): Promise<unknown> {
     switch (tool.name) {
       case "contact_seller":
@@ -1324,7 +1545,9 @@ export class ToolExecutor {
   /**
    * Generate WhatsApp link to contact a seller
    */
-  private async executeContactSeller(inputs: Record<string, unknown>): Promise<unknown> {
+  private async executeContactSeller(
+    inputs: Record<string, unknown>,
+  ): Promise<unknown> {
     const listingId = inputs.listing_id as string;
     const customMessage = inputs.message as string;
 
@@ -1357,9 +1580,10 @@ export class ToolExecutor {
     }
 
     // Build WhatsApp message
-    const defaultMessage = `Hi! I'm interested in your listing "${listing.product_name}" priced at ${listing.price} RWF on easyMO Marketplace.`;
+    const defaultMessage =
+      `Hi! I'm interested in your listing "${listing.product_name}" priced at ${listing.price} RWF on easyMO Marketplace.`;
     const message = customMessage || defaultMessage;
-    
+
     // Use utility function to clean phone number and build WhatsApp link
     const cleanPhone = this.formatPhoneForWhatsApp(listing.seller_phone);
     const encodedMessage = encodeURIComponent(message);
@@ -1418,7 +1642,9 @@ export class ToolExecutor {
   /**
    * Check user wallet balance
    */
-  private async checkWalletBalance(context: ToolExecutionContext): Promise<unknown> {
+  private async checkWalletBalance(
+    context: ToolExecutionContext,
+  ): Promise<unknown> {
     try {
       // Try RPC function first
       const { data, error } = await this.supabase.rpc("wallet_get_balance", {
@@ -1469,7 +1695,7 @@ export class ToolExecutor {
    */
   private async createSupportTicket(
     inputs: Record<string, unknown>,
-    context: ToolExecutionContext
+    context: ToolExecutionContext,
   ): Promise<unknown> {
     const issueType = inputs.issue_type as string;
     const description = inputs.description as string;
@@ -1517,7 +1743,8 @@ export class ToolExecutor {
       ticket_id: ticketId,
       status: "open",
       priority,
-      message: `Support ticket created! Our team will review and respond within 24 hours. Ticket ID: ${shortTicketId}`,
+      message:
+        `Support ticket created! Our team will review and respond within 24 hours. Ticket ID: ${shortTicketId}`,
     };
   }
 
@@ -1546,7 +1773,8 @@ export class ToolExecutor {
     if (error || !data || data.length === 0) {
       return {
         results: [],
-        message: "No matching FAQ entries found. Creating a support ticket might help!",
+        message:
+          "No matching FAQ entries found. Creating a support ticket might help!",
       };
     }
 
@@ -1569,28 +1797,35 @@ export class ToolExecutor {
    */
   private async findNearbyDrivers(
     inputs: Record<string, unknown>,
-    context: ToolExecutionContext
+    context: ToolExecutionContext,
   ): Promise<unknown> {
     const vehicleType = (inputs.vehicle_type as string) || "any";
     const radiusKm = (inputs.radius_km as number) || 5;
 
     // Get user's location from cache
-    const { data: user } = await this.supabase
-      .from("whatsapp_users")
-      .select("location_cache")
-      .eq("id", context.userId)
-      .single();
+    const { data: locationRow } = await this.supabase
+      .from("recent_locations")
+      .select("lat, lng, expires_at")
+      .eq("user_id", context.userId)
+      .order("captured_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    if (!user?.location_cache) {
+    const isExpired = locationRow?.expires_at
+      ? Date.parse(locationRow.expires_at) <= Date.now()
+      : true;
+
+    if (!locationRow || isExpired) {
       return {
         success: false,
         needs_location: true,
-        message: "Please share your GPS location so I can find drivers near you.",
+        message:
+          "Please share your GPS location so I can find drivers near you.",
       };
     }
 
-    const userLat = user.location_cache.lat;
-    const userLng = user.location_cache.lng;
+    const userLat = locationRow.lat;
+    const userLng = locationRow.lng;
 
     try {
       // Try RPC function for geospatial query
@@ -1614,7 +1849,8 @@ export class ToolExecutor {
           return {
             count: 0,
             drivers: [],
-            message: "No drivers available right now. Please try again in a few minutes.",
+            message:
+              "No drivers available right now. Please try again in a few minutes.",
           };
         }
 
@@ -1635,14 +1871,17 @@ export class ToolExecutor {
         return {
           count: 0,
           drivers: [],
-          message: "No drivers available nearby. Try expanding your search or wait a moment.",
+          message:
+            "No drivers available nearby. Try expanding your search or wait a moment.",
         };
       }
 
       return {
         count: data.length,
         drivers: data.map((d: Record<string, unknown>) => {
-          const distanceKm = typeof d.distance_km === "number" ? d.distance_km : 0;
+          const distanceKm = typeof d.distance_km === "number"
+            ? d.distance_km
+            : 0;
           return {
             id: d.id,
             name: d.driver_name,
@@ -1669,7 +1908,7 @@ export class ToolExecutor {
    */
   private async requestRide(
     inputs: Record<string, unknown>,
-    context: ToolExecutionContext
+    context: ToolExecutionContext,
   ): Promise<unknown> {
     const pickupAddress = inputs.pickup_address as string;
     const destinationAddress = inputs.destination_address as string;
@@ -1683,6 +1922,19 @@ export class ToolExecutor {
       .single();
 
     if (!user?.location_cache) {
+    const { data: locationRow } = await this.supabase
+      .from("recent_locations")
+      .select("lat, lng, expires_at")
+      .eq("user_id", context.userId)
+      .order("captured_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const isExpired = locationRow?.expires_at
+      ? Date.parse(locationRow.expires_at) <= Date.now()
+      : true;
+
+    if (!locationRow || isExpired) {
       return {
         success: false,
         needs_location: true,
@@ -1691,9 +1943,11 @@ export class ToolExecutor {
     }
 
     // Calculate fare estimate using class-level constants
-    const rates = ToolExecutor.FARE_RATES[vehicleType as keyof typeof ToolExecutor.FARE_RATES] 
-      || ToolExecutor.FARE_RATES.moto;
-    const estimatedFare = rates.base + ToolExecutor.DEFAULT_DISTANCE_KM * rates.perKm;
+    const rates = ToolExecutor
+      .FARE_RATES[vehicleType as keyof typeof ToolExecutor.FARE_RATES] ||
+      ToolExecutor.FARE_RATES.moto;
+    const estimatedFare = rates.base +
+      ToolExecutor.DEFAULT_DISTANCE_KM * rates.perKm;
 
     const { data, error } = await this.supabase
       .from("trips")
@@ -1702,8 +1956,8 @@ export class ToolExecutor {
         role: "passenger",
         trip_kind: "request",
         vehicle_type: vehicleType,
-        pickup_lat: user.location_cache.lat,
-        pickup_lng: user.location_cache.lng,
+        pickup_lat: locationRow.lat,
+        pickup_lng: locationRow.lng,
         pickup_text: pickupAddress || "Current location",
         dropoff_text: destinationAddress,
         status: "open",
@@ -1728,19 +1982,24 @@ export class ToolExecutor {
       destination: destinationAddress,
       vehicle_type: vehicleType,
       estimated_fare: `${estimatedFare} RWF`,
-      message: "Finding a driver for you... You'll be notified when one accepts.",
+      message:
+        "Finding a driver for you... You'll be notified when one accepts.",
     };
   }
 
   /**
    * Get fare estimate for a trip
    */
-  private async getFareEstimate(inputs: Record<string, unknown>): Promise<unknown> {
-    const distanceKm = (inputs.distance_km as number) || ToolExecutor.DEFAULT_DISTANCE_KM;
+  private async getFareEstimate(
+    inputs: Record<string, unknown>,
+  ): Promise<unknown> {
+    const distanceKm = (inputs.distance_km as number) ||
+      ToolExecutor.DEFAULT_DISTANCE_KM;
     const vehicleType = (inputs.vehicle_type as string) || "moto";
 
-    const rates = ToolExecutor.FARE_RATES[vehicleType as keyof typeof ToolExecutor.FARE_RATES] 
-      || ToolExecutor.FARE_RATES.moto;
+    const rates = ToolExecutor
+      .FARE_RATES[vehicleType as keyof typeof ToolExecutor.FARE_RATES] ||
+      ToolExecutor.FARE_RATES.moto;
     const estimatedFare = rates.base + distanceKm * rates.perKm;
     const estimatedTime = Math.ceil(distanceKm * ToolExecutor.MINUTES_PER_KM);
 
@@ -1771,7 +2030,9 @@ export class ToolExecutor {
 
     const { data, error } = await this.supabase
       .from("trips")
-      .select("id, status, pickup_text, dropoff_text, vehicle_type, creator_user_id")
+      .select(
+        "id, status, pickup_text, dropoff_text, vehicle_type, creator_user_id",
+      )
       .eq("id", rideId)
       .single();
 
@@ -1801,7 +2062,7 @@ export class ToolExecutor {
    */
   private async calculateInsuranceQuote(
     inputs: Record<string, unknown>,
-    context: ToolExecutionContext
+    context: ToolExecutionContext,
   ): Promise<unknown> {
     const vehicleType = (inputs.vehicle_type as string) || "car";
     const vehicleValue = (inputs.vehicle_value as number) || 5000000; // Default 5M RWF
@@ -1862,14 +2123,17 @@ export class ToolExecutor {
       monthly_premium: `${monthlyPremium.toLocaleString()} RWF`,
       currency: "RWF",
       valid_for_days: 30,
-      message: `Your ${coverageType} insurance quote is ready! Pay monthly or annually.`,
+      message:
+        `Your ${coverageType} insurance quote is ready! Pay monthly or annually.`,
     };
   }
 
   /**
    * Check insurance policy status
    */
-  private async checkPolicyStatus(inputs: Record<string, unknown>): Promise<unknown> {
+  private async checkPolicyStatus(
+    inputs: Record<string, unknown>,
+  ): Promise<unknown> {
     const policyNumber = inputs.policy_number as string;
 
     if (!policyNumber) {
@@ -1881,7 +2145,9 @@ export class ToolExecutor {
 
     const { data, error } = await this.supabase
       .from("insurance_policies")
-      .select("policy_number, insurance_type, coverage_type, status, start_date, end_date, annual_premium")
+      .select(
+        "policy_number, insurance_type, coverage_type, status, start_date, end_date, annual_premium",
+      )
       .eq("policy_number", policyNumber)
       .single();
 
@@ -1894,7 +2160,9 @@ export class ToolExecutor {
 
     const endDate = new Date(data.end_date);
     const now = new Date();
-    const daysUntilExpiry = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const daysUntilExpiry = Math.ceil(
+      (endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+    );
 
     return {
       success: true,
@@ -1915,7 +2183,7 @@ export class ToolExecutor {
    */
   private async submitInsuranceClaim(
     inputs: Record<string, unknown>,
-    context: ToolExecutionContext
+    context: ToolExecutionContext,
   ): Promise<unknown> {
     const policyNumber = inputs.policy_number as string;
     const claimType = inputs.claim_type as string;
@@ -1963,7 +2231,8 @@ export class ToolExecutor {
       status: "submitted",
       policy_number: policyNumber,
       claim_type: claimType,
-      message: "Claim submitted successfully! You'll receive updates via WhatsApp. Please upload supporting documents (photos, police report if applicable).",
+      message:
+        "Claim submitted successfully! You'll receive updates via WhatsApp. Please upload supporting documents (photos, police report if applicable).",
       next_steps: [
         "Upload photos of damage",
         "Provide police report (if accident)",
@@ -1982,7 +2251,7 @@ export class ToolExecutor {
     context: ToolExecutionContext,
     executionTime: number,
     success: boolean,
-    error?: string
+    error?: string,
   ): Promise<void> {
     try {
       await this.supabase.from("ai_agent_tool_executions").insert({
@@ -2012,11 +2281,11 @@ export class ToolExecutor {
    */
   private async executeWeatherTool(
     tool: AgentTool,
-    inputs: Record<string, unknown>
+    inputs: Record<string, unknown>,
   ): Promise<unknown> {
     const location = inputs.location as string || "Kigali";
     const days = (inputs.days as number) || 3;
-    
+
     const apiKey = Deno.env.get("OPENWEATHER_API_KEY");
     if (!apiKey) {
       return {
@@ -2028,7 +2297,9 @@ export class ToolExecutor {
 
     try {
       const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(location)}&appid=${apiKey}&units=metric&cnt=${days * 8}`
+        `https://api.openweathermap.org/data/2.5/forecast?q=${
+          encodeURIComponent(location)
+        }&appid=${apiKey}&units=metric&cnt=${days * 8}`,
       );
 
       if (!response.ok) {
@@ -2036,7 +2307,7 @@ export class ToolExecutor {
       }
 
       const data = await response.json();
-      
+
       return {
         location: data.city?.name || location,
         current: {
@@ -2064,12 +2335,12 @@ export class ToolExecutor {
    */
   private async executeTranslationTool(
     tool: AgentTool,
-    inputs: Record<string, unknown>
+    inputs: Record<string, unknown>,
   ): Promise<unknown> {
     const text = inputs.text as string;
     const targetLanguage = inputs.target_language as string;
     const sourceLanguage = inputs.source_language as string;
-    
+
     if (!text || !targetLanguage) {
       return {
         error: "Text and target language required",
@@ -2096,7 +2367,7 @@ export class ToolExecutor {
             target: targetLanguage,
             source: sourceLanguage,
           }),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -2104,11 +2375,12 @@ export class ToolExecutor {
       }
 
       const data = await response.json();
-      
+
       return {
         original_text: text,
         translated_text: data.data?.translations[0]?.translatedText || text,
-        source_language: data.data?.translations[0]?.detectedSourceLanguage || sourceLanguage,
+        source_language: data.data?.translations[0]?.detectedSourceLanguage ||
+          sourceLanguage,
         target_language: targetLanguage,
       };
     } catch (error) {
@@ -2126,12 +2398,12 @@ export class ToolExecutor {
    */
   private async executeGeocodingTool(
     tool: AgentTool,
-    inputs: Record<string, unknown>
+    inputs: Record<string, unknown>,
   ): Promise<unknown> {
     const address = inputs.address as string;
     const lat = inputs.lat as number;
     const lng = inputs.lng as number;
-    
+
     const apiKey = Deno.env.get("GOOGLE_MAPS_API_KEY");
     if (!apiKey) {
       return {
@@ -2143,10 +2415,13 @@ export class ToolExecutor {
       let url: string;
       if (address) {
         // Geocode address to coordinates
-        url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`;
+        url = `https://maps.googleapis.com/maps/api/geocode/json?address=${
+          encodeURIComponent(address)
+        }&key=${apiKey}`;
       } else if (lat && lng) {
         // Reverse geocode coordinates to address
-        url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
+        url =
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
       } else {
         return {
           error: "Either address or lat/lng required",
@@ -2159,7 +2434,7 @@ export class ToolExecutor {
       }
 
       const data = await response.json();
-      
+
       if (data.status !== "OK") {
         return {
           error: `Geocoding failed: ${data.status}`,
@@ -2189,7 +2464,7 @@ export class ToolExecutor {
   private async executeSchedulingTool(
     tool: AgentTool,
     inputs: Record<string, unknown>,
-    context: ToolExecutionContext
+    context: ToolExecutionContext,
   ): Promise<unknown> {
     const date = inputs.date as string;
     const time = inputs.time as string;
@@ -2233,4 +2508,3 @@ export class ToolExecutor {
     }
   }
 }
-
