@@ -16,14 +16,24 @@ interface InsuranceAdmin {
 /**
  * Fetch the primary insurance admin contact
  * Returns the first active contact or a fallback
+ * 
+ * Note: Uses unified insurance_admin_contacts table with columns:
+ * - channel (e.g., 'whatsapp') 
+ * - destination (phone number)
+ * - display_name
+ * - category (e.g., 'insurance')
+ * - is_active
+ * - display_order
+ * - priority
  */
 async function getInsuranceAdminContact(supabase: SupabaseClient): Promise<InsuranceAdmin | null> {
   const { data, error } = await supabase
     .from("insurance_admin_contacts")
-    .select("contact_value, display_name")
-    .eq("contact_type", "whatsapp")
+    .select("destination, display_name")
+    .eq("channel", "whatsapp")
     .eq("category", "insurance")
     .eq("is_active", true)
+    .order("priority", { ascending: true })
     .order("display_order", { ascending: true })
     .limit(1)
     .maybeSingle();
@@ -34,11 +44,14 @@ async function getInsuranceAdminContact(supabase: SupabaseClient): Promise<Insur
   }
 
   if (!data) {
+    await logStructuredEvent("INSURANCE_ADMIN_NO_CONTACTS", { 
+      message: "No active insurance admin contacts found in database" 
+    }, "warn");
     return null;
   }
 
   return {
-    wa_id: data.contact_value.replace(/^\+/, ""), // Strip leading + (e.g., "+250788..." → "250788...") for WhatsApp API
+    wa_id: data.destination.replace(/^\+/, ""), // Strip leading + (e.g., "+250788..." → "250788...") for WhatsApp API
     display_name: data.display_name || "Insurance Team"
   };
 }
