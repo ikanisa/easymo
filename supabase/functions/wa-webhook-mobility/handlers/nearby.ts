@@ -1015,8 +1015,8 @@ async function runMatchingFallback(
       return true;
     }
 
-  // NOTIFY DRIVERS (if searching for drivers)
-  if (state.mode === "drivers") {
+    // NOTIFY DRIVERS (if searching for drivers)
+    if (state.mode === "drivers") {
       // Get passenger name
       const { data: passenger } = await ctx.supabase
         .from("profiles")
@@ -1029,6 +1029,7 @@ async function runMatchingFallback(
       // SIMPLIFIED: Notifications disabled - trip_notifications table dropped
       // Users will see matches in the list and can contact directly via WhatsApp
       // This simplifies the system and removes complex notification logic
+    }
 
     const rendered = sortMatches(matches, { prioritize: "distance" })
       .slice(0, 9)
