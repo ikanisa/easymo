@@ -123,8 +123,6 @@ export function AuroraSettingsClient() {
                   value="Africa/Kigali"
                   options={[
                     { value: 'Africa/Kigali', label: 'Africa/Kigali (CAT)' },
-                    { value: 'Africa/Nairobi', label: 'Africa/Nairobi (EAT)' },
-                    { value: 'UTC', label: 'UTC' },
                   ]}
                 />
               </div>
