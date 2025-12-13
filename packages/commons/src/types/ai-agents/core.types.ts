@@ -16,7 +16,7 @@
 
 /**
  * AI Agent Definition
- * Represents an agent in the system (e.g., waiter, farmer, rides)
+ * Represents an agent in the system (e.g., buy_and_sell, support)
  */
 export interface AiAgent {
   id: string;
