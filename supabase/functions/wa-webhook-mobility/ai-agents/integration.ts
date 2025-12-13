@@ -277,6 +277,8 @@ async function invokeScheduleTripAgent(
     };
   }
 }
+
+/**
  * Send agent options to user as interactive list with fallback buttons
  */
 export async function sendAgentOptions(
