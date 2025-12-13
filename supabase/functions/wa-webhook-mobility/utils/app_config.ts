@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "../deps.ts";
+import { logStructuredEvent } from "../observe/log.ts";
 
 type AppConfigRow = {
   search_radius_km?: number | null;
@@ -30,7 +31,9 @@ export async function getAppConfig(
     .eq("id", 1)
     .maybeSingle();
   if (error) {
-    console.error("app_config.load_failed", error);
+    await logStructuredEvent("APP_CONFIG_LOAD_FAILED", {
+      error: error.message,
+    });
     cache = {
       value: {},
       loadedAt: now,
