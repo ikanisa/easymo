@@ -212,7 +212,7 @@ export const REALTIME_FUNCTIONS = [
         },
         country: {
           type: 'string',
-          enum: ['rwanda', 'malta'],
+          enum: ['rwanda'],
           description: 'Country for property search',
         },
         bedrooms: {
@@ -229,7 +229,7 @@ export const REALTIME_FUNCTIONS = [
         },
         currency: {
           type: 'string',
-          enum: ['RWF', 'EUR', 'USD'],
+          enum: ['RWF'],
           description: 'Currency for budget',
         },
         move_in_date: {
@@ -312,7 +312,7 @@ export const REALTIME_FUNCTIONS = [
       properties: {
         inquiry_type: {
           type: 'string',
-          enum: ['vehicle_sale', 'insurance', 'job_search', 'agriculture', 'business', 'other'],
+          enum: ['vehicle_sale', 'insurance', 'business', 'other'],
         },
         description: {
           type: 'string',
@@ -361,65 +361,6 @@ export const REALTIME_FUNCTIONS = [
     },
   },
 
-  // Jobs
-  {
-    name: 'search_jobs',
-    description: 'Search for job opportunities',
-    parameters: {
-      type: 'object',
-      properties: {
-        job_category: {
-          type: 'string',
-          description: 'Job category or industry',
-        },
-        location: {
-          type: 'string',
-          description: 'Job location',
-        },
-        experience_level: {
-          type: 'string',
-          enum: ['entry', 'mid', 'senior'],
-        },
-      },
-    },
-  },
-
-  // Agriculture
-  {
-    name: 'get_farming_advice',
-    description: 'Get agricultural advice and tips',
-    parameters: {
-      type: 'object',
-      properties: {
-        crop_type: {
-          type: 'string',
-          description: 'Type of crop',
-        },
-        issue: {
-          type: 'string',
-          description: 'Problem or question about farming',
-        },
-      },
-    },
-  },
-  {
-    name: 'search_equipment',
-    description: 'Search for farming equipment',
-    parameters: {
-      type: 'object',
-      properties: {
-        equipment_type: {
-          type: 'string',
-          description: 'Type of equipment needed',
-        },
-        rental_or_purchase: {
-          type: 'string',
-          enum: ['rent', 'buy'],
-        },
-      },
-    },
-  },
-
   // General
   {
     name: 'get_help',
@@ -447,7 +388,7 @@ export function buildCallCenterPrompt(config: {
   const lang = config.language || 'en';
   
   const prompts: Record<string, string> = {
-    en: `You are EasyMO Call Center AI, a helpful voice assistant for EasyMO's multi-country mobility and marketplace platform (Rwanda & Malta).
+    en: `You are EasyMO Call Center AI, a helpful voice assistant for EasyMO's mobility and marketplace platform in Rwanda.
 
 YOUR ROLE:
 You are an INFORMATION COLLECTOR and FIRST CONTACT agent. Your job is to:
@@ -464,8 +405,7 @@ PERSONALITY:
 - Show empathy and patience
 
 SERVICES:
-- Rwanda: Rides (moto/car), vehicles, properties, jobs, agriculture (currency: RWF)
-- Malta: Properties, rentals (currency: EUR)
+- Rwanda: Rides (moto/car), vehicles, properties, insurance (currency: RWF only)
 
 YOUR CONVERSATION STRATEGY:
 1. LISTEN & UNDERSTAND: "I can help with that! Let me get some details..."
@@ -477,11 +417,11 @@ YOUR CONVERSATION STRATEGY:
 CRITICAL: BE PROACTIVE WITH QUESTIONS
 
 Example - Property Search:
-User: "I need a 2 bedroom apartment in Valletta for 2000 euro per month"
+User: "I need a 2 bedroom apartment in Kigali for 200000 RWF per month"
 You ask:
   - "When are you looking to move in?" (timing)
   - "Is this for yourself or family?" (occupancy)
-  - "Any specific area in Valletta you prefer?" (location details)
+  - "Any specific area in Kigali you prefer?" (location details)
   - "Do you need furnished or unfurnished?" (requirements)
   - "What's your phone number so our property team can reach you?" (contact)
   
@@ -501,7 +441,7 @@ INFORMATION COLLECTION RULES:
 - ALWAYS ask for budget/price range
 - ALWAYS ask for specific locations (not just "city")
 - ALWAYS ask for any special requirements
-- For currency: Detect from location (Valletta=EUR, Kigali=RWF) or ask explicitly
+- Currency is always RWF (Rwandan Franc)
 
 TOOLS YOU HAVE:
 Use tools to RECORD requests, not to search immediately:
@@ -511,7 +451,7 @@ Use tools to RECORD requests, not to search immediately:
 - get_user_info: Look up returning customers
 
 DO NOT promise immediate results. Instead say:
-✅ "I've recorded your request for a 2-bedroom apartment in Valletta under €2000/month. Our property team will send you available options within 2 hours."
+✅ "I've recorded your request for a 2-bedroom apartment in Kigali under 200000 RWF/month. Our property team will send you available options within 2 hours."
 ❌ "Let me search for apartments now..." (Don't do real-time search)
 
 ENDING CALLS:
@@ -538,8 +478,7 @@ Urashobora gufasha abakiriya muri:
 - Gushaka ibinyabiziga bigurishwa
 - Kubona amakuru ku bwishingizi
 - Gushaka imitungo (ubutaka, amazu, apartman)
-- Gushaka akazi
-- Ubujyanama ku buhinzi n'ibikoresho
+- Ubufasha rusange ku rubuga
 
 ${config.userName ? `UMUKORESHA: ${config.userName}` : ''}`,
 
@@ -555,33 +494,12 @@ PERSONNALITÉ:
 CAPACITÉS:
 Vous pouvez aider avec:
 - Planifier des trajets (moto, voiture, van)
-- Trouver des véhicules à vendre
+- Trouver des véhicules à vendre  
 - Obtenir des devis d'assurance
 - Rechercher des propriétés
-- Trouver des emplois
-- Conseils agricoles
+- Aide générale sur la plateforme
 
 ${config.userName ? `UTILISATEUR: ${config.userName}` : ''}`,
-
-    sw: `Wewe ni EasyMO Call Center AI, msaidizi wa sauti anayesaidia kwenye jukwaa kuu la usafiri na soko nchini Rwanda.
-
-TABIA:
-- Uwe wa mazungumzo, rafiki na mtaalamu
-- Zungumza asilia kama wakala wa binadamu
-- Kuwa mfupi - weka majibu chini ya sekunde 30
-- Tumia lugha ya kawaida
-- Onyesha huruma na uvumilivu
-
-UWEZO:
-Unaweza kusaidia na:
-- Kupanga safari (pikipiki, gari, van)
-- Kutafuta magari ya kuuza
-- Kupata nukuu za bima
-- Kutafuta mali
-- Kutafuta kazi
-- Ushauri wa kilimo
-
-${config.userName ? `MTUMIAJI: ${config.userName}` : ''}`,
   };
 
   return prompts[lang] || prompts['en'];
