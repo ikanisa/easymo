@@ -24,6 +24,10 @@ declare global {
     | undefined;
 }
 
+/**
+ * EasyMO Rwanda-only admin navigation
+ * Supported services: Mobility, Insurance, Buy & Sell, Profile, Wallet
+ */
 const legacySections = [
   {
     title: "Overview",
@@ -38,10 +42,6 @@ const legacySections = [
       { href: "/agents/overview", title: "Agent overview" },
       { href: "/agents/dashboard", title: "Agent dashboard" },
       { href: "/agents/driver", title: "Driver agent" },
-      { href: "/agents/pharmacy", title: "Pharmacy agent" },
-      { href: "/agents/shops", title: "Shops and services agent" },
-      { href: "/agents/hardware", title: "Hardware agent" },
-      { href: "/agents/property", title: "Property agent" },
       { href: "/agents/schedule", title: "Schedule agent" },
       { href: "/agents/live-conversations", title: "Live conversations" },
       { href: "/agents/playbooks", title: "Playbooks" },
@@ -54,7 +54,6 @@ const legacySections = [
       { href: "/agents/sessions", title: "Active sessions" },
       { href: "/agents/negotiations", title: "Negotiations" },
       { href: "/agents/vendor-responses", title: "Vendor responses" },
-      { href: "/agents/video-jobs", title: "Video jobs" },
     ],
   },
   {
@@ -66,11 +65,6 @@ const legacySections = [
       { href: "/marketplace", title: "Marketplace" },
       { href: "/sms-vendors", title: "SMS Vendors" },
       { href: "/client-portal", title: "Client Portal" },
-      { href: "/pharmacies", title: "Pharmacies" },
-      { href: "/quincailleries", title: "Quincailleries" },
-      { href: "/shops", title: "Shops and services" },
-      { href: "/bars-restaurants", title: "Bars and restaurants" },
-      { href: "/property-rentals", title: "Property rentals" },
       { href: "/momo", title: "MoMo QR and tokens" },
     ],
   },
@@ -80,13 +74,6 @@ const legacySections = [
       { href: "/leads", title: "Leads" },
       { href: "/live-calls", title: "Live calls" },
       { href: "/voice-analytics", title: "Voice analytics" },
-      { href: "/video-analytics", title: "Video analytics" },
-    ],
-  },
-  {
-    title: "Marketing",
-    items: [
-      { href: "/integrations", title: "Integrations" },
     ],
   },
   {

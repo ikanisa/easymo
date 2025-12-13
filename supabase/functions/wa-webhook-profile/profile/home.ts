@@ -89,6 +89,9 @@ async function fetchProfileMenuItems(
 
 /**
  * Fallback menu items if database fetch fails
+ * 
+ * EasyMO Rwanda-only profile options:
+ * - Edit Profile, Wallet & Tokens, Vehicles, Saved Locations, MOMO QR
  */
 function getFallbackMenuItems(): ProfileMenuItem[] {
   return [
@@ -113,38 +116,18 @@ function getFallbackMenuItems(): ProfileMenuItem[] {
       metadata: {},
     },
     {
-      item_key: "my_businesses",
-      display_order: 4,
-      icon: "🏪",
-      title: "My Businesses",
-      description: "Manage your business listings",
+      item_key: "momo_qr",
+      display_order: 3,
+      icon: "📱",
+      title: "MOMO QR Code",
+      description: "Generate and manage your MOMO QR codes",
       action_type: "route",
-      action_target: "MY_BUSINESSES",
-      metadata: {},
-    },
-    {
-      item_key: "my_jobs",
-      display_order: 5,
-      icon: "💼",
-      title: "My Jobs",
-      description: "Manage your job postings",
-      action_type: "route",
-      action_target: "MY_JOBS",
-      metadata: {},
-    },
-    {
-      item_key: "my_properties",
-      display_order: 6,
-      icon: "🏠",
-      title: "My Properties",
-      description: "Manage your property listings",
-      action_type: "route",
-      action_target: "MY_PROPERTIES",
+      action_target: "MOMO_QR",
       metadata: {},
     },
     {
       item_key: "my_vehicles",
-      display_order: 7,
+      display_order: 4,
       icon: "🚗",
       title: "My Vehicles",
       description: "Manage your registered vehicles",
@@ -154,9 +137,9 @@ function getFallbackMenuItems(): ProfileMenuItem[] {
     },
     {
       item_key: "saved_locations",
-      display_order: 8,
+      display_order: 5,
       icon: "📍",
-      title: "Saved Locations",
+      title: "Favorite Locations",
       description: "Your favorite places",
       action_type: "route",
       action_target: "SAVED_LOCATIONS",
@@ -212,7 +195,7 @@ export async function startProfile(
     ctx,
     {
       title: "👤 Profile",
-      body: "Manage your account, wallet, businesses, jobs, properties, vehicles and more.",
+      body: "Manage your account, wallet, vehicles, MOMO QR codes and favorite locations.",
       sectionTitle: "Profile",
       buttonText: "View",
       rows,
