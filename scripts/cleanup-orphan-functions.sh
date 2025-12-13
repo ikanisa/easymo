@@ -20,7 +20,13 @@
 
 set -euo pipefail
 
-PROJECT_REF="${SUPABASE_PROJECT_REF:-lhbowpbcpwoiparwnwgt}"
+# SUPABASE_PROJECT_REF must be set via environment variable
+if [[ -z "${SUPABASE_PROJECT_REF:-}" ]]; then
+    echo "ERROR: SUPABASE_PROJECT_REF environment variable is required."
+    echo "Usage: SUPABASE_PROJECT_REF=your-project-ref ./scripts/cleanup-orphan-functions.sh [--dry-run] [--batch N]"
+    exit 1
+fi
+PROJECT_REF="${SUPABASE_PROJECT_REF}"
 
 # Colors for output
 RED='\033[0;31m'

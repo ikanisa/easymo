@@ -5,7 +5,9 @@ const DEFAULT_BASE = 'http://localhost:54321/functions/v1';
 const base = (process.env.EDGE_FUNCTIONS_BASE || DEFAULT_BASE).replace(/\/$/, '');
 const token = process.env.EDGE_FUNCTIONS_TOKEN || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-// IMPORTANT: wa-webhook is DEPRECATED (Issue #485) - DO NOT ADD BACK
+// Functions to verify on deployment
+// Note: admin-health was removed as it was deprecated and merged into admin-api
+// Note: wa-webhook is DEPRECATED (Issue #485) - DO NOT ADD BACK
 // The legacy monolithic wa-webhook has been replaced by wa-webhook-core + domain microservices
 const defaultFunctions = [
   { name: 'wa-webhook-core', path: 'wa-webhook-core', expect: (body, raw) => raw.includes('messages') || typeof body === 'object' },

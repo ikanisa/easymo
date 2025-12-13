@@ -120,21 +120,23 @@ check_deploy_scripts() {
     local found_issues=false
     
     for fn in "${DEPRECATED_FUNCTIONS[@]}"; do
-        # Use exact match pattern (word boundary on both sides, not part of larger function name)
-        # This ensures wa-webhook doesn't match wa-webhook-core, wa-webhook-mobility, etc.
-        local pattern=" ${fn}[^-a-z]| ${fn}$"
+        # Use word boundary pattern to match exact function name
+        # Matches: beginning of line, space, or after other non-alphanumeric char
+        # Does NOT match if followed by dash (wa-webhook-core, wa-webhook-mobility, etc)
+        local pattern="(^|[[:space:]])${fn}([[:space:]]|\$|[^-a-zA-Z0-9])"
         
         # Check CI workflows - look for the function name as a standalone word in deploy commands
         local workflow_refs=""
         for wf in "$REPO_ROOT/.github/workflows/"*.yml; do
-            if grep -E "supabase functions deploy.*${pattern}" "$wf" 2>/dev/null | grep -v "^#\|^\s*#" >/dev/null; then
+            # Match deployment commands with the deprecated function (not in comments)
+            if grep -E "supabase functions deploy.*${pattern}" "$wf" 2>/dev/null | grep -v "^[[:space:]]*#" >/dev/null; then
                 workflow_refs="$workflow_refs $wf"
             fi
         done
         
         # Check package.json - look for deploy scripts with the deprecated function
         local pkg_refs=""
-        if grep -E "\"functions:deploy[^\"]*${pattern}" "$REPO_ROOT/package.json" 2>/dev/null | grep -v "^#\|^\s*#" >/dev/null; then
+        if grep -E "\"functions:deploy[^\"]*${pattern}" "$REPO_ROOT/package.json" 2>/dev/null | grep -v "^[[:space:]]*#" >/dev/null; then
             pkg_refs="package.json"
         fi
         

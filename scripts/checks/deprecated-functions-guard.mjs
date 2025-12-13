@@ -47,13 +47,28 @@ const DEPLOY_PATTERNS = [
  * Extract function names from a deploy command string
  */
 function extractFunctionNames(command) {
-  // Remove flags like --project-ref, --no-verify-jwt, etc.
-  const cleanCommand = command
-    .replace(/--[a-z-]+\s*("[^"]*"|'[^']*'|[^\s]+)?/gi, '')
-    .replace(/\$\{?[A-Z_]+\}?/g, '') // Remove env vars like $PROJECT_REF
-    .trim();
+  // Remove flags with values like --project-ref value, --no-verify-jwt
+  // Be careful not to consume function names that follow flags
+  let cleanCommand = command;
   
-  return cleanCommand.split(/\s+/).filter(name => name && !name.startsWith('-'));
+  // First, remove flags with quoted values
+  cleanCommand = cleanCommand.replace(/--[a-z-]+\s*=?\s*("[^"]*"|'[^']*')/gi, '');
+  
+  // Then, remove flags with unquoted values (but only if the value looks like a value, not a function name)
+  // A value typically starts with $ (env var) or is a path or contains special chars
+  cleanCommand = cleanCommand.replace(/--[a-z-]+\s*=?\s*(\$\{?[A-Z_]+\}?|[A-Z_]+|[^a-z\s]+)/gi, '');
+  
+  // Remove remaining flags without values
+  cleanCommand = cleanCommand.replace(/--[a-z-]+/gi, '');
+  
+  // Remove env vars like $PROJECT_REF or ${PROJECT_REF}
+  cleanCommand = cleanCommand.replace(/\$\{?[A-Z_]+\}?/g, '');
+  
+  // Clean up whitespace
+  cleanCommand = cleanCommand.trim();
+  
+  // Extract function names (lowercase with dashes, like wa-webhook-core)
+  return cleanCommand.split(/\s+/).filter(name => name && /^[a-z][a-z0-9-]*$/i.test(name));
 }
 
 /**
