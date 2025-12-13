@@ -115,11 +115,10 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
  * List of all routed services (for health checks, validation, etc.)
  * 
  * EasyMO Rwanda-only services:
- * - Mobility, Insurance, Buy & Sell, Profile, Wallet
+ * - Mobility, Buy & Sell, Profile, Wallet
  */
 export const ROUTED_SERVICES: readonly string[] = [
   "wa-webhook-mobility",
-  "wa-webhook-insurance",
   "wa-webhook-profile",
   "wa-webhook-wallet",
   "wa-webhook-buy-sell",
@@ -152,7 +151,6 @@ export function buildMenuKeyMap(): Record<string, string> {
  * EasyMO Rwanda-only services
  */
 export const STATE_PATTERNS: Array<{ patterns: string[]; service: string }> = [
-  { patterns: ["insurance", "ins_"], service: "wa-webhook-insurance" },
   { patterns: ["mobility", "trip_", "ride_"], service: "wa-webhook-mobility" },
   // Wallet state patterns - route to dedicated wallet service
   // Note: wallet_ prefix catches wallet_cashout, wallet_purchase, wallet_referral, wallet_transfer, etc.
