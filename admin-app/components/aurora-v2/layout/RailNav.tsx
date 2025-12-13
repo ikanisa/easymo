@@ -35,7 +35,6 @@ const navItems: NavItem[] = [
   { icon: Phone, label: 'Calls', href: '/calls' },
   { icon: Briefcase, label: 'Jobs', href: '/jobs' },
   { icon: Building, label: 'Property', href: '/property' },
-  { icon: Shield, label: 'Insurance', href: '/insurance' },
   { icon: Bot, label: 'AI Agents', href: '/agents' },
 ];
 
