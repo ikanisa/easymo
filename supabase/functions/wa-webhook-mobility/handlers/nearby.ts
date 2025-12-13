@@ -225,25 +225,10 @@ function buildNearbyRow(
   };
 }
 
-import { checkPendingPayments } from "./trip_payment.ts";
-import { fmtCurrency } from "../utils/text.ts";
-
 export async function handleSeeDrivers(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
 
-  // 0. Check for pending payments
-  const pending = await checkPendingPayments(ctx);
-  if (pending) {
-    const formattedAmount = fmtCurrency(pending.amount, "RWF");
-    await sendButtonsMessage(
-      ctx,
-      t(ctx.locale, "payment.reminder.pending", { amount: formattedAmount }),
-      homeOnly(),
-    );
-    return true;
-  }
-
-  // 1. Standard workflow: always ask for vehicle selection
+  // Standard workflow: always ask for vehicle selection
   // This provides a clean, predictable user experience
   await setState(ctx.supabase, ctx.profileId, {
     key: "mobility_nearby_select",

@@ -49,6 +49,34 @@ EasyMO is a WhatsApp-first platform focused on the Rwanda market with the follow
 4. **Profile** - User profile management
 5. **Wallets** - Mobile money integration (USSD-based)
 
+### Mobility Workflow Details
+
+The mobility service uses a **button-driven workflow** (no AI agents, no free text input).
+
+#### Vehicle Types
+| ID | Name | Description |
+|----|------|-------------|
+| `veh_moto` | Moto | Two-wheel rides around town |
+| `veh_cab` | Cab | Standard car trips |
+| `veh_lifan` | Lifan | Three-wheel cargo rides |
+| `veh_truck` | Truck | Pickup or truck deliveries |
+| `veh_others` | Other | Buses, vans, etc. |
+
+#### Location Caching
+- **30-minute TTL**: Users can reuse their last shared location within 30 minutes
+- Cache stored in `recent_locations` table with `expires_at` column
+
+#### Trip Expiry
+- **30-minute expiry**: All trips auto-expire after 30 minutes via the `expires_at` column
+- Status is simply `open` while active, then expired
+
+#### Design Principles
+- ✅ **Button-driven**: All interactions via WhatsApp buttons and lists
+- ✅ **No payments**: Mobility workflow does NOT handle any payments
+- ✅ **No AI agents**: Uses direct database matching, not AI conversations
+- ✅ **Simple flow**: User → Vehicle → Location → Results → Direct WhatsApp chat
+- ✅ **Peer-to-peer**: Results show WhatsApp links for direct contact
+
 ### Supported Languages
 
 - English (en) - Primary UI
