@@ -26,7 +26,6 @@ import { claimEvent } from "../_shared/wa-webhook-shared/state/idempotency.ts";
 import { extractWhatsAppMessage } from "./utils/index.ts";
 import { MarketplaceAgent, WELCOME_MESSAGE } from "./agent.ts";
 import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
-import type { BuyAndSellContext } from "../_shared/agents/buy-and-sell.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -478,10 +477,6 @@ serve(async (req: Request): Promise<Response> => {
 
     // === AI AGENT PROCESSING ===
     
-    // Load context once for this request
-    let context: BuyAndSellContext = await MarketplaceAgent.loadContext(userPhone, supabase);
-    const isNewSession = !context.conversationHistory || context.conversationHistory.length === 0;
-    
     // Home/menu/reset commands → show welcome message and reset context
     const lower = text.toLowerCase();
     if (
@@ -502,11 +497,14 @@ serve(async (req: Request): Promise<Response> => {
       const duration = Date.now() - startTime;
       recordMetric("buy_sell.welcome_shown", 1, {
         duration_ms: duration,
-        isNewSession,
       });
       
       return respond({ success: true, message: "welcome_shown" });
     }
+    
+    // Load context for regular messages (after filtering out reset commands)
+    const context = await MarketplaceAgent.loadContext(userPhone, supabase);
+    const isNewSession = !context.conversationHistory || context.conversationHistory.length === 0;
     
     // For new sessions with actual text, show welcome first then process
     if (isNewSession && text) {
