@@ -37,12 +37,6 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
     priority: 1,
   },
   {
-    service: "wa-webhook-insurance",
-    keywords: ["insurance", "assurance", "cover", "claim", "policy", "premium", "insure", "protection"],
-    menuKeys: ["insurance", "insurance_agent", "motor_insurance", "insurance_submit", "insurance_help", "motor_insurance_upload", "2"],
-    priority: 1,
-  },
-  {
     // Wallet service - dedicated microservice for financial operations
     // Extracted from wa-webhook-profile for single-responsibility
     service: "wa-webhook-wallet",
