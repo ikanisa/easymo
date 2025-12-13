@@ -196,26 +196,26 @@ serve(async (req: Request): Promise<Response> => {
 
         // Profile Home
         if (id === "profile") {
-          const { startProfile } = await import("./profile/home.ts");
+          const { startProfile } = await import("./handlers/menu.ts");
           handled = await startProfile(ctx, state ?? { key: "home" });
         }
         
         // Profile Edit
         else if (id === "EDIT_PROFILE" || id === "edit_profile") {
-          const { startEditProfile } = await import("./profile/edit.ts");
+          const { startEditProfile } = await import("./handlers/edit.ts");
           handled = await startEditProfile(ctx);
         }
         else if (id === "EDIT_PROFILE_NAME") {
-          const { promptEditName } = await import("./profile/edit.ts");
+          const { promptEditName } = await import("./handlers/edit.ts");
           handled = await promptEditName(ctx);
         }
         else if (id === "EDIT_PROFILE_LANGUAGE") {
-          const { promptEditLanguage } = await import("./profile/edit.ts");
+          const { promptEditLanguage } = await import("./handlers/edit.ts");
           handled = await promptEditLanguage(ctx);
         }
         else if (id.startsWith("LANG::")) {
           const languageCode = id.replace("LANG::", "");
-          const { handleEditLanguage } = await import("./profile/edit.ts");
+          const { handleEditLanguage } = await import("./handlers/edit.ts");
           handled = await handleEditLanguage(ctx, languageCode);
         }
         
@@ -232,7 +232,7 @@ serve(async (req: Request): Promise<Response> => {
         
         // Saved Locations
         else if (id === IDS.SAVED_LOCATIONS || id === "SAVED_LOCATIONS" || id === "saved_locations") {
-          const { listSavedLocations } = await import("./profile/locations.ts");
+          const { listSavedLocations } = await import("./handlers/locations.ts");
           handled = await listSavedLocations(ctx);
         }
         else if (id === IDS.ADD_LOCATION || id === "add_location") {
@@ -278,7 +278,7 @@ serve(async (req: Request): Promise<Response> => {
         }
         else if (id.startsWith("LOC::")) {
           const locationId = id.replace("LOC::", "");
-          const { handleLocationSelection } = await import("./profile/locations.ts");
+          const { handleLocationSelection } = await import("./handlers/locations.ts");
           handled = await handleLocationSelection(ctx, locationId);
         }
         else if (id.startsWith("ADD_LOC::")) {
@@ -517,13 +517,13 @@ serve(async (req: Request): Promise<Response> => {
         
         // Back to Profile
         else if (id === IDS.BACK_PROFILE) {
-          const { startProfile } = await import("./profile/home.ts");
+          const { startProfile } = await import("./handlers/menu.ts");
           handled = await startProfile(ctx, state ?? { key: "home" });
         }
         
         // Back to Menu (from submenus)
         else if (id === IDS.BACK_MENU || id === "back_menu") {
-          const { startProfile } = await import("./profile/home.ts");
+          const { startProfile } = await import("./handlers/menu.ts");
           handled = await startProfile(ctx, state ?? { key: "home" });
         }
         
@@ -601,7 +601,7 @@ serve(async (req: Request): Promise<Response> => {
       }
       // Check for menu selection key first
       else if (text === "profile") {
-        const { startProfile } = await import("./profile/home.ts");
+        const { startProfile } = await import("./handlers/menu.ts");
         handled = await startProfile(ctx, state ?? { key: "home" });
       }
       
@@ -621,7 +621,7 @@ serve(async (req: Request): Promise<Response> => {
       
       // Handle profile edit name
       else if (state?.key === IDS.EDIT_PROFILE_NAME) {
-        const { handleEditName } = await import("./profile/edit.ts");
+        const { handleEditName } = await import("./handlers/edit.ts");
         handled = await handleEditName(ctx, (message.text as any)?.body ?? "");
       }
       

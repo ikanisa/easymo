@@ -1,0 +1,80 @@
+#!/bin/bash
+
+echo "🔐 EasyMO Secrets Cleanup Script"
+echo "=================================="
+echo ""
+echo "This will delete 55 deprecated secrets from Supabase Edge Functions"
+echo "27 essential secrets will remain"
+echo ""
+echo "Press Ctrl+C to cancel, or Enter to continue..."
+read
+
+echo ""
+echo "Deleting deprecated secrets..."
+echo ""
+
+# Delete all deprecated secrets
+supabase secrets unset \
+  SERVICE_ROLE_KEY \
+  SERVICE_URL \
+  WA_SUPABASE_SERVICE_ROLE_KEY \
+  VITE_SUPABASE_ANON_KEY \
+  VITE_SUPABASE_SERVICE_ROLE_KEY \
+  NEXT_PUBLIC_SUPABASE_ANON_KEY \
+  GOOGLE_SEARCH_API_KEY \
+  MENU_MEDIA_BUCKET \
+  OCR_RESULT_BUCKET \
+  OCR_MAX_ATTEMPTS \
+  OCR_QUEUE_SCAN_LIMIT \
+  OCR_MAX_MENU_CATEGORIES \
+  OCR_MAX_MENU_ITEMS \
+  INSURANCE_OCR_METRICS_WEBHOOK_URL \
+  INSURANCE_OCR_METRICS_TOKEN \
+  INSURANCE_MEDIA_BUCKET \
+  CART_REMINDER_CRON \
+  CART_REMINDER_MINUTES \
+  CART_REMINDER_BATCH_SIZE \
+  ORDER_PENDING_REMINDER_LANGUAGE \
+  ORDER_PENDING_REMINDER_CRON \
+  ORDER_PENDING_REMINDER_CRON_ENABLED \
+  ORDER_PENDING_REMINDER_MINUTES \
+  ORDER_PENDING_REMINDER_BATCH_SIZE \
+  VOUCHER_SIGNING_SECRET \
+  VOUCHERS_BUCKET \
+  TURBO_CACHE \
+  TURBO_REMOTE_ONLY \
+  TURBO_RUN_SUMMARY \
+  TURBO_DOWNLOAD_LOCAL_ENABLED \
+  VITE_SUPABASE_PROJECT_ID \
+  VITE_API_BASE \
+  ADMIN_TOKEN \
+  ADMIN_ACCESS_CREDENTIALS \
+  ADMIN_SESSION_SECRET_FALLBACK \
+  ADMIN_FLOW_WA_ID \
+  BRIDGE_SHARED_SECRET \
+  MOMO_SMS_HMAC_SECRET \
+  KYC_SIGNED_URL_TTL_SECONDS \
+  DEEPLINK_SIGNING_SECRET \
+  BROKER_APP_BASE_URL \
+  ALERT_WEBHOOK_URL \
+  NOTIFY_WORKER_LEASE_SECONDS \
+  NOTIFY_MAX_RETRIES \
+  NOTIFY_BACKOFF_BASE_SECONDS \
+  NOTIFY_MAX_BACKOFF_SECONDS \
+  NOTIFY_DEFAULT_DELAY_SECONDS \
+  WALLET_API_KEY \
+  SIGNATURE_SECRET \
+  SERPAPI_KEY \
+  FEATURE_AGENT_ALL \
+  FEATURE_AGENT_UNIFIED_SYSTEM
+
+echo ""
+echo "✅ Cleanup complete!"
+echo ""
+echo "Summary:"
+echo "  • Deleted: 55 deprecated secrets"
+echo "  • Remaining: 27 essential secrets"
+echo ""
+echo "Verify with: supabase secrets list"
+echo ""
+
