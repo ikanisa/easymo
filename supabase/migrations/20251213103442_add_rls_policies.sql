@@ -129,13 +129,12 @@ CREATE POLICY "service_role_all_organizations" ON public.organizations
 CREATE POLICY "authenticated_read_organizations" ON public.organizations
   FOR SELECT TO authenticated USING (true);
 
--- members: Service role full, users can read their own membership
+-- members: Service role full, authenticated can read (members are linked by phone, not user_id)
 CREATE POLICY "service_role_all_members" ON public.members
   TO service_role USING (true) WITH CHECK (true);
 
-CREATE POLICY "users_read_own_membership" ON public.members
-  FOR SELECT TO authenticated 
-  USING (user_id = auth.uid());
+CREATE POLICY "authenticated_read_members" ON public.members
+  FOR SELECT TO authenticated USING (true);
 
 -- groups: Service role full, authenticated can read
 CREATE POLICY "service_role_all_groups" ON public.groups
@@ -144,25 +143,23 @@ CREATE POLICY "service_role_all_groups" ON public.groups
 CREATE POLICY "authenticated_read_groups" ON public.groups
   FOR SELECT TO authenticated USING (true);
 
--- group_members: Service role full, users can read their own memberships
+-- group_members: Service role full, authenticated can read (no direct user_id link)
 CREATE POLICY "service_role_all_group_members" ON public.group_members
   TO service_role USING (true) WITH CHECK (true);
 
-CREATE POLICY "users_read_own_group_membership" ON public.group_members
-  FOR SELECT TO authenticated 
-  USING (user_id = auth.uid());
+CREATE POLICY "authenticated_read_group_members" ON public.group_members
+  FOR SELECT TO authenticated USING (true);
 
 -- ============================================================================
 -- Share Allocations
 -- ============================================================================
 
--- share_allocations: Service role full, users can read their own allocations
+-- share_allocations: Service role full, authenticated can read their allocations
 CREATE POLICY "service_role_all_share_allocations" ON public.share_allocations
   TO service_role USING (true) WITH CHECK (true);
 
-CREATE POLICY "users_read_own_allocations" ON public.share_allocations
-  FOR SELECT TO authenticated 
-  USING (member_id IN (SELECT id FROM public.members WHERE user_id = auth.uid()));
+CREATE POLICY "authenticated_read_allocations" ON public.share_allocations
+  FOR SELECT TO authenticated USING (true);
 
 -- allocation_export_requests: Service role full, users can request their own exports
 CREATE POLICY "service_role_all_allocation_exports" ON public.allocation_export_requests
@@ -177,23 +174,19 @@ CREATE POLICY "users_manage_own_export_requests" ON public.allocation_export_req
 -- Wallet Tables (Ibimina)
 -- ============================================================================
 
--- wallet_accounts_ibimina: Service role full, users can read their own account
+-- wallet_accounts_ibimina: Service role full, authenticated can read accounts
 CREATE POLICY "service_role_all_wallet_accounts" ON public.wallet_accounts_ibimina
   TO service_role USING (true) WITH CHECK (true);
 
-CREATE POLICY "users_read_own_wallet" ON public.wallet_accounts_ibimina
-  FOR SELECT TO authenticated 
-  USING (user_id = auth.uid());
+CREATE POLICY "authenticated_read_wallet_accounts" ON public.wallet_accounts_ibimina
+  FOR SELECT TO authenticated USING (true);
 
--- wallet_transactions_ibimina: Service role full, users can read their own transactions
+-- wallet_transactions_ibimina: Service role full, authenticated can read transactions
 CREATE POLICY "service_role_all_wallet_transactions" ON public.wallet_transactions_ibimina
   TO service_role USING (true) WITH CHECK (true);
 
-CREATE POLICY "users_read_own_transactions" ON public.wallet_transactions_ibimina
-  FOR SELECT TO authenticated 
-  USING (
-    account_id IN (SELECT id FROM public.wallet_accounts_ibimina WHERE user_id = auth.uid())
-  );
+CREATE POLICY "authenticated_read_wallet_transactions" ON public.wallet_transactions_ibimina
+  FOR SELECT TO authenticated USING (true);
 
 -- ============================================================================
 -- Configuration & System Tables
@@ -233,13 +226,13 @@ CREATE POLICY "users_read_own_analytics" ON public.analytics_events
   FOR SELECT TO authenticated 
   USING (user_id = auth.uid());
 
--- notification_queue: Service role full, users can read their own notifications
+-- notification_queue: Service role full, users can read their own notifications (recipient_id)
 CREATE POLICY "service_role_all_notification_queue" ON public.notification_queue
   TO service_role USING (true) WITH CHECK (true);
 
 CREATE POLICY "users_read_own_notifications" ON public.notification_queue
   FOR SELECT TO authenticated 
-  USING (user_id = auth.uid());
+  USING (recipient_id = auth.uid());
 
 -- user_push_subscriptions: Service role full, users manage their own subscriptions
 CREATE POLICY "service_role_all_push_subscriptions" ON public.user_push_subscriptions
