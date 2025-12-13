@@ -29,6 +29,6 @@ export async function emitAlert(
     });
   } catch (error) {
     // Best-effort only: never escalate alert delivery failures
-    console.warn("alert.emit_fail", String(error), { event });
+    logStructuredEvent("WARNING", { message: "alert.emit_fail", String(error }, "warn");, { event });
   }
 }

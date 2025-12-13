@@ -22,16 +22,16 @@ BEGIN;
 -- =====================================================================
 
 -- Add latitude and longitude if they don't exist
-ALTER TABLE public.business 
+ALTER TABLE public.businesses 
   ADD COLUMN IF NOT EXISTS latitude DECIMAL(10, 8),
   ADD COLUMN IF NOT EXISTS longitude DECIMAL(11, 8);
 
 -- Add PostGIS geography column for efficient spatial queries
-ALTER TABLE public.business 
+ALTER TABLE public.businesses 
   ADD COLUMN IF NOT EXISTS location GEOGRAPHY(Point, 4326);
 
 -- Create trigger to auto-populate geography from lat/lng
-CREATE OR REPLACE FUNCTION update_business_location_geography()
+CREATE OR REPLACE FUNCTION update_businesses_location_geography()
 RETURNS TRIGGER AS $$
 BEGIN
   IF NEW.latitude IS NOT NULL AND NEW.longitude IS NOT NULL THEN
@@ -43,11 +43,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trigger_business_location_geography ON public.business;
-CREATE TRIGGER trigger_business_location_geography
-BEFORE INSERT OR UPDATE OF latitude, longitude ON public.business
+DROP TRIGGER IF EXISTS trigger_businesses_location_geography ON public.businesses;
+CREATE TRIGGER trigger_businesses_location_geography
+BEFORE INSERT OR UPDATE OF latitude, longitude ON public.businesses
 FOR EACH ROW
-EXECUTE FUNCTION update_business_location_geography();
+EXECUTE FUNCTION update_businesses_location_geography();
 
 -- Backfill existing location data if location_text contains coordinates
 -- (This is a best-effort migration - manual geocoding may be needed for some records)
@@ -56,7 +56,7 @@ EXECUTE FUNCTION update_business_location_geography();
 -- 2. ADD DESCRIPTIVE COLUMNS
 -- =====================================================================
 
-ALTER TABLE public.business
+ALTER TABLE public.businesses
   ADD COLUMN IF NOT EXISTS description TEXT,
   ADD COLUMN IF NOT EXISTS phone TEXT,
   ADD COLUMN IF NOT EXISTS email TEXT,
@@ -64,7 +64,7 @@ ALTER TABLE public.business
   ADD COLUMN IF NOT EXISTS address TEXT;
 
 -- Copy location_text to address if address is null
-UPDATE public.business
+UPDATE public.businesses
 SET address = location_text
 WHERE address IS NULL AND location_text IS NOT NULL;
 
@@ -73,23 +73,23 @@ WHERE address IS NULL AND location_text IS NOT NULL;
 -- =====================================================================
 
 -- Tags: Quick categorical tags (e.g., ['pharmacy', 'medical', '24-hour'])
-ALTER TABLE public.business
+ALTER TABLE public.businesses
   ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}';
 
 -- Services: Services offered (e.g., ['printing', 'copying', 'binding', 'laminating'])
-ALTER TABLE public.business
+ALTER TABLE public.businesses
   ADD COLUMN IF NOT EXISTS services TEXT[] DEFAULT '{}';
 
 -- Products: Products or brands carried (e.g., ['HP', 'Dell', 'Canon', 'Epson'])
-ALTER TABLE public.business
+ALTER TABLE public.businesses
   ADD COLUMN IF NOT EXISTS products TEXT[] DEFAULT '{}';
 
 -- Keywords: Searchable keywords (e.g., ['computer', 'laptop', 'repair', 'accessories'])
-ALTER TABLE public.business
+ALTER TABLE public.businesses
   ADD COLUMN IF NOT EXISTS keywords TEXT[] DEFAULT '{}';
 
 -- AI Metadata: Rich structured data for AI context
-ALTER TABLE public.business
+ALTER TABLE public.businesses
   ADD COLUMN IF NOT EXISTS ai_metadata JSONB DEFAULT '{}'::jsonb;
 
 -- =====================================================================
@@ -98,16 +98,16 @@ ALTER TABLE public.business
 
 -- Operating hours: JSONB structure
 -- Example: {"monday": {"open": "08:00", "close": "18:00"}, "tuesday": {...}}
-ALTER TABLE public.business
+ALTER TABLE public.businesses
   ADD COLUMN IF NOT EXISTS operating_hours JSONB;
 
 -- Rating and reviews
-ALTER TABLE public.business
+ALTER TABLE public.businesses
   ADD COLUMN IF NOT EXISTS rating DECIMAL(2, 1) DEFAULT 0.0,
   ADD COLUMN IF NOT EXISTS review_count INTEGER DEFAULT 0;
 
 -- Verification status
-ALTER TABLE public.business
+ALTER TABLE public.businesses
   ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false;
 
 -- Status (if not already exists)
@@ -119,7 +119,7 @@ BEGIN
     AND table_name = 'business' 
     AND column_name = 'status'
   ) THEN
-    ALTER TABLE public.business 
+    ALTER TABLE public.businesses 
       ADD COLUMN status TEXT DEFAULT 'active';
   END IF;
 END $$;
@@ -129,11 +129,11 @@ END $$;
 -- =====================================================================
 
 -- Search vector for full-text search
-ALTER TABLE public.business
+ALTER TABLE public.businesses
   ADD COLUMN IF NOT EXISTS search_vector TSVECTOR;
 
 -- Function to update search vector
-CREATE OR REPLACE FUNCTION update_business_search_vector()
+CREATE OR REPLACE FUNCTION update_businesses_search_vector()
 RETURNS TRIGGER AS $$
 BEGIN
   NEW.search_vector := 
@@ -156,11 +156,11 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Create trigger
-DROP TRIGGER IF EXISTS trigger_business_search_vector ON public.business;
-CREATE TRIGGER trigger_business_search_vector
-BEFORE INSERT OR UPDATE ON public.business
+DROP TRIGGER IF EXISTS trigger_businesses_search_vector ON public.businesses;
+CREATE TRIGGER trigger_businesses_search_vector
+BEFORE INSERT OR UPDATE ON public.businesses
 FOR EACH ROW
-EXECUTE FUNCTION update_business_search_vector();
+EXECUTE FUNCTION update_businesses_search_vector();
 
 -- =====================================================================
 -- 6. CREATE INDEXES FOR PERFORMANCE
@@ -168,45 +168,45 @@ EXECUTE FUNCTION update_business_search_vector();
 
 -- GIN indexes for array columns (fast array overlap queries)
 CREATE INDEX IF NOT EXISTS idx_business_tags 
-ON public.business USING GIN(tags);
+ON public.businesses USING GIN(tags);
 
 CREATE INDEX IF NOT EXISTS idx_business_services 
-ON public.business USING GIN(services);
+ON public.businesses USING GIN(services);
 
 CREATE INDEX IF NOT EXISTS idx_business_products 
-ON public.business USING GIN(products);
+ON public.businesses USING GIN(products);
 
 CREATE INDEX IF NOT EXISTS idx_business_keywords 
-ON public.business USING GIN(keywords);
+ON public.businesses USING GIN(keywords);
 
 -- GIN index for JSONB metadata
 CREATE INDEX IF NOT EXISTS idx_business_ai_metadata 
-ON public.business USING GIN(ai_metadata);
+ON public.businesses USING GIN(ai_metadata);
 
 -- GIN index for full-text search
 CREATE INDEX IF NOT EXISTS idx_business_search_vector 
-ON public.business USING GIN(search_vector);
+ON public.businesses USING GIN(search_vector);
 
 -- GiST index for geography (spatial queries)
 CREATE INDEX IF NOT EXISTS idx_business_location 
-ON public.business USING GIST(location);
+ON public.businesses USING GIST(location);
 
 -- B-tree indexes for common filters
 CREATE INDEX IF NOT EXISTS idx_business_rating 
-ON public.business(rating DESC) 
+ON public.businesses(rating DESC) 
 WHERE rating IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_business_is_verified 
-ON public.business(is_verified) 
+ON public.businesses(is_verified) 
 WHERE is_verified = true;
 
 CREATE INDEX IF NOT EXISTS idx_business_status 
-ON public.business(status) 
+ON public.businesses(status) 
 WHERE status = 'active';
 
 -- Composite index for common query pattern: active businesses with location
 CREATE INDEX IF NOT EXISTS idx_business_active_with_location 
-ON public.business(is_active, country) 
+ON public.businesses(is_active, country) 
 WHERE is_active = true AND location IS NOT NULL;
 
 -- =====================================================================
@@ -214,7 +214,7 @@ WHERE is_active = true AND location IS NOT NULL;
 -- =====================================================================
 
 -- Auto-populate tags based on category_name
-UPDATE public.business
+UPDATE public.businesses
 SET tags = CASE
   WHEN category_name ILIKE '%pharmacy%' OR category_name ILIKE '%pharmacie%' THEN 
     ARRAY['pharmacy', 'medicine', 'health', 'medical']
@@ -238,7 +238,7 @@ END
 WHERE tags = '{}' OR tags IS NULL;
 
 -- Auto-populate keywords based on category
-UPDATE public.business
+UPDATE public.businesses
 SET keywords = CASE
   WHEN category_name ILIKE '%pharmacy%' THEN 
     ARRAY['panadol', 'paracetamol', 'medicine', 'drugs', 'prescription', 'vitamins', 'first aid']
@@ -259,18 +259,18 @@ WHERE keywords = '{}' OR keywords IS NULL;
 -- =====================================================================
 
 -- Ensure rating is between 0 and 5
-ALTER TABLE public.business
+ALTER TABLE public.businesses
   DROP CONSTRAINT IF EXISTS business_rating_check;
 
-ALTER TABLE public.business
+ALTER TABLE public.businesses
   ADD CONSTRAINT business_rating_check 
   CHECK (rating IS NULL OR (rating >= 0 AND rating <= 5.0));
 
 -- Ensure review_count is non-negative
-ALTER TABLE public.business
+ALTER TABLE public.businesses
   DROP CONSTRAINT IF EXISTS business_review_count_check;
 
-ALTER TABLE public.business
+ALTER TABLE public.businesses
   ADD CONSTRAINT business_review_count_check 
   CHECK (review_count IS NULL OR review_count >= 0);
 
@@ -278,43 +278,43 @@ ALTER TABLE public.business
 -- 9. ADD COMMENTS
 -- =====================================================================
 
-COMMENT ON COLUMN public.business.latitude IS 
+COMMENT ON COLUMN public.businesses.latitude IS 
 'Latitude coordinate (WGS84). Auto-synced to location geography column.';
 
-COMMENT ON COLUMN public.business.longitude IS 
+COMMENT ON COLUMN public.businesses.longitude IS 
 'Longitude coordinate (WGS84). Auto-synced to location geography column.';
 
-COMMENT ON COLUMN public.business.location IS 
+COMMENT ON COLUMN public.businesses.location IS 
 'PostGIS geography point. Auto-populated from latitude/longitude. Use for spatial queries.';
 
-COMMENT ON COLUMN public.business.tags IS 
+COMMENT ON COLUMN public.businesses.tags IS 
 'Categorical tags for quick filtering (e.g., [pharmacy, medical, 24-hour])';
 
-COMMENT ON COLUMN public.business.services IS 
+COMMENT ON COLUMN public.businesses.services IS 
 'Services offered (e.g., [printing, copying, binding])';
 
-COMMENT ON COLUMN public.business.products IS 
+COMMENT ON COLUMN public.businesses.products IS 
 'Products or brands carried (e.g., [HP, Dell, Canon])';
 
-COMMENT ON COLUMN public.business.keywords IS 
+COMMENT ON COLUMN public.businesses.keywords IS 
 'Searchable keywords for AI matching (e.g., [computer, laptop, repair])';
 
-COMMENT ON COLUMN public.business.ai_metadata IS 
+COMMENT ON COLUMN public.businesses.ai_metadata IS 
 'Rich structured metadata for AI context. Store specialties, certifications, payment methods, etc.';
 
-COMMENT ON COLUMN public.business.operating_hours IS 
+COMMENT ON COLUMN public.businesses.operating_hours IS 
 'Business hours in JSONB format: {"monday": {"open": "08:00", "close": "18:00"}, ...}';
 
-COMMENT ON COLUMN public.business.rating IS 
+COMMENT ON COLUMN public.businesses.rating IS 
 'Average rating (0.0 to 5.0)';
 
-COMMENT ON COLUMN public.business.review_count IS 
+COMMENT ON COLUMN public.businesses.review_count IS 
 'Total number of reviews';
 
-COMMENT ON COLUMN public.business.is_verified IS 
+COMMENT ON COLUMN public.businesses.is_verified IS 
 'Whether business has been verified by admin';
 
-COMMENT ON COLUMN public.business.search_vector IS 
+COMMENT ON COLUMN public.businesses.search_vector IS 
 'Full-text search vector. Auto-populated from name, description, tags, keywords, etc.';
 
 COMMIT;

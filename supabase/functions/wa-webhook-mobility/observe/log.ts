@@ -52,11 +52,11 @@ async function insertLog(
     },
   };
   if (!shouldPersistEvent(endpoint)) {
-    console.log(JSON.stringify({ ...consoleEnvelope, persisted: false }));
+    logStructuredEvent("DEBUG", { data: JSON.stringify({ ...consoleEnvelope, persisted: false } }););
     return;
   }
   try {
-    console.log(JSON.stringify({ ...consoleEnvelope, persisted: true }));
+    logStructuredEvent("DEBUG", { data: JSON.stringify({ ...consoleEnvelope, persisted: true } }););
     await supabase.from("webhook_logs").insert({
       endpoint,
       payload,
@@ -73,7 +73,7 @@ async function insertLog(
         : null,
     });
   } catch (err) {
-    console.error("wa_webhook.log_insert_fail", endpoint, err);
+    logStructuredEvent("ERROR", { error: "wa_webhook.log_insert_fail", endpoint, err }, "error");
   }
 }
 
@@ -151,7 +151,7 @@ export function logError(
   error: unknown,
   extra: Record<string, unknown> = {},
 ): void {
-  console.error(scope, error, extra);
+  logStructuredEvent("ERROR", { error: scope, error, extra }, "error");
 }
 
 function buildInboundSummary(payload: unknown): Record<string, unknown> {

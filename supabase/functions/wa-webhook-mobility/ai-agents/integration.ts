@@ -74,7 +74,7 @@ export async function routeToAIAgent(
         throw new Error(`Unknown agent type: ${request.agentType}`);
     }
   } catch (error) {
-    console.error("AI Agent routing error:", error);
+    logStructuredEvent("ERROR", { error: "AI Agent routing error:", error }, "error");
     logAgentEvent("AGENT_ERROR", {
       userId: request.userId,
       agentType: request.agentType,
@@ -123,7 +123,7 @@ async function invokeDriverAgent(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Driver agent HTTP error:", response.status, errorText);
+      logStructuredEvent("ERROR", { error: "Driver agent HTTP error:", response.status, errorText }, "error");
       
       // Per requirement: Return simple empty result without apologetic fallback
       return {
@@ -135,7 +135,7 @@ async function invokeDriverAgent(
 
     return await response.json();
   } catch (error) {
-    console.error("Driver agent error:", error);
+    logStructuredEvent("ERROR", { error: "Driver agent error:", error }, "error");
     
     return {
       success: false,
@@ -193,10 +193,10 @@ async function invokeScheduleTripAgent(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Schedule trip agent HTTP error:", response.status, errorText);
+      logStructuredEvent("ERROR", { error: "Schedule trip agent HTTP error:", response.status, errorText }, "error");
       
       // TIER 2: Fallback to direct database insert
-      console.log("FALLBACK: Attempting direct schedule trip creation");
+      logStructuredEvent("DEBUG", { data: "FALLBACK: Attempting direct schedule trip creation" });
       
       try {
         const scheduledDate = new Date(request.requestData.scheduledTime);
@@ -221,11 +221,11 @@ async function invokeScheduleTripAgent(
           .single();
 
         if (dbError) {
-          console.error("Fallback database insert failed:", dbError);
+          logStructuredEvent("ERROR", { error: "Fallback database insert failed:", dbError }, "error");
           throw dbError;
         }
 
-        console.log("FALLBACK SUCCESS: Trip scheduled via direct DB insert");
+        logStructuredEvent("DEBUG", { data: "FALLBACK SUCCESS: Trip scheduled via direct DB insert" });
         
         return {
           success: true,
@@ -243,7 +243,7 @@ async function invokeScheduleTripAgent(
           },
         };
       } catch (fallbackError) {
-        console.error("All fallbacks failed:", fallbackError);
+        logStructuredEvent("ERROR", { error: "All fallbacks failed:", fallbackError }, "error");
         
         // TIER 3: User-friendly error with alternatives
         return {
@@ -262,7 +262,7 @@ async function invokeScheduleTripAgent(
 
     return await response.json();
   } catch (error) {
-    console.error("Schedule trip agent error:", error);
+    logStructuredEvent("ERROR", { error: "Schedule trip agent error:", error }, "error");
     
     // TIER 3: Network/system error fallback
     return {
@@ -320,7 +320,7 @@ export async function sendAgentOptions(
       rows: listSections[0].rows,
     });
   } catch (error) {
-    console.error("Error sending agent options:", error);
+    logStructuredEvent("ERROR", { error: "Error sending agent options:", error }, "error");
     
     // Fallback to text message if interactive list fails
     await sendButtonsMessage(
@@ -356,7 +356,7 @@ export async function handleAgentSelection(
       .single();
 
     if (error || !session) {
-      console.error("Error fetching agent session:", error);
+      logStructuredEvent("ERROR", { error: "Error fetching agent session:", error }, "error");
       
       await sendButtonsMessage(
         ctx,
@@ -399,7 +399,7 @@ export async function handleAgentSelection(
       .eq("id", sessionId);
 
     if (updateError) {
-      console.error("Error updating agent session:", updateError);
+      logStructuredEvent("ERROR", { error: "Error updating agent session:", updateError }, "error");
     }
 
     // Send confirmation with next actions
@@ -424,7 +424,7 @@ export async function handleAgentSelection(
 
     return true;
   } catch (error) {
-    console.error("Error handling agent selection:", error);
+    logStructuredEvent("ERROR", { error: "Error handling agent selection:", error }, "error");
     
     await sendButtonsMessage(
       ctx,
@@ -454,7 +454,7 @@ export async function checkAgentSessionStatus(
       .single();
 
     if (error) {
-      console.error("Error checking agent session status:", error);
+      logStructuredEvent("ERROR", { error: "Error checking agent session status:", error }, "error");
       return { status: "error", message: "Unable to check session status" };
     }
 
@@ -468,7 +468,7 @@ export async function checkAgentSessionStatus(
       options: session.metadata?.options,
     };
   } catch (error) {
-    console.error("Exception checking agent session:", error);
+    logStructuredEvent("ERROR", { error: "Exception checking agent session:", error }, "error");
     return { status: "error", message: "System error occurred" };
   }
 }

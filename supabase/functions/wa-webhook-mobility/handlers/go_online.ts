@@ -96,7 +96,7 @@ export async function handleGoOnlineLocation(
           lng: coords.lng,
         });
       } catch (tripError) {
-        console.error("Failed to create driver trip:", tripError);
+        logStructuredEvent("ERROR", { error: "Failed to create driver trip:", tripError }, "error");
         // Continue even if trip creation fails
       }
 
@@ -110,7 +110,7 @@ export async function handleGoOnlineLocation(
           expiresInMinutes: 30,
         });
       } catch (intentError) {
-        console.error("Failed to save go_online intent:", intentError);
+        logStructuredEvent("ERROR", { error: "Failed to save go_online intent:", intentError }, "error");
       }
 
       // Also try to update driver_status table if it exists
@@ -124,7 +124,7 @@ export async function handleGoOnlineLocation(
         });
       } catch (error) {
         // Ignore if function doesn't exist yet
-        console.warn("update_driver_status not available");
+        logStructuredEvent("WARNING", { message: "update_driver_status not available" }, "warn");
       }
     }
 
@@ -150,7 +150,7 @@ export async function handleGoOnlineLocation(
     await clearState(ctx.supabase, ctx.profileId);
     return true;
   } catch (error) {
-    console.error("go_online.location_save_fail", error);
+    logStructuredEvent("ERROR", { error: "go_online.location_save_fail", error }, "error");
     await sendText(ctx.from, t(ctx.locale, "mobility.nearby.error"));
     return true;
   }
@@ -175,7 +175,7 @@ export async function handleGoOnlineUseCached(
     const coords = { lat: cached.lat, lng: cached.lng };
     return await handleGoOnlineLocation(ctx, coords);
   } catch (error) {
-    console.error("go_online.use_cached_fail", error);
+    logStructuredEvent("ERROR", { error: "go_online.use_cached_fail", error }, "error");
     await sendText(ctx.from, t(ctx.locale, "mobility.nearby.error"));
     return true;
   }
@@ -196,7 +196,7 @@ export async function handleGoOffline(ctx: RouterContext): Promise<boolean> {
       });
     } catch (error) {
       // Function might not exist, ignore
-      console.warn("update_driver_status failed (function may not exist)");
+      logStructuredEvent("WARNING", { message: "update_driver_status failed (function may not exist }, "warn");");
     }
 
     await logStructuredEvent("DRIVER_WENT_OFFLINE", {
@@ -211,7 +211,7 @@ export async function handleGoOffline(ctx: RouterContext): Promise<boolean> {
 
     return true;
   } catch (error) {
-    console.error("go_offline.fail", error);
+    logStructuredEvent("ERROR", { error: "go_offline.fail", error }, "error");
     await sendText(ctx.from, t(ctx.locale, "mobility.nearby.error"));
     return true;
   }

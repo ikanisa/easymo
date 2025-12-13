@@ -24,7 +24,7 @@ export async function saveRecentLocation(
       context,
     });
   } catch (err) {
-    console.error('recent_locations.insert_fail', err);
+    logStructuredEvent("ERROR", { error: 'recent_locations.insert_fail', err }, "error");
   }
 }
 
@@ -49,7 +49,7 @@ export async function getRecentLocation(
       return { lat: data[0].lat as number, lng: data[0].lng as number };
     }
   } catch (err) {
-    console.error('recent_locations.query_fail', err);
+    logStructuredEvent("ERROR", { error: 'recent_locations.query_fail', err }, "error");
   }
   return null;
 }
@@ -69,7 +69,7 @@ export async function recordRecentActivity(
       details,
     });
   } catch (err) {
-    console.error('recent_activities.insert_fail', err);
+    logStructuredEvent("ERROR", { error: 'recent_activities.insert_fail', err }, "error");
   }
 }
 

@@ -30,7 +30,7 @@ export async function getAppConfig(
     .eq("id", 1)
     .maybeSingle();
   if (error) {
-    console.error("app_config.load_failed", error);
+    logStructuredEvent("ERROR", { error: "app_config.load_failed", error }, "error");
     cache = {
       value: {},
       loadedAt: now,

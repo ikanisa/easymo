@@ -113,7 +113,7 @@ export async function handleAINearbyDrivers(
 
     return true;
   } catch (error) {
-    console.error("AI Nearby Drivers handler error:", error);
+    logStructuredEvent("ERROR", { error: "AI Nearby Drivers handler error:", error }, "error");
 
     await sendButtonsMessage(
       ctx,
@@ -235,7 +235,7 @@ export async function handleAINearbyPharmacies(
           );
         }
       } catch (dbError) {
-        console.error("Database fallback error:", dbError);
+        logStructuredEvent("ERROR", { error: "Database fallback error:", dbError }, "error");
         await sendButtonsMessage(
           ctx,
           t(ctx.locale, "pharmacy.error"),
@@ -248,7 +248,7 @@ export async function handleAINearbyPharmacies(
 
     return true;
   } catch (error) {
-    console.error("AI Pharmacy handler error:", error);
+    logStructuredEvent("ERROR", { error: "AI Pharmacy handler error:", error }, "error");
     await sendButtonsMessage(
       ctx,
       t(ctx.locale, "pharmacy.error"),
@@ -362,7 +362,7 @@ export async function handleAINearbyQuincailleries(
           );
         }
       } catch (dbError) {
-        console.error("Database fallback error:", dbError);
+        logStructuredEvent("ERROR", { error: "Database fallback error:", dbError }, "error");
         await sendButtonsMessage(
           ctx,
           t(ctx.locale, "quincaillerie.error"),
@@ -375,7 +375,7 @@ export async function handleAINearbyQuincailleries(
 
     return true;
   } catch (error) {
-    console.error("AI Quincaillerie handler error:", error);
+    logStructuredEvent("ERROR", { error: "AI Quincaillerie handler error:", error }, "error");
     await sendButtonsMessage(
       ctx,
       t(ctx.locale, "quincaillerie.error"),
@@ -423,12 +423,12 @@ export async function handleAINearbyShops(
     
     // Phase 2: Trigger AI agent in background (non-blocking)
     triggerShopsAgentBackground(ctx, location, items, itemImage, shopCategory).catch((error) => {
-      console.error("shops.background_agent_error", error);
+      logStructuredEvent("ERROR", { error: "shops.background_agent_error", error }, "error");
     });
 
     return instantResults;
   } catch (error) {
-    console.error("AI Shops handler error:", error);
+    logStructuredEvent("ERROR", { error: "AI Shops handler error:", error }, "error");
     await sendButtonsMessage(
       ctx,
       t(ctx.locale, "shops.error"),
@@ -526,7 +526,7 @@ export async function handleAIPropertyRental(
 
     return true;
   } catch (error) {
-    console.error("AI Property Rental handler error:", error);
+    logStructuredEvent("ERROR", { error: "AI Property Rental handler error:", error }, "error");
     await sendButtonsMessage(
       ctx,
       t(ctx.locale, "property.error"),
@@ -593,7 +593,7 @@ export async function handleAIScheduleTrip(
 
     return true;
   } catch (error) {
-    console.error("AI Schedule Trip handler error:", error);
+    logStructuredEvent("ERROR", { error: "AI Schedule Trip handler error:", error }, "error");
     await sendText(ctx.from, t(ctx.locale, "agent.error_occurred"));
     return false;
   }
@@ -755,7 +755,7 @@ async function triggerShopsAgentBackground(
       await sendText(ctx.from, response.message);
     }
   } catch (error) {
-    console.error("shops.background_agent_failure", error);
+    logStructuredEvent("ERROR", { error: "shops.background_agent_failure", error }, "error");
     // Silent failure - user already has database results
   }
 }
@@ -790,7 +790,7 @@ async function sendShopDatabaseResults(
       12,
     );
   } catch (error) {
-    console.error("shops.database_fetch_failed", error);
+    logStructuredEvent("ERROR", { error: "shops.database_fetch_failed", error }, "error");
   }
   
   const withContacts = entries.filter((entry) => entry.owner_whatsapp);
@@ -874,7 +874,7 @@ async function sendShopFallback(
       12,
     );
   } catch (error) {
-    console.error("shops.fallback_fetch_failed", error);
+    logStructuredEvent("ERROR", { error: "shops.fallback_fetch_failed", error }, "error");
   }
   const withContacts = entries.filter((entry) => entry.owner_whatsapp);
   if (!withContacts.length) {

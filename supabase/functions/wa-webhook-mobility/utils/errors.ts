@@ -191,7 +191,7 @@ export function handleError(error: unknown): Response {
   }
 
   // Unknown error - log and return generic 500
-  console.error("Unhandled error:", error);
+  logStructuredEvent("ERROR", { error: "Unhandled error:", error }, "error");
 
   return new Response(
     JSON.stringify({

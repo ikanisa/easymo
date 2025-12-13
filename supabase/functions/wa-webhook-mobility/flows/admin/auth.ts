@@ -47,7 +47,7 @@ async function loadAdminNumbers(ctx: RouterContext): Promise<Set<string>> {
     
     return cache.numbers;
   } catch (error) {
-    console.error("admin.load_numbers_fail", error);
+    logStructuredEvent("ERROR", { error: "admin.load_numbers_fail", error }, "error");
     cache = { numbers: new Set(), loadedAt: now };
     return cache.numbers;
   }

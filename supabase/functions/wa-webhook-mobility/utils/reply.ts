@@ -46,7 +46,7 @@ export async function sendButtonsMessage(
       }
     }
   } catch (err) {
-    console.warn("reply.auto_share_failed", { err: (err as Error)?.message });
+    logStructuredEvent("WARNING", { message: "reply.auto_share_failed", { err: (err as Error }, "warn");?.message });
   }
   const payload = ensureHomeButton(augmented).map((button) => {
     if (button.id === IDS.BACK_HOME) {

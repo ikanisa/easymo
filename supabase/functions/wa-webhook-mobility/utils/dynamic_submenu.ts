@@ -41,7 +41,7 @@ export async function fetchSubmenuItems(
   });
 
   if (error) {
-    console.error(`Failed to fetch submenu items for ${parentKey}:`, error);
+    logStructuredEvent("ERROR", { error: `Failed to fetch submenu items for ${parentKey}:`, error }, "error");
     return [];
   }
 
@@ -67,7 +67,7 @@ export async function fetchProfileMenuItems(
   });
 
   if (error) {
-    console.error("Failed to fetch profile menu items:", error);
+    logStructuredEvent("ERROR", { error: "Failed to fetch profile menu items:", error }, "error");
     return [];
   }
 

@@ -24,6 +24,6 @@ export async function logMomoQrRequest(
   };
   const { error } = await client.from("momo_qr_requests").insert(insertPayload);
   if (error) {
-    console.error("momo_qr.log_fail", error);
+    logStructuredEvent("ERROR", { error: "momo_qr.log_fail", error }, "error");
   }
 }

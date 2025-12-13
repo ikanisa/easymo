@@ -68,7 +68,7 @@ async function handleSubCommand(
         );
         await logAdminAction({ actor: ctx.from, target, action });
       } catch (error) {
-        console.error("admin.sub_command_fail", error);
+        logStructuredEvent("ERROR", { error: "admin.sub_command_fail", error }, "error");
         await sendText(
           ctx.from,
           `Command failed: ${(error as Error).message ?? error}`,
@@ -115,7 +115,7 @@ async function listSubmissions(ctx: RouterContext): Promise<void> {
       count: lines.length,
     });
   } catch (error) {
-    console.error("admin.sub_list_fail", error);
+    logStructuredEvent("ERROR", { error: "admin.sub_list_fail", error }, "error");
     await sendText(ctx.from, "Failed to list submissions.");
   }
 }

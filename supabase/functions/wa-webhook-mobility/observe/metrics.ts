@@ -17,7 +17,7 @@ async function safeLogMetric(
   try {
     await logMetric(name, value, normaliseDimensions(dimensions));
   } catch (error) {
-    console.error("metrics.emit_failed", { name, error });
+    logStructuredEvent("ERROR", { error: "metrics.emit_failed", { name, error } }, "error");
   }
 }
 

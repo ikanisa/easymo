@@ -1,5 +1,5 @@
-import { supabase } from "../wa-webhook/config.ts";
-import { logStructuredEvent } from "../wa-webhook/observe/log.ts";
+import { supabase } from "../_shared/wa-webhook-shared/config.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const WORKER_ID = crypto.randomUUID();
 const DEFAULT_LEASE_SECONDS = Math.max(

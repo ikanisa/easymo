@@ -107,7 +107,7 @@ function loadPricingOverrides(): PricingOverrides | null {
     const parsed = JSON.parse(raw) as PricingOverrides;
     return parsed;
   } catch (error) {
-    console.warn("fare.pricing_override_parse_fail", error);
+    logStructuredEvent("WARNING", { message: "fare.pricing_override_parse_fail", error }, "warn");
     return null;
   }
 }

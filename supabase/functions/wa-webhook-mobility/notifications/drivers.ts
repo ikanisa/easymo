@@ -33,7 +33,7 @@ export async function findOnlineDriversForTrip(
   });
 
   if (error) {
-    console.error("driver_notifications.find_drivers_fail", error);
+    logStructuredEvent("ERROR", { error: "driver_notifications.find_drivers_fail", error }, "error");
     throw error;
   }
 
@@ -191,7 +191,7 @@ export async function handleDriverResponse(
       passengerId: request.passenger_id,
     };
   } catch (error) {
-    console.error("driver_notifications.response_fail", error);
+    logStructuredEvent("ERROR", { error: "driver_notifications.response_fail", error }, "error");
     return { success: false };
   }
 }
@@ -244,6 +244,6 @@ export async function notifyPassengerOfDriverAcceptance(
       driverId,
     });
   } catch (error) {
-    console.error("driver_notifications.notify_passenger_fail", error);
+    logStructuredEvent("ERROR", { error: "driver_notifications.notify_passenger_fail", error }, "error");
   }
 }

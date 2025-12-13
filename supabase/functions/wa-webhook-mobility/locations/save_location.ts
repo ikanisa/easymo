@@ -16,7 +16,7 @@ export async function saveUserLocation(
   source: RecentSource = 'mobility',
 ): Promise<void> {
   if (!ctx.profileId) {
-    console.warn('saveUserLocation: No profileId, skipping save');
+    logStructuredEvent("WARNING", { message: 'saveUserLocation: No profileId, skipping save' }, "warn");
     return;
   }
 
@@ -27,7 +27,7 @@ export async function saveUserLocation(
     // Save to recent_locations table (for "Use Last Location" button)
     await saveRecentLocation(ctx, coords, source);
   } catch (error) {
-    console.error('save_user_location_fail', error);
+    logStructuredEvent("ERROR", { error: 'save_user_location_fail', error }, "error");
     // Don't throw - we don't want to fail the search if cache save fails
   }
 }
