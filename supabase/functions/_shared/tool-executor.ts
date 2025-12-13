@@ -507,6 +507,12 @@ export class ToolExecutor {
     const location = inputs.location as string;
     const negotiable = inputs.negotiable as boolean || true;
 
+    // Get user's phone number for seller contact
+    const { data: user } = await this.supabase
+      .from("whatsapp_users")
+      .select("phone")
+      .eq("id", context.userId)
+      .single();
     // Get user's phone number for seller contact (schema-flexible)
     const sellerPhone = await this.getUserPhoneForContact(context.userId);
 
@@ -520,6 +526,7 @@ export class ToolExecutor {
         condition,
         location,
         negotiable,
+        seller_phone: user?.phone,
         seller_phone: sellerPhone,
         status: "active",
       })
@@ -635,6 +642,18 @@ export class ToolExecutor {
       };
     }
 
+    const { data, error } = await this.supabase
+      .from("whatsapp_users")
+      .select(`
+        id,
+        phone,
+        language,
+        created_at,
+        updated_at,
+        location_cache
+      `)
+      .eq("id", userId)
+      .single();
     const phone = await this.getUserPhoneForContact(userId);
     const language = (await this.getUserLanguage(userId)) ?? "en";
     const memberSince = await this.getProfileCreatedAt(userId);
@@ -654,6 +673,11 @@ export class ToolExecutor {
     return {
       success: true,
       user: {
+        id: data.id,
+        phone: data.phone ? this.maskPhoneNumber(data.phone) : null,
+        language: data.language,
+        member_since: data.created_at,
+        has_location: !!data.location_cache,
         id: userId,
         phone: phone ? this.maskPhoneNumber(phone) : null,
         language,
@@ -731,6 +755,44 @@ export class ToolExecutor {
       if (profile?.user_id) {
         profileId = profile.user_id;
       } else {
+        // Try to create a minimal profile for the user if needed
+        // Get user phone from whatsapp_users
+        const { data: waUser } = await this.supabase
+          .from("whatsapp_users")
+          .select("phone")
+          .eq("id", context.userId)
+          .single();
+
+        if (!waUser) {
+          // Cannot create ticket without user context
+          return {
+            success: false,
+            error: "Unable to create support ticket. Please ensure your account is properly set up.",
+          };
+        }
+
+        // Create a minimal profile
+        // Note: profiles table uses 'user_id' as primary key and 'phone_number' for phone
+        const { data: newProfile, error: profileError } = await this.supabase
+          .from("profiles")
+          .insert({
+            user_id: context.userId,
+            phone_number: waUser.phone,
+          })
+          .select("user_id")
+          .single();
+
+        if (profileError) {
+          console.error("Profile creation error:", profileError);
+          // If we can't create a profile, log the issue and return gracefully
+          return {
+            success: false,
+            error: "Unable to create support ticket. Please contact support directly.",
+            details: "Our support team has been notified of this issue.",
+          };
+        }
+
+        profileId = newProfile.user_id;
         try {
           const { error: upsertError } = await this.supabase
             .from("profiles")
@@ -1536,6 +1598,47 @@ export class ToolExecutor {
     };
   }
 
+  // =====================================================================
+  // SUPPORT AGENT TOOLS
+  // =====================================================================
+
+  /**
+   * Get user account information
+   */
+  private async getUserInfo(context: ToolExecutionContext): Promise<unknown> {
+    const { data, error } = await this.supabase
+      .from("whatsapp_users")
+      .select("id, phone, language, created_at, location_cache")
+      .eq("id", context.userId)
+      .single();
+
+    if (error || !data) {
+      return {
+        success: false,
+        error: "User not found",
+      };
+    }
+
+    // Safely mask phone number (show only last 4 digits if length >= 4)
+    let maskedPhone: string | null = null;
+    if (data.phone) {
+      maskedPhone = data.phone.length >= 4
+        ? `***${data.phone.slice(-4)}`
+        : "***";
+    }
+
+    return {
+      success: true,
+      user: {
+        id: data.id,
+        phone: maskedPhone,
+        language: data.language,
+        member_since: data.created_at,
+        has_location: !!data.location_cache,
+      },
+    };
+  }
+
   /**
    * Check user wallet balance
    */
@@ -1812,6 +1915,13 @@ export class ToolExecutor {
     const vehicleType = (inputs.vehicle_type as string) || "moto";
 
     // Get user location
+    const { data: user } = await this.supabase
+      .from("whatsapp_users")
+      .select("location_cache, phone")
+      .eq("id", context.userId)
+      .single();
+
+    if (!user?.location_cache) {
     const { data: locationRow } = await this.supabase
       .from("recent_locations")
       .select("lat, lng, expires_at")

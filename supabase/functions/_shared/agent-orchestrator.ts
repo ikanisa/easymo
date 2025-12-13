@@ -303,6 +303,27 @@ export class AgentOrchestrator {
   /**
    * Get or create WhatsApp user by phone number
    */
+  private async getOrCreateUser(phoneNumber: string): Promise<{ id: string; preferredLanguage: string }> {
+    const { data: existing } = await this.supabase
+      .from("whatsapp_users")
+      .select("id, language")
+      .eq("phone", phoneNumber)
+      .single();
+
+    if (existing) {
+      return { id: existing.id, preferredLanguage: existing.language };
+    }
+
+    const { data: newUser } = await this.supabase
+      .from("whatsapp_users")
+      .insert({
+        phone: phoneNumber,
+        language: "en",
+      })
+      .select("id, language")
+      .single();
+
+    return { id: newUser!.id, preferredLanguage: newUser!.language };
   private async getOrCreateUser(
     phoneNumber: string,
   ): Promise<{ id: string; preferredLanguage: string }> {
