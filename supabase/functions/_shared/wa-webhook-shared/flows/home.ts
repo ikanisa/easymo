@@ -114,13 +114,14 @@ async function buildRows(options: {
   
   // Build menu rows from dynamic items
   const dynamicRows: MenuRow[] = menuItems.map((item) => {
-    const { descriptionKey } = getMenuItemTranslationKeys(item.key);
     // Use database name + icon instead of hardcoded translations
     const displayName = item.icon ? `${item.icon} ${item.name}` : item.name;
+    // Use catchy description from database, fallback to translation key if not set
+    const description = (item as any).description || t(options.locale, getMenuItemTranslationKeys(item.key).descriptionKey as TranslationKey);
     return {
       id: getMenuItemId(item.key),
       title: displayName,  // Display name from database
-      description: t(options.locale, descriptionKey as TranslationKey),
+      description: description,  // Catchy description from database
     };
   });
 
