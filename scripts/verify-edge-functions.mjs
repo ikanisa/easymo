@@ -5,9 +5,10 @@ const DEFAULT_BASE = 'http://localhost:54321/functions/v1';
 const base = (process.env.EDGE_FUNCTIONS_BASE || DEFAULT_BASE).replace(/\/$/, '');
 const token = process.env.EDGE_FUNCTIONS_TOKEN || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
+// IMPORTANT: wa-webhook is DEPRECATED (Issue #485) - DO NOT ADD BACK
+// The legacy monolithic wa-webhook has been replaced by wa-webhook-core + domain microservices
 const defaultFunctions = [
-  { name: 'admin-health', path: 'admin-health', expect: (body) => body.status === 'ok' },
-  { name: 'wa-webhook', path: 'wa-webhook', expect: (body, raw) => raw.includes('messages') || typeof body === 'object' },
+  { name: 'wa-webhook-core', path: 'wa-webhook-core', expect: (body, raw) => raw.includes('messages') || typeof body === 'object' },
   { name: 'wa-webhook-ai-agents', path: 'wa-webhook-ai-agents', expect: (_body, raw) => raw.length > 0 },
   { name: 'waiter-ai-agent', path: 'waiter-ai-agent', expect: (_body, raw) => raw.length > 0 },
   { name: 'agent-monitor', path: 'agent-monitor', expect: (_body, raw) => raw.length > 0 },

@@ -85,7 +85,9 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
       SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      FUNCTIONS: "wa-webhook wa-webhook-core wa-webhook-marketplace wa-webhook-jobs wa-webhook-ai-agents agent-property-rental"
+      # IMPORTANT: wa-webhook is DEPRECATED (Issue #485) - DO NOT ADD BACK
+      # The legacy monolithic wa-webhook has been replaced by wa-webhook-core + domain microservices
+      FUNCTIONS: "wa-webhook-core wa-webhook-marketplace wa-webhook-jobs wa-webhook-ai-agents agent-property-rental"
     steps:
       - name: Checkout
         uses: actions/checkout@v6
