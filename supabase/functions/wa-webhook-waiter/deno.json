@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "WhatsApp Waiter AI agent for restaurant/bar ordering",
   "imports": {
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.86.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.84.0",
     "observability": "../_shared/observability.ts"
   },
   "compilerOptions": {
