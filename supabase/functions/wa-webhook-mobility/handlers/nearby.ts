@@ -442,7 +442,7 @@ export async function handleNearbyLocation(
     await logStructuredEvent("NEARBY_CACHE_WRITE_FAILED", {
       userId: ctx.profileId,
       error: error instanceof Error ? error.message : String(error),
-    }, "error");
+    }});
   }
 
   // DIRECT DATABASE MATCHING: Simple workflow for Phase 1
@@ -816,7 +816,7 @@ async function showRecentSearches(
     await logStructuredEvent("RECENT_SEARCHES_LOAD_FAILED", {
       userId: ctx.profileId,
       error: error instanceof Error ? error.message : String(error),
-    }, "error");
+    }});
     return false; // Fall back to normal flow
   }
 }
@@ -1080,7 +1080,7 @@ async function runMatchingFallback(
       vehicle: state.vehicle,
       wa_id: maskPhone(ctx.from),
       error: error instanceof Error ? error.message : String(error ?? "unknown"),
-    }, "error");
+    }});
     await emitAlert("MATCHES_ERROR", {
       flow: "nearby",
       mode: state.mode,

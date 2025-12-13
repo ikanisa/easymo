@@ -99,7 +99,7 @@ export async function handleGoOnlineLocation(
         await logStructuredEvent("DRIVER_TRIP_CREATE_FAILED", {
           userId: ctx.profileId,
           error: tripError instanceof Error ? tripError.message : String(tripError),
-        }, "error");
+        }});
         // Continue even if trip creation fails
       }
 
@@ -116,7 +116,7 @@ export async function handleGoOnlineLocation(
         await logStructuredEvent("DRIVER_INTENT_SAVE_FAILED", {
           userId: ctx.profileId,
           error: intentError instanceof Error ? intentError.message : String(intentError),
-        }, "error");
+        }});
       }
 
       // Also try to update driver_status table if it exists
@@ -158,7 +158,7 @@ export async function handleGoOnlineLocation(
     await logStructuredEvent("GO_ONLINE_LOCATION_SAVE_FAILED", {
       userId: ctx.profileId,
       error: error instanceof Error ? error.message : String(error),
-    }, "error");
+    }});
     await sendText(ctx.from, t(ctx.locale, "mobility.nearby.error"));
     return true;
   }
@@ -186,7 +186,7 @@ export async function handleGoOnlineUseCached(
     await logStructuredEvent("GO_ONLINE_USE_CACHED_FAILED", {
       userId: ctx.profileId,
       error: error instanceof Error ? error.message : String(error),
-    }, "error");
+    }});
     await sendText(ctx.from, t(ctx.locale, "mobility.nearby.error"));
     return true;
   }
@@ -224,7 +224,7 @@ export async function handleGoOffline(ctx: RouterContext): Promise<boolean> {
     await logStructuredEvent("GO_OFFLINE_FAILED", {
       userId: ctx.profileId,
       error: error instanceof Error ? error.message : String(error),
-    }, "error");
+    }});
     await sendText(ctx.from, t(ctx.locale, "mobility.nearby.error"));
     return true;
   }
