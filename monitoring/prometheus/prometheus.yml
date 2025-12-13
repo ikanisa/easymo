@@ -62,12 +62,6 @@ scrape_configs:
       - targets: ['ranking-service:3003']
     metrics_path: '/metrics'
 
-  # Vendor Service
-  - job_name: 'vendor-service'
-    static_configs:
-      - targets: ['vendor-service:3004']
-    metrics_path: '/metrics'
-
   # Buyer Service
   - job_name: 'buyer-service'
     static_configs:

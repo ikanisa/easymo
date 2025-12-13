@@ -19,41 +19,6 @@ services:
       - mobility-net
     restart: unless-stopped
 
-  # Matching Service
-  matching-service:
-    build:
-      context: ./services/matching-service
-      dockerfile: Dockerfile
-    container_name: matching-service
-    ports:
-      - "4700:4700"
-    environment:
-      - NODE_ENV=production
-      - PORT=4700
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-      - REDIS_URL=redis://redis-mobility:6379
-    depends_on:
-      redis-mobility:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4700/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    networks:
-      - mobility-net
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 512M
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-
   # Ranking Service
   ranking-service:
     build:
@@ -103,12 +68,9 @@ services:
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
       - REDIS_URL=redis://redis-mobility:6379
-      - MATCHING_SERVICE_URL=http://matching-service:4700
       - RANKING_SERVICE_URL=http://ranking-service:4500
       - TRACKING_SERVICE_URL=http://tracking-service:4800
     depends_on:
-      matching-service:
-        condition: service_healthy
       ranking-service:
         condition: service_healthy
       tracking-service:

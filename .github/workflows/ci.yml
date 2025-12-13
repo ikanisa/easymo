@@ -88,7 +88,6 @@ jobs:
           path: |
             admin-app/coverage
             services/agent-core/coverage
-            services/broker-orchestrator/coverage
             services/wallet-service/coverage
 
       - name: Deno unit tests (Supabase functions)

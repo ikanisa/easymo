@@ -66,25 +66,6 @@ services:
     ports:
       - "4100:4100"
 
-  sip-ingress:
-    build: ./services/sip-ingress
-    command: pnpm start:dev
-    environment:
-      PORT: 4200
-      LOG_LEVEL: debug
-      KAFKA_BROKERS: kafka:19092
-      KAFKA_CLIENT_ID: sip-ingress
-      EVENT_TOPIC: voice.sip.events
-      CONTACT_TOPIC: voice.contact.events
-      REDIS_URL: redis://redis:6379
-    volumes:
-      - ./services/sip-ingress:/usr/src/app
-    depends_on:
-      - kafka
-      - redis
-    ports:
-      - "4200:4200"
-
   wallet-service:
     build: ./services/wallet-service
     command: pnpm start:dev
@@ -118,22 +99,6 @@ services:
     ports:
       - "4500:4500"
 
-  vendor-service:
-    build: ./services/vendor-service
-    command: pnpm start:dev
-    environment:
-      PORT: 4600
-      LOG_LEVEL: debug
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/agent_core
-      DEFAULT_TENANT_ID: a4a8cf2d-0a4f-446c-8bf2-28509641158f
-      FEATURE_MARKETPLACE_VENDOR: "1"
-    volumes:
-      - ./services/vendor-service:/usr/src/app
-    depends_on:
-      - postgres
-    ports:
-      - "4600:4600"
-
   buyer-service:
     build: ./services/buyer-service
     command: pnpm start:dev
@@ -152,76 +117,6 @@ services:
       - wallet-service
     ports:
       - "4700:4700"
-
-  whatsapp-bot:
-    build: ./services/whatsapp-bot
-    command: pnpm start:dev
-    environment:
-      PORT: 4800
-      LOG_LEVEL: debug
-      META_VERIFY_TOKEN: verify-token
-      META_PAGE_TOKEN: page-token
-      KAFKA_BROKERS: kafka:19092
-      KAFKA_CLIENT_ID: whatsapp-bot
-      INBOUND_TOPIC: whatsapp.inbound
-      OUTBOUND_TOPIC: whatsapp.outbound
-      REDIS_URL: redis://redis:6379
-      FEATURE_MARKETPLACE_VENDOR: "1"
-    volumes:
-      - ./services/whatsapp-bot:/usr/src/app
-    depends_on:
-      - kafka
-      - redis
-    ports:
-      - "4800:4800"
-
-  whatsapp-webhook-worker:
-    build: ./services/whatsapp-webhook-worker
-    command: pnpm start:dev
-    environment:
-      PORT: 4900
-      LOG_LEVEL: debug
-      KAFKA_BROKERS: kafka:19092
-      KAFKA_CLIENT_ID: whatsapp-webhook-worker
-      KAFKA_GROUP_ID: whatsapp-webhook-worker-group
-      WEBHOOK_TOPIC: whatsapp.webhook.inbound
-      WEBHOOK_PROCESSED_TOPIC: whatsapp.webhook.processed
-      WEBHOOK_DLQ_TOPIC: whatsapp.webhook.dlq
-      REDIS_URL: redis://redis:6379
-      SUPABASE_URL: http://host.docker.internal:54321
-      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
-      MAX_RETRIES: "3"
-      RETRY_DELAY_MS: "1000"
-      CONCURRENT_MESSAGES: "10"
-    volumes:
-      - ./services/whatsapp-webhook-worker:/usr/src/app
-    depends_on:
-      - kafka
-      - redis
-    ports:
-      - "4900:4900"
-
-  broker-orchestrator:
-    build: ./services/broker-orchestrator
-    command: pnpm start:dev
-    environment:
-      LOG_LEVEL: debug
-      KAFKA_BROKERS: kafka:19092
-      KAFKA_CLIENT_ID: broker-orchestrator
-      WHATSAPP_TOPIC: whatsapp.inbound
-      VOICE_CONTACT_TOPIC: voice.contact.events
-      SIP_TOPIC: voice.sip.events
-      BROKER_OUTBOUND_TOPIC: broker.outbound
-      REDIS_URL: redis://redis:6379
-      AGENT_CORE_URL: http://agent-core:4000
-      WALLET_SERVICE_URL: http://wallet-service:4400
-      FEATURE_MARKETPLACE_RANKING: "1"
-    volumes:
-      - ./services/broker-orchestrator:/usr/src/app
-    depends_on:
-      - kafka
-      - redis
-      - wallet-service
 
 volumes:
   agent_core_pg:
