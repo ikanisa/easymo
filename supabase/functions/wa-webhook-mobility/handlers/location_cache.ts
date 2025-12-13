@@ -42,7 +42,7 @@ export function isLocationCacheValid(
     
     return diffMinutes <= cacheMinutes;
   } catch (error) {
-    logStructuredEvent("ERROR", { error: 'Error validating location cache:', error }, "error");
+    console.error('Error validating location cache:', error);
     return false;
   }
 }

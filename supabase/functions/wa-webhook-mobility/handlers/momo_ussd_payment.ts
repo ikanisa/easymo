@@ -137,7 +137,7 @@ export async function initiateTripPayment(
 
     return true;
   } catch (error) {
-    logStructuredEvent("ERROR", { error: "MOMO_PAYMENT_INIT_ERROR", error }, "error");
+    console.error("MOMO_PAYMENT_INIT_ERROR", error);
     await sendText(ctx.from, "⚠️ Failed to initiate payment. Please try again.");
     return false;
   }
@@ -252,7 +252,7 @@ export async function handlePaymentConfirmation(
       return false;
     }
   } catch (error) {
-    logStructuredEvent("ERROR", { error: "MOMO_PAYMENT_CONFIRM_ERROR", error }, "error");
+    console.error("MOMO_PAYMENT_CONFIRM_ERROR", error);
     await sendText(ctx.from, "⚠️ Failed to confirm payment. Please try again.");
     return false;
   }
@@ -279,7 +279,7 @@ async function verifyMomoPayment(
     .limit(1);
 
   if (error) {
-    logStructuredEvent("ERROR", { error: "MOMO_VERIFY_ERROR", error }, "error");
+    console.error("MOMO_VERIFY_ERROR", error);
     return false;
   }
 
@@ -323,7 +323,7 @@ export async function handleRefund(
       });
 
     if (error) {
-      logStructuredEvent("ERROR", { error: "REFUND_CREATE_ERROR", error }, "error");
+      console.error("REFUND_CREATE_ERROR", error);
       await sendText(ctx.from, "⚠️ Failed to process refund request.");
       return false;
     }
@@ -346,7 +346,7 @@ export async function handleRefund(
 
     return true;
   } catch (error) {
-    logStructuredEvent("ERROR", { error: "REFUND_ERROR", error }, "error");
+    console.error("REFUND_ERROR", error);
     await sendText(ctx.from, "⚠️ Failed to process refund. Please contact support.");
     return false;
   }

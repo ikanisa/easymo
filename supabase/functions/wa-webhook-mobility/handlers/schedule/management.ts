@@ -46,7 +46,7 @@ export async function handleScheduleRefresh(
     });
     return true;
   } catch (error) {
-    logStructuredEvent("ERROR", { error: "mobility.schedule_refresh_fail", error }, "error");
+    console.error("mobility.schedule_refresh_fail", error);
     await logStructuredEvent("MATCHES_ERROR", {
       flow: "schedule",
       stage: "refresh",

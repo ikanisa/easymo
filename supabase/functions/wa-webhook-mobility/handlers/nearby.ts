@@ -439,7 +439,7 @@ export async function handleNearbyLocation(
       lng: pickup.lng,
     });
   } catch (error) {
-    logStructuredEvent("ERROR", { error: "mobility.nearby_cache_write_fail", error }, "error");
+    console.error("mobility.nearby_cache_write_fail", error);
   }
 
   // DIRECT DATABASE MATCHING: Simple workflow for Phase 1
@@ -785,7 +785,7 @@ async function showRecentSearches(
           locationText = geocoded.address || geocoded.city || "";
         }
       } catch (error) {
-        logStructuredEvent("WARNING", { message: "Failed to geocode recent search:", error }, "warn");
+        console.warn("Failed to geocode recent search:", error);
       }
       
       // Fallback to "Unknown location" if geocoding failed (never show coordinates!)
@@ -810,7 +810,7 @@ async function showRecentSearches(
 
     return true;
   } catch (error) {
-    logStructuredEvent("ERROR", { error: "Failed to load recent searches:", error }, "error");
+    console.error("Failed to load recent searches:", error);
     return false; // Fall back to normal flow
   }
 }
@@ -1069,7 +1069,7 @@ async function runMatchingFallback(
     );
     return true;
   } catch (error) {
-    logStructuredEvent("ERROR", { error: "mobility.nearby_match_fail", error }, "error");
+    console.error("mobility.nearby_match_fail", error);
     await logStructuredEvent("MATCHES_ERROR", {
       flow: "nearby",
       mode: state.mode,

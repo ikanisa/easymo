@@ -235,7 +235,7 @@ async function provisionBarForNumber(
       }
       barId = existingBar.id as string;
     } else {
-      logStructuredEvent("ERROR", { error: "bars.insert_fail", insertError, { slug, barName } }, "error");
+      console.error("bars.insert_fail", insertError, { slug, barName });
       return null;
     }
   } else {
@@ -269,7 +269,7 @@ async function provisionBarForNumber(
     .from("bar_settings")
     .upsert({ bar_id: barId }, { onConflict: "bar_id" });
   if (settingsError) {
-    logStructuredEvent("WARNING", { message: "bar_settings.auto_create_fail", settingsError, { barId } }, "warn");
+    console.warn("bar_settings.auto_create_fail", settingsError, { barId });
   }
 
   const { data: activeRow, error: activeError } = await client
@@ -311,7 +311,7 @@ async function selectBusinessCandidate(
     .order("created_at", { ascending: false })
     .limit(5);
   if (error) {
-    logStructuredEvent("ERROR", { error: "business.lookup_fail", error, { owner: canonicalNumber } }, "error");
+    console.error("business.lookup_fail", error, { owner: canonicalNumber });
     return null;
   }
   const rows = data ?? [];
@@ -353,7 +353,7 @@ async function ensureUniqueBarSlug(
       .eq("slug", candidate)
       .maybeSingle();
     if (error) {
-      logStructuredEvent("ERROR", { error: "bars.slug_check_fail", error, { candidate } }, "error");
+      console.error("bars.slug_check_fail", error, { candidate });
       break;
     }
     if (!data) return candidate;

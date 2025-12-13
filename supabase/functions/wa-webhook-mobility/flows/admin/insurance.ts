@@ -278,7 +278,7 @@ export async function hydrateInsuranceLeads(
       .limit(MAX_LEAD_ROWS);
 
     if (error) {
-      logStructuredEvent("ERROR", { error: "Failed to fetch insurance leads:", error }, "error");
+      console.error("Failed to fetch insurance leads:", error);
       return [];
     }
 
@@ -299,7 +299,7 @@ export async function hydrateInsuranceLeads(
       };
     });
   } catch (err) {
-    logStructuredEvent("ERROR", { error: "Error hydrating insurance leads:", err }, "error");
+    console.error("Error hydrating insurance leads:", err);
     return [];
   }
 }
@@ -375,14 +375,14 @@ async function handleMarkReviewed(
 
     if (error) {
       await sendText(ctx.from, "❌ Failed to mark lead as reviewed.");
-      logStructuredEvent("ERROR", { error: "Failed to mark lead as reviewed:", error }, "error");
+      console.error("Failed to mark lead as reviewed:", error);
       return;
     }
 
     await sendText(ctx.from, "✅ Lead marked as reviewed.");
   } catch (err) {
     await sendText(ctx.from, "❌ Error marking lead as reviewed.");
-    logStructuredEvent("ERROR", { error: "Error marking lead as reviewed:", err }, "error");
+    console.error("Error marking lead as reviewed:", err);
   }
 }
 
@@ -405,7 +405,7 @@ async function handleDMClient(
 
     if (error || !data) {
       await sendText(ctx.from, "❌ Failed to fetch lead details.");
-      logStructuredEvent("ERROR", { error: "Failed to fetch lead details:", error }, "error");
+      console.error("Failed to fetch lead details:", error);
       return;
     }
 
@@ -422,7 +422,7 @@ async function handleDMClient(
     );
   } catch (err) {
     await sendText(ctx.from, "❌ Error fetching client contact.");
-    logStructuredEvent("ERROR", { error: "Error fetching client contact:", err }, "error");
+    console.error("Error fetching client contact:", err);
   }
 }
 
@@ -445,7 +445,7 @@ async function handleRequestReupload(
 
     if (error || !data?.whatsapp) {
       await sendText(ctx.from, "❌ Failed to fetch lead contact.");
-      logStructuredEvent("ERROR", { error: "Failed to fetch lead contact:", error }, "error");
+      console.error("Failed to fetch lead contact:", error);
       return;
     }
 
@@ -461,7 +461,7 @@ async function handleRequestReupload(
 
     if (notifError) {
       await sendText(ctx.from, "❌ Failed to queue re-upload request.");
-      logStructuredEvent("ERROR", { error: "Failed to queue notification:", notifError }, "error");
+      console.error("Failed to queue notification:", notifError);
       return;
     }
 
@@ -472,14 +472,14 @@ async function handleRequestReupload(
       .eq("id", leadId);
 
     if (updateError) {
-      logStructuredEvent("ERROR", { error: "Failed to update lead status:", updateError }, "error");
+      console.error("Failed to update lead status:", updateError);
       // Don't return error to user since notification was queued successfully
     }
 
     await sendText(ctx.from, "✅ Re-upload request queued for delivery.");
   } catch (err) {
     await sendText(ctx.from, "❌ Error requesting re-upload.");
-    logStructuredEvent("ERROR", { error: "Error requesting re-upload:", err }, "error");
+    console.error("Error requesting re-upload:", err);
   }
 }
 
@@ -505,14 +505,14 @@ async function handleAssignOwner(
 
     if (error) {
       await sendText(ctx.from, "❌ Failed to assign owner.");
-      logStructuredEvent("ERROR", { error: "Failed to assign owner:", error }, "error");
+      console.error("Failed to assign owner:", error);
       return;
     }
 
     await sendText(ctx.from, `✅ Lead assigned to you (${ctx.from}).`);
   } catch (err) {
     await sendText(ctx.from, "❌ Error assigning owner.");
-    logStructuredEvent("ERROR", { error: "Error assigning owner:", err }, "error");
+    console.error("Error assigning owner:", err);
   }
 }
 
@@ -535,7 +535,7 @@ async function handleExportJSON(
 
     if (error || !data) {
       await sendText(ctx.from, "❌ Failed to fetch lead data.");
-      logStructuredEvent("ERROR", { error: "Failed to fetch lead data:", error }, "error");
+      console.error("Failed to fetch lead data:", error);
       return;
     }
 
@@ -547,6 +547,6 @@ async function handleExportJSON(
     await sendText(ctx.from, `📄 Lead Export (JSON):\n\n\`\`\`json\n${preview}\n\`\`\``);
   } catch (err) {
     await sendText(ctx.from, "❌ Error exporting lead.");
-    logStructuredEvent("ERROR", { error: "Error exporting lead:", err }, "error");
+    console.error("Error exporting lead:", err);
   }
 }

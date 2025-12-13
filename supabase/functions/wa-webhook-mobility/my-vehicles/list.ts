@@ -33,7 +33,7 @@ export async function listMyVehicles(
     .limit(20);
 
   if (error) {
-    logStructuredEvent("ERROR", { error: "Failed to fetch vehicles:", error }, "error");
+    console.error("Failed to fetch vehicles:", error);
     await sendButtonsMessage(
       ctx,
       "⚠️ Failed to load your vehicles. Please try again.",

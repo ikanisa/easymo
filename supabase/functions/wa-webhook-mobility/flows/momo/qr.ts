@@ -309,7 +309,7 @@ async function deliverMomoQr(
   } catch (error) {
     fallbackNeeded = true;
     const message = error instanceof Error ? error.message : String(error);
-    logStructuredEvent("ERROR", { error: "momo.qr.send_image_fail", message }, "error");
+    console.error("momo.qr.send_image_fail", message);
   }
 
   try {
@@ -321,7 +321,7 @@ async function deliverMomoQr(
   } catch (error) {
     fallbackNeeded = true;
     const message = error instanceof Error ? error.message : String(error);
-    logStructuredEvent("ERROR", { error: "momo.qr.send_buttons_fail", message }, "error");
+    console.error("momo.qr.send_buttons_fail", message);
   }
 
   if (fallbackNeeded) {
@@ -329,7 +329,7 @@ async function deliverMomoQr(
       await sendText(ctx.from, fallbackBody);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      logStructuredEvent("ERROR", { error: "momo.qr.send_text_fail", message }, "error");
+      console.error("momo.qr.send_text_fail", message);
     }
   }
   const loggedTarget = data.targetType === "msisdn"

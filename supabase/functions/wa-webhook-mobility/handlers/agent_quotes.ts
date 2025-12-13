@@ -58,7 +58,7 @@ export async function sendDriverQuoteRequest(
 
     return sent;
   } catch (error) {
-    logStructuredEvent("ERROR", { error: "Failed to send driver quote request:", error }, "error");
+    console.error("Failed to send driver quote request:", error);
     return false;
   }
 }
@@ -213,7 +213,7 @@ export async function handleDriverQuoteResponse(
 
     return true;
   } catch (error) {
-    logStructuredEvent("ERROR", { error: "Failed to handle driver quote response:", error }, "error");
+    console.error("Failed to handle driver quote response:", error);
     return false;
   }
 }
@@ -283,7 +283,7 @@ export async function sendQuotePresentationToUser(
 
     return true;
   } catch (error) {
-    logStructuredEvent("ERROR", { error: "Failed to send quote presentation:", error }, "error");
+    console.error("Failed to send quote presentation:", error);
     return false;
   }
 }

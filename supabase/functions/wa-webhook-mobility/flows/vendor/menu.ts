@@ -33,7 +33,7 @@ export async function handleVendorMenuMedia(
   try {
     record = await findActiveBarNumber(ctx.supabase, ctx.from);
   } catch (error) {
-    logStructuredEvent("ERROR", { error: "vendor.menu.lookup_fail", error, { from: ctx.from } }, "error");
+    console.error("vendor.menu.lookup_fail", error, { from: ctx.from });
     await sendText(
       ctx.from,
       t(ctx.locale, "vendor.menu.lookup_fail"),
@@ -100,7 +100,7 @@ export async function handleVendorMenuMedia(
 
     await triggerOcrProcessing(ctx.supabase);
   } catch (err) {
-    logStructuredEvent("ERROR", { error: "vendor.menu.store_fail", err, { mediaId, from: ctx.from } }, "error");
+    console.error("vendor.menu.store_fail", err, { mediaId, from: ctx.from });
     await logStructuredEvent("VENDOR_MENU_UPLOAD_FAIL", {
       wa_id: `***${ctx.from.slice(-4)}`,
       reason: err instanceof Error ? err.message : String(err ?? "unknown"),
@@ -169,7 +169,7 @@ async function handleRestaurantMenuUpload(
     // Trigger OCR processing
     await triggerOcrProcessing(ctx.supabase);
   } catch (err) {
-    logStructuredEvent("ERROR", { error: "restaurant.menu.upload_fail", err, { mediaId, from: ctx.from } }, "error");
+    console.error("restaurant.menu.upload_fail", err, { mediaId, from: ctx.from });
     await logStructuredEvent("RESTAURANT_MENU_UPLOAD_FAIL", {
       wa_id: `***${ctx.from.slice(-4)}`,
       reason: err instanceof Error ? err.message : String(err ?? "unknown"),
@@ -185,11 +185,11 @@ async function handleRestaurantMenuUpload(
 
 async function triggerOcrProcessing(client: SupabaseClient): Promise<void> {
   try {
-    logStructuredEvent("DEBUG", { data: "vendor.menu.ocr_trigger_start" });
+    console.log("vendor.menu.ocr_trigger_start");
     const { error } = await client.functions.invoke("unified-ocr", { body: { domain: "menu" } });
     if (error) throw error;
-    logStructuredEvent("DEBUG", { data: "vendor.menu.ocr_trigger_processor_ok" });
-    logStructuredEvent("DEBUG", { data: "vendor.menu.ocr_trigger_notifier_skipped" });
+    console.log("vendor.menu.ocr_trigger_processor_ok");
+    console.log("vendor.menu.ocr_trigger_notifier_skipped");
   } catch (error) {
     if (
       error && typeof error === "object" &&
@@ -208,7 +208,7 @@ async function triggerOcrProcessing(client: SupabaseClient): Promise<void> {
         body: bodyText,
       });
     } else {
-      logStructuredEvent("ERROR", { error: "vendor.menu.ocr_trigger_fail", error }, "error");
+      console.error("vendor.menu.ocr_trigger_fail", error);
     }
   }
 }

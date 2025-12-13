@@ -43,7 +43,7 @@ export async function startCustomerSupportChat(ctx: RouterContext): Promise<bool
     .single();
 
   if (error || !agentConfig) {
-    logStructuredEvent("ERROR", { error: "Failed to load customer support agent config:", error }, "error");
+    console.error("Failed to load customer support agent config:", error);
     
     // Fallback to showing human support contacts
     return await escalateToHumanSupport(ctx);
@@ -101,7 +101,7 @@ export async function handleCustomerSupportMessage(
 ): Promise<boolean> {
   
   if (!OPENAI_API_KEY) {
-    logStructuredEvent("ERROR", { error: "OpenAI API key not configured" }, "error");
+    console.error("OpenAI API key not configured");
     await sendText(ctx.from, "I'm having technical difficulties. Let me connect you with a human agent.");
     return await escalateToHumanSupport(ctx);
   }
@@ -182,7 +182,7 @@ export async function handleCustomerSupportMessage(
     return true;
 
   } catch (error) {
-    logStructuredEvent("ERROR", { error: "AI agent error:", error }, "error");
+    console.error("AI agent error:", error);
     
     await logStructuredEvent("AI_CUSTOMER_SUPPORT_ERROR", {
       profile_id: ctx.profileId,

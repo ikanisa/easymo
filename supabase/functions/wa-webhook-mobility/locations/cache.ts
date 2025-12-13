@@ -27,7 +27,7 @@ export async function saveLocationToCache(
     _lng: coords.lng,
   });
   if (error) {
-    logStructuredEvent("ERROR", { error: "location_cache.save_fail", error }, "error");
+    console.error("location_cache.save_fail", error);
     throw error;
   }
 }
@@ -47,7 +47,7 @@ export async function getCachedLocation(
   });
 
   if (error) {
-    logStructuredEvent("ERROR", { error: "location_cache.get_fail", error }, "error");
+    console.error("location_cache.get_fail", error);
     return null;
   }
 

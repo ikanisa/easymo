@@ -456,7 +456,7 @@ export async function handleScheduleDropoff(
     });
   return true;
 } catch (error) {
-    logStructuredEvent("ERROR", { error: "mobility.schedule_dropoff_fail", error }, "error");
+    console.error("mobility.schedule_dropoff_fail", error);
     await logStructuredEvent("MATCHES_ERROR", {
       flow: "schedule",
       stage: "dropoff",
@@ -909,7 +909,7 @@ export async function createTripAndDeliverMatches(
   await storeLastScheduleContext(ctx, context);
   return true;
   } catch (error) {
-    logStructuredEvent("ERROR", { error: "mobility.schedule_create_fail", error }, "error");
+    console.error("mobility.schedule_create_fail", error);
     await logStructuredEvent("MATCHES_ERROR", {
       flow: "schedule",
       stage,
@@ -1097,7 +1097,7 @@ async function saveRecurringTrip(
     timezone: state.timezone ?? DEFAULT_TIMEZONE,
   });
   if (error) {
-    logStructuredEvent("ERROR", { error: "mobility.schedule_recurring_fail", error }, "error");
+    console.error("mobility.schedule_recurring_fail", error);
     await sendText(ctx.from, t(ctx.locale, "schedule.recur.error"));
     return false;
   }
@@ -1235,7 +1235,7 @@ export async function deliverMatches(
         }
       }
     } catch (e) {
-      logStructuredEvent("WARNING", { message: 'schedule.notify_drivers_warn', e }, "warn");
+      console.warn('schedule.notify_drivers_warn', e);
     }
   }
 

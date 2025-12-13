@@ -38,7 +38,7 @@ async function withSendGuard(
     await send();
   } catch (error) {
     state.lastLabel = `${label}:error`;
-    logStructuredEvent("ERROR", { error: "admin.send_guard.error", error }, "error");
+    console.error("admin.send_guard.error", error);
     throw error;
   }
 }

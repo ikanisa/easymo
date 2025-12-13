@@ -17,11 +17,11 @@ export async function logEvent(
   };
 
   if (level === "error") {
-    logStructuredEvent("ERROR", { error: JSON.stringify(logData }, "error"););
+    console.error(JSON.stringify(logData));
   } else if (level === "warn") {
-    logStructuredEvent("WARNING", { message: JSON.stringify(logData }, "warn"););
+    console.warn(JSON.stringify(logData));
   } else {
-    logStructuredEvent("DEBUG", { data: JSON.stringify(logData }););
+    console.log(JSON.stringify(logData));
   }
 }
 

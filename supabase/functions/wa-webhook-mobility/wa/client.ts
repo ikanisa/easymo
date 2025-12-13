@@ -50,7 +50,7 @@ async function post(payload: unknown): Promise<void> {
     );
     if (res.ok) return;
     const text = await res.text();
-    logStructuredEvent("ERROR", { error: "wa_client.send_fail", res.status, text }, "error");
+    console.error("wa_client.send_fail", res.status, text);
     if (attempt >= STATUS_RETRIES || !STATUS_RETRY_CODES.has(res.status)) {
       throw new WhatsAppClientError(res.status, text);
     }
@@ -166,7 +166,7 @@ export async function sendList(
     buttonText,
     sections,
   });
-  if (issues.length) logStructuredEvent("WARNING", { message: "wa_client.validate_warn", { issues } }, "warn");
+  if (issues.length) console.warn("wa_client.validate_warn", { issues });
   if ((Deno.env.get("LOG_LEVEL") ?? "").toLowerCase() === "debug") {
     console.debug(
       "wa.payload.list_preview",

@@ -193,7 +193,7 @@ async function runOpenAIOCR(signedUrl: string): Promise<DriverLicenseData> {
       clearTimeout(timeout);
 
       if (response.status >= 500 && response.status < 600) {
-        logStructuredEvent("WARNING", { message: "DRIVER_LICENSE_OCR_RETRYABLE", { status: response.status } }, "warn");
+        console.warn("DRIVER_LICENSE_OCR_RETRYABLE", { status: response.status });
         lastError = new Error(`openai_${response.status}`);
         continue;
       }
@@ -226,7 +226,7 @@ async function runOpenAIOCR(signedUrl: string): Promise<DriverLicenseData> {
         /openai_5/.test(lastError.message);
       
       if (!isRetryable) {
-        logStructuredEvent("ERROR", { error: "DRIVER_LICENSE_OCR_OPENAI_ERROR", { error: lastError } }, "error");
+        console.error("DRIVER_LICENSE_OCR_OPENAI_ERROR", { error: lastError });
         throw lastError;
       }
     }
@@ -248,7 +248,7 @@ export async function processDriverLicense(
     const data = await runOpenAIOCR(signedUrl);
     return { data, provider: "openai" };
   } catch (openaiError) {
-    logStructuredEvent("WARNING", { message: "DRIVER_LICENSE_OCR_OPENAI_FAILED", openaiError }, "warn");
+    console.warn("DRIVER_LICENSE_OCR_OPENAI_FAILED", openaiError);
   }
 
   // Fallback to Gemini
@@ -256,7 +256,7 @@ export async function processDriverLicense(
     const data = await runGeminiOCR(signedUrl);
     return { data, provider: "gemini" };
   } catch (geminiError) {
-    logStructuredEvent("ERROR", { error: "DRIVER_LICENSE_OCR_GEMINI_FAILED", geminiError }, "error");
+    console.error("DRIVER_LICENSE_OCR_GEMINI_FAILED", geminiError);
     throw new Error("Failed to process driver license with both OpenAI and Gemini");
   }
 }
@@ -355,7 +355,7 @@ export async function saveLicenseCertificate(
     .single();
 
   if (error) {
-    logStructuredEvent("ERROR", { error: "DRIVER_LICENSE_SAVE_ERROR", error }, "error");
+    console.error("DRIVER_LICENSE_SAVE_ERROR", error);
     return { id: "", error: error.message };
   }
 

@@ -31,7 +31,7 @@ export async function ensureDriverAccess(ctx: RouterContext): Promise<boolean> {
     await promptDriverSubscription(ctx, gate.credits_left ?? 0);
     return false;
   } catch (error) {
-    logStructuredEvent("ERROR", { error: "driver.subscription_gate_fail", error }, "error");
+    console.error("driver.subscription_gate_fail", error);
     await promptDriverSubscription(ctx, 0);
     return false;
   }
@@ -125,7 +125,7 @@ export async function handleDriverSubscriptionPay(
     await clearState(ctx.supabase, ctx.profileId);
     return true;
   } catch (error) {
-    logStructuredEvent("ERROR", { error: "driver.subscription_pay_fail", error }, "error");
+    console.error("driver.subscription_pay_fail", error);
     await sendButtonsMessage(
       ctx,
       t(ctx.locale, "mobility.sub.payment_failed"),
