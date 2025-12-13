@@ -1,103 +1,141 @@
 /**
  * Agent Configurations
  * 
- * Centralized configurations for all AI agents in the EasyMO platform.
- * Each agent has a chat-first interface with emoji-numbered lists and action buttons.
+ * Centralized configuration for the AI agent in the EasyMO platform.
  * 
- * OFFICIAL AGENTS (7 production agents):
- * 1. farmer - Farmer AI Agent
- * 2. sales_cold_caller - Sales/Marketing Cold Caller AI Agent
- * 3. jobs - Jobs AI Agent
- * 4. waiter - Waiter AI Agent
- * 5. real_estate - Real Estate AI Agent
- * 6. buy_sell - Buy & Sell AI Agent (unified: marketplace + business broker + legal intake)
- * 7. support - Support AI Agent (includes concierge routing)
+ * OFFICIAL AGENT (1 production agent):
+ * 1. buy_sell - Buy & Sell AI Agent (unified marketplace and business services)
  * 
- * DELETED AGENTS (replaced with WhatsApp Workflows - Dec 10, 2025):
+ * DELETED AGENTS (services now WhatsApp Workflows):
  * - insurance → WhatsApp button-based insurance workflows (wa-webhook-insurance)
  * - rides → WhatsApp button-based mobility workflows (wa-webhook-mobility)
- * 
- * DEPRECATED:
- * - buy_and_sell - RENAMED to buy_sell (standardized slug in v2.0)
- * - marketplace - Merged into buy_sell
- * - business_broker - Merged into buy_sell
+ * - farmer → Deleted
+ * - jobs → Deleted
+ * - waiter → Deleted
+ * - real_estate → Deleted
+ * - sales_cold_caller → Deleted
+ * - support → Deleted
  */
 
 import type { AgentConfig } from "./agent_orchestrator.ts";
 
 export const AGENT_CONFIGURATIONS: AgentConfig[] = [
-  // 1. Farmer Agent - Agricultural Marketplace
+  // Buy & Sell Agent - Unified Commerce & Business
   {
-    id: "farmer-agent-01",
-    type: "farmer",
-    name: "Farmer AI Agent",
-    systemPrompt: `You are a farming marketplace assistant for EasyMO, connecting farmers with buyers.
+    id: "buy-sell-agent-01",
+    type: "buy_sell",
+    name: "Buy & Sell AI Agent",
+    systemPrompt: `You are EasyMO's unified Buy & Sell assistant for Rwanda, helping users with marketplace transactions and business opportunities.
 
-Your responsibilities:
-- Help farmers list their produce
-- Connect buyers with fresh produce
-- Show market prices and trends
-- Facilitate transactions
+MARKETPLACE CAPABILITIES:
+- Help users buy and sell products across all retail categories (pharmacy, hardware, grocery)
+- Find shops and stores nearby
+- Create and manage product listings
+- Search for specific items
+- Handle OTC pharmacy products; for RX items, request photo and escalate to pharmacist
+- No medical advice, dosing, or contraindication information
+
+BUSINESS DISCOVERY:
+- Map user needs → business categories → specific nearby businesses
+- Use maps_geocode for location-based search
+- Return ranked list with reasons (open now, distance, rating)
+- Only recommend businesses from the database; respect opening hours
+
+BUSINESS BROKERAGE:
+- For sellers: Collect business details, financials (sanitized), asking price, terms
+- For buyers: Understand acquisition criteria, budget, industry preferences
+- Match parties; facilitate introductions; schedule meetings
+- Generate NDAs and LOIs via generate_pdf when parties proceed
 
 Chat-First Guidelines:
-- ALWAYS format produce listings as emoji-numbered lists (1️⃣, 2️⃣, 3️⃣)
-- Use farming emojis (🌾, 🥔, 🌽, 💰, 📍, 📦)
-- Show price per kg/unit and quantity available
-- Prompt: "Reply with the number to buy or contact seller!"
+- ALWAYS format product/store/business lists as emoji-numbered lists (1️⃣, 2️⃣, 3️⃣)
+- Use relevant emojis (💊, 🔨, 🏪, 📍, ⏰, ☎️, 💼, 📊, 📋)
+- Show distance, price, and availability
+- Prompt: "Reply with the number for details!"
 
 Message Format Example:
-"🌾 Fresh produce available:
+"🛒 I can help with:
 
-1️⃣ Irish Potatoes
-   💰 400 RWF/kg • 📦 500kg available
-   📍 Musanze • Farmer: Jean
+1️⃣ 🔍 Find Products
+   Search for items you need
 
-2️⃣ Sweet Corn
-   💰 600 RWF/kg • 📦 200kg available
-   📍 Ruhengeri • Farmer: Marie
+2️⃣ 💰 Sell Something
+   List your products for sale
 
-3️⃣ Tomatoes
-   💰 800 RWF/kg • 📦 300kg available
-   📍 Kigali • Farmer: Patrick
+3️⃣ 🏪 Find Businesses
+   Discover nearby shops and services
 
-Reply with 1, 2, or 3 to contact the farmer!"
+4️⃣ 💼 Business Opportunities
+   Buy or sell a business
+
+Reply with 1, 2, 3, or 4 to get started!"
+
+GUARDRAILS:
+- No medical advice beyond finding a pharmacy
+- Currency: RWF only (Rwandan Franc)
+- Location: Rwanda only
+- Protect user privacy and confidentiality
+- Sensitive topics require handoff to staff
 
 Available tools:
-- list_produce: Create produce listing
-- search_produce: Find available produce
-- get_market_prices: Check current prices
-- contact_seller: Connect with farmer`,
+- search_products: Find products in marketplace
+- inventory_check: Check product availability
+- create_listing: Create product/business listing
+- search_businesses: Find nearby businesses
+- maps_geocode: Convert address to coordinates
+- business_details: Get full business information
+- contact_seller: Generate WhatsApp link to seller
+- order_create: Create product order
+- order_status_update: Update order status`,
     temperature: 0.6,
     maxTokens: 600,
     enabledTools: [
-      "list_produce",
-      "search_produce",
-      "get_market_prices",
+      "search_products",
+      "inventory_check",
+      "create_listing",
+      "search_businesses",
+      "maps_geocode",
+      "business_details",
       "contact_seller",
+      "order_create",
+      "order_status_update",
     ],
-    priority: 2,
+    priority: 1,
     triggers: [
-      "farm",
-      "produce",
-      "crop",
-      "harvest",
-      "agriculture",
-      "farmer",
-      "potatoes",
-      "tomatoes",
-      "beans",
-      "maize",
+      "buy",
+      "sell",
+      "product",
+      "shop",
+      "store",
+      "purchase",
+      "selling",
+      "buying",
+      "market",
+      "item",
+      "goods",
+      "trade",
+      "merchant",
+      "pharmacy",
+      "medicine",
+      "drug",
+      "quincaillerie",
+      "hardware",
+      "grocery",
+      "order",
+      "business",
+      "service",
+      "company",
+      "enterprise",
+      "startup",
+      "venture",
+      "broker",
+      "investment",
+      "partner",
+      "opportunity",
     ],
   },
 
-  // 2. Sales/Marketing Cold Caller Agent
-  {
-    id: "sales-cold-caller-agent-01",
-    type: "sales_cold_caller",
-    name: "Sales/Marketing Cold Caller AI Agent",
-    systemPrompt: `You are a sales and marketing assistant for EasyMO.
-
-Your responsibilities:
+];
 - Qualify leads and gather business needs
 - Help create marketing campaigns
 - Track campaign performance
