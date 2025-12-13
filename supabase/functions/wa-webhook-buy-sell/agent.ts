@@ -38,6 +38,21 @@ import { BUSINESS_CATEGORIES } from "../_shared/agents/buy-and-sell.ts";
 const AI_TEMPERATURE = parseFloat(Deno.env.get("MARKETPLACE_AI_TEMPERATURE") || "0.7");
 const AI_MAX_TOKENS = parseInt(Deno.env.get("MARKETPLACE_AI_MAX_TOKENS") || "1024", 10);
 
+// Welcome message for new/first-time users
+export const WELCOME_MESSAGE = `👋 Welcome to EasyMO Buy & Sell!
+
+I'm your AI assistant - I can help you:
+🔍 Find products, services, or businesses near you
+🏪 Connect you with verified vendors
+💰 Help you sell items or list your business
+
+Just tell me what you're looking for! For example:
+• "I need a laptop under 400,000 RWF"
+• "Find a pharmacy near Remera"
+• "I want to sell my phone"
+
+What can I help you with today?`;
+
 // =====================================================
 // BUSINESS CATEGORIES
 // =====================================================
@@ -486,39 +501,22 @@ export class MarketplaceAgent {
         correlationId: this.correlationId,
       });
 
-      // Fallback if no AI configured - show category list immediately
+      // Fallback if no AI configured - show welcome message
       if (!this.aiProvider) {
-        const { showBuySellCategories } = await import("./show_categories.ts");
+        logStructuredEvent(
+          "MARKETPLACE_AGENT_NO_AI_PROVIDER",
+          {
+            phone: context.phone.slice(-4),
+            correlationId: this.correlationId,
+          },
+          "warn",
+        );
         
-        try {
-          // Detect user country from phone number
-          const countryCode = context.phone.slice(0, 3); // First 3 digits
-          const countryMap: Record<string, string> = {
-            "250": "RW", "257": "BI", "255": "TZ", 
-            "243": "CD", "260": "ZM", "228": "TG", "356": "MT"
-          };
-          const userCountry = countryMap[countryCode] || "RW";
-          
-          // Send interactive list to user
-          await showBuySellCategories(context.phone, userCountry);
-          
-          // Important: We already sent the list, so throw to prevent sending empty text
-          throw new Error("INTERACTIVE_LIST_SENT");
-        } catch (error) {
-          // If we successfully sent the list, rethrow to skip text response
-          if (error instanceof Error && error.message === "INTERACTIVE_LIST_SENT") {
-            throw error;
-          }
-          
-          // If sending list fails, return fallback with proper message
-          return {
-            message: "🛒 *Buy & Sell*\n\n" +
-                     "Welcome! We're setting up your shopping experience.\n\n" +
-                     "Please try again in a moment.",
-            action: "continue",
-            flowComplete: false,
-          };
-        }
+        return {
+          message: WELCOME_MESSAGE,
+          action: "continue",
+          flowComplete: false,
+        };
       }
 
       const systemPrompt = await this.getSystemPrompt();
@@ -627,12 +625,6 @@ export class MarketplaceAgent {
       return agentResponse;
     } catch (error) {
       const duration = Date.now() - startTime;
-      
-      // INTERACTIVE_LIST_SENT is not an error - it's intentional flow control
-      // Just re-throw it to skip text response
-      if (error instanceof Error && error.message === "INTERACTIVE_LIST_SENT") {
-        throw error;
-      }
       
       logStructuredEvent(
         "MARKETPLACE_AGENT_PROCESS_ERROR",
