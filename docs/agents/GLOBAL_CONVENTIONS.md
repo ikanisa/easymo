@@ -1,8 +1,8 @@
 # EasyMO Platform - Global Conventions & Specifications
 
-**Version**: 1.0  
-**Last Updated**: 2025-11-12  
-**Status**: Reference Implementation
+**Version**: 2.0  
+**Last Updated**: 2025-12-13  
+**Status**: Reference Implementation (Rwanda Only)
 
 ---
 
@@ -252,10 +252,13 @@ async function processAction(agent: Agent, action: Action, amount?: number): Pro
 
 - en (English) - Default UI
 - fr (French) - UI and comprehension
-- rw (Kinyarwanda) - Comprehension support
+- rw (Kinyarwanda) - Comprehension support ONLY (NO UI translation)
+
+⚠️ **CRITICAL**: Kinyarwanda (rw) is supported for comprehension but MUST NOT be used for UI translation. See README.md for details.
 
 ```yaml
-languages: [en, fr, rw]
+languages: [en, fr]  # UI languages only
+comprehension_languages: [en, fr, rw]  # Includes Kinyarwanda for understanding
 ```
 
 **Implementation**:
@@ -264,38 +267,48 @@ languages: [en, fr, rw]
 // Detect user language from message
 const detectedLanguage = await detectLanguage(message);
 
+// Map to UI language (block Kinyarwanda UI)
+const uiLanguage = detectedLanguage === 'rw' ? 'en' : detectedLanguage;
+
 // Set conversation locale
 await supabase
   .from("conversations")
   .update({
-    locale: detectedLanguage,
-    country_pack_id: countryPackId,
+    locale: uiLanguage,  // Use mapped UI language
+    comprehension_locale: detectedLanguage,  // Track original language
+    country_pack_id: 'RW',
   })
   .eq("id", conversationId);
 ```
 
 ### Market Countries
 
-**Scope**: Rwanda only (RW)
+**Scope**: **Rwanda ONLY (RW)**
 
-**Explicit Exclusions**: All countries except Rwanda (including UG, KE, NG, ZA, MT)
+**Explicit Exclusions**: ALL countries except Rwanda (RW) have been removed as of 2025-12-13:
+- ~~UG~~ (Uganda) - Removed
+- ~~KE~~ (Kenya) - Removed
+- ~~BI~~ (Burundi) - Removed
+- ~~TZ~~ (Tanzania) - Removed
+- ~~CD~~ (Congo) - Removed
+- ~~MT~~ (Malta) - Removed
+- ~~NG, ZA, etc.~~ - Never supported
 
 ```sql
--- Enforce at org onboarding
-CREATE POLICY "org_must_have_allowed_country" ON organizations
+-- Enforce Rwanda-only at org onboarding
+CREATE POLICY "org_must_be_rwanda" ON organizations
   FOR INSERT
   WITH CHECK (
-    country_code NOT IN ('UG', 'KE', 'NG', 'ZA')
-    AND country_code IN (SELECT code FROM market_countries WHERE enabled = true)
+    country_code = 'RW'
   );
 ```
 
 ```typescript
-// Runtime check
-const allowedCountries = await supabase.from("market_countries").select("code").eq("enabled", true);
+// Runtime check - Rwanda only
+const SUPPORTED_COUNTRY = 'RW';
 
-if (!allowedCountries.data?.some((c) => c.code === orgCountry)) {
-  throw new Error("Organization country not in allowed markets");
+if (orgCountry !== SUPPORTED_COUNTRY) {
+  throw new Error(`Organization country must be Rwanda (RW). Got: ${orgCountry}`);
 }
 ```
 

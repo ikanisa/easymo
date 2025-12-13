@@ -59,9 +59,13 @@ EasyMO is a WhatsApp-first platform focused on the Rwanda market with the follow
 
 - **RWF (Rwandan Franc)** - Only supported currency
 
-### AI Agent
+### AI Agents
 
-- **Buy & Sell Agent** - The platform uses a single AI agent that handles marketplace transactions, business discovery, and general support queries
+EasyMO uses **one primary AI agent** for natural language interactions:
+
+- **Buy & Sell Agent** - Handles marketplace transactions, business discovery, product search, vendor matching, and general support queries via natural language conversation
+
+**Note:** Mobility and Insurance services use workflow-based (button-driven) interactions, not AI agents.
 
 ---
 

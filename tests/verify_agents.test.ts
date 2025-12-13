@@ -1,20 +1,17 @@
 
 import { describe, it, expect } from 'vitest';
-import { WaiterAgent } from '../packages/agents/src/agents/waiter/waiter.agent';
-import { FarmerAgent } from '../packages/agents/src/agents/farmer/farmer.agent';
-import { BusinessBrokerAgent } from '../packages/agents/src/agents/general/business-broker.agent';
-import { RealEstateAgent } from '../packages/agents/src/agents/property/real-estate.agent';
-import { JobsAgent } from '../packages/agents/src/agents/jobs/jobs.agent';
-import { SalesAgent } from '../packages/agents/src/agents/sales/sales.agent';
+import { BuyAndSellAgent } from '../packages/agents/src/agents/commerce/buy-and-sell.agent';
 
+/**
+ * Agent Verification Tests - Rwanda-Only
+ * 
+ * After refactoring, only BuyAndSellAgent remains active.
+ * Deprecated agents removed: WaiterAgent, FarmerAgent, JobsAgent, 
+ * RealEstateAgent, SalesAgent, BusinessBrokerAgent
+ */
 describe('Agent Verification', () => {
   const agents = [
-    new WaiterAgent(),
-    new FarmerAgent(),
-    new BusinessBrokerAgent(),
-    new RealEstateAgent(),
-    new JobsAgent(),
-    new SalesAgent()
+    new BuyAndSellAgent()
   ];
 
   agents.forEach(agent => {
@@ -27,15 +24,10 @@ describe('Agent Verification', () => {
 
       try {
         const context: any = { userId: 'test-user' };
-        if (agent.name === 'farmer_agent') {
-            context.metadata = {
-                params: { marketCode: 'sn-dakar', commodity: 'cassava', variety: 'bonoua_white', quantity: 50, city: 'Dakar' }
-            };
-        }
 
         const result = await agent.execute({
             userId: 'test-user',
-            query: 'Hello',
+            query: 'I need to find a hardware store',
             context
         });
         expect(result.success).toBe(true);
