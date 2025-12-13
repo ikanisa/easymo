@@ -697,7 +697,7 @@ export async function startScheduleSavedLocationPicker(
   if (!ctx.profileId) return false;
   const favorites = await listFavorites(ctx);
   await setState(ctx.supabase, ctx.profileId, {
-    key: "location_saved_picker",
+    key: "mobility_location_saved_picker",
     data: {
       source: "schedule",
       stage,

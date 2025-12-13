@@ -455,9 +455,20 @@ serve(async (req: Request): Promise<Response> => {
           handled = await handleRecentSearchSelection(ctx, id);
         } else if (
           id === "USE_CURRENT_LOCATION" &&
-          state?.key === STATE_KEYS.MOBILITY.LOCATION_SAVED_PICKER
+          state?.key === STATE_KEYS.MOBILITY.LOCATION_SAVED_PICKER &&
+          state.data?.source === "nearby"
         ) {
           handled = await handleNearbySavedLocationSelection(
+            ctx,
+            state.data as any,
+            id,
+          );
+        } else if (
+          id === "USE_CURRENT_LOCATION" &&
+          state?.key === STATE_KEYS.MOBILITY.LOCATION_SAVED_PICKER &&
+          state.data?.source === "schedule"
+        ) {
+          handled = await handleScheduleSavedLocationSelection(
             ctx,
             state.data as any,
             id,

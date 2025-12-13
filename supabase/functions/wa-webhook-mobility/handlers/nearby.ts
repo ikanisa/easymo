@@ -15,7 +15,7 @@ import { waChatLink } from "../utils/links.ts";
 import { maskPhone } from "../flows/support.ts";
 import { logStructuredEvent } from "../observe/log.ts";
 import { emitAlert } from "../observe/alert.ts";
-import { timeAgo, safeRowTitle } from "../utils/text.ts";
+import { safeRowTitle, timeAgo } from "../utils/text.ts";
 import { sendText } from "../wa/client.ts";
 import {
   buildButtons,
@@ -30,7 +30,10 @@ import {
   updateStoredVehicleType,
 } from "./vehicle_plate.ts";
 import { getRecentNearbyIntent, storeNearbyIntent } from "./intent_cache.ts";
-import { saveIntent, getRecentIntents } from "../../_shared/wa-webhook-shared/domains/intent_storage.ts";
+import {
+  getRecentIntents,
+  saveIntent,
+} from "../../_shared/wa-webhook-shared/domains/intent_storage.ts";
 import { isFeatureEnabled } from "../../_shared/feature-flags.ts";
 import { routeToAIAgent, sendAgentOptions } from "../ai-agents/index.ts";
 import { reverseGeocode } from "../../_shared/wa-webhook-shared/locations/geocoding.ts";
@@ -43,10 +46,10 @@ import { buildSaveRows } from "../locations/save.ts";
 import { checkLocationCache } from "./location_cache.ts";
 import { readLastLocation } from "../locations/favorites.ts";
 import { sortMatches } from "../../_shared/wa-webhook-shared/utils/sortMatches.ts";
-import { 
+import {
   getCachedLocation,
-  hasAnyRecentLocation,
   getLastLocation,
+  hasAnyRecentLocation,
 } from "../locations/cache.ts";
 import { saveUserLocation } from "../locations/save_location.ts";
 
@@ -131,7 +134,7 @@ export type NearbySavedPickerState = {
 };
 
 function getMatchTimestamp(match: MatchResult): string | null {
-  return match.created_at ?? null;  // Simplified: matched_at removed
+  return match.created_at ?? null; // Simplified: matched_at removed
 }
 
 function timestampMs(match: MatchResult): number {
@@ -180,10 +183,10 @@ function buildNearbyRow(
   state: NearbyStateRow;
 } {
   const distanceLabel = toDistanceLabel(match.distance_km);
-  
+
   // Use created_at for "listed time" (when trip was created)
   const listedTime = timeAgo(match.created_at ?? new Date().toISOString());
-  
+
   // Build title based on role
   let title: string;
   if (match.role === "driver") {
@@ -192,19 +195,20 @@ function buildNearbyRow(
   } else {
     // For passengers: show eclipsed phone number
     const eclipsed = eclipsePhone(match.phone ?? "");
-    title = eclipsed || match.ref_code || `Passenger ${match.trip_id.slice(0, 8)}`;
+    title = eclipsed || match.ref_code ||
+      `Passenger ${match.trip_id.slice(0, 8)}`;
   }
-  
+
   // Ensure title is safe for WhatsApp
   title = safeRowTitle(title.trim());
-  
+
   // Build description: Distance • Listed time
   const descriptionParts: string[] = [];
   if (distanceLabel) {
     descriptionParts.push(distanceLabel);
   }
   descriptionParts.push(`Listed ${listedTime}`);
-  
+
   const rowId = `MTCH::${match.trip_id}`;
   return {
     row: {
@@ -214,7 +218,7 @@ function buildNearbyRow(
     },
     state: {
       id: rowId,
-      whatsapp: match.phone ?? "",  // Simplified: direct phone field
+      whatsapp: match.phone ?? "", // Simplified: direct phone field
       ref: match.ref_code ?? "---",
       tripId: match.trip_id,
     },
@@ -234,18 +238,18 @@ export async function handleSeeDrivers(ctx: RouterContext): Promise<boolean> {
     await sendButtonsMessage(
       ctx,
       t(ctx.locale, "payment.reminder.pending", { amount: formattedAmount }),
-      homeOnly()
+      homeOnly(),
     );
     return true;
   }
-  
+
   // 1. Standard workflow: always ask for vehicle selection
   // This provides a clean, predictable user experience
   await setState(ctx.supabase, ctx.profileId, {
     key: "mobility_nearby_select",
     data: { mode: "drivers" },
   });
-  
+
   await sendVehicleSelector(ctx, "drivers");
   return true;
 }
@@ -289,7 +293,10 @@ export async function handleRecentSearchSelection(
   const vehicle = "veh_moto"; // Default, will be refined later
 
   // Execute search with these coordinates
-  return await handleNearbyLocation(ctx, { mode: mode as any, vehicle }, { lat, lng });
+  return await handleNearbyLocation(ctx, { mode: mode as any, vehicle }, {
+    lat,
+    lng,
+  });
 }
 
 export async function handleSeePassengers(
@@ -311,7 +318,10 @@ export async function handleSeePassengers(
       key: "mobility_nearby_location",
       data: { mode: "passengers", vehicle: storedVehicle },
     });
-    await promptShareLocation(ctx, { mode: "passengers", vehicle: storedVehicle }, {
+    await promptShareLocation(ctx, {
+      mode: "passengers",
+      vehicle: storedVehicle,
+    }, {
       allowVehicleChange: true,
     });
     return true;
@@ -336,7 +346,7 @@ export async function handleVehicleSelection(
   if (state.mode === "passengers") {
     await updateStoredVehicleType(ctx.supabase, ctx.profileId, vehicleType);
   }
-  
+
   // Check cache first (30 min TTL)
   const cached = await getCachedLocation(ctx.supabase, ctx.profileId);
   if (cached && cached.isValid) {
@@ -345,9 +355,12 @@ export async function handleVehicleSelection(
       key: "mobility_nearby_location",
       data: { mode: state.mode, vehicle: vehicleType },
     });
-    return await handleNearbyLocation(ctx, { mode: state.mode, vehicle: vehicleType }, { lat: cached.lat, lng: cached.lng });
+    return await handleNearbyLocation(ctx, {
+      mode: state.mode,
+      vehicle: vehicleType,
+    }, { lat: cached.lat, lng: cached.lng });
   }
-  
+
   // Cache expired or doesn't exist - prompt with "Use Last Location" button
   await setState(ctx.supabase, ctx.profileId, {
     key: "mobility_nearby_location",
@@ -363,28 +376,67 @@ export async function handleNearbyRecent(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
   try {
     // Prefer last drivers intent; fallback to passengers
-    const drivers = await getRecentNearbyIntent(ctx.supabase, ctx.profileId, 'drivers');
-    const passengers = await getRecentNearbyIntent(ctx.supabase, ctx.profileId, 'passengers');
+    const drivers = await getRecentNearbyIntent(
+      ctx.supabase,
+      ctx.profileId,
+      "drivers",
+    );
+    const passengers = await getRecentNearbyIntent(
+      ctx.supabase,
+      ctx.profileId,
+      "passengers",
+    );
     const pick = drivers || passengers;
     if (!pick) {
-      await sendButtonsMessage(ctx, t(ctx.locale, 'mobility.nearby.no_recent_search'), buildButtons(
-        { id: IDS.SEE_DRIVERS, title: t(ctx.locale, 'mobility.nearby.buttons.drivers') },
-        { id: IDS.SEE_PASSENGERS, title: t(ctx.locale, 'mobility.nearby.buttons.passengers') },
-      ));
+      await sendButtonsMessage(
+        ctx,
+        t(ctx.locale, "mobility.nearby.no_recent_search"),
+        buildButtons(
+          {
+            id: IDS.SEE_DRIVERS,
+            title: t(ctx.locale, "mobility.nearby.buttons.drivers"),
+          },
+          {
+            id: IDS.SEE_PASSENGERS,
+            title: t(ctx.locale, "mobility.nearby.buttons.passengers"),
+          },
+        ),
+      );
       return true;
     }
-    const mode = drivers ? 'drivers' : 'passengers';
-    const vehicle = pick.vehicle || 'veh_moto';
+    const mode = drivers ? "drivers" : "passengers";
+    const vehicle = pick.vehicle || "veh_moto";
     const coords = { lat: pick.lat, lng: pick.lng };
-    if (mode === 'drivers') {
-      await setState(ctx.supabase, ctx.profileId, { key: 'mobility_nearby_location', data: { mode, vehicle, pickup: coords } });
+    if (mode === "drivers") {
+      await setState(ctx.supabase, ctx.profileId, {
+        key: "mobility_nearby_location",
+        data: { mode, vehicle, pickup: coords },
+      });
     } else {
-      await setState(ctx.supabase, ctx.profileId, { key: 'mobility_nearby_location', data: { mode, vehicle } });
+      await setState(ctx.supabase, ctx.profileId, {
+        key: "mobility_nearby_location",
+        data: { mode, vehicle },
+      });
     }
-    return await handleNearbyLocation(ctx, { mode: mode as any, vehicle }, coords);
+    return await handleNearbyLocation(
+      ctx,
+      { mode: mode as any, vehicle },
+      coords,
+    );
   } catch (e) {
-    await sendButtonsMessage(ctx, t(ctx.locale, 'mobility.nearby.recent_load_error'), buildButtons({ id: IDS.BACK_MENU, title: t(ctx.locale, 'common.buttons.back') }));
-    await sendButtonsMessage(ctx, t(ctx.locale, "mobility.nearby.recent_load_error"), buildButtons({ id: IDS.BACK_MENU, title: 'Back' }));
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "mobility.nearby.recent_load_error"),
+      buildButtons({
+        id: IDS.BACK_MENU,
+        title: t(ctx.locale, "common.buttons.back"),
+      }),
+    );
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "mobility.nearby.recent_load_error"),
+      buildButtons({ id: IDS.BACK_MENU, title: "Back" }),
+    );
     return true;
   }
 }
@@ -430,7 +482,7 @@ export async function handleNearbyLocation(
   }
 
   // Save location to cache and history
-  await saveUserLocation(ctx, coords, 'mobility');
+  await saveUserLocation(ctx, coords, "mobility");
 
   try {
     await storeNearbyIntent(ctx.supabase, ctx.profileId, state.mode, {
@@ -442,7 +494,7 @@ export async function handleNearbyLocation(
     await logStructuredEvent("NEARBY_CACHE_WRITE_FAILED", {
       userId: ctx.profileId,
       error: error instanceof Error ? error.message : String(error),
-    }});
+    });
   }
 
   // DIRECT DATABASE MATCHING: Simple workflow for Phase 1
@@ -450,8 +502,6 @@ export async function handleNearbyLocation(
   // Note: AI agent integration planned for Phase 2
   return await runMatchingFallback(ctx, updatedState, pickup);
 }
-
-
 
 export async function handleNearbyResultSelection(
   ctx: RouterContext,
@@ -466,12 +516,17 @@ export async function handleNearbyResultSelection(
 
   // Extract the actual trip ID from the list row identifier (e.g., "MTCH::uuid" -> "uuid")
   const matchId = id.startsWith("MTCH::") ? id.replace("MTCH::", "") : id;
-  
+
   // Find the selected match from stored rows using matchId or tripId
-  const cachedMatch = state.rows.find((row) => row.id === matchId || row.tripId === matchId);
-  
+  const cachedMatch = state.rows.find((row) =>
+    row.id === matchId || row.tripId === matchId
+  );
+
   if (!cachedMatch) {
-    await sendText(ctx.from, t(ctx.locale, "mobility.nearby.match_unavailable"));
+    await sendText(
+      ctx.from,
+      t(ctx.locale, "mobility.nearby.match_unavailable"),
+    );
     await clearState(ctx.supabase, ctx.profileId);
     return true;
   }
@@ -489,8 +544,9 @@ export async function handleNearbyResultSelection(
     await sendText(
       ctx.from,
       t(ctx.locale, "mobility.nearby.match_expired", {
-        defaultValue: "⚠️ That match is no longer available. Please search again."
-      })
+        defaultValue:
+          "⚠️ That match is no longer available. Please search again.",
+      }),
     );
     await clearState(ctx.supabase, ctx.profileId);
     return true;
@@ -503,10 +559,14 @@ export async function handleNearbyResultSelection(
     .eq("user_id", trip.user_id)
     .maybeSingle();
 
-  const whatsapp = profile?.phone_number || profile?.wa_id || cachedMatch.whatsapp;
-  
+  const whatsapp = profile?.phone_number || profile?.wa_id ||
+    cachedMatch.whatsapp;
+
   if (!whatsapp) {
-    await sendText(ctx.from, t(ctx.locale, "mobility.nearby.match_unavailable"));
+    await sendText(
+      ctx.from,
+      t(ctx.locale, "mobility.nearby.match_unavailable"),
+    );
     await clearState(ctx.supabase, ctx.profileId);
     return true;
   }
@@ -519,37 +579,38 @@ export async function handleNearbyResultSelection(
   // When mode === "passengers", the user is a driver looking for passengers
   const isPassenger = state.mode === "drivers";
   const prefill = isPassenger
-    ? t(ctx.locale, "mobility.nearby.prefill.passenger", { 
-        ref: match.ref,
-        defaultValue: `Hi! I need a ride. Ref ${match.ref}` 
-      })
-    : t(ctx.locale, "mobility.nearby.prefill.driver", { 
-        ref: match.ref,
-        defaultValue: `Hi! I'm available for a ride. Ref ${match.ref}` 
-      });
-  
+    ? t(ctx.locale, "mobility.nearby.prefill.passenger", {
+      ref: match.ref,
+      defaultValue: `Hi! I need a ride. Ref ${match.ref}`,
+    })
+    : t(ctx.locale, "mobility.nearby.prefill.driver", {
+      ref: match.ref,
+      defaultValue: `Hi! I'm available for a ride. Ref ${match.ref}`,
+    });
+
   const link = waChatLink(match.whatsapp, prefill);
-  
+
   // Send clickable WhatsApp link to user
   await sendButtonsMessage(
     ctx,
-    t(ctx.locale, "mobility.nearby.chat_cta", { 
+    t(ctx.locale, "mobility.nearby.chat_cta", {
       link,
-      defaultValue: `✅ Contact them directly:\n\n${link}\n\nTap the link to start chatting on WhatsApp!`
+      defaultValue:
+        `✅ Contact them directly:\n\n${link}\n\nTap the link to start chatting on WhatsApp!`,
     }),
     [
       {
         id: IDS.NEARBY_RECENT,
         title: t(ctx.locale, "common.buttons.new_search", {
-          defaultValue: "New search"
+          defaultValue: "New search",
         }),
       },
     ],
   );
-  
+
   // Clear state
   await clearState(ctx.supabase, ctx.profileId);
-  
+
   // Log success
   await logStructuredEvent("MATCH_SELECTED", {
     mode: state.mode,
@@ -557,7 +618,7 @@ export async function handleNearbyResultSelection(
     matchId: match.tripId,
     via: "nearby_selection",
   });
-  
+
   return true;
 }
 
@@ -590,7 +651,7 @@ export async function startNearbySavedLocationPicker(
     ? "dropoff"
     : "pickup";
   await setState(ctx.supabase, ctx.profileId, {
-    key: "location_saved_picker",
+    key: "mobility_location_saved_picker",
     data: {
       source: "nearby",
       stage,
@@ -605,24 +666,28 @@ export async function startNearbySavedLocationPicker(
   const body = favorites.length
     ? baseBody
     : `${baseBody}\n\n${t(ctx.locale, "location.saved.list.empty")}`;
-  
+
   // Check for cached location (last 30 minutes)
   const rows: Array<{ id: string; title: string; description?: string }> = [];
   const lastLoc = await readLastLocation(ctx);
   if (lastLoc && lastLoc.capturedAt) {
     const capturedTime = new Date(lastLoc.capturedAt);
     const now = new Date();
-    const minutesAgo = Math.floor((now.getTime() - capturedTime.getTime()) / (1000 * 60));
-    
+    const minutesAgo = Math.floor(
+      (now.getTime() - capturedTime.getTime()) / (1000 * 60),
+    );
+
     if (minutesAgo <= 30) {
       rows.push({
         id: "USE_CURRENT_LOCATION",
         title: "📍 Current Location",
-        description: `Last updated ${minutesAgo} min${minutesAgo === 1 ? '' : 's'} ago`,
+        description: `Last updated ${minutesAgo} min${
+          minutesAgo === 1 ? "" : "s"
+        } ago`,
       });
     }
   }
-  
+
   rows.push(
     ...favorites.map((favorite) => favoriteToRow(ctx, favorite)),
     ...buildSaveRows(ctx),
@@ -632,7 +697,7 @@ export async function startNearbySavedLocationPicker(
       description: t(ctx.locale, "common.back_to_menu.description"),
     },
   );
-  
+
   await sendListMessage(
     ctx,
     {
@@ -653,7 +718,7 @@ export async function handleNearbySavedLocationSelection(
   selectionId: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
-  
+
   // Handle "Use Current Location"
   if (selectionId === "USE_CURRENT_LOCATION") {
     const lastLoc = await readLastLocation(ctx);
@@ -665,7 +730,7 @@ export async function handleNearbySavedLocationSelection(
       );
       return true;
     }
-    
+
     const restored: NearbyState = {
       mode: pickerState.snapshot.mode,
       vehicle: pickerState.snapshot.vehicle,
@@ -680,7 +745,7 @@ export async function handleNearbySavedLocationSelection(
       lng: lastLoc.lng,
     });
   }
-  
+
   const favoriteId = parseFavoriteRowId(selectionId);
   if (!favoriteId) return false;
   const favorite = await getFavoriteById(ctx, favoriteId);
@@ -763,7 +828,9 @@ async function showRecentSearches(
   if (!ctx.profileId) return false;
 
   try {
-    const intentType = state.mode === "drivers" ? "nearby_drivers" : "nearby_passengers";
+    const intentType = state.mode === "drivers"
+      ? "nearby_drivers"
+      : "nearby_passengers";
     const recentIntents = await getRecentIntents(
       ctx.supabase,
       ctx.profileId,
@@ -778,11 +845,15 @@ async function showRecentSearches(
     // Build list rows from recent intents with reverse geocoding
     const rows = await Promise.all(recentIntents.map(async (intent, i) => {
       const when = timeAgo(intent.created_at);
-      
+
       // Try to get human-readable address
       let locationText = "";
       try {
-        const geocoded = await reverseGeocode(intent.pickup_lat, intent.pickup_lng, { timeout: 2000 });
+        const geocoded = await reverseGeocode(
+          intent.pickup_lat,
+          intent.pickup_lng,
+          { timeout: 2000 },
+        );
         if (geocoded) {
           // Use short address (street name or area)
           locationText = geocoded.address || geocoded.city || "";
@@ -790,10 +861,10 @@ async function showRecentSearches(
       } catch (error) {
         // Geocoding failures are non-critical - continue with fallback text
       }
-      
+
       // Fallback to "Unknown location" if geocoding failed (never show coordinates!)
       const displayLocation = locationText || "Unknown location";
-      
+
       return {
         id: `RECENT_SEARCH::${i}::${intent.pickup_lat},${intent.pickup_lng}`,
         title: `📍 ${when}`,
@@ -805,8 +876,10 @@ async function showRecentSearches(
     // Users share location naturally via attachment menu
 
     await sendListMessage(ctx, {
-      title: t(ctx.locale, "mobility.nearby.recent_searches") || "Recent Searches",
-      body: t(ctx.locale, "mobility.nearby.recent_searches.body") || "Quick search from a recent location:",
+      title: t(ctx.locale, "mobility.nearby.recent_searches") ||
+        "Recent Searches",
+      body: t(ctx.locale, "mobility.nearby.recent_searches.body") ||
+        "Quick search from a recent location:",
       rows,
       buttonText: t(ctx.locale, "common.buttons.choose") || "Choose",
     });
@@ -816,7 +889,7 @@ async function showRecentSearches(
     await logStructuredEvent("RECENT_SEARCHES_LOAD_FAILED", {
       userId: ctx.profileId,
       error: error instanceof Error ? error.message : String(error),
-    }});
+    });
     return false; // Fall back to normal flow
   }
 }
@@ -827,35 +900,41 @@ async function promptShareLocation(
   options: { allowVehicleChange?: boolean } = {},
 ): Promise<void> {
   const buttons: ButtonSpec[] = [];
-  
+
   // Check if user has recent location for "Use Last Location" button
-  const hasRecent = ctx.profileId ? await hasAnyRecentLocation(ctx.supabase, ctx.profileId) : false;
-  
+  const hasRecent = ctx.profileId
+    ? await hasAnyRecentLocation(ctx.supabase, ctx.profileId)
+    : false;
+
   if (hasRecent) {
-    const { getUseLastLocationButton } = await import("../../_shared/wa-webhook-shared/locations/messages.ts");
+    const { getUseLastLocationButton } = await import(
+      "../../_shared/wa-webhook-shared/locations/messages.ts"
+    );
     const button = getUseLastLocationButton(ctx.locale);
     buttons.push({
       id: IDS.USE_LAST_LOCATION,
       title: button.title,
     });
   }
-  
+
   if (options.allowVehicleChange) {
     buttons.push({
       id: IDS.MOBILITY_CHANGE_VEHICLE,
       title: t(ctx.locale, "mobility.nearby.change_vehicle"),
     });
   }
-  
+
   buttons.push({
     id: IDS.LOCATION_SAVED_LIST,
     title: t(ctx.locale, "location.saved.button"),
   });
-  
+
   // Use standardized location sharing message
-  const { getShareLocationPrompt } = await import("../../_shared/wa-webhook-shared/locations/messages.ts");
+  const { getShareLocationPrompt } = await import(
+    "../../_shared/wa-webhook-shared/locations/messages.ts"
+  );
   const body = getShareLocationPrompt(ctx.locale, hasRecent);
-    
+
   try {
     await sendButtonsMessage(
       ctx,
@@ -917,7 +996,9 @@ async function runMatchingFallback(
     try {
       await saveIntent(ctx.supabase, {
         userId: ctx.profileId!,
-        intentType: state.mode === "drivers" ? "nearby_drivers" : "nearby_passengers",
+        intentType: state.mode === "drivers"
+          ? "nearby_drivers"
+          : "nearby_passengers",
         vehicleType: state.vehicle!,
         pickup,
         dropoff,
@@ -936,7 +1017,8 @@ async function runMatchingFallback(
     }
 
     // Use explicit window minutes from config
-    const TRIP_MATCHING_WINDOW_MINUTES = MOBILITY_CONFIG.TRIP_MATCHING_WINDOW_MINUTES;
+    const TRIP_MATCHING_WINDOW_MINUTES =
+      MOBILITY_CONFIG.TRIP_MATCHING_WINDOW_MINUTES;
 
     // Log RPC call parameters for debugging
     await logStructuredEvent("MATCHES_CALL", {
@@ -951,7 +1033,9 @@ async function runMatchingFallback(
       prefer_dropoff: Boolean(dropoff),
       max_results: max,
       wa_id: maskPhone(ctx.from),
-      rpc_function: state.mode === "drivers" ? "match_drivers_for_trip_v2" : "match_passengers_for_trip_v2",
+      rpc_function: state.mode === "drivers"
+        ? "match_drivers_for_trip_v2"
+        : "match_passengers_for_trip_v2",
     });
 
     const matches: MatchResult[] = state.mode === "drivers"
@@ -981,9 +1065,9 @@ async function runMatchingFallback(
       searchedFor: state.mode, // "drivers" or "passengers"
       myRole: role, // opposite of mode
       // Include first 3 match IDs for debugging (if any)
-      matchIds: matches.slice(0, 3).map(m => m.trip_id),
-      matchDistances: matches.slice(0, 3).map(m => m.distance_km),
-      matchAges: matches.slice(0, 3).map(m => m.location_age_minutes),
+      matchIds: matches.slice(0, 3).map((m) => m.trip_id),
+      matchDistances: matches.slice(0, 3).map((m) => m.distance_km),
+      matchAges: matches.slice(0, 3).map((m) => m.location_age_minutes),
     });
 
     // Per requirement: Never send fallback error messages
@@ -1000,18 +1084,19 @@ async function runMatchingFallback(
         windowMinutes: 30,
         possibleCauses: [
           "No active trips in area",
-          "Vehicle type mismatch", 
+          "Vehicle type mismatch",
           "Trips expired (>30 min)",
           "Trips outside radius",
         ],
-        hint: "Check mobility_trips table for open trips with role=driver/passenger",
+        hint:
+          "Check mobility_trips table for open trips with role=driver/passenger",
       });
-      
+
       // Use specific message based on what user was searching for
-      const messageKey = state.mode === "drivers" 
-        ? "mobility.nearby.empty_results.drivers"  // User searched for drivers
-        : "mobility.nearby.empty_results.passengers";  // User searched for passengers
-      
+      const messageKey = state.mode === "drivers"
+        ? "mobility.nearby.empty_results.drivers" // User searched for drivers
+        : "mobility.nearby.empty_results.passengers"; // User searched for passengers
+
       await sendButtonsMessage(
         ctx,
         t(ctx.locale, messageKey),
@@ -1029,9 +1114,9 @@ async function runMatchingFallback(
         .select("full_name, whatsapp_number")
         .eq("user_id", ctx.profileId!)
         .single();
-        
+
       const passengerName = passenger?.full_name ?? "A passenger";
-      
+
       // SIMPLIFIED: Notifications disabled - trip_notifications table dropped
       // Users will see matches in the list and can contact directly via WhatsApp
       // This simplifies the system and removes complex notification logic
@@ -1080,13 +1165,17 @@ async function runMatchingFallback(
       mode: state.mode,
       vehicle: state.vehicle,
       wa_id: maskPhone(ctx.from),
-      error: error instanceof Error ? error.message : String(error ?? "unknown"),
-    }});
+      error: error instanceof Error
+        ? error.message
+        : String(error ?? "unknown"),
+    });
     await emitAlert("MATCHES_ERROR", {
       flow: "nearby",
       mode: state.mode,
       vehicle: state.vehicle,
-      error: error instanceof Error ? error.message : String(error ?? "unknown"),
+      error: error instanceof Error
+        ? error.message
+        : String(error ?? "unknown"),
     });
     await sendButtonsMessage(
       ctx,
