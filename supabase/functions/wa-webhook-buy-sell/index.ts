@@ -478,8 +478,8 @@ serve(async (req: Request): Promise<Response> => {
 
     // === AI AGENT PROCESSING ===
     
-    // Check if this is a first-time user or new session (no conversation history)
-    const context: BuyAndSellContext = await MarketplaceAgent.loadContext(userPhone, supabase);
+    // Load context once for this request
+    let context: BuyAndSellContext = await MarketplaceAgent.loadContext(userPhone, supabase);
     const isNewSession = !context.conversationHistory || context.conversationHistory.length === 0;
     
     // Home/menu/reset commands → show welcome message and reset context
@@ -519,7 +519,7 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
     
-    // Process message with AI agent
+    // Process message with AI agent (passing the pre-loaded context)
     const agent = new MarketplaceAgent(supabase, correlationId);
     const response = await agent.process(text, context);
     

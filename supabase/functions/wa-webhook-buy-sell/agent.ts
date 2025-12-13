@@ -47,7 +47,7 @@ I'm your AI assistant - I can help you:
 💰 Help you sell items or list your business
 
 Just tell me what you're looking for! For example:
-• "I need a laptop under 400k"
+• "I need a laptop under 400,000 RWF"
 • "Find a pharmacy near Remera"
 • "I want to sell my phone"
 
