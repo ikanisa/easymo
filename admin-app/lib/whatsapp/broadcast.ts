@@ -6,6 +6,8 @@
  * @see supabase/functions/whatsapp-broadcast
  */
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 export interface BusinessContact {
   businessName: string;
   businessPhone: string;
@@ -100,7 +102,7 @@ export async function sendWhatsAppBroadcast(
  */
 export async function getBroadcastStatus(
   requestId: string,
-  supabase: any
+  supabase: SupabaseClient
 ): Promise<{
   status: string;
   sentCount: number;
@@ -130,13 +132,19 @@ export async function getBroadcastStatus(
       .eq("broadcast_id", broadcast.id)
       .order("created_at", { ascending: false });
 
-    const sentCount = targets?.filter((t: any) => t.status === "sent" || t.status === "delivered").length || 0;
+    interface BroadcastTarget {
+      business_name: string;
+      status: string;
+      created_at: string;
+    }
+
+    const sentCount = (targets as BroadcastTarget[] | null)?.filter(t => t.status === "sent" || t.status === "delivered").length || 0;
 
     return {
-      status: broadcast.status,
+      status: broadcast.status as string,
       sentCount,
       totalTargets: targets?.length || 0,
-      targets: targets?.map((t: any) => ({
+      targets: (targets as BroadcastTarget[] | null)?.map(t => ({
         businessName: t.business_name,
         status: t.status,
         createdAt: t.created_at
@@ -157,7 +165,7 @@ export async function getBroadcastStatus(
  */
 export async function getVendorReplies(
   requestId: string,
-  supabase: any
+  supabase: SupabaseClient
 ): Promise<Array<{
   businessPhone: string;
   action: string | null;
@@ -187,7 +195,12 @@ export async function getVendorReplies(
       return [];
     }
 
-    const phoneNumbers = targets.map((t: any) => t.business_phone);
+    interface BroadcastTargetPhone {
+      id: string;
+      business_phone: string;
+    }
+
+    const phoneNumbers = (targets as BroadcastTargetPhone[]).map(t => t.business_phone);
 
     // Get replies
     const { data: replies } = await supabase
@@ -196,7 +209,15 @@ export async function getVendorReplies(
       .in("business_phone", phoneNumbers)
       .order("created_at", { ascending: false });
 
-    return replies?.map((r: any) => ({
+    interface VendorReply {
+      business_phone: string;
+      action: string | null;
+      has_stock: boolean | null;
+      raw_body: string;
+      created_at: string;
+    }
+
+    return (replies as VendorReply[] | null)?.map(r => ({
       businessPhone: r.business_phone,
       action: r.action,
       hasStock: r.has_stock,
