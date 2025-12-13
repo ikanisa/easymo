@@ -56,13 +56,13 @@ serve(async (req: Request): Promise<Response> => {
   // Health check
   if (url.pathname === "/health" || url.pathname.endsWith("/health")) {
     try {
-      // Probe a guaranteed table to avoid false negatives during schema rollout
-      const { error } = await supabase.from("profiles").select("user_id").limit(1);
+      // Probe users table to verify database connectivity
+      const { error } = await supabase.from("users").select("id").limit(1);
       return respond({
         status: error ? "unhealthy" : "healthy",
         service: SERVICE_NAME,
         timestamp: new Date().toISOString(),
-        checks: { database: error ? "disconnected" : "connected", table: "profiles" },
+        checks: { database: error ? "disconnected" : "connected", table: "users" },
         version: SERVICE_VERSION,
       }, { status: error ? 503 : 200 });
     } catch (err) {
