@@ -88,6 +88,13 @@ BEGIN
     ALTER TABLE public.trips ADD COLUMN role TEXT NOT NULL CHECK (role IN ('driver', 'passenger'));
   END IF;
 
+  -- VEHICLE COLUMN STRATEGY:
+  -- - Existing code uses `vehicle_type` column (already in database)
+  -- - Simplified schema prefers `vehicle` (cleaner name)
+  -- - For backward compatibility, we create `vehicle` as a generated alias of `vehicle_type`
+  -- - Functions use COALESCE(vehicle, vehicle_type) to work with both
+  -- - Future migrations can consolidate to single `vehicle` column
+  
   -- Ensure vehicle column (using vehicle_type if it exists, or add vehicle)
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns 
@@ -99,7 +106,7 @@ BEGIN
     ALTER TABLE public.trips ADD COLUMN vehicle TEXT NOT NULL CHECK (vehicle IN ('moto', 'car'));
   END IF;
 
-  -- Add alias for vehicle_type -> vehicle if needed
+  -- Add alias for vehicle_type -> vehicle if needed (for backward compatibility)
   IF EXISTS (
     SELECT 1 FROM information_schema.columns 
     WHERE table_schema = 'public' AND table_name = 'trips' AND column_name = 'vehicle_type'
@@ -108,6 +115,7 @@ BEGIN
     WHERE table_schema = 'public' AND table_name = 'trips' AND column_name = 'vehicle'
   ) THEN
     -- Create a generated column that aliases vehicle_type
+    -- This allows new code to use `vehicle` while old code still uses `vehicle_type`
     ALTER TABLE public.trips ADD COLUMN vehicle TEXT GENERATED ALWAYS AS (vehicle_type) STORED;
   END IF;
 END $$;
@@ -274,6 +282,7 @@ BEGIN
     COALESCE(t.phone, p.phone_number, p.wa_id) AS phone,
     COALESCE(t.metadata->>'ref_code', SUBSTRING(t.id::text, 1, 8)) AS ref_code,
     t.role,
+    -- COALESCE for backward compatibility: vehicle (new) or vehicle_type (existing)
     COALESCE(t.vehicle, t.vehicle_type) AS vehicle,
     -- Haversine distance calculation (simple, no PostGIS needed)
     ROUND(
@@ -313,7 +322,7 @@ BEGIN
       )
     ) <= 10
   ORDER BY 
-    -- Prefer same vehicle type
+    -- Prefer same vehicle type (COALESCE for backward compatibility)
     (COALESCE(t.vehicle, t.vehicle_type) = v_vehicle) DESC,
     -- Then by distance
     (

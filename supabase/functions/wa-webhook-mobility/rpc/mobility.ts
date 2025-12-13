@@ -73,11 +73,13 @@ export async function insertTrip(
     : null;
 
   // Use simplified create_trip RPC function
+  // NOTE: _vehicle parameter accepts vehicleType value (e.g., 'moto', 'car')
+  // which is stored in the vehicle_type column for backward compatibility
   const { data, error } = await client.rpc("create_trip", {
     _user_id: params.userId,
     _phone: phone,
     _role: params.role,
-    _vehicle: params.vehicleType,
+    _vehicle: params.vehicleType,  // Maps to vehicle_type column in database
     _pickup_lat: params.lat,
     _pickup_lng: params.lng,
     _pickup_text: params.pickupText ?? null,
