@@ -1,9 +1,9 @@
+import { logStructuredEvent, scrubPII } from "../../_shared/observability.ts";
+import { getState, setState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
-import { setState, getState } from "../../_shared/wa-webhook-shared/state/store.ts";
-import { sendListMessage, sendButtonsMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
+import { sendButtonsMessage, sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
-import { logStructuredEvent, scrubPII } from "../../_shared/observability.ts";
 
 // Claim state keys
 export const CLAIM_STATES = {
