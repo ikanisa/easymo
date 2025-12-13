@@ -404,7 +404,7 @@ export class ToolExecutor {
     // Get user's phone number for seller contact
     const { data: user } = await this.supabase
       .from("whatsapp_users")
-      .select("phone_number")
+      .select("phone")
       .eq("id", context.userId)
       .single();
 
@@ -418,7 +418,7 @@ export class ToolExecutor {
         condition,
         location,
         negotiable,
-        seller_phone: user?.phone_number,
+        seller_phone: user?.phone,
         status: "active",
       })
       .select("id")
@@ -526,9 +526,8 @@ export class ToolExecutor {
       .from("whatsapp_users")
       .select(`
         id,
-        phone_number,
-        preferred_language,
-        user_roles,
+        phone,
+        language,
         created_at,
         updated_at,
         location_cache
@@ -548,9 +547,8 @@ export class ToolExecutor {
       success: true,
       user: {
         id: data.id,
-        phone: data.phone_number ? this.maskPhoneNumber(data.phone_number) : null,
-        language: data.preferred_language,
-        roles: data.user_roles,
+        phone: data.phone ? this.maskPhoneNumber(data.phone) : null,
+        language: data.language,
         member_since: data.created_at,
         has_location: !!data.location_cache,
       },
@@ -617,7 +615,7 @@ export class ToolExecutor {
         // Get user phone from whatsapp_users
         const { data: waUser } = await this.supabase
           .from("whatsapp_users")
-          .select("phone_number")
+          .select("phone")
           .eq("id", context.userId)
           .single();
 
@@ -635,7 +633,7 @@ export class ToolExecutor {
           .from("profiles")
           .insert({
             user_id: context.userId,
-            phone_number: waUser.phone_number,
+            phone_number: waUser.phone,
           })
           .select("user_id")
           .single();
@@ -1386,7 +1384,7 @@ export class ToolExecutor {
   private async getUserInfo(context: ToolExecutionContext): Promise<unknown> {
     const { data, error } = await this.supabase
       .from("whatsapp_users")
-      .select("id, phone_number, preferred_language, user_roles, created_at, location_cache")
+      .select("id, phone, language, created_at, location_cache")
       .eq("id", context.userId)
       .single();
 
@@ -1399,9 +1397,9 @@ export class ToolExecutor {
 
     // Safely mask phone number (show only last 4 digits if length >= 4)
     let maskedPhone: string | null = null;
-    if (data.phone_number) {
-      maskedPhone = data.phone_number.length >= 4
-        ? `***${data.phone_number.slice(-4)}`
+    if (data.phone) {
+      maskedPhone = data.phone.length >= 4
+        ? `***${data.phone.slice(-4)}`
         : "***";
     }
 
@@ -1410,8 +1408,7 @@ export class ToolExecutor {
       user: {
         id: data.id,
         phone: maskedPhone,
-        language: data.preferred_language,
-        roles: data.user_roles,
+        language: data.language,
         member_since: data.created_at,
         has_location: !!data.location_cache,
       },
@@ -1681,7 +1678,7 @@ export class ToolExecutor {
     // Get user location
     const { data: user } = await this.supabase
       .from("whatsapp_users")
-      .select("location_cache, phone_number")
+      .select("location_cache, phone")
       .eq("id", context.userId)
       .single();
 

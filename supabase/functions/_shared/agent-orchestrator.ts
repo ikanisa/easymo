@@ -273,26 +273,24 @@ export class AgentOrchestrator {
   private async getOrCreateUser(phoneNumber: string): Promise<{ id: string; preferredLanguage: string }> {
     const { data: existing } = await this.supabase
       .from("whatsapp_users")
-      .select("id, preferred_language")
-      .eq("phone_number", phoneNumber)
+      .select("id, language")
+      .eq("phone", phoneNumber)
       .single();
 
     if (existing) {
-      return existing;
+      return { id: existing.id, preferredLanguage: existing.language };
     }
 
     const { data: newUser } = await this.supabase
       .from("whatsapp_users")
       .insert({
-        phone_number: phoneNumber,
-        preferred_language: "en",
-        user_roles: ["guest"],
-        metadata: {},
+        phone: phoneNumber,
+        language: "en",
       })
-      .select("id, preferred_language")
+      .select("id, language")
       .single();
 
-    return newUser!;
+    return { id: newUser!.id, preferredLanguage: newUser!.language };
   }
 
   /**
