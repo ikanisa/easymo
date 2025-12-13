@@ -31,6 +31,17 @@ export interface WhatsAppMessage {
     name?: string;
     address?: string;
   };
+  video?: {
+    id: string;
+    mime_type: string;
+    caption?: string;
+  };
+  document?: {
+    id: string;
+    mime_type: string;
+    filename?: string;
+    caption?: string;
+  };
 }
 
 export interface ExtractedIntent {

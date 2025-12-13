@@ -120,14 +120,16 @@ serve(async (req: Request): Promise<Response> => {
       p_phone: from,
     });
 
-    if (userError) {
+    if (userError || !userData) {
       await logStructuredEvent("USER_UPSERT_FAILED", {
-        error: userError.message,
+        error: userError?.message || "User data not returned",
         correlationId,
       });
+      // Return early to avoid processing with undefined userId
+      return respond({ status: "error", message: "Failed to get or create user" }, { status: 500 });
     }
 
-    const userId = userData?.id;
+    const userId = userData.id;
 
     // Log inbound message
     await supabase.from("inbound_messages").insert({

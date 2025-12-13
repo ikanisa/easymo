@@ -160,7 +160,7 @@ async function processUserMessage(job: Job, correlationId: string): Promise<void
   // Check geo-blocking
   if (isPhoneBlocked(from)) {
     const country = detectCountryFromPhone(from);
-    const countryName = getCountryName(country!) || country;
+    const countryName = country ? (getCountryName(country) || country) : "your region";
 
     await sendWhatsAppMessage(
       from,
@@ -169,11 +169,11 @@ async function processUserMessage(job: Job, correlationId: string): Promise<void
 
     await logStructuredEvent("BLOCKED_MARKET_DETECTED", {
       from,
-      country,
+      country: country || "unknown",
       correlationId,
     });
 
-    await recordMetric("blocked_market.rejection", 1, { country });
+    await recordMetric("blocked_market.rejection", 1, { country: country || "unknown" });
     return;
   }
 

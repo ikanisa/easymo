@@ -77,11 +77,7 @@ export function normalizePhone(phone: string): string {
   }
 
   // Ensure it starts with +
-  if (!phone.startsWith("+")) {
-    return `+${digits}`;
-  }
-
-  return phone;
+  return `+${digits}`;
 }
 
 /**
