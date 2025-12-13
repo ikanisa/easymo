@@ -1,6 +1,0 @@
-{
-  "name": "wa-webhook-insurance",
-  "version": "2.2.0",
-  "verify_jwt": false,
-  "description": "Insurance document processing and claims"
-}

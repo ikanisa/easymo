@@ -61,7 +61,6 @@ const legacySections = [
     items: [
       { href: "/users", title: "Users" },
       { href: "/trips", title: "Trips" },
-      { href: "/insurance", title: "Insurance" },
       { href: "/marketplace", title: "Marketplace" },
       { href: "/sms-vendors", title: "SMS Vendors" },
       { href: "/client-portal", title: "Client Portal" },
