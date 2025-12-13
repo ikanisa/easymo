@@ -3,6 +3,7 @@
 
 import type { SupabaseClient } from "../deps.ts";
 import { LOCATION_CONFIG } from "../../_shared/location-config.ts";
+import { logStructuredEvent } from "../observe/log.ts";
 
 const LOCATION_CACHE_MINUTES = LOCATION_CONFIG.CACHE_TTL_MINUTES;
 
@@ -27,7 +28,10 @@ export async function saveLocationToCache(
     _lng: coords.lng,
   });
   if (error) {
-    console.error("location_cache.save_fail", error);
+    await logStructuredEvent("LOCATION_CACHE_SAVE_FAILED", {
+      userId,
+      error: error.message,
+    });
     throw error;
   }
 }
@@ -47,7 +51,10 @@ export async function getCachedLocation(
   });
 
   if (error) {
-    console.error("location_cache.get_fail", error);
+    await logStructuredEvent("LOCATION_CACHE_GET_FAILED", {
+      userId,
+      error: error.message,
+    });
     return null;
   }
 

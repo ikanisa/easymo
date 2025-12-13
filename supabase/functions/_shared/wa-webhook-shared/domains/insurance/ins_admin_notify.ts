@@ -73,7 +73,6 @@ export async function notifyInsuranceAdmins(
   const contacts = await fetchActiveContacts(client);
 
   if (!contacts.length) {
-    console.warn("insurance.no_active_admins");
     logStructuredEvent("INSURANCE_ADMIN_NO_TARGETS", {
       leadId,
       userWaId: userWaId.slice(0, 8) + "***",
@@ -85,15 +84,10 @@ export async function notifyInsuranceAdmins(
 
   const message = formatAdminNotificationMessage(extracted, userWaId);
   
-  console.log("insurance.broadcasting_to_all_contacts", {
-    leadId,
-    totalContacts: contacts.length,
-    channels: [...new Set(contacts.map(c => c.channel))],
-  });
-  
   logStructuredEvent("INSURANCE_ADMIN_NOTIFY_BROADCASTING", {
     leadId,
     totalContacts: contacts.length,
+    channels: [...new Set(contacts.map(c => c.channel))],
   }, "info");
 
   // Send to ALL contacts concurrently using Promise.allSettled
@@ -129,13 +123,6 @@ export async function notifyInsuranceAdmins(
     }
   });
 
-  console.log("insurance.broadcast_complete", {
-    leadId,
-    sent,
-    failed,
-    totalContacts: contacts.length,
-  });
-  
   logStructuredEvent("INSURANCE_ADMIN_NOTIFY_COMPLETE", {
     leadId,
     sent,
@@ -180,14 +167,6 @@ async function sendToContact(
   let delivered = false;
   let errorMessage: string | null = null;
 
-  console.log("insurance.attempting_send", {
-    contactId: contact.id,
-    destination,
-    channel: contact.channel,
-    messageLength: message.length,
-    leadId,
-  });
-  
   logStructuredEvent("INSURANCE_ADMIN_SEND_ATTEMPT", {
     leadId,
     contactId: contact.id,
@@ -198,11 +177,6 @@ async function sendToContact(
   try {
     await sendText(destination, message);
     delivered = true;
-    console.log("insurance.send_success", {
-      contactId: contact.id,
-      destination,
-      leadId,
-    });
     logStructuredEvent("INSURANCE_ADMIN_SEND_SUCCESS", {
       leadId,
       contactId: contact.id,
@@ -211,12 +185,6 @@ async function sendToContact(
   } catch (error) {
     const errMsg = error instanceof Error ? error.message : String(error ?? "unknown");
     errorMessage = errMsg;
-    console.error("insurance.send_failed", { 
-      contactId: contact.id,
-      destination,
-      error: errMsg,
-      errorStack: error instanceof Error ? error.stack : undefined,
-    });
     logStructuredEvent("INSURANCE_ADMIN_SEND_FAILED", {
       leadId,
       contactId: contact.id,
@@ -256,7 +224,6 @@ async function fetchActiveContacts(client: SupabaseClient): Promise<AdminContact
       .order("display_order", { ascending: true });
 
     if (error) {
-      console.error("insurance.fetch_contacts_error", error);
       logStructuredEvent("INSURANCE_ADMIN_FETCH_CONTACTS_ERROR", {
         error: error.message,
       }, "error");
@@ -270,7 +237,6 @@ async function fetchActiveContacts(client: SupabaseClient): Promise<AdminContact
       destination: contact.destination,
     }));
   } catch (err) {
-    console.error("insurance.fetch_contacts_exception", err);
     logStructuredEvent("INSURANCE_ADMIN_FETCH_CONTACTS_EXCEPTION", {
       error: err instanceof Error ? err.message : String(err),
     }, "error");
@@ -304,11 +270,6 @@ async function logNotification(
       });
 
     if (insertError) {
-      console.error("insurance.log_notification_error", {
-        contactId,
-        leadId,
-        error: insertError.message,
-      });
       logStructuredEvent("INSURANCE_ADMIN_LOG_NOTIFICATION_ERROR", {
         contactId,
         leadId,
@@ -316,10 +277,10 @@ async function logNotification(
       }, "error");
     }
   } catch (err) {
-    console.error("insurance.log_notification_exception", {
+    logStructuredEvent("INSURANCE_ADMIN_LOG_NOTIFICATION_EXCEPTION", {
       contactId,
       leadId,
       error: err instanceof Error ? err.message : String(err),
-    });
+    }, "error");
   }
 }

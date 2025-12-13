@@ -7,6 +7,7 @@
 import type { RouterContext } from "../types.ts";
 import { supabase } from "../config.ts";
 import type { SupabaseClient } from "../deps.ts";
+import { logStructuredEvent } from "../observe/log.ts";
 
 export interface SubmenuItem {
   key: string;
@@ -41,7 +42,11 @@ export async function fetchSubmenuItems(
   });
 
   if (error) {
-    console.error(`Failed to fetch submenu items for ${parentKey}:`, error);
+    await logStructuredEvent("SUBMENU_ITEMS_FETCH_FAILED", {
+      parentKey,
+      countryCode,
+      error: error.message,
+    });
     return [];
   }
 
@@ -67,7 +72,10 @@ export async function fetchProfileMenuItems(
   });
 
   if (error) {
-    console.error("Failed to fetch profile menu items:", error);
+    await logStructuredEvent("PROFILE_MENU_ITEMS_FETCH_FAILED", {
+      countryCode,
+      error: error.message,
+    });
     return [];
   }
 

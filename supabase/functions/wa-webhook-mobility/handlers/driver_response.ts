@@ -121,7 +121,11 @@ export async function handleDriverOfferRide(
 
     return true;
   } catch (error) {
-    console.error("driver_response.offer_ride_fail", error);
+    await logStructuredEvent("DRIVER_OFFER_RIDE_FAILED", {
+      tripId,
+      driverId: ctx.profileId,
+      error: error instanceof Error ? error.message : String(error),
+    });
     await sendText(ctx.from, t(ctx.locale, "mobility.nearby.error"));
     return true;
   }
@@ -179,7 +183,7 @@ export async function handleDriverViewDetails(
             : `\n📍 Distance: ${distance.toFixed(1)}km`;
         }
       } catch (error) {
-        console.warn("Could not calculate distance", error);
+        // Distance calculation failure is non-critical, continue without distance
       }
     }
 
@@ -215,7 +219,11 @@ export async function handleDriverViewDetails(
 
     return true;
   } catch (error) {
-    console.error("driver_response.view_details_fail", error);
+    await logStructuredEvent("DRIVER_VIEW_DETAILS_FAILED", {
+      tripId,
+      driverId: ctx.profileId,
+      error: error instanceof Error ? error.message : String(error),
+    });
     await sendText(ctx.from, t(ctx.locale, "mobility.nearby.error"));
     return true;
   }

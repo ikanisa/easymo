@@ -410,7 +410,7 @@ export async function handleTripComplete(
           finalFare = actual.totalFare;
           fareStrategy = "recalculated";
         } catch (error) {
-          console.warn("trip.fare_actual_fail", error);
+          // Fare calculation failed - use estimate as fallback
           finalFare = trip.fare_estimate;
           fareStrategy = "estimate_fallback";
         }

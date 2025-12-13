@@ -1,6 +1,7 @@
 import type { RouterContext } from "../types.ts";
 import { checkDuplicateLocation } from "../../_shared/wa-webhook-shared/locations/deduplication.ts";
 import { getAddressOrCoords } from "../../_shared/wa-webhook-shared/locations/geocoding.ts";
+import { logStructuredEvent } from "../observe/log.ts";
 
 export type FavoriteKind = "home" | "work" | "school" | "other";
 
@@ -49,7 +50,10 @@ export async function listFavorites(
     .eq("user_id", ctx.profileId)
     .order("created_at", { ascending: true });
   if (error) {
-    console.error("locations.favorites_list_fail", error);
+    await logStructuredEvent("LOCATIONS_FAVORITES_LIST_FAILED", {
+      userId: ctx.profileId,
+      error: error.message,
+    });
     return [];
   }
   return normalizeSavedLocations(data ?? []);
@@ -67,7 +71,11 @@ export async function getFavoriteById(
     .eq("id", id)
     .maybeSingle();
   if (error) {
-    console.error("locations.favorite_lookup_fail", error, { id });
+    await logStructuredEvent("LOCATIONS_FAVORITE_LOOKUP_FAILED", {
+      userId: ctx.profileId,
+      favoriteId: id,
+      error: error.message,
+    });
     return null;
   }
   const favorites = normalizeSavedLocations(data ? [data] : []);
@@ -84,11 +92,9 @@ export async function saveFavorite(
   
   // Validate coordinates
   if (!Number.isFinite(coords.lat) || coords.lat < -90 || coords.lat > 90) {
-    console.error("Invalid latitude:", coords.lat);
     return null;
   }
   if (!Number.isFinite(coords.lng) || coords.lng < -180 || coords.lng > 180) {
-    console.error("Invalid longitude:", coords.lng);
     return null;
   }
   
@@ -99,9 +105,8 @@ export async function saveFavorite(
   if (!finalAddress) {
     try {
       finalAddress = await getAddressOrCoords(coords.lat, coords.lng);
-      console.log("location.geocoded", { lat: coords.lat, lng: coords.lng, address: finalAddress });
     } catch (error) {
-      console.warn("location.geocode_fail", error);
+      // Geocoding failed - use coordinates as fallback
       finalAddress = `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
     }
   }
@@ -117,11 +122,6 @@ export async function saveFavorite(
     
     if (dupCheck.isDuplicate && dupCheck.nearbyLocations.length > 0) {
       const closest = dupCheck.nearbyLocations[0];
-      console.log("location.duplicate_detected", {
-        newLabel: normalizedLabel,
-        existingLabel: closest.label,
-        distance: closest.distance,
-      });
       // Return the existing location instead of creating duplicate
       return getFavoriteById(ctx, closest.id);
     }
@@ -161,7 +161,11 @@ export async function saveFavorite(
     .select("id, kind, label, address, lat, lng")
     .single();
   if (error) {
-    console.error("locations.favorite_save_fail", error);
+    await logStructuredEvent("LOCATIONS_FAVORITE_SAVE_FAILED", {
+      userId: ctx.profileId,
+      kind,
+      error: error.message,
+    });
     return null;
   }
   const favorites = normalizeSavedLocations(data ? [data] : []);
@@ -178,11 +182,9 @@ export async function updateFavorite(
   
   // Validate coordinates
   if (!Number.isFinite(coords.lat) || coords.lat < -90 || coords.lat > 90) {
-    console.error("Invalid latitude:", coords.lat);
     return false;
   }
   if (!Number.isFinite(coords.lng) || coords.lng < -180 || coords.lng > 180) {
-    console.error("Invalid longitude:", coords.lng);
     return false;
   }
   
@@ -199,7 +201,11 @@ export async function updateFavorite(
     .eq("user_id", ctx.profileId)
     .eq("id", favoriteId);
   if (error) {
-    console.error("locations.favorite_update_fail", error);
+    await logStructuredEvent("LOCATIONS_FAVORITE_UPDATE_FAILED", {
+      userId: ctx.profileId,
+      favoriteId,
+      error: error.message,
+    });
     return false;
   }
   return true;
@@ -309,7 +315,10 @@ export async function recordLastLocation(
       .eq("user_id", ctx.profileId);
     if (updateError) throw updateError;
   } catch (err) {
-    console.error("locations.record_last_fail", err);
+    await logStructuredEvent("LOCATIONS_RECORD_LAST_FAILED", {
+      userId: ctx.profileId,
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 }
 
@@ -342,7 +351,10 @@ export async function readLastLocation(
       };
     }
   } catch (err) {
-    console.error("locations.read_last_fail", err);
+    await logStructuredEvent("LOCATIONS_READ_LAST_FAILED", {
+      userId: ctx.profileId,
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
   return null;
 }

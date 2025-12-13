@@ -107,7 +107,7 @@ function loadPricingOverrides(): PricingOverrides | null {
     const parsed = JSON.parse(raw) as PricingOverrides;
     return parsed;
   } catch (error) {
-    console.warn("fare.pricing_override_parse_fail", error);
+    // JSON parse error - use default pricing
     return null;
   }
 }
@@ -158,7 +158,7 @@ async function loadRemotePricing(
       return normalized;
     }
   } catch (error) {
-    console.warn("fare.remote_pricing_load_failed", {
+    await logStructuredEvent("FARE_REMOTE_PRICING_LOAD_FAILED", {
       error: error instanceof Error ? error.message : String(error),
     });
   }
@@ -202,7 +202,7 @@ async function loadRemoteSurgeConfig(
       return normalized;
     }
   } catch (error) {
-    console.warn("fare.remote_surge_load_failed", {
+    await logStructuredEvent("FARE_REMOTE_SURGE_LOAD_FAILED", {
       error: error instanceof Error ? error.message : String(error),
     });
   }

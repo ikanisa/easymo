@@ -1,9 +1,9 @@
+import { logStructuredEvent, scrubPII } from "../../_shared/observability.ts";
+import { getState, setState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
-import { setState, getState } from "../../_shared/wa-webhook-shared/state/store.ts";
-import { sendListMessage, sendButtonsMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
+import { sendButtonsMessage, sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
-import { logStructuredEvent, scrubPII } from "../../_shared/observability.ts";
 
 // Claim state keys
 export const CLAIM_STATES = {
@@ -405,14 +405,19 @@ async function notifyAdminsAboutClaim(
       .from("insurance_admin_contacts")
       .select("destination")
       .eq("is_active", true)
-      .eq("channel", "whatsapp");
+      .eq("channel", "whatsapp")
+      .eq("category", "insurance");
 
     if (admins && admins.length > 0) {
       for (const admin of admins) {
         try {
           await sendText(admin.destination, adminMessage);
         } catch (error) {
-          console.error("Failed to notify admin:", admin.destination, error);
+          logStructuredEvent("INSURANCE_CLAIM_ADMIN_NOTIFY_FAILED", {
+            claimId,
+            adminDestination: admin.destination,
+            error: error instanceof Error ? error.message : String(error)
+          }, "error");
         }
       }
     }
@@ -422,6 +427,9 @@ async function notifyAdminsAboutClaim(
       adminsNotified: admins?.length || 0
     });
   } catch (error) {
-    console.error("Failed to notify admins about claim:", error);
+    logStructuredEvent("INSURANCE_CLAIM_NOTIFY_ALL_FAILED", {
+      claimId,
+      error: error instanceof Error ? error.message : String(error)
+    }, "error");
   }
 }
