@@ -42,25 +42,11 @@ export interface AgentCollaboration {
 // Agent registry - all available agents and their capabilities
 const AGENT_REGISTRY: AgentCapability[] = [
   {
-    agentType: 'farmer',
-    name: '🌾 Farmers Market AI',
-    description: 'Agricultural support and market assistant',
-    capabilities: ['crop_advice', 'market_prices', 'farming_tips', 'produce_listings'],
-    topics: ['agriculture', 'farming', 'crops', 'produce', 'market', 'seeds', 'fertilizer'],
-  },
-  {
-    agentType: 'support',
-    name: '🆘 Support AI',
-    description: 'Customer support and help',
-    capabilities: ['troubleshooting', 'faq', 'account_help', 'general_support'],
-    topics: ['help', 'support', 'issue', 'problem', 'question', 'account'],
-  },
-  {
-    agentType: 'waiter',
-    name: '🍽️ Bar & Restaurant AI',
-    description: 'Food service and ordering',
-    capabilities: ['menu', 'reservations', 'food_orders', 'recommendations'],
-    topics: ['food', 'restaurant', 'bar', 'menu', 'order', 'reservation', 'dining'],
+    agentType: 'buy_sell',
+    name: '🛍️ Buy & Sell AI',
+    description: 'Marketplace, business services, and general support',
+    capabilities: ['product_listings', 'buying', 'selling', 'business_discovery', 'general_support'],
+    topics: ['buy', 'sell', 'marketplace', 'product', 'shop', 'business', 'trade', 'service', 'help', 'support'],
   },
   {
     agentType: 'mobility',
@@ -75,27 +61,6 @@ const AGENT_REGISTRY: AgentCapability[] = [
     description: 'Insurance services and claims',
     capabilities: ['quotes', 'claims', 'policy_info', 'renewals'],
     topics: ['insurance', 'policy', 'claim', 'coverage', 'renewal', 'motor', 'health'],
-  },
-  {
-    agentType: 'property',
-    name: '🏠 Property AI',
-    description: 'Real estate and rentals',
-    capabilities: ['property_search', 'listings', 'viewings', 'rentals'],
-    topics: ['property', 'rent', 'house', 'apartment', 'real estate', 'rental'],
-  },
-  {
-    agentType: 'jobs',
-    name: '👔 Jobs AI',
-    description: 'Employment and recruitment',
-    capabilities: ['job_search', 'applications', 'cv_help', 'interviews'],
-    topics: ['job', 'employment', 'career', 'work', 'hire', 'cv', 'resume', 'interview'],
-  },
-  {
-    agentType: 'buy_sell',
-    name: '🛍️ Buy & Sell AI',
-    description: 'Marketplace and e-commerce',
-    capabilities: ['product_listings', 'buying', 'selling', 'negotiations'],
-    topics: ['buy', 'sell', 'marketplace', 'product', 'shop', 'business', 'trade'],
   },
 ];
 

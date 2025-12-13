@@ -352,57 +352,22 @@ export class AgentOrchestrator {
     // Keyword-based routing
     const lowerBody = messageBody.toLowerCase();
     
-    // Rides keywords (highest priority - time-sensitive)
+    // Rides keywords (highest priority - time-sensitive) → rides workflow
     if (lowerBody.includes("ride") || lowerBody.includes("driver") || lowerBody.includes("passenger") || 
         lowerBody.includes("pick") || lowerBody.includes("drop") || lowerBody.includes("take me") ||
         lowerBody.includes("need transport") || lowerBody.includes("going to")) {
       return "rides";
     }
     
-    // Insurance keywords
+    // Insurance keywords → insurance workflow
     if (lowerBody.includes("insurance") || lowerBody.includes("certificate") || 
         lowerBody.includes("carte jaune") || lowerBody.includes("policy") || 
         lowerBody.includes("cover") || lowerBody.includes("insure")) {
       return "insurance";
     }
     
-    // Waiter keywords
-    if (lowerBody.includes("menu") || lowerBody.includes("food") || lowerBody.includes("order")) {
-      return "waiter";
-    }
-    
-    // Jobs keywords
-    if (lowerBody.includes("job") || lowerBody.includes("work") || lowerBody.includes("employ")) {
-      return "jobs";
-    }
-    
-    // Real Estate keywords
-    if (lowerBody.includes("property") || lowerBody.includes("house") || lowerBody.includes("apartment") || lowerBody.includes("rent")) {
-      return "real_estate";
-    }
-    
-    // Farmer keywords
-    if (lowerBody.includes("farm") || lowerBody.includes("produce") || lowerBody.includes("crop")) {
-      return "farmer";
-    }
-    
-    // Business Broker keywords
-    if (lowerBody.includes("business") || lowerBody.includes("shop") || lowerBody.includes("service")) {
-      return "business_broker";
-    }
-
-    // Support/Sales/Customer Service keywords (FIX: Support button routing)
-    if (lowerBody.includes("support") || lowerBody.includes("help") || 
-        lowerBody.includes("sales") || lowerBody.includes("customer") ||
-        lowerBody.includes("general") || lowerBody.includes("ai_agents") ||
-        lowerBody.includes("agent") || lowerBody.includes("chat") ||
-        lowerBody.includes("ask") || lowerBody.includes("question")) {
-      return "sales"; // Use sales agent for general support/inquiries
-    }
-
-    // Default to sales agent for general support (was "jobs")
-    // This ensures support button and general queries get proper assistance
-    return "sales";
+    // All other queries → buy_sell agent (marketplace, business, general support)
+    return "buy_sell";
   }
 
   /**
@@ -551,81 +516,33 @@ export class AgentOrchestrator {
     const lastAssistantMessage = conversationHistory?.filter(m => m.role === "assistant").pop()?.content || "";
 
     switch (agentSlug) {
-      case "jobs":
-        if (lowerBody.includes("find") || lowerBody.includes("search")) {
+      case "buy_sell":
+        // Marketplace and business queries
+        if (lowerBody.includes("buy") || lowerBody.includes("find") || lowerBody.includes("search")) {
           return {
-            type: "search_jobs",
-            summary: `User searching for jobs: ${messageBody}`,
-            structuredPayload: this.extractJobSearchParams(messageBody),
+            type: "search_products",
+            summary: `User searching for products or businesses: ${messageBody}`,
+            structuredPayload: { query: messageBody },
             confidence: 0.85,
           };
         }
-        if (lowerBody.includes("post") || lowerBody.includes("hire")) {
-          return {
-            type: "post_job",
-            summary: `User wants to post a job`,
-            structuredPayload: {},
-            confidence: 0.75,
-          };
-        }
-        break;
-
-      case "real_estate":
-        if (lowerBody.includes("find") || lowerBody.includes("search") || lowerBody.includes("bedroom")) {
-          return {
-            type: "search_property",
-            summary: `User searching for property: ${messageBody}`,
-            structuredPayload: this.extractPropertySearchParams(messageBody),
-            confidence: 0.85,
-          };
-        }
-        break;
-
-      case "waiter":
-        if (lowerBody.includes("order") || lowerBody.includes("want")) {
-          return {
-            type: "order_food",
-            summary: `User wants to order: ${messageBody}`,
-            structuredPayload: { items: [] },
-            confidence: 0.80,
-          };
-        }
-        if (lowerBody.includes("menu")) {
-          return {
-            type: "view_menu",
-            summary: `User wants to see menu`,
-            structuredPayload: {},
-            confidence: 0.90,
-          };
-        }
-        break;
-
-      case "farmer":
         if (lowerBody.includes("sell") || lowerBody.includes("list")) {
           return {
-            type: "list_produce",
-            summary: `Farmer wants to list produce`,
+            type: "create_listing",
+            summary: `User wants to list product or business`,
             structuredPayload: {},
             confidence: 0.80,
           };
         }
-        if (lowerBody.includes("buy") || lowerBody.includes("find")) {
+        if (lowerBody.includes("business") || lowerBody.includes("shop") || lowerBody.includes("service")) {
           return {
-            type: "search_produce",
-            summary: `User searching for produce`,
-            structuredPayload: {},
-            confidence: 0.80,
+            type: "search_business",
+            summary: `User searching for businesses: ${messageBody}`,
+            structuredPayload: { query: messageBody },
+            confidence: 0.85,
           };
         }
         break;
-
-      case "business_broker":
-        return {
-          type: "search_business",
-          summary: `User searching for businesses: ${messageBody}`,
-          structuredPayload: { query: messageBody },
-          confidence: 0.85,
-        };
       
       case "rides":
         if (lowerBody.includes("need") && (lowerBody.includes("ride") || lowerBody.includes("driver"))) {
@@ -950,31 +867,15 @@ export class AgentOrchestrator {
     intent: ParsedIntent
   ): Promise<void> {
     switch (context.agentSlug) {
-      case "jobs":
-        await this.executeJobsAgentAction(context, intentId, intent);
-        break;
-      case "real_estate":
-        await this.executeRealEstateAgentAction(context, intentId, intent);
-        break;
-      case "waiter":
-        await this.executeWaiterAgentAction(context, intentId, intent);
-        break;
-      case "farmer":
-        await this.executeFarmerAgentAction(context, intentId, intent);
-        break;
-      case "business_broker":
-        await this.executeBusinessBrokerAgentAction(context, intentId, intent);
+      case "buy_sell":
+        // Buy & Sell agent - handled via tools
+        console.log("Buy & Sell agent action - using tools");
         break;
       case "rides":
         await this.executeRidesAgentAction(context, intentId, intent);
         break;
       case "insurance":
         await this.executeInsuranceAgentAction(context, intentId, intent);
-        break;
-      case "sales":
-      case "sales_cold_caller":
-        // Sales agent - mostly conversational, no specific tools needed
-        console.log("Sales agent action - conversational mode");
         break;
       default:
         console.warn(`No action handler for agent: ${context.agentSlug}`);

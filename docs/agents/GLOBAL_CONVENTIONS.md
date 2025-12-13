@@ -248,16 +248,14 @@ async function processAction(agent: Agent, action: Action, amount?: number): Pro
 
 ### Supported Languages
 
-**Default UI**: EN (English) and FR (French)
+**Rwanda Market Only**:
 
-**Comprehension Support**:
-
-- rw (Kinyarwanda)
-- sw (Swahili)
-- ln (Lingala)
+- en (English) - Default UI
+- fr (French) - UI and comprehension
+- rw (Kinyarwanda) - Comprehension support
 
 ```yaml
-languages: [en, fr, rw, sw, ln]
+languages: [en, fr, rw]
 ```
 
 **Implementation**:
@@ -278,9 +276,9 @@ await supabase
 
 ### Market Countries
 
-**Scope**: Only countries marked in `market_countries` table.
+**Scope**: Rwanda only (RW)
 
-**Explicit Exclusions**: UG (Uganda), KE (Kenya), NG (Nigeria), ZA (South Africa)
+**Explicit Exclusions**: All countries except Rwanda (including UG, KE, NG, ZA, MT)
 
 ```sql
 -- Enforce at org onboarding

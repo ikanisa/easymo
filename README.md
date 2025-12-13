@@ -11,24 +11,57 @@ These rules prevent schema drift, duplication, and fragmented features. **All wo
 
 ## Supported Countries
 
-### ❌ NOT Supported (DO NOT USE)
+### ✅ Supported
+
+**Rwanda (RW) - PRIMARY MARKET**
+
+### ❌ NOT Supported
+- All other countries removed as of 2025-12-13
 - ~~KE~~ (Kenya) - Removed 2025-11-27
 - ~~UG~~ (Uganda) - Removed 2025-11-27
+- ~~CD, BI, TZ~~ - Removed 2025-12-13
+- ~~MT~~ (Malta) - Removed 2025-12-13
 
 **Default Country**: `RW` (Rwanda)
-
-See [COUNTRIES.md](./COUNTRIES.md) for complete country documentation, feature availability, and compliance guidelines.
 
 ### Code Usage
 ```typescript
 // ✅ CORRECT
-const SUPPORTED_COUNTRIES = ['RW', 'CD', 'BI', 'TZ'];
+const SUPPORTED_COUNTRIES = ['RW'];
 
 // ❌ WRONG - NEVER USE
 const countries = ['RW', 'KE', 'UG']; // NO!
 ```
 
-**All database migrations, TypeScript code, and configuration must only use: RW, CD, BI, TZ**
+**All database migrations, TypeScript code, and configuration must only use: RW**
+
+---
+
+## EasyMO Services (Rwanda Only)
+
+EasyMO is a WhatsApp-first platform focused on the Rwanda market with the following services:
+
+### Active Services
+
+1. **Mobility (Rides/Transport)** - WhatsApp workflow-based ride booking and scheduling
+2. **Buy & Sell** - AI-powered marketplace for products and business services (pharmacy, hardware, groceries, business discovery)
+3. **Insurance** - WhatsApp workflow-based insurance quotes and certificate management
+4. **Profile** - User profile management
+5. **Wallets** - Mobile money integration (USSD-based)
+
+### Supported Languages
+
+- English (en) - Primary UI
+- French (fr) - UI and support
+- Kinyarwanda (rw) - Comprehension support only (NO UI translation)
+
+### Currency
+
+- **RWF (Rwandan Franc)** - Only supported currency
+
+### AI Agent
+
+- **Buy & Sell Agent** - The platform uses a single AI agent that handles marketplace transactions, business discovery, and general support queries
 
 ---
 
@@ -37,27 +70,21 @@ const countries = ['RW', 'KE', 'UG']; // NO!
 **NEVER TRANSLATE THE USER INTERFACE TO KINYARWANDA (rw/rw-RW). THIS IS A BLOCKING REQUIREMENT.**
 
 ### Why?
-- UI must remain in English, French, Swahili, or other supported languages
-- Kinyarwanda is NOT a supported UI language for this platform
+- UI must remain in English or French
+- Kinyarwanda comprehension is supported but NOT for UI elements
 - Any code that translates UI elements to Kinyarwanda will be **REJECTED**
 
 ### Implementation Rules:
 ```typescript
 // ❌ WRONG - NEVER USE KINYARWANDA IN UI
-const LANGUAGES = { EN: 'en', FR: 'fr', RW: 'rw', SW: 'sw' }; // NO!
+const LANGUAGES = { EN: 'en', FR: 'fr', RW: 'rw' }; // NO!
 locale = 'rw'; // NO!
 translateTo('rw'); // NO!
 
-// ✅ CORRECT - Only use approved languages
-const APPROVED_UI_LANGUAGES = ['en', 'fr', 'sw', 'es', 'pt', 'de'];
+// ✅ CORRECT - Only use approved UI languages
+const APPROVED_UI_LANGUAGES = ['en', 'fr'];
 // Kinyarwanda ('rw') is BLOCKED from UI translation
 ```
-
-### Enforcement:
-- All language detection logic must exclude 'rw' from UI languages
-- Translation functions must reject 'rw' as a target language
-- Constants/enums must NOT include 'rw' in supported UI languages
-- Any existing Kinyarwanda translations must be deprecated and removed
 
 ---
 
