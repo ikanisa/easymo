@@ -18,21 +18,15 @@ CREATE TABLE IF NOT EXISTS feature_flags (
 );
 
 -- Insert unified service feature flags
+-- Note: Jobs, Property, Farmer, Waiter, and Sales domains have been deprecated
+-- Current active services: buy_sell, mobility (rides/insurance via WhatsApp flows)
 INSERT INTO feature_flags (flag_key, flag_value) VALUES (
   'unified_service',
   '{
     "enabled": true,
     "rolloutPercent": 1,
     "agents": {
-      "marketplace": true,
-      "jobs": true,
-      "property": true,
-      "farmer": true,
-      "waiter": true,
-      "insurance": true,
-      "rides": true,
-      "sales": true,
-      "business_broker": true,
+      "buy_sell": true,
       "support": true
     },
     "features": {
@@ -40,6 +34,10 @@ INSERT INTO feature_flags (flag_key, flag_value) VALUES (
       "unifiedSearch": false,
       "sharedPreferences": false,
       "hybridFlows": true
+    },
+    "whatsapp_workflows": {
+      "mobility": true,
+      "insurance": true
     }
   }'::jsonb
 )
