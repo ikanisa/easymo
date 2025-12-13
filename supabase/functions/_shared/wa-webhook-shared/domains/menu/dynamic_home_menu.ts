@@ -11,35 +11,27 @@ const MENU_CACHE_TTL_SECONDS = Math.max(
 );
 
 export type MenuItemKey =
-  // 8 AI Agents (aligned with ai_agents table)
-  | "waiter_agent"
+  // Active AI Agents (Rwanda-only)
   | "rides_agent"
-  | "jobs_agent"
   | "business_broker_agent"
-  | "real_estate_agent"
-  | "farmer_agent"
   | "insurance_agent"
-  | "sales_agent"
+  | "buy_and_sell_agent"
   // Profile (not an agent)
   | "profile"
   // Legacy keys (kept for backward compatibility, marked as deprecated)
-  | "jobs" // @deprecated Use jobs_agent
-  | "jobs_gigs" // @deprecated Use jobs_agent
   | "rides" // @deprecated Use rides_agent
   | "nearby_drivers" // @deprecated Covered by rides_agent
   | "nearby_passengers" // @deprecated Covered by rides_agent
   | "schedule_trip" // @deprecated Covered by rides_agent
   | "motor_insurance" // @deprecated Use insurance_agent
-  | "nearby_pharmacies" // @deprecated Covered by business_broker_agent
-  | "quincailleries" // @deprecated Covered by business_broker_agent
-  | "shops_services" // @deprecated Covered by business_broker_agent
-  | "property_rentals" // @deprecated Use real_estate_agent
+  | "nearby_pharmacies" // @deprecated Covered by buy_and_sell_agent
+  | "quincailleries" // @deprecated Covered by buy_and_sell_agent
+  | "shops_services" // @deprecated Covered by buy_and_sell_agent
   | "momo_qr" // @deprecated Moved to separate payment flow
-  | "bars_restaurants" // @deprecated Use waiter_agent
-  | "notary_services" // @deprecated Covered by business_broker_agent
+  | "notary_services" // @deprecated Covered by buy_and_sell_agent
   | "profile_assets" // @deprecated Use profile
   | "token_transfer" // @deprecated Moved to wallet
-  | "general_broker" // @deprecated Use business_broker_agent
+  | "general_broker" // @deprecated Use buy_and_sell_agent
   | "customer_support"; // @deprecated Accessed via support flow
 
 export interface WhatsAppHomeMenuItem {
@@ -110,20 +102,15 @@ export async function fetchActiveMenuItems(
 /**
  * Alias mapping from legacy menu keys to canonical agent keys.
  * Used for backward compatibility when old keys are referenced in code or user sessions.
- * After cleanup migration (2025-11-22), only 9 canonical keys are active in DB:
- * waiter_agent, rides_agent, jobs_agent, business_broker_agent, real_estate_agent,
- * farmer_agent, insurance_agent, sales_agent, profile.
+ * After Rwanda-only refactoring (2025-12-13), only 4 canonical keys are active:
+ * rides_agent, buy_and_sell_agent, insurance_agent, profile.
  */
 export const HOME_MENU_KEY_ALIASES: Record<string, string> = {
-  // Canonical keys (9 active items) - map to themselves
-  waiter_agent: "waiter_agent",
+  // Canonical keys (4 active items) - map to themselves
   rides_agent: "rides_agent",
-  jobs_agent: "jobs_agent",
-  business_broker_agent: "business_broker_agent",
-  real_estate_agent: "real_estate_agent",
-  farmer_agent: "farmer_agent",
+  buy_and_sell_agent: "buy_and_sell_agent",
+  business_broker_agent: "buy_and_sell_agent", // merged into buy_and_sell
   insurance_agent: "insurance_agent",
-  sales_agent: "sales_agent",
   profile: "profile",
   
   // Legacy aliases - route to canonical agents
@@ -131,20 +118,27 @@ export const HOME_MENU_KEY_ALIASES: Record<string, string> = {
   nearby_drivers: "rides_agent",
   nearby_passengers: "rides_agent",
   rides: "rides_agent",
-  jobs_gigs: "jobs_agent",
-  jobs: "jobs_agent",
-  bars_restaurants: "waiter_agent",
-  nearby_pharmacies: "business_broker_agent",
-  quincailleries: "business_broker_agent",
-  shops_services: "business_broker_agent",
-  notary_services: "business_broker_agent",
-  general_broker: "business_broker_agent",
-  property_rentals: "real_estate_agent",
+  nearby_pharmacies: "buy_and_sell_agent",
+  quincailleries: "buy_and_sell_agent",
+  shops_services: "buy_and_sell_agent",
+  notary_services: "buy_and_sell_agent",
+  general_broker: "buy_and_sell_agent",
   motor_insurance: "insurance_agent",
   momo_qr: "profile",  // Payment QR accessed via profile
   token_transfer: "profile",  // Wallet transfers via profile
   profile_assets: "profile",
-  customer_support: "sales_agent",  // Support routed to sales agent
+  
+  // Deprecated (removed domains)
+  waiter_agent: "profile",
+  jobs_agent: "profile",
+  jobs: "profile",
+  jobs_gigs: "profile",
+  bars_restaurants: "profile",
+  property_rentals: "profile",
+  real_estate_agent: "profile",
+  farmer_agent: "profile",
+  sales_agent: "profile",
+  customer_support: "profile",
 };
 
 /**
@@ -177,53 +171,29 @@ export function getMenuItemTranslationKeys(
     MenuItemKey,
     { titleKey: string; descriptionKey: string }
   > = {
-    // 8 AI Agents
-    waiter_agent: {
-      titleKey: "home.rows.waiterAgent.title",
-      descriptionKey: "home.rows.waiterAgent.description",
-    },
+    // Active AI Agents (Rwanda-only)
     rides_agent: {
       titleKey: "home.rows.ridesAgent.title",
       descriptionKey: "home.rows.ridesAgent.description",
-    },
-    jobs_agent: {
-      titleKey: "home.rows.jobsAgent.title",
-      descriptionKey: "home.rows.jobsAgent.description",
     },
     business_broker_agent: {
       titleKey: "home.rows.businessBrokerAgent.title",
       descriptionKey: "home.rows.businessBrokerAgent.description",
     },
-    real_estate_agent: {
-      titleKey: "home.rows.realEstateAgent.title",
-      descriptionKey: "home.rows.realEstateAgent.description",
-    },
-    farmer_agent: {
-      titleKey: "home.rows.farmerAgent.title",
-      descriptionKey: "home.rows.farmerAgent.description",
+    buy_and_sell_agent: {
+      titleKey: "home.rows.buyAndSellAgent.title",
+      descriptionKey: "home.rows.buyAndSellAgent.description",
     },
     insurance_agent: {
       titleKey: "home.rows.insuranceAgent.title",
       descriptionKey: "home.rows.insuranceAgent.description",
-    },
-    sales_agent: {
-      titleKey: "home.rows.salesAgent.title",
-      descriptionKey: "home.rows.salesAgent.description",
     },
     // Profile
     profile: {
       titleKey: "home.rows.profile.title",
       descriptionKey: "home.rows.profile.description",
     },
-    // Legacy mappings (backward compatibility)
-    jobs: {
-      titleKey: "home.rows.jobs.title",
-      descriptionKey: "home.rows.jobs.description",
-    },
-    jobs_gigs: {
-      titleKey: "home.rows.jobs.title",
-      descriptionKey: "home.rows.jobs.description",
-    },
+    // Legacy mappings (backward compatibility) - deprecated agents route to profile
     rides: {
       titleKey: "home.rows.rides.title",
       descriptionKey: "home.rows.rides.description",

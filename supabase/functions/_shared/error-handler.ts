@@ -101,7 +101,7 @@ export interface ErrorBoundaryContext {
  *     userId: user.id,
  *     correlationId: req.headers.get("x-correlation-id") || crypto.randomUUID(),
  *     messageId: message.id,
- *     agentType: "waiter-ai"
+ *     agentType: "buy-and-sell-ai"
  *   }
  * );
  * ```

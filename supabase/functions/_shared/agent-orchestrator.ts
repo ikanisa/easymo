@@ -652,32 +652,7 @@ export class AgentOrchestrator {
     return params;
   }
 
-  /**
-   * Extract property search parameters from message
-   */
-  private extractPropertySearchParams(message: string): Record<string, unknown> {
-    const params: Record<string, unknown> = {};
-    
-    // Extract bedrooms
-    const bedroomMatch = message.match(/(\d+)\s*(?:bed|br|bedroom)/i);
-    if (bedroomMatch) {
-      params.bedrooms = parseInt(bedroomMatch[1]);
-    }
 
-    // Extract location
-    const locationMatch = message.match(/in\s+(\w+)/i);
-    if (locationMatch) {
-      params.location = locationMatch[1];
-    }
-
-    // Extract budget
-    const budgetMatch = message.match(/(\d+)k/i);
-    if (budgetMatch) {
-      params.max_monthly_rent = parseInt(budgetMatch[1]) * 1000;
-    }
-
-    return params;
-  }
 
   /**
    * Extract ride parameters from message
@@ -882,138 +857,15 @@ export class AgentOrchestrator {
     }
   }
 
-  /**
-   * Jobs agent actions
-   */
-  private async executeJobsAgentAction(
-    context: AgentContext,
-    intentId: string,
-    intent: ParsedIntent
-  ): Promise<void> {
-    if (intent.type === "search_jobs") {
-      // Search job_posts table (would need to exist)
-      // For now, just log
-      console.log(JSON.stringify({
-        event: "JOBS_SEARCH_REQUESTED",
-        params: intent.structuredPayload,
-      }));
-      
-      // Query job_posts table and create match events
-      const { searchJobs, createJobMatchEvents, formatJobsForWhatsApp } = await import(
-        "../wa-webhook-shared/tools/jobs-matcher.ts"
-      );
-      
-      const { matches, total } = await searchJobs(
-        this.supabase,
-        intent.structuredPayload as any,
-        context.userId
-      );
-      
-      // Create match events in database
-      await createJobMatchEvents(
-        this.supabase,
-        context.userId,
-        context.agentId,
-        context.conversationId,
-        matches
-      );
-      
-      console.log(JSON.stringify({
-        event: "JOBS_MATCHES_CREATED",
-        matchCount: matches.length,
-        totalAvailable: total,
-      }));
-    }
-  }
 
-  /**
-   * Real estate agent actions
-   */
-  private async executeRealEstateAgentAction(
-    context: AgentContext,
-    intentId: string,
-    intent: ParsedIntent
-  ): Promise<void> {
-    if (intent.type === "search_property") {
-      console.log(JSON.stringify({
-        event: "PROPERTY_SEARCH_REQUESTED",
-        params: intent.structuredPayload,
-      }));
-      
-      // Query properties table and create match events
-      const { searchProperties, createPropertyMatchEvents, formatPropertiesForWhatsApp } = await import(
-        "../wa-webhook-shared/tools/property-matcher.ts"
-      );
-      
-      const { matches, total } = await searchProperties(
-        this.supabase,
-        intent.structuredPayload as any
-      );
-      
-      // Create match events in database
-      await createPropertyMatchEvents(
-        this.supabase,
-        context.userId,
-        context.agentId,
-        context.conversationId,
-        matches
-      );
-      
-      console.log(JSON.stringify({
-        event: "PROPERTY_MATCHES_CREATED",
-        matchCount: matches.length,
-        totalAvailable: total,
-      }));
-    }
-  }
 
-  /**
-   * Waiter agent actions
-   */
-  private async executeWaiterAgentAction(
-    context: AgentContext,
-    intentId: string,
-    intent: ParsedIntent
-  ): Promise<void> {
-    if (intent.type === "view_menu") {
-      console.log(JSON.stringify({
-        event: "MENU_VIEW_REQUESTED",
-      }));
-    } else if (intent.type === "order_food") {
-      console.log(JSON.stringify({
-        event: "FOOD_ORDER_REQUESTED",
-        items: intent.structuredPayload.items,
-      }));
-    }
-  }
 
-  /**
-   * Farmer agent actions
-   */
-  private async executeFarmerAgentAction(
-    context: AgentContext,
-    intentId: string,
-    intent: ParsedIntent
-  ): Promise<void> {
-    console.log(JSON.stringify({
-      event: "FARMER_ACTION_REQUESTED",
-      intentType: intent.type,
-    }));
-  }
 
-  /**
-   * Business broker agent actions
-   */
-  private async executeBusinessBrokerAgentAction(
-    context: AgentContext,
-    intentId: string,
-    intent: ParsedIntent
-  ): Promise<void> {
-    console.log(JSON.stringify({
-      event: "BUSINESS_SEARCH_REQUESTED",
-      query: intent.structuredPayload.query,
-    }));
-  }
+
+
+
+
+
 
   /**
    * Rides agent actions
@@ -1266,25 +1118,6 @@ export class AgentOrchestrator {
     const roleName = persona?.role_name || "Assistant";
 
     switch (intent.type) {
-      case "search_jobs":
-        return `🔍 Searching for jobs matching your criteria...\n\n` +
-               `Looking for: ${JSON.stringify(intent.structuredPayload)}\n\n` +
-               `I'll find the best matches for you! 💼`;
-      
-      case "search_property":
-        return `🏠 Searching for properties...\n\n` +
-               `Criteria: ${JSON.stringify(intent.structuredPayload)}\n\n` +
-               `I'll show you the top 5 matches! 🔑`;
-      
-      case "view_menu":
-        return `📋 Here's our menu:\n\n` +
-               `(Menu items would appear here)\n\n` +
-               `What would you like to order? 🍽️`;
-      
-      case "order_food":
-        return `✅ Processing your order...\n\n` +
-               `I'll confirm the details shortly! 👨‍🍳`;
-      
       case "search_business":
         return `🏢 Searching local businesses...\n\n` +
                `Finding matches for: ${intent.structuredPayload.query}\n\n` +
