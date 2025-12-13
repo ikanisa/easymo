@@ -50,7 +50,13 @@ ALTER TABLE public.notification_queue ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_push_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.push_tokens ENABLE ROW LEVEL SECURITY;
 
--- Spatial (PostGIS system table)
-ALTER TABLE public.spatial_ref_sys ENABLE ROW LEVEL SECURITY;
+-- Spatial (PostGIS system table) - Skip if we don't have permissions
+DO $$ 
+BEGIN
+  ALTER TABLE public.spatial_ref_sys ENABLE ROW LEVEL SECURITY;
+EXCEPTION 
+  WHEN insufficient_privilege THEN
+    RAISE NOTICE 'Skipping spatial_ref_sys - insufficient privileges (PostGIS system table)';
+END $$;
 
 COMMIT;
