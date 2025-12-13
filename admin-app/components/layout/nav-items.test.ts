@@ -9,7 +9,11 @@ declare global {
     | undefined;
 }
 
-const legacySectionTitles = ["Overview", "AI agents", "Operations", "Business", "Marketing", "System"] as const;
+/**
+ * EasyMO Rwanda-only admin navigation
+ * Supported services: Mobility, Insurance, Buy & Sell, Profile, Wallet
+ */
+const legacySectionTitles = ["Overview", "AI agents", "Operations", "Business", "System"] as const;
 
 const legacyNavTitles = [
   "Dashboard",
@@ -17,10 +21,6 @@ const legacyNavTitles = [
   "Agent overview",
   "Agent dashboard",
   "Driver agent",
-  "Pharmacy agent",
-  "Shops and services agent",
-  "Hardware agent",
-  "Property agent",
   "Schedule agent",
   "Live conversations",
   "Playbooks",
@@ -33,24 +33,16 @@ const legacyNavTitles = [
   "Active sessions",
   "Negotiations",
   "Vendor responses",
-  "Video jobs",
   "Users",
   "Trips",
   "Insurance",
   "Marketplace",
   "SMS Vendors",
   "Client Portal",
-  "Pharmacies",
-  "Quincailleries",
-  "Shops and services",
-  "Bars and restaurants",
-  "Property rentals",
   "MoMo QR and tokens",
   "Leads",
   "Live calls",
   "Voice analytics",
-  "Video analytics",
-  "Integrations",
   "System logs",
   "WhatsApp health",
   "WhatsApp menu",

@@ -14,16 +14,16 @@ import { sendButtonsMessage, buildButtons } from "../utils/reply.ts";
 import { t } from "../i18n/translator.ts";
 import { IDS } from "../wa/ids.ts";
 
+/**
+ * EasyMO Rwanda-only agent types:
+ * - nearby_drivers: Find nearby drivers for rides
+ * - schedule_trip: Schedule future trips
+ */
 export interface AgentRequest {
   userId: string;
   agentType:
     | "nearby_drivers"
-    | "pharmacy"
-    | "property_rental"
-    | "schedule_trip"
-    | "shops"
-    | "quincaillerie"
-    | "notary";
+    | "schedule_trip";
   flowType: string;
   requestData: any;
   location?: { latitude: number; longitude: number; text?: string };
@@ -39,6 +39,7 @@ export interface AgentResponse {
 
 /**
  * Route request to appropriate AI agent based on intent
+ * EasyMO Rwanda-only: Only mobility-related agents
  */
 export async function routeToAIAgent(
   ctx: RouterContext,
@@ -61,25 +62,13 @@ export async function routeToAIAgent(
   });
 
   try {
-    // Route to specific agent
+    // Route to specific agent (Rwanda mobility only)
     switch (request.agentType) {
       case "nearby_drivers":
         return await invokeDriverAgent(ctx, request);
       
-      case "pharmacy":
-        return await invokePharmacyAgent(ctx, request);
-      
-      case "property_rental":
-        return await invokePropertyAgent(ctx, request);
-      
       case "schedule_trip":
         return await invokeScheduleTripAgent(ctx, request);
-      
-      case "shops":
-        return await invokeShopsAgent(ctx, request);
-      
-      case "quincaillerie":
-        return await invokeQuincaillerieAgent(ctx, request);
       
       default:
         throw new Error(`Unknown agent type: ${request.agentType}`);
@@ -156,117 +145,6 @@ async function invokeDriverAgent(
   }
 }
 
-/**
- * Invoke Pharmacy Agent - DATABASE SEARCH ONLY
- */
-async function invokePharmacyAgent(
-  ctx: RouterContext,
-  request: AgentRequest,
-): Promise<AgentResponse> {
-  try {
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-    const SUPABASE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-    if (!SUPABASE_URL || !SUPABASE_KEY) {
-      throw new Error("Missing Supabase credentials");
-    }
-
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/agent-negotiation`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${SUPABASE_KEY}`,
-      },
-      body: JSON.stringify({
-        userId: request.userId,
-        agentType: "pharmacy",
-        flowType: request.flowType,
-        location: request.location,
-        medications: request.requestData.medications,
-        prescriptionImage: request.requestData.prescriptionImage,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Pharmacy agent HTTP error:", response.status, errorText);
-      
-      return {
-        success: false,
-        sessionId: "",
-        message: "No matches found at this time.",
-      };
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("Pharmacy agent error:", error);
-    
-    return {
-      success: false,
-      sessionId: "",
-      message: "Search unavailable. Please try again.",
-    };
-  }
-}
-
-/**
- * Invoke Property Rental Agent - DATABASE SEARCH ONLY
- */
-async function invokePropertyAgent(
-  ctx: RouterContext,
-  request: AgentRequest,
-): Promise<AgentResponse> {
-  try {
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-    const SUPABASE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-    if (!SUPABASE_URL || !SUPABASE_KEY) {
-      throw new Error("Missing Supabase credentials");
-    }
-
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/agent-property-rental`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${SUPABASE_KEY}`,
-      },
-      body: JSON.stringify({
-        userId: request.userId,
-        action: request.requestData.action,
-        rentalType: request.requestData.rentalType,
-        bedrooms: request.requestData.bedrooms,
-        minBudget: request.requestData.minBudget,
-        maxBudget: request.requestData.maxBudget,
-        location: request.location,
-        address: request.requestData.address,
-        amenities: request.requestData.amenities,
-        propertyData: request.requestData.propertyData,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Property agent HTTP error:", response.status, errorText);
-      
-      return {
-        success: false,
-        sessionId: "",
-        message: "No matches found at this time.",
-      };
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("Property agent error:", error);
-    
-    return {
-      success: false,
-      sessionId: "",
-      message: "Search unavailable. Please try again.",
-    };
-  }
-}
 
 /**
  * Invoke Schedule Trip Agent - DATABASE SEARCH ONLY
@@ -399,114 +277,6 @@ async function invokeScheduleTripAgent(
     };
   }
 }
-
-/**
- * Invoke General Shops Agent - DATABASE SEARCH ONLY
- */
-async function invokeShopsAgent(
-  ctx: RouterContext,
-  request: AgentRequest,
-): Promise<AgentResponse> {
-  try {
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-    const SUPABASE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-    if (!SUPABASE_URL || !SUPABASE_KEY) {
-      throw new Error("Missing Supabase credentials");
-    }
-
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/agent-shops`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${SUPABASE_KEY}`,
-      },
-      body: JSON.stringify({
-        userId: request.userId,
-        action: request.requestData.action,
-        location: request.location,
-        items: request.requestData.items,
-        itemImage: request.requestData.itemImage,
-        shopCategory: request.requestData.shopCategory,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Shops agent HTTP error:", response.status, errorText);
-      
-      return {
-        success: false,
-        sessionId: "",
-        message: "No matches found at this time.",
-      };
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("Shops agent error:", error);
-    
-    return {
-      success: false,
-      sessionId: "",
-      message: "Search unavailable. Please try again.",
-    };
-  }
-}
-
-/**
- * Invoke Quincaillerie (Hardware Store) Agent - DATABASE SEARCH ONLY
- */
-async function invokeQuincaillerieAgent(
-  ctx: RouterContext,
-  request: AgentRequest,
-): Promise<AgentResponse> {
-  try {
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-    const SUPABASE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-    if (!SUPABASE_URL || !SUPABASE_KEY) {
-      throw new Error("Missing Supabase credentials");
-    }
-
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/agent-quincaillerie`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${SUPABASE_KEY}`,
-      },
-      body: JSON.stringify({
-        userId: request.userId,
-        location: request.location,
-        items: request.requestData.items,
-        itemImage: request.requestData.itemImage,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Quincaillerie agent HTTP error:", response.status, errorText);
-      
-      return {
-        success: false,
-        sessionId: "",
-        message: "No matches found at this time.",
-      };
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("Quincaillerie agent error:", error);
-    
-    return {
-      success: false,
-      sessionId: "",
-      message: "Search unavailable. Please try again.",
-    };
-  }
-}
-
-/**
  * Send agent options to user as interactive list with fallback buttons
  */
 export async function sendAgentOptions(

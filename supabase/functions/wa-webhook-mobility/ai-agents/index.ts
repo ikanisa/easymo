@@ -2,6 +2,8 @@
  * AI Agents Module
  *
  * Central export point for all AI agent functionality in the WhatsApp webhook system.
+ * 
+ * EasyMO Rwanda-only: Supports mobility (rides/transport) and schedule trip agents.
  */
 
 export {
@@ -17,10 +19,6 @@ export {
   handleAIAgentLocationUpdate,
   handleAIAgentOptionSelection,
   handleAINearbyDrivers,
-  handleAINearbyPharmacies,
-  handleAINearbyQuincailleries,
-  handleAINearbyShops,
-  handleAIPropertyRental,
   handleAIScheduleTrip,
   handleShopFallbackSelection,
 } from "./handlers.ts";
