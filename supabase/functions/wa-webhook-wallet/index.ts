@@ -17,7 +17,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js.86.0";
+import { createClient } from "@supabase/supabase-js";
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { getState, setState, clearState } from "../_shared/wa-webhook-shared/state/store.ts";
 import { sendButtonsMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
