@@ -58,7 +58,10 @@ export async function sendDriverQuoteRequest(
 
     return sent;
   } catch (error) {
-    console.error("Failed to send driver quote request:", error);
+    await logAgentEvent("agent.driver_quote_request_failed", {
+      sessionId: params.sessionId,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return false;
   }
 }
@@ -213,7 +216,10 @@ export async function handleDriverQuoteResponse(
 
     return true;
   } catch (error) {
-    console.error("Failed to handle driver quote response:", error);
+    await logAgentEvent("agent.driver_quote_response_failed", {
+      sessionId: params.sessionId,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return false;
   }
 }
@@ -283,7 +289,10 @@ export async function sendQuotePresentationToUser(
 
     return true;
   } catch (error) {
-    console.error("Failed to send quote presentation:", error);
+    await logAgentEvent("agent.quote_presentation_failed", {
+      sessionId,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return false;
   }
 }
