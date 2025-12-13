@@ -161,7 +161,7 @@ CREATE POLICY "service_role_manage_feature_gate_audit" ON public.feature_gate_au
 
 CREATE TABLE IF NOT EXISTS public.app_config (
   id INTEGER PRIMARY KEY DEFAULT 1,
-  insurance_allowed_countries TEXT[] DEFAULT ARRAY['RW'],
+  insurance_allowed_countries TEXT[] DEFAULT ARRAY['RW', 'KE', 'UG', 'TZ'],
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT app_config_singleton CHECK (id = 1)
@@ -225,18 +225,10 @@ GRANT EXECUTE ON FUNCTION public.get_admin_contacts(TEXT, TEXT) TO service_role;
 -- 8. SEED DATA - Default Insurance Admin Contact
 -- ============================================================================
 
--- Insert a default insurance admin contact if none exists
-INSERT INTO public.insurance_admin_contacts (
-  channel, 
-  destination, 
-  display_name, 
-  category, 
-  display_order, 
-  priority,
-  is_active
-) VALUES
-  ('whatsapp', '+250788767816', 'Insurance Team', 'insurance', 1, 10, true)
-ON CONFLICT (destination) DO NOTHING;
+-- NOTE: Default insurance admin contacts should be configured via the admin panel
+-- or by running a separate seed script after deployment.
+-- This ensures sensitive phone numbers are not exposed in version control.
+-- Example seed command: INSERT INTO insurance_admin_contacts (channel, destination, display_name, category, is_active) VALUES ('whatsapp', '<phone>', 'Insurance Team', 'insurance', true);
 
 -- ============================================================================
 -- COMMENTS
