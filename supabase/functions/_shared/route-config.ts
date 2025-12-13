@@ -21,6 +21,13 @@ export interface RouteConfig {
 
 /**
  * All microservice route configurations
+ * 
+ * EasyMO supports only the following services (Rwanda only):
+ * - Mobility (rides/transport)
+ * - Buy & Sell (marketplace with AI agent)
+ * - Insurance
+ * - Profile (with vehicles, MOMO QR, favorite locations)
+ * - Wallet
  */
 export const ROUTE_CONFIGS: RouteConfig[] = [
   {
@@ -33,18 +40,6 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
     service: "wa-webhook-insurance",
     keywords: ["insurance", "assurance", "cover", "claim", "policy", "premium", "insure", "protection"],
     menuKeys: ["insurance", "insurance_agent", "motor_insurance", "insurance_submit", "insurance_help", "motor_insurance_upload", "2"],
-    priority: 1,
-  },
-  {
-    service: "wa-webhook-jobs",
-    keywords: ["job", "work", "employment", "hire", "career", "apply", "cv", "resume", "gig", "gigs"],
-    menuKeys: ["jobs", "jobs_agent", "3"],
-    priority: 1,
-  },
-  {
-    service: "wa-webhook-property",
-    keywords: ["property", "rent", "house", "apartment", "rental", "landlord", "tenant", "real estate"],
-    menuKeys: ["property", "property_rentals", "property rentals", "real_estate_agent", "4"],
     priority: 1,
   },
   {
@@ -63,18 +58,16 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
     priority: 1,
   },
   {
-    // Profile service - user profile, settings, and assets management
-    // Wallet functionality moved to wa-webhook-wallet
+    // Profile service - user profile, settings, vehicles, and favorite locations
     service: "wa-webhook-profile",
     keywords: [
       // Profile keywords
-      "profile", "account", "my account", "settings",
+      "profile", "account", "my account", "settings", "vehicle", "vehicles",
     ],
     menuKeys: [
       // Profile menu keys
       "profile", "my_account", "my account", "account", "profile_assets", 
-      "my_business", "my_businesses",
-      "my_jobs", "my_properties", "saved_locations",
+      "my_vehicles", "saved_locations", "favorite_locations",
       // Legacy numeric
       "5",
     ],
@@ -84,11 +77,11 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
     // Directory service: Structured category browsing and location-based business search
     service: "wa-webhook-buy-sell-directory",
     keywords: ["buy", "sell", "category", "categories", "browse", "directory", "shops"],
-    menuKeys: ["buy_sell_directory", "buy_sell_categories", "buy_and_sell", "buy and sell", "shops_services", "directory", "browse_categories", "6"],
+    menuKeys: ["buy_sell_directory", "buy_sell_categories", "buy_and_sell", "buy and sell", "shops_services", "directory", "browse_categories", "3"],
     priority: 1,
   },
   {
-    // AI Agent service: Natural language business discovery
+    // AI Agent service: Natural language business discovery (only AI agent kept)
     service: "wa-webhook-buy-sell-agent",
     keywords: ["business broker", "find business", "shopping assistant", "ai search", "chat agent"],
     menuKeys: ["buy_sell_agent", "business_broker_agent", "chat_with_agent", "marketplace_agent", "shop_ai", "ai_assistant"],
@@ -99,9 +92,6 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
      * Legacy Buy & Sell service - DEPRECATED
      * 
      * This service is deprecated and traffic should be routed to wa-webhook-buy-sell-directory.
-     * The empty keywords and menuKeys arrays ensure this service is not directly accessible
-     * via keyword matching or menu selections. Only state-based routing or explicit redirects
-     * should route to this service (which will then redirect to the new directory service).
      */
     service: "wa-webhook-buy-sell",
     keywords: [], // Intentionally empty - deprecated service
@@ -112,10 +102,7 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
   },
   {
     /**
-     * Legacy agent-buy-sell endpoint
-     * 
-     * This endpoint is still active for AI processing but menu routing now goes through
-     * wa-webhook-buy-sell-agent. Direct access is intentionally disabled via empty arrays.
+     * Buy-Sell AI Agent endpoint (only AI agent kept)
      */
     service: "agent-buy-sell",
     keywords: [], // Intentionally empty - access via wa-webhook-buy-sell-agent
@@ -123,57 +110,29 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
     priority: 99,
   },
   {
-    service: "wa-agent-farmer",
-    keywords: ["farmer", "agriculture", "crop", "harvest", "seed", "fertilizer"],
-    menuKeys: ["farmer_agent", "farmers", "farmers_market"],
-    priority: 2,
-  },
-  {
     service: "wa-agent-support",
     keywords: ["support", "help", "issue", "problem", "question", "faq"],
-    menuKeys: ["support_agent", "support", "customer_support", "help", "7"],
+    menuKeys: ["support_agent", "support", "customer_support", "help", "4"],
     priority: 2,
-  },
-  {
-    service: "wa-agent-waiter",
-    keywords: ["waiter", "restaurant", "bar", "food", "menu", "order", "reservation"],
-    menuKeys: ["waiter_agent", "waiter", "restaurant"],
-    priority: 2,
-  },
-  {
-    service: "agent-property-rental",
-    keywords: ["property", "rental", "rent", "house", "apartment", "lease", "accommodation"],
-    menuKeys: ["property_agent", "rental_agent", "property_rental", "real_estate"],
-    priority: 2,
-  },
-  {
-    service: "wa-agent-call-center",
-    keywords: ["agent", "chat", "ask", "call center", "universal", "marketplace"],
-    menuKeys: ["ai_agents", "call_center", "universal_agent"],
-    priority: 3, // Fallback for general AI queries
   },
 ];
 
 /**
  * List of all routed services (for health checks, validation, etc.)
+ * 
+ * EasyMO Rwanda-only services:
+ * - Mobility, Insurance, Buy & Sell, Profile, Wallet
  */
 export const ROUTED_SERVICES: readonly string[] = [
   "wa-webhook-mobility",
   "wa-webhook-insurance",
-  "wa-webhook-jobs",
-  "wa-webhook-property",
   "wa-webhook-profile",
   "wa-webhook-wallet",
   "wa-webhook-buy-sell",
   "wa-webhook-buy-sell-directory",
   "wa-webhook-buy-sell-agent",
-  "wa-webhook-waiter",
-  "wa-agent-farmer",
-  "wa-agent-support",
-  "wa-agent-waiter",
   "agent-buy-sell",
-  "agent-property-rental",
-  "wa-agent-call-center",
+  "wa-agent-support",
   "wa-webhook-core",
   "wa-webhook", // Legacy fallback
 ] as const;
@@ -195,12 +154,12 @@ export function buildMenuKeyMap(): Record<string, string> {
 
 /**
  * State-based routing patterns
+ * 
+ * EasyMO Rwanda-only services
  */
 export const STATE_PATTERNS: Array<{ patterns: string[]; service: string }> = [
   { patterns: ["insurance", "ins_"], service: "wa-webhook-insurance" },
-  { patterns: ["jobs", "job_"], service: "wa-webhook-jobs" },
   { patterns: ["mobility", "trip_", "ride_"], service: "wa-webhook-mobility" },
-  { patterns: ["property", "rental_"], service: "wa-webhook-property" },
   // Wallet state patterns - route to dedicated wallet service
   // Note: wallet_ prefix catches wallet_cashout, wallet_purchase, wallet_referral, wallet_transfer, etc.
   { patterns: ["wallet_", "payment_", "transfer_", "momo_qr_"], service: "wa-webhook-wallet" },
@@ -210,13 +169,8 @@ export const STATE_PATTERNS: Array<{ patterns: string[]; service: string }> = [
   { patterns: ["agent_chat", "business_broker_chat"], service: "wa-webhook-buy-sell-agent" },
   // Legacy buy/sell patterns - route to directory
   { patterns: ["shop_", "buy_sell_", "buy_sell_location", "buy_sell_results", "buy_sell_menu"], service: "wa-webhook-buy-sell-directory" },
-  { patterns: ["waiter_workflow_"], service: "wa-webhook-waiter" },
-  { patterns: ["farmer_"], service: "wa-agent-farmer" },
   { patterns: ["support_"], service: "wa-agent-support" },
-  { patterns: ["waiter_", "restaurant_"], service: "wa-agent-waiter" },
   { patterns: ["buy_sell_agent_"], service: "wa-webhook-buy-sell-agent" },
-  { patterns: ["property_agent_", "rental_agent_"], service: "agent-property-rental" },
-  { patterns: ["agent_", "call_center_"], service: "wa-agent-call-center" },
 ];
 
 /**

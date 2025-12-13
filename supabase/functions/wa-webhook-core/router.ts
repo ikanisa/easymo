@@ -611,22 +611,22 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
     }));
 
     // Fallback if no items found (shouldn't happen if DB is populated)
+    // EasyMO Rwanda-only services: Mobility, Insurance, Buy & Sell, Wallet/Profile
     if (rows.length === 0) {
       logWarn("NO_ACTIVE_MENU_ITEMS", { message: "No active menu items found in DB, using fallback" }, { correlationId: crypto.randomUUID() });
       rows.push(
         { id: "rides", title: "Rides & Transport", description: "Request a ride or delivery" },
         { id: "insurance", title: "Insurance", description: "Buy or manage insurance" },
-        { id: "jobs", title: "Jobs & Careers", description: "Find jobs or hire" },
-        { id: "property", title: "Property Rentals", description: "Rent houses or apartments" },
-        { id: "wallet", title: "Wallet & Profile", description: "Manage funds and settings" },
-        { id: "marketplace", title: "Marketplace", description: "Buy and sell items" },
-        { id: "ai_agents", title: "AI Support", description: "Chat with our AI assistant" }
+        { id: "buy_and_sell", title: "Buy & Sell", description: "Browse shops and services" },
+        { id: "wallet", title: "Wallet & MOMO QR", description: "Manage funds and QR codes" },
+        { id: "profile", title: "Profile", description: "Manage your account and vehicles" },
+        { id: "support", title: "Support", description: "Get help from our team" }
       );
     }
 
     await sendListMessage(ctx, {
       title: "easyMO Services",
-      body: "✨ Hello 👋 Do more with easyMO, Rides, Shops, MOMO QR codes ..and more.",
+      body: "✨ Hello 👋 Do more with easyMO in Rwanda - Rides, Buy & Sell, MOMO QR codes, Insurance and more.",
       buttonText: "View Services",
       sectionTitle: "Services",
       rows: rows,
