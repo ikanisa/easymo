@@ -318,14 +318,69 @@ async function handleConfirmOutreach(
     const intent = sourcingRequest.intent_json;
 
     // Trigger broadcast via whatsapp-broadcast function
-    // Note: This would typically call the broadcast function via HTTP
-    // For now, we'll just log and notify user
-    
-    await sendText(
-      from,
-      `Great! I'll reach out to ${candidates.length} businesses about your request. ` +
-      `You'll receive notifications when they respond. This usually takes a few hours.`
-    );
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const bridgeApiKey = Deno.env.get("WHATSAPP_BRIDGE_API_KEY");
+      
+      if (!bridgeApiKey) {
+        throw new Error("WHATSAPP_BRIDGE_API_KEY not configured");
+      }
+
+      const broadcastPayload = {
+        requestId: `sourcing-${sourcingRequestId}`,
+        userLocationLabel: intent.location || undefined,
+        needDescription: intent.description,
+        vendorFilter: {
+          tags: intent.special_requirements || []
+        }
+      };
+
+      const broadcastResponse = await fetch(
+        `${supabaseUrl}/functions/v1/whatsapp-broadcast`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": bridgeApiKey,
+            "x-correlation-id": correlationId
+          },
+          body: JSON.stringify(broadcastPayload)
+        }
+      );
+
+      if (!broadcastResponse.ok) {
+        throw new Error(`Broadcast failed: ${broadcastResponse.status}`);
+      }
+
+      const broadcastResult = await broadcastResponse.json();
+      
+      await sendText(
+        from,
+        `Great! I've reached out to ${broadcastResult.sentCount} businesses about your request. ` +
+        `You'll receive notifications when they respond. This usually takes a few hours.`
+      );
+
+      await logStructuredEvent("BROADCAST_TRIGGERED", {
+        userId,
+        sourcingRequestId,
+        sentCount: broadcastResult.sentCount,
+        correlationId
+      });
+
+    } catch (error) {
+      await logStructuredEvent("BROADCAST_TRIGGER_ERROR", {
+        userId,
+        sourcingRequestId,
+        error: (error as Error).message,
+        correlationId
+      }, "error");
+
+      await sendText(
+        from,
+        `I found ${candidates.length} businesses for you, but I'm having trouble reaching out to them right now. ` +
+        `Please try again in a moment.`
+      );
+    }
 
     await logStructuredEvent("OUTREACH_CONFIRMED", {
       userId,

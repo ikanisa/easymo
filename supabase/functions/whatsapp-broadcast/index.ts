@@ -188,6 +188,8 @@ Deno.serve(async (req) => {
             },
             body: JSON.stringify({
               messaging_product: "whatsapp",
+              // WhatsApp Cloud API expects international format without '+' prefix
+              // e.g., "250788123456" not "+250788123456"
               to: normalizedPhone.replace(/^\+/, ""),
               type: "template",
               template: {
