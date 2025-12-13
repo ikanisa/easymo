@@ -131,7 +131,7 @@ export type NearbySavedPickerState = {
 };
 
 function getMatchTimestamp(match: MatchResult): string | null {
-  return match.matched_at ?? match.created_at ?? null;
+  return match.created_at ?? null;  // Simplified: matched_at removed
 }
 
 function timestampMs(match: MatchResult): number {
@@ -187,12 +187,11 @@ function buildNearbyRow(
   // Build title based on role
   let title: string;
   if (match.role === "driver") {
-    // For drivers: show number plate (or fallback to ref code)
-    const plate = match.number_plate?.trim();
-    title = plate || match.ref_code || `Driver ${match.trip_id.slice(0, 8)}`;
+    // For drivers: show ref code (simplified - no number plate lookup)
+    title = match.ref_code || `Driver ${match.trip_id.slice(0, 8)}`;
   } else {
     // For passengers: show eclipsed phone number
-    const eclipsed = eclipsePhone(match.whatsapp_e164 ?? "");
+    const eclipsed = eclipsePhone(match.phone ?? "");
     title = eclipsed || match.ref_code || `Passenger ${match.trip_id.slice(0, 8)}`;
   }
   
@@ -215,7 +214,7 @@ function buildNearbyRow(
     },
     state: {
       id: rowId,
-      whatsapp: match.whatsapp_e164 ?? "",
+      whatsapp: match.phone ?? "",  // Simplified: direct phone field
       ref: match.ref_code ?? "---",
       tripId: match.trip_id,
     },
@@ -1027,89 +1026,9 @@ async function runMatchingFallback(
         
       const passengerName = passenger?.full_name ?? "A passenger";
       
-      // Send notifications to top 9 drivers (async, don't block the user response)
-      const notifyDrivers = async () => {
-        for (const match of matches.slice(0, 9)) {
-          if (!match.whatsapp_e164) continue;
-          
-          try {
-            // Rate limiting: max 5 notifications per driver per hour
-            // Query trip_notifications table (where notifications are actually stored)
-            const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-            const { count: recentNotifications } = await ctx.supabase
-              .from('trip_notifications')
-              .select('id', { count: 'exact', head: true })
-              .eq('recipient_id', match.creator_user_id)
-              .gte('created_at', oneHourAgo);
-            
-            if ((recentNotifications || 0) >= 5) {
-              logStructuredEvent("DRIVER_NOTIFICATION_RATE_LIMITED", {
-                driverId: match.creator_user_id,
-                count: recentNotifications,
-              });
-              continue; // Skip this driver
-            }
-            
-            // Quiet hours check
-            const quiet = await isDriverQuiet(ctx.supabase, match.creator_user_id).catch(() => false);
-            if (quiet) continue;
-            
-            const acceptId = `RIDE_ACCEPT::${tempTripId}`;
-            
-            try {
-              await sendButtonsDirect(
-                match.whatsapp_e164,
-                ctx.locale,
-                `🚖 **New Ride Request!**\n\nPassenger: ${passengerName}\nDistance: ${toDistanceLabel(match.distance_km)}\n\nDo you want to accept this ride?`,
-                [{ id: acceptId, title: "✅ Accept Ride" }],
-              );
-            } catch {
-              // Fallback to template/text if interactive fails
-              try {
-                const { sendTemplate } = await import("../wa/client.ts");
-                const tpl = Deno.env.get('WA_DRIVER_NOTIFY_TEMPLATE') ?? 'ride_notify';
-                const lang = Deno.env.get('WA_TEMPLATE_LANG') ?? 'en';
-                const compact = `New ride near you. Passenger: ${passengerName}. ${toDistanceLabel(match.distance_km) ?? ''}`.trim();
-                await sendTemplate(match.whatsapp_e164, { name: tpl, language: lang, bodyParameters: [{ type: 'text', text: compact }] });
-              } catch {
-                // Last resort - plain text
-                await sendText(match.whatsapp_e164, `🚖 New ride near you. Passenger: ${passengerName}. Reply ACCEPT to confirm.`);
-              }
-            }
-            
-            // Log notification (don't await to avoid blocking)
-            ctx.supabase.from("trip_notifications").insert({
-              trip_id: tempTripId,
-              recipient_id: match.creator_user_id,
-              status: "sent"
-            });
-            
-            // Log notification sent (fire and forget)
-            logStructuredEvent("DRIVER_NOTIFIED", {
-              tripId: tempTripId,
-              driverId: match.creator_user_id,
-            }).catch(() => {
-              // Ignore logging errors
-            });
-          } catch (notifyError) {
-            // Log error but continue with other drivers
-            logStructuredEvent("DRIVER_NOTIFICATION_FAILED", {
-              tripId: tempTripId,
-              driverId: match.creator_user_id,
-              error: notifyError instanceof Error ? notifyError.message : String(notifyError),
-            });
-          }
-        }
-      };
-      
-      // Fire and forget - don't block user response
-      notifyDrivers().catch((_err: unknown) => {
-        logStructuredEvent("DRIVER_NOTIFICATION_BATCH_FAILED", {
-          tripId: tempTripId,
-          error: _err instanceof Error ? _err.message : String(_err),
-        });
-      });
-    }
+      // SIMPLIFIED: Notifications disabled - trip_notifications table dropped
+      // Users will see matches in the list and can contact directly via WhatsApp
+      // This simplifies the system and removes complex notification logic
 
     const rendered = sortMatches(matches, { prioritize: "distance" })
       .slice(0, 9)
@@ -1179,36 +1098,6 @@ async function runMatchingFallback(
     // - Passenger trips stay visible when drivers search
     // - Driver trips stay visible when passengers search
     // - Enables true peer-to-peer discovery
-  }
-}
-
-async function isDriverQuiet(client: any, driverId: string): Promise<boolean> {
-  try {
-    const { data } = await client
-      .from('profiles')
-      .select('metadata')
-      .eq('user_id', driverId)
-      .maybeSingle();
-    const meta = (data?.metadata && typeof data.metadata === 'object') ? (data!.metadata as any) : {};
-    const quiet = meta?.driver?.quiet;
-    if (!quiet?.enabled) return false;
-    const tz = quiet.tz || 'Africa/Kigali';
-    const now = new Date();
-    const hours = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: tz }).format(now);
-    const toMinutes = (hhmm: string) => {
-      const [h, m] = hhmm.split(':').map((x: string) => parseInt(x, 10));
-      return h * 60 + (m || 0);
-    };
-    const cur = toMinutes(hours);
-    const start = toMinutes(String(quiet.start || '22:00'));
-    const end = toMinutes(String(quiet.end || '06:00'));
-    // Quiet window may cross midnight
-    if (start <= end) {
-      return cur >= start && cur < end;
-    }
-    return cur >= start || cur < end;
-  } catch (_) {
-    return false;
   }
 }
 

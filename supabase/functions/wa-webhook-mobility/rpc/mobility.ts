@@ -27,30 +27,10 @@ export async function gateProFeature(client: SupabaseClient, userId: string) {
   };
 }
 
-export async function recordDriverPresence(
-  client: SupabaseClient,
-  userId: string,
-  params: {
-    vehicleType: string;
-    lat: number;
-    lng: number;
-    lastSeenAt?: string;
-  },
-): Promise<void> {
-  const { error } = await client
-    .from("driver_status")
-    .upsert({
-      user_id: userId,
-      vehicle_type: params.vehicleType,
-      last_seen: params.lastSeenAt ?? new Date().toISOString(),
-      lat: params.lat,
-      lng: params.lng,
-      location: `SRID=4326;POINT(${params.lng} ${params.lat})`,
-      online: true,
-    }, { onConflict: "user_id" });
-  if (error) throw error;
-}
+// NOTE: recordDriverPresence removed - driver_status table dropped in simplified schema
+// Drivers are now discovered through active trip records only
 
+// SIMPLIFIED: Use create_trip RPC function instead of direct insert
 export async function insertTrip(
   client: SupabaseClient,
   params: {
@@ -63,6 +43,7 @@ export async function insertTrip(
     pickupText?: string;
     scheduledAt?: Date | string;
     recurrence?: RecurrenceType;
+    phone?: string;  // Added for simplified schema
   },
 ): Promise<string> {
   // Guard against malformed coordinates before persisting
@@ -73,38 +54,41 @@ export async function insertTrip(
     throw new Error("Invalid coordinates: lat must be [-90,90], lng must be [-180,180]");
   }
 
-  // Calculate travel time: when the trip is supposed to happen
-  const travelTime = params.scheduledAt
+  // Get phone number from params or fetch from profile
+  let phone = params.phone;
+  if (!phone) {
+    const { data: profile } = await client
+      .from("profiles")
+      .select("phone_number, wa_id")
+      .eq("user_id", params.userId)
+      .maybeSingle();
+    phone = profile?.phone_number || profile?.wa_id || "";
+  }
+
+  // Calculate scheduled time
+  const scheduledFor = params.scheduledAt
     ? (params.scheduledAt instanceof Date 
         ? params.scheduledAt 
         : new Date(params.scheduledAt))
-    : new Date(); // NOW for immediate trips
+    : null;
 
-  // Trip expires 30 minutes AFTER the travel time (not from creation time!)
-  const expiresAt = new Date(travelTime.getTime() + TRIP_EXPIRY_MS);
-  
-  const scheduledAtStr = params.scheduledAt ? travelTime.toISOString() : null;
-
-  const { data, error } = await client
-    .from("trips") // Canonical table
-    .insert({
-      user_id: params.userId,
-      role: params.role,
-      vehicle_type: params.vehicleType,
-      kind: params.scheduledAt ? "scheduled" : "request_intent",
-      pickup_lat: params.lat,
-      pickup_lng: params.lng,
-      pickup_text: params.pickupText ?? null,
-      scheduled_for: scheduledAtStr,
-      status: "open",
-      expires_at: expiresAt.toISOString(),
-      metadata: params.recurrence ? { recurrence: params.recurrence } : {},
-    })
-    .select("id")
-    .single();
+  // Use simplified create_trip RPC function
+  const { data, error } = await client.rpc("create_trip", {
+    _user_id: params.userId,
+    _phone: phone,
+    _role: params.role,
+    _vehicle: params.vehicleType,
+    _pickup_lat: params.lat,
+    _pickup_lng: params.lng,
+    _pickup_text: params.pickupText ?? null,
+    _dropoff_lat: null,
+    _dropoff_lng: null,
+    _dropoff_text: null,
+    _scheduled_for: scheduledFor?.toISOString() ?? null,
+  });
 
   if (error) throw error;
-  return data?.id;
+  return data as string;
 }
 
 export async function updateTripDropoff(
@@ -137,23 +121,34 @@ export async function updateTripDropoff(
 
 export type MatchResult = {
   trip_id: string;
-  creator_user_id: string;
-  whatsapp_e164: string;
+  user_id: string;
+  phone: string;  // Now directly from trips table
   ref_code: string;
+  role: "driver" | "passenger";
+  vehicle: string;
   distance_km: number;
-  drop_bonus_m: number | null;
   pickup_text: string | null;
   dropoff_text: string | null;
-  matched_at: string | null;
-  created_at?: string | null;
-  vehicle_type?: string | null;
-  is_exact_match?: boolean;
-  location_age_minutes?: number;
-  number_plate?: string | null;  // For drivers
-  driver_name?: string | null;   // Optional: driver full name
-  role?: "driver" | "passenger"; // To differentiate in UI
+  scheduled_for: string | null;
+  created_at: string | null;
+  expires_at: string | null;
 };
 
+// SIMPLIFIED: Use find_matches RPC function for both drivers and passengers
+export async function findMatches(
+  client: SupabaseClient,
+  tripId: string,
+  limit = 9,
+) {
+  const { data, error } = await client.rpc("find_matches", {
+    _trip_id: tripId,
+    _limit: limit,
+  });
+  if (error) throw error;
+  return (data ?? []) as MatchResult[];
+}
+
+// Legacy functions for backward compatibility - these now call find_matches
 export async function matchDriversForTrip(
   client: SupabaseClient,
   tripId: string,
@@ -162,15 +157,8 @@ export async function matchDriversForTrip(
   radiusMeters?: number,
   windowMinutes?: number,
 ) {
-  const { data, error } = await client.rpc("match_drivers_for_trip_v2", {
-    _trip_id: tripId,
-    _limit: limit,
-    _prefer_dropoff: preferDropoff,
-    _radius_m: radiusMeters ?? null,
-    _window_minutes: windowMinutes ?? 30,
-  } as Record<string, unknown>);
-  if (error) throw error;
-  return (data ?? []) as MatchResult[];
+  // Simplified: ignore complex parameters, just use find_matches
+  return findMatches(client, tripId, limit);
 }
 
 export async function matchPassengersForTrip(
@@ -181,15 +169,8 @@ export async function matchPassengersForTrip(
   radiusMeters?: number,
   windowMinutes?: number,
 ) {
-  const { data, error } = await client.rpc("match_passengers_for_trip_v2", {
-    _trip_id: tripId,
-    _limit: limit,
-    _prefer_dropoff: preferDropoff,
-    _radius_m: radiusMeters ?? null,
-    _window_minutes: windowMinutes ?? 30,
-  } as Record<string, unknown>);
-  if (error) throw error;
-  return (data ?? []) as MatchResult[];
+  // Simplified: ignore complex parameters, just use find_matches
+  return findMatches(client, tripId, limit);
 }
 
 export async function updateTripLocation(
