@@ -27,8 +27,7 @@ DROP TABLE IF EXISTS public.feature_gate_audit CASCADE;
 -- 6. Drop app_config (insurance-related)
 DROP TABLE IF EXISTS public.app_config CASCADE;
 
--- 7. Drop processed_webhooks (insurance-specific deduplication)
--- Note: Only drop if not used by other services
+-- 7. Drop processed_webhooks (used by insurance workflow)
 DROP TABLE IF EXISTS public.processed_webhooks CASCADE;
 
 -- Drop helper function for admin contacts (we'll recreate a simpler one if needed)

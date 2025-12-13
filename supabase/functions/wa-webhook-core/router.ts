@@ -101,7 +101,7 @@ async function handleInsuranceAgentRequest(phoneNumber: string): Promise<void> {
     }
 
     const contact = contacts[0];
-    const whatsappLink = `https://wa.me/${contact.destination.replace(/\+/g, "")}`;
+    const whatsappLink = `https://wa.me/${contact.destination.replace(/^\+/, "")}`;
     const displayName = contact.display_name || "Insurance Team";
     
     const message = `🛡️ Insurance Services\n\nFor insurance inquiries, please contact our ${displayName}:\n\n${whatsappLink}`;
