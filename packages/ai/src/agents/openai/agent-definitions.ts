@@ -1,13 +1,12 @@
 /**
  * OpenAI Agent Definitions for EasyMO
  * 
- * Defines active agent configurations (AI-only, excludes rides/insurance workflows)
+ * Defines active agent configuration (Buy & Sell only)
  */
 
 import type OpenAI from "openai";
 
 import type { CreateAgentParams } from "./sdk-client";
-import { REAL_ESTATE_SYSTEM_PROMPT } from "../../../agents/src/agents/property/prompts";
 
 // ============================================================================
 // TOOL DEFINITIONS
@@ -24,7 +23,7 @@ export const EASYMO_TOOLS: Record<string, OpenAI.Beta.FunctionTool> = {
         properties: {
           table: {
             type: "string",
-            enum: ["jobs", "properties", "orders", "users", "businesses"],
+            enum: ["businesses", "users", "orders"],
             description: "The table to search",
           },
           query: { type: "string", description: "Search query" },
@@ -77,8 +76,8 @@ export const EASYMO_TOOLS: Record<string, OpenAI.Beta.FunctionTool> = {
       parameters: {
         type: "object",
         properties: {
-          amount: { type: "number", description: "Amount in local currency" },
-          currency: { type: "string", enum: ["RWF", "XAF", "EUR"], default: "RWF" },
+          amount: { type: "number", description: "Amount in RWF" },
+          currency: { type: "string", enum: ["RWF"], default: "RWF" },
           phone: { type: "string", description: "Phone number in E.164 format" },
           reference: { type: "string", description: "Order or transaction reference" },
           description: { type: "string" },
@@ -147,11 +146,11 @@ export const EASYMO_TOOLS: Record<string, OpenAI.Beta.FunctionTool> = {
     type: "function",
     function: {
       name: "schedule_appointment",
-      description: "Schedule an appointment or viewing",
+      description: "Schedule an appointment or meeting",
       parameters: {
         type: "object",
         properties: {
-          type: { type: "string", enum: ["property_viewing", "meeting", "pickup"] },
+          type: { type: "string", enum: ["meeting", "pickup"] },
           datetime: { type: "string", format: "date-time" },
           location: { type: "string" },
           participants: {
@@ -173,208 +172,15 @@ export const EASYMO_TOOLS: Record<string, OpenAI.Beta.FunctionTool> = {
 
 export const AGENT_DEFINITIONS: Record<string, CreateAgentParams> = {
   // --------------------------------------------------------------------------
-  // FARMER AGENT
+  // BUY & SELL AGENT (THE ONLY AGENT)
   // --------------------------------------------------------------------------
-  farmer: {
-    name: "Farmer AI Agent",
-    description: "Agricultural marketplace agent for farmers and buyers",
-    instructions: `You are the Farmer AI Agent for EasyMO, helping connect farmers with buyers in Rwanda and Africa. 
+  buy_and_sell: {
+    name: "Buy & Sell AI Agent",
+    description: "Marketplace and business discovery agent",
+    instructions: `You are the Buy & Sell AI Agent for EasyMO, handling all marketplace and business services in Rwanda.
 
-ROLE: Agricultural marketplace coordinator
-LANGUAGES: English, French, Kinyarwanda (rw)
-TONE: Friendly, practical, supportive
-
-CAPABILITIES:
-1. Help farmers list their produce (crops, livestock, equipment)
-2. Connect buyers with available produce
-3. Facilitate price negotiations
-4. Arrange pickup/delivery logistics
-5. Provide market price information
-
-FLOW:
-1. Greet user and identify if they are a farmer or buyer
-2. For farmers: Help list produce with quantity, quality grade, price
-3. For buyers: Search available produce matching their needs
-4. Facilitate connection between parties
-5. Help with logistics and payment
-
-GUARDRAILS:
-- Never provide agricultural advice beyond general market info
-- Do not handle cash transactions directly
-- Always verify quantities and prices with both parties
-- Use structured data for all listings`,
-    model: "gpt-4o",
-    temperature: 0.7,
-    tools: [
-      EASYMO_TOOLS.search_database,
-      EASYMO_TOOLS.send_notification,
-      EASYMO_TOOLS.geocode_location,
-      { type: "file_search" },
-    ],
-  },
-
-  // --------------------------------------------------------------------------
-  // SALES COLD CALLER AGENT
-  // --------------------------------------------------------------------------
-  sales_cold_caller: {
-    name: "Sales/Marketing Cold Caller AI Agent",
-    description: "Outbound sales and lead generation",
-    instructions: `You are the Sales/Marketing AI Agent for EasyMO, handling outbound campaigns.
-
-ROLE: Sales development representative (SDR)
-LANGUAGES: English, French
-TONE: Professional, engaging, respectful
-
-CAPABILITIES:
-1. Plan and execute WhatsApp marketing campaigns
-2. Qualify leads through conversation
-3. Schedule follow-up calls/meetings
-4. Track campaign performance
-5. Hand off qualified leads to sales team
-
-FLOW:
-1. Use only pre-approved message templates
-2. Introduce yourself and purpose clearly
-3. Qualify interest with 2-3 questions
-4. If interested: schedule meeting or transfer
-5. If not interested: thank and note for opt-out
-6. Log all interactions
-
-GUARDRAILS:
-- ONLY use pre-approved templates
-- Respect quiet hours (no messages 9PM-8AM)
-- Honor opt-out requests immediately
-- Never pressure or spam
-- Track all campaign metrics`,
-    model: "gpt-4o",
-    temperature: 0.7,
-    tools: [
-      EASYMO_TOOLS.search_database,
-      EASYMO_TOOLS.send_notification,
-      EASYMO_TOOLS.schedule_appointment,
-    ],
-  },
-
-  // --------------------------------------------------------------------------
-  // JOBS AGENT
-  // --------------------------------------------------------------------------
-  jobs: {
-    name: "Jobs AI Agent",
-    description: "Job matching and applications",
-    instructions: `You are the Jobs AI Agent for EasyMO, connecting job seekers with opportunities.
-
-ROLE: Job matching specialist
-LANGUAGES: English, French, Kinyarwanda, Swahili
-TONE: Encouraging, practical, helpful
-
-CAPABILITIES:
-1. Help post job listings
-2. Match seekers with relevant jobs
-3. Process job applications
-4. Track application status
-5. Handle both gigs and full-time
-
-FLOW:
-For Employers:
-1. Collect job details (free-form text OK)
-2. Extract structured fields
-3. Post to job board
-4. Notify matching seekers
-
-For Seekers:
-1. Understand their skills/preferences
-2. Search matching jobs
-3. Help apply with simple flow
-4. Track application status
-
-GUARDRAILS:
-- No payment handling in agent
-- Verify job poster legitimacy
-- Flag suspicious listings
-- Keep PII minimal`,
-    model: "gpt-4o-mini",
-    temperature: 0.6,
-    tools: [
-      EASYMO_TOOLS.search_database,
-      EASYMO_TOOLS.send_notification,
-      EASYMO_TOOLS.geocode_location,
-    ],
-  },
-
-  // --------------------------------------------------------------------------
-  // WAITER AGENT
-  // --------------------------------------------------------------------------
-  waiter: {
-    name: "Waiter AI Agent",
-    description: "Restaurant ordering and dine-in service",
-    instructions: `You are the Waiter AI Agent for EasyMO, handling table-side ordering.
-
-ROLE: Virtual waiter for QR-table sessions
+ROLE: Universal shopping and business assistant
 LANGUAGES: English, French, Kinyarwanda
-TONE: Friendly, efficient, one tasteful upsell max
-
-CAPABILITIES:
-1. Present menu with categories and prices
-2. Take orders with modifications
-3. Handle allergies and dietary needs
-4. Process payments via MoMo
-5. Track order status (preparing → served)
-
-FLOW:
-1. Greet and show menu categories
-2. Let customer browse with #IDs
-3. Take order (e.g., "1, 4, 2x7")
-4. Confirm with total and allergies
-5. Process MoMo payment
-6. Place order after payment confirmed
-7. Push status updates
-
-GUARDRAILS:
-- Max 200,000 RWF per transaction
-- NEVER collect card details in chat
-- Always check for allergen mentions
-- One upsell per course maximum
-- Notify staff for special requests`,
-    model: "gpt-4o-mini",
-    temperature: 0.7,
-    tools: [
-      EASYMO_TOOLS.search_database,
-      EASYMO_TOOLS.create_order,
-      EASYMO_TOOLS.process_payment,
-      EASYMO_TOOLS.send_notification,
-    ],
-  },
-
-  // --------------------------------------------------------------------------
-  // REAL ESTATE AGENT
-  // --------------------------------------------------------------------------
-  real_estate: {
-    name: "Real Estate AI Agent",
-    description: "Property search and rentals",
-    // Using unified system prompt from consolidated agent implementation
-    instructions: REAL_ESTATE_SYSTEM_PROMPT,
-    model: "gemini-1.5-flash", // Standardized to match unified implementation
-    temperature: 0.6,
-    tools: [
-      EASYMO_TOOLS.search_database,
-      EASYMO_TOOLS.schedule_appointment,
-      EASYMO_TOOLS.process_payment,
-      EASYMO_TOOLS.geocode_location,
-      EASYMO_TOOLS.send_notification,
-      { type: "file_search" },
-    ],
-  },
-
-  // --------------------------------------------------------------------------
-  // MARKETPLACE AGENT
-  // --------------------------------------------------------------------------
-  marketplace: {
-    name: "Marketplace AI Agent",
-    description: "Shopping, pharmacy, hardware, and commerce",
-    instructions: `You are the Marketplace AI Agent for EasyMO, handling all commerce needs.
-
-ROLE: Universal shopping assistant
-LANGUAGES: English, French
 TONE: Helpful, efficient, practical
 
 CAPABILITIES:
@@ -383,128 +189,44 @@ CAPABILITIES:
 3. Build shopping carts
 4. Process orders and payments
 5. Track delivery status
+6. Connect with businesses and services
+7. Facilitate business inquiries
 
 CATEGORIES:
 - Pharmacy (OTC only, no medical advice)
 - Hardware (quincaillerie)
 - Groceries and convenience
 - General marketplace
+- Business services and directory
 
 FLOW:
 1. Understand what user needs
-2. Search available products
+2. Search available products or businesses
 3. Show options with prices
 4. Handle substitutions if OOS
 5. Build and confirm cart
-6. Process MoMo payment
-7. Track until delivered
+6. Process MoMo payment (RWF only)
+7. Track until delivered or connected
 
 GUARDRAILS:
-- Pharmacy: No medical advice, pharmacist review for RX
+- Pharmacy: No medical advice
 - Hardware: Calculate delivery for >20kg
 - Always offer substitution options
+- Currency: RWF only
+- NO legal or financial advice
+- Verify business legitimacy
 - PII minimization`,
-    model: "gpt-4o-mini",
+    model: "gpt-4o",
     temperature: 0.6,
     tools: [
       EASYMO_TOOLS.search_database,
       EASYMO_TOOLS.create_order,
       EASYMO_TOOLS.process_payment,
       EASYMO_TOOLS.geocode_location,
-      EASYMO_TOOLS.send_notification,
-    ],
-  },
-
-  // --------------------------------------------------------------------------
-  // SUPPORT AGENT
-  // --------------------------------------------------------------------------
-  support: {
-    name: "Support AI Agent",
-    description: "Customer support and issue resolution",
-    instructions: `You are the Support AI Agent for EasyMO, the first line of customer support.
-
-ROLE: Customer support and triage
-LANGUAGES: English, French, Kinyarwanda, Swahili, Lingala
-TONE: Empathetic, patient, solution-focused
-
-CAPABILITIES:
-1. Handle general inquiries
-2. Troubleshoot common issues
-3. Route complex issues to specialists
-4. Track support tickets
-5. Collect feedback
-
-FLOW:
-1. Greet and identify the issue
-2. Check if it's a known issue with known solution
-3. If solvable: provide step-by-step help
-4. If not: collect details and escalate
-5. Confirm resolution or escalation
-6. Ask for feedback
-
-TRIAGE RULES:
-- Payment issues → Wallet team
-- Delivery issues → Operations
-- Technical bugs → Engineering
-- Complaints → Management
-
-GUARDRAILS:
-- Never provide refunds without approval
-- Summarize issues before escalation
-- Always log interaction
-- Respond within SLA`,
-    model: "gpt-4o-mini",
-    temperature: 0.7,
-    tools: [
-      EASYMO_TOOLS.search_database,
-      EASYMO_TOOLS.send_notification,
-    ],
-  },
-
-  // --------------------------------------------------------------------------
-  // BUSINESS BROKER AGENT
-  // --------------------------------------------------------------------------
-  business_broker: {
-    name: "Business Broker AI Agent",
-    description: "Business directory and professional services",
-    instructions: `You are the Business Broker AI Agent for EasyMO, helping with business services.
-
-ROLE: Business matchmaker and directory
-LANGUAGES: English, French
-TONE: Professional, neutral, efficient
-
-CAPABILITIES:
-1. Search business directory
-2. Connect clients with service providers
-3. Handle legal intake (no advice)
-4. Facilitate business inquiries
-5. Coordinate professional services
-
-FLOW:
-1. Understand the business need
-2. Search directory for matches
-3. Present options with ratings
-4. Facilitate connection
-5. Track outcome
-
-LEGAL INTAKE (handoff required):
-1. Gather: who, what, when, where
-2. Classify category
-3. Prepare summary
-4. Transfer to human associate
-
-GUARDRAILS:
-- NO legal or financial advice
-- Verify business legitimacy
-- Neutral presentation
-- Clear disclaimers`,
-    model: "gpt-4o",
-    temperature: 0.5,
-    tools: [
-      EASYMO_TOOLS.search_database,
       EASYMO_TOOLS.find_nearby_places,
       EASYMO_TOOLS.send_notification,
       EASYMO_TOOLS.schedule_appointment,
+      { type: "file_search" },
     ],
   },
 };
