@@ -7,9 +7,17 @@ BEGIN;
 
 -- Add unique constraint to prevent duplicate message processing
 -- Use message_id + webhook_type combination for uniqueness
-ALTER TABLE public.processed_webhooks 
-  ADD CONSTRAINT IF NOT EXISTS processed_webhooks_message_webhook_unique 
-  UNIQUE (message_id, webhook_type);
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint 
+    WHERE conname = 'processed_webhooks_message_webhook_unique'
+  ) THEN
+    ALTER TABLE public.processed_webhooks 
+      ADD CONSTRAINT processed_webhooks_message_webhook_unique 
+      UNIQUE (message_id, webhook_type);
+  END IF;
+END $$;
 
 -- Ensure index exists for faster cleanup of old records
 CREATE INDEX IF NOT EXISTS idx_processed_webhooks_created_at 
