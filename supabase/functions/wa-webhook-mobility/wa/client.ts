@@ -1,5 +1,5 @@
 import { WA_PHONE_ID, WA_TOKEN } from "../config.ts";
-import { delay, fetchWithTimeout } from "../../_shared/http.ts";
+import { delay, fetchWithTimeout } from "../../_shared/wa-webhook-shared/utils/http.ts";
 
 export class WhatsAppClientError extends Error {
   readonly status: number;
