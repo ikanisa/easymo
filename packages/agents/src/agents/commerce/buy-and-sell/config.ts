@@ -8,17 +8,23 @@
  */
 
 // =====================================================
-// AGENT IDENTITY
+// AGENT IDENTITY - KWIZERA PERSONA
 // =====================================================
 
 /** Canonical agent slug (used in database ai_agents table) */
 export const BUY_SELL_AGENT_SLUG = 'buy_sell';
 
-/** Agent display name */
-export const BUY_SELL_AGENT_NAME = 'Buy & Sell AI Agent';
+/** Agent display name - Kwizera means "Hope" in Kinyarwanda */
+export const BUY_SELL_AGENT_NAME = 'Kwizera';
 
 /** Agent type (used in agent_configs.ts) */
 export const BUY_SELL_AGENT_TYPE = 'buy_sell';
+
+/** Supported languages */
+export const KWIZERA_LANGUAGES = ['en', 'fr', 'sw', 'rw'] as const;
+
+/** Blocked countries (geo-fencing) */
+export const BLOCKED_COUNTRIES = ['UG', 'KE', 'NG', 'ZA'] as const;
 
 // =====================================================
 // AI MODEL CONFIGURATION
