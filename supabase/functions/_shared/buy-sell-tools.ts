@@ -145,14 +145,28 @@ export interface ToolCall {
 }
 
 /**
+ * Gemini response structure for parsing function calls
+ */
+interface GeminiResponse {
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{
+        functionCall?: {
+          name: string;
+          args?: Record<string, unknown>;
+        };
+      }>;
+    };
+  }>;
+}
+
+/**
  * Parse function call results from Gemini response
  */
-export function parseFunctionCalls(response: unknown): ToolCall[] {
+export function parseFunctionCalls(response: GeminiResponse): ToolCall[] {
   const functionCalls: ToolCall[] = [];
   
-  // Handle the response structure
-  const resp = response as { candidates?: Array<{ content?: { parts?: Array<{ functionCall?: { name: string; args?: Record<string, unknown> } }> } }> };
-  const candidates = resp.candidates || [];
+  const candidates = response.candidates || [];
 
   for (const candidate of candidates) {
     const parts = candidate.content?.parts || [];

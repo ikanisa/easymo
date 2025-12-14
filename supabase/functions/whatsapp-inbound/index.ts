@@ -73,23 +73,30 @@ function verifyWebhook(req: Request): Response | null {
 function parseVendorAction(text: string): "HAVE_IT" | "NO_STOCK" | "STOP_MESSAGES" | null {
   const normalized = text.toLowerCase().trim();
 
-  // HAVE_IT patterns
+  // HAVE_IT patterns - check for positive indicators anywhere in the message
   if (
     normalized.includes("have it") ||
     normalized.includes("in stock") ||
     normalized.includes("available") ||
-    /^(yes|yeah|yep|sure|ok)$/i.test(normalized)
+    normalized.includes("yes") ||
+    normalized.includes("yeah") ||
+    normalized.includes("yep") ||
+    normalized.includes("sure") ||
+    normalized.startsWith("ok") ||
+    normalized.startsWith("got it")
   ) {
     return "HAVE_IT";
   }
 
-  // NO_STOCK patterns
+  // NO_STOCK patterns - check for negative indicators anywhere in the message
   if (
     normalized.includes("no stock") ||
     normalized.includes("out of stock") ||
     normalized.includes("don't have") ||
     normalized.includes("not available") ||
-    /^(no|nope|sorry)$/i.test(normalized)
+    normalized.includes("sold out") ||
+    normalized.includes("nope") ||
+    (normalized.includes("sorry") && !normalized.includes("have"))
   ) {
     return "NO_STOCK";
   }

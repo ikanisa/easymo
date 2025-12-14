@@ -89,14 +89,13 @@ async function processJob(
 
     const state: ConversationStep = conversation?.state_json || { step: "COLLECT_INTENT" };
 
-    // Check geo-blocking
+    // Check geo-blocking (Kwizera persona - polite message)
     const userCountry = getCountryFromPhone(from);
     if (userCountry && isBlockedCountry(userCountry)) {
       await sendText(
         from,
-        `Sorry, our service is not yet available in your country (${userCountry}). ` +
-        `We currently don't support: ${BLOCKED_COUNTRIES.join(", ")}. ` +
-        `We're working on expanding to more regions soon!`
+        `I'm sorry, easyMO's sourcing service is not yet available in your region. ` +
+        `We currently serve Rwanda. Stay tuned for expansion! 🌍`
       );
 
       await logStructuredEvent("USER_GEO_BLOCKED", {
@@ -513,7 +512,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error("Missing Supabase configuration");
+      const missing = [];
+      if (!supabaseUrl) missing.push("SUPABASE_URL");
+      if (!supabaseKey) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+      throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
     }
     
     const supabase = createClient(supabaseUrl, supabaseKey);

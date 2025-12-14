@@ -271,14 +271,27 @@ export function isValidPhoneNumber(phone: string): boolean {
 /**
  * Mask phone number for logging (PII protection)
  * 
+ * Always masks the middle digits to protect privacy.
+ * Short numbers get extra masking for safety.
+ * 
  * Examples:
  * - "+250788123456" -> "+250****3456"
+ * - "+250788" -> "+2****8" (short numbers still masked)
  */
 export function maskPhone(phone: string): string {
   const normalized = normalizePhoneNumber(phone);
-  if (normalized.length < 8) {
-    return normalized;
+  
+  // For very short numbers (likely invalid), mask almost everything
+  if (normalized.length <= 5) {
+    return normalized.slice(0, 2) + "***";
   }
+  
+  // For short numbers (5-10 chars), show first 2 and last 1
+  if (normalized.length < 10) {
+    return normalized.slice(0, 2) + "****" + normalized.slice(-1);
+  }
+  
+  // Standard masking: show country code (+XXX) and last 4 digits
   return normalized.replace(/(\+\d{3})\d+(\d{4})/, "$1****$2");
 }
 
