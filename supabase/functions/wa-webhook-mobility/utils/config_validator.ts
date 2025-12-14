@@ -7,6 +7,8 @@
  * @see docs/GROUND_RULES.md
  */
 
+import { logStructuredEvent } from "../../_shared/observability.ts";
+
 interface ConfigValidationResult {
   valid: boolean;
   errors: string[];
@@ -192,10 +194,9 @@ export function printConfigStatus(): void {
   }
 
   if (validation.valid) {
-    console.log(JSON.stringify({
-      event: "CONFIG_VALIDATION_SUCCESS",
+    logStructuredEvent("CONFIG_VALIDATION_SUCCESS", {
       warningCount: validation.warnings.length,
-    }));
+    }, "info");
   }
 }
 

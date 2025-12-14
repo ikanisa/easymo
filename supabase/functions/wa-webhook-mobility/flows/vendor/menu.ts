@@ -185,11 +185,11 @@ async function handleRestaurantMenuUpload(
 
 async function triggerOcrProcessing(client: SupabaseClient): Promise<void> {
   try {
-    console.log("vendor.menu.ocr_trigger_start");
+    logStructuredEvent("VENDOR_MENU_OCR_START", {}, "info");
     const { error } = await client.functions.invoke("unified-ocr", { body: { domain: "menu" } });
     if (error) throw error;
-    console.log("vendor.menu.ocr_trigger_processor_ok");
-    console.log("vendor.menu.ocr_trigger_notifier_skipped");
+    logStructuredEvent("VENDOR_MENU_OCR_PROCESSOR_OK", {}, "info");
+    logStructuredEvent("VENDOR_MENU_OCR_NOTIFIER_SKIPPED", {}, "info");
   } catch (error) {
     if (
       error && typeof error === "object" &&

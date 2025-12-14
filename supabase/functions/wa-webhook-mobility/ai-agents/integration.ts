@@ -196,7 +196,11 @@ async function invokeScheduleTripAgent(
       console.error("Schedule trip agent HTTP error:", response.status, errorText);
       
       // TIER 2: Fallback to direct database insert
-      console.log("FALLBACK: Attempting direct schedule trip creation");
+      logAgentEvent("AI_FALLBACK_ATTEMPT", {
+        action: "direct_schedule_trip",
+        reason: "primary_method_failed",
+        status: response.status,
+      });
       
       try {
         const scheduledDate = new Date(request.requestData.scheduledTime);
@@ -225,7 +229,10 @@ async function invokeScheduleTripAgent(
           throw dbError;
         }
 
-        console.log("FALLBACK SUCCESS: Trip scheduled via direct DB insert");
+        logAgentEvent("AI_FALLBACK_SUCCESS", {
+          action: "direct_db_insert",
+          tripId: trip.id,
+        });
         
         return {
           success: true,

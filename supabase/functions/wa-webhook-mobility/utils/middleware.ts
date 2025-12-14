@@ -213,13 +213,11 @@ export function logWebhookCompletion(
     success: String(success),
   });
 
-  console.log(JSON.stringify({
-    event: "WEBHOOK_COMPLETED",
+  logStructuredEvent("WEBHOOK_COMPLETED", {
     duration,
     success,
     messageCount: prepared.messages.length,
-    timestamp: new Date().toISOString(),
-  }));
+  }, "info");
 }
 
 /**

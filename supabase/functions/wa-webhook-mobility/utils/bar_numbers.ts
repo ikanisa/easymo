@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "../deps.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 import {
   buildDigitFuzzyPattern,
   buildNumberLookupCandidates,
@@ -287,11 +288,11 @@ async function provisionBarForNumber(
   }
 
   if (activeRow) {
-    console.log("bar_numbers.auto_provision_success", {
+    logStructuredEvent("BAR_AUTO_PROVISION_SUCCESS", {
       barId,
       number: canonical,
       businessId: candidate?.id ?? null,
-    });
+    }, "info");
     return activeRow as BarNumberRow;
   }
 
