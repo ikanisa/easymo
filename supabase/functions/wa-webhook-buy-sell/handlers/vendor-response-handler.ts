@@ -8,8 +8,9 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
-import { logStructuredEvent } from "../../_shared/observability.ts";
+import { logStructuredEvent, recordMetric } from "../../_shared/observability.ts";
 import { VendorOutreachService } from "../services/vendor-outreach.ts";
+import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 
 // =====================================================
 // VENDOR RESPONSE HANDLER
@@ -227,9 +228,25 @@ export class VendorResponseHandler {
         return { success: false, error: "Failed to format notification" };
       }
 
-      // TODO: Send WhatsApp message to user
-      // For now, we just return success - the actual sending would be done
-      // by the WhatsApp webhook function using the Cloud API
+      // Send WhatsApp message to user
+      const { data: userProfile } = await this.supabase
+        .from("profiles")
+        .select("whatsapp_number")
+        .eq("user_id", params.userId)
+        .single();
+
+      if (userProfile?.whatsapp_number) {
+        // The message was already formatted above, send it
+        await sendText(userProfile.whatsapp_number, message);
+        
+        logStructuredEvent("BUY_SELL_VENDOR_RESPONSE_SENT", {
+          userId: params.userId,
+          userPhone: params.userPhone.slice(-4),
+          correlationId: this.correlationId,
+        });
+        
+        await recordMetric("buy_sell.vendor_response.sent", 1);
+      }
 
       logStructuredEvent("VENDOR_RESPONSE_USER_NOTIFIED", {
         sessionId: params.sessionId,

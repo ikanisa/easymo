@@ -6,6 +6,7 @@ import {
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 import { clearState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import { listMyBusinesses } from "./list.ts";
+import { logStructuredEvent, recordMetric } from "../../_shared/observability.ts";
 
 export async function handleCreateBusinessName(
   ctx: RouterContext,
@@ -50,6 +51,17 @@ export async function handleCreateBusinessName(
     );
     return true;
   }
+
+  // Log success and metrics
+  await logStructuredEvent("BUY_SELL_BUSINESS_CREATED", {
+    profileId: ctx.profileId,
+    businessName: trimmedName,
+    from: `***${ctx.from.slice(-4)}`,
+  });
+  
+  await recordMetric("buy_sell.business.created", 1, {
+    nameLength: trimmedName.length,
+  });
 
   // Clear state
   await clearState(ctx.supabase, ctx.profileId);
