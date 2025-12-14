@@ -95,6 +95,24 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
   {
+<<<<<<< HEAD
+    db: { schema: "public" },
+    global: { headers: { "x-connection-pool": "true" } },
+    auth: { persistSession: false, autoRefreshToken: false },
+=======
+    db: {
+      schema: "public",
+    },
+    global: {
+      headers: {
+        "x-connection-pool": "true",
+      },
+    },
+    auth: {
+      persistSession: false, // Edge functions don't need session persistence
+      autoRefreshToken: false,
+    },
+>>>>>>> fix/wa-webhook-profile-phase1-clean
   },
 );
 
@@ -111,6 +129,10 @@ serve(async (req: Request): Promise<Response> => {
     headers.set("X-Correlation-ID", correlationId);
     headers.set("X-Service", SERVICE_NAME);
     headers.set("X-Service-Version", SERVICE_VERSION);
+<<<<<<< HEAD
+=======
+    // Add connection reuse headers to reduce cold starts
+>>>>>>> fix/wa-webhook-profile-phase1-clean
     headers.set("Connection", "keep-alive");
     headers.set("Keep-Alive", "timeout=65");
     return new Response(JSON.stringify(body), { ...init, headers });
@@ -357,17 +379,59 @@ serve(async (req: Request): Promise<Response> => {
       }
     }
 
+<<<<<<< HEAD
+    // Phase 2: Check response cache
+    const cacheKey = `${from}:${messageId ?? "no-id"}`;
+=======
+    // Check response cache (helps with webhook retries from WhatsApp)
+    const cacheKey = `${from}:${messageId}`;
+>>>>>>> fix/wa-webhook-profile-phase1-clean
     const cached = responseCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
       logEvent("PROFILE_CACHE_HIT", { from, messageId }, "debug");
       return respond(cached.response);
     }
 
+<<<<<<< HEAD
+    // Phase 2: Circuit breaker protection
+    if (!dbCircuitBreaker.canExecute()) {
+      logEvent("PROFILE_DB_CIRCUIT_OPEN", { from, metrics: dbCircuitBreaker.getMetrics() }, "warn");
+      return respond({ error: "service_unavailable", message: "Database temporarily unavailable", retry_after: 60 }, { status: 503 });
+    }
+
+    // Build Context - Auto-create profile if needed
+=======
+    // Build Context - Auto-create profile if needed (with circuit breaker protection)
+    if (!dbCircuitBreaker.canExecute()) {
+      logEvent("PROFILE_DB_CIRCUIT_OPEN", {
+        from,
+        metrics: dbCircuitBreaker.getMetrics(),
+      }, "warn");
+      return respond(
+        {
+          error: "service_unavailable",
+          message: "Database temporarily unavailable",
+          retry_after: 60,
+        },
+        { status: 503 },
+      );
+    }
+
+>>>>>>> fix/wa-webhook-profile-phase1-clean
     let profile;
     try {
       profile = await ensureProfile(supabase, from);
       dbCircuitBreaker.recordSuccess();
     } catch (error) {
+<<<<<<< HEAD
+      dbCircuitBreaker.recordFailure(error instanceof Error ? error.message : String(error));
+      throw error;
+=======
+      dbCircuitBreaker.recordFailure(
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error; // Re-throw to be caught by outer catch
+>>>>>>> fix/wa-webhook-profile-phase1-clean
     }
 
     const ctx: RouterContext = {
@@ -1020,6 +1084,20 @@ serve(async (req: Request): Promise<Response> => {
       logEvent("PROFILE_UNHANDLED_MESSAGE", { from, type: message.type });
     }
 
+<<<<<<< HEAD
+    // Phase 2: Cache successful response
+    const successResponse = { success: true, handled };
+    if (messageId) {
+      responseCache.set(cacheKey, { response: successResponse, timestamp: Date.now() });
+=======
+    // Cache successful response
+    const successResponse = { success: true, handled };
+    if (messageId) {
+      responseCache.set(cacheKey, {
+        response: successResponse,
+        timestamp: Date.now(),
+      });
+>>>>>>> fix/wa-webhook-profile-phase1-clean
     }
 
     return respond(successResponse);
