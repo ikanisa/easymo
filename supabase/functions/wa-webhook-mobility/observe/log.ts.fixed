@@ -1,1 +1,0 @@
-    logStructuredEvent("DEBUG", { data: JSON.stringify({ ...consoleEnvelope, persisted: false }) });
