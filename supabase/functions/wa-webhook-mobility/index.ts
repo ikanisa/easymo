@@ -304,19 +304,10 @@ serve(async (req: Request): Promise<Response> => {
       locale: (profile?.language as any) || "en",
     };
 
-    logEvent("MOBILITY_MESSAGE_PROCESSING", {
-      from,
-      type: message.type,
-      hasProfile: !!profile,
-    });
-
-    // DIAGNOSTIC LOGGING REMOVED
-
     // 2. Get State
     const state = ctx.profileId
       ? await getState(supabase, ctx.profileId)
       : null;
-    logEvent("MOBILITY_STATE", { key: state?.key });
 
     // 3. Dispatch
     let handled = false;
@@ -329,7 +320,6 @@ serve(async (req: Request): Promise<Response> => {
       const id = buttonId || listId;
 
       if (id) {
-        logEvent("MOBILITY_INTERACTION", { id });
 
         // Mobility main menu
         if (id === IDS.RIDES_MENU || id === "rides_agent" || id === "rides") {
@@ -338,20 +328,7 @@ serve(async (req: Request): Promise<Response> => {
           handled = await showMobilityMenu(ctx);
         } // Nearby Flows
         else if (id === IDS.SEE_DRIVERS) {
-          await logStructuredEvent("LOG", {
-            data: JSON.stringify({
-              event: "MOBILITY_LAUNCHING_WORKFLOW",
-              workflow: "handleSeeDrivers",
-            }),
-          });
           handled = await handleSeeDrivers(ctx);
-          await logStructuredEvent("LOG", {
-            data: JSON.stringify({
-              event: "MOBILITY_WORKFLOW_RESULT",
-              workflow: "handleSeeDrivers",
-              handled,
-            }),
-          });
         } else if (id === IDS.SEE_PASSENGERS) {
           handled = await handleSeePassengers(ctx);
         } else if (
@@ -652,7 +629,7 @@ serve(async (req: Request): Promise<Response> => {
           lat: Number(loc.latitude),
           lng: Number(loc.longitude),
         };
-        logEvent("MOBILITY_LOCATION", coords);
+        // Location logged at debug level for privacy
         await recordLastLocation(ctx, coords).catch((e) => {
           logStructuredEvent("WARNING", {
             data: "mobility.record_location_fail",

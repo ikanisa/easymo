@@ -317,17 +317,10 @@ serve(async (req: Request): Promise<Response> => {
       locale: (profile?.language as any) || "en",
     };
 
-    logEvent("PROFILE_MESSAGE_PROCESSING", {
-      from,
-      type: message.type,
-      hasProfile: !!profile,
-    });
-
     // Get State
     const state = ctx.profileId
       ? await getState(supabase, ctx.profileId)
       : null;
-    logEvent("PROFILE_STATE", { key: state?.key });
 
     let handled = false;
 
@@ -339,7 +332,6 @@ serve(async (req: Request): Promise<Response> => {
       const id = buttonId || listId;
 
       if (id) {
-        logEvent("PROFILE_INTERACTION", { id });
 
         // Profile Home
         if (id === "profile") {
