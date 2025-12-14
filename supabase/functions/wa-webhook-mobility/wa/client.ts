@@ -1,5 +1,6 @@
 import { WA_PHONE_ID, WA_TOKEN } from "../config.ts";
 import { delay, fetchWithTimeout } from "../../_shared/wa-webhook-shared/utils/http.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 
 export class WhatsAppClientError extends Error {
   readonly status: number;
@@ -76,14 +77,14 @@ export async function sendButtons(
   buttons: Array<{ id: string; title: string }>,
 ): Promise<void> {
   if ((Deno.env.get("LOG_LEVEL") ?? "").toLowerCase() === "debug") {
-    console.debug("wa.payload.buttons_preview", {
+    logStructuredEvent("WA_BUTTONS_PREVIEW", {
       bodyPreview: body?.slice(0, 40),
       count: buttons?.length ?? 0,
       buttons: buttons.slice(0, 3).map((b) => ({
         id: b.id,
         title: b.title.slice(0, 20),
       })),
-    });
+    }, "debug");
   }
   await post({
     messaging_product: "whatsapp",
@@ -166,16 +167,17 @@ export async function sendList(
     buttonText,
     sections,
   });
-  if (issues.length) console.warn("wa_client.validate_warn", { issues });
+  if (issues.length) logStructuredEvent("WA_CLIENT_VALIDATE_WARN", { issues }, "warn");
   if ((Deno.env.get("LOG_LEVEL") ?? "").toLowerCase() === "debug") {
-    console.debug(
-      "wa.payload.list_preview",
+    logStructuredEvent(
+      "WA_LIST_PREVIEW",
       previewListPayload({
         title: headerText,
         body: bodyText,
         buttonText,
         sections,
       }),
+      "debug"
     );
   }
   const headerPayload = headerText

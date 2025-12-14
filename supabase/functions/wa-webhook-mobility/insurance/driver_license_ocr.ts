@@ -6,9 +6,10 @@
  */
 
 import type { SupabaseClient } from "../deps.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
-const OPENAI_VISION_MODEL = Deno.env.get("OPENAI_VISION_MODEL") ?? "gpt-5";  // Per README.md: Use GPT-5 (but prefer Gemini-3 for vision)
+const OPENAI_VISION_MODEL = Deno.env.get("OPENAI_VISION_MODEL") ?? "gpt-4-vision-preview";
 const OPENAI_BASE_URL = Deno.env.get("OPENAI_BASE_URL") ?? "https://api.openai.com/v1";
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? "";
 
@@ -80,7 +81,7 @@ async function runGeminiOCR(signedUrl: string): Promise<DriverLicenseData> {
     throw new Error("GEMINI_API_KEY is not configured");
   }
 
-  console.info("DRIVER_LICENSE_OCR_GEMINI_START");
+  logStructuredEvent("DRIVER_LICENSE_OCR_GEMINI_START", {});
 
   const imgResp = await fetch(signedUrl);
   if (!imgResp.ok) throw new Error("Failed to fetch image for Gemini");
@@ -129,7 +130,7 @@ async function runGeminiOCR(signedUrl: string): Promise<DriverLicenseData> {
     throw new Error("Gemini response missing content");
   }
 
-  console.info("DRIVER_LICENSE_OCR_GEMINI_OK");
+  logStructuredEvent("DRIVER_LICENSE_OCR_GEMINI_OK", {});
   return JSON.parse(content);
 }
 
@@ -175,7 +176,7 @@ async function runOpenAIOCR(signedUrl: string): Promise<DriverLicenseData> {
     const timeout = setTimeout(() => controller.abort(), OCR_TIMEOUT_MS);
     
     try {
-      console.info("DRIVER_LICENSE_OCR_OPENAI_CALL", {
+      logStructuredEvent("DRIVER_LICENSE_OCR_OPENAI_CALL", {
         model: OPENAI_VISION_MODEL,
         attempt: attempt + 1,
       });
@@ -193,7 +194,7 @@ async function runOpenAIOCR(signedUrl: string): Promise<DriverLicenseData> {
       clearTimeout(timeout);
 
       if (response.status >= 500 && response.status < 600) {
-        console.warn("DRIVER_LICENSE_OCR_RETRYABLE", { status: response.status });
+        logStructuredEvent("DRIVER_LICENSE_OCR_RETRYABLE", { status: response.status }, "warn");
         lastError = new Error(`openai_${response.status}`);
         continue;
       }
@@ -210,7 +211,7 @@ async function runOpenAIOCR(signedUrl: string): Promise<DriverLicenseData> {
         throw new Error("OpenAI response missing message content");
       }
 
-      console.info("DRIVER_LICENSE_OCR_OPENAI_OK");
+      logStructuredEvent("DRIVER_LICENSE_OCR_OPENAI_OK", {});
       return JSON.parse(messageContent);
     } catch (error) {
       clearTimeout(timeout);
@@ -248,7 +249,7 @@ export async function processDriverLicense(
     const data = await runOpenAIOCR(signedUrl);
     return { data, provider: "openai" };
   } catch (openaiError) {
-    console.warn("DRIVER_LICENSE_OCR_OPENAI_FAILED", openaiError);
+    logStructuredEvent("DRIVER_LICENSE_OCR_OPENAI_FAILED", { error: String(openaiError) }, "warn");
   }
 
   // Fallback to Gemini
