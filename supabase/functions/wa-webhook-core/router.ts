@@ -2,6 +2,7 @@
 import { getRoutingText } from "../_shared/wa-webhook-shared/utils/messages.ts";
 import type { WhatsAppWebhookPayload, RouterContext, WhatsAppMessage, WhatsAppCallEvent } from "../_shared/wa-webhook-shared/types.ts";
 import { sendListMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
+import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
 import { supabase } from "../_shared/wa-webhook-shared/config.ts";
 import type { SupabaseClient } from "../_shared/wa-webhook-shared/deps.ts";
 import {
@@ -70,6 +71,53 @@ const SERVICE_KEY_MAP = buildMenuKeyMap();
 const MAX_RETRIES = 2;
 const INITIAL_RETRY_DELAY_MS = 200;
 const RETRIABLE_STATUS_CODES = [408, 429, 503, 504];
+
+/**
+ * Handle insurance agent request - simple contact info delivery
+ * Queries insurance_admin_contacts table and sends WhatsApp link to admin
+ */
+async function handleInsuranceAgentRequest(phoneNumber: string): Promise<void> {
+  try {
+    // Query insurance_admin_contacts for active insurance contact
+    const { data: contacts, error } = await supabase
+      .from("insurance_admin_contacts")
+      .select("destination, display_name")
+      .eq("category", "insurance")
+      .eq("is_active", true)
+      .order("priority", { ascending: true })
+      .limit(1);
+
+    if (error) {
+      logError("INSURANCE_CONTACT_QUERY_ERROR", { error: error.message }, { correlationId: crypto.randomUUID() });
+      // Fallback message
+      await sendText(phoneNumber, "For insurance services, please contact our support team.");
+      return;
+    }
+
+    if (!contacts || contacts.length === 0) {
+      logWarn("NO_INSURANCE_CONTACT_FOUND", {}, { correlationId: crypto.randomUUID() });
+      await sendText(phoneNumber, "Insurance services are currently unavailable. Please try again later.");
+      return;
+    }
+
+    const contact = contacts[0];
+    const whatsappLink = `https://wa.me/${contact.destination.replace(/^\+/, "")}`;
+    const displayName = contact.display_name || "Insurance Team";
+    
+    const message = `🛡️ Insurance Services\n\nFor insurance inquiries, please contact our ${displayName}:\n\n${whatsappLink}`;
+    
+    await sendText(phoneNumber, message);
+    
+    logInfo("INSURANCE_CONTACT_SENT", { 
+      to: phoneNumber.substring(0, 6) + "***",
+      contactName: displayName 
+    }, { correlationId: crypto.randomUUID() });
+  } catch (err) {
+    logError("INSURANCE_HANDLER_ERROR", { error: String(err) }, { correlationId: crypto.randomUUID() });
+    // Send fallback message on any error
+    await sendText(phoneNumber, "For insurance services, please contact our support team.");
+  }
+}
 
 /**
  * Sleep for a given duration with optional jitter
@@ -162,6 +210,19 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
         routingText,
       };
     }
+    
+    // Handle insurance_agent inline - simple contact info delivery
+    if (normalized === "insurance_agent" || normalized === "insurance") {
+      if (phoneNumber) {
+        await handleInsuranceAgentRequest(phoneNumber);
+      }
+      return {
+        service: "wa-webhook-core",
+        reason: "keyword",
+        routingText,
+      };
+    }
+    
     if (SERVICE_KEY_MAP[normalized]) {
       if (phoneNumber) {
         await setActiveService(supabase, phoneNumber, SERVICE_KEY_MAP[normalized]);
@@ -616,7 +677,6 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
       logWarn("NO_ACTIVE_MENU_ITEMS", { message: "No active menu items found in DB, using fallback" }, { correlationId: crypto.randomUUID() });
       rows.push(
         { id: "rides", title: "Rides & Transport", description: "Request a ride or delivery" },
-        { id: "insurance", title: "Insurance", description: "Buy or manage insurance" },
         { id: "buy_and_sell", title: "Buy & Sell", description: "Browse shops and services" },
         { id: "wallet", title: "Wallet & MOMO QR", description: "Manage funds and QR codes" },
         { id: "profile", title: "Profile", description: "Manage your account and vehicles" },

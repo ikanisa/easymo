@@ -11,7 +11,6 @@ export const SERVICES = {
   CORE: "wa-webhook-core",
   PROFILE: "wa-webhook-profile",
   MOBILITY: "wa-webhook-mobility",
-  INSURANCE: "wa-webhook-insurance",
 } as const;
 
 export type ServiceName = typeof SERVICES[keyof typeof SERVICES];
