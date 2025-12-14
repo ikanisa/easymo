@@ -5,7 +5,7 @@ import type { SupabaseClient } from "../deps.ts";
 import type { RouterContext } from "../types.ts";
 import { sendButtons, sendText } from "../wa/client.ts";
 import { t } from "../i18n/translator.ts";
-import { logStructuredEvent } from "../observe/log.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 import { IDS } from "../wa/ids.ts";
 
 export interface NearbyDriver {

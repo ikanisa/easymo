@@ -10,7 +10,7 @@ import { buildMomoUssd, buildMomoUssdForQr } from "../../utils/momo.ts";
 import { maskPhone } from "../support.ts";
 import { buildWaLink } from "../../../_shared/wa-webhook-shared/utils/share.ts";
 import { logMomoQrRequest } from "../../rpc/momo.ts";
-import { logEvent } from "../../observe/log.ts";
+import { logEvent } from "../../../_shared/observability.ts";
 import {
   buildButtons,
   sendButtonsMessage,
@@ -344,7 +344,7 @@ async function deliverMomoQr(
     ussd: buttonData.ussd,
     telUri: qrData.telUri,
   });
-  await logEvent("MOMO_QR", {
+  await logStructuredEvent("MOMO_QR", {
     requester: ctx.from,
     target: loggedTarget,
     target_type: data.targetType,

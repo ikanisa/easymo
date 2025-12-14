@@ -2,7 +2,7 @@ import type { RouterContext } from "../../types.ts";
 import type { SupabaseClient } from "../../deps.ts";
 import { MENU_MEDIA_BUCKET } from "../../config.ts";
 import { fetchWhatsAppMedia } from "../../utils/media.ts";
-import { logEvent, logStructuredEvent } from "../../observe/log.ts";
+import { logEvent, logStructuredEvent } from "../../../_shared/observability.ts";
 import { sendText } from "../../wa/client.ts";
 import { t } from "../../i18n/translator.ts";
 import { findActiveBarNumber } from "../../utils/bar_numbers.ts";
@@ -86,7 +86,7 @@ export async function handleVendorMenuMedia(
       });
     if (insertError) throw insertError;
 
-    await logEvent("wa-webhook-vendor-upload", {
+    await logStructuredEvent("wa-webhook-vendor-upload", {
       bar_id: record.bar_id,
       wa_id: ctx.from,
       media_id: mediaId,

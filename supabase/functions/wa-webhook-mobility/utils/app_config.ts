@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "../deps.ts";
-import { logStructuredEvent } from "../observe/log.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 
 type AppConfigRow = {
   search_radius_km?: number | null;

@@ -1,5 +1,5 @@
 import type { RouterContext } from "../types.ts";
-import { logStructuredEvent } from "../observe/log.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 
 const TTL_MINUTES = 30;
 

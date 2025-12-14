@@ -5,7 +5,7 @@ import { getAppConfig } from "../../utils/app_config.ts";
 import { t } from "../../i18n/translator.ts";
 import { homeOnly, sendButtonsMessage } from "../../../_shared/wa-webhook-shared/utils/reply.ts";
 import { sendText } from "../../wa/client.ts";
-import { logStructuredEvent } from "../../observe/log.ts";
+import { logStructuredEvent } from "../../../_shared/observability.ts";
 import { maskPhone } from "../../flows/support.ts";
 import { emitAlert } from "../../observe/alert.ts";
 import { waChatLink } from "../../utils/links.ts";

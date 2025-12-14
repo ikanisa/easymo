@@ -7,7 +7,7 @@ import { t } from "../i18n/translator.ts";
 import { IDS } from "../wa/ids.ts";
 import { sendText, sendButtons } from "../wa/client.ts";
 import { sendButtonsMessage, homeOnly } from "../../_shared/wa-webhook-shared/utils/reply.ts";
-import { logStructuredEvent } from "../observe/log.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 import { waChatLink } from "../utils/links.ts";
 import {
   handleDriverResponse as recordDriverResponse,

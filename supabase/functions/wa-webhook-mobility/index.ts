@@ -171,7 +171,7 @@ serve(async (req: Request): Promise<Response> => {
     // Protect against large payloads
     const MAX_BODY_SIZE = 1024 * 1024; // 1MB
     if (rawBody.length > MAX_BODY_SIZE) {
-      logEvent("MOBILITY_PAYLOAD_TOO_LARGE", { size: rawBody.length }, "warn");
+      logStructuredEvent("MOBILITY_PAYLOAD_TOO_LARGE", { size: rawBody.length }, "warn");
       return respond({ error: "payload_too_large" }, { status: 413 });
     }
 
@@ -213,7 +213,7 @@ serve(async (req: Request): Promise<Response> => {
         "true";
 
     if (!appSecret) {
-      logEvent(
+      logStructuredEvent(
         "MOBILITY_AUTH_CONFIG_ERROR",
         { reason: "missing_app_secret" },
         "error",
@@ -230,13 +230,13 @@ serve(async (req: Request): Promise<Response> => {
           appSecret,
         );
         if (isValidSignature) {
-          logEvent("MOBILITY_SIGNATURE_VALID", {
+          logStructuredEvent("MOBILITY_SIGNATURE_VALID", {
             signatureHeader,
             signatureMethod: signatureMeta.method,
           });
         }
       } catch (err) {
-        logEvent("MOBILITY_SIGNATURE_ERROR", {
+        logStructuredEvent("MOBILITY_SIGNATURE_ERROR", {
           error: err instanceof Error ? err.message : String(err),
         }, "error");
       }
@@ -245,7 +245,7 @@ serve(async (req: Request): Promise<Response> => {
     if (!isValidSignature) {
       const bypass = allowUnsigned || (internalForward && allowInternalForward);
       if (bypass) {
-        logEvent("MOBILITY_AUTH_BYPASS", {
+        logStructuredEvent("MOBILITY_AUTH_BYPASS", {
           reason: internalForward
             ? "internal_forward"
             : signature
@@ -257,7 +257,7 @@ serve(async (req: Request): Promise<Response> => {
           userAgent: req.headers.get("user-agent"),
         }, "warn");
       } else {
-        logEvent("MOBILITY_AUTH_FAILED", {
+        logStructuredEvent("MOBILITY_AUTH_FAILED", {
           signatureProvided: signatureMeta.provided,
           signatureHeader,
           signatureMethod: signatureMeta.method,
@@ -272,7 +272,7 @@ serve(async (req: Request): Promise<Response> => {
     try {
       payload = rawBody ? JSON.parse(rawBody) : {} as WhatsAppWebhookPayload;
     } catch (err) {
-      logEvent("MOBILITY_PAYLOAD_INVALID_JSON", {
+      logStructuredEvent("MOBILITY_PAYLOAD_INVALID_JSON", {
         error: err instanceof Error ? err.message : String(err),
       }, "warn");
       return respond({ error: "invalid_payload" }, { status: 400 });
@@ -660,7 +660,7 @@ serve(async (req: Request): Promise<Response> => {
         (message.document as any)?.mime_type || "image/jpeg";
 
       if (mediaId && state?.key === VERIFICATION_STATES.LICENSE_UPLOAD) {
-        logEvent("MOBILITY_LICENSE_UPLOAD", { mediaId, mimeType });
+        logStructuredEvent("MOBILITY_LICENSE_UPLOAD", { mediaId, mimeType });
         handled = await handleLicenseUpload(ctx, mediaId, mimeType);
       }
     } // D. Handle Text Messages (Keywords/Fallbacks)
@@ -717,12 +717,12 @@ serve(async (req: Request): Promise<Response> => {
     if (!handled) {
       // If we have state but didn't handle the input, maybe show a generic "I didn't understand" or just ignore
       // For now, we'll just log it.
-      logEvent("MOBILITY_UNHANDLED_MESSAGE", { from, type: message.type });
+      logStructuredEvent("MOBILITY_UNHANDLED_MESSAGE", { from, type: message.type });
     }
 
     return respond({ success: true, handled });
   } catch (err) {
-    logEvent("MOBILITY_WEBHOOK_ERROR", {
+    logStructuredEvent("MOBILITY_WEBHOOK_ERROR", {
       error: formatUnknownError(err),
     }, "error");
 

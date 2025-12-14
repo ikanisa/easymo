@@ -5,7 +5,7 @@ import { clearState, setState } from "../../state/store.ts";
 import { sendButtonsMessage } from "../../../_shared/wa-webhook-shared/utils/reply.ts";
 import { t } from "../../i18n/translator.ts";
 import { sendText } from "../../wa/client.ts";
-import { logStructuredEvent } from "../../observe/log.ts";
+import { logStructuredEvent } from "../../../_shared/observability.ts";
 
 export const DRIVER_SUBSCRIPTION_STATE = "driver_subscription_prompt";
 

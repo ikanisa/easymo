@@ -3,7 +3,7 @@
 
 import type { SupabaseClient } from "../deps.ts";
 import { LOCATION_CONFIG } from "../../_shared/location-config.ts";
-import { logStructuredEvent } from "../observe/log.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 
 const LOCATION_CACHE_MINUTES = LOCATION_CONFIG.CACHE_TTL_MINUTES;
 

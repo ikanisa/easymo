@@ -2,7 +2,7 @@
 import type { RouterContext } from "../types.ts";
 import { saveLocationToCache } from "./cache.ts";
 import { saveRecentLocation, type RecentSource } from "./recent.ts";
-import { logStructuredEvent } from "../observe/log.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 
 /**
  * Save location to both cache (30-min TTL) and recent_locations (history)

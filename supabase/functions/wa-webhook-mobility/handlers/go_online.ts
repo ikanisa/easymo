@@ -7,7 +7,7 @@ import { t } from "../i18n/translator.ts";
 import { IDS } from "../wa/ids.ts";
 import { sendText } from "../wa/client.ts";
 import { homeOnly, sendButtonsMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
-import { logStructuredEvent } from "../observe/log.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 import { getCachedLocation, saveLocationToCache } from "../locations/cache.ts";
 import { getStoredVehicleType } from "./vehicle_plate.ts";
 import { ensureVehiclePlate } from "./vehicle_plate.ts";

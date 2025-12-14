@@ -13,7 +13,7 @@ import { MOBILITY_CONFIG } from "../../_shared/wa-webhook-shared/config/mobility
 import { getAppConfig } from "../utils/app_config.ts";
 import { waChatLink } from "../utils/links.ts";
 import { maskPhone } from "../flows/support.ts";
-import { logStructuredEvent } from "../observe/log.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 import { emitAlert } from "../observe/alert.ts";
 import { safeRowTitle, timeAgo } from "../../_shared/wa-webhook-shared/utils/text.ts";
 import { sendText } from "../wa/client.ts";

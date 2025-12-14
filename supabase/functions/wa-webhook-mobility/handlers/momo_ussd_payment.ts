@@ -9,7 +9,7 @@ import type { RouterContext } from "../types.ts";
 import type { SupabaseClient } from "../deps.ts";
 import { setState, getState, clearState } from "../state/store.ts";
 import { sendText, sendInteractive } from "../wa/client.ts";
-import { logEvent } from "../observe/logger.ts";
+import { logEvent } from "../../_shared/observability.ts";
 
 const MOMO_PAYMENT_STATE_KEY = "momo_payment";
 
@@ -129,7 +129,7 @@ export async function initiateTripPayment(
     });
 
     // Log event
-    await logEvent("MOMO_PAYMENT_INITIATED", {
+    await logStructuredEvent("MOMO_PAYMENT_INITIATED", {
       tripId,
       amount,
       phoneNumber,
@@ -137,7 +137,7 @@ export async function initiateTripPayment(
 
     return true;
   } catch (error) {
-    await logEvent("MOMO_PAYMENT_INIT_ERROR", {
+    await logStructuredEvent("MOMO_PAYMENT_INIT_ERROR", {
       error: error instanceof Error ? error.message : String(error),
     });
     await sendText(ctx.from, "⚠️ Failed to initiate payment. Please try again.");
@@ -178,7 +178,7 @@ export async function handlePaymentConfirmation(
 
       await sendText(ctx.from, "❌ Payment cancelled. Trip has been cancelled.");
       
-      await logEvent("MOMO_PAYMENT_CANCELLED", {
+      await logStructuredEvent("MOMO_PAYMENT_CANCELLED", {
         tripId: paymentState.tripId,
       });
       
@@ -232,7 +232,7 @@ export async function handlePaymentConfirmation(
         `Your driver has been notified. Safe travels! 🚗`
       );
 
-      await logEvent("MOMO_PAYMENT_COMPLETED", {
+      await logStructuredEvent("MOMO_PAYMENT_COMPLETED", {
         tripId: paymentState.tripId,
         amount: paymentState.amount,
       });
@@ -254,7 +254,7 @@ export async function handlePaymentConfirmation(
       return false;
     }
   } catch (error) {
-    await logEvent("MOMO_PAYMENT_CONFIRM_ERROR", {
+    await logStructuredEvent("MOMO_PAYMENT_CONFIRM_ERROR", {
       error: error instanceof Error ? error.message : String(error),
     });
     await sendText(ctx.from, "⚠️ Failed to confirm payment. Please try again.");
@@ -283,7 +283,7 @@ async function verifyMomoPayment(
     .limit(1);
 
   if (error) {
-    await logEvent("MOMO_VERIFY_ERROR", {
+    await logStructuredEvent("MOMO_VERIFY_ERROR", {
       phoneNumber,
       expectedAmount,
       error: error.message,
@@ -331,7 +331,7 @@ export async function handleRefund(
       });
 
     if (error) {
-      await logEvent("REFUND_CREATE_ERROR", {
+      await logStructuredEvent("REFUND_CREATE_ERROR", {
         tripId,
         error: error.message,
       });
@@ -349,7 +349,7 @@ export async function handleRefund(
       `You'll receive an SMS confirmation once completed.`
     );
 
-    await logEvent("REFUND_REQUESTED", {
+    await logStructuredEvent("REFUND_REQUESTED", {
       tripId,
       amount,
       reason,
@@ -357,7 +357,7 @@ export async function handleRefund(
 
     return true;
   } catch (error) {
-    await logEvent("REFUND_ERROR", {
+    await logStructuredEvent("REFUND_ERROR", {
       tripId,
       error: error instanceof Error ? error.message : String(error),
     });

@@ -1,7 +1,7 @@
 import type { RouterContext } from "../types.ts";
 import { checkDuplicateLocation } from "../../_shared/wa-webhook-shared/locations/deduplication.ts";
 import { getAddressOrCoords } from "../../_shared/wa-webhook-shared/locations/geocoding.ts";
-import { logStructuredEvent } from "../observe/log.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 
 export type FavoriteKind = "home" | "work" | "school" | "other";
 

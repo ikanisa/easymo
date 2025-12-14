@@ -7,7 +7,7 @@
 import type { RouterContext } from "../types.ts";
 import { supabase } from "../config.ts";
 import type { SupabaseClient } from "../deps.ts";
-import { logStructuredEvent } from "../observe/log.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 
 export interface SubmenuItem {
   key: string;
