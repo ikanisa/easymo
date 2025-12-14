@@ -1,3 +1,23 @@
+/**
+ * WhatsApp Profile Management Webhook Handler
+ * 
+ * Handles user profile management via WhatsApp Business API:
+ * - Language preferences
+ * - Location settings
+ * - Profile information
+ * - Help and support
+ * 
+ * Features:
+ * - Circuit breaker protection for database operations
+ * - Response caching for webhook retries (2-min TTL)
+ * - Connection pooling for Supabase client
+ * - Keep-alive headers for connection reuse
+ * - Atomic idempotency checking
+ * 
+ * @module wa-webhook-profile
+ * @version 3.0.0
+ */
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "@supabase/supabase-js";
 import { logStructuredEvent } from "../_shared/observability/index.ts";
@@ -18,8 +38,6 @@ import type {
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import { WEBHOOK_CONFIG } from "../_shared/config/webhooks.ts";
-// Note: Rate limiting removed - handled by wa-webhook-core (100 req/min per phone number)
-// Static imports for frequently used handlers to reduce dynamic import overhead
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { ensureProfile } from "../_shared/wa-webhook-shared/utils/profile.ts";
 import { CircuitBreaker } from "../_shared/circuit-breaker.ts";
@@ -27,7 +45,7 @@ import { CircuitBreaker } from "../_shared/circuit-breaker.ts";
 const profileConfig = WEBHOOK_CONFIG.profile;
 
 const SERVICE_NAME = "wa-webhook-profile";
-const SERVICE_VERSION = "3.0.0"; // v3.0.0: Wallet functionality extracted to wa-webhook-wallet
+const SERVICE_VERSION = "3.0.0";
 const MAX_BODY_SIZE = profileConfig.maxBodySize;
 
 // Circuit breaker for database operations
