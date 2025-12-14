@@ -1,5 +1,5 @@
 import { supabase } from "../config.ts";
-import { logStructuredEvent } from "../observe/log.ts";
+import { logStructuredEvent } from "../../observability/index.ts";
 import type { SupportedLanguage } from "../i18n/language.ts";
 
 export type ChatState = { key: string; data?: Record<string, unknown> };

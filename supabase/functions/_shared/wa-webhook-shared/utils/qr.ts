@@ -1,4 +1,4 @@
-import { logStructuredEvent } from "../observe/log.ts";
+import { logStructuredEvent } from "../../observability/index.ts";
 
 const encoder = new TextEncoder();
 

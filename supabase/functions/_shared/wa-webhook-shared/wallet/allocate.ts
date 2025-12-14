@@ -1,6 +1,6 @@
 import type { RouterContext } from "../types.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { logStructuredEvent } from "../observe/log.ts";
+import { logStructuredEvent } from "../../observability/index.ts";
 
 export interface TokenAllocationResult {
   success: boolean;

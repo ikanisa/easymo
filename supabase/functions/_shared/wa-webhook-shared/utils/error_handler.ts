@@ -8,7 +8,7 @@
  */
 
 import { sendText } from "../wa/client.ts";
-import { logStructuredEvent } from "../observe/log.ts";
+import { logStructuredEvent } from "../../observability/index.ts";
 
 // Re-export new error classes from shared for consistency
 export { 

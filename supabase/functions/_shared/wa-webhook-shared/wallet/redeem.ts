@@ -1,5 +1,5 @@
 import type { RouterContext } from "../types.ts";
-import { logStructuredEvent } from "../observe/log.ts";
+import { logStructuredEvent } from "../../observability/index.ts";
 import { notifyTokenRedemption } from "./notifications.ts";
 
 export interface RedemptionResult {

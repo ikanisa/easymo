@@ -10,7 +10,7 @@ import { getMomoProvider } from "../../domains/exchange/country_support.ts";
 import { maskPhone } from "../support.ts";
 import { buildWaLink } from "../../utils/share.ts";
 import { logMomoQrRequest } from "../../rpc/momo.ts";
-import { logEvent } from "../../observe/log.ts";
+import { logEvent } from "../../../observability/index.ts";
 import {
   buildButtons,
   sendButtonsMessage,
