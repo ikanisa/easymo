@@ -49,6 +49,11 @@ function formatUnknownError(error: unknown): string {
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+  {
+    db: { schema: "public" },
+    global: { headers: { "x-connection-pool": "true" } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  },
 );
 
 serve(async (req: Request): Promise<Response> => {
@@ -63,6 +68,9 @@ serve(async (req: Request): Promise<Response> => {
     headers.set("X-Request-ID", requestId);
     headers.set("X-Correlation-ID", correlationId);
     headers.set("X-Service", SERVICE_NAME);
+    headers.set("X-Service-Version", SERVICE_VERSION);
+    headers.set("Connection", "keep-alive");
+    headers.set("Keep-Alive", "timeout=65");
     return new Response(JSON.stringify(body), { ...init, headers });
   };
 
