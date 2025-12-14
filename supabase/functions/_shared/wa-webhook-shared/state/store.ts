@@ -127,16 +127,49 @@ async function getOrCreateAuthUserId(
 
   if (!createError && created?.user?.id) return created.user.id;
 
-  // If creation failed because the user already exists (or any transient issue),
-  // try to resolve the existing user id via other strategies.
+  // If creation failed, check if it's a duplicate error (phone already exists)
+  if (createError) {
+    const errorMsg = createError.message?.toLowerCase() ?? "";
+    const isDuplicateError =
+      errorMsg.includes("already registered") ||
+      errorMsg.includes("duplicate") ||
+      errorMsg.includes("unique constraint") ||
+      createError.code === "23505";
+
+    if (isDuplicateError) {
+      // Treat as recoverable - phone exists, just find the user
+      const retry = await findAuthUserIdByPhone(client, phoneE164);
+      if (retry) return retry;
+
+      const viaList = await findAuthUserIdByPhoneViaAdminList(client, phoneE164);
+      if (viaList) return viaList;
+
+      // Log for debugging but don't throw - fall through to last resort lookup
+      await logStructuredEvent(
+        "AUTH_USER_LOOKUP_RETRY",
+        {
+          phone: maskMsisdn(phoneE164),
+          error: "Phone exists, attempting extensive lookup",
+        },
+        "warn",
+      );
+      
+      // Fall through to last resort lookup below
+    } else {
+      // Non-duplicate error - this is a real problem, throw it
+      throw createError;
+    }
+  }
+
+  // 5. Last resort: extensive lookup (for duplicate errors that couldn't be resolved above)
   const retry = await findAuthUserIdByPhone(client, phoneE164);
   if (retry) return retry;
 
   const viaList = await findAuthUserIdByPhoneViaAdminList(client, phoneE164);
   if (viaList) return viaList;
 
-  if (createError) throw createError;
-  throw new Error("Failed to resolve auth user id");
+  // At this point, we've exhausted all options
+  throw new Error(`Failed to resolve auth user id for ${maskMsisdn(phoneE164)}`);
 }
 
 async function findProfileUserIdByColumn(
@@ -356,10 +389,23 @@ export async function ensureProfile(
       locale: effectiveLocale,
     };
   } catch (error) {
-    await logStructuredEvent("USER_ENSURE_ERROR", {
-      masked_phone: maskMsisdn(normalizedE164),
-      error: formatUnknownError(error),
-    });
+    const errorMessage = formatUnknownError(error);
+    const isDuplicateError = errorMessage.toLowerCase().includes(
+      "already registered",
+    );
+
+    // Only log as error if it's NOT a duplicate (duplicate is handled in getOrCreateAuthUserId)
+    if (!isDuplicateError) {
+      await logStructuredEvent(
+        "USER_ENSURE_ERROR",
+        {
+          masked_phone: maskMsisdn(normalizedE164),
+          error: errorMessage,
+        },
+        "error",
+      );
+    }
+
     throw error;
   }
 }

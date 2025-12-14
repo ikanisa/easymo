@@ -69,7 +69,7 @@ serve(async (req: Request): Promise<Response> => {
   const logEvent = (
     event: string,
     details: Record<string, unknown> = {},
-    level: "debug" | "info" | "warn" | "error" = "info",
+    level: "info" | "info" | "warn" | "error" = "info",
   ) => {
     logStructuredEvent(event, {
       service: SERVICE_NAME,
@@ -139,8 +139,8 @@ serve(async (req: Request): Promise<Response> => {
     const appSecret = Deno.env.get("WHATSAPP_APP_SECRET") ??
       Deno.env.get("WA_APP_SECRET");
     const runtimeEnv =
-      (Deno.env.get("APP_ENV") ?? Deno.env.get("NODE_ENV") ?? "development")
-        .toLowerCase();
+      (Deno.env.get("DENO_ENV") ?? "development").toLowerCase();
+    const debugMode = Deno.env.get("WA_SIGNATURE_DEBUG") === "true";
     const allowUnsigned = runtimeEnv !== "production" &&
       runtimeEnv !== "prod" &&
       (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() ===
@@ -169,13 +169,59 @@ serve(async (req: Request): Promise<Response> => {
         const bypass = allowUnsigned ||
           (internalForward && allowInternalForward);
         if (!bypass) {
-          logEvent("PROFILE_AUTH_FAILED", { signatureHeaderName }, "warn");
+          logEvent("PROFILE_AUTH_FAILED", { 
+            signatureHeaderName,
+            userAgent: req.headers.get("user-agent"),
+            debugMode,
+          }, "warn");
           return respond({ error: "unauthorized" }, { status: 401 });
         }
-        logEvent("PROFILE_AUTH_BYPASS", {
-          reason: internalForward ? "internal_forward" : "signature_mismatch",
-          signatureHeaderName,
-        }, "warn");
+        // Enhanced logging for production bypass (should never happen)
+        if (runtimeEnv === "production" || runtimeEnv === "prod") {
+          logEvent(
+            "PROFILE_AUTH_BYPASS_PRODUCTION",
+            {
+              reason: internalForward
+                ? "internal_forward"
+                : "signature_mismatch",
+              signatureHeaderName,
+              environment: runtimeEnv,
+              userAgent: req.headers.get("user-agent"),
+              allowUnsigned,
+              allowInternalForward,
+              internalForward,
+            },
+            "error", // ERROR level in production!
+          );
+        } else if (debugMode) {
+          // Debug info when WA_SIGNATURE_DEBUG=true
+          logEvent(
+            "PROFILE_AUTH_BYPASS_DEBUG",
+            {
+              reason: internalForward
+                ? "internal_forward"
+                : "signature_mismatch",
+              signatureHeaderName,
+              environment: runtimeEnv,
+              signatureProvided: signature ? "yes" : "no",
+              appSecretPrefix: appSecret?.slice(0, 8) + "***",
+            },
+            "info",
+          );
+        } else {
+          // Info level for non-prod, non-debug
+          logEvent(
+            "PROFILE_AUTH_BYPASS",
+            {
+              reason: internalForward
+                ? "internal_forward"
+                : "signature_mismatch",
+              signatureHeaderName,
+              environment: runtimeEnv,
+            },
+            "info",
+          );
+        }
       }
     } else {
       const bypass = allowUnsigned || (internalForward && allowInternalForward);
@@ -183,9 +229,26 @@ serve(async (req: Request): Promise<Response> => {
         logEvent("PROFILE_AUTH_MISSING_SIGNATURE", {}, "warn");
         return respond({ error: "unauthorized" }, { status: 401 });
       }
-      logEvent("PROFILE_AUTH_BYPASS", {
-        reason: internalForward ? "internal_forward" : "no_signature",
-      }, "warn");
+      // Log missing signature bypass
+      if (runtimeEnv === "production" || runtimeEnv === "prod") {
+        logEvent(
+          "PROFILE_AUTH_BYPASS_PRODUCTION",
+          {
+            reason: internalForward ? "internal_forward" : "no_signature",
+            environment: runtimeEnv,
+          },
+          "error", // ERROR in production
+        );
+      } else {
+        logEvent(
+          "PROFILE_AUTH_BYPASS",
+          {
+            reason: internalForward ? "internal_forward" : "no_signature",
+            environment: runtimeEnv,
+          },
+          "info", // INFO in dev
+        );
+      }
     }
 
     // Parse payload with error handling
@@ -214,37 +277,34 @@ serve(async (req: Request): Promise<Response> => {
     // Idempotency: Check if we've already processed this message
     const messageId = (message as any).id; // WhatsApp message ID (wamid)
     if (messageId) {
-      // Check if we've processed this message in the last 5 minutes
-      const { data: processed } = await supabase
-        .from("processed_webhooks")
-        .select("id")
-        .eq("message_id", messageId)
-        .gte("created_at", new Date(Date.now() - 5 * 60 * 1000).toISOString())
-        .maybeSingle();
-
-      if (processed) {
-        logEvent("PROFILE_DUPLICATE_MESSAGE", { messageId, from }, "debug");
-        return respond({ success: true, ignored: "duplicate" });
-      }
-
-      // Mark as processed (fire and forget - don't await)
-      supabase
+      // Atomic idempotency check using unique constraint
+      const { error: insertError } = await supabase
         .from("processed_webhooks")
         .insert({
           message_id: messageId,
           phone_number: from,
           webhook_type: "profile",
           created_at: new Date().toISOString(),
-        })
-        .then(() => {
-          // Success - no action needed
-        }, (err: Error) => {
-          logEvent(
-            "PROFILE_IDEMPOTENCY_INSERT_FAILED",
-            { error: err.message },
-            "warn",
-          );
         });
+
+      if (insertError) {
+        // Check if it's a duplicate (unique constraint violation)
+        if (insertError.code === "23505") {
+          logEvent("PROFILE_DUPLICATE_MESSAGE", { messageId, from }, "debug");
+          return respond({ success: true, ignored: "duplicate_message" });
+        }
+
+        // Other errors are non-fatal (idempotency is best-effort)
+        logEvent(
+          "PROFILE_IDEMPOTENCY_INSERT_FAILED",
+          {
+            error: insertError.message,
+            code: insertError.code,
+          },
+          "warn",
+        );
+        // Continue processing despite idempotency failure
+      }
     }
 
     // Phase 2: Check response cache
@@ -278,17 +338,10 @@ serve(async (req: Request): Promise<Response> => {
       locale: (profile?.language as any) || "en",
     };
 
-    logEvent("PROFILE_MESSAGE_PROCESSING", {
-      from,
-      type: message.type,
-      hasProfile: !!profile,
-    });
-
     // Get State
     const state = ctx.profileId
       ? await getState(supabase, ctx.profileId)
       : null;
-    logEvent("PROFILE_STATE", { key: state?.key });
 
     let handled = false;
 
@@ -300,7 +353,6 @@ serve(async (req: Request): Promise<Response> => {
       const id = buttonId || listId;
 
       if (id) {
-        logEvent("PROFILE_INTERACTION", { id });
 
         // Profile Home
         if (id === "profile") {
@@ -938,19 +990,32 @@ serve(async (req: Request): Promise<Response> => {
     return respond(successResponse);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    logEvent("PROFILE_WEBHOOK_ERROR", { error: message }, "error");
-    await logStructuredEvent("ERROR", {
-      data: "profile.webhook_error",
-      message,
-    });
 
-    return respond({
-      error: "internal_error",
-      service: SERVICE_NAME,
-      requestId,
-    }, {
-      status: 500,
-    });
+    // Single consolidated error log
+    await logStructuredEvent(
+      "PROFILE_WEBHOOK_ERROR",
+      {
+        service: SERVICE_NAME,
+        requestId,
+        correlationId,
+        path: url.pathname,
+        error: message,
+        stack: err instanceof Error ? err.stack : undefined,
+      },
+      "error",
+    );
+
+    return respond(
+      {
+        error: "internal_error",
+        message: "An unexpected error occurred",
+        service: SERVICE_NAME,
+        requestId,
+      },
+      {
+        status: 500,
+      },
+    );
   }
 });
 
