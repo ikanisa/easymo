@@ -24,9 +24,7 @@
 
 import { logStructuredEvent, recordMetric } from "../../_shared/observability.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
-// TODO Phase 2: Fix DualAIProvider import - path broken
-// import { DualAIProvider } from "../../wa-agent-waiter/core/providers/dual-ai-provider.ts";
-type DualAIProvider = any; // Temporary workaround  
+import { DualAIProvider } from "../../_shared/agents/marketplace-ai-provider.ts";
 import { AgentConfigLoader } from "../../_shared/agent-config-loader.ts";
 
 // Types moved from deleted _shared/agents/buy-and-sell.ts
@@ -519,26 +517,36 @@ export class MarketplaceAgent {
     this.configLoader = new AgentConfigLoader(supabase);
 
     try {
-      // TODO Phase 2: Fix DualAIProvider instantiation (path broken)
-      // this.aiProvider = new DualAIProvider();
-      this.aiProvider = null; // Temporarily disabled
-      if (this.aiProvider === null) {
-        logStructuredEvent(
-          "MARKETPLACE_AGENT_PROVIDER_DISABLED",
-          { reason: "DualAIProvider path broken", correlationId },
-          "warn",
-        );
-      }
+      this.aiProvider = new DualAIProvider(correlationId);
+      logStructuredEvent(
+        "MARKETPLACE_AGENT_PROVIDER_INITIALIZED",
+        { correlationId },
+        "info",
+      );
     } catch (error) {
       this.aiProvider = null;
       logStructuredEvent(
-        "MARKETPLACE_AGENT_PROVIDER_MISSING",
+        "MARKETPLACE_AGENT_PROVIDER_ERROR",
         {
           error: error instanceof Error ? error.message : String(error),
           correlationId,
         },
-        "warn",
+        "error",
       );
+      throw error; // Don't silently fail
+    }
+  }
+
+  /**
+   * Static method to check provider availability
+   */
+  static async healthCheck(): Promise<{ healthy: boolean; aiProvider: boolean }> {
+    try {
+      const provider = new DualAIProvider();
+      const healthy = await provider.healthCheck();
+      return { healthy, aiProvider: healthy };
+    } catch {
+      return { healthy: false, aiProvider: false };
     }
   }
 
@@ -570,6 +578,8 @@ export class MarketplaceAgent {
           },
           "warn",
         );
+        
+        recordMetric("marketplace.agent.ai_fallback", 1);
         
         return {
           message: WELCOME_MESSAGE,

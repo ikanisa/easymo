@@ -72,10 +72,13 @@ serve(async (req: Request): Promise<Response> => {
 
     // Health check (no verification params)
     if (!mode && !token) {
+      const health = await MarketplaceAgent.healthCheck();
+      
       return respond({
         status: "healthy",
         service: "wa-webhook-buy-sell",
         scope: "ai_agent_conversation",
+        aiProvider: health.aiProvider,
         timestamp: new Date().toISOString(),
       });
     }
