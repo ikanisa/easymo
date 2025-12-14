@@ -95,11 +95,6 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
   {
-<<<<<<< HEAD
-    db: { schema: "public" },
-    global: { headers: { "x-connection-pool": "true" } },
-    auth: { persistSession: false, autoRefreshToken: false },
-=======
     db: {
       schema: "public",
     },
@@ -112,7 +107,6 @@ const supabase = createClient(
       persistSession: false, // Edge functions don't need session persistence
       autoRefreshToken: false,
     },
->>>>>>> fix/wa-webhook-profile-phase1-clean
   },
 );
 
@@ -129,278 +123,14 @@ serve(async (req: Request): Promise<Response> => {
     headers.set("X-Correlation-ID", correlationId);
     headers.set("X-Service", SERVICE_NAME);
     headers.set("X-Service-Version", SERVICE_VERSION);
-<<<<<<< HEAD
-=======
-    // Add connection reuse headers to reduce cold starts
->>>>>>> fix/wa-webhook-profile-phase1-clean
-    headers.set("Connection", "keep-alive");
-    headers.set("Keep-Alive", "timeout=65");
-    return new Response(JSON.stringify(body), { ...init, headers });
-  };
-
-  const logEvent = (
-    event: string,
-    details: Record<string, unknown> = {},
-    level: "info" | "info" | "warn" | "error" = "info",
-  ) => {
-    logStructuredEvent(event, {
-      service: SERVICE_NAME,
-      requestId,
-      correlationId,
-      path: url.pathname,
-      ...details,
-    }, level);
-  };
-
-  // Health check
-  if (url.pathname === "/health" || url.pathname.endsWith("/health")) {
-    try {
-      // Probe profiles table to verify database connectivity
-      const { error } = await supabase.from("profiles").select("user_id").limit(
-        1,
-      );
-      return respond({
-        status: error ? "unhealthy" : "healthy",
-        service: SERVICE_NAME,
-        timestamp: new Date().toISOString(),
-        checks: {
-          database: error ? "disconnected" : "connected",
-          table: "profiles",
-        },
-        version: SERVICE_VERSION,
-      }, { status: error ? 503 : 200 });
-    } catch (err) {
-      return respond({
-        status: "unhealthy",
-        service: SERVICE_NAME,
-        error: err instanceof Error ? err.message : String(err),
-      }, { status: 503 });
-    }
-  }
-
-  // Webhook verification
-  if (req.method === "GET") {
-    const mode = url.searchParams.get("hub.mode");
-    const token = url.searchParams.get("hub.verify_token");
-    const challenge = url.searchParams.get("hub.challenge");
-
-    if (mode === "subscribe" && token === Deno.env.get("WA_VERIFY_TOKEN")) {
-      return new Response(challenge ?? "", { status: 200 });
-    }
-    return respond({ error: "forbidden" }, { status: 403 });
-  }
-
-  // Main webhook handler
-  try {
-    const rawBody = await req.text();
-
-    // Security: Body size validation
-    if (rawBody.length > MAX_BODY_SIZE) {
-      logEvent("PROFILE_BODY_TOO_LARGE", { size: rawBody.length }, "warn");
-      return respond({ error: "payload_too_large" }, { status: 413 });
-    }
-
-    const signatureHeaderName = req.headers.has("x-hub-signature-256")
-      ? "x-hub-signature-256"
-      : req.headers.has("x-hub-signature")
-      ? "x-hub-signature"
-      : null;
-    const signature = signatureHeaderName
-      ? req.headers.get(signatureHeaderName)
-      : null;
-    const appSecret = Deno.env.get("WHATSAPP_APP_SECRET") ??
-      Deno.env.get("WA_APP_SECRET");
-    const runtimeEnv =
-      (Deno.env.get("DENO_ENV") ?? "development").toLowerCase();
-    const debugMode = Deno.env.get("WA_SIGNATURE_DEBUG") === "true";
-    const allowUnsigned = runtimeEnv !== "production" &&
-      runtimeEnv !== "prod" &&
-      (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() ===
-        "true";
-    const internalForward = req.headers.get("x-wa-internal-forward") === "true";
-    const allowInternalForward =
-      (Deno.env.get("WA_ALLOW_INTERNAL_FORWARD") ?? "false").toLowerCase() ===
-        "true";
-
-    if (!appSecret) {
-      logEvent(
-        "PROFILE_AUTH_CONFIG_ERROR",
-        { reason: "missing_app_secret" },
-        "error",
-      );
-      return respond({ error: "server_misconfigured" }, { status: 500 });
-    }
-
-    if (signature) {
-      const isValid = await verifyWebhookSignature(
-        rawBody,
-        signature,
-        appSecret,
-      );
-      if (!isValid) {
-        const bypass = allowUnsigned ||
-          (internalForward && allowInternalForward);
-        if (!bypass) {
-          logEvent("PROFILE_AUTH_FAILED", { 
-            signatureHeaderName,
-            userAgent: req.headers.get("user-agent"),
-            debugMode,
-          }, "warn");
-          return respond({ error: "unauthorized" }, { status: 401 });
-        }
-        // Enhanced logging for production bypass (should never happen)
-        if (runtimeEnv === "production" || runtimeEnv === "prod") {
-          logEvent(
-            "PROFILE_AUTH_BYPASS_PRODUCTION",
-            {
-              reason: internalForward
-                ? "internal_forward"
-                : "signature_mismatch",
-              signatureHeaderName,
-              environment: runtimeEnv,
-              userAgent: req.headers.get("user-agent"),
-              allowUnsigned,
-              allowInternalForward,
-              internalForward,
-            },
-            "error", // ERROR level in production!
-          );
-        } else if (debugMode) {
-          // Debug info when WA_SIGNATURE_DEBUG=true
-          logEvent(
-            "PROFILE_AUTH_BYPASS_DEBUG",
-            {
-              reason: internalForward
-                ? "internal_forward"
-                : "signature_mismatch",
-              signatureHeaderName,
-              environment: runtimeEnv,
-              signatureProvided: signature ? "yes" : "no",
-              appSecretPrefix: appSecret?.slice(0, 8) + "***",
-            },
-            "info",
-          );
-        } else {
-          // Info level for non-prod, non-debug
-          logEvent(
-            "PROFILE_AUTH_BYPASS",
-            {
-              reason: internalForward
-                ? "internal_forward"
-                : "signature_mismatch",
-              signatureHeaderName,
-              environment: runtimeEnv,
-            },
-            "info",
-          );
-        }
-      }
-    } else {
-      const bypass = allowUnsigned || (internalForward && allowInternalForward);
-      if (!bypass) {
-        logEvent("PROFILE_AUTH_MISSING_SIGNATURE", {}, "warn");
-        return respond({ error: "unauthorized" }, { status: 401 });
-      }
-      // Log missing signature bypass
-      if (runtimeEnv === "production" || runtimeEnv === "prod") {
-        logEvent(
-          "PROFILE_AUTH_BYPASS_PRODUCTION",
-          {
-            reason: internalForward ? "internal_forward" : "no_signature",
-            environment: runtimeEnv,
-          },
-          "error", // ERROR in production
-        );
-      } else {
-        logEvent(
-          "PROFILE_AUTH_BYPASS",
-          {
-            reason: internalForward ? "internal_forward" : "no_signature",
-            environment: runtimeEnv,
-          },
-          "info", // INFO in dev
-        );
-      }
-    }
-
-    // Parse payload with error handling
-    let payload: WhatsAppWebhookPayload;
-    try {
-      payload = JSON.parse(rawBody);
-    } catch {
-      logEvent("PROFILE_INVALID_JSON", {}, "warn");
-      return respond({ error: "invalid_payload" }, { status: 400 });
-    }
-
-    const entry = payload.entry?.[0];
-    const change = entry?.changes?.[0];
-    const value = change?.value;
-    const message = value?.messages?.[0];
-
-    if (!message) {
-      return respond({ success: true, ignored: "no_message" });
-    }
-
-    const from = message.from;
-    if (!from) {
-      return respond({ success: true, ignored: "no_sender" });
-    }
-
-    // Idempotency: Check if we've already processed this message
-    const messageId = (message as any).id; // WhatsApp message ID (wamid)
-    if (messageId) {
-      // Atomic idempotency check using unique constraint
-      const { error: insertError } = await supabase
-        .from("processed_webhooks")
-        .insert({
-          message_id: messageId,
-          phone_number: from,
-          webhook_type: "profile",
-          created_at: new Date().toISOString(),
-        });
-
-      if (insertError) {
-        // Check if it's a duplicate (unique constraint violation)
-        if (insertError.code === "23505") {
-          logEvent("PROFILE_DUPLICATE_MESSAGE", { messageId, from }, "debug");
-          return respond({ success: true, ignored: "duplicate_message" });
-        }
-
-        // Other errors are non-fatal (idempotency is best-effort)
-        logEvent(
-          "PROFILE_IDEMPOTENCY_INSERT_FAILED",
-          {
-            error: insertError.message,
-            code: insertError.code,
-          },
-          "warn",
-        );
-        // Continue processing despite idempotency failure
-      }
-    }
-
-<<<<<<< HEAD
-    // Phase 2: Check response cache
-    const cacheKey = `${from}:${messageId ?? "no-id"}`;
-=======
     // Check response cache (helps with webhook retries from WhatsApp)
     const cacheKey = `${from}:${messageId}`;
->>>>>>> fix/wa-webhook-profile-phase1-clean
     const cached = responseCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
       logEvent("PROFILE_CACHE_HIT", { from, messageId }, "debug");
       return respond(cached.response);
     }
 
-<<<<<<< HEAD
-    // Phase 2: Circuit breaker protection
-    if (!dbCircuitBreaker.canExecute()) {
-      logEvent("PROFILE_DB_CIRCUIT_OPEN", { from, metrics: dbCircuitBreaker.getMetrics() }, "warn");
-      return respond({ error: "service_unavailable", message: "Database temporarily unavailable", retry_after: 60 }, { status: 503 });
-    }
-
-    // Build Context - Auto-create profile if needed
-=======
     // Build Context - Auto-create profile if needed (with circuit breaker protection)
     if (!dbCircuitBreaker.canExecute()) {
       logEvent("PROFILE_DB_CIRCUIT_OPEN", {
@@ -417,21 +147,15 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
->>>>>>> fix/wa-webhook-profile-phase1-clean
     let profile;
     try {
       profile = await ensureProfile(supabase, from);
       dbCircuitBreaker.recordSuccess();
     } catch (error) {
-<<<<<<< HEAD
-      dbCircuitBreaker.recordFailure(error instanceof Error ? error.message : String(error));
-      throw error;
-=======
       dbCircuitBreaker.recordFailure(
         error instanceof Error ? error.message : String(error),
       );
       throw error; // Re-throw to be caught by outer catch
->>>>>>> fix/wa-webhook-profile-phase1-clean
     }
 
     const ctx: RouterContext = {
@@ -1084,12 +808,6 @@ serve(async (req: Request): Promise<Response> => {
       logEvent("PROFILE_UNHANDLED_MESSAGE", { from, type: message.type });
     }
 
-<<<<<<< HEAD
-    // Phase 2: Cache successful response
-    const successResponse = { success: true, handled };
-    if (messageId) {
-      responseCache.set(cacheKey, { response: successResponse, timestamp: Date.now() });
-=======
     // Cache successful response
     const successResponse = { success: true, handled };
     if (messageId) {
@@ -1097,7 +815,6 @@ serve(async (req: Request): Promise<Response> => {
         response: successResponse,
         timestamp: Date.now(),
       });
->>>>>>> fix/wa-webhook-profile-phase1-clean
     }
 
     return respond(successResponse);
