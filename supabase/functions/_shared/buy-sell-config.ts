@@ -1,42 +1,4 @@
 /**
- * Buy & Sell Configuration
- * 
- * African country code mappings and geo-blocking utilities
- */
-
-// African country phone prefixes (without + sign)
-export const AFRICAN_COUNTRY_CODES: Record<string, string> = {
-  "250": "RW", // Rwanda
-  "254": "KE", // Kenya
-  "255": "TZ", // Tanzania
-  "256": "UG", // Uganda
-  "234": "NG", // Nigeria
-  "27": "ZA",  // South Africa
-  "233": "GH", // Ghana
-  "237": "CM", // Cameroon
-  "251": "ET", // Ethiopia
-  "252": "SO", // Somalia
-  "253": "DJ", // Djibouti
-  "257": "BI", // Burundi
-  "258": "MZ", // Mozambique
-  "260": "ZM", // Zambia
-  "261": "MG", // Madagascar
-  "263": "ZW", // Zimbabwe
-  "265": "MW", // Malawi
-  "267": "BW", // Botswana
-  "268": "SZ", // Eswatini
-  "269": "KM", // Comoros
-  "211": "SS", // South Sudan
-  "212": "MA", // Morocco
-  "213": "DZ", // Algeria
-  "216": "TN", // Tunisia
-  "218": "LY", // Libya
-  "220": "GM", // Gambia
-  "221": "SN", // Senegal
-  "222": "MR", // Mauritania
-  "223": "ML", // Mali
-  "224": "GN", // Guinea
-  "225": "CI", // Côte d'Ivoire
  * Buy & Sell Agent Configuration and Phone Utilities
  * 
  * Configuration for regional operations and phone number utilities:
@@ -45,7 +7,13 @@ export const AFRICAN_COUNTRY_CODES: Record<string, string> = {
  * - Market configurations
  * - Phone number normalization
  * - Country detection from phone
+ * 
+ * @see docs/GROUND_RULES.md for geo-blocking requirements
  */
+
+// =====================================================
+// COUNTRY CODES
+// =====================================================
 
 // African country codes mapping (prefix to ISO code)
 export const AFRICAN_COUNTRY_CODES: Record<string, string> = {
@@ -75,50 +43,10 @@ export const AFRICAN_COUNTRY_CODES: Record<string, string> = {
   "239": "ST", // São Tomé and Príncipe
   "240": "GQ", // Equatorial Guinea
   "241": "GA", // Gabon
-  "242": "CG", // Republic of the Congo
-  "243": "CD", // Democratic Republic of the Congo
   "244": "AO", // Angola
   "245": "GW", // Guinea-Bissau
-  "246": "IO", // British Indian Ocean Territory
   "248": "SC", // Seychelles
   "249": "SD", // Sudan
-};
-
-// Blocked countries for Buy & Sell agent (as per source requirements)
-export const BLOCKED_COUNTRIES = ["UG", "KE", "NG", "ZA"];
-
-/**
- * Normalize phone number to E.164 format
- * @param phone Phone number in various formats
- * @returns Normalized phone number with + prefix
- */
-export function normalizePhone(phone: string): string {
-  // Remove all non-digit characters
-  let digits = phone.replace(/\D/g, "");
-
-  // If starts with 00, replace with +
-  if (digits.startsWith("00")) {
-    digits = digits.substring(2);
-  }
-
-  // Ensure it starts with +
-  return `+${digits}`;
-}
-
-/**
- * Detect country code from phone number
- * @param phone Phone number
- * @returns Two-letter country code or null if not found
- */
-export function detectCountryFromPhone(phone: string): string | null {
-  const normalized = normalizePhone(phone);
-  const digits = normalized.replace(/\D/g, "");
-
-  // Try matching prefixes from longest to shortest
-  for (let i = 3; i >= 2; i--) {
-    const prefix = digits.substring(0, i);
-    if (AFRICAN_COUNTRY_CODES[prefix]) {
-      return AFRICAN_COUNTRY_CODES[prefix];
   "251": "ET", // Ethiopia
   "252": "SO", // Somalia
   "253": "DJ", // Djibouti
@@ -136,10 +64,47 @@ export function detectCountryFromPhone(phone: string): string | null {
   "27": "ZA",  // South Africa
 };
 
-// Blocked countries for vendor outreach (as per requirements)
+// =====================================================
+// GEO-BLOCKING
+// =====================================================
+
+// Blocked countries for Buy & Sell agent (as per product requirements)
+// Service only available in Rwanda initially
 export const BLOCKED_COUNTRIES = ["UG", "KE", "NG", "ZA"];
 
-// Market configuration
+// Country names for user-friendly messages
+const COUNTRY_NAMES: Record<string, string> = {
+  RW: "Rwanda",
+  KE: "Kenya",
+  TZ: "Tanzania",
+  UG: "Uganda",
+  NG: "Nigeria",
+  ZA: "South Africa",
+  GH: "Ghana",
+  CM: "Cameroon",
+  ET: "Ethiopia",
+  SO: "Somalia",
+  DJ: "Djibouti",
+  BI: "Burundi",
+  MZ: "Mozambique",
+  ZM: "Zambia",
+  MG: "Madagascar",
+  ZW: "Zimbabwe",
+  MW: "Malawi",
+  BW: "Botswana",
+  SZ: "Eswatini",
+  KM: "Comoros",
+  SS: "South Sudan",
+  CD: "DR Congo",
+  CI: "Côte d'Ivoire",
+  SN: "Senegal",
+  ML: "Mali",
+};
+
+// =====================================================
+// MARKET CONFIGURATION
+// =====================================================
+
 export interface MarketConfig {
   countryCode: string;
   countryName: string;
@@ -201,6 +166,10 @@ export const MARKET_CONFIG: Record<string, MarketConfig> = {
   }
 };
 
+// =====================================================
+// PHONE NUMBER UTILITIES
+// =====================================================
+
 /**
  * Normalize phone number to E.164 format
  * 
@@ -214,9 +183,6 @@ export function normalizePhoneNumber(phone: string, defaultCountryCode: string =
 
   // Remove all non-digit characters
   let cleaned = phone.replace(/\D/g, "");
-
-  // If starts with +, remove it for now
-  const hasPlus = phone.startsWith("+");
 
   // If starts with 0, remove it (local format)
   if (cleaned.startsWith("0")) {
@@ -265,12 +231,6 @@ export function getCountryFromPhone(phone: string): string | null {
 
 /**
  * Check if phone number is from a blocked country
- * @param phone Phone number
- * @returns true if blocked, false otherwise
- */
-export function isPhoneBlocked(phone: string): boolean {
-  const country = detectCountryFromPhone(phone);
-  return country !== null && BLOCKED_COUNTRIES.includes(country);
  */
 export function isBlockedPhone(phone: string): boolean {
   const country = getCountryFromPhone(phone);
@@ -279,59 +239,19 @@ export function isBlockedPhone(phone: string): boolean {
 
 /**
  * Check if country code is blocked
- * @param countryCode Two-letter country code
- * @returns true if blocked, false otherwise
- */
-export function isCountryBlocked(countryCode: string): boolean {
  */
 export function isBlockedCountry(countryCode: string): boolean {
   return BLOCKED_COUNTRIES.includes(countryCode.toUpperCase());
 }
 
 /**
- * Format phone number for display (mask middle digits)
- * @param phone Phone number
- * @returns Masked phone number
+ * Get country name from country code
  */
-export function maskPhone(phone: string): string {
-  const normalized = normalizePhone(phone);
-  if (normalized.length < 8) {
-    return normalized;
-  }
-  return normalized.replace(/(\+\d{3})\d+(\d{4})/, "$1****$2");
+export function getCountryName(countryCode: string): string | null {
+  return COUNTRY_NAMES[countryCode.toUpperCase()] || null;
 }
 
 /**
- * Get country name from country code
- * @param countryCode Two-letter country code
- * @returns Country name or null if not found
- */
-export function getCountryName(countryCode: string): string | null {
-  const countryNames: Record<string, string> = {
-    RW: "Rwanda",
-    KE: "Kenya",
-    TZ: "Tanzania",
-    UG: "Uganda",
-    NG: "Nigeria",
-    ZA: "South Africa",
-    GH: "Ghana",
-    CM: "Cameroon",
-    ET: "Ethiopia",
-    SO: "Somalia",
-    DJ: "Djibouti",
-    BI: "Burundi",
-    MZ: "Mozambique",
-    ZM: "Zambia",
-    MG: "Madagascar",
-    ZW: "Zimbabwe",
-    MW: "Malawi",
-    BW: "Botswana",
-    SZ: "Eswatini",
-    KM: "Comoros",
-    SS: "South Sudan",
-  };
-
-  return countryNames[countryCode.toUpperCase()] || null;
  * Get market config for a phone number
  */
 export function getMarketConfig(phone: string): MarketConfig | null {
@@ -346,6 +266,20 @@ export function isValidPhoneNumber(phone: string): boolean {
   const normalized = normalizePhoneNumber(phone);
   // Basic validation: should start with + and have 10-15 digits
   return /^\+\d{10,15}$/.test(normalized);
+}
+
+/**
+ * Mask phone number for logging (PII protection)
+ * 
+ * Examples:
+ * - "+250788123456" -> "+250****3456"
+ */
+export function maskPhone(phone: string): string {
+  const normalized = normalizePhoneNumber(phone);
+  if (normalized.length < 8) {
+    return normalized;
+  }
+  return normalized.replace(/(\+\d{3})\d+(\d{4})/, "$1****$2");
 }
 
 /**
@@ -379,3 +313,19 @@ export function formatPhoneDisplay(phone: string): string {
   const parts = number.match(/.{1,3}/g) || [];
   return `+${countryCode} ${parts.join(" ")}`;
 }
+
+// =====================================================
+// LEGACY ALIASES (for backward compatibility)
+// =====================================================
+
+/** @deprecated Use normalizePhoneNumber instead */
+export const normalizePhone = normalizePhoneNumber;
+
+/** @deprecated Use getCountryFromPhone instead */
+export const detectCountryFromPhone = getCountryFromPhone;
+
+/** @deprecated Use isBlockedPhone instead */
+export const isPhoneBlocked = isBlockedPhone;
+
+/** @deprecated Use isBlockedCountry instead */
+export const isCountryBlocked = isBlockedCountry;
