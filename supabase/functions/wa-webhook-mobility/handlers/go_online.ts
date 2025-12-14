@@ -101,7 +101,7 @@ export async function handleGoOnlineLocation(
         await logStructuredEvent("DRIVER_TRIP_CREATE_FAILED", {
           userId: ctx.profileId,
           error: tripError instanceof Error ? tripError.message : String(tripError),
-        }});
+        });
         // Continue even if trip creation fails
       }
 
