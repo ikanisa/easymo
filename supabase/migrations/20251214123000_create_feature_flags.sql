@@ -16,25 +16,37 @@ CREATE TABLE IF NOT EXISTS feature_flags (
 );
 
 -- Add index for enabled flags (common query)
-CREATE INDEX idx_feature_flags_enabled ON feature_flags(enabled) WHERE enabled = true;
+CREATE INDEX IF NOT EXISTS idx_feature_flags_enabled ON feature_flags(enabled) WHERE enabled = true;
 
 -- Enable RLS
 ALTER TABLE feature_flags ENABLE ROW LEVEL SECURITY;
 
 -- Service role has full access
-CREATE POLICY "Service role full access on feature_flags"
-  ON feature_flags
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'feature_flags' AND policyname = 'Service role full access on feature_flags'
+  ) THEN
+    CREATE POLICY "Service role full access on feature_flags"
+      ON feature_flags
+      FOR ALL
+      TO service_role
+      USING (true)
+      WITH CHECK (true);
+  END IF;
+END $$;
 
 -- Authenticated users can read enabled flags
-CREATE POLICY "Authenticated users can read enabled flags"
-  ON feature_flags
-  FOR SELECT
-  TO authenticated
-  USING (enabled = true);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'feature_flags' AND policyname = 'Authenticated users can read enabled flags'
+  ) THEN
+    CREATE POLICY "Authenticated users can read enabled flags"
+      ON feature_flags
+      FOR SELECT
+      TO authenticated
+      USING (enabled = true);
+  END IF;
+END $$;
 
 -- Create function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_feature_flags_updated_at()
@@ -46,6 +58,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Create trigger
+DROP TRIGGER IF EXISTS update_feature_flags_timestamp ON feature_flags;
 CREATE TRIGGER update_feature_flags_timestamp
   BEFORE UPDATE ON feature_flags
   FOR EACH ROW
