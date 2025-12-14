@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "@supabase/supabase-js";
-import { logStructuredEvent } from "../_shared/observability.ts";
+import { logStructuredEvent } from "../_shared/observability/index.ts";
 import {
   clearState,
   getState,
@@ -247,8 +247,29 @@ serve(async (req: Request): Promise<Response> => {
         });
     }
 
+    // Phase 2: Check response cache
+    const cacheKey = `${from}:${messageId ?? "no-id"}`;
+    const cached = responseCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      logEvent("PROFILE_CACHE_HIT", { from, messageId }, "debug");
+      return respond(cached.response);
+    }
+
+    // Phase 2: Circuit breaker protection
+    if (!dbCircuitBreaker.canExecute()) {
+      logEvent("PROFILE_DB_CIRCUIT_OPEN", { from, metrics: dbCircuitBreaker.getMetrics() }, "warn");
+      return respond({ error: "service_unavailable", message: "Database temporarily unavailable", retry_after: 60 }, { status: 503 });
+    }
+
     // Build Context - Auto-create profile if needed
-    const profile = await ensureProfile(supabase, from);
+    let profile;
+    try {
+      profile = await ensureProfile(supabase, from);
+      dbCircuitBreaker.recordSuccess();
+    } catch (error) {
+      dbCircuitBreaker.recordFailure(error instanceof Error ? error.message : String(error));
+      throw error;
+    }
 
     const ctx: RouterContext = {
       supabase,
@@ -908,7 +929,13 @@ serve(async (req: Request): Promise<Response> => {
       logEvent("PROFILE_UNHANDLED_MESSAGE", { from, type: message.type });
     }
 
-    return respond({ success: true, handled });
+    // Phase 2: Cache successful response
+    const successResponse = { success: true, handled };
+    if (messageId) {
+      responseCache.set(cacheKey, { response: successResponse, timestamp: Date.now() });
+    }
+
+    return respond(successResponse);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     logEvent("PROFILE_WEBHOOK_ERROR", { error: message }, "error");

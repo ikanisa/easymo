@@ -1,9 +1,9 @@
 // wa-webhook-mobility - Standalone version
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "./deps.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
+import { logStructuredEvent } from "../_shared/observability/index.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
-import { clearState, getState, setState } from "./state/store.ts";
+import { clearState, getState, setState } from "../_shared/wa-webhook-shared/state/store.ts";
 import {
   handleChangeVehicleRequest,
   handleNearbyLocation,
