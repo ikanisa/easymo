@@ -22,12 +22,39 @@ import { WEBHOOK_CONFIG } from "../_shared/config/webhooks.ts";
 // Static imports for frequently used handlers to reduce dynamic import overhead
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { ensureProfile } from "../_shared/wa-webhook-shared/utils/profile.ts";
+import { CircuitBreaker } from "../_shared/circuit-breaker.ts";
 
 const profileConfig = WEBHOOK_CONFIG.profile;
 
 const SERVICE_NAME = "wa-webhook-profile";
 const SERVICE_VERSION = "3.0.0"; // v3.0.0: Wallet functionality extracted to wa-webhook-wallet
 const MAX_BODY_SIZE = profileConfig.maxBodySize;
+
+// Circuit breaker for database operations
+const dbCircuitBreaker = new CircuitBreaker({
+  failureThreshold: 5,
+  successThreshold: 2,
+  timeout: 60000, // 1 minute
+  windowSize: 60000,
+});
+
+// Simple response cache for recent requests (helps with webhook retries)
+interface CacheEntry {
+  response: { success: boolean; ignored?: string };
+  timestamp: number;
+}
+const responseCache = new Map<string, CacheEntry>();
+const CACHE_TTL = 120000; // 2 minutes
+
+// Cleanup old cache entries periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of responseCache.entries()) {
+    if (now - entry.timestamp > CACHE_TTL) {
+      responseCache.delete(key);
+    }
+  }
+}, 60000); // Cleanup every minute
 
 function formatUnknownError(error: unknown): string {
   if (error instanceof Error) return error.message;
@@ -49,6 +76,20 @@ function formatUnknownError(error: unknown): string {
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+  {
+    db: {
+      schema: "public",
+    },
+    global: {
+      headers: {
+        "x-connection-pool": "true",
+      },
+    },
+    auth: {
+      persistSession: false, // Edge functions don't need session persistence
+      autoRefreshToken: false,
+    },
+  },
 );
 
 serve(async (req: Request): Promise<Response> => {
@@ -63,6 +104,10 @@ serve(async (req: Request): Promise<Response> => {
     headers.set("X-Request-ID", requestId);
     headers.set("X-Correlation-ID", correlationId);
     headers.set("X-Service", SERVICE_NAME);
+    headers.set("X-Service-Version", SERVICE_VERSION);
+    // Add connection reuse headers to reduce cold starts
+    headers.set("Connection", "keep-alive");
+    headers.set("Keep-Alive", "timeout=65");
     return new Response(JSON.stringify(body), { ...init, headers });
   };
 
@@ -307,8 +352,40 @@ serve(async (req: Request): Promise<Response> => {
       }
     }
 
-    // Build Context - Auto-create profile if needed
-    const profile = await ensureProfile(supabase, from);
+    // Check response cache (helps with webhook retries from WhatsApp)
+    const cacheKey = `${from}:${messageId}`;
+    const cached = responseCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      logEvent("PROFILE_CACHE_HIT", { from, messageId }, "debug");
+      return respond(cached.response);
+    }
+
+    // Build Context - Auto-create profile if needed (with circuit breaker protection)
+    if (!dbCircuitBreaker.canExecute()) {
+      logEvent("PROFILE_DB_CIRCUIT_OPEN", {
+        from,
+        metrics: dbCircuitBreaker.getMetrics(),
+      }, "warn");
+      return respond(
+        {
+          error: "service_unavailable",
+          message: "Database temporarily unavailable",
+          retry_after: 60,
+        },
+        { status: 503 },
+      );
+    }
+
+    let profile;
+    try {
+      profile = await ensureProfile(supabase, from);
+      dbCircuitBreaker.recordSuccess();
+    } catch (error) {
+      dbCircuitBreaker.recordFailure(
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error; // Re-throw to be caught by outer catch
+    }
 
     const ctx: RouterContext = {
       supabase,
@@ -968,7 +1045,16 @@ serve(async (req: Request): Promise<Response> => {
       logEvent("PROFILE_UNHANDLED_MESSAGE", { from, type: message.type });
     }
 
-    return respond({ success: true, handled });
+    // Cache successful response
+    const successResponse = { success: true, handled };
+    if (messageId) {
+      responseCache.set(cacheKey, {
+        response: successResponse,
+        timestamp: Date.now(),
+      });
+    }
+
+    return respond(successResponse);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
 
