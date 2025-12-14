@@ -2,7 +2,7 @@ import type { RouterContext } from "../types.ts";
 import { setState } from "../state/store.ts";
 import { IDS } from "../wa/ids.ts";
 import { maskPhone } from "./support.ts";
-import { sendListMessage } from "../utils/reply.ts";
+import { sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import {
   evaluateMotorInsuranceGate,
   recordMotorInsuranceHidden,

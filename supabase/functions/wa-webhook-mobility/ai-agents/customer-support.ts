@@ -1,6 +1,6 @@
 import type { RouterContext } from "../types.ts";
 import { sendText } from "../wa/client.ts";
-import { homeOnly } from "../utils/reply.ts";
+import { homeOnly } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { IDS } from "../wa/ids.ts";
 import { logStructuredEvent } from "../observe/log.ts";
 

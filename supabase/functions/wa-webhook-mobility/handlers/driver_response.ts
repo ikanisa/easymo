@@ -6,7 +6,7 @@ import { clearState, setState } from "../state/store.ts";
 import { t } from "../i18n/translator.ts";
 import { IDS } from "../wa/ids.ts";
 import { sendText, sendButtons } from "../wa/client.ts";
-import { sendButtonsMessage, homeOnly } from "../utils/reply.ts";
+import { sendButtonsMessage, homeOnly } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { logStructuredEvent } from "../observe/log.ts";
 import { waChatLink } from "../utils/links.ts";
 import {

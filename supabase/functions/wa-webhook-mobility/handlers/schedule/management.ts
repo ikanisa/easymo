@@ -3,7 +3,7 @@ import { clearState, setState } from "../../state/store.ts";
 import { IDS } from "../../wa/ids.ts";
 import { getAppConfig } from "../../utils/app_config.ts";
 import { t } from "../../i18n/translator.ts";
-import { homeOnly, sendButtonsMessage } from "../../utils/reply.ts";
+import { homeOnly, sendButtonsMessage } from "../../../_shared/wa-webhook-shared/utils/reply.ts";
 import { sendText } from "../../wa/client.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
 import { maskPhone } from "../../flows/support.ts";

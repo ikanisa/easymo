@@ -111,33 +111,161 @@ const supabase = createClient(
 );
 
 serve(async (req: Request): Promise<Response> => {
-  // Note: Rate limiting handled by wa-webhook-core before forwarding to this service
   const url = new URL(req.url);
   const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
   const correlationId = req.headers.get("x-correlation-id") ?? requestId;
 
-  const respond = (body: unknown, init: ResponseInit = {}): Response => {
+  // Helper: JSON response with consistent headers
+  const json = (body: unknown, init: ResponseInit = {}): Response => {
     const headers = new Headers(init.headers);
     headers.set("Content-Type", "application/json");
     headers.set("X-Request-ID", requestId);
     headers.set("X-Correlation-ID", correlationId);
     headers.set("X-Service", SERVICE_NAME);
     headers.set("X-Service-Version", SERVICE_VERSION);
+    return new Response(JSON.stringify(body), { ...init, headers });
+  };
+
+  // Helper: Structured logging
+  const logEvent = (
+    event: string,
+    payload: Record<string, unknown> = {},
+    level: "debug" | "info" | "warn" | "error" = "info",
+  ) => {
+    logStructuredEvent(event, {
+      service: SERVICE_NAME,
+      requestId,
+      correlationId,
+      ...payload,
+    }, level);
+  };
+
+  // Health check endpoint
+  if (url.pathname === "/health" || url.pathname.endsWith("/health")) {
+    return json({
+      status: "healthy",
+      service: SERVICE_NAME,
+      version: SERVICE_VERSION,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  // WhatsApp webhook verification (GET)
+  if (req.method === "GET") {
+    const mode = url.searchParams.get("hub.mode");
+    const token = url.searchParams.get("hub.verify_token");
+    const challenge = url.searchParams.get("hub.challenge");
+    
+    const verifyToken = Deno.env.get("WA_VERIFY_TOKEN");
+    
+    if (mode === "subscribe" && token && token === verifyToken) {
+      logEvent("PROFILE_WEBHOOK_VERIFIED", { mode });
+      return new Response(challenge ?? "", { 
+        status: 200,
+        headers: {
+          "X-Request-ID": requestId,
+          "X-Correlation-ID": correlationId,
+        },
+      });
+    }
+    
+    logEvent("PROFILE_VERIFICATION_FAILED", { mode, hasToken: !!token }, "warn");
+    return json({ error: "forbidden", message: "Invalid verification token" }, { status: 403 });
+  }
+
+  // POST webhook handling
+  try {
+    // Parse request body
+    const rawBody = await req.text();
+    let payload: WhatsAppWebhookPayload;
+    
+    try {
+      payload = JSON.parse(rawBody);
+    } catch (parseError) {
+      logEvent("PROFILE_PARSE_ERROR", { 
+        error: parseError instanceof Error ? parseError.message : String(parseError),
+      }, "error");
+      return json({ error: "invalid_json", message: "Invalid JSON payload" }, { status: 400 });
+    }
+
+    // Verify webhook signature (security)
+    const appSecret = Deno.env.get("WA_APP_SECRET") ?? "";
+    const signature = req.headers.get("x-hub-signature-256") ?? "";
+    const runtimeEnv = (Deno.env.get("DENO_ENV") ?? "development").toLowerCase();
+    const isProduction = runtimeEnv === "production" || runtimeEnv === "prod";
+    
+    if (signature && appSecret) {
+      const isValid = await verifyWebhookSignature(rawBody, signature, appSecret);
+      
+      if (!isValid) {
+        if (isProduction) {
+          // NEVER bypass in production
+          logEvent("PROFILE_SIGNATURE_INVALID", { 
+            environment: runtimeEnv,
+            userAgent: req.headers.get("user-agent"),
+          }, "error");
+          return json({ error: "unauthorized", message: "Invalid webhook signature" }, { status: 401 });
+        } else {
+          // Dev mode: only bypass if explicitly enabled
+          const allowBypass = Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") === "true";
+          if (!allowBypass) {
+            logEvent("PROFILE_SIGNATURE_INVALID_DEV", { bypass_disabled: true }, "warn");
+            return json({ error: "unauthorized", message: "Invalid signature (dev bypass disabled)" }, { status: 401 });
+          }
+          logEvent("PROFILE_SIGNATURE_BYPASS_DEV", { reason: "dev_mode_explicit" }, "warn");
+        }
+      }
+    } else if (isProduction) {
+      // Production must have signature
+      logEvent("PROFILE_SIGNATURE_MISSING", { environment: "production" }, "error");
+      return json({ error: "unauthorized", message: "Missing webhook signature" }, { status: 401 });
+    }
+
+    // Validate payload structure
+    if (!payload.entry || !Array.isArray(payload.entry) || payload.entry.length === 0) {
+      logEvent("PROFILE_NO_ENTRIES", {}, "debug");
+      return json({ success: true, ignored: "no_entries" });
+    }
+
+    const entry = payload.entry[0];
+    if (!entry.changes || !Array.isArray(entry.changes) || entry.changes.length === 0) {
+      logEvent("PROFILE_NO_CHANGES", {}, "debug");
+      return json({ success: true, ignored: "no_changes" });
+    }
+
+    const change = entry.changes[0];
+    const value = change.value;
+    
+    if (!value.messages || !Array.isArray(value.messages) || value.messages.length === 0) {
+      logEvent("PROFILE_NO_MESSAGES", {}, "debug");
+      return json({ success: true, ignored: "no_messages" });
+    }
+
+    const message = value.messages[0];
+    const from = message.from;
+    const messageId = message.id;
+
+    logEvent("PROFILE_WEBHOOK_RECEIVED", { 
+      from: from?.slice(-4),
+      messageId: messageId?.slice(0, 8),
+      type: message.type,
+    });
+
     // Check response cache (helps with webhook retries from WhatsApp)
     const cacheKey = `${from}:${messageId}`;
     const cached = responseCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      logEvent("PROFILE_CACHE_HIT", { from, messageId }, "debug");
-      return respond(cached.response);
+      logEvent("PROFILE_CACHE_HIT", { messageId: messageId?.slice(0, 8) }, "debug");
+      return json(cached.response);
     }
 
     // Build Context - Auto-create profile if needed (with circuit breaker protection)
     if (!dbCircuitBreaker.canExecute()) {
       logEvent("PROFILE_DB_CIRCUIT_OPEN", {
-        from,
+        from: from?.slice(-4),
         metrics: dbCircuitBreaker.getMetrics(),
       }, "warn");
-      return respond(
+      return json(
         {
           error: "service_unavailable",
           message: "Database temporarily unavailable",
@@ -155,7 +283,32 @@ serve(async (req: Request): Promise<Response> => {
       dbCircuitBreaker.recordFailure(
         error instanceof Error ? error.message : String(error),
       );
-      throw error; // Re-throw to be caught by outer catch
+      
+      const errorMessage = formatUnknownError(error);
+      
+      // Classify error type
+      if (errorMessage.includes("already registered") || errorMessage.includes("duplicate")) {
+        // User error - phone already exists (return 400, not 500)
+        logEvent("PROFILE_USER_ERROR", { 
+          error: "PHONE_DUPLICATE",
+          from: from?.slice(-4),
+        }, "warn");
+        return json({ 
+          error: "USER_ERROR",
+          code: "PHONE_DUPLICATE",
+          message: "Phone number already registered",
+        }, { status: 400 });
+      }
+      
+      // System error - database issue (return 500)
+      logEvent("PROFILE_SYSTEM_ERROR", { 
+        error: errorMessage,
+        from: from?.slice(-4),
+      }, "error");
+      return json({
+        error: "internal_error",
+        message: "Failed to process profile",
+      }, { status: 500 });
     }
 
     const ctx: RouterContext = {
@@ -817,25 +970,22 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    return respond(successResponse);
+    return json(successResponse);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    const errorMessage = err instanceof Error ? err.message : String(err);
 
     // Single consolidated error log
-    await logStructuredEvent(
+    logEvent(
       "PROFILE_WEBHOOK_ERROR",
       {
-        service: SERVICE_NAME,
-        requestId,
-        correlationId,
         path: url.pathname,
-        error: message,
+        error: errorMessage,
         stack: err instanceof Error ? err.stack : undefined,
       },
       "error",
     );
 
-    return respond(
+    return json(
       {
         error: "internal_error",
         message: "An unexpected error occurred",

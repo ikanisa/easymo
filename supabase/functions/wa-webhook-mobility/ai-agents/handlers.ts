@@ -22,7 +22,7 @@ import {
   homeOnly,
   sendButtonsMessage,
   sendListMessage,
-} from "../utils/reply.ts";
+} from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { t } from "../i18n/translator.ts";
 import { clearState, setState } from "../state/store.ts";
 import { IDS } from "../wa/ids.ts";

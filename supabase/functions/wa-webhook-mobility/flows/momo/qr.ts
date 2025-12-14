@@ -15,7 +15,7 @@ import {
   buildButtons,
   sendButtonsMessage,
   sendListMessage,
-} from "../../utils/reply.ts";
+} from "../../../_shared/wa-webhook-shared/utils/reply.ts";
 import { sendHomeMenu } from "../home.ts";
 
 const STATES = {

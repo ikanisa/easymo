@@ -1,7 +1,7 @@
 import type { RouterContext } from "../types.ts";
 import type { SupabaseClient } from "../deps.ts";
 import { setState } from "../state/store.ts";
-import { sendButtonsMessage } from "../utils/reply.ts";
+import { sendButtonsMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { IDS } from "../wa/ids.ts";
 
 const PLATE_STATE_KEY = "vehicle_plate_register";

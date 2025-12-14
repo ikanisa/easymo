@@ -10,7 +10,7 @@ import type { RouterContext } from "../types.ts";
 import { isFeatureEnabled } from "../../_shared/feature-flags.ts";
 import { logAgentEvent } from "../../_shared/agent-observability.ts";
 import { sendText, sendList } from "../wa/client.ts";
-import { sendButtonsMessage, buildButtons } from "../utils/reply.ts";
+import { sendButtonsMessage, buildButtons } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { t } from "../i18n/translator.ts";
 import { IDS } from "../wa/ids.ts";
 

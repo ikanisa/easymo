@@ -1,4 +1,4 @@
-import { fetchWithTimeout } from "../utils/http.ts";
+import { fetchWithTimeout } from "../../_shared/http.ts";
 
 const ALERT_WEBHOOK_URL = Deno.env.get("ALERT_WEBHOOK_URL") ?? "";
 const ALERT_TIMEOUT_MS = Math.max(

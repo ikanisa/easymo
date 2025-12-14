@@ -2,7 +2,7 @@ import type { RouterContext } from "../../types.ts";
 import { gateProFeature } from "../../rpc/mobility.ts";
 import { IDS } from "../../wa/ids.ts";
 import { clearState, setState } from "../../state/store.ts";
-import { sendButtonsMessage } from "../../utils/reply.ts";
+import { sendButtonsMessage } from "../../../_shared/wa-webhook-shared/utils/reply.ts";
 import { t } from "../../i18n/translator.ts";
 import { sendText } from "../../wa/client.ts";
 import { logStructuredEvent } from "../../observe/log.ts";

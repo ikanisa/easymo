@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "../deps.ts";
 import { sendText as sendTextMessage, sendList, sendButtons, sendTemplate } from "../wa/client.ts";
 import { logStructuredEvent } from "../observe/log.ts";
-import { maskE164 } from "../utils/text.ts";
+import { maskE164 } from "../../_shared/wa-webhook-shared/utils/text.ts";
 import type { ApprovedTemplate } from "../shared/template_registry.ts";
 
 interface SendTextOptions {

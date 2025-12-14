@@ -15,7 +15,7 @@ import { waChatLink } from "../utils/links.ts";
 import { maskPhone } from "../flows/support.ts";
 import { logStructuredEvent } from "../observe/log.ts";
 import { emitAlert } from "../observe/alert.ts";
-import { safeRowTitle, timeAgo } from "../utils/text.ts";
+import { safeRowTitle, timeAgo } from "../../_shared/wa-webhook-shared/utils/text.ts";
 import { sendText } from "../wa/client.ts";
 import {
   buildButtons,
@@ -23,7 +23,7 @@ import {
   sendButtonsDirect,
   sendButtonsMessage,
   sendListMessage,
-} from "../utils/reply.ts";
+} from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import {
   ensureVehiclePlate,
   getStoredVehicleType,

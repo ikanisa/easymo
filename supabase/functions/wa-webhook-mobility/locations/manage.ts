@@ -15,7 +15,7 @@ import {
   buildButtons,
   sendButtonsMessage,
   sendListMessage,
-} from "../utils/reply.ts";
+} from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { IDS } from "../wa/ids.ts";
 
 const FAVORITE_ROW_PREFIX = "FAVM::";

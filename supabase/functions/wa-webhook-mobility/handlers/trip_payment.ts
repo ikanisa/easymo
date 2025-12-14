@@ -16,11 +16,11 @@ import { logStructuredEvent } from "../../_shared/observability.ts";
 import type { RouterContext } from "../types.ts";
 import { buildMomoUssd, buildMomoUssdForQr } from "../utils/momo.ts";
 import { sendText, sendImageUrl } from "../wa/client.ts";
-import { buildButtons, sendButtonsMessage } from "../utils/reply.ts";
+import { buildButtons, sendButtonsMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { setState, clearState } from "../state/store.ts";
 import { IDS } from "../wa/ids.ts";
 import { t } from "../i18n/translator.ts";
-import { fmtCurrency } from "../utils/text.ts";
+import { fmtCurrency } from "../../_shared/wa-webhook-shared/utils/text.ts";
 
 // ============================================================================
 // TYPES

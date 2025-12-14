@@ -13,7 +13,7 @@ import type { RouterContext } from "../types.ts";
 import type { SupabaseClient } from "../deps.ts";
 import { setState, clearState, getState } from "../state/store.ts";
 import { sendText } from "../wa/client.ts";
-import { buildButtons, sendButtonsMessage, sendListMessage } from "../utils/reply.ts";
+import { buildButtons, sendButtonsMessage, sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { IDS } from "../wa/ids.ts";
 import {
   processDriverLicense,

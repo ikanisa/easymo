@@ -6,12 +6,12 @@ import { clearState, setState } from "../state/store.ts";
 import { t } from "../i18n/translator.ts";
 import { IDS } from "../wa/ids.ts";
 import { sendText } from "../wa/client.ts";
-import { homeOnly, sendButtonsMessage } from "../utils/reply.ts";
+import { homeOnly, sendButtonsMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { logStructuredEvent } from "../observe/log.ts";
 import { getCachedLocation, saveLocationToCache } from "../locations/cache.ts";
 import { getStoredVehicleType } from "./vehicle_plate.ts";
 import { ensureVehiclePlate } from "./vehicle_plate.ts";
-import { timeAgo } from "../utils/text.ts";
+import { timeAgo } from "../../_shared/wa-webhook-shared/utils/text.ts";
 import { insertTrip } from "../rpc/mobility.ts";
 import { saveIntent } from "../../_shared/wa-webhook-shared/domains/intent_storage.ts";
 

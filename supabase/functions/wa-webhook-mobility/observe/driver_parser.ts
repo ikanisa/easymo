@@ -1,5 +1,5 @@
 import type { RouterContext, WhatsAppMessage } from "../types.ts";
-import { getTextBody, isLocationMessage, isTextMessage } from "../utils/messages.ts";
+import { getTextBody, isLocationMessage, isTextMessage } from "../../_shared/wa-webhook-shared/utils/messages.ts";
 
 function appBase(): string {
   return Deno.env.get("BROKER_APP_BASE_URL") ??
