@@ -369,3 +369,91 @@ export function isRetryableError(error: unknown): boolean {
   
   return false;
 }
+
+/**
+ * PHASE 3: Error Classification
+ * Categorize errors for better observability and alerting
+ */
+export type ErrorCategory = "user_error" | "system_error" | "external_error" | "unknown";
+
+/**
+ * Classify error by category
+ */
+export function classifyError(error: unknown): ErrorCategory {
+  const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+  
+  // User errors (bad input, validation failures, not found)
+  if (
+    message.includes("invalid") ||
+    message.includes("not found") ||
+    message.includes("unauthorized") ||
+    message.includes("forbidden") ||
+    message.includes("bad request") ||
+    message.includes("validation") ||
+    message.includes("missing required")
+  ) {
+    return "user_error";
+  }
+  
+  // External service errors (third-party APIs, timeouts, network)
+  if (
+    message.includes("timeout") ||
+    message.includes("network") ||
+    message.includes("connection") ||
+    message.includes("upstream") ||
+    message.includes("external") ||
+    message.includes("econnrefused") ||
+    message.includes("enotfound") ||
+    message.includes("503") ||
+    message.includes("504") ||
+    message.includes("429")
+  ) {
+    return "external_error";
+  }
+  
+  // System errors (database, internal issues, crashes)
+  if (
+    message.includes("database") ||
+    message.includes("internal") ||
+    message.includes("server error") ||
+    message.includes("crash") ||
+    message.includes("panic") ||
+    message.includes("500") ||
+    message.includes("out of memory") ||
+    message.includes("stack overflow")
+  ) {
+    return "system_error";
+  }
+  
+  return "unknown";
+}
+
+/**
+ * Format unknown error to string
+ */
+export function formatUnknownError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  if (typeof error === "object" && error !== null) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim().length > 0) {
+      return message;
+    }
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return String(error);
+    }
+  }
+  return String(error);
+}
+
+/**
+ * Get stack trace if available
+ */
+export function getStackTrace(error: unknown): string | null {
+  if (error instanceof Error && error.stack) {
+    return error.stack;
+  }
+  return null;
+}
