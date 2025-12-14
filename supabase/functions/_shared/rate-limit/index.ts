@@ -2,10 +2,83 @@
  * Rate Limiting Module for Supabase Edge Functions
  * 
  * Uses Redis (Upstash) with sliding window algorithm
+ * Falls back to in-memory rate limiting if Redis unavailable
  * Implements best practices from GROUND_RULES.md
  */
 
 import { Redis } from "https://esm.sh/@upstash/redis@1.28.0";
+import { logStructuredEvent } from "../observability.ts";
+
+// In-memory rate limit store (fallback when Redis unavailable)
+interface RateLimitEntry {
+  timestamps: number[];
+  resetAt: number;
+}
+const memoryStore = new Map<string, RateLimitEntry>();
+let lastCleanup = Date.now();
+
+/**
+ * Clean up expired entries from memory store (prevent memory leaks)
+ */
+function cleanupMemoryStore(): void {
+  const now = Date.now();
+  if (now - lastCleanup < 60000) return; // Cleanup max once per minute
+  
+  for (const [key, entry] of memoryStore.entries()) {
+    if (entry.resetAt < now) {
+      memoryStore.delete(key);
+    }
+  }
+  lastCleanup = now;
+}
+
+/**
+ * In-memory rate limiting (fallback for Redis failures)
+ */
+function checkRateLimitInMemory(config: RateLimitConfig): RateLimitResult {
+  const now = Date.now();
+  const windowMs = config.windowSeconds * 1000;
+  const windowStart = now - windowMs;
+  const redisKey = `ratelimit:${config.key}`;
+  
+  // Cleanup old entries periodically
+  cleanupMemoryStore();
+  
+  // Get or create entry
+  let entry = memoryStore.get(redisKey);
+  if (!entry || entry.resetAt < now) {
+    entry = {
+      timestamps: [],
+      resetAt: now + windowMs,
+    };
+    memoryStore.set(redisKey, entry);
+  }
+  
+  // Remove timestamps outside current window
+  entry.timestamps = entry.timestamps.filter(ts => ts > windowStart);
+  
+  // Add current request timestamp
+  entry.timestamps.push(now);
+  
+  const requestCount = entry.timestamps.length;
+  const allowed = requestCount <= config.limit;
+  const remaining = Math.max(0, config.limit - requestCount);
+  
+  if (!allowed) {
+    logStructuredEvent("RATE_LIMIT_EXCEEDED_MEMORY", {
+      key: config.key,
+      count: requestCount,
+      limit: config.limit,
+    }, "warn");
+  }
+  
+  return {
+    allowed,
+    remaining,
+    resetAt: new Date(entry.resetAt),
+    current: requestCount,
+  };
+}
 
 export interface RateLimitConfig {
   /** Unique identifier for rate limit (e.g., "wa-webhook:user-id" or IP) */
@@ -37,14 +110,8 @@ export async function checkRateLimit(
   const redisToken = Deno.env.get("UPSTASH_REDIS_TOKEN");
 
   if (!redisUrl || !redisToken) {
-    // Fail open if Redis is not configured (log warning)
-    console.warn("Rate limiting disabled: Redis not configured");
-    return {
-      allowed: true,
-      remaining: config.limit,
-      resetAt: new Date(Date.now() + config.windowSeconds * 1000),
-      current: 0,
-    };
+    // Use in-memory fallback if Redis not configured
+    return checkRateLimitInMemory(config);
   }
 
   const redis = new Redis({
@@ -77,13 +144,12 @@ export async function checkRateLimit(
       current: requestCount,
     };
   } catch (error) {
-    console.error("Rate limit check failed:", error);
-    return {
-      allowed: true,
-      remaining: config.limit,
-      resetAt: new Date(Date.now() + config.windowSeconds * 1000),
-      current: 0,
-    };
+    logStructuredEvent("REDIS_RATE_LIMIT_ERROR", {
+      error: error instanceof Error ? error.message : String(error),
+      key: config.key,
+    }, "error");
+    // Fallback to in-memory on Redis errors
+    return checkRateLimitInMemory(config);
   }
 }
 

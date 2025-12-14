@@ -68,31 +68,10 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
     priority: 1,
   },
   {
-    // Directory service: Structured category browsing and location-based business search
-    service: "wa-webhook-buy-sell-directory",
-    keywords: ["buy", "sell", "category", "categories", "browse", "directory", "shops"],
-    menuKeys: ["buy_sell_directory", "buy_sell_categories", "buy_and_sell", "buy and sell", "shops_services", "directory", "browse_categories", "3"],
-    priority: 1,
-  },
-  {
-    // AI Agent service: Natural language business discovery (only AI agent kept)
-    service: "wa-webhook-buy-sell-agent",
-    keywords: ["business broker", "find business", "shopping assistant", "ai search", "chat agent"],
-    menuKeys: ["buy_sell_agent", "business_broker_agent", "chat_with_agent", "marketplace_agent", "shop_ai", "ai_assistant"],
-    priority: 1,
-  },
-  {
-    /**
-     * Legacy Buy & Sell service - DEPRECATED
-     * 
-     * This service is deprecated and traffic should be routed to wa-webhook-buy-sell-directory.
-     */
     service: "wa-webhook-buy-sell",
-    keywords: [], // Intentionally empty - deprecated service
-    menuKeys: [],  // Intentionally empty - deprecated service
-    priority: 99,
-    deprecated: true,
-    redirectTo: "wa-webhook-buy-sell-directory",
+    keywords: ["buy", "sell", "category", "categories", "browse", "directory", "shops", "business", "marketplace"],
+    menuKeys: ["buy_sell", "buy_and_sell", "buy and sell", "shops_services", "marketplace", "3"],
+    priority: 1,
   },
   {
     /**
@@ -152,17 +131,9 @@ export function buildMenuKeyMap(): Record<string, string> {
  */
 export const STATE_PATTERNS: Array<{ patterns: string[]; service: string }> = [
   { patterns: ["mobility", "trip_", "ride_"], service: "wa-webhook-mobility" },
-  // Wallet state patterns - route to dedicated wallet service
-  // Note: wallet_ prefix catches wallet_cashout, wallet_purchase, wallet_referral, wallet_transfer, etc.
   { patterns: ["wallet_", "payment_", "transfer_", "momo_qr_"], service: "wa-webhook-wallet" },
-  // New directory service state patterns
-  { patterns: ["directory_category", "directory_results", "directory_menu_pagination"], service: "wa-webhook-buy-sell-directory" },
-  // New agent service state patterns
-  { patterns: ["agent_chat", "business_broker_chat"], service: "wa-webhook-buy-sell-agent" },
-  // Legacy buy/sell patterns - route to directory
-  { patterns: ["shop_", "buy_sell_", "buy_sell_location", "buy_sell_results", "buy_sell_menu"], service: "wa-webhook-buy-sell-directory" },
+  { patterns: ["shop_", "buy_sell_", "buy_sell_location", "buy_sell_results", "buy_sell_menu", "business_", "directory_"], service: "wa-webhook-buy-sell" },
   { patterns: ["support_"], service: "wa-agent-support" },
-  { patterns: ["buy_sell_agent_"], service: "wa-webhook-buy-sell-agent" },
 ];
 
 /**
