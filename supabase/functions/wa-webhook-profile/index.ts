@@ -391,22 +391,6 @@ serve(async (req: Request): Promise<Response> => {
       throw error; // Re-throw to be caught by outer catch
     }
 
-        // Other errors are non-fatal (idempotency is best-effort)
-        logEvent(
-          "PROFILE_IDEMPOTENCY_INSERT_FAILED",
-          {
-            error: insertError.message,
-            code: insertError.code,
-          },
-          "warn",
-        );
-        // Continue processing despite idempotency failure
-      }
-    }
-
-    // Build Context - Auto-create profile if needed
-    const profile = await ensureProfile(supabase, from);
-
     const ctx: RouterContext = {
       supabase,
       from,
@@ -1065,7 +1049,16 @@ serve(async (req: Request): Promise<Response> => {
       logEvent("PROFILE_UNHANDLED_MESSAGE", { from, type: message.type });
     }
 
-    return respond({ success: true, handled });
+    // Cache successful response
+    const successResponse = { success: true, handled };
+    if (messageId) {
+      responseCache.set(cacheKey, {
+        response: successResponse,
+        timestamp: Date.now(),
+      });
+    }
+
+    return respond(successResponse);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
 

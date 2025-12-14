@@ -24,7 +24,9 @@
 
 import { logStructuredEvent, recordMetric } from "../../_shared/observability.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
-import { DualAIProvider } from "../../wa-agent-waiter/core/providers/dual-ai-provider.ts";
+// TODO Phase 2: Fix DualAIProvider import - path doesn't exist but gracefully handles failure
+// import { DualAIProvider } from "../../wa-agent-waiter/core/providers/dual-ai-provider.ts";
+type DualAIProvider = any; // Temporary type until proper import fixed
 import { AgentConfigLoader } from "../../_shared/agent-config-loader.ts";
 
 // Types and configuration inlined (no longer importing from deleted wrapper)
@@ -515,7 +517,19 @@ export class MarketplaceAgent {
     this.configLoader = new AgentConfigLoader(supabase);
 
     try {
-      this.aiProvider = new DualAIProvider();
+      // TODO Phase 2: Fix DualAIProvider instantiation
+      // this.aiProvider = new DualAIProvider();
+      this.aiProvider = null; // Temporarily disabled until import fixed
+      if (this.aiProvider === null) {
+        logStructuredEvent(
+          "MARKETPLACE_AGENT_PROVIDER_DISABLED",
+          {
+            reason: "DualAIProvider import path broken, temporarily disabled",
+            correlationId,
+          },
+          "warn",
+        );
+      }
     } catch (error) {
       this.aiProvider = null;
       logStructuredEvent(
