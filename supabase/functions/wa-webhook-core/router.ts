@@ -14,7 +14,6 @@ import {
   isServiceCircuitOpen,
   recordServiceSuccess,
   recordServiceFailure,
-  checkRateLimit,
   fetchWithRetry,
   getAllCircuitStates,
 } from "../_shared/service-resilience.ts";
@@ -402,7 +401,7 @@ export async function summarizeServiceHealth(supabase: SupabaseClient): Promise<
 async function getAllServicesHealth(): Promise<Record<string, boolean>> {
   // Check all services in parallel with a strict timeout per service
   const checks = ROUTED_SERVICES
-    .filter(s => s !== "wa-webhook-core" && s !== FALLBACK_SERVICE)
+    .filter(s => s !== "wa-webhook-core")
     .map(async (service) => {
       const isHealthy = await checkServiceHealth(service);
       return [service, isHealthy] as const;

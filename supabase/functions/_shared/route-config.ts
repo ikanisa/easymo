@@ -64,6 +64,10 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
     priority: 1,
   },
   {
+    // Buy & Sell + Support - consolidated marketplace service
+    service: "wa-webhook-buy-sell",
+    keywords: ["buy", "sell", "category", "categories", "browse", "directory", "shops", "business", "marketplace", "support", "help", "issue", "problem", "question", "faq"],
+    menuKeys: ["buy_sell", "buy_and_sell", "buy and sell", "shops_services", "marketplace", "3", "support_agent", "support", "customer_support", "help", "4"],
     // Buy & Sell service - consolidated marketplace + support
     // Support functionality merged here per comprehensive cleanup (Phase 2)
     // Handles both marketplace transactions and customer support inquiries
@@ -103,6 +107,7 @@ export const ROUTED_SERVICES: readonly string[] = [
   "wa-webhook-profile",
   "wa-webhook-wallet",
   "wa-webhook-buy-sell",
+  "wa-webhook-voice-calls",
 ] as const;
 
 export type RoutedService = typeof ROUTED_SERVICES[number];
@@ -129,6 +134,7 @@ export function buildMenuKeyMap(): Record<string, string> {
 export const STATE_PATTERNS: Array<{ patterns: string[]; service: string }> = [
   { patterns: ["mobility", "trip_", "ride_"], service: "wa-webhook-mobility" },
   { patterns: ["wallet_", "payment_", "transfer_", "momo_qr_"], service: "wa-webhook-wallet" },
+  { patterns: ["shop_", "buy_sell_", "buy_sell_location", "buy_sell_results", "buy_sell_menu", "business_", "directory_", "support_"], service: "wa-webhook-buy-sell" },
   { 
     patterns: [
       // Marketplace patterns
