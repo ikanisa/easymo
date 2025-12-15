@@ -21,16 +21,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "@supabase/supabase-js";
 import { logStructuredEvent } from "../_shared/observability/index.ts";
-import {
-  clearState,
-  getState,
-  setState,
-} from "../_shared/wa-webhook-shared/state/store.ts";
-import {
-  sendButtonsMessage,
-  sendListMessage,
-} from "../_shared/wa-webhook-shared/utils/reply.ts";
-import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
+import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
+import { sendButtonsMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
 import type {
   RouterContext,
   WhatsAppWebhookPayload,
@@ -41,6 +33,7 @@ import { WEBHOOK_CONFIG } from "../_shared/config/webhooks.ts";
 import { verifyWebhookSignature, checkIdempotency } from "../_shared/webhook-utils.ts";
 import { ensureProfile } from "../_shared/wa-webhook-shared/utils/profile.ts";
 import { CircuitBreaker } from "../_shared/circuit-breaker.ts";
+import { formatUnknownError, classifyError } from "./utils/error-handling.ts";
 
 const profileConfig = WEBHOOK_CONFIG.profile;
 
@@ -110,23 +103,6 @@ if (!envValid) {
   }
 }
 
-function formatUnknownError(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (typeof error === "string") return error;
-  if (typeof error === "object" && error !== null) {
-    const message = (error as { message?: unknown }).message;
-    if (typeof message === "string" && message.trim().length > 0) {
-      return message;
-    }
-    try {
-      return JSON.stringify(error);
-    } catch {
-      return String(error);
-    }
-  }
-  return String(error);
-}
-
 const supabase = createClient(
   SUPABASE_URL ?? "",
   SUPABASE_SERVICE_ROLE_KEY ?? "",
@@ -145,70 +121,6 @@ const supabase = createClient(
     },
   },
 );
-
-/**
- * Sanitize error message to prevent exposing internal details to users
- */
-function sanitizeErrorMessage(error: unknown): string {
-  const message = formatUnknownError(error);
-  // List of patterns that indicate internal/sensitive errors
-  const sensitivePatterns = [
-    /column|table|relation|schema/i,
-    /permission denied/i,
-    /authentication failed/i,
-    /database|postgres|sql/i,
-    /internal server/i,
-    /connection|timeout/i,
-    /env|environment/i,
-  ];
-  
-  for (const pattern of sensitivePatterns) {
-    if (pattern.test(message)) {
-      return "An error occurred. Please try again later.";
-    }
-  }
-  
-  // Truncate long error messages
-  if (message.length > 100) {
-    return message.substring(0, 100) + "...";
-  }
-  
-  return message;
-}
-
-/**
- * Coerce location coordinates to numbers and validate
- */
-function parseCoordinates(lat: unknown, lng: unknown): { lat: number; lng: number } | null {
-  let parsedLat: number;
-  let parsedLng: number;
-  
-  if (typeof lat === "string") {
-    parsedLat = parseFloat(lat);
-  } else if (typeof lat === "number") {
-    parsedLat = lat;
-  } else {
-    return null;
-  }
-  
-  if (typeof lng === "string") {
-    parsedLng = parseFloat(lng);
-  } else if (typeof lng === "number") {
-    parsedLng = lng;
-  } else {
-    return null;
-  }
-  
-  if (!Number.isFinite(parsedLat) || !Number.isFinite(parsedLng)) {
-    return null;
-  }
-  
-  if (parsedLat < -90 || parsedLat > 90 || parsedLng < -180 || parsedLng > 180) {
-    return null;
-  }
-  
-  return { lat: parsedLat, lng: parsedLng };
-}
 
 serve(async (req: Request): Promise<Response> => {
   const url = new URL(req.url);
@@ -559,45 +471,8 @@ serve(async (req: Request): Promise<Response> => {
           );
           handled = await listSavedLocations(ctx);
         } else if (id === IDS.ADD_LOCATION || id === "add_location") {
-          // Show list of location types to add
-          await sendListMessage(
-            ctx,
-            {
-              title: "📍 Add Saved Location",
-              body: "Choose the type of location you want to save:",
-              sectionTitle: "Location Type",
-              buttonText: "Choose",
-              rows: [
-                {
-                  id: "ADD_LOC::home",
-                  title: "🏠 Home",
-                  description: "Save your home address",
-                },
-                {
-                  id: "ADD_LOC::work",
-                  title: "💼 Work",
-                  description: "Save your work address",
-                },
-                {
-                  id: "ADD_LOC::school",
-                  title: "🎓 School",
-                  description: "Save your school address",
-                },
-                {
-                  id: "ADD_LOC::other",
-                  title: "📍 Other",
-                  description: "Save another favorite place",
-                },
-                {
-                  id: IDS.SAVED_LOCATIONS,
-                  title: "← Cancel",
-                  description: "Back to saved locations",
-                },
-              ],
-            },
-            { emoji: "➕" },
-          );
-          handled = true;
+          const { showAddLocationTypeMenu } = await import("./handlers/locations.ts");
+          handled = await showAddLocationTypeMenu(ctx);
         } else if (id.startsWith("LOC::")) {
           const locationId = id.replace("LOC::", "");
           const { handleLocationSelection } = await import(
@@ -606,257 +481,33 @@ serve(async (req: Request): Promise<Response> => {
           handled = await handleLocationSelection(ctx, locationId);
         } else if (id.startsWith("ADD_LOC::")) {
           const locationType = id.replace("ADD_LOC::", "");
-          if (ctx.profileId) {
-            await setState(ctx.supabase, ctx.profileId, {
-              key: "add_location",
-              data: { type: locationType },
-            });
-            await sendButtonsMessage(
-              ctx,
-              `📍 *Add ${
-                locationType.charAt(0).toUpperCase() + locationType.slice(1)
-              } Location*\n\nPlease share your location or send the address.`,
-              [
-                { id: IDS.SAVED_LOCATIONS, title: "← Cancel" },
-              ],
-            );
-            handled = true;
-          }
+          const { promptAddLocation } = await import("./handlers/locations.ts");
+          handled = await promptAddLocation(ctx, locationType);
         } // Confirm Save Location
         else if (id.startsWith("CONFIRM_SAVE_LOC::")) {
           const locationType = id.replace("CONFIRM_SAVE_LOC::", "");
-          if (
-            !ctx.profileId || !state || state.key !== "confirm_add_location" ||
-            !state.data
-          ) {
-            handled = false;
-          } else {
-            const { lat, lng, address } = state.data as {
-              lat: number;
-              lng: number;
-              address?: string;
-            };
-
-            // Show loading state
-            await sendText(ctx.from, "⏳ Saving location...");
-
-            const { error } = await ctx.supabase
-              .from("saved_locations")
-              .insert({
-                user_id: ctx.profileId,
-                label: locationType,
-                lat,
-                lng,
-                address: address || null,
-              });
-
-            // Also save to location cache (30-min TTL) for use by other services
-            if (!error) {
-              try {
-                await ctx.supabase.rpc("update_user_location_cache", {
-                  _user_id: ctx.profileId,
-                  _lat: lat,
-                  _lng: lng,
-                });
-                logEvent("PROFILE_LOCATION_CACHED", {
-                  user: ctx.profileId,
-                  type: locationType,
-                  lat,
-                  lng,
-                });
-              } catch (cacheError) {
-                // Log but don't fail - saved location is more important
-                logEvent("PROFILE_CACHE_FAILED", {
-                  error: cacheError instanceof Error
-                    ? cacheError.message
-                    : String(cacheError),
-                }, "warn");
-              }
-            }
-
-            await clearState(ctx.supabase, ctx.profileId);
-
-            if (error) {
-              // P1 fix - Issue #11: Sanitize error message
-              await sendButtonsMessage(
-                ctx,
-                `⚠️ Failed to save location. Please try again.`,
-                [
-                  { id: IDS.SAVED_LOCATIONS, title: "📍 Try Again" },
-                  { id: IDS.BACK_PROFILE, title: "← Back" },
-                ],
-              );
-              logEvent("PROFILE_LOCATION_SAVE_ERROR", { 
-                error: error.message,
-                type: locationType,
-              }, "error");
-            } else {
-              await sendButtonsMessage(
-                ctx,
-                `✅ Your ${locationType} location has been saved!\n\nYou can now use it for rides and deliveries.`,
-                [
-                  { id: IDS.SAVED_LOCATIONS, title: "📍 View Locations" },
-                  { id: IDS.BACK_PROFILE, title: "← Back" },
-                ],
-              );
-            }
-            handled = true;
-          }
+          const { confirmSaveLocation } = await import("./handlers/locations.ts");
+          handled = await confirmSaveLocation(ctx, locationType, state ?? { key: "" });
         } // Use Saved Location
         else if (id.startsWith("USE_LOC::")) {
           const locationId = id.replace("USE_LOC::", "");
-          if (!ctx.profileId) {
-            handled = false;
-          } else {
-            const { data: location } = await ctx.supabase
-              .from("saved_locations")
-              .select("*")
-              .eq("id", locationId)
-              .eq("user_id", ctx.profileId)
-              .maybeSingle();
-
-            if (!location) {
-              await sendButtonsMessage(
-                ctx,
-                "⚠️ Location not found or no longer available.",
-                [{ id: IDS.SAVED_LOCATIONS, title: "← Back to Locations" }],
-              );
-              handled = true;
-            } else {
-              await sendButtonsMessage(
-                ctx,
-                `📍 *Using: ${location.label}*\n\n` +
-                  `${
-                    location.address ||
-                    `Coordinates: ${location.lat.toFixed(4)}, ${
-                      location.lng.toFixed(4)
-                    }`
-                  }\n\n` +
-                  `What would you like to do with this location?`,
-                [
-                  { id: "RIDE_FROM_HERE", title: "🚖 Get a ride" },
-                  { id: "SCHEDULE_FROM_HERE", title: "📅 Schedule trip" },
-                  { id: IDS.SAVED_LOCATIONS, title: "← Back" },
-                ],
-              );
-              handled = true;
-            }
-          }
+          const { handleUseLocation } = await import("./handlers/locations.ts");
+          handled = await handleUseLocation(ctx, locationId);
         } // Edit Saved Location
         else if (id.startsWith("EDIT_LOC::")) {
           const locationId = id.replace("EDIT_LOC::", "");
-          if (!ctx.profileId) {
-            handled = false;
-          } else {
-            const { data: location } = await ctx.supabase
-              .from("saved_locations")
-              .select("*")
-              .eq("id", locationId)
-              .eq("user_id", ctx.profileId)
-              .maybeSingle();
-
-            if (!location) {
-              await sendButtonsMessage(
-                ctx,
-                "⚠️ Location not found or no longer available.",
-                [{ id: IDS.SAVED_LOCATIONS, title: "← Back to Locations" }],
-              );
-              handled = true;
-            } else {
-              await setState(ctx.supabase, ctx.profileId, {
-                key: "edit_location",
-                data: { locationId, originalLabel: location.label },
-              });
-              await sendButtonsMessage(
-                ctx,
-                `📍 *Edit: ${location.label}*\n\n` +
-                  `Current: ${
-                    location.address ||
-                    `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`
-                  }\n\n` +
-                  `Share a new location to update this saved location.`,
-                [
-                  { id: `LOC::${locationId}`, title: "← Cancel" },
-                ],
-              );
-              handled = true;
-            }
-          }
+          const { handleEditLocation } = await import("./handlers/locations.ts");
+          handled = await handleEditLocation(ctx, locationId);
         } // Delete Saved Location
         else if (id.startsWith("DELETE_LOC::")) {
           const locationId = id.replace("DELETE_LOC::", "");
-          if (!ctx.profileId) {
-            handled = false;
-          } else {
-            const { data: location } = await ctx.supabase
-              .from("saved_locations")
-              .select("label")
-              .eq("id", locationId)
-              .eq("user_id", ctx.profileId)
-              .maybeSingle();
-
-            if (!location) {
-              await sendButtonsMessage(
-                ctx,
-                "⚠️ Location not found or no longer available.",
-                [{ id: IDS.SAVED_LOCATIONS, title: "← Back to Locations" }],
-              );
-              handled = true;
-            } else {
-              await setState(ctx.supabase, ctx.profileId, {
-                key: "delete_location_confirm",
-                data: { locationId, label: location.label },
-              });
-              await sendButtonsMessage(
-                ctx,
-                `🗑️ *Delete Location?*\n\n` +
-                  `Are you sure you want to delete "${location.label}"?\n\n` +
-                  `This action cannot be undone.`,
-                [
-                  {
-                    id: `CONFIRM_DELETE_LOC::${locationId}`,
-                    title: "✅ Yes, delete",
-                  },
-                  { id: `LOC::${locationId}`, title: "❌ Cancel" },
-                ],
-              );
-              handled = true;
-            }
-          }
+          const { handleDeleteLocationPrompt } = await import("./handlers/locations.ts");
+          handled = await handleDeleteLocationPrompt(ctx, locationId);
         } // Confirm Delete Saved Location
         else if (id.startsWith("CONFIRM_DELETE_LOC::")) {
           const locationId = id.replace("CONFIRM_DELETE_LOC::", "");
-          if (!ctx.profileId) {
-            handled = false;
-          } else {
-            const { error } = await ctx.supabase
-              .from("saved_locations")
-              .delete()
-              .eq("id", locationId)
-              .eq("user_id", ctx.profileId);
-
-            if (error) {
-              // P1 fix - Issue #11: Sanitize error message
-              await sendButtonsMessage(
-                ctx,
-                `⚠️ Failed to delete location. Please try again.`,
-                [{ id: IDS.SAVED_LOCATIONS, title: "← Back to Locations" }],
-              );
-              logEvent("LOCATION_DELETE_FAILED", {
-                locationId,
-                error: error.message,
-              }, "error");
-            } else {
-              await clearState(ctx.supabase, ctx.profileId);
-              await sendButtonsMessage(
-                ctx,
-                "✅ Location deleted successfully!",
-                [{ id: IDS.SAVED_LOCATIONS, title: "📍 View Locations" }],
-              );
-              logEvent("LOCATION_DELETED", { locationId });
-            }
-            handled = true;
-          }
+          const { confirmDeleteLocation } = await import("./handlers/locations.ts");
+          handled = await confirmDeleteLocation(ctx, locationId);
         } // Back to Profile
         else if (id === IDS.BACK_PROFILE) {
           const { startProfile } = await import("./handlers/menu.ts");
@@ -899,7 +550,7 @@ serve(async (req: Request): Promise<Response> => {
                 ],
               );
               handled = true;
-            } catch (e) {
+            } catch {
               await sendButtonsMessage(
                 ctx,
                 t(ctx.locale, "wallet.earn.error"),
@@ -976,23 +627,9 @@ serve(async (req: Request): Promise<Response> => {
         handled = await handleEditName(ctx, (message.text as any)?.body ?? "");
       } // Handle add location (text address)
       else if (state?.key === IDS.ADD_LOCATION && message.type === "text") {
-        if (ctx.profileId && state.data?.type) {
-          const address = (message.text as any)?.body ?? "";
-          const locationType = state.data.type as string;
-
-          // For now, just confirm receipt - actual location saving would need geocoding
-          await clearState(ctx.supabase, ctx.profileId);
-
-          await sendButtonsMessage(
-            ctx,
-            `✅ Thank you! We've received your ${locationType} address:\n\n${address}\n\nTo save it with coordinates, please share your location using WhatsApp's location feature.`,
-            [
-              { id: IDS.SAVED_LOCATIONS, title: "📍 Locations" },
-              { id: IDS.BACK_PROFILE, title: "← Back" },
-            ],
-          );
-          handled = true;
-        }
+        const address = (message.text as any)?.body ?? "";
+        const { handleLocationTextAddress } = await import("./handlers/locations.ts");
+        handled = await handleLocationTextAddress(ctx, address, state);
       }
     } // ============================================================
     // PHASE 2: Menu Upload Media Handler
@@ -1003,125 +640,9 @@ serve(async (req: Request): Promise<Response> => {
       message.type === "location" &&
       (state?.key === IDS.ADD_LOCATION || state?.key === "edit_location")
     ) {
-      if (ctx.profileId) {
-        const location = (message as any).location;
-        
-        // P0 fix - Issue #5: Use parseCoordinates helper for type coercion and validation
-        const coords = parseCoordinates(location?.latitude, location?.longitude);
-
-        // Validate coordinates using the helper
-        if (!coords) {
-          await sendButtonsMessage(
-            ctx,
-            "⚠️ Invalid location coordinates. Please try again.",
-            [
-              { id: IDS.SAVED_LOCATIONS, title: "📍 Saved Locations" },
-              { id: IDS.BACK_PROFILE, title: "← Back" },
-            ],
-          );
-          logEvent("INVALID_COORDINATES", { 
-            rawLat: location?.latitude, 
-            rawLng: location?.longitude 
-          }, "warn");
-          handled = true;
-        } else if (state.key === IDS.ADD_LOCATION && state.data?.type) {
-          // Show confirmation first
-          const locationType = state.data.type as string;
-          const address = location?.address ||
-            `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`;
-
-          await setState(ctx.supabase, ctx.profileId, {
-            key: "confirm_add_location",
-            data: {
-              type: locationType,
-              lat: coords.lat,
-              lng: coords.lng,
-              address: location?.address || null,
-            },
-          });
-
-          await sendButtonsMessage(
-            ctx,
-            `📍 *Confirm ${
-              locationType.charAt(0).toUpperCase() + locationType.slice(1)
-            } Location*\n\n` +
-              `Address: ${address}\n` +
-              `Coordinates: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}\n\n` +
-              `Is this correct?`,
-            [
-              {
-                id: `CONFIRM_SAVE_LOC::${locationType}`,
-                title: "✅ Yes, save it",
-              },
-              { id: IDS.SAVED_LOCATIONS, title: "❌ Cancel" },
-            ],
-          );
-          handled = true;
-        } else if (state.key === "edit_location" && state.data?.locationId) {
-          // Update existing location
-          const locationId = state.data.locationId;
-          const { error } = await ctx.supabase
-            .from("saved_locations")
-            .update({
-              lat: coords.lat,
-              lng: coords.lng,
-              address: location?.address || null,
-            })
-            .eq("id", locationId)
-            .eq("user_id", ctx.profileId);
-
-          // Also update location cache
-          if (!error) {
-            try {
-              await ctx.supabase.rpc("update_user_location_cache", {
-                _user_id: ctx.profileId,
-                _lat: coords.lat,
-                _lng: coords.lng,
-              });
-              logEvent("PROFILE_LOCATION_UPDATED_CACHED", {
-                user: ctx.profileId,
-                locationId,
-                lat: coords.lat,
-                lng: coords.lng,
-              });
-            } catch (cacheError) {
-              logEvent("PROFILE_CACHE_FAILED", {
-                error: cacheError instanceof Error
-                  ? cacheError.message
-                  : String(cacheError),
-              }, "warn");
-            }
-          }
-
-          await clearState(ctx.supabase, ctx.profileId);
-
-          if (error) {
-            // P1 fix - Issue #11: Sanitize error message
-            await sendButtonsMessage(
-              ctx,
-              `⚠️ Failed to update location. Please try again.`,
-              [
-                { id: `LOC::${locationId}`, title: "← Back" },
-                { id: IDS.SAVED_LOCATIONS, title: "📍 Locations" },
-              ],
-            );
-            logEvent("PROFILE_LOCATION_UPDATE_ERROR", { 
-              error: error.message,
-              locationId,
-            }, "error");
-          } else {
-            await sendButtonsMessage(
-              ctx,
-              `✅ Location updated successfully!`,
-              [
-                { id: `LOC::${locationId}`, title: "📍 View Location" },
-                { id: IDS.SAVED_LOCATIONS, title: "📍 All Locations" },
-              ],
-            );
-          }
-          handled = true;
-        }
-      }
+      const location = (message as any).location;
+      const { handleLocationMessage } = await import("./handlers/locations.ts");
+      handled = await handleLocationMessage(ctx, location, state);
     }
 
     // Fallback: Detect phone number pattern (for MoMo QR without keywords)
@@ -1157,17 +678,7 @@ serve(async (req: Request): Promise<Response> => {
     const errorStack = err instanceof Error ? err.stack : undefined;
 
     // Classify error type
-    const isUserError = errorMessage.includes("validation") || 
-                       errorMessage.includes("invalid") ||
-                       errorMessage.includes("not found") ||
-                       errorMessage.includes("already exists") ||
-                       errorMessage.includes("duplicate");
-    const isSystemError = errorMessage.includes("database") ||
-                         errorMessage.includes("connection") ||
-                         errorMessage.includes("timeout") ||
-                         errorMessage.includes("ECONNREFUSED");
-    
-    const statusCode = isUserError ? 400 : (isSystemError ? 503 : 500);
+    const { isUserError, isSystemError, statusCode } = classifyError(err);
 
     // Single consolidated error log
     logEvent(
