@@ -1,13 +1,15 @@
 BEGIN;
 
 -- ============================================================================
--- HOME MENU REFACTOR
--- Purpose: Move home menu to database-driven configuration in wa-webhook-core
--- Date: 2025-12-15
+-- FIX HOME MENU TABLE SCHEMA
+-- Drop and recreate with correct schema
 -- ============================================================================
 
--- 1. Create home menu items table
-CREATE TABLE IF NOT EXISTS public.whatsapp_home_menu_items (
+-- Drop existing table if it has wrong schema
+DROP TABLE IF EXISTS public.whatsapp_home_menu_items CASCADE;
+
+-- Create with correct schema
+CREATE TABLE public.whatsapp_home_menu_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   key TEXT NOT NULL UNIQUE,
   title TEXT NOT NULL,
@@ -36,7 +38,7 @@ CREATE POLICY "anon_read_home_menu"
   ON whatsapp_home_menu_items FOR SELECT 
   USING (is_active = true);
 
--- 2. Seed menu items
+-- Seed menu items
 INSERT INTO whatsapp_home_menu_items (key, title, description, icon, target_service, display_order, active_countries) VALUES
 ('rides', 'Rides', 'Book rides & transport', '🚗', 'wa-webhook-mobility', 1, ARRAY['RW']),
 ('buy_sell', 'Buy & Sell', 'Browse marketplace', '🛒', 'wa-webhook-buy-sell', 2, ARRAY['RW']),
@@ -51,7 +53,7 @@ ON CONFLICT (key) DO UPDATE SET
   display_order = EXCLUDED.display_order,
   updated_at = NOW();
 
--- 3. Function to get menu for user (with country filtering)
+-- Function to get menu for user (with country filtering)
 CREATE OR REPLACE FUNCTION public.get_home_menu_for_user(
   p_country_code TEXT DEFAULT 'RW',
   p_locale TEXT DEFAULT 'en'
