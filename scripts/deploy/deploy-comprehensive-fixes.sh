@@ -39,6 +39,10 @@ log_info "Deploying wa-webhook-mobility (empty title fix)"
 supabase functions deploy wa-webhook-mobility
 
 echo ""
+echo "Phase 2: Core WhatsApp Infrastructure"
+echo "-------------------------------------"
+log_info "Deploying wa-webhook-core (main router)"
+supabase functions deploy wa-webhook-core
 echo "Phase 2: Core Infrastructure"
 echo "-------------------------------------"
 log_info "Deploying wa-webhook-core (core router)"

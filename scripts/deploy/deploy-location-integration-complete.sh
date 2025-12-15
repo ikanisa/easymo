@@ -54,9 +54,22 @@ check_prerequisites() {
 
 deploy_phase1_ai_agents() {
     log_info "========================================="
-    log_info "PHASE 1: AI Agents Location Migration"
+    log_info "PHASE 1: Core WhatsApp Migration"
     log_info "========================================="
     
+    log_info "Deploying core WhatsApp function..."
+    
+    # Deploy wa-webhook-core Edge Function
+    if [ -d "supabase/functions/wa-webhook-core" ]; then
+        supabase functions deploy wa-webhook-core \
+            --project-ref "$SUPABASE_PROJECT_ID" \
+            --no-verify-jwt
+        log_info "✅ Core WhatsApp function deployed"
+    else
+        log_warn "⚠️ wa-webhook-core directory not found"
+    fi
+    
+    log_info "Phase 1 deployment complete!"
     log_info "Phase 1 deployment complete (wa-webhook-ai-agents removed)!"
 }
 

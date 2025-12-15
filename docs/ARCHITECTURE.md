@@ -40,7 +40,6 @@ marketplace features.
 │  ┌────────────────────────────────────────────────────┐     │
 │  │  Supabase Edge Functions (Deno)                    │     │
 │  │  • wa-webhook-core (routing)                       │     │
-│  │  • wa-webhook-ai-agents                           │     │
 │  │  • wa-webhook-mobility, wallet, jobs, property    │     │
 │  │  • admin-* (settings, stats, users, trips)        │     │
 │  └────────────────────────────────────────────────────┘     │
@@ -242,6 +241,8 @@ services/agent-core/
 4. Core routes to specific handler:
    - Payment → wa-webhook-wallet
    - Booking → wa-webhook-mobility
+   - Profile/Settings → wa-webhook-profile
+   - Unrecognized text → home menu
    - Marketplace → wa-webhook-marketplace
 5. Handler processes & responds
 6. Response sent back through Meta API
@@ -260,9 +261,10 @@ Meta Business API
        ↓
 wa-webhook-core (validation, logging, routing)
        ↓
+Domain-specific webhook (mobility, wallet, profile, etc.)
 Domain-specific webhook handler
        ↓
-agent-core service (agent execution)
+Microservices (if needed)
        ↓
 External APIs (if needed)
        ↓

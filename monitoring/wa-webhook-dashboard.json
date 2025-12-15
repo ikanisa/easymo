@@ -9,6 +9,9 @@
         "wa-webhook-property",
         "wa-webhook-marketplace",
         "wa-webhook-jobs",
+        "wa-webhook-wallet",
+        "wa-webhook-profile",
+        "wa-webhook-buy-sell"
         "wa-webhook-wallet"
       ],
       "metrics": [

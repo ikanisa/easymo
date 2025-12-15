@@ -59,12 +59,6 @@
     "required_columns": [],
     "required_functions": []
   },
-  "wa-webhook-ai-agents": {
-    "description": "WhatsApp webhook handler for AI agents",
-    "required_migrations": [],
-    "required_columns": [],
-    "required_functions": []
-  },
   "agent-property-rental": {
     "description": "AI agent for property rental",
     "required_migrations": [],

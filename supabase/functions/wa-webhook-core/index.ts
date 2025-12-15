@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { supabase } from "../_shared/wa-webhook-shared/config.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
-import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { forwardToEdgeService, routeIncomingPayload, summarizeServiceHealth } from "./router.ts";
 import { LatencyTracker } from "./telemetry.ts";
 import { checkRateLimit, cleanupRateLimitState } from "../_shared/service-resilience.ts";

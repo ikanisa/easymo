@@ -85,25 +85,7 @@ else
 fi
 echo ""
 
-echo "📦 [2/9] Deploying wa-webhook-jobs (job marketplace)..."
-if supabase functions deploy wa-webhook-jobs --no-verify-jwt; then
-  echo "   ✅ wa-webhook-jobs deployed successfully"
-else
-  echo "   ❌ Failed to deploy wa-webhook-jobs"
-  exit 1
-fi
-echo ""
-
-echo "📦 [4/9] Deploying wa-webhook-marketplace (e-commerce)..."
-if supabase functions deploy wa-webhook-marketplace --no-verify-jwt; then
-  echo "   ✅ wa-webhook-marketplace deployed successfully"
-else
-  echo "   ❌ Failed to deploy wa-webhook-marketplace"
-  exit 1
-fi
-echo ""
-
-echo "📦 [5/9] Deploying wa-webhook-mobility (rides & logistics)..."
+echo "📦 [2/7] Deploying wa-webhook-mobility (rides & logistics)..."
 if supabase functions deploy wa-webhook-mobility --no-verify-jwt; then
   echo "   ✅ wa-webhook-mobility deployed successfully"
 else
@@ -112,16 +94,16 @@ else
 fi
 echo ""
 
-echo "📦 [6/9] Deploying wa-webhook-property (real estate)..."
-if supabase functions deploy wa-webhook-property --no-verify-jwt; then
-  echo "   ✅ wa-webhook-property deployed successfully"
+echo "📦 [3/7] Deploying wa-webhook-wallet (financial services)..."
+if supabase functions deploy wa-webhook-wallet --no-verify-jwt; then
+  echo "   ✅ wa-webhook-wallet deployed successfully"
 else
-  echo "   ❌ Failed to deploy wa-webhook-property"
+  echo "   ❌ Failed to deploy wa-webhook-wallet"
   exit 1
 fi
 echo ""
 
-echo "📦 [7/9] Deploying wa-webhook-buy-sell (buy & sell services)..."
+echo "📦 [4/7] Deploying wa-webhook-buy-sell (marketplace & support)..."
 if supabase functions deploy wa-webhook-buy-sell --no-verify-jwt; then
   echo "   ✅ wa-webhook-buy-sell deployed successfully"
 else
@@ -130,11 +112,30 @@ else
 fi
 echo ""
 
-echo "📦 [8/9] Deploying wa-webhook-profile (user & business profiles)..."
+echo "📦 [5/7] Deploying wa-webhook-profile (user profiles)..."
 if supabase functions deploy wa-webhook-profile --no-verify-jwt; then
   echo "   ✅ wa-webhook-profile deployed successfully"
 else
   echo "   ❌ Failed to deploy wa-webhook-profile"
+  exit 1
+fi
+echo ""
+
+echo "==========================================="
+echo "📦 [6/7] Deploying wa-webhook-insurance (insurance quotes)..."
+if supabase functions deploy wa-webhook-insurance --no-verify-jwt; then
+  echo "   ✅ wa-webhook-insurance deployed successfully"
+else
+  echo "   ❌ Failed to deploy wa-webhook-insurance"
+  exit 1
+fi
+echo ""
+
+echo "📦 [7/7] Deploying wa-webhook-voice-calls (voice handler)..."
+if supabase functions deploy wa-webhook-voice-calls --no-verify-jwt; then
+  echo "   ✅ wa-webhook-voice-calls deployed successfully"
+else
+  echo "   ❌ Failed to deploy wa-webhook-voice-calls"
   exit 1
 fi
 echo ""

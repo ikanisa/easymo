@@ -290,8 +290,10 @@ Located in `supabase/functions/wa-webhook-*`
 - `wa-webhook-core` - Main webhook router
 - `wa-webhook-mobility` - Mobility services
 - `wa-webhook-wallet` - Wallet operations
+- `wa-webhook-profile` - Profile and account management
 - `wa-webhook-jobs` - Job marketplace
 - `wa-webhook-property` - Property listings
+- `wa-webhook-buy-sell` - Buy & Sell marketplace
 - `wa-webhook-marketplace` - Marketplace services
 
 ---

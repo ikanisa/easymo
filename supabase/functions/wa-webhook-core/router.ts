@@ -54,6 +54,7 @@ import {
   ROUTED_SERVICES,
 } from "../_shared/route-config.ts";
 
+
 // Build SERVICE_KEY_MAP from consolidated route config
 const SERVICE_KEY_MAP = buildMenuKeyMap();
 
@@ -83,14 +84,18 @@ async function handleInsuranceAgentRequest(phoneNumber: string): Promise<void> {
       return;
     }
 
-    // Build message with all insurance contacts
-    let message = "🛡️ Insurance Services\n\nFor insurance inquiries, please contact:\n\n";
+    // Build engaging message with emojis
+    let message = "🛡️ *Insurance Made Easy!*\n\n";
+    message += "Get protected today! Our insurance team is ready to help you.\n\n";
+    message += "📞 *Contact us now:*\n\n";
     
     contacts.forEach((contact, index) => {
       const whatsappLink = `https://wa.me/${contact.phone_number.replace(/^\+/, "")}`;
-      const displayName = contact.name || `Insurance Contact ${index + 1}`;
-      message += `${index + 1}. ${displayName}\n   ${whatsappLink}\n\n`;
+      message += `${index + 1}. ${contact.name}\n`;
+      message += `   💬 ${whatsappLink}\n\n`;
     });
+    
+    message += "✨ _Fast quotes • Easy claims • Peace of mind_";
     
     await sendText(phoneNumber, message.trim());
     
@@ -135,7 +140,7 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
     //   - Standalone codes: 6-12 alphanumeric characters (avoiding common words)
     const hasRefPrefix = /^REF[:\s]+[A-Z0-9]{4,12}$/i.test(trimmedText);
     const isStandaloneCode = /^[A-Z0-9]{6,12}$/.test(upperText) && 
-                            !/^(HELLO|THANKS|CANCEL|SUBMIT|ACCEPT|REJECT|STATUS|URGENT|PLEASE)$/.test(upperText);
+                            !/^(HELLO|THANKS|CANCEL|SUBMIT|ACCEPT|REJECT|STATUS|URGENT|PLEASE|INSURANCE)$/.test(upperText);
     
     const isReferralCode = hasRefPrefix || isStandaloneCode;
     
@@ -517,6 +522,11 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
   if (selection === "menu" || selection === "home") {
     logInfo("MENU_REQUESTED", { from: phoneNumber }, { correlationId: crypto.randomUUID() });
     if (phoneNumber) await clearActiveService(supabase, phoneNumber);
+  } else if (selection === "insurance") {
+    // Handle insurance inline - show contacts directly
+    logInfo("INSURANCE_SELECTED", { from: phoneNumber }, { correlationId: crypto.randomUUID() });
+    await handleInsuranceAgentRequest(phoneNumber);
+    return new Response(JSON.stringify({ success: true, insurance_sent: true }), { status: 200 });
   } else if (selection) {
     const isInteractive = Boolean(interactiveId);
     const targetService = SERVICE_KEY_MAP[selection] ?? null;
@@ -580,7 +590,7 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
     
     const rows = menuItems.map(item => ({
       id: item.key, // Use key as the ID for routing
-      title: item.name,
+      title: item.title, // Use title field from database
       description: item.description || undefined,
     }));
 

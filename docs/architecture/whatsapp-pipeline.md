@@ -24,12 +24,15 @@ agents. It handles message normalization, routing, intent parsing, and response 
                            │ POST /wa-webhook-core
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
+│                     Core Webhook Router                          │
+│                supabase/functions/wa-webhook-core/               │
 │                    Core Webhook Handler                          │
 │             supabase/functions/wa-webhook-core/                  │
 │                                                                   │
 │  1. Verify signature (security)                                  │
 │  2. Extract message data                                         │
 │  3. Generate correlation ID                                      │
+│  4. Route to appropriate service                                 │
 │  4. Route to domain-specific handler                             │
 └──────────────────────────┬──────────────────────────────────────┘
                            │
@@ -88,9 +91,11 @@ agents. It handles message normalization, routing, intent parsing, and response 
 - Verify WhatsApp webhook signature
 - Extract message data from payload
 - Generate correlation ID for tracing
+- Route to appropriate domain service
 - Handle health checks
 - Error handling & logging
 
+### 2. Domain Service Routing
 ### 2. Router
 
 **File:** `supabase/functions/wa-webhook-core/router.ts`
@@ -161,9 +166,9 @@ Match/notification triggers
 
 **Key Metrics:**
 
-- Requests/min per agent
+- Requests/min per service
 - Latency (parsing, DB, total)
-- Error rate per intent type
+- Error rate per message type
 - Message delivery success rate
 
 ---
