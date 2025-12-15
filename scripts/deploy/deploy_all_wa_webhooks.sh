@@ -121,6 +121,7 @@ else
 fi
 echo ""
 
+echo "==========================================="
 echo "📦 [6/7] Deploying wa-webhook-insurance (insurance quotes)..."
 if supabase functions deploy wa-webhook-insurance --no-verify-jwt; then
   echo "   ✅ wa-webhook-insurance deployed successfully"

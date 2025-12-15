@@ -19,6 +19,13 @@ export type FeatureFlag =
   | "agent.warmTransfer"
   | "agent.negotiation"
   | "agent.scheduling"
+  | "agent.nearby_drivers"
+  | "agent.pharmacy"
+  | "agent.property_rental"
+  | "agent.schedule_trip"
+  | "agent.shops"
+  | "agent.quincaillerie"
+  | "agent.notary"
   | "wallet.service"
   | "ocr.processor"
   | "cart.reminders"
@@ -38,6 +45,13 @@ const DEFAULT_FLAGS: Record<FeatureFlag, boolean> = {
   "agent.warmTransfer": false,
   "agent.negotiation": false,
   "agent.scheduling": false,
+  "agent.nearby_drivers": false,
+  "agent.pharmacy": false,
+  "agent.property_rental": false,
+  "agent.schedule_trip": false,
+  "agent.shops": false,
+  "agent.quincaillerie": false,
+  "agent.notary": false,
   "wallet.service": false,
   "ocr.processor": true,
   "cart.reminders": true,

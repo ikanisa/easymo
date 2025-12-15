@@ -103,8 +103,7 @@ TESTEOF
 # Create all remaining services
 create_service "wa-webhook-marketplace" "marketplace_listings"
 create_service "wa-webhook-wallet" "wallet_transactions"
-create_service "wa-webhook-ai-agents" "ai_agent_conversations"
 create_service "wa-webhook-core" "profiles"
 
 echo ""
-echo "✅ All 4 remaining services created!"
+echo "✅ All 3 remaining services created!"
