@@ -172,10 +172,10 @@ Match/notification triggers
 
 ```bash
 # Staging
-supabase functions deploy wa-webhook-ai-agents --project-ref staging
+supabase functions deploy wa-webhook-core --project-ref staging
 
 # Production
-supabase functions deploy wa-webhook-ai-agents --project-ref prod
+supabase functions deploy wa-webhook-core --project-ref prod
 ```
 
 ---

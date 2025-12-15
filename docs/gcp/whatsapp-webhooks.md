@@ -186,12 +186,11 @@ Consider migration if:
 1. **wa-webhook-core** - Main WhatsApp message router
 2. **wa-webhook-mobility** - Mobility/ride-sharing messages
 3. **wa-webhook-commerce** - Marketplace messages
-4. **wa-webhook-ai-agents** - AI agent orchestration
-5. **wa-agent-\*** - All AI conversation handlers
-6. **admin-\*** functions - Admin API endpoints
-7. **openai-realtime-sip** - SIP voice integration
-8. **OCR processors** - Document OCR
-9. **Lookup functions** - Data enrichment
+4. **wa-agent-\*** - All AI conversation handlers
+5. **admin-\*** functions - Admin API endpoints
+6. **openai-realtime-sip** - SIP voice integration
+7. **OCR processors** - Document OCR
+8. **Lookup functions** - Data enrichment
 
 **Why this split?**
 
