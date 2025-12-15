@@ -39,13 +39,10 @@ log_info "Deploying wa-webhook-mobility (empty title fix)"
 supabase functions deploy wa-webhook-mobility
 
 echo ""
-echo "Phase 2: Core AI Agent Infrastructure"
+echo "Phase 2: Core WhatsApp Infrastructure"
 echo "-------------------------------------"
-log_info "Deploying wa-webhook-ai-agents (database-driven agents)"
-supabase functions deploy wa-webhook-ai-agents
-
-log_info "Deploying wa-webhook-unified (unified orchestrator)"
-supabase functions deploy wa-webhook-unified
+log_info "Deploying wa-webhook-core (main router)"
+supabase functions deploy wa-webhook-core
 
 echo ""
 echo "Phase 3: Domain-Specific Webhooks"

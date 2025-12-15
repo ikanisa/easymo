@@ -24,10 +24,10 @@ fi
 
 # Step 2: Verify edge functions
 echo -e "${YELLOW}Step 2: Verifying edge functions...${NC}"
-if [ -f "supabase/functions/wa-webhook-ai-agents/index.ts" ]; then
+if [ -f "supabase/functions/wa-webhook-core/index.ts" ]; then
   echo -e "${GREEN}✅ Main webhook handler exists${NC}"
 else
-  echo -e "${RED}❌ Missing wa-webhook-ai-agents/index.ts${NC}"
+  echo -e "${RED}❌ Missing wa-webhook-core/index.ts${NC}"
   exit 1
 fi
 
@@ -59,12 +59,12 @@ if [ "$DEPLOY_LOCAL" = "y" ]; then
   supabase db reset --local
   
   # Deploy edge functions
-  supabase functions deploy wa-webhook-ai-agents --local
+  supabase functions deploy wa-webhook-core --local
   
   # Test health endpoint
   echo -e "${YELLOW}Testing health endpoint...${NC}"
   sleep 2
-  HEALTH_RESPONSE=$(curl -s http://127.0.0.1:56311/functions/v1/wa-webhook-ai-agents/health)
+  HEALTH_RESPONSE=$(curl -s http://127.0.0.1:56311/functions/v1/wa-webhook-core/health)
   
   if echo "$HEALTH_RESPONSE" | grep -q "healthy"; then
     echo -e "${GREEN}✅ Health check passed!${NC}"

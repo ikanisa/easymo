@@ -17,7 +17,6 @@ echo ""
 functions=(
   # WhatsApp microservices (deployed)
   "wa-webhook-core"
-  "wa-webhook-ai-agents"
   "wa-webhook-mobility"
   "wa-webhook-wallet"
   "wa-webhook-jobs"
