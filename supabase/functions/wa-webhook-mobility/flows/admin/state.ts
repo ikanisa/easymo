@@ -6,12 +6,6 @@ import { isAdminNumber } from "./auth.ts";
 export const ADMIN_STATE = {
   ENTRY: "admin_entry",
   HUB_LIST: "admin_hub_list",
-  INSURANCE_ENTRY: "admin_insurance_entry",
-  INSURANCE_LIST: "admin_insurance_list",
-  INSURANCE_DETAIL: "admin_insurance_detail",
-  INSURANCE_DETAIL_MENU: "admin_insurance_detail_menu",
-  INSURANCE_MORE: "admin_insurance_more",
-  INSURANCE_MORE_LIST: "admin_insurance_more_list",
 } as const;
 
 type AdminStateKey = typeof ADMIN_STATE[keyof typeof ADMIN_STATE];
