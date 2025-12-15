@@ -178,7 +178,6 @@ serve(async (req: Request): Promise<Response> => {
       ? "x-hub-signature"
       : null;
     const signature = signatureHeader ? req.headers.get(signatureHeader) : null;
-    const signatureMeta = (() => {
       if (!signature) {
         return {
           provided: false,
@@ -225,6 +224,16 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
+    // Diagnostic: Log what we're about to verify
+    logStructuredEvent("MOBILITY_SIGNATURE_VERIFICATION_ATTEMPT", {
+      hasSignature: !!signature,
+      signatureHeader,
+      signatureLength: signature?.length ?? 0,
+      payloadLength: rawBody.length,
+      appSecretLength: appSecret.length,
+      appSecretPrefix: appSecret.substring(0, 10),
+    }, "info");
+
     let isValidSignature = false;
     if (signature) {
       try {
@@ -239,6 +248,25 @@ serve(async (req: Request): Promise<Response> => {
             signatureMethod: signatureMeta.method,
           });
         } else {
+          // Compute what the signature SHOULD be for debugging
+          const encoder = new TextEncoder();
+          const key = await crypto.subtle.importKey(
+            "raw",
+            encoder.encode(appSecret),
+            { name: "HMAC", hash: "SHA-256" },
+            false,
+            ["sign"],
+          );
+          const signatureBytes = await crypto.subtle.sign(
+            "HMAC",
+            key,
+            encoder.encode(rawBody),
+          );
+          const expectedHash = Array.from(new Uint8Array(signatureBytes))
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("");
+          const receivedHash = signature.split("=")[1]?.toLowerCase() ?? "";
+          
           logStructuredEvent("MOBILITY_SIGNATURE_MISMATCH", {
             signatureProvided: true,
             signatureHeader,
@@ -246,6 +274,9 @@ serve(async (req: Request): Promise<Response> => {
             signatureSample: signatureMeta.sample,
             payloadSize: rawBody.length,
             appSecretLength: appSecret.length,
+            receivedHashSample: receivedHash.slice(0, 16),
+            expectedHashSample: expectedHash.slice(0, 16),
+            hashMatch: receivedHash === expectedHash,
           }, "warn");
         }
       } catch (err) {
