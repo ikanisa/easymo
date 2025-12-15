@@ -1,7 +1,7 @@
 # WA-Webhook Insurance & Profile - Critical Analysis & Implementation Plan
 **Date:** 2025-12-14  
 **Status:** CRITICAL - Production Issues Identified  
-**Scope:** wa-webhook-insurance routing, wa-webhook-profile cleanup, production readiness
+**Scope:** wa-webhook-core routing, wa-webhook-profile cleanup, production readiness
 
 ---
 
@@ -11,7 +11,7 @@
 From production logs (2025-12-14T07:55:19Z):
 ```json
 {
-  "event_message": "POST | 500 | wa-webhook-insurance",
+  "event_message": "POST | 500 | wa-webhook-core",
   "error": "Phone number already registered by another user",
   "execution_time_ms": 1334,
   "status_code": 500
@@ -21,9 +21,9 @@ From production logs (2025-12-14T07:55:19Z):
 ### Root Cause Analysis
 
 #### 1. **Non-Existent Function**
-- ❌ `wa-webhook-insurance` **DOES NOT EXIST** as a deployed edge function
+- ❌ `wa-webhook-core` **DOES NOT EXIST** as a deployed edge function
 - ✅ Insurance is handled via `wa-webhook-core` router since Phase 5 (webhook consolidation)
-- ❌ Tests still reference `wa-webhook-insurance` (integration.test.ts:91)
+- ❌ Tests still reference `wa-webhook-core` (integration.test.ts:91)
 - ❌ Routing config might be forwarding to non-existent endpoint
 
 #### 2. **Phone Registration Error**
@@ -63,7 +63,7 @@ The actual error `"Phone number already registered by another user"` indicates:
 
 | # | Issue | Impact | Location |
 |---|-------|--------|----------|
-| 6 | **Outdated tests** | Tests reference deleted `wa-webhook-insurance` | `__tests__/integration.test.ts` |
+| 6 | **Outdated tests** | Tests reference deleted `wa-webhook-core` | `__tests__/integration.test.ts` |
 | 7 | **Mixed logging** | 4 different logging implementations | `observe/*`, `_shared/observability.ts` |
 | 8 | **Missing correlation IDs** | Some logs use "none" | Multiple files |
 | 9 | **No error classification** | All errors treated equally | `_shared/error-handler.ts` |
@@ -101,11 +101,11 @@ if (normalized === "insurance_agent" || normalized === "insurance") {
 }
 ```
 
-**Issue:** This handles insurance inline but tests expect forwarding to `wa-webhook-insurance`
+**Issue:** This handles insurance inline but tests expect forwarding to `wa-webhook-core`
 
 **Fix:**
 ```typescript
-// Option A: Remove all references to wa-webhook-insurance
+// Option A: Remove all references to wa-webhook-core
 // Lines 214-220 - Keep inline handler (RECOMMENDED)
 if (normalized === "insurance_agent" || normalized === "insurance") {
   await handleInsuranceAgentRequest(phoneNumber);
@@ -115,7 +115,7 @@ if (normalized === "insurance_agent" || normalized === "insurance") {
   };
 }
 
-// Option B: Create wa-webhook-insurance function (NOT RECOMMENDED - adds complexity)
+// Option B: Create wa-webhook-core function (NOT RECOMMENDED - adds complexity)
 ```
 
 **Recommendation:** Keep inline handling (Option A). Insurance is simple contact forwarding.
@@ -348,7 +348,7 @@ try {
 Deno.test("Keyword routing - 'insurance' routes to insurance service", async () => {
   const payload = createTestPayload("insurance");
   const routedService = await routeIncomingPayload(payload);
-  assertEquals(routedService, "wa-webhook-insurance"); // ❌ WRONG
+  assertEquals(routedService, "wa-webhook-core"); // ❌ WRONG
 });
 
 // AFTER
@@ -577,7 +577,7 @@ return json({
 
 ### HIGH PRIORITY (This Week)
 
-1. ✅ Update outdated tests (remove wa-webhook-insurance references)
+1. ✅ Update outdated tests (remove wa-webhook-core references)
 2. ✅ Consolidate logging (single source of truth)
 3. ✅ Fix missing correlation IDs
 4. ✅ Reduce log noise (70% reduction target)

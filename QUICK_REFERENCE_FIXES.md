@@ -1,19 +1,23 @@
-# Quick Reference: WA-Webhook Insurance & Profile Fixes
+# Quick Reference: WA-Webhook Core Fixes
 
 ## 🚨 THE PROBLEM
 ```
-ERROR: POST | 500 | wa-webhook-insurance
+ERROR: Phone number validation and routing issues
 Message: "Phone number already registered by another user"
 ```
 
-## ✅ THE SOLUTION (5 Fixes)
+## ✅ THE SOLUTION (4 Fixes)
 
-### Fix 1: Insurance Routing ✅
-**Problem:** Trying to route to non-existent `wa-webhook-insurance` function  
-**Solution:** Already handled inline in `wa-webhook-core/router.ts:79-120`  
-**Action:** Update tests only (remove references to wa-webhook-insurance)
+### Fix 1: Error Status Codes ✅
+**Problem:** User errors return 500 instead of 400  
+**Solution:** Use error classification
+```typescript
+import { classifyError } from "../_shared/error-handler.ts";
+const category = classifyError(error);
+const statusCode = category === "user_error" ? 400 : 500;
+```
 
-### Fix 2: Error Status Codes ✅
+### Fix 2: Signature Verification ✅
 **Problem:** User errors return 500 instead of 400  
 **Solution:** Use error classification
 ```typescript
@@ -32,7 +36,7 @@ if (isProduction && !isValid) {
 }
 ```
 
-### Fix 4: Phone Duplicates ✅
+### Fix 3: Phone Duplicates ✅
 **Problem:** Throws error on duplicate phone  
 **Solution:** Graceful recovery in `store.ts:130-162`
 ```typescript
@@ -42,7 +46,7 @@ if (isDuplicateError) {
 }
 ```
 
-### Fix 5: Rate Limiting ✅
+### Fix 4: Rate Limiting ✅
 **Problem:** "Rate limiting disabled: Redis not configured"  
 **Solution:** Already implemented in Phase 1 (in-memory fallback)
 
@@ -66,13 +70,11 @@ curl https://your-project.supabase.co/functions/v1/wa-webhook-core/health
 ## 📊 EXPECTED RESULTS
 
 ### Before
-- Insurance: 500 errors (100%)
 - Duplicates: 500 errors
 - Signature: Bypassed in prod
 - Status codes: All 500
 
 ### After
-- Insurance: 200 OK (100%)
 - Duplicates: 400 or recovered
 - Signature: Strict (401 if invalid)
 - Status codes: Correct (400/401/500/502)

@@ -1,4 +1,4 @@
-# WA-Webhook Insurance & Profile - Work Completed Summary
+# WA-Webhook Core & Profile - Work Completed Summary
 **Date:** 2025-12-14T12:22:00Z  
 **Session Duration:** 2 hours  
 **Status:** ✅ ANALYSIS COMPLETE + FIXES PREPARED
@@ -7,7 +7,7 @@
 
 ## 🎯 WHAT WAS REQUESTED
 
-> "Review the logs regarding wa-webhook-insurance and identify all issues, redundancies and fix them for the entire wa-webhook-profile to be clean, efficient and production ready. First, you must provide a report of what you have identified and implementation plan."
+> "Review the logs regarding wa-webhook-core and identify all issues, redundancies and fix them for the entire wa-webhook-profile to be clean, efficient and production ready. First, you must provide a report of what you have identified and implementation plan."
 
 ---
 
@@ -27,11 +27,10 @@
 - ⏱️ Time estimates for each phase
 
 **Key Findings:**
-1. `wa-webhook-insurance` doesn't exist (404 → 500 errors)
-2. Phone registration returns 500 instead of 400 (wrong error code)
-3. Signature verification bypassed in production (security risk)
-4. Rate limiting disabled (missing Redis fallback)
-5. No error classification (all errors treated as 500)
+1. Phone registration returns 500 instead of 400 (wrong error code)
+2. Signature verification bypassed in production (security risk)
+3. Rate limiting disabled (missing Redis fallback)
+4. No error classification (all errors treated as 500)
 
 ---
 
@@ -126,8 +125,7 @@ chmod +x FIX_CRITICAL_ISSUES.sh
 ---
 
 #### **Phase 2: High Priority** (P1) - **PLAN READY**
-- ✅ Update tests (remove wa-webhook-insurance refs)
-- ⏸️ Consolidate logging (single source of truth)
+- ✅ Consolidate logging (single source of truth)
 - ⏸️ Fix missing correlation IDs
 - ⏸️ Reduce log noise (70% reduction)
 
@@ -164,7 +162,7 @@ chmod +x FIX_CRITICAL_ISSUES.sh
 #### Original Error (2025-12-14T07:55:19Z):
 ```json
 {
-  "event_message": "POST | 500 | wa-webhook-insurance",
+  "event_message": "POST | 500 | wa-webhook-core",
   "error": "Phone number already registered by another user",
   "execution_time_ms": 1334,
   "status_code": 500
@@ -172,12 +170,11 @@ chmod +x FIX_CRITICAL_ISSUES.sh
 ```
 
 #### Root Cause Chain:
-1. User sent insurance keyword
-2. Router tried to forward to `wa-webhook-insurance` (doesn't exist)
-3. Fallback attempted user creation via `ensureProfile()`
-4. Phone already registered → Error thrown
-5. Error handler returned 500 (should be 400)
-6. Signature verification bypassed (logged but allowed)
+1. User request received
+2. Attempted user creation via `ensureProfile()`
+3. Phone already registered → Error thrown
+4. Error handler returned 500 (should be 400)
+5. Signature verification bypassed (logged but allowed)
 
 #### After Fixes:
 ```json
@@ -216,10 +213,9 @@ chmod +x FIX_CRITICAL_ISSUES.sh
 ### THIS WEEK (Phase 2)
 **Status:** ⏸️ Plan documented, ready to implement
 
-1. ⏸️ Update all tests (remove wa-webhook-insurance)
-2. ⏸️ Consolidate 4 logging systems into 1
-3. ⏸️ Fix missing correlation IDs
-4. ⏸️ Reduce log noise (70% target)
+1. ⏸️ Consolidate 4 logging systems into 1
+2. ⏸️ Fix missing correlation IDs
+3. ⏸️ Reduce log noise (70% target)
 
 **Time required:** 2 days  
 **Risk:** Low (backward compatible)

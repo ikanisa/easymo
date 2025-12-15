@@ -84,7 +84,7 @@
 
 - [ ] **Webhook signature verification active**
   - File: `supabase/functions/_shared/webhook-utils.ts`
-  - Used in: wa-webhook-mobility/index.ts, wa-webhook-insurance/index.ts
+  - Used in: wa-webhook-mobility/index.ts, wa-webhook-core/index.ts
 
 - [ ] **No exposed secrets in codebase**
   ```bash
@@ -157,7 +157,7 @@
 
 - [ ] **README.md updated**
   - wa-webhook-mobility/README.md
-  - wa-webhook-insurance/README.md
+  - wa-webhook-core/README.md
 
 - [ ] **API endpoints documented**
   - Health check endpoints
@@ -174,7 +174,7 @@
 - [ ] **Deploy to staging first**
   ```bash
   supabase functions deploy wa-webhook-mobility --project-ref STAGING_REF
-  supabase functions deploy wa-webhook-insurance --project-ref STAGING_REF
+  supabase functions deploy wa-webhook-core --project-ref STAGING_REF
   ```
 
 - [ ] **Smoke test staging**
@@ -185,7 +185,7 @@
 - [ ] **Deploy to production**
   ```bash
   supabase functions deploy wa-webhook-mobility --project-ref PROD_REF
-  supabase functions deploy wa-webhook-insurance --project-ref PROD_REF
+  supabase functions deploy wa-webhook-core --project-ref PROD_REF
   ```
 
 - [ ] **Verify production deployment**
@@ -265,5 +265,5 @@ cd supabase/functions/wa-webhook-mobility && deno test --allow-all
 
 # Deploy
 supabase functions deploy wa-webhook-mobility
-supabase functions deploy wa-webhook-insurance
+supabase functions deploy wa-webhook-core
 ```
