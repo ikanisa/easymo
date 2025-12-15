@@ -54,8 +54,8 @@ import { sendButtonsMessage, sendListMessage } from "../_shared/wa-webhook-share
 import { recordLastLocation } from "./locations/favorites.ts";
 import { sendLocation, sendText } from "./wa/client.ts";
 import { t } from "./i18n/translator.ts";
-// Import supabase from config (uses proper environment variable fallbacks)
-import { supabase } from "./config.ts";
+// Import supabase and config from config (uses proper environment variable fallbacks)
+import { supabase, WA_APP_SECRET } from "./config.ts";
 // Import location utilities
 import { getLastLocation } from "./locations/cache.ts";
 import { getLocationReusedMessage } from "../_shared/wa-webhook-shared/locations/messages.ts";
@@ -193,8 +193,7 @@ serve(async (req: Request): Promise<Response> => {
         sample: hash ? `${hash.slice(0, 6)}…${hash.slice(-4)}` : null,
       };
     })();
-    const appSecret = Deno.env.get("WHATSAPP_APP_SECRET") ??
-      Deno.env.get("WA_APP_SECRET");
+    const appSecret = WA_APP_SECRET;
     const runtimeEnv =
       (Deno.env.get("APP_ENV") ?? Deno.env.get("NODE_ENV") ?? "development")
         .toLowerCase();
@@ -210,10 +209,18 @@ serve(async (req: Request): Promise<Response> => {
     if (!appSecret) {
       logStructuredEvent(
         "MOBILITY_AUTH_CONFIG_ERROR",
-        { reason: "missing_app_secret" },
+        { reason: "missing_app_secret", message: "WA_APP_SECRET not found in environment" },
         "error",
       );
       return respond({ error: "server_misconfigured" }, { status: 500 });
+    }
+
+    if (appSecret.length < 10) {
+      logStructuredEvent(
+        "MOBILITY_AUTH_CONFIG_WARNING",
+        { reason: "app_secret_too_short", length: appSecret.length, message: "WA_APP_SECRET seems invalid (too short)" },
+        "error",
+      );
     }
 
     let isValidSignature = false;
@@ -229,6 +236,15 @@ serve(async (req: Request): Promise<Response> => {
             signatureHeader,
             signatureMethod: signatureMeta.method,
           });
+        } else {
+          logStructuredEvent("MOBILITY_SIGNATURE_MISMATCH", {
+            signatureProvided: true,
+            signatureHeader,
+            signatureMethod: signatureMeta.method,
+            signatureSample: signatureMeta.sample,
+            payloadSize: rawBody.length,
+            appSecretLength: appSecret.length,
+          }, "warn");
         }
       } catch (err) {
         logStructuredEvent("MOBILITY_SIGNATURE_ERROR", {
