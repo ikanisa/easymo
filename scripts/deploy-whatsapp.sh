@@ -21,13 +21,12 @@ supabase db push
 echo "-- Deploying Edge Functions (WA microservices + insurance-ocr)..."
 supabase functions deploy \
   wa-webhook-core \
-  wa-webhook-ai-agents \
   wa-webhook-mobility \
   wa-webhook-wallet \
-  wa-webhook-jobs \
-  wa-webhook-property \
-  wa-webhook-marketplace \
-  insurance-ocr
+  wa-webhook-buy-sell \
+  wa-webhook-profile \
+  wa-webhook-insurance \
+  wa-webhook-voice-calls
 
 echo "-- Done."
 echo ""

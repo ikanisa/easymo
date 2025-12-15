@@ -11,7 +11,6 @@ const token = process.env.EDGE_FUNCTIONS_TOKEN || process.env.SUPABASE_ANON_KEY 
 // The legacy monolithic wa-webhook has been replaced by wa-webhook-core + domain microservices
 const defaultFunctions = [
   { name: 'wa-webhook-core', path: 'wa-webhook-core', expect: (body, raw) => raw.includes('messages') || typeof body === 'object' },
-  { name: 'wa-webhook-ai-agents', path: 'wa-webhook-ai-agents', expect: (_body, raw) => raw.length > 0 },
   { name: 'waiter-ai-agent', path: 'waiter-ai-agent', expect: (_body, raw) => raw.length > 0 },
   { name: 'agent-monitor', path: 'agent-monitor', expect: (_body, raw) => raw.length > 0 },
   { name: 'agent-runner', path: 'agent-runner', expect: (_body, raw) => raw.length > 0 },

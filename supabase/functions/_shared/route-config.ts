@@ -13,10 +13,6 @@ export interface RouteConfig {
   menuKeys: string[];
   /** Priority for conflict resolution (lower = higher priority) */
   priority: number;
-  /** If true, this service is deprecated */
-  deprecated?: boolean;
-  /** The service to redirect to when deprecated */
-  redirectTo?: string;
 }
 
 /**
@@ -69,30 +65,15 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
   },
   {
     service: "wa-webhook-buy-sell",
-    keywords: ["buy", "sell", "category", "categories", "browse", "directory", "shops", "business", "marketplace"],
-    menuKeys: ["buy_sell", "buy_and_sell", "buy and sell", "shops_services", "marketplace", "3"],
+    keywords: ["buy", "sell", "category", "categories", "browse", "directory", "shops", "business", "marketplace", "support", "help", "issue", "problem", "question", "faq"],
+    menuKeys: ["buy_sell", "buy_and_sell", "buy and sell", "shops_services", "marketplace", "3", "support_agent", "support", "customer_support", "help", "4"],
     priority: 1,
-  },
-  {
-    /**
-     * Buy-Sell AI Agent endpoint (only AI agent kept)
-     */
-    service: "agent-buy-sell",
-    keywords: [], // Intentionally empty - access via wa-webhook-buy-sell-agent
-    menuKeys: [],  // Intentionally empty - access via wa-webhook-buy-sell-agent
-    priority: 99,
   },
   {
     service: "wa-webhook-insurance",
     keywords: ["insurance", "insure", "policy", "coverage", "quote", "motor insurance"],
     menuKeys: ["insurance", "motor_insurance"],
     priority: 1,
-  },
-  {
-    service: "wa-agent-support",
-    keywords: ["support", "help", "issue", "problem", "question", "faq"],
-    menuKeys: ["support_agent", "support", "customer_support", "help", "4"],
-    priority: 2,
   },
 ];
 
@@ -103,17 +84,12 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
  * - Mobility, Buy & Sell, Insurance, Profile, Wallet
  */
 export const ROUTED_SERVICES: readonly string[] = [
+  "wa-webhook-core",
   "wa-webhook-mobility",
   "wa-webhook-insurance",
   "wa-webhook-profile",
   "wa-webhook-wallet",
   "wa-webhook-buy-sell",
-  "wa-webhook-buy-sell-directory",
-  "wa-webhook-buy-sell-agent",
-  "agent-buy-sell",
-  "wa-agent-support",
-  "wa-webhook-core",
-  "wa-webhook", // Legacy fallback
 ] as const;
 
 export type RoutedService = typeof ROUTED_SERVICES[number];
@@ -139,8 +115,7 @@ export function buildMenuKeyMap(): Record<string, string> {
 export const STATE_PATTERNS: Array<{ patterns: string[]; service: string }> = [
   { patterns: ["mobility", "trip_", "ride_"], service: "wa-webhook-mobility" },
   { patterns: ["wallet_", "payment_", "transfer_", "momo_qr_"], service: "wa-webhook-wallet" },
-  { patterns: ["shop_", "buy_sell_", "buy_sell_location", "buy_sell_results", "buy_sell_menu", "business_", "directory_"], service: "wa-webhook-buy-sell" },
-  { patterns: ["support_"], service: "wa-agent-support" },
+  { patterns: ["shop_", "buy_sell_", "buy_sell_location", "buy_sell_results", "buy_sell_menu", "business_", "directory_", "support_"], service: "wa-webhook-buy-sell" },
 ];
 
 /**
@@ -184,58 +159,4 @@ export function matchKeywordsToService(text: string): string | null {
   return matches[0].service;
 }
 
-/**
- * Check if a service is deprecated
- */
-export function isServiceDeprecated(service: string): boolean {
-  const config = ROUTE_CONFIGS.find((c) => c.service === service);
-  return config?.deprecated === true;
-}
 
-/**
- * Get the redirect target for a deprecated service
- * Returns the original service if not deprecated or no redirect configured
- */
-export function getServiceRedirect(service: string): string {
-  const config = ROUTE_CONFIGS.find((c) => c.service === service);
-  if (config?.deprecated && config?.redirectTo) {
-    return config.redirectTo;
-  }
-  return service;
-}
-
-/**
- * Resolve the final service to route to, taking into account deprecation
- * and the FEATURE_UNIFIED_AGENTS feature flag.
- * 
- * When useUnified is true and the service is deprecated, returns the redirect target.
- * When useUnified is false, always returns the original service (even if deprecated).
- * When the service is not deprecated, always returns the original service.
- * 
- * @param service - The originally matched service
- * @param useUnified - Whether to redirect deprecated services to the unified service
- * @returns The final service to route to
- */
-export function resolveServiceWithMigration(service: string, useUnified: boolean): string {
-  // When unified routing is disabled, always use the original service
-  if (!useUnified) {
-    return service;
-  }
-  
-  // When unified routing is enabled, check if service has a redirect configured
-  const config = ROUTE_CONFIGS.find((c) => c.service === service);
-  if (config?.deprecated && config?.redirectTo) {
-    return config.redirectTo;
-  }
-  
-  // Service is not deprecated or has no redirect, use original
-  return service;
-}
-
-/**
- * Services that are deprecated
- * Used for monitoring and migration tracking
- */
-export const DEPRECATED_SERVICES = ROUTE_CONFIGS
-  .filter((c) => c.deprecated)
-  .map((c) => c.service);

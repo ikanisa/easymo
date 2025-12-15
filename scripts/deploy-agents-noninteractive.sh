@@ -62,12 +62,12 @@ supabase functions deploy agent-shops \
 echo "Deploying WhatsApp microservices..."
 for svc in \
   wa-webhook-core \
-  wa-webhook-ai-agents \
   wa-webhook-mobility \
   wa-webhook-wallet \
-  wa-webhook-jobs \
-  wa-webhook-property \
-  wa-webhook-marketplace; do
+  wa-webhook-buy-sell \
+  wa-webhook-profile \
+  wa-webhook-insurance \
+  wa-webhook-voice-calls; do
   echo "Deploying $svc..."
   supabase functions deploy "$svc" \
     --project-ref $PROJECT_REF \
@@ -112,12 +112,12 @@ echo "   - agent-schedule-trip"
 echo "   - agent-quincaillerie"
 echo "   - agent-shops"
 echo "   - wa-webhook-core"
-echo "   - wa-webhook-ai-agents"
 echo "   - wa-webhook-mobility"
 echo "   - wa-webhook-wallet"
-echo "   - wa-webhook-jobs"
-echo "   - wa-webhook-property"
-echo "   - wa-webhook-marketplace"
+echo "   - wa-webhook-buy-sell"
+echo "   - wa-webhook-profile"
+echo "   - wa-webhook-insurance"
+echo "   - wa-webhook-voice-calls"
 echo ""
 echo "🔍 View logs:"
 echo "   supabase functions logs --project-ref $PROJECT_REF"
