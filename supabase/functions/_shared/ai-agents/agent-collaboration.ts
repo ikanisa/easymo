@@ -39,7 +39,7 @@ export interface AgentCollaboration {
   createdAt: string;
 }
 
-// Agent registry - all available agents and their capabilities
+// Agent registry - only Buy & Sell AI Agent
 const AGENT_REGISTRY: AgentCapability[] = [
   {
     agentType: 'buy_sell',
@@ -47,20 +47,6 @@ const AGENT_REGISTRY: AgentCapability[] = [
     description: 'Marketplace, business services, and general support',
     capabilities: ['product_listings', 'buying', 'selling', 'business_discovery', 'general_support'],
     topics: ['buy', 'sell', 'marketplace', 'product', 'shop', 'business', 'trade', 'service', 'help', 'support'],
-  },
-  {
-    agentType: 'mobility',
-    name: '🚕 Rides AI',
-    description: 'Transportation and delivery',
-    capabilities: ['ride_booking', 'delivery', 'driver_matching', 'eta'],
-    topics: ['ride', 'taxi', 'delivery', 'transport', 'driver', 'pickup', 'dropoff'],
-  },
-  {
-    agentType: 'insurance',
-    name: '🛡️ Insurance AI',
-    description: 'Insurance services and claims',
-    capabilities: ['quotes', 'claims', 'policy_info', 'renewals'],
-    topics: ['insurance', 'policy', 'claim', 'coverage', 'renewal', 'motor', 'health'],
   },
 ];
 
@@ -182,7 +168,7 @@ export async function consultAgent(
       return result;
     }
   } catch (error) {
-    console.error(`Agent consultation failed: ${request.toAgent}`, error);
+    // Agent consultation failed - non-fatal, return null
   }
 
   return null;

@@ -44,7 +44,6 @@ export const WA_VERIFY_TOKEN = mustGetOne(
 export const OPENAI_API_KEY = getEnv("OPENAI_API_KEY") ?? "";
 export const WA_BOT_NUMBER_E164 =
   getEnv("WA_BOT_NUMBER_E164", "WHATSAPP_PHONE_NUMBER_E164") ?? "";
-export const QR_SALT = getEnv("QR_SALT") ?? "";
 export const MENU_MEDIA_BUCKET = getEnv("MENU_MEDIA_BUCKET") ??
   "menu-source-files";
 export const INSURANCE_MEDIA_BUCKET = getEnv("INSURANCE_MEDIA_BUCKET") ??

@@ -134,7 +134,7 @@ export async function handleDriverSubscriptionPay(
     });
     await sendButtonsMessage(
       ctx,
-      t(ctx.locale, "mobility.sub.payment_failed"),
+      t(ctx.locale, "mobility.sub.activate_fail"),
       [{ id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") }],
     );
     return true;

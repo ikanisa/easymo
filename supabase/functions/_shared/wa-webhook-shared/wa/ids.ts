@@ -1,13 +1,6 @@
 export const IDS = {
-  // Home menu - 8 AI Agents
-  WAITER_AGENT: "waiter_agent",
-  RIDES_AGENT: "rides_agent",
-  JOBS_AGENT: "jobs_agent",
-  BUSINESS_BROKER_AGENT: "business_broker_agent",
-  REAL_ESTATE_AGENT: "real_estate_agent",
-  FARMER_AGENT: "farmer_agent",
-  INSURANCE_AGENT: "insurance_agent",
-  SALES_AGENT: "sales_agent",
+  // Home menu - Only Buy & Sell AI Agent
+  BUSINESS_BROKER_AGENT: "buy_sell", // Alias for buy_sell agent
   // Legacy IDs (backward compatibility)
   RIDES_MENU: "rides_menu",
   JOB_BOARD: "job_board",
@@ -74,9 +67,6 @@ export const IDS = {
   PROFILE_MANAGE_WHATSAPP_NUMBERS: "profile_manage_whatsapp_numbers",
   BARS_RESTAURANTS: "bars_restaurants",
   RESTAURANT_MANAGER: "restaurant_manager",
-  FARMER_AGENT_SUPPLY: "farmer_agent_supply",
-  FARMER_AGENT_DEMAND: "farmer_agent_demand",
-  GENERAL_BROKER: "general_broker",
   ADMIN_HUB: "admin_hub",
   ADMIN_HUB_VIEW: "admin_hub_view",
   HOME_MORE: "home_more",
@@ -216,17 +206,6 @@ export const IDS = {
   MENU_SET_PROMO: "menu_set_promo",
   MENU_DELETE_ITEM: "menu_delete_item",
   
-  // Waiter AI Agent
-  WAITER_START: "waiter_start",
-  WAITER_ADD_ITEM: "waiter_add_item",
-  WAITER_VIEW_CART: "waiter_view_cart",
-  WAITER_CHECKOUT: "waiter_checkout",
-  WAITER_PAY_MOMO: "waiter_pay_momo",
-  WAITER_PAY_REVOLUT: "waiter_pay_revolut",
-  WAITER_CONFIRM_PAID: "waiter_confirm_paid",
-  WAITER_CLEAR_CART: "waiter_clear_cart",
-  WAITER_ADD_MORE: "waiter_add_more",
-  WAITER_HELP: "waiter_help",
   
   // Order Status Updates
   ORDER_STATUS_RECEIVED: "order_status_received",

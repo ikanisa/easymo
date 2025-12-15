@@ -26,14 +26,6 @@ export const scheduleHandler = lazy(
 );
 
 /**
- * Trip lifecycle handler
- */
-export const tripHandler = lazy(
-  "mobility:trip",
-  () => import("./trip/index.ts")
-);
-
-/**
  * Go online/offline handler
  */
 export const onlineHandler = lazy(
@@ -76,11 +68,6 @@ export async function getHandler(action: string) {
     case "schedule":
     case "schedule_trip":
       return scheduleHandler.load();
-
-    case "trip":
-    case "trip_start":
-    case "trip_complete":
-      return tripHandler.load();
 
     case "online":
     case "go_online":

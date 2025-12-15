@@ -33,7 +33,6 @@ export async function handleAdminRow(
     case ADMIN_ROW_IDS.OPS_TRIPS:
     case ADMIN_ROW_IDS.OPS_MARKETPLACE:
     case ADMIN_ROW_IDS.OPS_WALLET:
-    case ADMIN_ROW_IDS.OPS_MOMO:
     case ADMIN_ROW_IDS.TRUST_REFERRALS:
     case ADMIN_ROW_IDS.TRUST_FREEZE:
     case ADMIN_ROW_IDS.DIAG_MATCH:

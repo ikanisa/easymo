@@ -533,7 +533,7 @@ export class MarketplaceAgent {
         },
         "error",
       );
-      throw error; // Don't silently fail
+      // Don't throw - allow agent to be created but process() will handle gracefully
     }
   }
 
@@ -619,11 +619,30 @@ export class MarketplaceAgent {
 
       messages.push({ role: "user", content: userMessage });
 
-      const responseText = await this.aiProvider.chat(messages, {
-        temperature: AI_TEMPERATURE,
-        maxTokens: AI_MAX_TOKENS,
-        metadata: { agent: "buy_sell" },
-      });
+      let responseText: string;
+      try {
+        responseText = await this.aiProvider.chat(messages, {
+          temperature: AI_TEMPERATURE,
+          maxTokens: AI_MAX_TOKENS,
+          metadata: { agent: "buy_sell" },
+        });
+      } catch (error) {
+        logStructuredEvent(
+          "MARKETPLACE_AGENT_AI_CHAT_ERROR",
+          {
+            error: error instanceof Error ? error.message : String(error),
+            correlationId: this.correlationId,
+          },
+          "error",
+        );
+        
+        // Return graceful fallback response
+        return {
+          message: "I'm having trouble connecting right now. Please try again in a moment, or type 'menu' to start over.",
+          action: "error",
+          flowComplete: false,
+        };
+      }
 
       // Parse AI response
       let aiResponse: AIResponse;

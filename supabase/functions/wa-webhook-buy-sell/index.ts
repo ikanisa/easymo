@@ -41,7 +41,10 @@ serve(async (req: Request): Promise<Response> => {
   });
 
   if (!rateLimitCheck.allowed) {
-    return rateLimitCheck.response!;
+    if (rateLimitCheck.response) {
+      return rateLimitCheck.response;
+    }
+    return respond({ error: "rate_limit_exceeded" }, { status: 429 });
   }
 
   const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
@@ -188,11 +191,21 @@ serve(async (req: Request): Promise<Response> => {
     // Button replies (common actions + My Business management)
     if (message.type === "interactive" && message.interactive?.button_reply?.id) {
       const buttonId = message.interactive.button_reply.id;
+      
+      logStructuredEvent("BUY_SELL_BUTTON_CLICKED", {
+        buttonId,
+        userPhone: `***${userPhone.slice(-4)}`,
+        correlationId,
+      });
+      
       const { handleInteractiveButton } = await import("./handlers/interactive-buttons.ts");
       
       const result = await handleInteractiveButton(buttonId, userPhone, supabase, correlationId);
       if (result.handled) {
+        await recordMetric("buy_sell.button.handled", 1, { buttonId });
         return respond({ success: true, message: result.action || "button_handled" });
+      } else {
+        await recordMetric("buy_sell.button.unhandled", 1, { buttonId });
       }
     }
 
@@ -200,18 +213,56 @@ serve(async (req: Request): Promise<Response> => {
 
     // Location sharing - pass to AI agent with location context
     if (message.type === "location" && message.location) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("user_id, language")
-        .eq("whatsapp_number", userPhone)
-        .maybeSingle();
+      // Validate location data
+      const lat = message.location.latitude;
+      const lng = message.location.longitude;
+      
+      if (typeof lat !== "number" || typeof lng !== "number" || 
+          isNaN(lat) || isNaN(lng) ||
+          lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        logStructuredEvent("BUY_SELL_INVALID_LOCATION", {
+          lat,
+          lng,
+          userPhone: `***${userPhone.slice(-4)}`,
+          correlationId,
+        }, "warn");
+        await sendText(userPhone, "⚠️ Invalid location data. Please share your location again.");
+        return respond({ success: true, message: "invalid_location" });
+      }
+
+      // Use profile from earlier lookup or fetch if not available
+      if (!profile) {
+        try {
+          const { data, error } = await supabase
+            .from("profiles")
+            .select("user_id, language")
+            .eq("whatsapp_number", userPhone)
+            .maybeSingle();
+          
+          if (error) {
+            logStructuredEvent("BUY_SELL_PROFILE_LOOKUP_ERROR", {
+              error: error.message,
+              userPhone: `***${userPhone.slice(-4)}`,
+              correlationId,
+            }, "error");
+          } else {
+            profile = data;
+          }
+        } catch (err) {
+          logStructuredEvent("BUY_SELL_PROFILE_LOOKUP_EXCEPTION", {
+            error: err instanceof Error ? err.message : String(err),
+            userPhone: `***${userPhone.slice(-4)}`,
+            correlationId,
+          }, "error");
+        }
+      }
 
       if (profile) {
         // Load or create context with location
         const context: BuyAndSellContext = await MarketplaceAgent.loadContext(userPhone, supabase);
         context.location = {
-          lat: message.location.latitude,
-          lng: message.location.longitude,
+          lat,
+          lng,
         };
         
         // Process location with agent
@@ -225,12 +276,32 @@ serve(async (req: Request): Promise<Response> => {
 
     // === TEXT HANDLERS ===
 
-    // Business state handlers
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("user_id, language")
-      .eq("whatsapp_number", userPhone)
-      .maybeSingle();
+    // Business state handlers - use profile from earlier lookup or fetch if not available
+    if (!profile) {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("user_id, language")
+          .eq("whatsapp_number", userPhone)
+          .maybeSingle();
+        
+        if (error) {
+          logStructuredEvent("BUY_SELL_PROFILE_LOOKUP_ERROR", {
+            error: error.message,
+            userPhone: `***${userPhone.slice(-4)}`,
+            correlationId,
+          }, "error");
+        } else {
+          profile = data;
+        }
+      } catch (err) {
+        logStructuredEvent("BUY_SELL_PROFILE_LOOKUP_EXCEPTION", {
+          error: err instanceof Error ? err.message : String(err),
+          userPhone: `***${userPhone.slice(-4)}`,
+          correlationId,
+        }, "error");
+      }
+    }
 
     if (profile) {
       const { getState } = await import("../_shared/wa-webhook-shared/state/store.ts");
@@ -238,6 +309,12 @@ serve(async (req: Request): Promise<Response> => {
 
       // Handle state transitions using state machine handler
       if (state) {
+        logStructuredEvent("BUY_SELL_STATE_TRANSITION", {
+          stateKey: state.key,
+          userPhone: `***${userPhone.slice(-4)}`,
+          correlationId,
+        });
+        
         const { handleStateTransition } = await import("./handlers/state-machine.ts");
         const { getProfileContext } = await import("./handlers/interactive-buttons.ts");
         
@@ -245,7 +322,10 @@ serve(async (req: Request): Promise<Response> => {
         if (ctx) {
           const result = await handleStateTransition(state, text, ctx, correlationId);
           if (result.handled) {
+            await recordMetric("buy_sell.state_transition.handled", 1, { stateKey: state.key });
             return respond({ success: true, message: "state_transition_handled" });
+          } else {
+            await recordMetric("buy_sell.state_transition.unhandled", 1, { stateKey: state.key });
           }
         }
       }

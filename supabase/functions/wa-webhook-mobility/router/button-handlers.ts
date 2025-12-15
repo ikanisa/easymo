@@ -130,52 +130,6 @@ export const BUTTON_HANDLERS: ButtonHandler[] = [
     description: "Change active vehicle",
   },
 
-  // Trip Management
-  {
-    id: "ACCEPT_TRIP",
-    handler: "handleTripAccept",
-    category: "trip",
-    description: "Accept trip request",
-  },
-  {
-    id: "DECLINE_TRIP",
-    handler: "handleTripDecline",
-    category: "trip",
-    description: "Decline trip request",
-  },
-  {
-    id: "START_TRIP",
-    handler: "handleTripStart",
-    category: "trip",
-    description: "Start trip",
-  },
-  {
-    id: "COMPLETE_TRIP",
-    handler: "handleTripComplete",
-    category: "trip",
-    description: "Complete trip",
-  },
-  {
-    id: "CANCEL_TRIP",
-    handler: "handleTripCancel",
-    category: "trip",
-    description: "Cancel trip",
-  },
-
-  // Payment
-  {
-    id: "PAY_MOMO",
-    handler: "handleMomoPayment",
-    category: "payment",
-    description: "Pay with mobile money",
-  },
-  {
-    id: "PAY_USSD",
-    handler: "handleUSSDPayment",
-    category: "payment",
-    description: "Pay with USSD",
-  },
-
   // Support
   {
     id: "HELP_MENU",

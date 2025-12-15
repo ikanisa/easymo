@@ -11,29 +11,29 @@ const MENU_CACHE_TTL_SECONDS = Math.max(
 );
 
 export type MenuItemKey =
-  // Active AI Agents (Rwanda-only)
-  | "rides_agent"
-  | "business_broker_agent"
-  | "insurance_agent"
-  | "buy_and_sell_agent"
-  // Profile (not an agent)
-  | "profile"
+  // Active services (Rwanda-only)
+  | "rides" // Mobility service (not an AI agent)
+  | "buy_sell" // Buy & Sell AI Agent (ONLY AI AGENT)
+  | "buy_and_sell_agent" // Alias for buy_sell
+  | "business_broker_agent" // Alias for buy_sell
+  | "insurance" // Insurance service (not an AI agent)
+  | "profile" // Profile service (not an agent)
   // Legacy keys (kept for backward compatibility, marked as deprecated)
-  | "rides" // @deprecated Use rides_agent
-  | "nearby_drivers" // @deprecated Covered by rides_agent
-  | "nearby_passengers" // @deprecated Covered by rides_agent
-  | "schedule_trip" // @deprecated Covered by rides_agent
-  | "motor_insurance" // @deprecated Use insurance_agent
-  | "nearby_pharmacies" // @deprecated Covered by buy_and_sell_agent
-  | "quincailleries" // @deprecated Covered by buy_and_sell_agent
-  | "shops_services" // @deprecated Covered by buy_and_sell_agent
-  | "property_rentals" // @deprecated Covered by buy_and_sell_agent
-  | "bars_restaurants" // @deprecated Covered by buy_and_sell_agent
+  | "rides_agent" // @deprecated Use rides
+  | "nearby_drivers" // @deprecated Covered by rides
+  | "nearby_passengers" // @deprecated Covered by rides
+  | "schedule_trip" // @deprecated Covered by rides
+  | "motor_insurance" // @deprecated Use insurance
+  | "nearby_pharmacies" // @deprecated Covered by buy_sell
+  | "quincailleries" // @deprecated Covered by buy_sell
+  | "shops_services" // @deprecated Covered by buy_sell
+  | "property_rentals" // @deprecated Covered by buy_sell
+  | "bars_restaurants" // @deprecated Covered by buy_sell
   | "momo_qr" // @deprecated Moved to separate payment flow
-  | "notary_services" // @deprecated Covered by buy_and_sell_agent
+  | "notary_services" // @deprecated Covered by buy_sell
   | "profile_assets" // @deprecated Use profile
   | "token_transfer" // @deprecated Moved to wallet
-  | "general_broker" // @deprecated Use buy_and_sell_agent
+  | "general_broker" // @deprecated Use buy_sell
   | "customer_support"; // @deprecated Accessed via support flow
 
 export interface WhatsAppHomeMenuItem {
@@ -108,29 +108,31 @@ export async function fetchActiveMenuItems(
  * rides_agent, buy_and_sell_agent, insurance_agent, profile.
  */
 export const HOME_MENU_KEY_ALIASES: Record<string, string> = {
-  // Canonical keys (4 active items) - map to themselves
-  rides_agent: "rides_agent",
-  buy_and_sell_agent: "buy_and_sell_agent",
-  business_broker_agent: "buy_and_sell_agent", // merged into buy_and_sell
-  insurance_agent: "insurance_agent",
-  profile: "profile",
+  // Canonical keys - map to themselves
+  rides: "rides", // Mobility service (not an AI agent)
+  buy_sell: "buy_sell", // Buy & Sell AI Agent (ONLY AI AGENT)
+  buy_and_sell_agent: "buy_sell", // Alias for buy_sell
+  business_broker_agent: "buy_sell", // Alias for buy_sell
+  insurance: "insurance", // Insurance service (not an AI agent)
+  profile: "profile", // Profile service (not an agent)
   
-  // Legacy aliases - route to canonical agents
-  schedule_trip: "rides_agent",
-  nearby_drivers: "rides_agent",
-  nearby_passengers: "rides_agent",
-  rides: "rides_agent",
-  nearby_pharmacies: "buy_and_sell_agent",
-  quincailleries: "buy_and_sell_agent",
-  shops_services: "buy_and_sell_agent",
-  notary_services: "buy_and_sell_agent",
-  general_broker: "buy_and_sell_agent",
-  motor_insurance: "insurance_agent",
+  // Legacy aliases - route to canonical services
+  rides_agent: "rides",
+  schedule_trip: "rides",
+  nearby_drivers: "rides",
+  nearby_passengers: "rides",
+  nearby_pharmacies: "buy_sell",
+  quincailleries: "buy_sell",
+  shops_services: "buy_sell",
+  notary_services: "buy_sell",
+  general_broker: "buy_sell",
+  motor_insurance: "insurance",
+  insurance_agent: "insurance",
   momo_qr: "profile",  // Payment QR accessed via profile
   token_transfer: "profile",  // Wallet transfers via profile
   profile_assets: "profile",
   
-  // Deprecated (removed domains)
+  // Deprecated (removed domains) - route to profile
   waiter_agent: "profile",
   jobs_agent: "profile",
   jobs: "profile",
@@ -173,22 +175,26 @@ export function getMenuItemTranslationKeys(
     MenuItemKey,
     { titleKey: string; descriptionKey: string }
   > = {
-    // Active AI Agents (Rwanda-only)
-    rides_agent: {
-      titleKey: "home.rows.ridesAgent.title",
-      descriptionKey: "home.rows.ridesAgent.description",
+    // Active services (Rwanda-only)
+    rides: {
+      titleKey: "home.rows.rides.title",
+      descriptionKey: "home.rows.rides.description",
     },
-    business_broker_agent: {
-      titleKey: "home.rows.businessBrokerAgent.title",
-      descriptionKey: "home.rows.businessBrokerAgent.description",
+    buy_sell: {
+      titleKey: "home.rows.buyAndSellAgent.title",
+      descriptionKey: "home.rows.buyAndSellAgent.description",
     },
     buy_and_sell_agent: {
       titleKey: "home.rows.buyAndSellAgent.title",
       descriptionKey: "home.rows.buyAndSellAgent.description",
     },
-    insurance_agent: {
-      titleKey: "home.rows.insuranceAgent.title",
-      descriptionKey: "home.rows.insuranceAgent.description",
+    business_broker_agent: {
+      titleKey: "home.rows.buyAndSellAgent.title",
+      descriptionKey: "home.rows.buyAndSellAgent.description",
+    },
+    insurance: {
+      titleKey: "home.rows.insurance.title",
+      descriptionKey: "home.rows.insurance.description",
     },
     // Profile
     profile: {
@@ -253,8 +259,8 @@ export function getMenuItemTranslationKeys(
       descriptionKey: "home.rows.tokenTransfer.description",
     },
     general_broker: {
-      titleKey: "home.rows.generalBroker.title",
-      descriptionKey: "home.rows.generalBroker.description",
+      titleKey: "home.rows.buyAndSellAgent.title",
+      descriptionKey: "home.rows.buyAndSellAgent.description",
     },
     customer_support: {
       titleKey: "home.rows.customerSupport.title",

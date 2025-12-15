@@ -37,7 +37,6 @@ import {
   handleGoOnlineUseCached,
   startGoOnline,
 } from "./handlers/go_online.ts";
-import { routeDriverAction } from "./handlers/driver_response.ts";
 import {
   handleVehiclePlateInput,
   parsePlateState,
@@ -481,14 +480,8 @@ serve(async (req: Request): Promise<Response> => {
         } // Go Online / Offline Flows
         else if (id === IDS.GO_ONLINE || id === "driver_go_online") {
           handled = await startGoOnline(ctx);
-        } else if (id === IDS.DRIVER_GO_OFFLINE) {
+        } else if (id === IDS.GO_OFFLINE) {
           handled = await handleGoOffline(ctx);
-        } // Driver Response Actions (Offer Ride, View Details)
-        else if (
-          id.startsWith(IDS.DRIVER_OFFER_RIDE + "::") ||
-          id.startsWith(IDS.DRIVER_VIEW_DETAILS + "::")
-        ) {
-          handled = await routeDriverAction(ctx, id);
         } // Share easyMO
         else if (id === IDS.SHARE_EASYMO) {
           if (ctx.profileId) {

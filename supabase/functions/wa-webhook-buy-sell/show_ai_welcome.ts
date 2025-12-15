@@ -21,11 +21,11 @@ export async function showAIWelcome(
   const profile = await ensureProfile(supabase, userPhone);
   if (profile?.user_id) {
     await setState(supabase, profile.user_id, {
-      key: "business_broker_chat",
+      key: "buy_sell_chat",
       data: {
         active: true,
         started_at: new Date().toISOString(),
-        agent_type: "business_broker",
+        agent_type: "buy_sell",
       },
     });
     

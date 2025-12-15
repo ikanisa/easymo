@@ -341,8 +341,8 @@ export class LLMRouter {
    * Get default provider rules for an agent
    */
   private getDefaultRules(agentSlug: string): AgentProviderRules {
-    // General Broker uses Gemini for tools, OpenAI for conversation
-    if (agentSlug === 'general-broker') {
+    // Buy & Sell Agent uses Gemini for tools, OpenAI for conversation
+    if (agentSlug === 'buy_sell' || agentSlug === 'buy-and-sell' || agentSlug === 'general-broker') {
       return {
         agentSlug,
         primaryProvider: 'openai',

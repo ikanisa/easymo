@@ -36,9 +36,9 @@ export async function listMyBusinesses(
   if (!businesses || businesses.length === 0) {
     await sendButtonsMessage(
       ctx,
-      "🏪 *You don't have any businesses yet.*\n\nTap the button below to chat with our Business Broker AI Agent who will help you register your business through a simple conversation.",
+      "🏪 *You don't have any businesses yet.*\n\nTap the button below to chat with our Buy & Sell AI Agent who will help you register your business through a simple conversation.",
       [
-        { id: IDS.BUSINESS_BROKER_AGENT, title: "💬 Chat with Business Agent" },
+        { id: "buy_sell", title: "💬 Chat with Buy & Sell AI" },
         { id: IDS.BACK_PROFILE, title: "← Back" },
       ],
     );
@@ -53,8 +53,8 @@ export async function listMyBusinesses(
 
   rows.push(
     {
-      id: IDS.BUSINESS_BROKER_AGENT,
-      title: "💬 Add via AI Agent",
+      id: "buy_sell",
+      title: "💬 Add via Buy & Sell AI",
       description: "Chat with AI to register new business",
     },
     {
@@ -131,14 +131,30 @@ export async function handleBusinessSelection(
   });
 
   // Business detail view - show business info and management options
+  let detailMessage = `📋 *${business.name}*\n\n`;
+  
+  if (business.category) {
+    detailMessage += `📂 Category: ${business.category}\n`;
+  }
+  if (business.address) {
+    detailMessage += `📍 Address: ${business.address}\n`;
+  }
+  if (business.phone_number) {
+    detailMessage += `📱 Phone: ${business.phone_number}\n`;
+  }
+  if (business.description) {
+    detailMessage += `\n📝 ${business.description}\n`;
+  }
+  
+  detailMessage += `\nWhat would you like to do?`;
+  
   await sendButtonsMessage(
     ctx,
-    `📋 *${business.name}*\n\n` +
-      (business.category ? `Category: ${business.category}\n` : "") +
-      (business.address ? `Address: ${business.address}\n` : "") +
-      `\nWhat would you like to do?`,
+    detailMessage,
     [
-      [{ id: "MY_BUSINESSES", title: "← Back to My Businesses" }],
+      { id: `EDIT_BIZ::${business.id}`, title: "✏️ Edit Business" },
+      { id: `DELETE_BIZ::${business.id}`, title: "🗑️ Delete Business" },
+      { id: IDS.MY_BUSINESSES, title: "← Back to My Businesses" },
     ]
   );
   

@@ -14,7 +14,7 @@ import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-
 import { logStructuredEvent, logError, recordMetric } from "./observability.ts";
 
 export interface AgentConfig {
-  type: 'waiter' | 'real_estate' | 'job_board' | 'mobility' | 'marketplace' | 'wallet';
+  type: 'buy_sell' | 'marketplace';
   maxTokens: number;
   temperature: number;
   systemPrompt: string;
@@ -293,60 +293,32 @@ export class AIAgentOrchestrator {
    */
   private async getAgentConfig(agentType: string): Promise<AgentConfig> {
     const configs: Record<string, AgentConfig> = {
-      waiter: {
-        type: 'waiter',
-        maxTokens: 500,
+      buy_sell: {
+        type: 'buy_sell',
+        maxTokens: 1024,
         temperature: 0.7,
-        systemPrompt: "You are a helpful waiter assistant. Help customers with menu items, orders, and restaurant information.",
+        systemPrompt: "You are the Buy & Sell AI Agent for EasyMO. Help customers find products, services, and businesses in Rwanda. You can help with buying, selling, business discovery, and general marketplace support.",
         maxContextMessages: 20,
-      },
-      real_estate: {
-        type: 'real_estate',
-        maxTokens: 800,
-        temperature: 0.5,
-        systemPrompt: "You are a real estate agent. Help customers find properties, schedule viewings, and answer property-related questions.",
-        maxContextMessages: 30,
-      },
-      job_board: {
-        type: 'job_board',
-        maxTokens: 600,
-        temperature: 0.6,
-        systemPrompt: "You are a job board assistant. Help users find jobs, prepare applications, and provide career advice.",
-        maxContextMessages: 25,
-      },
-      mobility: {
-        type: 'mobility',
-        maxTokens: 400,
-        temperature: 0.5,
-        systemPrompt: "You are a mobility assistant. Help users find transportation options, drivers, and passengers.",
-        maxContextMessages: 15,
       },
       marketplace: {
         type: 'marketplace',
-        maxTokens: 500,
-        temperature: 0.6,
-        systemPrompt: "You are a marketplace assistant. Help users buy and sell items, find local businesses, and make transactions.",
+        maxTokens: 1024,
+        temperature: 0.7,
+        systemPrompt: "You are the Buy & Sell AI Agent for EasyMO. Help customers find products, services, and businesses in Rwanda. You can help with buying, selling, business discovery, and general marketplace support.",
         maxContextMessages: 20,
-      },
-      wallet: {
-        type: 'wallet',
-        maxTokens: 400,
-        temperature: 0.3,
-        systemPrompt: "You are a wallet assistant. Help users with mobile money transactions, balance inquiries, and payment history.",
-        maxContextMessages: 15,
       },
     };
     
     const config = configs[agentType];
     
     if (!config) {
-      logError("invalid_agent_type", new Error(`Unknown agent type: ${agentType}`), {
+      logError("invalid_agent_type", new Error(`Unknown agent type: ${agentType}. Only 'buy_sell' agent is supported.`), {
         agentType,
         correlationId: this.correlationId,
       });
       
-      // Return default config
-      return configs.waiter;
+      // Return default config (buy_sell)
+      return configs.buy_sell;
     }
     
     return config;
