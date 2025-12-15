@@ -85,14 +85,18 @@ async function handleInsuranceAgentRequest(phoneNumber: string): Promise<void> {
       return;
     }
 
-    // Build message with all insurance contacts
-    let message = "🛡️ Insurance Services\n\nFor insurance inquiries, please contact:\n\n";
+    // Build engaging message with emojis
+    let message = "🛡️ *Insurance Made Easy!*\n\n";
+    message += "Get protected today! Our insurance team is ready to help you.\n\n";
+    message += "📞 *Contact us now:*\n\n";
     
     contacts.forEach((contact, index) => {
       const whatsappLink = `https://wa.me/${contact.phone_number.replace(/^\+/, "")}`;
-      const displayName = contact.name || `Insurance Contact ${index + 1}`;
-      message += `${index + 1}. ${displayName}\n   ${whatsappLink}\n\n`;
+      message += `${index + 1}. ${contact.name}\n`;
+      message += `   💬 ${whatsappLink}\n\n`;
     });
+    
+    message += "✨ _Fast quotes • Easy claims • Peace of mind_";
     
     await sendText(phoneNumber, message.trim());
     
