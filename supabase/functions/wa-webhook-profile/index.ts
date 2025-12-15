@@ -38,7 +38,7 @@ import type {
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import { WEBHOOK_CONFIG } from "../_shared/config/webhooks.ts";
-import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
+import { verifyWebhookSignature, checkIdempotency } from "../_shared/webhook-utils.ts";
 import { ensureProfile } from "../_shared/wa-webhook-shared/utils/profile.ts";
 import { CircuitBreaker } from "../_shared/circuit-breaker.ts";
 
@@ -89,14 +89,25 @@ setInterval(() => {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+// Track if environment is valid for health check reporting
+const envValid = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
+
+if (!envValid) {
+  const missingVars = [
+    !SUPABASE_URL ? "SUPABASE_URL" : null,
+    !SUPABASE_SERVICE_ROLE_KEY ? "SUPABASE_SERVICE_ROLE_KEY" : null,
+  ].filter(Boolean);
+  
   logStructuredEvent("PROFILE_ENV_VALIDATION_FAILED", {
     service: SERVICE_NAME,
-    missingVars: [
-      !SUPABASE_URL ? "SUPABASE_URL" : null,
-      !SUPABASE_SERVICE_ROLE_KEY ? "SUPABASE_SERVICE_ROLE_KEY" : null,
-    ].filter(Boolean),
+    missingVars,
   }, "error");
+  
+  // In production, throw to prevent starting with invalid config
+  const runtimeEnv = (Deno.env.get("DENO_ENV") ?? "development").toLowerCase();
+  if (runtimeEnv === "production" || runtimeEnv === "prod") {
+    throw new Error(`Missing required environment variables: ${missingVars.join(", ")}`);
+  }
 }
 
 function formatUnknownError(error: unknown): string {
@@ -134,34 +145,6 @@ const supabase = createClient(
     },
   },
 );
-
-/**
- * Helper function to execute database operations with circuit breaker protection
- */
-async function executeWithCircuitBreaker<T>(
-  operation: () => Promise<T>,
-  operationName: string,
-  logEvent: (event: string, payload?: Record<string, unknown>, level?: "info" | "warn" | "error") => void,
-): Promise<T> {
-  if (!dbCircuitBreaker.canExecute()) {
-    logEvent("PROFILE_DB_CIRCUIT_OPEN", {
-      operation: operationName,
-      metrics: dbCircuitBreaker.getMetrics(),
-    }, "warn");
-    throw new Error("Database temporarily unavailable (circuit breaker open)");
-  }
-  
-  try {
-    const result = await operation();
-    dbCircuitBreaker.recordSuccess();
-    return result;
-  } catch (error) {
-    dbCircuitBreaker.recordFailure(
-      error instanceof Error ? error.message : String(error),
-    );
-    throw error;
-  }
-}
 
 /**
  * Sanitize error message to prevent exposing internal details to users
@@ -259,14 +242,16 @@ serve(async (req: Request): Promise<Response> => {
 
   // Health check endpoint - Include circuit breaker metrics
   if (url.pathname === "/health" || url.pathname.endsWith("/health")) {
+    const healthStatus = envValid ? "healthy" : "degraded";
     return json({
-      status: "healthy",
+      status: healthStatus,
       service: SERVICE_NAME,
       version: SERVICE_VERSION,
       timestamp: new Date().toISOString(),
       circuitBreaker: dbCircuitBreaker.getMetrics(),
       cacheSize: responseCache.size,
       maxCacheSize: MAX_CACHE_SIZE,
+      envValid,
     });
   }
 
@@ -426,13 +411,12 @@ serve(async (req: Request): Promise<Response> => {
     }
     
     // Database idempotency check (P0 fix - Issue #3)
-    // Only import and check if message has an ID
+    // Check if message has already been processed
     if (messageId) {
       try {
-        const { checkIdempotency } = await import("../_shared/webhook-utils.ts");
         const alreadyProcessed = await checkIdempotency(supabase, messageId, correlationId);
         if (alreadyProcessed) {
-          logEvent("PROFILE_DUPLICATE_SKIPPED", { messageId: messageId?.slice(0, 8) }, "info");
+          logEvent("PROFILE_DUPLICATE_SKIPPED", { messageId: messageId.slice(0, 8) }, "info");
           return json({ success: true, ignored: "duplicate" });
         }
       } catch (idempotencyError) {
