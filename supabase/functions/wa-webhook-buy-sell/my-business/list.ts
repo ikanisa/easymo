@@ -5,6 +5,7 @@ import {
 } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 import { setState } from "../../_shared/wa-webhook-shared/state/store.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 
 export async function listMyBusinesses(
   ctx: RouterContext,
@@ -20,7 +21,10 @@ export async function listMyBusinesses(
     .limit(20);
 
   if (error) {
-    console.error("Failed to fetch businesses:", error);
+    await logStructuredEvent("BUSINESS_LIST_FETCH_ERROR", {
+      error: error.message,
+      profileId: ctx.profileId,
+    }, "error");
     await sendButtonsMessage(
       ctx,
       "⚠️ Failed to load your businesses. Please try again.",
@@ -126,10 +130,13 @@ export async function handleBusinessSelection(
     },
   });
 
-  // TODO: Implement business detail view
+  // Business detail view - show business info and management options
   await sendButtonsMessage(
     ctx,
-    `Business selected: ${businessId}\n\n(Detail view coming soon)`,
+    `📋 *${business.name}*\n\n` +
+      (business.category ? `Category: ${business.category}\n` : "") +
+      (business.address ? `Address: ${business.address}\n` : "") +
+      `\nWhat would you like to do?`,
     [
       [{ id: "MY_BUSINESSES", title: "← Back to My Businesses" }],
     ]

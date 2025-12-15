@@ -599,7 +599,22 @@ Reference: ${sessionId.slice(0, 8)}`;
         });
 
         // Notify user of results
-        // TODO: Send WhatsApp message to user with results
+        try {
+          const { VendorResponseHandler } = await import("../handlers/vendor-response-handler.ts");
+          const handler = new VendorResponseHandler(this.supabase, this.correlationId);
+          await handler.notifyUser({
+            sessionId,
+            userPhone: session.user_phone,
+          });
+        } catch (notifyError) {
+          // Log but don't fail - notification is best effort
+          logStructuredEvent("VENDOR_OUTREACH_NOTIFY_USER_FAILED", {
+            error: notifyError instanceof Error ? notifyError.message : String(notifyError),
+            sessionId,
+            userPhone: session.user_phone,
+          }, "warn");
+        }
+
         logStructuredEvent("VENDOR_OUTREACH_SESSION_COMPLETED", {
           sessionId,
           totalVendors: messages.length,

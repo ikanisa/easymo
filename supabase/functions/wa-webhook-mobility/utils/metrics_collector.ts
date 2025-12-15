@@ -7,6 +7,8 @@
  * @see docs/GROUND_RULES.md
  */
 
+import { logStructuredEvent } from "../../_shared/observability.ts";
+
 interface MetricValue {
   count: number;
   sum: number;
@@ -158,13 +160,12 @@ class MetricsCollector {
     for (const [name, dimensionMap] of this.counters.entries()) {
       for (const [dimKey, value] of dimensionMap.entries()) {
         const dimensions = this.parseDimensionKey(dimKey);
-        console.log(JSON.stringify({
-          event: "METRIC_COUNTER",
+        logStructuredEvent("METRIC_COUNTER", {
           timestamp,
           metric: name,
           value,
           dimensions,
-        }));
+        });
       }
     }
 
@@ -172,13 +173,12 @@ class MetricsCollector {
     for (const [name, dimensionMap] of this.gauges.entries()) {
       for (const [dimKey, value] of dimensionMap.entries()) {
         const dimensions = this.parseDimensionKey(dimKey);
-        console.log(JSON.stringify({
-          event: "METRIC_GAUGE",
+        logStructuredEvent("METRIC_GAUGE", {
           timestamp,
           metric: name,
           value,
           dimensions,
-        }));
+        });
       }
     }
 
@@ -187,13 +187,12 @@ class MetricsCollector {
       for (const [dimKey, values] of dimensionMap.entries()) {
         const dimensions = this.parseDimensionKey(dimKey);
         const stats = this.calculateHistogramStats(values);
-        console.log(JSON.stringify({
-          event: "METRIC_HISTOGRAM",
+        logStructuredEvent("METRIC_HISTOGRAM", {
           timestamp,
           metric: name,
           ...stats,
           dimensions,
-        }));
+        });
       }
     }
 

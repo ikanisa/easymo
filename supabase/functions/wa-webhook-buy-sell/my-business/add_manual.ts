@@ -356,7 +356,11 @@ async function handleConfirmStep(
       .single();
 
     if (insertError || !newBusiness) {
-      console.error("business_add_manual.insert_error", insertError);
+      await logStructuredEvent("BUSINESS_ADD_MANUAL_INSERT_ERROR", {
+        error: insertError?.message,
+        userId: ctx.profileId,
+        category: state.category,
+      }, "error");
       await sendButtonsMessage(
         ctx,
         "⚠️ Failed to create business. Please try again later.",
@@ -388,7 +392,10 @@ async function handleConfirmStep(
 
     return true;
   } catch (err) {
-    console.error("business_add_manual.exception", err);
+    await logStructuredEvent("BUSINESS_ADD_MANUAL_EXCEPTION", {
+      error: err instanceof Error ? err.message : String(err),
+      userId: ctx.profileId,
+    }, "error");
     await sendButtonsMessage(
       ctx,
       "⚠️ An error occurred. Please try again later.",

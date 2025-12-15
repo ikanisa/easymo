@@ -1144,6 +1144,20 @@ serve(async (req: Request): Promise<Response> => {
     return json(successResponse);
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
+    const errorStack = err instanceof Error ? err.stack : undefined;
+
+    // Classify error type
+    const isUserError = errorMessage.includes("validation") || 
+                       errorMessage.includes("invalid") ||
+                       errorMessage.includes("not found") ||
+                       errorMessage.includes("already exists") ||
+                       errorMessage.includes("duplicate");
+    const isSystemError = errorMessage.includes("database") ||
+                         errorMessage.includes("connection") ||
+                         errorMessage.includes("timeout") ||
+                         errorMessage.includes("ECONNREFUSED");
+    
+    const statusCode = isUserError ? 400 : (isSystemError ? 503 : 500);
 
     // Single consolidated error log
     logEvent(
@@ -1151,20 +1165,24 @@ serve(async (req: Request): Promise<Response> => {
       {
         path: url.pathname,
         error: errorMessage,
-        stack: err instanceof Error ? err.stack : undefined,
+        stack: errorStack,
+        errorType: isUserError ? "user_error" : (isSystemError ? "system_error" : "unknown_error"),
+        statusCode,
+        requestId,
+        correlationId,
       },
-      "error",
+      isSystemError ? "error" : "warn",
     );
 
     return json(
       {
-        error: "internal_error",
-        message: "An unexpected error occurred",
+        error: isUserError ? "invalid_request" : (isSystemError ? "service_unavailable" : "internal_error"),
+        message: isUserError ? errorMessage : "An unexpected error occurred. Please try again later.",
         service: SERVICE_NAME,
         requestId,
       },
       {
-        status: 500,
+        status: statusCode,
       },
     );
   }

@@ -189,8 +189,9 @@ export class ProactiveOutreachWorkflow {
       await this.memoryService.storePreferredLocation(userPhone, location);
     } else if (userMessage) {
       // Text location (e.g., "Kigali")
+      // Note: Geocoding text to lat/lng is handled by the AI agent's location extraction
+      // The agent can work with text locations for search purposes
       locationData = { lat: 0, lng: 0, text: userMessage };
-      // TODO: Geocode text to lat/lng
     }
 
     if (!locationData) {

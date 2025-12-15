@@ -31,7 +31,9 @@ export async function maybeRunRetention(): Promise<void> {
   }
   inFlight = runRetention()
     .catch((error) => {
-      console.error("retention.run_failed", error);
+      logStructuredEvent("RETENTION_RUN_FAILED", {
+        error: error instanceof Error ? error.message : String(error),
+      }, "error");
     })
     .finally(() => {
       lastRun = Date.now();
@@ -55,12 +57,16 @@ async function purgeWaEvents(): Promise<void> {
     .delete({ count: "exact" });
   const lt = (query as { lt?: (column: string, value: string) => typeof query }).lt;
   if (!lt) {
-    console.warn("retention.wa_events_skip", "lt not supported by client stub");
+    logStructuredEvent("RETENTION_WA_EVENTS_SKIP", {
+      reason: "lt not supported by client stub",
+    }, "warn");
     return;
   }
   const { error, count } = await lt.call(query, "created_at", cutoffIso);
   if (error) {
-    console.error("retention.wa_events_fail", error);
+    logStructuredEvent("RETENTION_WA_EVENTS_FAIL", {
+      error: error.message,
+    }, "error");
     return;
   }
   if (count && count > 0) {
@@ -78,12 +84,16 @@ async function purgeWebhookLogs(): Promise<void> {
     .delete({ count: "exact" });
   const lt = (query as { lt?: (column: string, value: string) => typeof query }).lt;
   if (!lt) {
-    console.warn("retention.webhook_logs_skip", "lt not supported by client stub");
+    logStructuredEvent("RETENTION_WEBHOOK_LOGS_SKIP", {
+      reason: "lt not supported by client stub",
+    }, "warn");
     return;
   }
   const { error, count } = await lt.call(query, "received_at", cutoffIso);
   if (error) {
-    console.error("retention.webhook_logs_fail", error);
+    logStructuredEvent("RETENTION_WEBHOOK_LOGS_FAIL", {
+      error: error.message,
+    }, "error");
     return;
   }
   if (count && count > 0) {

@@ -7,6 +7,7 @@ import {
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 import { setState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import { handleBusinessSelection } from "./list.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 
 export async function startEditBusiness(
   ctx: RouterContext,
@@ -108,7 +109,12 @@ export async function handleUpdateBusinessField(
     .eq("profile_id", ctx.profileId);
 
   if (error) {
-    console.error(`Failed to update business ${field}:`, error);
+    await logStructuredEvent("BUSINESS_UPDATE_ERROR", {
+      error: error.message,
+      businessId,
+      field,
+      profileId: ctx.profileId,
+    }, "error");
     await sendTextMessage(
       ctx,
       `⚠️ Failed to update business ${field}. Please try again.`,

@@ -2474,6 +2474,7 @@
     }
   },
   "redirects": {
+    "https://esm.sh/@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.87.3",
     "https://esm.sh/@supabase/supabase-js@2": "https://esm.sh/@supabase/supabase-js@2.86.0"
   },
   "remote": {
@@ -2541,6 +2542,7 @@
     "https://deno.land/x/zod@v3.22.4/types.ts": "724185522fafe43ee56a52333958764c8c8cd6ad4effa27b42651df873fc151e",
     "https://esm.sh/@supabase/supabase-js@2.45.1": "e8171967a4951665ebd85b31386304fdfdcce5bb35a93b888524a06e451022af",
     "https://esm.sh/@supabase/supabase-js@2.86.0": "03cff32ee9cd57294c4fbaef936d61d1842ebeb0e4c72c01667524c7f1e23912",
+    "https://esm.sh/@supabase/supabase-js@2.87.3": "7ea19de0cb70aa6eb50da057aab973d65c7cb8607923998a0354e204c9c8cb26",
     "https://esm.sh/@upstash/redis@1.28.0": "758f569a7c190661425db5ea2bce369923ca921ac242a96525fbdee166b511d2"
   },
   "workspace": {

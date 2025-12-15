@@ -5,6 +5,7 @@ import {
 } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 import { listMyBusinesses } from "./list.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 
 export async function confirmDeleteBusiness(
   ctx: RouterContext,
@@ -37,7 +38,11 @@ export async function handleDeleteBusiness(
     .eq("profile_id", ctx.profileId);
 
   if (error) {
-    console.error("Failed to delete business:", error);
+    await logStructuredEvent("BUSINESS_DELETE_ERROR", {
+      error: error.message,
+      businessId,
+      profileId: ctx.profileId,
+    }, "error");
     await sendTextMessage(
       ctx,
       "⚠️ Failed to delete business. Please try again.",

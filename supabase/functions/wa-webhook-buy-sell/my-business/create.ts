@@ -43,7 +43,11 @@ export async function handleCreateBusinessName(
   });
 
   if (error) {
-    console.error("Failed to create business:", error);
+    await logStructuredEvent("BUSINESS_CREATE_ERROR", {
+      error: error.message,
+      profileId: ctx.profileId,
+      nameLength: trimmedName.length,
+    }, "error");
     await sendButtonsMessage(
       ctx,
       "⚠️ Failed to create business. Please try again.",

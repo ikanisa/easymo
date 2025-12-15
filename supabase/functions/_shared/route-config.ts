@@ -29,7 +29,12 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
   {
     service: "wa-webhook-mobility",
     keywords: ["ride", "trip", "driver", "taxi", "transport", "schedule", "book", "nearby", "delivery"],
-    menuKeys: ["rides", "mobility", "rides_agent", "nearby_drivers", "nearby_passengers", "schedule_trip", "1"],
+    menuKeys: [
+      // Database menu keys (primary)
+      "rides", "rides_agent",
+      // Legacy/alternative keys
+      "mobility", "nearby_drivers", "nearby_passengers", "schedule_trip", "1",
+    ],
     priority: 1,
   },
   {
@@ -65,10 +70,6 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
   },
   {
     // Buy & Sell + Support - consolidated marketplace service
-    service: "wa-webhook-buy-sell",
-    keywords: ["buy", "sell", "category", "categories", "browse", "directory", "shops", "business", "marketplace", "support", "help", "issue", "problem", "question", "faq"],
-    menuKeys: ["buy_sell", "buy_and_sell", "buy and sell", "shops_services", "marketplace", "3", "support_agent", "support", "customer_support", "help", "4"],
-    // Buy & Sell service - consolidated marketplace + support
     // Support functionality merged here per comprehensive cleanup (Phase 2)
     // Handles both marketplace transactions and customer support inquiries
     service: "wa-webhook-buy-sell",
@@ -79,8 +80,10 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
       "support", "help", "issue", "problem", "question", "faq",
     ],
     menuKeys: [
-      // Marketplace menu keys
-      "buy_sell", "buy_and_sell", "buy and sell", "shops_services", "marketplace", "3",
+      // Marketplace menu keys (aligned with database keys)
+      "buy_sell", "buy_and_sell", "buy and sell", "business_broker_agent", "buy_and_sell_agent",
+      // Legacy menu keys
+      "shops_services", "marketplace", "3",
       // Support menu keys (consolidated from wa-agent-support)
       "support_agent", "support", "customer_support", "help", "4",
     ],

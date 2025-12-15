@@ -58,8 +58,7 @@ import { t } from "./i18n/translator.ts";
 import { supabase, WA_APP_SECRET } from "./config.ts";
 // Fallback: also try direct env read in case Supabase binding has issues
 const WA_APP_SECRET_DIRECT = Deno.env.get("WHATSAPP_APP_SECRET") ?? Deno.env.get("WA_APP_SECRET");
-console.log("DEBUG: WA_APP_SECRET_DIRECT available:", !!WA_APP_SECRET_DIRECT, "length:", WA_APP_SECRET_DIRECT?.length ?? 0);
-console.log("DEBUG: WA_APP_SECRET from config available:", !!WA_APP_SECRET, "length:", WA_APP_SECRET?.length ?? 0);
+// Debug logging removed - use structured logging instead
 // Import location utilities
 import { getLastLocation } from "./locations/cache.ts";
 import { getLocationReusedMessage } from "../_shared/wa-webhook-shared/locations/messages.ts";
@@ -368,8 +367,13 @@ serve(async (req: Request): Promise<Response> => {
 
       if (id) {
 
-        // Mobility main menu
-        if (id === IDS.RIDES_MENU || id === "rides_agent" || id === "rides") {
+        // Mobility main menu - handle all variations of menu keys
+        if (
+          id === IDS.RIDES_MENU || 
+          id === "rides_agent" || 
+          id === "rides" ||
+          id === "mobility"
+        ) {
           handled = await showMobilityMenu(ctx);
         } else if (id === IDS.BACK_MENU || id === IDS.BACK_HOME) {
           handled = await showMobilityMenu(ctx);
@@ -727,16 +731,35 @@ serve(async (req: Request): Promise<Response> => {
 
     return respond({ success: true, handled });
   } catch (err) {
+    const errorMessage = formatUnknownError(err);
+    
+    // Classify error type
+    const isUserError = errorMessage.includes("validation") || 
+                       errorMessage.includes("invalid") ||
+                       errorMessage.includes("not found") ||
+                       errorMessage.includes("already exists");
+    const isSystemError = errorMessage.includes("database") ||
+                         errorMessage.includes("connection") ||
+                         errorMessage.includes("timeout") ||
+                         errorMessage.includes("ECONNREFUSED");
+    
+    const statusCode = isUserError ? 400 : (isSystemError ? 503 : 500);
+    
     logStructuredEvent("MOBILITY_WEBHOOK_ERROR", {
-      error: formatUnknownError(err),
-    }, "error");
+      error: errorMessage,
+      errorType: isUserError ? "user_error" : (isSystemError ? "system_error" : "unknown_error"),
+      statusCode,
+      requestId,
+      correlationId,
+    }, isSystemError ? "error" : "warn");
 
     return respond({
-      error: "internal_error",
+      error: isUserError ? "invalid_request" : (isSystemError ? "service_unavailable" : "internal_error"),
+      message: isUserError ? errorMessage : "An error occurred. Please try again later.",
       service: "wa-webhook-mobility",
       requestId,
     }, {
-      status: 500,
+      status: statusCode,
     });
   }
 });

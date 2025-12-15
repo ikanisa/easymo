@@ -188,6 +188,36 @@ serve(async (req: Request): Promise<Response> => {
     if (message.type === "interactive" && message.interactive?.button_reply?.id) {
       const buttonId = message.interactive.button_reply.id;
 
+      // Handle initial menu selection from home menu
+      // Check for menu keys that route to this service
+      if (buttonId === "buy_sell" || buttonId === "buy_and_sell" || buttonId === "business_broker_agent" || buttonId === "buy_and_sell_agent") {
+        // User clicked "Buy & Sell" from home menu - show welcome message
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("user_id, language")
+          .eq("whatsapp_number", userPhone)
+          .maybeSingle();
+        
+        if (profile) {
+          // Load or create context
+          const context: BuyAndSellContext = await MarketplaceAgent.loadContext(userPhone, supabase);
+          const isNewSession = !context.conversationHistory || context.conversationHistory.length === 0;
+          
+          if (isNewSession) {
+            // Send welcome message for new sessions
+            await sendText(userPhone, WELCOME_MESSAGE);
+            logStructuredEvent("BUY_SELL_WELCOME_FROM_MENU", {
+              from: `***${userPhone.slice(-4)}`,
+              correlationId,
+            });
+          } else {
+            // For returning users, just send a greeting
+            await sendText(userPhone, "🛒 *Buy & Sell*\n\nHow can I help you today?");
+          }
+        }
+        return respond({ success: true, message: "welcome_shown" });
+      }
+
       // Handle Share easyMO button (auto-appended by reply.ts)
       if (buttonId === "share_easymo") {
         const { handleShareEasyMOButton } = await import("../_shared/wa-webhook-shared/utils/share-button-handler.ts");
@@ -541,6 +571,18 @@ serve(async (req: Request): Promise<Response> => {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? error.stack : undefined;
     
+    // Classify error type
+    const isUserError = errorMessage.includes("validation") || 
+                       errorMessage.includes("invalid") ||
+                       errorMessage.includes("not found") ||
+                       errorMessage.includes("already exists");
+    const isSystemError = errorMessage.includes("database") ||
+                         errorMessage.includes("connection") ||
+                         errorMessage.includes("timeout") ||
+                         errorMessage.includes("ECONNREFUSED");
+    
+    const statusCode = isUserError ? 400 : (isSystemError ? 503 : 500);
+    
     logStructuredEvent(
       "BUY_SELL_ERROR",
       {
@@ -549,12 +591,20 @@ serve(async (req: Request): Promise<Response> => {
         durationMs: duration,
         requestId,
         correlationId,
+        errorType: isUserError ? "user_error" : (isSystemError ? "system_error" : "unknown_error"),
+        statusCode,
       },
-      "error",
+      isSystemError ? "error" : "warn",
     );
 
-    recordMetric("buy_sell.message.error", 1);
+    recordMetric("buy_sell.message.error", 1, {
+      error_type: isUserError ? "user_error" : (isSystemError ? "system_error" : "unknown_error"),
+    });
 
-    return respond({ error: errorMessage }, { status: 500 });
+    // Return appropriate status code
+    return respond({ 
+      error: isUserError ? "invalid_request" : (isSystemError ? "service_unavailable" : "internal_error"),
+      message: isUserError ? errorMessage : "An error occurred. Please try again later.",
+    }, { status: statusCode });
   }
 });

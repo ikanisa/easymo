@@ -33,7 +33,10 @@ export async function listMyVehicles(
     .limit(20);
 
   if (error) {
-    console.error("Failed to fetch vehicles:", error);
+    await logStructuredEvent("MOBILITY_VEHICLES_FETCH_ERROR", {
+      error: error.message,
+      profileId: ctx.profileId,
+    }, "error");
     await sendButtonsMessage(
       ctx,
       "⚠️ Failed to load your vehicles. Please try again.",

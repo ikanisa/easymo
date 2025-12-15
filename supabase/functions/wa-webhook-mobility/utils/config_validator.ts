@@ -180,17 +180,15 @@ export function printConfigStatus(): void {
   const validation = validateAndLoadConfig();
   
   if (validation.errors.length > 0) {
-    console.error(JSON.stringify({
-      event: "CONFIG_VALIDATION_ERRORS",
+    await logStructuredEvent("CONFIG_VALIDATION_ERRORS", {
       errors: validation.errors,
-    }));
+    }, "error");
   }
 
   if (validation.warnings.length > 0) {
-    console.warn(JSON.stringify({
-      event: "CONFIG_VALIDATION_WARNINGS",
+    await logStructuredEvent("CONFIG_VALIDATION_WARNINGS", {
       warnings: validation.warnings,
-    }));
+    }, "warn");
   }
 
   if (validation.valid) {

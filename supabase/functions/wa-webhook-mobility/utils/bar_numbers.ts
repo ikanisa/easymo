@@ -49,10 +49,11 @@ async function canonicalizeRow(
     .update({ number_e164: canonical })
     .eq("id", row.id);
   if (error) {
-    console.warn("bar_numbers.canonicalize_fail", error, {
+    await logStructuredEvent("BAR_NUMBERS_CANONICALIZE_FAIL", {
+      error: error.message,
       id: row.id,
       candidate: canonical,
-    });
+    }, "warn");
     return;
   }
   row.number_e164 = canonical;
@@ -184,7 +185,8 @@ async function provisionBarForNumber(
       .update({ is_active: true, verified_at: new Date().toISOString() })
       .eq("id", target.id);
     if (reactivateError) {
-      console.error("bar_numbers.reactivate_fail", reactivateError, {
+      await logStructuredEvent("BAR_NUMBERS_REACTIVATE_FAIL", {
+        error: reactivateError.message,
         number: canonical,
       });
     } else {
@@ -229,14 +231,19 @@ async function provisionBarForNumber(
         .eq("slug", slug)
         .maybeSingle();
       if (existingBarError || !existingBar) {
-        console.error("bars.lookup_fail", existingBarError ?? insertError, {
+        await logStructuredEvent("BARS_LOOKUP_FAIL", {
+          error: (existingBarError ?? insertError)?.message,
           slug,
-        });
+        }, "error");
         return null;
       }
       barId = existingBar.id as string;
     } else {
-      console.error("bars.insert_fail", insertError, { slug, barName });
+      await logStructuredEvent("BARS_INSERT_FAIL", {
+        error: insertError?.message,
+        slug,
+        barName,
+      }, "error");
       return null;
     }
   } else {
@@ -259,10 +266,11 @@ async function provisionBarForNumber(
     .from("bar_numbers")
     .upsert(upsertPayload, { onConflict: "bar_id,number_e164" });
   if (upsertError) {
-    console.error("bar_numbers.auto_provision_fail", upsertError, {
+    await logStructuredEvent("BAR_NUMBERS_AUTO_PROVISION_FAIL", {
+      error: upsertError.message,
       barId,
       number: canonical,
-    });
+    }, "error");
     return null;
   }
 
@@ -270,7 +278,10 @@ async function provisionBarForNumber(
     .from("bar_settings")
     .upsert({ bar_id: barId }, { onConflict: "bar_id" });
   if (settingsError) {
-    console.warn("bar_settings.auto_create_fail", settingsError, { barId });
+    await logStructuredEvent("BAR_SETTINGS_AUTO_CREATE_FAIL", {
+      error: settingsError.message,
+      barId,
+    }, "warn");
   }
 
   const { data: activeRow, error: activeError } = await client
@@ -281,9 +292,10 @@ async function provisionBarForNumber(
     .eq("is_active", true)
     .maybeSingle();
   if (activeError) {
-    console.error("bar_numbers.fetch_after_provision_fail", activeError, {
+    await logStructuredEvent("BAR_NUMBERS_FETCH_AFTER_PROVISION_FAIL", {
+      error: activeError.message,
       barId,
-    });
+    }, "error");
     return null;
   }
 
@@ -312,7 +324,10 @@ async function selectBusinessCandidate(
     .order("created_at", { ascending: false })
     .limit(5);
   if (error) {
-    console.error("business.lookup_fail", error, { owner: canonicalNumber });
+    await logStructuredEvent("BUSINESS_LOOKUP_FAIL", {
+      error: error.message,
+      owner: canonicalNumber,
+    }, "error");
     return null;
   }
   const rows = data ?? [];
@@ -354,7 +369,10 @@ async function ensureUniqueBarSlug(
       .eq("slug", candidate)
       .maybeSingle();
     if (error) {
-      console.error("bars.slug_check_fail", error, { candidate });
+      await logStructuredEvent("BARS_SLUG_CHECK_FAIL", {
+        error: error.message,
+        candidate,
+      }, "error");
       break;
     }
     if (!data) return candidate;

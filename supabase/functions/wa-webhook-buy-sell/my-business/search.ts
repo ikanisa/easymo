@@ -95,7 +95,11 @@ export async function handleBusinessNameSearch(
     );
 
     if (error) {
-      console.error("business_search.search_error", error);
+      await logStructuredEvent("BUSINESS_SEARCH_ERROR", {
+        error: error.message,
+        userId: ctx.profileId,
+        searchTerm,
+      }, "error");
       await sendButtonsMessage(
         ctx,
         "⚠️ Search failed. Please try again or add your business manually.",
@@ -137,7 +141,10 @@ export async function handleBusinessNameSearch(
     await showSearchResults(ctx, searchTerm, results as SearchResult[]);
     return true;
   } catch (err) {
-    console.error("business_search.exception", err);
+    await logStructuredEvent("BUSINESS_SEARCH_EXCEPTION", {
+      error: err instanceof Error ? err.message : String(err),
+      userId: ctx.profileId,
+    }, "error");
     await sendButtonsMessage(
       ctx,
       "⚠️ An error occurred. Please try again.",
@@ -228,7 +235,11 @@ export async function handleBusinessClaim(
     .single();
 
   if (error || !business) {
-    console.error("business_claim.fetch_error", error);
+    await logStructuredEvent("BUSINESS_CLAIM_FETCH_ERROR", {
+      error: error?.message,
+      businessId,
+      userId: ctx.profileId,
+    }, "error");
     await sendButtonsMessage(
       ctx,
       "⚠️ Business not found. Please try searching again.",
@@ -314,7 +325,11 @@ export async function confirmBusinessClaim(
       .eq("id", businessId);
 
     if (updateError) {
-      console.error("business_claim.update_error", updateError);
+      await logStructuredEvent("BUSINESS_CLAIM_UPDATE_ERROR", {
+        error: updateError.message,
+        businessId,
+        userId: ctx.profileId,
+      }, "error");
       await sendButtonsMessage(
         ctx,
         "⚠️ Failed to claim business. Please try again.",
@@ -352,7 +367,11 @@ export async function confirmBusinessClaim(
 
     return true;
   } catch (err) {
-    console.error("business_claim.exception", err);
+    await logStructuredEvent("BUSINESS_CLAIM_EXCEPTION", {
+      error: err instanceof Error ? err.message : String(err),
+      businessId,
+      userId: ctx.profileId,
+    }, "error");
     await sendButtonsMessage(
       ctx,
       "⚠️ An error occurred. Please try again later.",

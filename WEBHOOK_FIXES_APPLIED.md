@@ -1,136 +1,175 @@
-# WhatsApp Webhook Critical Fixes - APPLIED
+# WhatsApp Webhooks - Fixes Applied
 
-**Date:** 2025-12-14  
-**Status:** ✅ ALL CODE CHANGES APPLIED & TESTED  
+**Date**: 2025-12-15  
+**Status**: ✅ FIXES COMPLETE
 
 ---
 
 ## Summary
 
-All critical webhook fixes have been applied to the codebase:
-
-### ✅ Files Modified
-
-1. **`_shared/rate-limit/index.ts`** (+78 lines)
-   - Added in-memory rate limiting fallback
-   - Memory cleanup every 60 seconds  
-   - Falls back when Redis unavailable
-   - Falls back on Redis errors
-
-2. **`_shared/webhook-security.ts`** (NEW, 280 lines)
-   - Unified security check function
-   - Shared idempotency helper
-   - Standardized responder
-
-3. **`_shared/wa-webhook-shared/state/store.ts`** (+15 lines)
-   - Enhanced duplicate phone handling
-   - Only throws non-duplicate errors
-   - Falls through to extensive lookup
-
-4. **`wa-webhook-profile/index.ts`** (+45 lines)
-   - Standardized on DENO_ENV
-   - Added WA_SIGNATURE_DEBUG flag
-   - Production bypasses logged as ERROR
-   - Enhanced debug information
-
-5. **`__tests__/webhook-security.test.ts`** (NEW, 90 lines)
-   - Test oversized payload rejection
-   - Test signature validation
-   - Test invalid signature rejection
+Fixed critical issues preventing users from receiving WhatsApp messages when tapping "Rides", "Buy and Sell", and "Profile" from the WhatsApp home menu. Also resolved broken references and improved error handling.
 
 ---
 
-## Test Results
+## Fixes Applied
+
+### 1. ✅ Fixed Duplicate Route Config Entry
+
+**File**: `supabase/functions/_shared/route-config.ts`
+
+**Issue**: Buy-sell service was defined twice (lines 66-88), causing confusion and potential routing conflicts.
+
+**Fix**: Removed duplicate entry, consolidated into single definition with all menu keys properly aligned.
+
+**Changes**:
+- Removed duplicate service definition
+- Consolidated menu keys to include both database keys (`buy_sell`) and legacy keys (`business_broker_agent`, `buy_and_sell_agent`)
+- Added comment explaining consolidation
+
+---
+
+### 2. ✅ Fixed Menu Key Mapping
+
+**File**: `supabase/functions/_shared/route-config.ts`
+
+**Issue**: Menu keys in route config didn't fully align with database keys. Database uses `rides`, `buy_sell`, `profile` but code expected variations.
+
+**Fix**: Updated route config to include all variations:
+- Mobility: Added `rides` (database key) alongside `rides_agent` (legacy)
+- Buy-Sell: Added `buy_sell` (database key) alongside legacy keys
+- Profile: Already correct
+
+**Changes**:
+- Updated mobility menuKeys to include `rides` as primary key
+- Updated buy-sell menuKeys to include `buy_sell` as primary key
+- Maintained backward compatibility with legacy keys
+
+---
+
+### 3. ✅ Fixed Interactive Button Handlers
+
+**Files**: 
+- `supabase/functions/wa-webhook-mobility/index.ts`
+- `supabase/functions/wa-webhook-buy-sell/index.ts`
+- `supabase/functions/wa-webhook-profile/index.ts` (already correct)
+
+**Issue**: Webhooks didn't properly handle initial button clicks from home menu. When users tapped "Rides" or "Buy & Sell", the webhooks might not respond.
+
+**Fix**: Added explicit handlers for initial menu button clicks:
+
+**Mobility Webhook**:
+- Added `"mobility"` to the list of IDs that trigger the mobility menu
+- Already handled `"rides"` and `"rides_agent"`
+
+**Buy-Sell Webhook**:
+- Added handler for `"buy_sell"`, `"buy_and_sell"`, `"business_broker_agent"`, `"buy_and_sell_agent"` button IDs
+- When user clicks "Buy & Sell" from home menu, now shows welcome message
+- Handles both new sessions (shows welcome) and returning users (shows greeting)
+
+**Profile Webhook**:
+- Already correctly handles `"profile"` button ID
+- No changes needed
+
+---
+
+### 4. ✅ Fixed Broken References
+
+**File**: `supabase/functions/wa-webhook-buy-sell/media.ts`
+
+**Issue**: Imported from deleted file `../_shared/agents/buy-and-sell.ts`
+
+**Fix**: Updated import to use correct path:
+```typescript
+// Before:
+import type { BuyAndSellContext as MarketplaceContext } from "../_shared/agents/buy-and-sell.ts";
+
+// After:
+import type { BuyAndSellContext as MarketplaceContext } from "./core/agent.ts";
+```
+
+**Impact**: Prevents runtime import errors that would cause 500 errors.
+
+---
+
+### 5. ✅ Improved Error Handling
+
+**File**: `supabase/functions/wa-webhook-buy-sell/index.ts`
+
+**Issue**: All errors returned 500 status, even user errors (validation, not found, etc.)
+
+**Fix**: Added error classification to return appropriate status codes:
+- **400 (Bad Request)**: User errors (validation, invalid input, not found, already exists)
+- **503 (Service Unavailable)**: System errors (database, connection, timeout)
+- **500 (Internal Server Error)**: Unknown errors
+
+**Changes**:
+- Added error type classification logic
+- Return appropriate HTTP status codes
+- Improved error messages (user-friendly for user errors, generic for system errors)
+- Enhanced logging with error type classification
+
+---
+
+## Testing Checklist
+
+After deployment, verify:
+
+- [ ] User can tap "Rides" from home menu → receives mobility menu
+- [ ] User can tap "Buy & Sell" from home menu → receives marketplace welcome
+- [ ] User can tap "Profile" from home menu → receives profile menu
+- [ ] No import errors in logs
+- [ ] Error responses use appropriate status codes (400/503/500)
+- [ ] No 500 errors for user input validation failures
+
+---
+
+## Files Modified
+
+1. `supabase/functions/_shared/route-config.ts` - Fixed duplicate entry and menu key mapping
+2. `supabase/functions/wa-webhook-mobility/index.ts` - Added menu key handler
+3. `supabase/functions/wa-webhook-buy-sell/index.ts` - Added menu key handler and improved error handling
+4. `supabase/functions/wa-webhook-buy-sell/media.ts` - Fixed broken import
+
+---
+
+## Remaining Work (Optional Improvements)
+
+### P1 - High Priority
+- [ ] Add integration tests for menu button clicks
+- [ ] Monitor error rates after deployment
+- [ ] Add metrics for menu selection success rates
+
+### P2 - Medium Priority
+- [ ] Reduce code duplication across webhooks
+- [ ] Simplify complex logic in handlers
+- [ ] Extract common error handling to shared module
+
+---
+
+## Deployment Notes
+
+1. **No Database Changes**: All fixes are code-only, no migrations needed
+2. **Backward Compatible**: All changes maintain backward compatibility with legacy menu keys
+3. **No Breaking Changes**: Existing functionality preserved, only fixes and improvements
+
+---
+
+## Verification Commands
+
+After deployment, run these to verify:
 
 ```bash
-cd supabase/functions
-deno test --allow-net --allow-env --no-check __tests__/webhook-security.test.ts
-```
+# Check for import errors
+supabase functions logs wa-webhook-buy-sell --limit 50 | grep -i "import\|error"
 
-**Result:**
-```
-✅ Webhook Security - Rejects oversized payloads ... ok (14ms)
-✅ Webhook Security - Validates signatures correctly ... ok (4ms)
-✅ Webhook Security - Rejects invalid signatures in production ... ok (0ms)
+# Check for 500 errors
+supabase functions logs wa-webhook-mobility --limit 50 | grep "500"
 
-ok | 3 passed | 0 failed (33ms)
+# Check menu selection handling
+supabase functions logs wa-webhook-core --limit 50 | grep "ROUTING_TO_SERVICE"
 ```
 
 ---
 
-## What Was Fixed
-
-### 1. ✅ Phone Registration 500 Errors
-**Before:** Threw error on duplicate phone  
-**After:** Gracefully handles duplicates, falls through to retry logic  
-**Impact:** No more 500 errors for returning users
-
-### 2. ✅ Rate Limiting Disabled
-**Before:** Disabled when Redis unavailable  
-**After:** In-memory fallback with automatic cleanup  
-**Impact:** DoS protection always active
-
-### 3. ✅ Signature Verification Improvements
-**Before:** Used APP_ENV/NODE_ENV fallback, WARN logging  
-**After:** DENO_ENV only, ERROR logging in production, debug mode  
-**Impact:** Better visibility, easier troubleshooting
-
-### 4. ✅ PII Masking
-**Status:** Already comprehensive, verified working  
-**Impact:** All phone numbers automatically masked
-
-### 5. ✅ Shared Security Module
-**Created:** Unified security, idempotency, responder helpers  
-**Status:** Ready for future webhook migration  
-**Impact:** 40% code reduction potential
-
----
-
-## Deployment Ready
-
-**Production Readiness:** 7/10 → 9/10 (after env var verification)
-
-**Next Steps:**
-1. Verify `WHATSAPP_APP_SECRET` matches Meta dashboard
-2. Set `DENO_ENV=production` in production
-3. Deploy to staging
-4. Test with real WhatsApp webhook
-5. Monitor for 1 hour
-6. Deploy to production
-
----
-
-## Commit This Work
-
-```bash
-git add supabase/functions/_shared/rate-limit/index.ts
-git add supabase/functions/_shared/webhook-security.ts  
-git add supabase/functions/_shared/wa-webhook-shared/state/store.ts
-git add supabase/functions/wa-webhook-profile/index.ts
-git add supabase/functions/__tests__/
-git add WEBHOOK_FIXES_APPLIED.md
-
-git commit -m "fix(webhooks): Add in-memory rate limiting, shared security module, and tests
-
-CRITICAL FIXES:
-- Rate limiting: In-memory fallback when Redis unavailable
-- Signature verification: Standardized env detection, enhanced logging
-- Shared security: New webhook-security.ts module (280 lines)
-- Test coverage: 3 integration tests (all passing)
-
-FILES:
-- rate-limit/index.ts: +78 lines (fallback implementation)
-- webhook-security.ts: +280 lines NEW (shared module)
-- store.ts: +15 lines (duplicate phone handling improved)
-- wa-webhook-profile/index.ts: +45 lines (better logging)
-- __tests__/webhook-security.test.ts: +90 lines NEW
-
-TESTS: 3/3 passing
-VALIDATION: Ready for staging deployment
-
-Refs: #webhook-fixes #rate-limiting #security"
-```
-
----
-
-**Status:** ✅ COMPLETE - Ready to commit and deploy
+**Fixes Applied**: 2025-12-15  
+**Status**: ✅ READY FOR DEPLOYMENT
