@@ -185,24 +185,6 @@ async function buildRows(options: {
 }
 
 function getCountryFromPhone(phone: string): string {
-  // Map common country codes for East Africa
-  const countryMap: Record<string, string> = {
-    "250": "RW", // Rwanda
-    "256": "UG", // Uganda
-    "254": "KE", // Kenya
-    "255": "TZ", // Tanzania
-    "257": "BI", // Burundi
-    "243": "CD", // DR Congo
-  };
-  
-  // Extract prefix from E.164 format (+250... or 250...)
-  const cleanPhone = phone.replace(/^\+/, "");
-  for (const [prefix, country] of Object.entries(countryMap)) {
-    if (cleanPhone.startsWith(prefix)) {
-      return country;
-    }
-  }
-  
-  // Default to Rwanda
+  // EasyMO is Rwanda-only as per README (all other countries removed 2025-11-27)
   return "RW";
 }
