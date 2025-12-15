@@ -342,9 +342,20 @@ export class AgentConfigLoader {
       message: "Using fallback configuration (database load failed)"
     }));
 
+    // Provide basic fallback instructions for the buy_sell agent to ensure minimal functionality
+    const fallbackInstructions = agentSlug === "buy_sell" ? {
+      id: "fallback",
+      code: "buy_sell_fallback",
+      title: "Buy & Sell Agent Fallback",
+      instructions: "You are Kwizera, easyMO's AI sourcing assistant for Rwanda. Help users find products and services. Be helpful, concise, and professional. Never hallucinate product availability.",
+      guardrails: "Do not provide medical advice. Do not source illegal items. Always respect user privacy.",
+      memory_strategy: "conversation",
+      is_active: true,
+    } : null;
+
     return {
       persona: null,
-      systemInstructions: null,
+      systemInstructions: fallbackInstructions,
       tools: [],
       tasks: [],
       knowledgeBases: [],

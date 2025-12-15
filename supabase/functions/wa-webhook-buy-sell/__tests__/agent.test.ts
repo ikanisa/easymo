@@ -15,7 +15,7 @@ import {
   type MarketplaceContext,
   WELCOME_MESSAGE,
   BUSINESS_CATEGORIES,
-} from "../agent.ts";
+} from "../core/agent.ts";
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 
 // Type for mock Supabase client that satisfies the minimum interface needed for testing
@@ -107,10 +107,10 @@ Deno.test("BUSINESS_CATEGORIES - has 9 categories", () => {
 
 Deno.test("WELCOME_MESSAGE - exists and contains key information", () => {
   assertExists(WELCOME_MESSAGE);
-  assertEquals(WELCOME_MESSAGE.includes("Welcome to EasyMO Buy & Sell"), true);
-  assertEquals(WELCOME_MESSAGE.includes("AI assistant"), true);
-  assertEquals(WELCOME_MESSAGE.includes("Find products"), true);
-  assertEquals(WELCOME_MESSAGE.includes("What can I help you with today"), true);
+  assertEquals(WELCOME_MESSAGE.includes("Kwizera"), true);
+  assertEquals(WELCOME_MESSAGE.includes("easyMO"), true);
+  assertEquals(WELCOME_MESSAGE.includes("Rwanda"), true);
+  assertEquals(WELCOME_MESSAGE.includes("What can I help you find today"), true);
 });
 
 // =====================================================

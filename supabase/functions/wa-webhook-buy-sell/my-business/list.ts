@@ -42,7 +42,7 @@ export async function listMyBusinesses(
   }
 
   const rows = businesses.map((b) => ({
-    id: `biz::${b.id}`,
+    id: `BIZ::${b.id}`,
     title: b.name,
     description: b.address || b.category || "Business",
   }));
@@ -101,10 +101,10 @@ export async function handleBusinessSelection(
   if (!ctx.profileId) return false;
 
   const { data: business, error } = await ctx.supabase
-    .from("business")
+    .from("businesses")
     .select("*")
     .eq("id", businessId)
-    .eq("owner_user_id", ctx.profileId)
+    .eq("profile_id", ctx.profileId)
     .single();
 
   if (error || !business) {

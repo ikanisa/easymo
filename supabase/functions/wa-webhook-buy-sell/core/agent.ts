@@ -89,10 +89,8 @@ You can also send me a voice note - I understand Kinyarwanda, English, French, a
 What can I help you find today?`;
 
 // =====================================================
-// BUSINESS CATEGORIES (Re-exported from shared module)
+// BUSINESS CATEGORIES - Already exported above, no re-export needed
 // =====================================================
-
-export { BUSINESS_CATEGORIES };
 
 export const EMOJI_NUMBERS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"] as const;
 
@@ -667,11 +665,12 @@ export class MarketplaceAgent {
           ...context.collectedData,
           ...this.filterNullValues(aiResponse.extracted_entities),
         },
+        // Cap conversation history to last 20 entries to prevent unbounded growth
         conversationHistory: [
           ...context.conversationHistory,
           { role: "user" as const, content: userMessage },
           { role: "assistant" as const, content: agentResponse.message },
-        ],
+        ].slice(-20),
         lastAIResponse: agentResponse.message,
       });
 

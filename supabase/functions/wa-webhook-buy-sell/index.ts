@@ -24,7 +24,7 @@ import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import { claimEvent } from "../_shared/wa-webhook-shared/state/idempotency.ts";
 import { extractWhatsAppMessage } from "./utils/index.ts";
-import { MarketplaceAgent, WELCOME_MESSAGE } from "./core/agent.ts";
+import { MarketplaceAgent, WELCOME_MESSAGE, type BuyAndSellContext } from "./core/agent.ts";
 import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
 
 const supabase = createClient(
