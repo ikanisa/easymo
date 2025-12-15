@@ -58,7 +58,6 @@ import {
 
 // Build SERVICE_KEY_MAP from consolidated route config
 const SERVICE_KEY_MAP = buildMenuKeyMap();
-const RETRIABLE_STATUS_CODES = [408, 429, 503, 504];
 
 /**
  * Handle insurance agent request - dynamically fetch contacts from admin_contacts table
