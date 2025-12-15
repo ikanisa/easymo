@@ -38,7 +38,7 @@
     "lucide-react": "0.545.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "react-native": "^0.76.6",
+    "react-native": "^0.83.0",
     "react-native-reanimated": "^3.16.1",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
