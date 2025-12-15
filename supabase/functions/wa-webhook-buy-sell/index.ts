@@ -567,9 +567,22 @@ serve(async (req: Request): Promise<Response> => {
   } catch (error) {
     const duration = Date.now() - startTime;
     
-    // Properly serialize error for logging
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorStack = error instanceof Error ? error.stack : undefined;
+    // Properly serialize error for logging (handle Supabase error objects)
+    let errorMessage: string;
+    let errorStack: string | undefined;
+    let errorCode: string | undefined;
+    
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      errorStack = error.stack;
+    } else if (error && typeof error === "object") {
+      // Handle Supabase/PostgREST error objects
+      const err = error as Record<string, unknown>;
+      errorMessage = String(err.message || err.error || "Unknown error");
+      errorCode = err.code ? String(err.code) : undefined;
+    } else {
+      errorMessage = String(error);
+    }
     
     // Classify error type
     const isUserError = errorMessage.includes("validation") || 
@@ -587,6 +600,7 @@ serve(async (req: Request): Promise<Response> => {
       "BUY_SELL_ERROR",
       {
         error: errorMessage,
+        errorCode,
         stack: errorStack,
         durationMs: duration,
         requestId,

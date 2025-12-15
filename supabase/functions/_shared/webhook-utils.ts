@@ -710,10 +710,21 @@ export async function checkIdempotency(
     return alreadyProcessed;
     
   } catch (error) {
-    logError("idempotency_check", error, {
+    // Properly serialize error for logging
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : (error && typeof error === "object" && "message" in error)
+      ? String((error as Record<string, unknown>).message)
+      : String(error);
+    
+    logStructuredEvent("IDEMPOTENCY_CHECK_ERROR", {
       whatsappMessageId,
       correlationId,
-    });
+      error: errorMessage,
+      errorCode: (error && typeof error === "object" && "code" in error) 
+        ? String((error as Record<string, unknown>).code)
+        : undefined,
+    }, "warn");
     
     // On error, assume not processed to avoid losing messages
     return false;

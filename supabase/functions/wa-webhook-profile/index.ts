@@ -421,8 +421,18 @@ serve(async (req: Request): Promise<Response> => {
         }
       } catch (idempotencyError) {
         // Log but don't fail - idempotency check failure shouldn't block processing
+        // Properly serialize error (handle Supabase error objects)
+        const errorMessage = idempotencyError instanceof Error 
+          ? idempotencyError.message 
+          : (idempotencyError && typeof idempotencyError === "object" && "message" in idempotencyError)
+          ? String((idempotencyError as Record<string, unknown>).message)
+          : String(idempotencyError);
+        
         logEvent("PROFILE_IDEMPOTENCY_CHECK_ERROR", {
-          error: idempotencyError instanceof Error ? idempotencyError.message : String(idempotencyError),
+          error: errorMessage,
+          errorCode: (idempotencyError && typeof idempotencyError === "object" && "code" in idempotencyError)
+            ? String((idempotencyError as Record<string, unknown>).code)
+            : undefined,
         }, "warn");
       }
     }

@@ -238,14 +238,35 @@ export const logError = (
   error: Error | unknown,
   payload?: Record<string, unknown>
 ) => {
-  const normalizedError = error instanceof Error ? error : new Error(String(error));
+  // Handle different error types
+  let errorDetails: Record<string, unknown>;
+  
+  if (error instanceof Error) {
+    errorDetails = {
+      name: error.name,
+      message: scrubPII(error.message),
+      stack: error.stack,
+    };
+  } else if (error && typeof error === "object") {
+    // Handle Supabase/PostgREST error objects
+    const err = error as Record<string, unknown>;
+    errorDetails = {
+      name: "DatabaseError",
+      message: scrubPII(String(err.message || err.error || "Unknown error")),
+      code: err.code,
+      details: err.details,
+      hint: err.hint,
+    };
+  } else {
+    errorDetails = {
+      name: "UnknownError",
+      message: scrubPII(String(error)),
+    };
+  }
+  
   writeLog("error", "global", "none", { 
     event, 
-    error: {
-      name: normalizedError.name,
-      message: scrubPII(normalizedError.message),
-      stack: normalizedError.stack,
-    },
+    error: errorDetails,
     payload: scrubPII(payload ?? {}) 
   });
 };
