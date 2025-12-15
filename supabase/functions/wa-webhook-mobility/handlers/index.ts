@@ -14,7 +14,7 @@ import { lazy, preloadHandlers } from "../../_shared/handlers/lazy-loader.ts";
  */
 export const nearbyHandler = lazy(
   "mobility:nearby",
-  () => import("./nearby/index.ts")
+  () => import("./nearby.ts")
 );
 
 /**
@@ -22,7 +22,7 @@ export const nearbyHandler = lazy(
  */
 export const scheduleHandler = lazy(
   "mobility:schedule",
-  () => import("./schedule/index.ts")
+  () => import("./schedule.ts")
 );
 
 /**
@@ -38,16 +38,11 @@ export const tripHandler = lazy(
  */
 export const onlineHandler = lazy(
   "mobility:online",
-  () => import("./driver/online.ts")
+  () => import("./go_online.ts")
 );
 
-/**
- * Driver verification handler
- */
-export const verificationHandler = lazy(
-  "mobility:verification",
-  () => import("./driver/verification.ts")
-);
+// NOTE: Driver verification handler removed per GROUND_RULES
+// Payment handlers, fare.ts, ai-agents/, driver_verification.ts are prohibited in mobility function
 
 // ============================================================================
 // PRELOAD CRITICAL HANDLERS
@@ -91,10 +86,6 @@ export async function getHandler(action: string) {
     case "go_online":
     case "go_offline":
       return onlineHandler.load();
-
-    case "verify":
-    case "verification":
-      return verificationHandler.load();
 
     default:
       return null;

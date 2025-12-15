@@ -35,7 +35,7 @@ import {
   saveIntent,
 } from "../../_shared/wa-webhook-shared/domains/intent_storage.ts";
 import { isFeatureEnabled } from "../../_shared/feature-flags.ts";
-import { routeToAIAgent, sendAgentOptions } from "../ai-agents/index.ts";
+// NOTE: AI agent functions removed per GROUND_RULES - ai-agents is prohibited in mobility function
 import { reverseGeocode } from "../../_shared/wa-webhook-shared/locations/geocoding.ts";
 import {
   getFavoriteById,

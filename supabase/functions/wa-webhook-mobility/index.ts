@@ -1,6 +1,5 @@
 // wa-webhook-mobility - Standalone version
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "./deps.ts";
 import { logStructuredEvent } from "../_shared/observability/index.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import { clearState, getState, setState } from "../_shared/wa-webhook-shared/state/store.ts";
@@ -44,15 +43,6 @@ import {
   parsePlateState,
   vehiclePlateStateKey,
 } from "./handlers/vehicle_plate.ts";
-// Payment handlers
-
-// Verification handlers
-import {
-  handleLicenseUpload,
-  showVerificationMenu,
-  startLicenseVerification,
-  VERIFICATION_STATES,
-} from "./handlers/driver_verification.ts";
 import type {
   RawWhatsAppMessage,
   RouterContext,
@@ -64,6 +54,11 @@ import { sendButtonsMessage, sendListMessage } from "../_shared/wa-webhook-share
 import { recordLastLocation } from "./locations/favorites.ts";
 import { sendLocation, sendText } from "./wa/client.ts";
 import { t } from "./i18n/translator.ts";
+// Import supabase from config (uses proper environment variable fallbacks)
+import { supabase } from "./config.ts";
+// Import location utilities
+import { getLastLocation } from "./locations/cache.ts";
+import { getLocationReusedMessage } from "../_shared/wa-webhook-shared/locations/messages.ts";
 
 function formatUnknownError(error: unknown): string {
   if (error instanceof Error) return error.message;
@@ -82,6 +77,9 @@ function formatUnknownError(error: unknown): string {
   return String(error);
 }
 
+// Default age estimate for recent location (in minutes)
+const DEFAULT_LOCATION_AGE_MINUTES = 5;
+
 const STATE_KEYS = {
   MOBILITY: {
     NEARBY_SELECT: "mobility_nearby_select",
@@ -99,10 +97,7 @@ const STATE_KEYS = {
   },
 } as const;
 
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL") ?? "",
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-);
+// Note: supabase client is imported from ./config.ts with proper env var fallbacks
 
 serve(async (req: Request): Promise<Response> => {
   // Rate limiting (100 req/min for high-volume WhatsApp)
@@ -360,28 +355,14 @@ serve(async (req: Request): Promise<Response> => {
           if (!ctx.profileId) {
             handled = false;
           } else {
-            const { handleUseLastLocation } = await import(
-              "../../_shared/wa-webhook-shared/locations/request-location.ts"
-            );
-            const { getLocationReusedMessage } = await import(
-              "../../_shared/wa-webhook-shared/locations/messages.ts"
-            );
-
-            const lastLoc = await handleUseLastLocation(
-              {
-                supabase: ctx.supabase,
-                userId: ctx.profileId,
-                from: ctx.from,
-                locale: ctx.locale,
-              },
-              "mobility",
-            );
+            // Use local getLastLocation from ./locations/cache.ts (already imported at top)
+            const lastLoc = await getLastLocation(ctx.supabase, ctx.profileId);
 
             if (lastLoc?.lat && lastLoc?.lng) {
-              // Show confirmation message
+              // Show confirmation message using imported getLocationReusedMessage
               await sendText(
                 ctx.from,
-                getLocationReusedMessage(lastLoc.ageMinutes, ctx.locale),
+                getLocationReusedMessage(DEFAULT_LOCATION_AGE_MINUTES, ctx.locale),
               );
 
               // Continue with matching flow
@@ -545,28 +526,14 @@ serve(async (req: Request): Promise<Response> => {
           if (!ctx.profileId) {
             handled = false;
           } else {
-            const { handleUseLastLocation } = await import(
-              "../../_shared/wa-webhook-shared/locations/request-location.ts"
-            );
-            const { getLocationReusedMessage } = await import(
-              "../../_shared/wa-webhook-shared/locations/messages.ts"
-            );
-
-            const lastLoc = await handleUseLastLocation(
-              {
-                supabase: ctx.supabase,
-                userId: ctx.profileId,
-                from: ctx.from,
-                locale: ctx.locale,
-              },
-              "mobility",
-            );
+            // Use local getLastLocation from ./locations/cache.ts (already imported at top)
+            const lastLoc = await getLastLocation(ctx.supabase, ctx.profileId);
 
             if (lastLoc?.lat && lastLoc?.lng) {
-              // Show confirmation message
+              // Show confirmation message using imported getLocationReusedMessage
               await sendText(
                 ctx.from,
-                getLocationReusedMessage(lastLoc.ageMinutes, ctx.locale),
+                getLocationReusedMessage(DEFAULT_LOCATION_AGE_MINUTES, ctx.locale),
               );
 
               // Continue with schedule flow
@@ -613,13 +580,9 @@ serve(async (req: Request): Promise<Response> => {
             state.data as any,
             id,
           );
-
-          // Driver Verification Handlers
-        } else if (id === IDS.VERIFY_LICENSE) {
-          handled = await startLicenseVerification(ctx);
-        } else if (id === IDS.VERIFY_STATUS) {
-          handled = await showVerificationMenu(ctx);
         }
+        // NOTE: Driver verification handlers removed per GROUND_RULES
+        // (driver_verification.ts, ai-agents/, fare.ts are prohibited in mobility function)
       }
     } // B. Handle Location Messages
     else if (message.type === "location") {
@@ -652,18 +615,8 @@ serve(async (req: Request): Promise<Response> => {
           handled = await handleScheduleDropoff(ctx, state.data as any, coords);
         }
       }
-    } // C. Handle Image/Document Messages (License Upload only - insurance removed)
-    else if ((message.type === "image" || message.type === "document")) {
-      const mediaId = (message.image as any)?.id ||
-        (message.document as any)?.id;
-      const mimeType = (message.image as any)?.mime_type ||
-        (message.document as any)?.mime_type || "image/jpeg";
-
-      if (mediaId && state?.key === VERIFICATION_STATES.LICENSE_UPLOAD) {
-        logStructuredEvent("MOBILITY_LICENSE_UPLOAD", { mediaId, mimeType });
-        handled = await handleLicenseUpload(ctx, mediaId, mimeType);
-      }
-    } // D. Handle Text Messages (Keywords/Fallbacks)
+    } // C. Handle Image/Document Messages - Note: License upload removed per GROUND_RULES
+    // D. Handle Text Messages (Keywords/Fallbacks)
     else if (message.type === "text") {
       const text = (message.text as any)?.body?.toLowerCase() ?? "";
       const rawText = (message.text as any)?.body ?? "";
