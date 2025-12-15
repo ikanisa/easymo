@@ -4,6 +4,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 import { 
   MarketplaceAgent,
@@ -46,13 +47,26 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
+    const correlationId = crypto.randomUUID();
     const body: BuySellRequest = await req.json();
+    
     if (!body.userPhone || !body.message) {
+      logStructuredEvent("AGENT_BUY_SELL_VALIDATION_ERROR", {
+        correlationId,
+        error: "missing_params"
+      }, "warn");
       return new Response(
         JSON.stringify({ error: "missing_params", message: "userPhone and message are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+
+    logStructuredEvent("AGENT_BUY_SELL_REQUEST", {
+      correlationId,
+      phoneLastFour: body.userPhone.slice(-4),
+      hasLocation: !!body.location,
+      reset: !!body.reset
+    });
 
     if (body.reset) {
       await MarketplaceAgent.resetContext(body.userPhone, supabase);
@@ -73,11 +87,17 @@ serve(async (req: Request): Promise<Response> => {
       await MarketplaceAgent.saveContext(context, supabase);
     }
 
+    logStructuredEvent("AGENT_BUY_SELL_SUCCESS", { correlationId });
+
     return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("agent-buy-sell error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logStructuredEvent("AGENT_BUY_SELL_ERROR", {
+      error: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined
+    }, "error");
     return new Response(
       JSON.stringify({ error: "agent_error", message: "Could not process request" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
