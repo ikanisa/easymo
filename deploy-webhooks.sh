@@ -2,8 +2,18 @@
 # Deploy webhook functions to Supabase
 set -e
 
-export SUPABASE_ACCESS_TOKEN="sbp_500607f0d078e919aa24f179473291544003a035"
-export DATABASE_URL="postgresql://postgres:Pq0jyevTlfoa376P@db.lhbowpbcpwoiparwnwgt.supabase.co:5432/postgres"
+# SECURITY: Credentials MUST be provided via environment variables or CI/CD secrets
+# DO NOT hardcode credentials in this script
+# Set SUPABASE_ACCESS_TOKEN and DATABASE_URL via:
+# - GitHub Secrets (for CI/CD)
+# - Local .env file (not committed to git)
+# - Environment variable exports
+
+if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+  echo "ERROR: SUPABASE_ACCESS_TOKEN environment variable is not set"
+  echo "Please set this via GitHub Secrets or your local environment"
+  exit 1
+fi
 
 echo "=== Deploying Webhook Functions ==="
 echo "Project: lhbowpbcpwoiparwnwgt"
