@@ -57,13 +57,28 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get active insurance contacts from insurance_admin_contacts table
-    const { data: contacts, error } = await supabase
-      .from("insurance_admin_contacts")
-      .select("display_name, destination")
-      .eq("channel", "whatsapp")
-      .eq("category", "insurance")
-      .eq("is_active", true)
-      .order("display_order", { ascending: true });
+    // Set a reasonable timeout to avoid long-running queries
+    const queryTimeout = setTimeout(() => {
+      throw new Error("Database query timeout");
+    }, 5000); // 5 second timeout
+
+    let contacts, error;
+    try {
+      const result = await supabase
+        .from("insurance_admin_contacts")
+        .select("display_name, destination")
+        .eq("channel", "whatsapp")
+        .eq("category", "insurance")
+        .eq("is_active", true)
+        .order("display_order", { ascending: true });
+      
+      clearTimeout(queryTimeout);
+      contacts = result.data;
+      error = result.error;
+    } catch (e) {
+      clearTimeout(queryTimeout);
+      throw e;
+    }
 
     if (error) {
       await logStructuredEvent("INSURANCE_DB_ERROR", {
@@ -101,11 +116,39 @@ serve(async (req) => {
     // Build WhatsApp links message
     const contactLinks = contacts
       .map((c: InsuranceContact) => {
-        // Remove + prefix from phone number for wa.me link
-        const cleanNumber = c.destination.replace(/^\+/, "");
+        // Clean phone number: remove spaces, dashes, and + prefix for wa.me link
+        const cleanNumber = c.destination
+          .replace(/[\s\-+]/g, "")
+          .replace(/^00/, ""); // Also handle 00 prefix
+        
+        // Basic validation: ensure it's a valid phone number (digits only, 10-15 chars)
+        if (!/^\d{10,15}$/.test(cleanNumber)) {
+          console.warn(`Invalid phone number format: ${c.destination}`);
+          return null; // Skip invalid numbers
+        }
+        
         return `• ${c.display_name}: https://wa.me/${cleanNumber}`;
       })
+      .filter((link): link is string => link !== null) // Remove null entries
       .join("\n");
+
+    // Check if we have any valid contacts after filtering
+    if (!contactLinks) {
+      await logStructuredEvent("INSURANCE_NO_VALID_CONTACTS", {
+        requestId,
+      }, "warn");
+
+      return new Response(
+        JSON.stringify({ 
+          error: "No valid insurance contacts available",
+          message: "Please try again later or contact support."
+        }),
+        { 
+          status: 503, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
 
     const message = `🛡️ *Insurance Services*
 
