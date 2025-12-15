@@ -236,7 +236,7 @@ supabase/migrations/
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ 1. WhatsApp Message Arrives                                 │
-│    POST /wa-webhook-ai-agents                                │
+│    POST /wa-webhook-core                                     │
 └──────────────────┬──────────────────────────────────────────┘
                    │
                    ▼
@@ -439,7 +439,7 @@ pnpm test:agent:waiter
 
 ## Feature Flags
 
-**Location:** `supabase/functions/wa-webhook-ai-agents/router.config.ts`
+**Location:** `supabase/functions/wa-webhook-core/router.ts`
 
 ```typescript
 featureToggles: {

@@ -22,7 +22,6 @@ SERVICES=(
   "wa-webhook-marketplace"
   "wa-webhook-jobs"
   "wa-webhook-wallet"
-  "wa-webhook-ai-agents"
 )
 
 for service in "${SERVICES[@]}"; do
@@ -172,7 +171,6 @@ jobs:
           - wa-webhook-marketplace
           - wa-webhook-jobs
           - wa-webhook-wallet
-          - wa-webhook-ai-agents
     steps:
       - uses: actions/checkout@v3
       - uses: denoland/setup-deno@v1
@@ -202,7 +200,7 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
         run: |
-          for service in wa-webhook-core wa-webhook-mobility wa-webhook-property wa-webhook-marketplace wa-webhook-jobs wa-webhook-wallet wa-webhook-ai-agents; do
+          for service in wa-webhook-core wa-webhook-mobility wa-webhook-property wa-webhook-marketplace wa-webhook-jobs wa-webhook-wallet; do
             echo "Deploying $service..."
             supabase functions deploy $service --project-ref $SUPABASE_PROJECT_ID
           done
@@ -229,8 +227,7 @@ cat > "$MONITORING_DIR/wa-webhook-dashboard.json" <<'EOF'
         "wa-webhook-property",
         "wa-webhook-marketplace",
         "wa-webhook-jobs",
-        "wa-webhook-wallet",
-        "wa-webhook-ai-agents"
+        "wa-webhook-wallet"
       ],
       "metrics": [
         "health_status",

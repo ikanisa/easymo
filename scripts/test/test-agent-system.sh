@@ -12,7 +12,7 @@ echo
 
 # Test 1: Health check
 echo "1️⃣ Testing health endpoint..."
-curl -s "${BASE_URL}/wa-webhook-ai-agents/health" | jq '.' || echo "❌ Health check failed"
+curl -s "${BASE_URL}/wa-webhook-core/health" | jq '.' || echo "❌ Health check failed"
 echo
 
 # Test 2: Feature flags

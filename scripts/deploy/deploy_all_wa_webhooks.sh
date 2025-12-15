@@ -139,15 +139,6 @@ else
 fi
 echo ""
 
-echo "📦 [9/9] Deploying wa-webhook-ai-agents (AI conversational agents)..."
-if supabase functions deploy wa-webhook-ai-agents --no-verify-jwt; then
-  echo "   ✅ wa-webhook-ai-agents deployed successfully"
-else
-  echo "   ❌ Failed to deploy wa-webhook-ai-agents"
-  exit 1
-fi
-echo ""
-
 echo "=========================================="
 echo "✅ PHASE 2 DEPLOYMENT COMPLETE!"
 echo "=========================================="

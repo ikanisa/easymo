@@ -15,7 +15,6 @@ SERVICES=(
     "wa-webhook-marketplace"
     "wa-webhook-property"
     "wa-webhook-mobility"
-    "wa-webhook-ai-agents"
     "wa-webhook-buy-sell"
     "wa-webhook-profile"
 )

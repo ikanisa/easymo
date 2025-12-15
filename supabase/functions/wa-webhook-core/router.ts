@@ -236,16 +236,6 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
     }
   }
 
-  // Check if unified agent system is enabled (but only for non-greeting text)
-  const unifiedSystemEnabled = await (async () => {
-    try {
-      const { isFeatureEnabled } = await import("../_shared/feature-flags.ts");
-      return isFeatureEnabled("agent.unified_system");
-    } catch {
-      return false; // Graceful degradation if feature flags unavailable
-    }
-  })();
-
   if (phoneNumber) {
     const session = await getSessionByPhone(supabase, phoneNumber);
     if (session?.active_service && ROUTED_SERVICES.includes(session.active_service)) {

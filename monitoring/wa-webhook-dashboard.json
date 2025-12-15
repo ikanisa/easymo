@@ -9,8 +9,7 @@
         "wa-webhook-property",
         "wa-webhook-marketplace",
         "wa-webhook-jobs",
-        "wa-webhook-wallet",
-        "wa-webhook-ai-agents"
+        "wa-webhook-wallet"
       ],
       "metrics": [
         "health_status",

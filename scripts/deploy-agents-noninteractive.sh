@@ -62,7 +62,6 @@ supabase functions deploy agent-shops \
 echo "Deploying WhatsApp microservices..."
 for svc in \
   wa-webhook-core \
-  wa-webhook-ai-agents \
   wa-webhook-mobility \
   wa-webhook-wallet \
   wa-webhook-jobs \
