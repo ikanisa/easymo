@@ -57,19 +57,7 @@ deploy_phase1_ai_agents() {
     log_info "PHASE 1: AI Agents Location Migration"
     log_info "========================================="
     
-    log_info "Deploying AI agent location helpers..."
-    
-    # Deploy AI agents Edge Function
-    if [ -d "supabase/functions/wa-webhook-ai-agents" ]; then
-        supabase functions deploy wa-webhook-ai-agents \
-            --project-ref "$SUPABASE_PROJECT_ID" \
-            --no-verify-jwt
-        log_info "✅ AI Agents function deployed"
-    else
-        log_warn "⚠️ wa-webhook-ai-agents directory not found"
-    fi
-    
-    log_info "Phase 1 deployment complete!"
+    log_info "Phase 1 deployment complete (wa-webhook-ai-agents removed)!"
 }
 
 deploy_phase2_cache_integrations() {

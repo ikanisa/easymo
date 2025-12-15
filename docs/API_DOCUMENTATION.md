@@ -288,11 +288,11 @@ Located in `supabase/functions/admin-*`
 Located in `supabase/functions/wa-webhook-*`
 
 - `wa-webhook-core` - Main webhook router
-- `wa-webhook-ai-agents` - AI agent integration
 - `wa-webhook-mobility` - Mobility services
 - `wa-webhook-wallet` - Wallet operations
 - `wa-webhook-jobs` - Job marketplace
 - `wa-webhook-property` - Property listings
+- `wa-webhook-marketplace` - Marketplace services
 
 ---
 
