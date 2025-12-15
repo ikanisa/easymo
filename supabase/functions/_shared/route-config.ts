@@ -83,6 +83,12 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
     priority: 99,
   },
   {
+    service: "wa-webhook-insurance",
+    keywords: ["insurance", "insure", "policy", "coverage", "quote", "motor insurance"],
+    menuKeys: ["insurance", "motor_insurance"],
+    priority: 1,
+  },
+  {
     service: "wa-agent-support",
     keywords: ["support", "help", "issue", "problem", "question", "faq"],
     menuKeys: ["support_agent", "support", "customer_support", "help", "4"],
@@ -94,10 +100,11 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
  * List of all routed services (for health checks, validation, etc.)
  * 
  * EasyMO Rwanda-only services:
- * - Mobility, Buy & Sell, Profile, Wallet
+ * - Mobility, Buy & Sell, Insurance, Profile, Wallet
  */
 export const ROUTED_SERVICES: readonly string[] = [
   "wa-webhook-mobility",
+  "wa-webhook-insurance",
   "wa-webhook-profile",
   "wa-webhook-wallet",
   "wa-webhook-buy-sell",

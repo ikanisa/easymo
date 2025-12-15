@@ -27,6 +27,8 @@ export type MenuItemKey =
   | "nearby_pharmacies" // @deprecated Covered by buy_and_sell_agent
   | "quincailleries" // @deprecated Covered by buy_and_sell_agent
   | "shops_services" // @deprecated Covered by buy_and_sell_agent
+  | "property_rentals" // @deprecated Covered by buy_and_sell_agent
+  | "bars_restaurants" // @deprecated Covered by buy_and_sell_agent
   | "momo_qr" // @deprecated Moved to separate payment flow
   | "notary_services" // @deprecated Covered by buy_and_sell_agent
   | "profile_assets" // @deprecated Use profile
