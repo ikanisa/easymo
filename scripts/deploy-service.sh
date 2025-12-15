@@ -13,7 +13,7 @@ if [ -z "$SERVICE" ]; then
     echo "  - wa-webhook-core"
     echo "  - wa-webhook-profile"
     echo "  - wa-webhook-mobility"
-    echo "  - wa-webhook-insurance"
+    echo "  - wa-webhook-buy-sell"
     exit 1
 fi
 

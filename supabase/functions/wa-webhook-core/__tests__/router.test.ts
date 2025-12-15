@@ -31,10 +31,11 @@ routingSuite.test("routes mobility keywords to mobility service", () => {
   });
 });
 
-routingSuite.test("routes insurance keywords to insurance service", () => {
+routingSuite.test("routes insurance keywords to core (handled inline)", () => {
   TEST_MESSAGES.insuranceKeywords.forEach((keyword) => {
     const decision = mockRouteByKeyword(`I want ${keyword}`);
-    assertEquals(decision.service, "wa-webhook-insurance", `Keyword "${keyword}" should route to insurance`);
+    // Insurance is handled inline by wa-webhook-core, not by a separate service
+    assertEquals(decision.service, "wa-webhook-core", `Keyword "${keyword}" should route to core (insurance handled inline)`);
   });
 });
 
@@ -57,9 +58,10 @@ stateSuite.test("routes to mobility when session state is mobility", () => {
   assertEquals(decision.reason, "state");
 });
 
-stateSuite.test("routes to insurance when session state is insurance", () => {
+stateSuite.test("routes to core when session state is insurance (handled inline)", () => {
   const decision = mockRouteByState("ins_wait_doc");
-  assertEquals(decision.service, "wa-webhook-insurance");
+  // Insurance is handled inline by wa-webhook-core
+  assertEquals(decision.service, "wa-webhook-core");
   assertEquals(decision.reason, "state");
 });
 
@@ -131,9 +133,9 @@ function mockRouteByKeyword(text: string): RoutingDecision {
     return { service: "wa-webhook-mobility", reason: "keyword", routingText: text };
   }
 
-  // Check insurance keywords
+  // Check insurance keywords - handled inline by wa-webhook-core
   if (TEST_MESSAGES.insuranceKeywords.some((k) => lowerText.includes(k))) {
-    return { service: "wa-webhook-insurance", reason: "keyword", routingText: text };
+    return { service: "wa-webhook-core", reason: "keyword", routingText: text };
   }
 
   // Check profile keywords
@@ -149,8 +151,9 @@ function mockRouteByState(state: string): RoutingDecision {
   if (state.startsWith("mobility_") || state.startsWith("trip_")) {
     return { service: "wa-webhook-mobility", reason: "state" };
   }
+  // Insurance is handled inline by wa-webhook-core
   if (state.startsWith("ins_") || state.startsWith("claim_")) {
-    return { service: "wa-webhook-insurance", reason: "state" };
+    return { service: "wa-webhook-core", reason: "state" };
   }
   if (state.startsWith("wallet_") || state.startsWith("profile_")) {
     return { service: "wa-webhook-profile", reason: "state" };
