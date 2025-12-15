@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { logStructuredEvent } from "../_shared/observability/index.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
-import { clearState, getState, setState } from "../_shared/wa-webhook-shared/state/store.ts";
+import { clearState, getState } from "../_shared/wa-webhook-shared/state/store.ts";
 import {
   handleChangeVehicleRequest,
   handleNearbyLocation,
@@ -44,15 +44,14 @@ import {
   vehiclePlateStateKey,
 } from "./handlers/vehicle_plate.ts";
 import type {
-  RawWhatsAppMessage,
   RouterContext,
   WhatsAppWebhookPayload,
 } from "./types.ts";
 import { IDS } from "./wa/ids.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
-import { sendButtonsMessage, sendListMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
+import { sendButtonsMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
 import { recordLastLocation } from "./locations/favorites.ts";
-import { sendLocation, sendText } from "./wa/client.ts";
+import { sendText } from "./wa/client.ts";
 import { t } from "./i18n/translator.ts";
 // Import supabase and config from config (uses proper environment variable fallbacks)
 import { supabase, WA_APP_SECRET } from "./config.ts";
@@ -62,23 +61,7 @@ const WA_APP_SECRET_DIRECT = Deno.env.get("WHATSAPP_APP_SECRET") ?? Deno.env.get
 // Import location utilities
 import { getLastLocation } from "./locations/cache.ts";
 import { getLocationReusedMessage } from "../_shared/wa-webhook-shared/locations/messages.ts";
-
-function formatUnknownError(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (typeof error === "string") return error;
-  if (typeof error === "object" && error !== null) {
-    const message = (error as { message?: unknown }).message;
-    if (typeof message === "string" && message.trim().length > 0) {
-      return message;
-    }
-    try {
-      return JSON.stringify(error);
-    } catch {
-      return String(error);
-    }
-  }
-  return String(error);
-}
+import { formatUnknownError, classifyError } from "./utils/error-handling.ts";
 
 // Default age estimate for recent location (in minutes)
 const DEFAULT_LOCATION_AGE_MINUTES = 5;
@@ -380,8 +363,10 @@ serve(async (req: Request): Promise<Response> => {
           id === "rides" ||
           id === "mobility"
         ) {
+          const { showMobilityMenu } = await import("./handlers/menu.ts");
           handled = await showMobilityMenu(ctx);
         } else if (id === IDS.BACK_MENU || id === IDS.BACK_HOME) {
+          const { showMobilityMenu } = await import("./handlers/menu.ts");
           handled = await showMobilityMenu(ctx);
         } // Nearby Flows
         else if (id === IDS.SEE_DRIVERS) {
@@ -718,6 +703,7 @@ serve(async (req: Request): Promise<Response> => {
         }
       } // Check for menu selection keys first
       else if (text === "rides_agent" || text === "rides") {
+        const { showMobilityMenu } = await import("./handlers/menu.ts");
         handled = await showMobilityMenu(ctx);
       } // Simple keyword triggers if not in a specific flow or if flow allows interruption
       else if (text.includes("driver") || text.includes("ride")) {
@@ -738,18 +724,7 @@ serve(async (req: Request): Promise<Response> => {
     return respond({ success: true, handled });
   } catch (err) {
     const errorMessage = formatUnknownError(err);
-    
-    // Classify error type
-    const isUserError = errorMessage.includes("validation") || 
-                       errorMessage.includes("invalid") ||
-                       errorMessage.includes("not found") ||
-                       errorMessage.includes("already exists");
-    const isSystemError = errorMessage.includes("database") ||
-                         errorMessage.includes("connection") ||
-                         errorMessage.includes("timeout") ||
-                         errorMessage.includes("ECONNREFUSED");
-    
-    const statusCode = isUserError ? 400 : (isSystemError ? 503 : 500);
+    const { isUserError, isSystemError, statusCode } = classifyError(err);
     
     logStructuredEvent("MOBILITY_WEBHOOK_ERROR", {
       error: errorMessage,
@@ -774,42 +749,3 @@ logStructuredEvent("SERVICE_STARTED", {
   service: "wa-webhook-mobility",
   version: "1.1.0",
 });
-
-async function showMobilityMenu(ctx: RouterContext): Promise<boolean> {
-  if (!ctx.profileId) return false;
-  await setState(supabase, ctx.profileId, { key: "mobility_menu", data: {} });
-  const rows = [
-    {
-      id: IDS.SEE_DRIVERS,
-      title: "🚖 Nearby drivers",
-      description: "Request riders close to your location.",
-    },
-    {
-      id: IDS.SEE_PASSENGERS,
-      title: "🧍 Nearby passengers",
-      description: "Drivers find people needing a ride.",
-    },
-    {
-      id: IDS.SCHEDULE_TRIP,
-      title: "🗓️ Schedule trip",
-      description: "Plan a future pickup with reminders.",
-    },
-    {
-      id: IDS.GO_ONLINE,
-      title: "🟢 Go online",
-      description: "Share your location to receive ride offers.",
-    },
-  ];
-  await sendListMessage(
-    ctx,
-    {
-      title: "🚗 Mobility",
-      body: "Choose what you need help with.",
-      sectionTitle: "Options",
-      rows,
-      buttonText: "Open",
-    },
-    { emoji: "🚗" },
-  );
-  return true;
-}

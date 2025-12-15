@@ -45,6 +45,30 @@ export async function handleInteractiveButton(
     return { handled: false };
   }
 
+  // Handle initial menu selection from home menu
+  if (buttonId === "buy_sell" || buttonId === "buy_and_sell" || buttonId === "business_broker_agent" || buttonId === "buy_and_sell_agent") {
+    const { MarketplaceAgent, WELCOME_MESSAGE } = await import("../core/agent.ts");
+    const { sendText } = await import("../../_shared/wa-webhook-shared/wa/client.ts");
+    
+    // Load or create context
+    const context = await MarketplaceAgent.loadContext(from, supabase);
+    const isNewSession = !context.conversationHistory || context.conversationHistory.length === 0;
+    
+    if (isNewSession) {
+      // Send welcome message for new sessions
+      await sendText(from, WELCOME_MESSAGE);
+      logStructuredEvent("BUY_SELL_WELCOME_FROM_MENU", {
+        from: `***${from.slice(-4)}`,
+        correlationId,
+      });
+    } else {
+      // For returning users, just send a greeting
+      await sendText(from, "🛒 *Buy & Sell*\n\nHow can I help you today?");
+    }
+    
+    return { handled: true, action: "welcome_shown" };
+  }
+
   // Handle share button
   if (buttonId === "share_easymo") {
     const { handleShareEasyMOButton } = await import("../../_shared/wa-webhook-shared/utils/share-button-handler.ts");
@@ -185,8 +209,9 @@ export async function handleInteractiveButton(
 /**
  * Get profile context for a user
  * Fetches profile once and returns structured context
+ * Exported for use in other handlers
  */
-async function getProfileContext(userPhone: string, supabase: SupabaseClient): Promise<ProfileContext | null> {
+export async function getProfileContext(userPhone: string, supabase: SupabaseClient): Promise<ProfileContext | null> {
   const { data: profile } = await supabase
     .from("profiles")
     .select("user_id, language")

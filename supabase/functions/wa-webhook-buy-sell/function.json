@@ -1,5 +1,6 @@
 {
-  "name": "wa-webhook-marketplace",
+  "name": "wa-webhook-buy-sell",
   "version": "1.0.0",
-  "verify_jwt": false
+  "verify_jwt": false,
+  "description": "AI-powered marketplace assistant for buy and sell"
 }

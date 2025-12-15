@@ -26,6 +26,7 @@ import { claimEvent } from "../_shared/wa-webhook-shared/state/idempotency.ts";
 import { extractWhatsAppMessage } from "./utils/index.ts";
 import { MarketplaceAgent, WELCOME_MESSAGE, type BuyAndSellContext } from "./core/agent.ts";
 import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
+import { classifyError, serializeError } from "./utils/error-handling.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -187,218 +188,11 @@ serve(async (req: Request): Promise<Response> => {
     // Button replies (common actions + My Business management)
     if (message.type === "interactive" && message.interactive?.button_reply?.id) {
       const buttonId = message.interactive.button_reply.id;
-
-      // Handle initial menu selection from home menu
-      // Check for menu keys that route to this service
-      if (buttonId === "buy_sell" || buttonId === "buy_and_sell" || buttonId === "business_broker_agent" || buttonId === "buy_and_sell_agent") {
-        // User clicked "Buy & Sell" from home menu - show welcome message
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("user_id, language")
-          .eq("whatsapp_number", userPhone)
-          .maybeSingle();
-        
-        if (profile) {
-          // Load or create context
-          const context: BuyAndSellContext = await MarketplaceAgent.loadContext(userPhone, supabase);
-          const isNewSession = !context.conversationHistory || context.conversationHistory.length === 0;
-          
-          if (isNewSession) {
-            // Send welcome message for new sessions
-            await sendText(userPhone, WELCOME_MESSAGE);
-            logStructuredEvent("BUY_SELL_WELCOME_FROM_MENU", {
-              from: `***${userPhone.slice(-4)}`,
-              correlationId,
-            });
-          } else {
-            // For returning users, just send a greeting
-            await sendText(userPhone, "🛒 *Buy & Sell*\n\nHow can I help you today?");
-          }
-        }
-        return respond({ success: true, message: "welcome_shown" });
-      }
-
-      // Handle Share easyMO button (auto-appended by reply.ts)
-      if (buttonId === "share_easymo") {
-        const { handleShareEasyMOButton } = await import("../_shared/wa-webhook-shared/utils/share-button-handler.ts");
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("user_id, language")
-          .eq("whatsapp_number", userPhone)
-          .single();
-        
-        if (profile?.user_id) {
-          await handleShareEasyMOButton({
-            from: userPhone,
-            profileId: profile.user_id,
-            locale: (profile.language || "en") as any,
-            supabase,
-          }, "wa-webhook-buy-sell");
-        }
-        return respond({ success: true, message: "share_button_handled" });
-      }
-
-      // === MY BUSINESSES MANAGEMENT ===
+      const { handleInteractiveButton } = await import("./handlers/interactive-buttons.ts");
       
-      // List user's businesses
-      if (buttonId === "MY_BUSINESSES" || buttonId === "my_business") {
-        const { listMyBusinesses } = await import("./my-business/list.ts");
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("user_id, language")
-          .eq("whatsapp_number", userPhone)
-          .single();
-        
-        if (profile) {
-          const ctx = {
-            supabase,
-            from: userPhone,
-            profileId: profile.user_id,
-            locale: (profile.language || "en") as any,
-          };
-          await listMyBusinesses(ctx);
-        }
-        return respond({ success: true, message: "my_businesses_shown" });
-      }
-
-      // Create business
-      if (buttonId === "CREATE_BUSINESS") {
-        const { startCreateBusiness } = await import("./my-business/list.ts");
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("user_id, language")
-          .eq("whatsapp_number", userPhone)
-          .single();
-        
-        if (profile) {
-          const ctx = {
-            supabase,
-            from: userPhone,
-            profileId: profile.user_id,
-            locale: (profile.language || "en") as any,
-          };
-          await startCreateBusiness(ctx);
-        }
-        return respond({ success: true, message: "create_business_started" });
-      }
-
-      // Business selection
-      if (buttonId.startsWith("BIZ::")) {
-        const businessId = buttonId.replace("BIZ::", "");
-        const { handleBusinessSelection } = await import("./my-business/list.ts");
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("user_id, language")
-          .eq("whatsapp_number", userPhone)
-          .single();
-        
-        if (profile) {
-          const ctx = {
-            supabase,
-            from: userPhone,
-            profileId: profile.user_id,
-            locale: (profile.language || "en") as any,
-          };
-          await handleBusinessSelection(ctx, businessId);
-        }
-        return respond({ success: true, message: "business_selected" });
-      }
-
-      // Edit business
-      if (buttonId.startsWith("EDIT_BIZ::")) {
-        const businessId = buttonId.replace("EDIT_BIZ::", "");
-        const { startEditBusiness } = await import("./my-business/update.ts");
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("user_id, language")
-          .eq("whatsapp_number", userPhone)
-          .single();
-        
-        if (profile) {
-          const ctx = {
-            supabase,
-            from: userPhone,
-            profileId: profile.user_id,
-            locale: (profile.language || "en") as any,
-          };
-          await startEditBusiness(ctx, businessId);
-        }
-        return respond({ success: true, message: "edit_business_started" });
-      }
-
-      // Delete business (confirmation)
-      if (buttonId.startsWith("DELETE_BIZ::")) {
-        const businessId = buttonId.replace("DELETE_BIZ::", "");
-        const { confirmDeleteBusiness } = await import("./my-business/delete.ts");
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("user_id, language")
-          .eq("whatsapp_number", userPhone)
-          .single();
-        
-        if (profile) {
-          const ctx = {
-            supabase,
-            from: userPhone,
-            profileId: profile.user_id,
-            locale: (profile.language || "en") as any,
-          };
-          await confirmDeleteBusiness(ctx, businessId);
-        }
-        return respond({ success: true, message: "delete_confirmation_shown" });
-      }
-
-      // Confirm delete
-      if (buttonId.startsWith("CONFIRM_DELETE_BIZ::")) {
-        const businessId = buttonId.replace("CONFIRM_DELETE_BIZ::", "");
-        const { handleDeleteBusiness } = await import("./my-business/delete.ts");
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("user_id, language")
-          .eq("whatsapp_number", userPhone)
-          .single();
-        
-        if (profile) {
-          const ctx = {
-            supabase,
-            from: userPhone,
-            profileId: profile.user_id,
-            locale: (profile.language || "en") as any,
-          };
-          await handleDeleteBusiness(ctx, businessId);
-        }
-        return respond({ success: true, message: "business_deleted" });
-      }
-
-      // Other business actions
-      if (buttonId.startsWith("EDIT_BIZ_NAME::") || buttonId.startsWith("EDIT_BIZ_DESC::") || buttonId.startsWith("BACK_BIZ::")) {
-        const businessId = buttonId.replace(/^(EDIT_BIZ_NAME|EDIT_BIZ_DESC|BACK_BIZ)::/, "");
-        const action = buttonId.split("::")[0];
-        
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("user_id, language")
-          .eq("whatsapp_number", userPhone)
-          .single();
-        
-        if (profile) {
-          const ctx = {
-            supabase,
-            from: userPhone,
-            profileId: profile.user_id,
-            locale: (profile.language || "en") as any,
-          };
-
-          if (action === "EDIT_BIZ_NAME" || action === "EDIT_BIZ_DESC") {
-            const { promptEditField } = await import("./my-business/update.ts");
-            const field = action === "EDIT_BIZ_NAME" ? "name" : "description";
-            await promptEditField(ctx, businessId, field);
-          } else if (action === "BACK_BIZ") {
-            const { handleBusinessSelection } = await import("./my-business/list.ts");
-            await handleBusinessSelection(ctx, businessId);
-          }
-        }
-        return respond({ success: true, message: "business_action_handled" });
+      const result = await handleInteractiveButton(buttonId, userPhone, supabase, correlationId);
+      if (result.handled) {
+        return respond({ success: true, message: result.action || "button_handled" });
       }
     }
 
@@ -442,69 +236,18 @@ serve(async (req: Request): Promise<Response> => {
       const { getState } = await import("../_shared/wa-webhook-shared/state/store.ts");
       const state = await getState(supabase, profile.user_id);
 
-      // Business creation - name input
-      if (state?.key === "business_create_name") {
-        const { handleCreateBusinessName } = await import("./my-business/create.ts");
-        const ctx = {
-          supabase,
-          from: userPhone,
-          profileId: profile.user_id,
-          locale: (profile.language || "en") as any,
-        };
-        await handleCreateBusinessName(ctx, text);
-        return respond({ success: true, message: "business_name_processed" });
-      }
-
-      // Business edit - name field
-      if (state?.key === "business_edit_name" && state.data) {
-        const { handleUpdateBusinessField } = await import("./my-business/update.ts");
-        const ctx = {
-          supabase,
-          from: userPhone,
-          profileId: profile.user_id,
-          locale: (profile.language || "en") as any,
-        };
-        await handleUpdateBusinessField(ctx, String(state.data.businessId), "name", text);
-        return respond({ success: true, message: "business_name_updated" });
-      }
-
-      // Business edit - description field
-      if (state?.key === "business_edit_description" && state.data) {
-        const { handleUpdateBusinessField } = await import("./my-business/update.ts");
-        const ctx = {
-          supabase,
-          from: userPhone,
-          profileId: profile.user_id,
-          locale: (profile.language || "en") as any,
-        };
-        await handleUpdateBusinessField(ctx, String(state.data.businessId), "description", text);
-        return respond({ success: true, message: "business_description_updated" });
-      }
-
-      // Business search - name input
-      if (state?.key === "business_search" && state.data?.step === "awaiting_name") {
-        const { handleBusinessNameSearch } = await import("./my-business/search.ts");
-        const ctx = {
-          supabase,
-          from: userPhone,
-          profileId: profile.user_id,
-          locale: (profile.language || "en") as any,
-        };
-        await handleBusinessNameSearch(ctx, text);
-        return respond({ success: true, message: "business_search_processed" });
-      }
-
-      // Manual business add - step-by-step
-      if (state?.key === "business_add_manual" && state.data) {
-        const { handleManualBusinessStep } = await import("./my-business/add_manual.ts");
-        const ctx = {
-          supabase,
-          from: userPhone,
-          profileId: profile.user_id,
-          locale: (profile.language || "en") as any,
-        };
-        await handleManualBusinessStep(ctx, state.data, text);
-        return respond({ success: true, message: "manual_business_step_processed" });
+      // Handle state transitions using state machine handler
+      if (state) {
+        const { handleStateTransition } = await import("./handlers/state-machine.ts");
+        const { getProfileContext } = await import("./handlers/interactive-buttons.ts");
+        
+        const ctx = await getProfileContext(userPhone, supabase);
+        if (ctx) {
+          const result = await handleStateTransition(state, text, ctx, correlationId);
+          if (result.handled) {
+            return respond({ success: true, message: "state_transition_handled" });
+          }
+        }
       }
     }
 
@@ -566,35 +309,8 @@ serve(async (req: Request): Promise<Response> => {
     return respond({ success: true, action: response.action });
   } catch (error) {
     const duration = Date.now() - startTime;
-    
-    // Properly serialize error for logging (handle Supabase error objects)
-    let errorMessage: string;
-    let errorStack: string | undefined;
-    let errorCode: string | undefined;
-    
-    if (error instanceof Error) {
-      errorMessage = error.message;
-      errorStack = error.stack;
-    } else if (error && typeof error === "object") {
-      // Handle Supabase/PostgREST error objects
-      const err = error as Record<string, unknown>;
-      errorMessage = String(err.message || err.error || "Unknown error");
-      errorCode = err.code ? String(err.code) : undefined;
-    } else {
-      errorMessage = String(error);
-    }
-    
-    // Classify error type
-    const isUserError = errorMessage.includes("validation") || 
-                       errorMessage.includes("invalid") ||
-                       errorMessage.includes("not found") ||
-                       errorMessage.includes("already exists");
-    const isSystemError = errorMessage.includes("database") ||
-                         errorMessage.includes("connection") ||
-                         errorMessage.includes("timeout") ||
-                         errorMessage.includes("ECONNREFUSED");
-    
-    const statusCode = isUserError ? 400 : (isSystemError ? 503 : 500);
+    const { message: errorMessage, stack: errorStack, code: errorCode } = serializeError(error);
+    const { isUserError, isSystemError, statusCode } = classifyError(error);
     
     logStructuredEvent(
       "BUY_SELL_ERROR",
