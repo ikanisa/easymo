@@ -3,16 +3,12 @@ import { setState } from "../state/store.ts";
 import { IDS } from "../wa/ids.ts";
 import { maskPhone } from "./support.ts";
 import { sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
-import {
-  evaluateMotorInsuranceGate,
-  recordMotorInsuranceHidden,
-} from "../domains/insurance/gate.ts";
 import { t, type TranslationKey } from "../i18n/translator.ts";
 import {
   fetchActiveMenuItems,
   getMenuItemId,
   getMenuItemTranslationKeys,
-} from "../domains/menu/dynamic_home_menu.ts";
+} from "../../_shared/wa-webhook-shared/domains/menu/dynamic_home_menu.ts";
 
 const PAGE_SIZE = 9;
 
@@ -42,13 +38,10 @@ export async function sendHomeMenu(
   ctx: RouterContext,
   page = 0,
 ): Promise<void> {
-  const gate = await evaluateMotorInsuranceGate(ctx);
-  if (!gate.allowed) {
-    await recordMotorInsuranceHidden(ctx, gate, "menu");
-  }
+  // Simplified: Always show insurance, no complex feature gating
   const rows = await buildRows({
-    isAdmin: gate.isAdmin,
-    showInsurance: gate.allowed,
+    isAdmin: false, // Admin check done in router
+    showInsurance: true, // Always show insurance menu item
     locale: ctx.locale,
     ctx,
   });
@@ -195,8 +188,8 @@ function getCountryFromPhone(phone: string): string {
   // Map common country codes for East Africa
   const countryMap: Record<string, string> = {
     "250": "RW", // Rwanda
-    "256": // Uganda
-    "254": // Kenya
+    "256": "UG", // Uganda
+    "254": "KE", // Kenya
     "255": "TZ", // Tanzania
     "257": "BI", // Burundi
     "243": "CD", // DR Congo
