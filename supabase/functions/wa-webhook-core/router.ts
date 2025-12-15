@@ -137,7 +137,7 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
     //   - Standalone codes: 6-12 alphanumeric characters (avoiding common words)
     const hasRefPrefix = /^REF[:\s]+[A-Z0-9]{4,12}$/i.test(trimmedText);
     const isStandaloneCode = /^[A-Z0-9]{6,12}$/.test(upperText) && 
-                            !/^(HELLO|THANKS|CANCEL|SUBMIT|ACCEPT|REJECT|STATUS|URGENT|PLEASE)$/.test(upperText);
+                            !/^(HELLO|THANKS|CANCEL|SUBMIT|ACCEPT|REJECT|STATUS|URGENT|PLEASE|INSURANCE)$/.test(upperText);
     
     const isReferralCode = hasRefPrefix || isStandaloneCode;
     
