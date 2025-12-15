@@ -279,6 +279,7 @@ serve(async (req: Request): Promise<Response> => {
             receivedHashSample: receivedHash.slice(0, 16),
             expectedHashSample: expectedHash.slice(0, 16),
             hashMatch: receivedHash === expectedHash,
+            diagnostic: "App secret mismatch or body modified. Verify WA_APP_SECRET matches WhatsApp Business API App Secret.",
           }, "warn");
         }
       } catch (err) {
@@ -309,6 +310,11 @@ serve(async (req: Request): Promise<Response> => {
           signatureMethod: signatureMeta.method,
           signatureSample: signatureMeta.sample,
           userAgent: req.headers.get("user-agent"),
+          isInternalForward: internalForward,
+          allowInternalForward,
+          diagnostic: internalForward 
+            ? "Internal forward detected but WA_ALLOW_INTERNAL_FORWARD is not enabled. Set WA_ALLOW_INTERNAL_FORWARD=true if requests come from wa-webhook-core."
+            : "Signature verification failed. Verify WA_APP_SECRET matches WhatsApp Business API App Secret.",
         }, "warn");
         return respond({ error: "unauthorized" }, { status: 401 });
       }
