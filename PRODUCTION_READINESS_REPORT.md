@@ -239,7 +239,7 @@ Unit tests exist but no automated E2E tests for full WhatsApp flow.
 7. **Deploy to staging**
    ```bash
    supabase functions deploy wa-webhook-mobility --project-ref STAGING
-   supabase functions deploy wa-webhook-insurance --project-ref STAGING
+   supabase functions deploy wa-webhook-core --project-ref STAGING
    ```
 
 8. **Smoke test staging**
@@ -251,7 +251,7 @@ Unit tests exist but no automated E2E tests for full WhatsApp flow.
 9. **Deploy to production**
    ```bash
    supabase functions deploy wa-webhook-mobility
-   supabase functions deploy wa-webhook-insurance
+   supabase functions deploy wa-webhook-core
    ```
 
 10. **Monitor for 1 hour**

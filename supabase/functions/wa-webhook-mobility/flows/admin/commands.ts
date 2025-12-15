@@ -2,8 +2,6 @@ import type { RouterContext } from "../../types.ts";
 import { sendText } from "../../wa/client.ts";
 import { isAdminNumber } from "./auth.ts";
 import { logAdminAction } from "../../../_shared/observability.ts";
-import { INSURANCE_MEDIA_BUCKET, OPENAI_API_KEY } from "../../config.ts";
-import { getAppConfig } from "../../utils/app_config.ts";
 
 export async function handleAdminCommand(
   ctx: RouterContext,
@@ -26,9 +24,6 @@ export async function handleAdminCommand(
       return true;
     case "help":
       await sendText(ctx.from, adminHelp());
-      return true;
-    case "insurance":
-      await handleInsuranceCommand(ctx, rest);
       return true;
     default:
       await sendText(ctx.from, `Unknown command ${command}. Send /help.`);
@@ -121,45 +116,5 @@ async function listSubmissions(ctx: RouterContext): Promise<void> {
 }
 
 function adminHelp(): string {
-  return "Admin commands:\n/sub approve <ref>\n/sub reject <ref>\n/sub list\n/insurance diag";
-}
-
-async function handleInsuranceCommand(
-  ctx: RouterContext,
-  args: string[],
-): Promise<void> {
-  const action = (args[0] ?? "").toLowerCase();
-  if (action !== "diag") {
-    await sendText(ctx.from, "Usage: /insurance diag");
-    return;
-  }
-
-  const openaiStatus = OPENAI_API_KEY ? "ok" : "missing";
-  const { insurance_admin_numbers } = await getAppConfig(ctx.supabase);
-  const adminCount = Array.isArray(insurance_admin_numbers)
-    ? insurance_admin_numbers.filter((value) =>
-      typeof value === "string" && value.trim()
-    ).length
-    : 0;
-
-  const { error: bucketError } = await ctx.supabase.storage
-    .from(INSURANCE_MEDIA_BUCKET)
-    .list("", { limit: 1 });
-  const bucketStatus = bucketError?.message ?? "ok";
-
-  const lines = [
-    "Insurance OCR diagnostics:",
-    `• OPENAI_API_KEY: ${openaiStatus}`,
-    `• Bucket ${INSURANCE_MEDIA_BUCKET}: ${bucketStatus}`,
-    `• Admin numbers: ${adminCount}`,
-  ];
-
-  await sendText(ctx.from, lines.join("\n"));
-  await logAdminAction({
-    actor: ctx.from,
-    action: "insurance_diag",
-    openai: openaiStatus,
-    admins: adminCount,
-    bucket_status: bucketStatus,
-  });
+  return "Admin commands:\n/sub approve <ref>\n/sub reject <ref>\n/sub list";
 }
