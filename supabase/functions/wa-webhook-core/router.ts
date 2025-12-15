@@ -84,13 +84,16 @@ async function handleInsuranceAgentRequest(phoneNumber: string): Promise<void> {
       return;
     }
 
-    // Build engaging message with emojis
+    // Build engaging message with emojis and prefilled WhatsApp message
     let message = "🛡️ *Insurance Made Easy!*\n\n";
     message += "Get protected today! Our insurance team is ready to help you.\n\n";
     message += "📞 *Contact us now:*\n\n";
     
+    const prefilledMessage = encodeURIComponent("Hi, I need motor insurance. Can you help me with a quote?");
+    
     contacts.forEach((contact, index) => {
-      const whatsappLink = `https://wa.me/${contact.phone_number.replace(/^\+/, "")}`;
+      const cleanNumber = contact.phone_number.replace(/^\+/, "");
+      const whatsappLink = `https://wa.me/${cleanNumber}?text=${prefilledMessage}`;
       message += `${index + 1}. ${contact.name}\n`;
       message += `   💬 ${whatsappLink}\n\n`;
     });
