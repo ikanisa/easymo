@@ -21,13 +21,6 @@ import {
 import { addToDeadLetterQueue } from "../_shared/dead-letter-queue.ts";
 import { circuitBreakerManager } from "../_shared/circuit-breaker.ts";
 import { logError, logWarn, logInfo } from "../_shared/correlation-logging.ts";
-import { isFeatureEnabled } from "../_shared/feature-flags.ts";
-import {
-  resolveServiceWithMigration,
-  isServiceDeprecated,
-  DEPRECATED_SERVICES,
-  UNIFIED_SERVICE,
-} from "../_shared/route-config.ts";
 
 type RoutingDecision = {
   service: string;
@@ -60,17 +53,11 @@ type WhatsAppHomeMenuItem = {
 import {
   buildMenuKeyMap,
   ROUTED_SERVICES,
-  getServiceFromState as getServiceFromStateConfig,
 } from "../_shared/route-config.ts";
 
-const FALLBACK_SERVICE = "wa-webhook";
 
 // Build SERVICE_KEY_MAP from consolidated route config
 const SERVICE_KEY_MAP = buildMenuKeyMap();
-// Retry configuration
-const MAX_RETRIES = 2;
-const INITIAL_RETRY_DELAY_MS = 200;
-const RETRIABLE_STATUS_CODES = [408, 429, 503, 504];
 
 /**
  * Handle insurance agent request - dynamically fetch contacts from admin_contacts table
@@ -118,34 +105,6 @@ async function handleInsuranceAgentRequest(phoneNumber: string): Promise<void> {
     // Send fallback message on any error
     await sendText(phoneNumber, "For insurance services, please contact our support team.");
   }
-}
-
-/**
- * Sleep for a given duration with optional jitter
- */
-function sleep(ms: number, jitter = true): Promise<void> {
-  const delay = jitter ? ms * (0.8 + Math.random() * 0.4) : ms;
-  return new Promise((resolve) => setTimeout(resolve, delay));
-}
-
-/**
- * Check if an error or status code is retriable
- */
-function isRetriable(error: unknown, statusCode?: number): boolean {
-  // Network errors are retriable
-  if (error instanceof Error) {
-    const message = error.message.toLowerCase();
-    if (message.includes("network") || message.includes("timeout") || message.includes("abort")) {
-      return true;
-    }
-  }
-  
-  // Specific status codes are retriable
-  if (statusCode && RETRIABLE_STATUS_CODES.includes(statusCode)) {
-    return true;
-  }
-  
-  return false;
 }
 
 const MICROSERVICES_BASE_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1`;
@@ -247,19 +206,6 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
     }
   }
 
-  // If unified system enabled, route to AI agents (but greetings were already handled above)
-  if (unifiedSystemEnabled) {
-    logInfo("ROUTE_TO_UNIFIED_AGENT_SYSTEM", {
-      message: routingText?.substring(0, 50) ?? null,
-      target: "wa-webhook-ai-agents",
-    }, { correlationId: crypto.randomUUID() });
-    return {
-      service: "wa-webhook-ai-agents",
-      reason: "keyword",
-      routingText,
-    };
-  }
-
   // Default: show home menu for any unrecognized text
   return {
     service: "wa-webhook-core",
@@ -275,23 +221,7 @@ export async function forwardToEdgeService(
 ): Promise<Response> {
   const correlationId = headers?.get("X-Correlation-ID") ?? crypto.randomUUID();
   
-  // Check if unified webhook migration is enabled
-  const useUnifiedWebhook = isFeatureEnabled("agent.unified_webhook");
-  
-  // Resolve the final service, potentially redirecting deprecated services to unified
-  let targetService = decision.service;
-  const originalService = decision.service;
-  
-  if (useUnifiedWebhook && isServiceDeprecated(decision.service)) {
-    targetService = resolveServiceWithMigration(decision.service, true);
-    
-    // Log the migration redirect for monitoring
-    logInfo("WA_CORE_MIGRATION_REDIRECT", {
-      originalService,
-      targetService,
-      reason: "deprecated_service_redirect",
-    }, { correlationId });
-  }
+  const targetService = decision.service;
   
   if (!ROUTED_SERVICES.includes(targetService)) {
     logWarn("WA_CORE_UNKNOWN_SERVICE", { 
@@ -314,7 +244,6 @@ export async function forwardToEdgeService(
     const breakerState = circuitBreakerManager.getBreaker(targetService).getState();
     logWarn("WA_CORE_CIRCUIT_OPEN", {
       service: targetService,
-      originalService: originalService !== targetService ? originalService : undefined,
       breakerState,
     }, { correlationId });
     
@@ -345,7 +274,6 @@ export async function forwardToEdgeService(
   forwardHeaders.set("Content-Type", "application/json");
   forwardHeaders.set("X-Routed-From", "wa-webhook-core");
   forwardHeaders.set("X-Routed-Service", targetService);
-  forwardHeaders.set("X-Original-Service", originalService); // Track original for debugging
   forwardHeaders.set("X-Correlation-ID", correlationId);
   // Add Authorization header for service-to-service calls
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -373,7 +301,7 @@ export async function forwardToEdgeService(
     if (response.status === 404) {
       logWarn(
         "WA_CORE_SERVICE_NOT_FOUND",
-        { service: targetService, originalService, status: response.status },
+        { service: targetService, status: response.status },
         { correlationId },
       );
       const message = getFirstMessage(payload);
@@ -394,7 +322,6 @@ export async function forwardToEdgeService(
 
     logInfo("WA_CORE_ROUTED", { 
       service: targetService, 
-      originalService: originalService !== targetService ? originalService : undefined,
       status: response.status,
     }, { correlationId });
 
@@ -407,7 +334,6 @@ export async function forwardToEdgeService(
     
     logError("WA_CORE_ROUTING_FAILURE", {
       service: targetService,
-      originalService: originalService !== targetService ? originalService : undefined,
       error: errorMessage,
     }, { correlationId });
 
@@ -426,7 +352,6 @@ export async function forwardToEdgeService(
     return new Response(JSON.stringify({
       success: false,
       service: targetService,
-      originalService: originalService !== targetService ? originalService : undefined,
       error: "Service temporarily unavailable",
     }), {
       status: 503,
@@ -596,7 +521,7 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
     if (phoneNumber) await clearActiveService(supabase, phoneNumber);
   } else if (selection) {
     const isInteractive = Boolean(interactiveId);
-    const targetService = SERVICE_KEY_MAP[selection] ?? (isInteractive ? FALLBACK_SERVICE : null);
+    const targetService = SERVICE_KEY_MAP[selection] ?? null;
     if (targetService) {
       logInfo("ROUTING_TO_SERVICE", { service: targetService, selection }, { correlationId: crypto.randomUUID() });
       if (phoneNumber) await setActiveService(supabase, phoneNumber, targetService);

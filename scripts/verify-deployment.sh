@@ -19,9 +19,10 @@ functions=(
   "wa-webhook-core"
   "wa-webhook-mobility"
   "wa-webhook-wallet"
-  "wa-webhook-jobs"
-  "wa-webhook-property"
-  "wa-webhook-marketplace"
+  "wa-webhook-buy-sell"
+  "wa-webhook-profile"
+  "wa-webhook-insurance"
+  "wa-webhook-voice-calls"
   # Agents
   "agent-negotiation"
   "agent-property-rental"
