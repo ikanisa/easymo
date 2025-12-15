@@ -396,16 +396,19 @@ export async function handleTripComplete(
     // 4. Calculate final fare (if not already set)
     // NOTE: fare.ts removed per GROUND_RULES - fare calculation now handled externally
     // Using estimate as fallback; actual fare should be set by external pricing service
+    // Default minimum fare (1000 RWF) if no fare data available
+    const DEFAULT_MINIMUM_FARE = 1000;
     let finalFare = trip.actual_fare;
     let fareStrategy = "existing_actual";
     if (!finalFare) {
       // Use fare_estimate as fallback since calculateActualFare is removed
-      finalFare = trip.fare_estimate;
-      fareStrategy = "estimate_fallback";
+      finalFare = trip.fare_estimate ?? DEFAULT_MINIMUM_FARE;
+      fareStrategy = trip.fare_estimate ? "estimate_fallback" : "default_minimum";
       await logStructuredEvent("FARE_CALCULATION_SKIPPED", {
         tripId,
         reason: "fare_module_removed",
         usingEstimate: finalFare,
+        strategy: fareStrategy,
       }, "debug");
     }
 

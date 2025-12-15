@@ -77,6 +77,9 @@ function formatUnknownError(error: unknown): string {
   return String(error);
 }
 
+// Default age estimate for recent location (in minutes)
+const DEFAULT_LOCATION_AGE_MINUTES = 5;
+
 const STATE_KEYS = {
   MOBILITY: {
     NEARBY_SELECT: "mobility_nearby_select",
@@ -356,13 +359,10 @@ serve(async (req: Request): Promise<Response> => {
             const lastLoc = await getLastLocation(ctx.supabase, ctx.profileId);
 
             if (lastLoc?.lat && lastLoc?.lng) {
-              // Calculate age in minutes for message (estimate: recent_locations has captured_at)
-              const ageMinutes = 5; // Default age estimate for recent location
-              
               // Show confirmation message using imported getLocationReusedMessage
               await sendText(
                 ctx.from,
-                getLocationReusedMessage(ageMinutes, ctx.locale),
+                getLocationReusedMessage(DEFAULT_LOCATION_AGE_MINUTES, ctx.locale),
               );
 
               // Continue with matching flow
@@ -530,13 +530,10 @@ serve(async (req: Request): Promise<Response> => {
             const lastLoc = await getLastLocation(ctx.supabase, ctx.profileId);
 
             if (lastLoc?.lat && lastLoc?.lng) {
-              // Calculate age in minutes for message (estimate: recent_locations has captured_at)
-              const ageMinutes = 5; // Default age estimate for recent location
-              
               // Show confirmation message using imported getLocationReusedMessage
               await sendText(
                 ctx.from,
-                getLocationReusedMessage(ageMinutes, ctx.locale),
+                getLocationReusedMessage(DEFAULT_LOCATION_AGE_MINUTES, ctx.locale),
               );
 
               // Continue with schedule flow
