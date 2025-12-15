@@ -582,7 +582,7 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
     
     const rows = menuItems.map(item => ({
       id: item.key, // Use key as the ID for routing
-      title: item.name,
+      title: item.title, // Use title field from database
       description: item.description || undefined,
     }));
 
