@@ -15,7 +15,7 @@ BEGIN;
 -- PART 1: Add unique constraints to profiles table
 -- ============================================================================
 
--- Add unique constraint on phone_number (if column exists)
+-- Add unique index on phone_number (if column exists)
 DO $$
 BEGIN
   IF EXISTS (
@@ -27,21 +27,20 @@ BEGIN
     -- Drop existing unique index if it exists
     DROP INDEX IF EXISTS idx_profiles_phone_number_unique;
     
-    -- Add unique constraint (will fail if duplicates exist)
+    -- Create unique index (only for non-null values)
     BEGIN
-      ALTER TABLE public.profiles 
-      ADD CONSTRAINT profiles_phone_number_unique 
-      UNIQUE (phone_number) 
+      CREATE UNIQUE INDEX idx_profiles_phone_number_unique 
+      ON public.profiles (phone_number) 
       WHERE phone_number IS NOT NULL;
       
-      RAISE NOTICE 'Added unique constraint on profiles.phone_number';
+      RAISE NOTICE 'Added unique index on profiles.phone_number';
     EXCEPTION WHEN OTHERS THEN
-      RAISE WARNING 'Could not add unique constraint on phone_number: %', SQLERRM;
+      RAISE WARNING 'Could not add unique index on phone_number: %', SQLERRM;
     END;
   END IF;
 END $$;
 
--- Add unique constraint on wa_id (if column exists)
+-- Add unique index on wa_id (if column exists)
 DO $$
 BEGIN
   IF EXISTS (
@@ -53,16 +52,15 @@ BEGIN
     -- Drop existing unique index if it exists
     DROP INDEX IF EXISTS idx_profiles_wa_id_unique;
     
-    -- Add unique constraint (will fail if duplicates exist)
+    -- Create unique index (only for non-null values)
     BEGIN
-      ALTER TABLE public.profiles 
-      ADD CONSTRAINT profiles_wa_id_unique 
-      UNIQUE (wa_id) 
+      CREATE UNIQUE INDEX idx_profiles_wa_id_unique 
+      ON public.profiles (wa_id) 
       WHERE wa_id IS NOT NULL;
       
-      RAISE NOTICE 'Added unique constraint on profiles.wa_id';
+      RAISE NOTICE 'Added unique index on profiles.wa_id';
     EXCEPTION WHEN OTHERS THEN
-      RAISE WARNING 'Could not add unique constraint on wa_id: %', SQLERRM;
+      RAISE WARNING 'Could not add unique index on wa_id: %', SQLERRM;
     END;
   END IF;
 END $$;
