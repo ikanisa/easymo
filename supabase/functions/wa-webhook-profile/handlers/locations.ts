@@ -4,6 +4,7 @@ import {
   sendListMessage,
 } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 
 export async function listSavedLocations(
   ctx: RouterContext,
@@ -22,11 +23,14 @@ export async function listSavedLocations(
     .limit(20);
 
   if (error) {
-    console.error("Failed to fetch saved locations:", error);
+    // P1 fix - Issue #11: Sanitize error message (don't expose to user)
+    logStructuredEvent("PROFILE_LOCATIONS_FETCH_ERROR", {
+      userId: ctx.profileId,
+      error: error.message,
+    }, "error");
     await sendButtonsMessage(
       ctx,
-      "⚠️ Failed to load your saved locations. Please try again.\n\n" +
-      `Error: ${error.message}`,
+      "⚠️ Failed to load your saved locations. Please try again.",
       [
         { id: IDS.SAVED_LOCATIONS, title: "🔄 Try Again" },
         { id: IDS.BACK_PROFILE, title: "← Back" },

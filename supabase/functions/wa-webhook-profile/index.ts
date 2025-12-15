@@ -47,6 +47,7 @@ const profileConfig = WEBHOOK_CONFIG.profile;
 const SERVICE_NAME = "wa-webhook-profile";
 const SERVICE_VERSION = "3.0.0";
 const MAX_BODY_SIZE = profileConfig.maxBodySize;
+const MAX_CACHE_SIZE = 1000; // Maximum number of cached responses to prevent memory leaks
 
 // Circuit breaker for database operations
 const dbCircuitBreaker = new CircuitBreaker({
@@ -64,15 +65,39 @@ interface CacheEntry {
 const responseCache = new Map<string, CacheEntry>();
 const CACHE_TTL = 120000; // 2 minutes
 
-// Cleanup old cache entries periodically
+// Cleanup old cache entries periodically and enforce size limit
 setInterval(() => {
   const now = Date.now();
+  // Remove expired entries
   for (const [key, entry] of responseCache.entries()) {
     if (now - entry.timestamp > CACHE_TTL) {
       responseCache.delete(key);
     }
   }
+  // Enforce size limit by removing oldest entries if needed
+  if (responseCache.size > MAX_CACHE_SIZE) {
+    const entries = Array.from(responseCache.entries())
+      .sort((a, b) => a[1].timestamp - b[1].timestamp);
+    const toRemove = entries.slice(0, responseCache.size - MAX_CACHE_SIZE);
+    for (const [key] of toRemove) {
+      responseCache.delete(key);
+    }
+  }
 }, 60000); // Cleanup every minute
+
+// Environment variable validation at startup
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  logStructuredEvent("PROFILE_ENV_VALIDATION_FAILED", {
+    service: SERVICE_NAME,
+    missingVars: [
+      !SUPABASE_URL ? "SUPABASE_URL" : null,
+      !SUPABASE_SERVICE_ROLE_KEY ? "SUPABASE_SERVICE_ROLE_KEY" : null,
+    ].filter(Boolean),
+  }, "error");
+}
 
 function formatUnknownError(error: unknown): string {
   if (error instanceof Error) return error.message;
@@ -92,8 +117,8 @@ function formatUnknownError(error: unknown): string {
 }
 
 const supabase = createClient(
-  Deno.env.get("SUPABASE_URL") ?? "",
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+  SUPABASE_URL ?? "",
+  SUPABASE_SERVICE_ROLE_KEY ?? "",
   {
     db: {
       schema: "public",
@@ -109,6 +134,98 @@ const supabase = createClient(
     },
   },
 );
+
+/**
+ * Helper function to execute database operations with circuit breaker protection
+ */
+async function executeWithCircuitBreaker<T>(
+  operation: () => Promise<T>,
+  operationName: string,
+  logEvent: (event: string, payload?: Record<string, unknown>, level?: "info" | "warn" | "error") => void,
+): Promise<T> {
+  if (!dbCircuitBreaker.canExecute()) {
+    logEvent("PROFILE_DB_CIRCUIT_OPEN", {
+      operation: operationName,
+      metrics: dbCircuitBreaker.getMetrics(),
+    }, "warn");
+    throw new Error("Database temporarily unavailable (circuit breaker open)");
+  }
+  
+  try {
+    const result = await operation();
+    dbCircuitBreaker.recordSuccess();
+    return result;
+  } catch (error) {
+    dbCircuitBreaker.recordFailure(
+      error instanceof Error ? error.message : String(error),
+    );
+    throw error;
+  }
+}
+
+/**
+ * Sanitize error message to prevent exposing internal details to users
+ */
+function sanitizeErrorMessage(error: unknown): string {
+  const message = formatUnknownError(error);
+  // List of patterns that indicate internal/sensitive errors
+  const sensitivePatterns = [
+    /column|table|relation|schema/i,
+    /permission denied/i,
+    /authentication failed/i,
+    /database|postgres|sql/i,
+    /internal server/i,
+    /connection|timeout/i,
+    /env|environment/i,
+  ];
+  
+  for (const pattern of sensitivePatterns) {
+    if (pattern.test(message)) {
+      return "An error occurred. Please try again later.";
+    }
+  }
+  
+  // Truncate long error messages
+  if (message.length > 100) {
+    return message.substring(0, 100) + "...";
+  }
+  
+  return message;
+}
+
+/**
+ * Coerce location coordinates to numbers and validate
+ */
+function parseCoordinates(lat: unknown, lng: unknown): { lat: number; lng: number } | null {
+  let parsedLat: number;
+  let parsedLng: number;
+  
+  if (typeof lat === "string") {
+    parsedLat = parseFloat(lat);
+  } else if (typeof lat === "number") {
+    parsedLat = lat;
+  } else {
+    return null;
+  }
+  
+  if (typeof lng === "string") {
+    parsedLng = parseFloat(lng);
+  } else if (typeof lng === "number") {
+    parsedLng = lng;
+  } else {
+    return null;
+  }
+  
+  if (!Number.isFinite(parsedLat) || !Number.isFinite(parsedLng)) {
+    return null;
+  }
+  
+  if (parsedLat < -90 || parsedLat > 90 || parsedLng < -180 || parsedLng > 180) {
+    return null;
+  }
+  
+  return { lat: parsedLat, lng: parsedLng };
+}
 
 serve(async (req: Request): Promise<Response> => {
   const url = new URL(req.url);
@@ -140,13 +257,16 @@ serve(async (req: Request): Promise<Response> => {
     }, level);
   };
 
-  // Health check endpoint
+  // Health check endpoint - Include circuit breaker metrics
   if (url.pathname === "/health" || url.pathname.endsWith("/health")) {
     return json({
       status: "healthy",
       service: SERVICE_NAME,
       version: SERVICE_VERSION,
       timestamp: new Date().toISOString(),
+      circuitBreaker: dbCircuitBreaker.getMetrics(),
+      cacheSize: responseCache.size,
+      maxCacheSize: MAX_CACHE_SIZE,
     });
   }
 
@@ -175,8 +295,36 @@ serve(async (req: Request): Promise<Response> => {
 
   // POST webhook handling
   try {
+    // Rate limiting check (P0 fix - Issue #1)
+    const rateLimitResult = await rateLimitMiddleware(req, {
+      limit: profileConfig.rateLimit,
+      windowSeconds: profileConfig.rateWindow,
+    });
+    
+    if (!rateLimitResult.allowed) {
+      logEvent("PROFILE_RATE_LIMITED", {
+        remaining: rateLimitResult.result.remaining,
+        resetAt: rateLimitResult.result.resetAt.toISOString(),
+      }, "warn");
+      return rateLimitResult.response!;
+    }
+
     // Parse request body
     const rawBody = await req.text();
+    
+    // Body size validation (P0 fix - Issue #2)
+    if (rawBody.length > MAX_BODY_SIZE) {
+      logEvent("PROFILE_PAYLOAD_TOO_LARGE", { 
+        size: rawBody.length, 
+        max: MAX_BODY_SIZE,
+      }, "warn");
+      return json({ 
+        error: "payload_too_large", 
+        message: `Request body exceeds maximum size of ${MAX_BODY_SIZE} bytes`,
+        max_size: MAX_BODY_SIZE,
+      }, { status: 413 });
+    }
+    
     let payload: WhatsAppWebhookPayload;
     
     try {
@@ -194,19 +342,34 @@ serve(async (req: Request): Promise<Response> => {
     const runtimeEnv = (Deno.env.get("DENO_ENV") ?? "development").toLowerCase();
     const isProduction = runtimeEnv === "production" || runtimeEnv === "prod";
     
-    if (signature && appSecret) {
-      const isValid = await verifyWebhookSignature(rawBody, signature, appSecret);
+    // Fix signature verification logic gap (P1 fix - Issue #8)
+    // If appSecret is configured, always require a valid signature in production
+    // If signature is present, always verify it regardless of environment
+    if (isProduction) {
+      if (!signature || !appSecret) {
+        // Production must have both signature and secret
+        logEvent("PROFILE_SIGNATURE_MISSING", { 
+          environment: "production",
+          hasSignature: !!signature,
+          hasAppSecret: !!appSecret,
+        }, "error");
+        return json({ error: "unauthorized", message: "Missing webhook signature or app secret" }, { status: 401 });
+      }
       
+      const isValid = await verifyWebhookSignature(rawBody, signature, appSecret);
       if (!isValid) {
-        if (isProduction) {
-          // NEVER bypass in production
-          logEvent("PROFILE_SIGNATURE_INVALID", { 
-            environment: runtimeEnv,
-            userAgent: req.headers.get("user-agent"),
-          }, "error");
-          return json({ error: "unauthorized", message: "Invalid webhook signature" }, { status: 401 });
-        } else {
-          // Dev mode: only bypass if explicitly enabled
+        logEvent("PROFILE_SIGNATURE_INVALID", { 
+          environment: runtimeEnv,
+          userAgent: req.headers.get("user-agent"),
+        }, "error");
+        return json({ error: "unauthorized", message: "Invalid webhook signature" }, { status: 401 });
+      }
+    } else {
+      // Non-production environment
+      if (signature && appSecret) {
+        // If both are provided, verify
+        const isValid = await verifyWebhookSignature(rawBody, signature, appSecret);
+        if (!isValid) {
           const allowBypass = Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") === "true";
           if (!allowBypass) {
             logEvent("PROFILE_SIGNATURE_INVALID_DEV", { bypass_disabled: true }, "warn");
@@ -214,22 +377,25 @@ serve(async (req: Request): Promise<Response> => {
           }
           logEvent("PROFILE_SIGNATURE_BYPASS_DEV", { reason: "dev_mode_explicit" }, "warn");
         }
+      } else if (signature && !appSecret) {
+        // Signature provided but no secret to verify against - log warning
+        logEvent("PROFILE_SIGNATURE_NO_SECRET", { 
+          environment: runtimeEnv,
+          hasSignature: true,
+        }, "warn");
       }
-    } else if (isProduction) {
-      // Production must have signature
-      logEvent("PROFILE_SIGNATURE_MISSING", { environment: "production" }, "error");
-      return json({ error: "unauthorized", message: "Missing webhook signature" }, { status: 401 });
+      // If neither signature nor secret, allow in non-production (dev mode)
     }
 
     // Validate payload structure
     if (!payload.entry || !Array.isArray(payload.entry) || payload.entry.length === 0) {
-      logEvent("PROFILE_NO_ENTRIES", {}, "debug");
+      logEvent("PROFILE_NO_ENTRIES", {}, "info");
       return json({ success: true, ignored: "no_entries" });
     }
 
     const entry = payload.entry[0];
     if (!entry.changes || !Array.isArray(entry.changes) || entry.changes.length === 0) {
-      logEvent("PROFILE_NO_CHANGES", {}, "debug");
+      logEvent("PROFILE_NO_CHANGES", {}, "info");
       return json({ success: true, ignored: "no_changes" });
     }
 
@@ -237,7 +403,7 @@ serve(async (req: Request): Promise<Response> => {
     const value = change.value;
     
     if (!value.messages || !Array.isArray(value.messages) || value.messages.length === 0) {
-      logEvent("PROFILE_NO_MESSAGES", {}, "debug");
+      logEvent("PROFILE_NO_MESSAGES", {}, "info");
       return json({ success: true, ignored: "no_messages" });
     }
 
@@ -255,8 +421,26 @@ serve(async (req: Request): Promise<Response> => {
     const cacheKey = `${from}:${messageId}`;
     const cached = responseCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      logEvent("PROFILE_CACHE_HIT", { messageId: messageId?.slice(0, 8) }, "debug");
+      logEvent("PROFILE_CACHE_HIT", { messageId: messageId?.slice(0, 8) }, "info");
       return json(cached.response);
+    }
+    
+    // Database idempotency check (P0 fix - Issue #3)
+    // Only import and check if message has an ID
+    if (messageId) {
+      try {
+        const { checkIdempotency } = await import("../_shared/webhook-utils.ts");
+        const alreadyProcessed = await checkIdempotency(supabase, messageId, correlationId);
+        if (alreadyProcessed) {
+          logEvent("PROFILE_DUPLICATE_SKIPPED", { messageId: messageId?.slice(0, 8) }, "info");
+          return json({ success: true, ignored: "duplicate" });
+        }
+      } catch (idempotencyError) {
+        // Log but don't fail - idempotency check failure shouldn't block processing
+        logEvent("PROFILE_IDEMPOTENCY_CHECK_ERROR", {
+          error: idempotencyError instanceof Error ? idempotencyError.message : String(idempotencyError),
+        }, "warn");
+      }
     }
 
     // Build Context - Auto-create profile if needed (with circuit breaker protection)
@@ -499,14 +683,19 @@ serve(async (req: Request): Promise<Response> => {
             await clearState(ctx.supabase, ctx.profileId);
 
             if (error) {
+              // P1 fix - Issue #11: Sanitize error message
               await sendButtonsMessage(
                 ctx,
-                `⚠️ Failed to save location: ${error.message}`,
+                `⚠️ Failed to save location. Please try again.`,
                 [
                   { id: IDS.SAVED_LOCATIONS, title: "📍 Try Again" },
                   { id: IDS.BACK_PROFILE, title: "← Back" },
                 ],
               );
+              logEvent("PROFILE_LOCATION_SAVE_ERROR", { 
+                error: error.message,
+                type: locationType,
+              }, "error");
             } else {
               await sendButtonsMessage(
                 ctx,
@@ -653,9 +842,10 @@ serve(async (req: Request): Promise<Response> => {
               .eq("user_id", ctx.profileId);
 
             if (error) {
+              // P1 fix - Issue #11: Sanitize error message
               await sendButtonsMessage(
                 ctx,
-                `⚠️ Failed to delete location: ${error.message}`,
+                `⚠️ Failed to delete location. Please try again.`,
                 [{ id: IDS.SAVED_LOCATIONS, title: "← Back to Locations" }],
               );
               logEvent("LOCATION_DELETE_FAILED", {
@@ -821,11 +1011,12 @@ serve(async (req: Request): Promise<Response> => {
     ) {
       if (ctx.profileId) {
         const location = (message as any).location;
-        const lat = location?.latitude;
-        const lng = location?.longitude;
+        
+        // P0 fix - Issue #5: Use parseCoordinates helper for type coercion and validation
+        const coords = parseCoordinates(location?.latitude, location?.longitude);
 
-        // Validate coordinates
-        if (!lat || !lng || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+        // Validate coordinates using the helper
+        if (!coords) {
           await sendButtonsMessage(
             ctx,
             "⚠️ Invalid location coordinates. Please try again.",
@@ -834,35 +1025,26 @@ serve(async (req: Request): Promise<Response> => {
               { id: IDS.BACK_PROFILE, title: "← Back" },
             ],
           );
-          handled = true;
-        } else if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-          await sendButtonsMessage(
-            ctx,
-            "⚠️ Coordinates out of valid range. Please share a valid location.",
-            [
-              { id: IDS.SAVED_LOCATIONS, title: "📍 Saved Locations" },
-              { id: IDS.BACK_PROFILE, title: "← Back" },
-            ],
-          );
-          logEvent("INVALID_COORDINATES", { lat, lng }, "warn");
+          logEvent("INVALID_COORDINATES", { 
+            rawLat: location?.latitude, 
+            rawLng: location?.longitude 
+          }, "warn");
           handled = true;
         } else if (state.key === IDS.ADD_LOCATION && state.data?.type) {
           // Show confirmation first
           const locationType = state.data.type as string;
           const address = location?.address ||
-            `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+            `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`;
 
-          if (ctx.profileId) {
-            await setState(ctx.supabase, ctx.profileId, {
-              key: "confirm_add_location",
-              data: {
-                type: locationType,
-                lat,
-                lng,
-                address: location?.address || null,
-              },
-            });
-          }
+          await setState(ctx.supabase, ctx.profileId, {
+            key: "confirm_add_location",
+            data: {
+              type: locationType,
+              lat: coords.lat,
+              lng: coords.lng,
+              address: location?.address || null,
+            },
+          });
 
           await sendButtonsMessage(
             ctx,
@@ -870,7 +1052,7 @@ serve(async (req: Request): Promise<Response> => {
               locationType.charAt(0).toUpperCase() + locationType.slice(1)
             } Location*\n\n` +
               `Address: ${address}\n` +
-              `Coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}\n\n` +
+              `Coordinates: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}\n\n` +
               `Is this correct?`,
             [
               {
@@ -887,8 +1069,8 @@ serve(async (req: Request): Promise<Response> => {
           const { error } = await ctx.supabase
             .from("saved_locations")
             .update({
-              lat,
-              lng,
+              lat: coords.lat,
+              lng: coords.lng,
               address: location?.address || null,
             })
             .eq("id", locationId)
@@ -899,14 +1081,14 @@ serve(async (req: Request): Promise<Response> => {
             try {
               await ctx.supabase.rpc("update_user_location_cache", {
                 _user_id: ctx.profileId,
-                _lat: lat,
-                _lng: lng,
+                _lat: coords.lat,
+                _lng: coords.lng,
               });
               logEvent("PROFILE_LOCATION_UPDATED_CACHED", {
                 user: ctx.profileId,
                 locationId,
-                lat,
-                lng,
+                lat: coords.lat,
+                lng: coords.lng,
               });
             } catch (cacheError) {
               logEvent("PROFILE_CACHE_FAILED", {
@@ -920,14 +1102,19 @@ serve(async (req: Request): Promise<Response> => {
           await clearState(ctx.supabase, ctx.profileId);
 
           if (error) {
+            // P1 fix - Issue #11: Sanitize error message
             await sendButtonsMessage(
               ctx,
-              `⚠️ Failed to update location: ${error.message}`,
+              `⚠️ Failed to update location. Please try again.`,
               [
                 { id: `LOC::${locationId}`, title: "← Back" },
                 { id: IDS.SAVED_LOCATIONS, title: "📍 Locations" },
               ],
             );
+            logEvent("PROFILE_LOCATION_UPDATE_ERROR", { 
+              error: error.message,
+              locationId,
+            }, "error");
           } else {
             await sendButtonsMessage(
               ctx,

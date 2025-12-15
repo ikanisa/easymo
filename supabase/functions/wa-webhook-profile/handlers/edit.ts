@@ -19,7 +19,13 @@ const SUPPORTED_LANGUAGES = [
 ];
 
 export async function startEditProfile(ctx: RouterContext): Promise<boolean> {
-  await setState(ctx.supabase, ctx.profileId!, {
+  // P0 fix - Issue #6: Add profileId null guard
+  if (!ctx.profileId) {
+    await sendText(ctx.from, "❌ Please complete your profile setup first.");
+    return false;
+  }
+
+  await setState(ctx.supabase, ctx.profileId, {
     key: EDIT_STATES.MENU,
     data: {}
   });
@@ -52,7 +58,13 @@ export async function startEditProfile(ctx: RouterContext): Promise<boolean> {
 }
 
 export async function promptEditName(ctx: RouterContext): Promise<boolean> {
-  await setState(ctx.supabase, ctx.profileId!, {
+  // P0 fix - Issue #6: Add profileId null guard
+  if (!ctx.profileId) {
+    await sendText(ctx.from, "❌ Please complete your profile setup first.");
+    return false;
+  }
+
+  await setState(ctx.supabase, ctx.profileId, {
     key: EDIT_STATES.NAME,
     data: {}
   });
@@ -70,6 +82,12 @@ export async function handleEditName(
   ctx: RouterContext,
   newName: string
 ): Promise<boolean> {
+  // P0 fix - Issue #6: Add profileId null guard
+  if (!ctx.profileId) {
+    await sendText(ctx.from, "❌ Please complete your profile setup first.");
+    return false;
+  }
+
   const trimmedName = newName.trim();
 
   // Validation: minimum length
@@ -107,7 +125,7 @@ export async function handleEditName(
       return false;
     }
 
-    await setState(ctx.supabase, ctx.profileId!, {
+    await setState(ctx.supabase, ctx.profileId, {
       key: "home",
       data: {}
     });
@@ -136,7 +154,13 @@ export async function handleEditName(
 }
 
 export async function promptEditLanguage(ctx: RouterContext): Promise<boolean> {
-  await setState(ctx.supabase, ctx.profileId!, {
+  // P0 fix - Issue #6: Add profileId null guard
+  if (!ctx.profileId) {
+    await sendText(ctx.from, "❌ Please complete your profile setup first.");
+    return false;
+  }
+
+  await setState(ctx.supabase, ctx.profileId, {
     key: EDIT_STATES.LANGUAGE,
     data: {}
   });
@@ -162,6 +186,12 @@ export async function handleEditLanguage(
   ctx: RouterContext,
   languageCode: string
 ): Promise<boolean> {
+  // P0 fix - Issue #6: Add profileId null guard
+  if (!ctx.profileId) {
+    await sendText(ctx.from, "❌ Please complete your profile setup first.");
+    return false;
+  }
+
   const lang = SUPPORTED_LANGUAGES.find(l => l.code === languageCode);
 
   if (!lang) {
@@ -185,7 +215,7 @@ export async function handleEditLanguage(
       return false;
     }
 
-    await setState(ctx.supabase, ctx.profileId!, {
+    await setState(ctx.supabase, ctx.profileId, {
       key: "home",
       data: {}
     });
