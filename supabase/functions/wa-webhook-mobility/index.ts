@@ -58,6 +58,8 @@ import { t } from "./i18n/translator.ts";
 import { supabase, WA_APP_SECRET } from "./config.ts";
 // Fallback: also try direct env read in case Supabase binding has issues
 const WA_APP_SECRET_DIRECT = Deno.env.get("WHATSAPP_APP_SECRET") ?? Deno.env.get("WA_APP_SECRET");
+console.log("DEBUG: WA_APP_SECRET_DIRECT available:", !!WA_APP_SECRET_DIRECT, "length:", WA_APP_SECRET_DIRECT?.length ?? 0);
+console.log("DEBUG: WA_APP_SECRET from config available:", !!WA_APP_SECRET, "length:", WA_APP_SECRET?.length ?? 0);
 // Import location utilities
 import { getLastLocation } from "./locations/cache.ts";
 import { getLocationReusedMessage } from "../_shared/wa-webhook-shared/locations/messages.ts";
@@ -178,6 +180,7 @@ serve(async (req: Request): Promise<Response> => {
       ? "x-hub-signature"
       : null;
     const signature = signatureHeader ? req.headers.get(signatureHeader) : null;
+    const signatureMeta = (() => {
       if (!signature) {
         return {
           provided: false,
