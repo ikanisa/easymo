@@ -118,14 +118,32 @@ async function getOrCreateAuthUserId(
   const existing = await findAuthUserIdByPhone(client, phoneE164);
   if (existing) return existing;
 
+  // Create anonymous user (no password, phone as identifier)
+  // This creates an anonymous user that can be identified by phone number
   const { data: created, error: createError } = await client.auth.admin
     .createUser({
       phone: phoneE164,
       phone_confirm: true,
-      user_metadata: { source: "whatsapp" },
+      // No password = anonymous user
+      // No email = anonymous user
+      user_metadata: { 
+        source: "whatsapp",
+        auth_type: "anonymous",
+        phone: phoneE164,
+      },
+      app_metadata: {
+        provider: "whatsapp",
+        providers: ["whatsapp"],
+      },
     });
 
-  if (!createError && created?.user?.id) return created.user.id;
+  if (!createError && created?.user?.id) {
+    await logStructuredEvent("ANONYMOUS_USER_CREATED", {
+      phone: maskMsisdn(phoneE164),
+      user_id: created.user.id,
+    });
+    return created.user.id;
+  }
 
   // If creation failed, check if it's a duplicate error (phone already exists)
   if (createError) {
@@ -354,11 +372,13 @@ export async function ensureProfile(
       };
     }
 
-    // 2) Create or reuse auth user for this phone, then ensure profile row exists
+    // 2) Create or reuse auth user for this phone (anonymous authentication)
+    // The trigger will automatically create the profile, but we ensure it exists
     const userId = await getOrCreateAuthUserId(client, normalizedE164);
     await ensureProfileRowExists(client, userId);
 
     // 3) Best-effort: persist phone mapping across known column variants
+    // This ensures WhatsApp number is stored in all possible columns
     await tryUpdateProfile(client, userId, { whatsapp_number: digits });
     await tryUpdateProfile(client, userId, { wa_id: digits });
     await tryUpdateProfile(client, userId, { whatsapp_e164: normalizedE164 });
