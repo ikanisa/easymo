@@ -294,6 +294,7 @@ Located in `supabase/functions/wa-webhook-*`
 - `wa-webhook-jobs` - Job marketplace
 - `wa-webhook-property` - Property listings
 - `wa-webhook-buy-sell` - Buy & Sell marketplace
+- `wa-webhook-marketplace` - Marketplace services
 
 ---
 

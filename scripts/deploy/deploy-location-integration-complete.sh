@@ -70,6 +70,7 @@ deploy_phase1_ai_agents() {
     fi
     
     log_info "Phase 1 deployment complete!"
+    log_info "Phase 1 deployment complete (wa-webhook-ai-agents removed)!"
 }
 
 deploy_phase2_cache_integrations() {

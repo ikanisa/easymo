@@ -61,6 +61,20 @@ export function SupportChat() {
 
       // AI agent support is currently unavailable
       // TODO: Implement admin panel support via wa-webhook-core or dedicated admin support service
+      // Call AI agent via Supabase function
+      const { data, error } = await supabase.functions.invoke("wa-webhook-core", {
+        body: {
+          message: input,
+          agentType,
+          context: {
+            channel: "admin_panel",
+            sessionId: userMessage.id,
+          },
+        },
+      });
+
+      if (error) throw error;
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",

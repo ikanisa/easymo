@@ -12,6 +12,7 @@
         "wa-webhook-wallet",
         "wa-webhook-profile",
         "wa-webhook-buy-sell"
+        "wa-webhook-wallet"
       ],
       "metrics": [
         "health_status",

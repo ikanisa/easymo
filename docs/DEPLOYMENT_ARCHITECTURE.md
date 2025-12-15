@@ -122,7 +122,6 @@ supabase secrets set WHATSAPP_VERIFY_TOKEN=xxx
 - `vendor-service` - Vendor management
 - `video-orchestrator` - Video calls
 - `voice-bridge` - Voice call handling
-- `wa-webhook-ai-agents` - WhatsApp AI
 - `whatsapp-pricing-server` - Pricing engine
 - `whatsapp-webhook-worker` - Async webhook processing
 

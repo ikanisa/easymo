@@ -43,6 +43,13 @@ echo "Phase 2: Core WhatsApp Infrastructure"
 echo "-------------------------------------"
 log_info "Deploying wa-webhook-core (main router)"
 supabase functions deploy wa-webhook-core
+echo "Phase 2: Core Infrastructure"
+echo "-------------------------------------"
+log_info "Deploying wa-webhook-core (core router)"
+supabase functions deploy wa-webhook-core
+
+log_info "Deploying wa-webhook-unified (unified orchestrator)"
+supabase functions deploy wa-webhook-unified
 
 echo ""
 echo "Phase 3: Domain-Specific Webhooks"

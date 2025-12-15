@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Test runner for wa-webhook-ai-agents
+# Test runner for wa-webhook-core
 # Runs all test suites with proper configuration
 
 set -e
 
-echo "🧪 Running wa-webhook-ai-agents test suite..."
+echo "🧪 Running wa-webhook-core test suite..."
 echo ""
 
 # Check environment variables
@@ -18,28 +18,24 @@ echo "✅ Environment configured"
 echo "   URL: ${SUPABASE_URL:0:30}..."
 echo ""
 
-# Navigate to test directory
-cd "$(dirname "$0")/supabase/functions/wa-webhook-ai-agents/__tests__"
+# Navigate to repository root
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
 
-# Run tests
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "📋 Test Suite 1: Intent Parsing (fast, no database)"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-deno test --allow-env intent-parsing.test.ts
+# Check if test directory exists
+TEST_DIR="supabase/functions/wa-webhook-core/__tests__"
+if [ -d "$TEST_DIR" ]; then
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "📋 Test Suite: Router Tests"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  cd "$TEST_DIR"
+  deno test --allow-env --allow-net
 
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🧠 Test Suite 2: Orchestrator (requires database)"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-deno test --allow-net --allow-env orchestrator.test.ts
-
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🔗 Test Suite 3: Integration (end-to-end)"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-deno test --allow-net --allow-env integration.test.ts
-
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "✅ All tests passed!"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ All tests passed!"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+else
+  echo "⚠️ No test directory found at $TEST_DIR, skipping tests"
+fi

@@ -13,10 +13,6 @@ export interface RouteConfig {
   menuKeys: string[];
   /** Priority for conflict resolution (lower = higher priority) */
   priority: number;
-  /** If true, this service is deprecated */
-  deprecated?: boolean;
-  /** The service to redirect to when deprecated */
-  redirectTo?: string;
 }
 
 /**
@@ -68,31 +64,29 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
     priority: 1,
   },
   {
+    // Buy & Sell service - consolidated marketplace + support
+    // Support functionality merged here per comprehensive cleanup (Phase 2)
+    // Handles both marketplace transactions and customer support inquiries
     service: "wa-webhook-buy-sell",
-    keywords: ["buy", "sell", "category", "categories", "browse", "directory", "shops", "business", "marketplace"],
-    menuKeys: ["buy_sell", "buy_and_sell", "buy and sell", "shops_services", "marketplace", "3"],
+    keywords: [
+      // Marketplace keywords
+      "buy", "sell", "category", "categories", "browse", "directory", "shops", "business", "marketplace",
+      // Support keywords (consolidated from wa-agent-support)
+      "support", "help", "issue", "problem", "question", "faq",
+    ],
+    menuKeys: [
+      // Marketplace menu keys
+      "buy_sell", "buy_and_sell", "buy and sell", "shops_services", "marketplace", "3",
+      // Support menu keys (consolidated from wa-agent-support)
+      "support_agent", "support", "customer_support", "help", "4",
+    ],
     priority: 1,
-  },
-  {
-    /**
-     * Buy-Sell AI Agent endpoint (only AI agent kept)
-     */
-    service: "agent-buy-sell",
-    keywords: [], // Intentionally empty - access via wa-webhook-buy-sell-agent
-    menuKeys: [],  // Intentionally empty - access via wa-webhook-buy-sell-agent
-    priority: 99,
   },
   {
     service: "wa-webhook-insurance",
     keywords: ["insurance", "insure", "policy", "coverage", "quote", "motor insurance"],
     menuKeys: ["insurance", "motor_insurance"],
     priority: 1,
-  },
-  {
-    service: "wa-agent-support",
-    keywords: ["support", "help", "issue", "problem", "question", "faq"],
-    menuKeys: ["support_agent", "support", "customer_support", "help", "4"],
-    priority: 2,
   },
 ];
 
@@ -103,17 +97,12 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
  * - Mobility, Buy & Sell, Insurance, Profile, Wallet
  */
 export const ROUTED_SERVICES: readonly string[] = [
+  "wa-webhook-core",
   "wa-webhook-mobility",
   "wa-webhook-insurance",
   "wa-webhook-profile",
   "wa-webhook-wallet",
   "wa-webhook-buy-sell",
-  "wa-webhook-buy-sell-directory",
-  "wa-webhook-buy-sell-agent",
-  "agent-buy-sell",
-  "wa-agent-support",
-  "wa-webhook-core",
-  "wa-webhook", // Legacy fallback
 ] as const;
 
 export type RoutedService = typeof ROUTED_SERVICES[number];
@@ -135,12 +124,20 @@ export function buildMenuKeyMap(): Record<string, string> {
  * State-based routing patterns
  * 
  * EasyMO Rwanda-only services
+ * Note: Support patterns consolidated into buy-sell per comprehensive cleanup
  */
 export const STATE_PATTERNS: Array<{ patterns: string[]; service: string }> = [
   { patterns: ["mobility", "trip_", "ride_"], service: "wa-webhook-mobility" },
   { patterns: ["wallet_", "payment_", "transfer_", "momo_qr_"], service: "wa-webhook-wallet" },
-  { patterns: ["shop_", "buy_sell_", "buy_sell_location", "buy_sell_results", "buy_sell_menu", "business_", "directory_"], service: "wa-webhook-buy-sell" },
-  { patterns: ["support_"], service: "wa-agent-support" },
+  { 
+    patterns: [
+      // Marketplace patterns
+      "shop_", "buy_sell_", "buy_sell_location", "buy_sell_results", "buy_sell_menu", "business_", "directory_",
+      // Support patterns (consolidated from wa-agent-support)
+      "support_",
+    ],
+    service: "wa-webhook-buy-sell",
+  },
 ];
 
 /**
@@ -183,3 +180,5 @@ export function matchKeywordsToService(text: string): string | null {
 
   return matches[0].service;
 }
+
+

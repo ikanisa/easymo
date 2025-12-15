@@ -27,6 +27,7 @@ EDGE_FUNCTIONS_TO_DELETE=(
   "webhook-traffic-router"
   "wa-webhook-buy-sell-agent"
   "wa-webhook-buy-sell-directory"
+  "agent-buy-sell"
   
   # Debug functions
   "debug-auth-users"
@@ -41,6 +42,7 @@ EDGE_FUNCTIONS_TO_DELETE=(
   "wa-agent-waiter"
   "ai-contact-queue"
   "ai-lookup-customer"
+  "wa-webhook-ai-agents"
   
   # Duplicate SMS functions
   "momo-sms-webhook"

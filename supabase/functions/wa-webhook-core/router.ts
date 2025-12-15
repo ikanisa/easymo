@@ -53,36 +53,28 @@ type WhatsAppHomeMenuItem = {
 import {
   buildMenuKeyMap,
   ROUTED_SERVICES,
-  getServiceFromState as getServiceFromStateConfig,
 } from "../_shared/route-config.ts";
 
-const FALLBACK_SERVICE = "wa-webhook";
 
 // Build SERVICE_KEY_MAP from consolidated route config
 const SERVICE_KEY_MAP = buildMenuKeyMap();
-// Retry configuration
-const MAX_RETRIES = 2;
-const INITIAL_RETRY_DELAY_MS = 200;
-const RETRIABLE_STATUS_CODES = [408, 429, 503, 504];
 
 /**
- * Handle insurance agent request - simple contact info delivery
- * Queries insurance_admin_contacts table and sends WhatsApp link to admin
+ * Handle insurance agent request - dynamically fetch contacts from admin_contacts table
+ * Queries admin_contacts table for category='insurance' and sends list of available contacts
  */
 async function handleInsuranceAgentRequest(phoneNumber: string): Promise<void> {
   try {
-    // Query insurance_admin_contacts for active insurance contact
+    // Query admin_contacts for active insurance contacts
     const { data: contacts, error } = await supabase
-      .from("insurance_admin_contacts")
-      .select("destination, display_name")
+      .from("admin_contacts")
+      .select("phone_number, name")
       .eq("category", "insurance")
       .eq("is_active", true)
-      .order("priority", { ascending: true })
-      .limit(1);
+      .order("created_at", { ascending: true });
 
     if (error) {
       logError("INSURANCE_CONTACT_QUERY_ERROR", { error: error.message }, { correlationId: crypto.randomUUID() });
-      // Fallback message
       await sendText(phoneNumber, "For insurance services, please contact our support team.");
       return;
     }
@@ -93,17 +85,24 @@ async function handleInsuranceAgentRequest(phoneNumber: string): Promise<void> {
       return;
     }
 
-    const contact = contacts[0];
-    const whatsappLink = `https://wa.me/${contact.destination.replace(/^\+/, "")}`;
-    const displayName = contact.display_name || "Insurance Team";
+    // Build engaging message with emojis
+    let message = "🛡️ *Insurance Made Easy!*\n\n";
+    message += "Get protected today! Our insurance team is ready to help you.\n\n";
+    message += "📞 *Contact us now:*\n\n";
     
-    const message = `🛡️ Insurance Services\n\nFor insurance inquiries, please contact our ${displayName}:\n\n${whatsappLink}`;
+    contacts.forEach((contact, index) => {
+      const whatsappLink = `https://wa.me/${contact.phone_number.replace(/^\+/, "")}`;
+      message += `${index + 1}. ${contact.name}\n`;
+      message += `   💬 ${whatsappLink}\n\n`;
+    });
     
-    await sendText(phoneNumber, message);
+    message += "✨ _Fast quotes • Easy claims • Peace of mind_";
     
-    logInfo("INSURANCE_CONTACT_SENT", { 
+    await sendText(phoneNumber, message.trim());
+    
+    logInfo("INSURANCE_CONTACTS_SENT", { 
       to: phoneNumber.substring(0, 6) + "***",
-      contactName: displayName 
+      contactCount: contacts.length 
     }, { correlationId: crypto.randomUUID() });
   } catch (err) {
     logError("INSURANCE_HANDLER_ERROR", { error: String(err) }, { correlationId: crypto.randomUUID() });
@@ -112,44 +111,16 @@ async function handleInsuranceAgentRequest(phoneNumber: string): Promise<void> {
   }
 }
 
-/**
- * Sleep for a given duration with optional jitter
- */
-function sleep(ms: number, jitter = true): Promise<void> {
-  const delay = jitter ? ms * (0.8 + Math.random() * 0.4) : ms;
-  return new Promise((resolve) => setTimeout(resolve, delay));
-}
-
-/**
- * Check if an error or status code is retriable
- */
-function isRetriable(error: unknown, statusCode?: number): boolean {
-  // Network errors are retriable
-  if (error instanceof Error) {
-    const message = error.message.toLowerCase();
-    if (message.includes("network") || message.includes("timeout") || message.includes("abort")) {
-      return true;
-    }
-  }
-  
-  // Specific status codes are retriable
-  if (statusCode && RETRIABLE_STATUS_CODES.includes(statusCode)) {
-    return true;
-  }
-  
-  return false;
-}
-
 const MICROSERVICES_BASE_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1`;
 const ROUTER_TIMEOUT_MS = Math.max(Number(Deno.env.get("WA_ROUTER_TIMEOUT_MS") ?? "4000") || 4000, 1000);
 
 export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Promise<RoutingDecision> {
   const routingMessage = getFirstMessage(payload);
   
-  // Handle voice/audio messages -> Route to Call Center AGI
+  // Handle voice/audio messages -> Route to Voice Calls Handler
   if (routingMessage?.type === 'audio' || routingMessage?.type === 'voice') {
     return {
-      service: "wa-agent-call-center",
+      service: "wa-webhook-voice-calls",
       reason: "keyword",
       routingText: "[VOICE_MESSAGE]",
     };
@@ -170,7 +141,7 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
     //   - Standalone codes: 6-12 alphanumeric characters (avoiding common words)
     const hasRefPrefix = /^REF[:\s]+[A-Z0-9]{4,12}$/i.test(trimmedText);
     const isStandaloneCode = /^[A-Z0-9]{6,12}$/.test(upperText) && 
-                            !/^(HELLO|THANKS|CANCEL|SUBMIT|ACCEPT|REJECT|STATUS|URGENT|PLEASE)$/.test(upperText);
+                            !/^(HELLO|THANKS|CANCEL|SUBMIT|ACCEPT|REJECT|STATUS|URGENT|PLEASE|INSURANCE)$/.test(upperText);
     
     const isReferralCode = hasRefPrefix || isStandaloneCode;
     
@@ -257,7 +228,10 @@ export async function forwardToEdgeService(
   const targetService = decision.service;
   
   if (!ROUTED_SERVICES.includes(targetService)) {
-    console.warn(`Unknown service '${targetService}', handling inside core.`);
+    logWarn("WA_CORE_UNKNOWN_SERVICE", { 
+      service: targetService,
+      handlingInCore: true 
+    }, { correlationId });
     return new Response(JSON.stringify({ success: true, service: "wa-webhook-core" }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
@@ -272,12 +246,10 @@ export async function forwardToEdgeService(
   // Check circuit breaker before attempting request
   if (isServiceCircuitOpen(targetService)) {
     const breakerState = circuitBreakerManager.getBreaker(targetService).getState();
-    console.warn(JSON.stringify({
-      event: "WA_CORE_CIRCUIT_OPEN",
+    logWarn("WA_CORE_CIRCUIT_OPEN", {
       service: targetService,
       breakerState,
-      correlationId,
-    }));
+    }, { correlationId });
     
     // Add to DLQ for later processing
     const message = getFirstMessage(payload);
@@ -551,9 +523,14 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
   if (selection === "menu" || selection === "home") {
     logInfo("MENU_REQUESTED", { from: phoneNumber }, { correlationId: crypto.randomUUID() });
     if (phoneNumber) await clearActiveService(supabase, phoneNumber);
+  } else if (selection === "insurance") {
+    // Handle insurance inline - show contacts directly
+    logInfo("INSURANCE_SELECTED", { from: phoneNumber }, { correlationId: crypto.randomUUID() });
+    await handleInsuranceAgentRequest(phoneNumber);
+    return new Response(JSON.stringify({ success: true, insurance_sent: true }), { status: 200 });
   } else if (selection) {
     const isInteractive = Boolean(interactiveId);
-    const targetService = SERVICE_KEY_MAP[selection] ?? (isInteractive ? FALLBACK_SERVICE : null);
+    const targetService = SERVICE_KEY_MAP[selection] ?? null;
     if (targetService) {
       logInfo("ROUTING_TO_SERVICE", { service: targetService, selection }, { correlationId: crypto.randomUUID() });
       if (phoneNumber) await setActiveService(supabase, phoneNumber, targetService);
@@ -580,11 +557,10 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
             { service: targetService, status: response.status },
             { correlationId: crypto.randomUUID() },
           );
-          console.warn(JSON.stringify({
-            event: "WA_CORE_MENU_FALLBACK",
+          logWarn("WA_CORE_MENU_FALLBACK", {
             reason: "service_missing",
             service: targetService,
-          }));
+          }, { correlationId: crypto.randomUUID() });
         } else {
           logInfo("FORWARDED", { service: targetService, status: response.status }, { correlationId: crypto.randomUUID() });
           return response;
@@ -615,7 +591,7 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
     
     const rows = menuItems.map(item => ({
       id: item.key, // Use key as the ID for routing
-      title: item.name,
+      title: item.title, // Use title field from database
       description: item.description || undefined,
     }));
 
@@ -640,7 +616,7 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
       rows: rows,
     });
 
-    console.log(JSON.stringify({ event: "MENU_SENT_SUCCESS", to: phoneNumber, itemCount: rows.length }));
+    logInfo("MENU_SENT_SUCCESS", { to: phoneNumber?.slice(-4), itemCount: rows.length }, { correlationId: crypto.randomUUID() });
     return new Response(JSON.stringify({ success: true, menu_shown: true }), { status: 200 });
   } catch (error) {
     logError("SEND_MESSAGE_FAILED", { error: String(error) }, { correlationId: crypto.randomUUID() });

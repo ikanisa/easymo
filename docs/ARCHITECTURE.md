@@ -243,6 +243,7 @@ services/agent-core/
    - Booking → wa-webhook-mobility
    - Profile/Settings → wa-webhook-profile
    - Unrecognized text → home menu
+   - Marketplace → wa-webhook-marketplace
 5. Handler processes & responds
 6. Response sent back through Meta API
 ```
@@ -261,6 +262,7 @@ Meta Business API
 wa-webhook-core (validation, logging, routing)
        ↓
 Domain-specific webhook (mobility, wallet, profile, etc.)
+Domain-specific webhook handler
        ↓
 Microservices (if needed)
        ↓
