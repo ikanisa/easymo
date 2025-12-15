@@ -523,6 +523,11 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
   if (selection === "menu" || selection === "home") {
     logInfo("MENU_REQUESTED", { from: phoneNumber }, { correlationId: crypto.randomUUID() });
     if (phoneNumber) await clearActiveService(supabase, phoneNumber);
+  } else if (selection === "insurance") {
+    // Handle insurance inline - show contacts directly
+    logInfo("INSURANCE_SELECTED", { from: phoneNumber }, { correlationId: crypto.randomUUID() });
+    await handleInsuranceAgentRequest(phoneNumber);
+    return new Response(JSON.stringify({ success: true, insurance_sent: true }), { status: 200 });
   } else if (selection) {
     const isInteractive = Boolean(interactiveId);
     const targetService = SERVICE_KEY_MAP[selection] ?? null;
