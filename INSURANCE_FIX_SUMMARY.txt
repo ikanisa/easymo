@@ -1,0 +1,35 @@
+# Insurance Feature Fix Summary
+
+## What Was Wrong
+- Insurance feature querying wrong table: `insurance_admin_contacts`
+- Should use existing `admin_contacts` table with `category='insurance'`
+- No contacts configured = "services unavailable" error
+
+## What I Fixed
+✅ Updated `supabase/functions/wa-webhook-core/router.ts`:
+   - Changed query from `insurance_admin_contacts` → `admin_contacts`
+   - Query filters by: `category='insurance'` AND `is_active=true`
+   - Returns ALL active contacts (not just one)
+   - Builds numbered list of contacts dynamically
+
+## What You Need To Do
+⚠️ Add insurance contacts to database (NO placeholders):
+
+```sql
+-- Example: Add your actual insurance team contacts
+INSERT INTO public.admin_contacts (category, phone_number, name, is_active)
+VALUES 
+  ('insurance', '+250788XXXXXX', 'Your Insurance Lead Name', true),
+  ('insurance', '+250788YYYYYY', 'Your Insurance Support Name', true);
+```
+
+## Deploy
+```bash
+supabase functions deploy wa-webhook-core
+```
+
+## Test
+WhatsApp message: 🛡️ Insurance
+Expected: List of all insurance contacts with WhatsApp links
+
+Full documentation: INSURANCE_FIX.md
