@@ -59,24 +59,12 @@ export function SupportChat() {
         }
       }
 
-      // Call AI agent via Supabase function
-      const { data, error } = await supabase.functions.invoke("wa-webhook-ai-agents", {
-        body: {
-          message: input,
-          agentType,
-          context: {
-            channel: "admin_panel",
-            sessionId: userMessage.id,
-          },
-        },
-      });
-
-      if (error) throw error;
-
+      // AI agent support is currently unavailable
+      // TODO: Implement admin panel support via wa-webhook-core or dedicated admin support service
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: data?.response || "I'm sorry, I couldn't process that request. Please try again.",
+        content: "AI agent support is currently being updated. Please contact support directly at support@easymo.rw or use the contact form.",
         timestamp: new Date(),
         agentType,
       };
