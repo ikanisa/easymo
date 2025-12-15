@@ -174,8 +174,9 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
       };
     }
     
-    // Handle insurance_agent inline - simple contact info delivery
-    if (normalized === "insurance_agent" || normalized === "insurance") {
+    // Note: Insurance is handled in handleHomeMenu when selected from menu
+    // Only handle direct text "insurance_agent" here
+    if (normalized === "insurance_agent") {
       if (phoneNumber) {
         await handleInsuranceAgentRequest(phoneNumber);
       }
