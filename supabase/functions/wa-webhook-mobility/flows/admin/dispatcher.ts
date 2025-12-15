@@ -7,7 +7,7 @@ import { ensureAdmin } from "./state.ts";
 export async function handleAdminRow(
   ctx: RouterContext,
   id: string,
-  state: ChatState,
+  _state: ChatState,
 ): Promise<boolean> {
   const allowed = await ensureAdmin(ctx);
   if (!allowed) return true;
@@ -37,7 +37,6 @@ export async function handleAdminRow(
     case ADMIN_ROW_IDS.TRUST_REFERRALS:
     case ADMIN_ROW_IDS.TRUST_FREEZE:
     case ADMIN_ROW_IDS.DIAG_MATCH:
-    case ADMIN_ROW_IDS.DIAG_INSURANCE:
     case ADMIN_ROW_IDS.DIAG_HEALTH:
     case ADMIN_ROW_IDS.DIAG_LOGS:
       const { t } = await import("../../i18n/translator.ts");

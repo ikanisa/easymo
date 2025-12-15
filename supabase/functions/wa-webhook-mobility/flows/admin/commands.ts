@@ -2,8 +2,6 @@ import type { RouterContext } from "../../types.ts";
 import { sendText } from "../../wa/client.ts";
 import { isAdminNumber } from "./auth.ts";
 import { logAdminAction } from "../../../_shared/observability.ts";
-import { INSURANCE_MEDIA_BUCKET, OPENAI_API_KEY } from "../../config.ts";
-import { getAppConfig } from "../../utils/app_config.ts";
 
 export async function handleAdminCommand(
   ctx: RouterContext,

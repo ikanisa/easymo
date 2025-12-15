@@ -1,5 +1,4 @@
 import type { RouterContext } from "../../types.ts";
-import { sendText } from "../../wa/client.ts";
 import { IDS } from "../../wa/ids.ts";
 import { ADMIN_STATE, ensureAdmin, setAdminState } from "./state.ts";
 import { maskPhone } from "../support.ts";
