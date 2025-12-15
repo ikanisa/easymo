@@ -11,6 +11,9 @@
 //
 // These handlers will return false until properly refactored to use the 
 // simplified trips-only approach.
+//
+// NOTE: fare.ts has been removed per GROUND_RULES - fare calculation 
+// is now handled externally. See mobility README for details.
 // ============================================================================
 
 import { logStructuredEvent } from "../../_shared/observability.ts";
@@ -19,7 +22,7 @@ import { resolveLanguage, type SupportedLanguage } from "../i18n/language.ts";
 import { t } from "../i18n/translator.ts";
 import { notifyDriver, notifyPassenger } from "./trip_notifications.ts";
 import { startDriverTracking, stopDriverTracking } from "./tracking.ts";
-import { calculateActualFare } from "./fare.ts";
+// NOTE: calculateActualFare removed - fare.ts is prohibited per GROUND_RULES
 import { initiateTripPayment } from "./trip_payment.ts";
 
 // ============================================================================
@@ -391,33 +394,22 @@ export async function handleTripComplete(
     const durationMinutes = Math.round((completedAt.getTime() - startedAt.getTime()) / 60000);
 
     // 4. Calculate final fare (if not already set)
+    // NOTE: fare.ts removed per GROUND_RULES - fare calculation now handled externally
+    // Using estimate as fallback; actual fare should be set by external pricing service
+    // Default minimum fare (1000 RWF) if no fare data available
+    const DEFAULT_MINIMUM_FARE = 1000;
     let finalFare = trip.actual_fare;
     let fareStrategy = "existing_actual";
     if (!finalFare) {
-      const distance = typeof trip.distance_km === "number"
-        ? trip.distance_km
-        : Number(trip.distance_km ?? 0);
-      if (
-        trip.vehicle_type && Number.isFinite(distance) && distance > 0
-      ) {
-        try {
-          const actual = await calculateActualFare(
-            trip.vehicle_type,
-            distance,
-            durationMinutes,
-            { client: ctx.supabase },
-          );
-          finalFare = actual.totalFare;
-          fareStrategy = "recalculated";
-        } catch (error) {
-          // Fare calculation failed - use estimate as fallback
-          finalFare = trip.fare_estimate;
-          fareStrategy = "estimate_fallback";
-        }
-      } else {
-        finalFare = trip.fare_estimate;
-        fareStrategy = "estimate_fallback";
-      }
+      // Use fare_estimate as fallback since calculateActualFare is removed
+      finalFare = trip.fare_estimate ?? DEFAULT_MINIMUM_FARE;
+      fareStrategy = trip.fare_estimate ? "estimate_fallback" : "default_minimum";
+      await logStructuredEvent("FARE_CALCULATION_SKIPPED", {
+        tripId,
+        reason: "fare_module_removed",
+        usingEstimate: finalFare,
+        strategy: fareStrategy,
+      }, "debug");
     }
 
     // 5. Update trip status

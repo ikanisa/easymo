@@ -60,11 +60,11 @@ echo "==============================="
 run_test_suite "mobility-nearby" "supabase/functions/wa-webhook-mobility/__tests__/nearby.test.ts"
 run_test_suite "mobility-lifecycle" "supabase/functions/wa-webhook-mobility/__tests__/trip-lifecycle.test.ts"
 
-# Insurance Service Tests
-echo -e "${YELLOW}📦 Insurance Service Tests${NC}"
-echo "==============================="
-run_test_suite "insurance-claims" "supabase/functions/wa-webhook-insurance/__tests__/claims.test.ts"
-run_test_suite "insurance-ocr" "supabase/functions/wa-webhook-insurance/__tests__/ocr.test.ts"
+# Insurance Service Tests - Commented out as insurance is handled inline in wa-webhook-core
+# echo -e "${YELLOW}📦 Insurance Service Tests${NC}"
+# echo "==============================="
+# run_test_suite "insurance-claims" "supabase/functions/wa-webhook-insurance/__tests__/claims.test.ts"
+# run_test_suite "insurance-ocr" "supabase/functions/wa-webhook-insurance/__tests__/ocr.test.ts"
 
 # Profile Service Tests
 echo -e "${YELLOW}�� Profile Service Tests${NC}"

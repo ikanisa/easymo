@@ -37,9 +37,9 @@ supabase functions deploy wa-webhook-mobility --project-ref lhbowpbcpwoiparwnwgt
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "📦 Deploying wa-webhook-insurance function..."
+echo "📦 Deploying wa-webhook-buy-sell function..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-supabase functions deploy wa-webhook-insurance --project-ref lhbowpbcpwoiparwnwgt --no-verify-jwt
+supabase functions deploy wa-webhook-buy-sell --project-ref lhbowpbcpwoiparwnwgt --no-verify-jwt
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -59,13 +59,13 @@ echo "  3. ✅ Enhanced observability (logs now include code & wa.me link)"
 echo "  4. ✅ Added Share button handler to ALL microservices:"
 echo "       - wa-webhook (main)"
 echo "       - wa-webhook-mobility"
-echo "       - wa-webhook-insurance ⭐ (your case)"
+echo "       - wa-webhook-buy-sell"
 echo "       - wa-webhook-property"
 echo "  5. ✅ Created shared handleShareEasyMOButton() utility"
 echo ""
 echo "🧪 Test the Share EasyMO feature:"
 echo "1. Send any message to WhatsApp bot (+228 93 00 27 51)"
-echo "2. Start any flow (Insurance, Property, Mobility, etc.)"
+echo "2. Start any flow (Buy/Sell, Property, Mobility, etc.)"
 echo "3. Look for '🔗 Share easyMO' button (auto-appears if <3 buttons)"
 echo "4. Tap the button and verify you receive:"
 echo "   - wa.me link: https://wa.me/22893002751?text=REF%3AXXXXXXXX"

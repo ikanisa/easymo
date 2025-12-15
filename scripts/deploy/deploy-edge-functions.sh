@@ -19,7 +19,6 @@ FUNCTIONS_TO_DEPLOY=(
   "wa-webhook-mobility"
   "wa-webhook-property"
   "wa-webhook-jobs"
-  "wa-webhook-insurance"
   "wa-agent-call-center"
   "wa-agent-waiter"
   "wa-agent-farmer"

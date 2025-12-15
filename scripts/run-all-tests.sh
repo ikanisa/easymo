@@ -26,7 +26,7 @@ SUITES=(
   "wa-webhook-core/__tests__"
   "wa-webhook-profile/__tests__"
   "wa-webhook-mobility/__tests__"
-  "wa-webhook-insurance/__tests__"
+  "wa-webhook-buy-sell/__tests__"
 )
 
 TOTAL_PASSED=0
