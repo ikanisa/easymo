@@ -18,14 +18,18 @@ echo "✅ Environment configured"
 echo "   URL: ${SUPABASE_URL:0:30}..."
 echo ""
 
-# Navigate to test directory
-cd "$(dirname "$0")/supabase/functions/wa-webhook-core/__tests__"
+# Navigate to repository root
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
 
-# Run tests (if they exist)
-if [ -d "$(dirname "$0")/supabase/functions/wa-webhook-core/__tests__" ]; then
+# Check if test directory exists
+TEST_DIR="supabase/functions/wa-webhook-core/__tests__"
+if [ -d "$TEST_DIR" ]; then
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "📋 Test Suite: Router Tests"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  cd "$TEST_DIR"
   deno test --allow-env --allow-net
 
   echo ""
@@ -33,5 +37,5 @@ if [ -d "$(dirname "$0")/supabase/functions/wa-webhook-core/__tests__" ]; then
   echo "✅ All tests passed!"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 else
-  echo "⚠️ No test directory found, skipping tests"
+  echo "⚠️ No test directory found at $TEST_DIR, skipping tests"
 fi
