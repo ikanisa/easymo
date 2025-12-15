@@ -91,6 +91,7 @@ export const ROUTED_SERVICES: readonly string[] = [
   "wa-webhook-profile",
   "wa-webhook-wallet",
   "wa-webhook-buy-sell",
+  "wa-webhook-voice-calls",
 ] as const;
 
 export type RoutedService = typeof ROUTED_SERVICES[number];
