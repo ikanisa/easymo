@@ -131,7 +131,6 @@ All edge functions located in `supabase/functions/`
 
 ```
 wa-webhook-core/         # Main router (validates, logs, routes)
-wa-webhook-ai-agents/    # AI agent orchestration
 wa-webhook-mobility/     # Ride booking, tracking
 wa-webhook-wallet/       # Payments, transfers
 wa-webhook-jobs/         # Job marketplace
@@ -241,9 +240,9 @@ services/agent-core/
 2. Core validates signature
 3. Core logs event with correlation ID
 4. Core routes to specific handler:
-   - AI message → wa-webhook-ai-agents
    - Payment → wa-webhook-wallet
    - Booking → wa-webhook-mobility
+   - Marketplace → wa-webhook-marketplace
 5. Handler processes & responds
 6. Response sent back through Meta API
 ```
@@ -259,9 +258,9 @@ WhatsApp User sends message
        ↓
 Meta Business API
        ↓
-wa-webhook-core (validation, logging)
+wa-webhook-core (validation, logging, routing)
        ↓
-wa-webhook-ai-agents (if AI needed)
+Domain-specific webhook handler
        ↓
 agent-core service (agent execution)
        ↓

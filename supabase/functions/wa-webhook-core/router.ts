@@ -235,16 +235,6 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
     }
   }
 
-  // Check if unified agent system is enabled (but only for non-greeting text)
-  const unifiedSystemEnabled = await (async () => {
-    try {
-      const { isFeatureEnabled } = await import("../_shared/feature-flags.ts");
-      return isFeatureEnabled("agent.unified_system");
-    } catch {
-      return false; // Graceful degradation if feature flags unavailable
-    }
-  })();
-
   if (phoneNumber) {
     const session = await getSessionByPhone(supabase, phoneNumber);
     if (session?.active_service && ROUTED_SERVICES.includes(session.active_service)) {
@@ -254,20 +244,6 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
         routingText,
       };
     }
-  }
-
-  // If unified system enabled, route to AI agents (but greetings were already handled above)
-  if (unifiedSystemEnabled) {
-    console.log(JSON.stringify({
-      event: "ROUTE_TO_UNIFIED_AGENT_SYSTEM",
-      message: routingText?.substring(0, 50) ?? null,
-      target: "wa-webhook-ai-agents",
-    }));
-    return {
-      service: "wa-webhook-ai-agents",
-      reason: "keyword",
-      routingText,
-    };
   }
 
   // Default: show home menu for any unrecognized text

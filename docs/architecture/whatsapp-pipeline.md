@@ -21,16 +21,16 @@ agents. It handles message normalization, routing, intent parsing, and response 
 │                  (Cloud API Webhook Events)                      │
 └──────────────────────────┬──────────────────────────────────────┘
                            │
-                           │ POST /wa-webhook-ai-agents
+                           │ POST /wa-webhook-core
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                  Unified Webhook Handler                         │
-│             supabase/functions/wa-webhook-ai-agents/             │
+│                    Core Webhook Handler                          │
+│             supabase/functions/wa-webhook-core/                  │
 │                                                                   │
 │  1. Verify signature (security)                                  │
 │  2. Extract message data                                         │
 │  3. Generate correlation ID                                      │
-│  4. Pass to AgentOrchestrator                                    │
+│  4. Route to domain-specific handler                             │
 └──────────────────────────┬──────────────────────────────────────┘
                            │
                            ▼
@@ -42,8 +42,8 @@ agents. It handles message normalization, routing, intent parsing, and response 
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                      Agent Routing                               │
-│               (AgentOrchestrator.processMessage)                 │
+│                      Domain Routing                              │
+│               (Router.routeMessage)                              │
 └──────────────────────────┬──────────────────────────────────────┘
                            │
                            ▼
@@ -81,7 +81,7 @@ agents. It handles message normalization, routing, intent parsing, and response 
 
 ### 1. Webhook Handler
 
-**File:** `supabase/functions/wa-webhook-ai-agents/index.ts`
+**File:** `supabase/functions/wa-webhook-core/index.ts`
 
 **Responsibilities:**
 
@@ -91,13 +91,13 @@ agents. It handles message normalization, routing, intent parsing, and response 
 - Handle health checks
 - Error handling & logging
 
-### 2. Agent Orchestrator
+### 2. Router
 
-**File:** `supabase/functions/_shared/agent-orchestrator.ts`
+**File:** `supabase/functions/wa-webhook-core/router.ts`
 
 **Responsibilities:**
 
-- Route messages to correct agent
+- Route messages to domain-specific handlers
 - Load agent configuration
 - Invoke LLM for intent parsing
 - Call apply_intent functions
