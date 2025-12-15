@@ -87,8 +87,9 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
     priority: 1,
   },
   {
-    service: "wa-webhook-insurance",
-    keywords: ["insurance", "insure", "policy", "coverage", "quote", "motor insurance"],
+    // Insurance - handled inline by router, not a separate service
+    service: "wa-webhook-core",
+    keywords: ["insure", "policy", "coverage", "quote", "motor insurance"],
     menuKeys: ["insurance", "motor_insurance"],
     priority: 1,
   },
