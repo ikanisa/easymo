@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "../deps.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 
 export async function logMomoQrRequest(
   client: SupabaseClient,
@@ -24,6 +25,10 @@ export async function logMomoQrRequest(
   };
   const { error } = await client.from("momo_qr_requests").insert(insertPayload);
   if (error) {
-    console.error("momo_qr.log_fail", error);
+    logStructuredEvent("MOMO_QR_LOG_FAIL", {
+      error: error.message,
+      requesterWaId: payload.requesterWaId,
+      targetType: payload.targetType,
+    }, "error");
   }
 }

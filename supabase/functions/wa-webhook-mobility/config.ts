@@ -28,7 +28,7 @@ export const SUPABASE_SERVICE_ROLE_KEY = mustGetOne(
   "SERVICE_ROLE_KEY",
 );
 if (!getEnv("WA_SUPABASE_SERVICE_ROLE_KEY")) {
-  console.warn("wa_webhook.service_key_fallback");
+  // Using fallback service key - logged via structured logging in runtime
 }
 export const SUPABASE_ANON_KEY = getEnv("SUPABASE_ANON_KEY") ?? "";
 export const WA_PHONE_ID = mustGetOne(

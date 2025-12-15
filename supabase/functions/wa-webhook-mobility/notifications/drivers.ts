@@ -33,7 +33,11 @@ export async function findOnlineDriversForTrip(
   });
 
   if (error) {
-    console.error("driver_notifications.find_drivers_fail", error);
+    logStructuredEvent("DRIVER_NOTIFICATIONS_FIND_DRIVERS_FAIL", {
+      error: error.message,
+      tripId,
+      radiusKm,
+    }, "error");
     throw error;
   }
 
@@ -102,10 +106,11 @@ export async function notifyDriver(
 
     return true;
   } catch (error) {
-    console.error("driver_notifications.notify_fail", {
+    logStructuredEvent("DRIVER_NOTIFICATIONS_NOTIFY_FAIL", {
       driverId: driver.userId,
+      tripId: tripDetails.tripId,
       error: error instanceof Error ? error.message : String(error),
-    });
+    }, "error");
     return false;
   }
 }
@@ -191,7 +196,10 @@ export async function handleDriverResponse(
       passengerId: request.passenger_id,
     };
   } catch (error) {
-    console.error("driver_notifications.response_fail", error);
+    logStructuredEvent("DRIVER_NOTIFICATIONS_RESPONSE_FAIL", {
+      requestId,
+      error: error instanceof Error ? error.message : String(error),
+    }, "error");
     return { success: false };
   }
 }
@@ -244,6 +252,10 @@ export async function notifyPassengerOfDriverAcceptance(
       driverId,
     });
   } catch (error) {
-    console.error("driver_notifications.notify_passenger_fail", error);
+    logStructuredEvent("DRIVER_NOTIFICATIONS_NOTIFY_PASSENGER_FAIL", {
+      passengerId,
+      driverId,
+      error: error instanceof Error ? error.message : String(error),
+    }, "error");
   }
 }

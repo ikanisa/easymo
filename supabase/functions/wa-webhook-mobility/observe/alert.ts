@@ -1,4 +1,5 @@
 import { fetchWithTimeout } from "../../_shared/wa-webhook-shared/utils/http.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 
 const ALERT_WEBHOOK_URL = Deno.env.get("ALERT_WEBHOOK_URL") ?? "";
 const ALERT_TIMEOUT_MS = Math.max(
@@ -29,6 +30,9 @@ export async function emitAlert(
     });
   } catch (error) {
     // Best-effort only: never escalate alert delivery failures
-    console.warn("alert.emit_fail", String(error), { event });
+    logStructuredEvent("ALERT_EMIT_FAIL", {
+      event,
+      error: error instanceof Error ? error.message : String(error),
+    }, "warn");
   }
 }

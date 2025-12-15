@@ -46,12 +46,12 @@ export async function handleScheduleRefresh(
     });
     return true;
   } catch (error) {
-    console.error("mobility.schedule_refresh_fail", error);
     await logStructuredEvent("MATCHES_ERROR", {
       flow: "schedule",
       stage: "refresh",
       role: state.role,
       vehicle: state.vehicle,
+      error: error instanceof Error ? error.message : String(error),
       wa_id: maskPhone(ctx.from),
     });
     await emitAlert("MATCHES_ERROR", {

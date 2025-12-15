@@ -51,7 +51,12 @@ async function post(payload: unknown): Promise<void> {
     );
     if (res.ok) return;
     const text = await res.text();
-    console.error("wa_client.send_fail", res.status, text);
+    logStructuredEvent("WA_CLIENT_SEND_FAIL", {
+      status: res.status,
+      error: text,
+      attempt,
+      maxRetries: STATUS_RETRIES,
+    }, "error");
     if (attempt >= STATUS_RETRIES || !STATUS_RETRY_CODES.has(res.status)) {
       throw new WhatsAppClientError(res.status, text);
     }

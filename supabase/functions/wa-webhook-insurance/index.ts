@@ -10,16 +10,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent } from "../_shared/observability.ts";
+import { fetchInsuranceContacts, formatContactLinks } from "./handlers/contacts.ts";
+import { buildInsuranceMessage } from "./utils/messages.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-interface InsuranceContact {
-  display_name: string;
-  destination: string;
-}
 
 serve(async (req) => {
   const requestId = crypto.randomUUID();
@@ -56,36 +53,10 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get active insurance contacts from insurance_admin_contacts table
-    // Set a reasonable timeout to avoid long-running queries
-    const queryTimeout = setTimeout(() => {
-      throw new Error("Database query timeout");
-    }, 5000); // 5 second timeout
-
-    let contacts, error;
-    try {
-      const result = await supabase
-        .from("insurance_admin_contacts")
-        .select("display_name, destination")
-        .eq("channel", "whatsapp")
-        .eq("category", "insurance")
-        .eq("is_active", true)
-        .order("display_order", { ascending: true });
-      
-      clearTimeout(queryTimeout);
-      contacts = result.data;
-      error = result.error;
-    } catch (e) {
-      clearTimeout(queryTimeout);
-      throw e;
-    }
+    // Fetch insurance contacts using handler
+    const { contacts, error } = await fetchInsuranceContacts(supabase, requestId);
 
     if (error) {
-      await logStructuredEvent("INSURANCE_DB_ERROR", {
-        requestId,
-        error: error.message,
-      }, "error");
-
       return new Response(
         JSON.stringify({ error: "Failed to fetch insurance contacts" }),
         { 
@@ -113,24 +84,8 @@ serve(async (req) => {
       );
     }
 
-    // Build WhatsApp links message
-    const contactLinks = contacts
-      .map((c: InsuranceContact) => {
-        // Clean phone number: remove spaces, dashes, and + prefix for wa.me link
-        const cleanNumber = c.destination
-          .replace(/[\s\-+]/g, "")
-          .replace(/^00/, ""); // Also handle 00 prefix
-        
-        // Basic validation: ensure it's a valid phone number (digits only, 10-15 chars)
-        if (!/^\d{10,15}$/.test(cleanNumber)) {
-          console.warn(`Invalid phone number format: ${c.destination}`);
-          return null; // Skip invalid numbers
-        }
-        
-        return `• ${c.display_name}: https://wa.me/${cleanNumber}`;
-      })
-      .filter((link): link is string => link !== null) // Remove null entries
-      .join("\n");
+    // Format contact links using handler
+    const contactLinks = await formatContactLinks(contacts, requestId);
 
     // Check if we have any valid contacts after filtering
     if (!contactLinks) {
@@ -150,13 +105,8 @@ serve(async (req) => {
       );
     }
 
-    const message = `🛡️ *Insurance Services*
-
-Contact our insurance agents directly on WhatsApp:
-
-${contactLinks}
-
-Tap any link above to start chatting with an insurance agent.`;
+    // Build message using utility
+    const message = buildInsuranceMessage(contactLinks);
 
     await logStructuredEvent("INSURANCE_SUCCESS", {
       requestId,

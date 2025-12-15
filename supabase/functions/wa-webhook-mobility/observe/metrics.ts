@@ -1,4 +1,5 @@
 import { logMetric } from "./logging.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 
 type MetricDimensions = Record<string, string | number | boolean | null | undefined>;
 
@@ -17,7 +18,10 @@ async function safeLogMetric(
   try {
     await logMetric(name, value, normaliseDimensions(dimensions));
   } catch (error) {
-    console.error("metrics.emit_failed", { name, error });
+    logStructuredEvent("METRICS_EMIT_FAILED", {
+      metricName: name,
+      error: error instanceof Error ? error.message : String(error),
+    }, "error");
   }
 }
 

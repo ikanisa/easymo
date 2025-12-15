@@ -473,13 +473,13 @@ export async function handleScheduleDropoff(
     });
     return true;
   } catch (error) {
-    console.error("mobility.schedule_dropoff_fail", error);
     await logStructuredEvent("MATCHES_ERROR", {
       flow: "schedule",
       stage: "dropoff",
       role: state.role,
       vehicle: state.vehicle,
       wa_id: maskPhone(ctx.from),
+      error: error instanceof Error ? error.message : String(error),
     });
     await emitAlert("MATCHES_ERROR", {
       flow: "schedule",
@@ -936,12 +936,12 @@ export async function createTripAndDeliverMatches(
     await storeLastScheduleContext(ctx, context);
     return true;
   } catch (error) {
-    console.error("mobility.schedule_create_fail", error);
     await logStructuredEvent("MATCHES_ERROR", {
       flow: "schedule",
       stage,
       role: state.role,
       vehicle: state.vehicle,
+      error: error instanceof Error ? error.message : String(error),
       wa_id: maskPhone(ctx.from),
     });
     await emitAlert("MATCHES_ERROR", {
@@ -1132,7 +1132,10 @@ async function saveRecurringTrip(
     timezone: state.timezone ?? DEFAULT_TIMEZONE,
   });
   if (error) {
-    console.error("mobility.schedule_recurring_fail", error);
+    await logStructuredEvent("SCHEDULE_RECURRING_FAIL", {
+      error: error instanceof Error ? error.message : String(error),
+      from: ctx.from,
+    }, "error");
     await sendText(ctx.from, t(ctx.locale, "schedule.recur.error"));
     return false;
   }
