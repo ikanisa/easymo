@@ -44,7 +44,6 @@ declare -a FUNCTIONS=(
     "wa-webhook-mobility"
     "wa-webhook-property"
     "wa-webhook-jobs"
-    "wa-webhook-insurance"
     "wa-agent-waiter"
     "wa-agent-farmer"
     "wa-agent-support"

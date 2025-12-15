@@ -25,7 +25,6 @@ git log --oneline -1
 deno check supabase/functions/wa-webhook-core/index.ts
 deno check supabase/functions/wa-webhook-profile/index.ts
 deno check supabase/functions/wa-webhook-mobility/index.ts
-deno check supabase/functions/wa-webhook-insurance/index.ts
 ```
 
 ### Step 3: Deploy Services
@@ -39,9 +38,6 @@ supabase functions deploy wa-webhook-profile --no-verify-jwt
 
 # 3. Mobility service
 supabase functions deploy wa-webhook-mobility --no-verify-jwt
-
-# 4. Insurance service
-supabase functions deploy wa-webhook-insurance --no-verify-jwt
 ```
 
 ### Step 4: Verify Deployment

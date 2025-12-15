@@ -81,14 +81,15 @@ Deno.test("Keyword routing - 'rides' routes to mobility service", async () => {
   assertEquals(routedService, "wa-webhook-mobility");
 });
 
-Deno.test("Keyword routing - 'insurance' routes to insurance service", async () => {
+Deno.test("Keyword routing - 'insurance' is handled inline by core", async () => {
   const payload = createTestPayload("insurance");
   const response = await sendWebhook(payload);
   
   assertEquals(response.status, 200);
   
+  // Insurance is handled inline by wa-webhook-core, not routed to a separate service
   const routedService = response.headers.get("X-Routed-Service");
-  assertEquals(routedService, "wa-webhook-insurance");
+  assertEquals(routedService, "wa-webhook-core");
 });
 
 Deno.test("Menu keyword shows home menu", async () => {

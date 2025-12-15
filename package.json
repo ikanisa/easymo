@@ -34,7 +34,7 @@
     "functions:deploy:insurance": "supabase functions deploy insurance-ocr",
     "functions:deploy:agents": "supabase functions deploy agents/nearby-drivers agents/pharmacy agents/property-rental agents/schedule-trip agents/quincaillerie agents/shops",
     "functions:deploy": "supabase functions deploy admin-settings admin-stats admin-users admin-trips insurance-ocr",
-    "functions:deploy:wa": "supabase functions deploy wa-webhook-core wa-webhook-ai-agents wa-webhook-mobility wa-webhook-profile wa-webhook-jobs wa-webhook-property wa-webhook-insurance wa-webhook-marketplace",
+    "functions:deploy:wa": "supabase functions deploy wa-webhook-core wa-webhook-ai-agents wa-webhook-mobility wa-webhook-profile wa-webhook-jobs wa-webhook-property wa-webhook-buy-sell wa-webhook-marketplace",
     "functions:deploy:wa-router": "supabase functions deploy wa-webhook-core",
     "functions:deploy:wa-ai": "supabase functions deploy wa-webhook-ai-agents",
     "functions:deploy:wa-mobility": "supabase functions deploy wa-webhook-mobility",

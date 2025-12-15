@@ -23,7 +23,7 @@ SERVICES=(
   "wa-webhook-core"
   "wa-webhook-profile"
   "wa-webhook-mobility"
-  "wa-webhook-insurance"
+  "wa-webhook-buy-sell"
 )
 
 # Check prerequisites

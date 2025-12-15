@@ -121,11 +121,11 @@ else
 fi
 echo ""
 
-echo "📦 [7/9] Deploying wa-webhook-insurance (insurance services)..."
-if supabase functions deploy wa-webhook-insurance --no-verify-jwt; then
-  echo "   ✅ wa-webhook-insurance deployed successfully"
+echo "📦 [7/9] Deploying wa-webhook-buy-sell (buy & sell services)..."
+if supabase functions deploy wa-webhook-buy-sell --no-verify-jwt; then
+  echo "   ✅ wa-webhook-buy-sell deployed successfully"
 else
-  echo "   ❌ Failed to deploy wa-webhook-insurance"
+  echo "   ❌ Failed to deploy wa-webhook-buy-sell"
   exit 1
 fi
 echo ""

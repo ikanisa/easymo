@@ -10,7 +10,7 @@ echo ""
 
 # Configuration
 SUPABASE_PROJECT_REF="${SUPABASE_PROJECT_REF:-lhbowpbcpwoiparwnwgt}"
-SERVICES=("wa-webhook-core" "wa-webhook-profile" "wa-webhook-mobility" "wa-webhook-insurance")
+SERVICES=("wa-webhook-core" "wa-webhook-profile" "wa-webhook-mobility" "wa-webhook-buy-sell")
 
 # Colors
 RED='\033[0;31m'
