@@ -59,8 +59,8 @@ supabase functions deploy wa-webhook-jobs
 log_info "Deploying wa-webhook-property"
 supabase functions deploy wa-webhook-property
 
-log_info "Deploying wa-webhook-insurance"
-supabase functions deploy wa-webhook-insurance
+log_info "Deploying wa-webhook-buy-sell"
+supabase functions deploy wa-webhook-buy-sell
 
 log_info "Deploying wa-webhook-profile"
 supabase functions deploy wa-webhook-profile

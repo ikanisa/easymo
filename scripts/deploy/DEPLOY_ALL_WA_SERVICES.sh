@@ -47,7 +47,7 @@ WA_SERVICES=(
     "wa-webhook-property"
     "wa-webhook-mobility"
     "wa-webhook-ai-agents"
-    "wa-webhook-insurance"
+    "wa-webhook-buy-sell"
     "wa-webhook-profile"
     # "wa-webhook-unified" # DELETED
 )

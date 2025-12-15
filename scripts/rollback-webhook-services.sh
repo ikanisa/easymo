@@ -16,7 +16,7 @@ if [ -z "$SERVICE_NAME" ]; then
   echo "  - wa-webhook-core"
   echo "  - wa-webhook-profile"
   echo "  - wa-webhook-mobility"
-  echo "  - wa-webhook-insurance"
+  echo "  - wa-webhook-buy-sell"
   echo "  - all (rollback all services)"
   exit 1
 fi
@@ -58,7 +58,7 @@ rollback_service() {
 
 # Execute rollback
 if [ "$SERVICE_NAME" == "all" ]; then
-  for service in wa-webhook-core wa-webhook-profile wa-webhook-mobility wa-webhook-insurance; do
+  for service in wa-webhook-core wa-webhook-profile wa-webhook-mobility wa-webhook-buy-sell; do
     rollback_service "$service"
   done
 else
