@@ -56,6 +56,8 @@ import { sendLocation, sendText } from "./wa/client.ts";
 import { t } from "./i18n/translator.ts";
 // Import supabase and config from config (uses proper environment variable fallbacks)
 import { supabase, WA_APP_SECRET } from "./config.ts";
+// Fallback: also try direct env read in case Supabase binding has issues
+const WA_APP_SECRET_DIRECT = Deno.env.get("WHATSAPP_APP_SECRET") ?? Deno.env.get("WA_APP_SECRET");
 // Import location utilities
 import { getLastLocation } from "./locations/cache.ts";
 import { getLocationReusedMessage } from "../_shared/wa-webhook-shared/locations/messages.ts";
@@ -193,7 +195,7 @@ serve(async (req: Request): Promise<Response> => {
         sample: hash ? `${hash.slice(0, 6)}…${hash.slice(-4)}` : null,
       };
     })();
-    const appSecret = WA_APP_SECRET;
+    const appSecret = WA_APP_SECRET || WA_APP_SECRET_DIRECT;
     const runtimeEnv =
       (Deno.env.get("APP_ENV") ?? Deno.env.get("NODE_ENV") ?? "development")
         .toLowerCase();
