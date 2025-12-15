@@ -225,7 +225,6 @@ export async function handleBusinessClaim(
     .from("businesses")
     .select("id, name, category, address, profile_id")
     .eq("id", businessId)
-    .eq("status", "active")
     .single();
 
   if (error || !business) {

@@ -70,6 +70,8 @@ export const BUSINESS_CATEGORIES = [
 
 const AI_TEMPERATURE = parseFloat(Deno.env.get("MARKETPLACE_AI_TEMPERATURE") || "0.7");
 const AI_MAX_TOKENS = parseInt(Deno.env.get("MARKETPLACE_AI_MAX_TOKENS") || "1024", 10);
+// Maximum number of conversation history entries to store (prevents unbounded growth)
+const MAX_CONVERSATION_HISTORY_SIZE = 20;
 
 // Welcome message for new/first-time users - Kwizera persona
 export const WELCOME_MESSAGE = `👋 Muraho! I'm Kwizera, your easyMO sourcing assistant.
@@ -665,12 +667,12 @@ export class MarketplaceAgent {
           ...context.collectedData,
           ...this.filterNullValues(aiResponse.extracted_entities),
         },
-        // Cap conversation history to last 20 entries to prevent unbounded growth
+        // Cap conversation history to prevent unbounded growth
         conversationHistory: [
           ...context.conversationHistory,
           { role: "user" as const, content: userMessage },
           { role: "assistant" as const, content: agentResponse.message },
-        ].slice(-20),
+        ].slice(-MAX_CONVERSATION_HISTORY_SIZE),
         lastAIResponse: agentResponse.message,
       });
 
