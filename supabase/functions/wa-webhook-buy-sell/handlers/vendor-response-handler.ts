@@ -228,25 +228,16 @@ export class VendorResponseHandler {
         return { success: false, error: "Failed to format notification" };
       }
 
-      // Send WhatsApp message to user
-      const { data: userProfile } = await this.supabase
-        .from("profiles")
-        .select("whatsapp_number")
-        .eq("user_id", params.userId)
-        .single();
-
-      if (userProfile?.whatsapp_number) {
-        // The message was already formatted above, send it
-        await sendText(userProfile.whatsapp_number, message);
-        
-        logStructuredEvent("BUY_SELL_VENDOR_RESPONSE_SENT", {
-          userId: params.userId,
-          userPhone: params.userPhone.slice(-4),
-          correlationId: this.correlationId,
-        });
-        
-        await recordMetric("buy_sell.vendor_response.sent", 1);
-      }
+      // Send WhatsApp message directly to user using their phone number
+      await sendText(params.userPhone, message);
+      
+      logStructuredEvent("BUY_SELL_VENDOR_RESPONSE_SENT", {
+        userPhone: params.userPhone.slice(-4),
+        sessionId: params.sessionId,
+        correlationId: this.correlationId,
+      });
+      
+      await recordMetric("buy_sell.vendor_response.sent", 1);
 
       logStructuredEvent("VENDOR_RESPONSE_USER_NOTIFIED", {
         sessionId: params.sessionId,

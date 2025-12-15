@@ -1,27 +1,12 @@
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
-import { setState } from "../../_shared/wa-webhook-shared/state/store.ts";
-import { sendListMessage, sendButtonsMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
-import { logStructuredEvent } from "../../_shared/observability.ts";
-import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 import { setState, clearState } from "../../_shared/wa-webhook-shared/state/store.ts";
-import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
-import { sendButtonsMessage, sendListMessage, buildButtons } from "../../_shared/wa-webhook-shared/utils/reply.ts";
+import { sendListMessage, sendButtonsMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
-import { t } from "../../_shared/wa-webhook-shared/i18n/translator.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
+import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 
 export const BUSINESS_SEARCH_STATE = "business_search";
 export const BUSINESS_CLAIM_STATE = "business_claim";
-
-interface SearchResult {
-  id: string;
-  name: string;
-  category_name: string | null;
-  city: string | null;
-  address: string | null;
-  similarity_score: number;
-  is_claimed: boolean;
-}
 
 type SearchResult = {
   id: string;
@@ -45,12 +30,6 @@ export async function startBusinessSearch(ctx: RouterContext): Promise<boolean> 
     data: { step: "awaiting_name" },
   });
 
-  await sendButtonsMessage(
-    ctx,
-    "🔍 *Add Your Business*\n\n" +
-    "Type the name of your business and I'll search our directory of 3,000+ businesses.\n\n" +
-    "If your business is already listed, you can claim it. Otherwise, you can add it manually.",
-    [{ id: IDS.BACK_PROFILE, title: "← Back" }]
   await logStructuredEvent("BUSINESS_SEARCH_STARTED", {
     userId: ctx.profileId,
     from: ctx.from,
@@ -61,132 +40,15 @@ export async function startBusinessSearch(ctx: RouterContext): Promise<boolean> 
     "🔍 *Search for Your Business*\n\n" +
     "Please type the name of your business to search our directory of 3000+ businesses.\n\n" +
     "We'll help you claim it or add it manually if not found.",
-    buildButtons(
-      { id: IDS.BUSINESS_ADD_MANUAL, title: "Add Manually" },
-      { id: IDS.BACK_MENU, title: "Cancel" },
-    ),
-  );
-
-  return true;
-}
-
-export async function handleBusinessNameSearch(
-  ctx: RouterContext,
-  searchTerm: string
-): Promise<boolean> {
-  if (!ctx.profileId) return false;
-
-  await logStructuredEvent("BUSINESS_SEARCH_INITIATED", {
-    userId: ctx.profileId,
-    searchTerm,
-  });
-
-  const { data: results, error } = await ctx.supabase.rpc("search_businesses_semantic", {
-    p_search_term: searchTerm,
-    p_country: "Rwanda",
-    p_limit: 8,
-  });
-
-  if (error) {
-    console.error("business.search_error", error);
-    await sendButtonsMessage(
-      ctx,
-      "⚠️ Search failed. Please try again.",
-      [
-        { id: IDS.BUSINESS_ADD_MANUAL, title: "➕ Add Manually" },
-        { id: IDS.BACK_PROFILE, title: "← Back" },
-      ]
-    );
-    return true;
-  }
-
-  await setState(ctx.supabase, ctx.profileId, {
-    key: BUSINESS_SEARCH_STATE,
-    data: { 
-      step: "showing_results",
-      searchTerm,
-      results: results || [],
-    },
-  });
-
-  if (!results || results.length === 0) {
-    return await showNoResultsFound(ctx, searchTerm);
-  }
-
-  return await showSearchResults(ctx, searchTerm, results);
-}
-
-async function showSearchResults(
-  ctx: RouterContext,
-  searchTerm: string,
-  results: SearchResult[]
-): Promise<boolean> {
-  const rows = results.map((biz) => {
-    const claimed = biz.is_claimed ? " (Claimed)" : "";
-    return {
-      id: `claim::${biz.id}`,
-      title: biz.name.slice(0, 24),
-      description: `${biz.category_name || "Business"} • ${biz.city || "Rwanda"}${claimed}`.slice(0, 72),
-    };
-  });
-
-  rows.push({
-    id: IDS.BUSINESS_ADD_MANUAL,
-    title: "➕ Add New Business",
-    description: `"${searchTerm}" not here? Add it manually`,
-  });
-
-  rows.push({
-    id: IDS.BACK_PROFILE,
-    title: "← Back to Profile",
-    description: "Cancel search",
-  });
-
-  await sendListMessage(ctx, {
-    title: "🔍 Search Results",
-    body: `Found ${results.length} businesses matching "${searchTerm}":\n\nTap a business to claim it, or add yours manually.`,
-    sectionTitle: "Businesses",
-    buttonText: "Select",
-    rows,
-  });
-
-  return true;
-}
-
-async function showNoResultsFound(
-  ctx: RouterContext,
-  searchTerm: string
-): Promise<boolean> {
-  await sendButtonsMessage(
-    ctx,
-    `🔍 *No Results Found*\n\nNo businesses found matching "${searchTerm}".\n\nWould you like to add your business manually?`,
     [
-      { id: IDS.BUSINESS_ADD_MANUAL, title: "➕ Add Manually" },
-      { id: IDS.BUSINESS_SEARCH, title: "🔍 Search Again" },
-      { id: IDS.BACK_PROFILE, title: "← Back" },
-    ]
+      { id: IDS.BUSINESS_ADD_MANUAL, title: "Add Manually" },
+      { id: IDS.BACK_PROFILE, title: "← Cancel" },
+    ],
   );
 
   return true;
 }
 
-export async function handleBusinessClaim(
-  ctx: RouterContext,
-  businessId: string
-): Promise<boolean> {
-  if (!ctx.profileId) return false;
-
-  const { data: business, error } = await ctx.supabase
-    .from("business")
-    .select("id, name, category_name, city, address, phone, owner_user_id")
-    .eq("id", businessId)
-    .single();
-
-  if (error || !business) {
-    await sendButtonsMessage(
-      ctx,
-      "⚠️ Business not found. Please try again.",
-      [{ id: IDS.BUSINESS_SEARCH, title: "🔍 Search Again" }]
 /**
  * Handle business name search input from user
  */
@@ -237,10 +99,10 @@ export async function handleBusinessNameSearch(
       await sendButtonsMessage(
         ctx,
         "⚠️ Search failed. Please try again or add your business manually.",
-        buildButtons(
+        [
           { id: IDS.BUSINESS_ADD_MANUAL, title: "Add Manually" },
-          { id: IDS.BACK_MENU, title: "Cancel" },
-        ),
+          { id: IDS.BACK_PROFILE, title: "← Cancel" },
+        ],
       );
       return true;
     }
@@ -255,11 +117,11 @@ export async function handleBusinessNameSearch(
         ctx,
         `🔍 *No businesses found for "${searchTerm}"*\n\n` +
         "Would you like to add it manually?",
-        buildButtons(
+        [
           { id: IDS.BUSINESS_ADD_MANUAL, title: "✅ Add Manually" },
           { id: IDS.BUSINESS_SEARCH, title: "🔄 Search Again" },
-          { id: IDS.BACK_MENU, title: "Cancel" },
-        ),
+          { id: IDS.BACK_PROFILE, title: "← Cancel" },
+        ],
       );
       return true;
     }
@@ -279,7 +141,7 @@ export async function handleBusinessNameSearch(
     await sendButtonsMessage(
       ctx,
       "⚠️ An error occurred. Please try again.",
-      buildButtons({ id: IDS.BACK_MENU, title: "Back" }),
+      [{ id: IDS.BACK_PROFILE, title: "← Back" }],
     );
     return true;
   }
@@ -330,7 +192,7 @@ async function showSearchResults(
       description: "Try a different search term",
     },
     {
-      id: IDS.BACK_MENU,
+      id: IDS.BACK_PROFILE,
       title: "← Cancel",
       description: "Back to menu",
     },
@@ -358,12 +220,11 @@ export async function handleBusinessClaim(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
 
-  // Fetch business details
+  // Fetch business details - use consistent table name (businesses) and column (profile_id)
   const { data: business, error } = await ctx.supabase
-    .from("business")
-    .select("id, name, category_name, location_text, owner_user_id, owner_whatsapp")
+    .from("businesses")
+    .select("id, name, category, address, profile_id")
     .eq("id", businessId)
-    .eq("is_active", true)
     .single();
 
   if (error || !business) {
@@ -371,61 +232,39 @@ export async function handleBusinessClaim(
     await sendButtonsMessage(
       ctx,
       "⚠️ Business not found. Please try searching again.",
-      buildButtons({ id: IDS.BUSINESS_SEARCH, title: "Search Again" }),
+      [{ id: IDS.BUSINESS_SEARCH, title: "Search Again" }],
     );
     return true;
   }
 
-  if (business.owner_user_id) {
-    await sendButtonsMessage(
-      ctx,
-      `⚠️ *Business Already Claimed*\n\n"${business.name}" is already claimed by another user.\n\nIf you believe this is your business, please contact support.`,
-      [
-        { id: IDS.BUSINESS_SEARCH, title: "🔍 Search Again" },
-        { id: IDS.BUSINESS_ADD_MANUAL, title: "➕ Add Different" },
-        { id: IDS.BACK_PROFILE, title: "← Back" },
-      ]
   // Check if already claimed
-  if (business.owner_user_id && business.owner_user_id !== ctx.profileId) {
+  if (business.profile_id && business.profile_id !== ctx.profileId) {
     await logStructuredEvent("BUSINESS_CLAIM_ALREADY_CLAIMED", {
       userId: ctx.profileId,
       businessId,
-      existingOwnerId: business.owner_user_id,
+      existingOwnerId: business.profile_id,
     });
 
     await sendButtonsMessage(
       ctx,
       `⚠️ *${business.name}* is already claimed by another owner.\n\n` +
       "If you believe this is your business, please contact support.",
-      buildButtons(
+      [
         { id: IDS.BUSINESS_SEARCH, title: "Search Again" },
-        { id: IDS.BACK_MENU, title: "Back" },
-      ),
+        { id: IDS.BACK_PROFILE, title: "← Back" },
+      ],
     );
     return true;
   }
 
-  await setState(ctx.supabase, ctx.profileId, {
-    key: BUSINESS_CLAIM_STATE,
-    data: { businessId, businessName: business.name },
-  });
-
-  await sendButtonsMessage(
-    ctx,
-    `🏪 *Claim Business*\n\n*${business.name}*\n📍 ${business.city || "Rwanda"}\n📂 ${business.category_name || "Business"}\n\nIs this your business? Claiming it will link it to your profile and allow you to manage it.`,
-    [
-      { id: IDS.BUSINESS_CLAIM_CONFIRM, title: "✅ Yes, Claim It" },
-      { id: IDS.BUSINESS_SEARCH, title: "🔍 Search Again" },
-      { id: IDS.BACK_PROFILE, title: "← Back" },
-    ]
   // Store business details for confirmation
   await setState(ctx.supabase, ctx.profileId, {
     key: BUSINESS_CLAIM_STATE,
     data: {
       businessId,
       businessName: business.name,
-      category: business.category_name,
-      location: business.location_text,
+      category: business.category,
+      location: business.address,
     },
   });
 
@@ -438,73 +277,24 @@ export async function handleBusinessClaim(
   // Ask for confirmation
   const details = [
     `🏪 *${business.name}*`,
-    business.category_name ? `📂 ${business.category_name}` : "",
-    business.location_text ? `📍 ${business.location_text}` : "",
+    business.category ? `📂 ${business.category}` : "",
+    business.address ? `📍 ${business.address}` : "",
   ].filter(Boolean).join("\n");
 
   await sendButtonsMessage(
     ctx,
     `${details}\n\n*Claim this business?*\n\n` +
     "You'll be able to manage it from your profile.",
-    buildButtons(
+    [
       { id: IDS.BUSINESS_CLAIM_CONFIRM, title: "✅ Yes, Claim It" },
       { id: IDS.BUSINESS_SEARCH, title: "← Back to Search" },
-      { id: IDS.BACK_MENU, title: "Cancel" },
-    ),
+      { id: IDS.BACK_PROFILE, title: "Cancel" },
+    ],
   );
 
   return true;
 }
 
-export async function confirmBusinessClaim(
-  ctx: RouterContext,
-  businessId: string
-): Promise<boolean> {
-  if (!ctx.profileId) return false;
-
-  const { error: updateError } = await ctx.supabase
-    .from("business")
-    .update({ 
-      owner_user_id: ctx.profileId,
-      owner_whatsapp: ctx.from,
-    })
-    .eq("id", businessId);
-
-  if (updateError) {
-    console.error("business.claim_error", updateError);
-    await sendButtonsMessage(
-      ctx,
-      "⚠️ Failed to claim business. Please try again.",
-      [{ id: IDS.BACK_PROFILE, title: "← Back" }]
-    );
-    return true;
-  }
-
-  await ctx.supabase.from("user_businesses").insert({
-    user_id: ctx.profileId,
-    business_id: businessId,
-    role: "owner",
-    verification_method: "whatsapp",
-    is_verified: true,
-    verified_at: new Date().toISOString(),
-  });
-
-  await logStructuredEvent("BUSINESS_CLAIMED", {
-    userId: ctx.profileId,
-    businessId,
-    from: ctx.from,
-  });
-
-  await sendButtonsMessage(
-    ctx,
-    "✅ *Business Claimed Successfully!*\n\nYour business is now linked to your profile. You can manage it from your Profile menu.",
-    [
-      { id: IDS.PROFILE_MANAGE_BUSINESSES, title: "🏪 My Businesses" },
-      { id: IDS.BACK_PROFILE, title: "← Back to Profile" },
-    ]
-  );
-
-  return true;
 /**
  * Confirm business claim and update ownership
  */
@@ -515,12 +305,11 @@ export async function confirmBusinessClaim(
   if (!ctx.profileId) return false;
 
   try {
-    // Update business ownership
+    // Update business ownership - use consistent column name (profile_id)
     const { error: updateError } = await ctx.supabase
-      .from("business")
+      .from("businesses")
       .update({
-        owner_user_id: ctx.profileId,
-        owner_whatsapp: ctx.from,
+        profile_id: ctx.profileId,
       })
       .eq("id", businessId);
 
@@ -529,28 +318,15 @@ export async function confirmBusinessClaim(
       await sendButtonsMessage(
         ctx,
         "⚠️ Failed to claim business. Please try again.",
-        buildButtons({ id: IDS.MY_BUSINESSES, title: "My Businesses" }),
+        [{ id: IDS.MY_BUSINESSES, title: "← My Businesses" }],
       );
       return true;
     }
 
-    // Create user_businesses record
-    await ctx.supabase
-      .from("user_businesses")
-      .insert({
-        user_id: ctx.profileId,
-        business_id: businessId,
-        role: "owner",
-        is_verified: true,
-        verification_method: "search_claim",
-      })
-      .select()
-      .single();
-
     // Get business name for confirmation message
     const { data: business } = await ctx.supabase
-      .from("business")
-      .select("name, category_name")
+      .from("businesses")
+      .select("name, category")
       .eq("id", businessId)
       .single();
 
@@ -568,10 +344,10 @@ export async function confirmBusinessClaim(
       `✅ *Success!*\n\n` +
       `You've claimed *${business?.name || "this business"}*.\n\n` +
       `You can now manage it from your profile.`,
-      buildButtons(
+      [
         { id: IDS.MY_BUSINESSES, title: "View My Businesses" },
-        { id: IDS.BACK_HOME, title: "Home" },
-      ),
+        { id: IDS.BACK_HOME, title: "← Home" },
+      ],
     );
 
     return true;
@@ -580,7 +356,7 @@ export async function confirmBusinessClaim(
     await sendButtonsMessage(
       ctx,
       "⚠️ An error occurred. Please try again later.",
-      buildButtons({ id: IDS.BACK_MENU, title: "Back" }),
+      [{ id: IDS.BACK_PROFILE, title: "← Back" }],
     );
     return true;
   }

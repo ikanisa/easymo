@@ -34,12 +34,12 @@ export async function handleCreateBusinessName(
     return true;
   }
 
-  // Create the business - use owner_id to match list.ts query
+  // Create the business - use profile_id to match list.ts query
   const { error } = await ctx.supabase.from("businesses").insert({
-    owner_id: ctx.profileId,
-    owner_whatsapp: ctx.from,
+    profile_id: ctx.profileId,
     name: trimmedName,
     description: "New business", // Default description
+    status: "active",
   });
 
   if (error) {

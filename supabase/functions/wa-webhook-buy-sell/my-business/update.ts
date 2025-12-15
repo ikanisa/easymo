@@ -105,7 +105,7 @@ export async function handleUpdateBusinessField(
     .from("businesses")
     .update(updates)
     .eq("id", businessId)
-    .eq("owner_id", ctx.profileId);
+    .eq("profile_id", ctx.profileId);
 
   if (error) {
     console.error(`Failed to update business ${field}:`, error);
