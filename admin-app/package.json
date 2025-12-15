@@ -41,7 +41,7 @@
     "@easymo/ibimina-ui": "workspace:*",
     "@easymo/ui": "workspace:*",
     "@easymo/video-agent-schema": "workspace:*",
-    "@google/generative-ai": "^0.21.0",
+    "@google/generative-ai": "^0.24.1",
     "@googlemaps/google-maps-services-js": "^3.4.2",
     "@headlessui/react": "^2.2.2",
     "@heroicons/react": "^2.1.5",
