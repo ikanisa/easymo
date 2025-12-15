@@ -1,23 +1,22 @@
 /**
  * Home Menu Handler
  * Handles home menu display and navigation
+ * Database-driven menu from whatsapp_home_menu_items table
  */
 
 import type { RouterContext, HandlerResult } from "../../_shared/types/index.ts";
-import { STATE_KEYS } from "../../_shared/config/index.ts";
 import { StateMachine } from "../../_shared/state/index.ts";
-import { sendList, homeMenuList } from "../../_shared/messaging/index.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
 
 /**
- * Handle home menu request
+ * Handle home menu request - database-driven
  */
 export async function handleHomeMenu(ctx: RouterContext): Promise<HandlerResult> {
   try {
     logStructuredEvent("HOME_MENU_REQUESTED", {
       requestId: ctx.requestId,
       userId: ctx.profileId,
-    }, "debug");
+    }, "info");
 
     // Clear state (return to home)
     if (ctx.profileId) {
@@ -25,21 +24,87 @@ export async function handleHomeMenu(ctx: RouterContext): Promise<HandlerResult>
       await sm.clearState(ctx.profileId);
     }
 
-    // Get localized home menu
-    const menu = homeMenuList(ctx.locale);
+    // Get menu items from database
+    const { data: menuItems, error } = await ctx.supabase
+      .from("whatsapp_home_menu_items")
+      .select("key, title, description, icon")
+      .eq("is_active", true)
+      .contains("active_countries", ["RW"]) // Rwanda only
+      .order("display_order", { ascending: true })
+      .limit(10);
 
-    // Send to user
-    const result = await sendList(ctx, menu);
-
-    if (result.success) {
-      logStructuredEvent("HOME_MENU_SENT", {
+    if (error) {
+      logStructuredEvent("HOME_MENU_DB_ERROR", {
         requestId: ctx.requestId,
-        userId: ctx.profileId,
-        messageId: result.messageId,
-      });
+        error: error.message,
+      }, "error");
+      throw new Error("Failed to load menu");
     }
 
-    return { handled: result.success };
+    if (!menuItems || menuItems.length === 0) {
+      logStructuredEvent("HOME_MENU_EMPTY", { requestId: ctx.requestId }, "warn");
+      throw new Error("No menu items available");
+    }
+
+    // Build WhatsApp list message
+    const sections = [{
+      title: "EasyMO Services",
+      rows: menuItems.map((item: any) => ({
+        id: item.key,
+        title: `${item.icon || ""} ${item.title}`.trim(),
+        description: item.description || "",
+      })),
+    }];
+
+    // Send WhatsApp list message
+    const messageData = {
+      messaging_product: "whatsapp",
+      to: ctx.from,
+      type: "interactive",
+      interactive: {
+        type: "list",
+        header: {
+          type: "text",
+          text: "🏠 Home Menu",
+        },
+        body: {
+          text: "Welcome to EasyMO! Choose a service:",
+        },
+        action: {
+          button: "View Services",
+          sections,
+        },
+      },
+    };
+
+    // Send via WhatsApp API
+    const response = await fetch(
+      `https://graph.facebook.com/v18.0/${Deno.env.get("WA_PHONE_NUMBER_ID")}/messages`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${Deno.env.get("WA_ACCESS_TOKEN")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(messageData),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`WhatsApp API error: ${errorText}`);
+    }
+
+    const result = await response.json();
+
+    logStructuredEvent("HOME_MENU_SENT", {
+      requestId: ctx.requestId,
+      userId: ctx.profileId,
+      messageId: result.messages?.[0]?.id,
+      itemCount: menuItems.length,
+    });
+
+    return { handled: true };
   } catch (error) {
     logStructuredEvent("HOME_MENU_ERROR", {
       requestId: ctx.requestId,

@@ -16,7 +16,7 @@ import {
   sendButtonsMessage,
   sendListMessage,
 } from "../../../_shared/wa-webhook-shared/utils/reply.ts";
-import { sendHomeMenu } from "../home.ts";
+import { handleBackHome } from "../../../wa-webhook-core/handlers/home.ts";
 
 const STATES = {
   MENU: "momo_qr_menu",
@@ -144,7 +144,7 @@ export async function handleMomoButton(
       return true;
     case IDS.BACK_MENU:
       await clearState(ctx.supabase, ctx.profileId);
-      await sendHomeMenu(ctx);
+      await handleBackHome(ctx);
       return true;
     default:
       return false;
