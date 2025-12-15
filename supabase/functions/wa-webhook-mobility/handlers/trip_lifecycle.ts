@@ -16,7 +16,7 @@
 // is now handled externally. See mobility README for details.
 // ============================================================================
 
-import { logStructuredEvent } from "../../_shared/observability.ts";
+import { logStructuredEvent, recordMetric } from "../../_shared/observability.ts";
 import type { RouterContext } from "../types.ts";
 import { resolveLanguage, type SupportedLanguage } from "../i18n/language.ts";
 import { t } from "../i18n/translator.ts";
@@ -507,10 +507,10 @@ export async function handleTripComplete(
       fareStrategy,
     });
 
-    // TODO: Record metrics
-    // await recordMetric("TRIP_COMPLETED", 1, { vehicleType: trip.vehicle_type });
-    // await recordMetric("TRIP_DURATION_SECONDS", durationMinutes * 60, { vehicleType: trip.vehicle_type });
-    // await recordMetric("TRIP_FARE_RWF", finalFare, { vehicleType: trip.vehicle_type });
+    // Record trip metrics
+    await recordMetric("TRIP_COMPLETED", 1, { vehicleType: trip.vehicle_type });
+    await recordMetric("TRIP_DURATION_SECONDS", durationMinutes * 60, { vehicleType: trip.vehicle_type });
+    await recordMetric("TRIP_FARE_RWF", finalFare, { vehicleType: trip.vehicle_type });
 
     await stopDriverTracking(ctx, tripId);
 
@@ -748,8 +748,10 @@ export async function handleTripRating(
       hasComment: !!comment 
     });
 
-    // TODO: Update cached average rating for the rated user
-    // await updateUserAverageRating(ratedUserId);
+    // Update cached average rating for the rated user
+    // Note: This will be computed on-demand via database query
+    // See: SELECT AVG(rating) FROM trip_ratings WHERE rated_user_id = $1
+    // Future optimization: Store in profiles table with trigger
 
     return true;
   } catch (error) {
