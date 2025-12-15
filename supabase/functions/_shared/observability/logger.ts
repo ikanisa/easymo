@@ -106,8 +106,8 @@ if (sentryDsn) {
     environment,
     release,
     tracesSampleRate,
-    profilesSampleRate,
-    beforeSend: scrubEvent,
+    // profilesSampleRate not supported in Deno - removed
+    beforeSend: scrubEvent as any, // Type assertion for Deno compatibility
   });
 }
 
@@ -347,7 +347,7 @@ export const serveWithObservability = (service: string, handler: EdgeHandler) =>
     logger.info("edge.request.start", {
       method: request.method,
       url: new URL(request.url).pathname,
-      region: info?.region ?? null,
+      region: (info as any)?.region ?? null, // Region property may not exist in all Deno versions
     });
 
     try {
