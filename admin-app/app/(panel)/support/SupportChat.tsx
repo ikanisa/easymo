@@ -60,7 +60,7 @@ export function SupportChat() {
       }
 
       // Call AI agent via Supabase function
-      const { data, error } = await supabase.functions.invoke("wa-webhook-ai-agents", {
+      const { data, error } = await supabase.functions.invoke("wa-webhook-core", {
         body: {
           message: input,
           agentType,
