@@ -1,3 +1,5 @@
+import { logStructuredEvent } from "../_shared/observability.ts";
+
 type LatencyConfig = {
   windowSize: number;
   coldStartSloMs: number;
@@ -22,18 +24,16 @@ export class LatencyTracker {
     const coldStartMs = requestStart - startMarker;
     this.#hasRecordedColdStart = true;
     const healthy = coldStartMs <= this.#coldStartSloMs;
-    console.log(JSON.stringify({
-      event: "WA_CORE_COLD_START",
+    logStructuredEvent("WA_CORE_COLD_START", {
       coldStartMs: Math.round(coldStartMs),
       withinSlo: healthy,
       correlationId,
-    }));
+    });
     if (!healthy) {
-      console.warn(JSON.stringify({
-        event: "WA_CORE_COLD_START_SLO_BREACH",
+      logStructuredEvent("WA_CORE_COLD_START_SLO_BREACH", {
         coldStartMs: Math.round(coldStartMs),
         slo: this.#coldStartSloMs,
-      }));
+      }, "warn");
     }
   }
 
@@ -46,20 +46,21 @@ export class LatencyTracker {
     const p95 = this.#calculatePercentile(95);
     const breach = p95 > this.#p95SloMs;
 
-    console.log(JSON.stringify({
-      event: "WA_CORE_LATENCY", correlationId, latencyMs: Math.round(latencyMs), p95: Math.round(p95) || 0,
+    logStructuredEvent("WA_CORE_LATENCY", {
+      correlationId,
+      latencyMs: Math.round(latencyMs),
+      p95: Math.round(p95) || 0,
       windowSize: this.#samples.length,
       slo: this.#p95SloMs,
       withinSlo: !breach,
-    }));
+    });
 
     if (breach) {
-      console.warn(JSON.stringify({
-        event: "WA_CORE_LATENCY_SLO_BREACH",
+      logStructuredEvent("WA_CORE_LATENCY_SLO_BREACH", {
         p95: Math.round(p95),
         slo: this.#p95SloMs,
         sampleCount: this.#samples.length,
-      }));
+      }, "warn");
     }
 
     return latencyMs;
