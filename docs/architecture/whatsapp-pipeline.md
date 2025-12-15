@@ -21,16 +21,16 @@ agents. It handles message normalization, routing, intent parsing, and response 
 │                  (Cloud API Webhook Events)                      │
 └──────────────────────────┬──────────────────────────────────────┘
                            │
-                           │ POST /wa-webhook-ai-agents
+                           │ POST /wa-webhook-core
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                  Unified Webhook Handler                         │
-│             supabase/functions/wa-webhook-ai-agents/             │
+│                     Core Webhook Router                          │
+│                supabase/functions/wa-webhook-core/               │
 │                                                                   │
 │  1. Verify signature (security)                                  │
 │  2. Extract message data                                         │
 │  3. Generate correlation ID                                      │
-│  4. Pass to AgentOrchestrator                                    │
+│  4. Route to appropriate service                                 │
 └──────────────────────────┬──────────────────────────────────────┘
                            │
                            ▼
@@ -81,17 +81,18 @@ agents. It handles message normalization, routing, intent parsing, and response 
 
 ### 1. Webhook Handler
 
-**File:** `supabase/functions/wa-webhook-ai-agents/index.ts`
+**File:** `supabase/functions/wa-webhook-core/index.ts`
 
 **Responsibilities:**
 
 - Verify WhatsApp webhook signature
 - Extract message data from payload
 - Generate correlation ID for tracing
+- Route to appropriate domain service
 - Handle health checks
 - Error handling & logging
 
-### 2. Agent Orchestrator
+### 2. Domain Service Routing
 
 **File:** `supabase/functions/_shared/agent-orchestrator.ts`
 
@@ -161,9 +162,9 @@ Match/notification triggers
 
 **Key Metrics:**
 
-- Requests/min per agent
+- Requests/min per service
 - Latency (parsing, DB, total)
-- Error rate per intent type
+- Error rate per message type
 - Message delivery success rate
 
 ---
@@ -172,10 +173,10 @@ Match/notification triggers
 
 ```bash
 # Staging
-supabase functions deploy wa-webhook-ai-agents --project-ref staging
+supabase functions deploy wa-webhook-core --project-ref staging
 
 # Production
-supabase functions deploy wa-webhook-ai-agents --project-ref prod
+supabase functions deploy wa-webhook-core --project-ref prod
 ```
 
 ---

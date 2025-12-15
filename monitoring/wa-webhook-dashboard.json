@@ -10,7 +10,8 @@
         "wa-webhook-marketplace",
         "wa-webhook-jobs",
         "wa-webhook-wallet",
-        "wa-webhook-ai-agents"
+        "wa-webhook-profile",
+        "wa-webhook-buy-sell"
       ],
       "metrics": [
         "health_status",
