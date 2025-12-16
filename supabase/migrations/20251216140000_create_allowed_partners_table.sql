@@ -36,9 +36,11 @@ COMMENT ON COLUMN public.allowed_partners.is_active IS 'Whether this partner is 
 ALTER TABLE public.allowed_partners ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
+DROP POLICY IF EXISTS "service_role_manage_partners" ON public.allowed_partners;
 CREATE POLICY "service_role_manage_partners" ON public.allowed_partners
   FOR ALL USING (auth.role() = 'service_role');
 
+DROP POLICY IF EXISTS "users_view_active_partners" ON public.allowed_partners;
 CREATE POLICY "users_view_active_partners" ON public.allowed_partners
   FOR SELECT USING (is_active = true);
 
