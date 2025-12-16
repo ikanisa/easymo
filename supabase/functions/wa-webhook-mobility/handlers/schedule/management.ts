@@ -152,7 +152,15 @@ export async function handleScheduleRecent(
     const root = (data?.metadata && typeof data.metadata === "object")
       ? (data!.metadata as Record<string, unknown>)
       : {};
-    const last = (root as any)?.mobility?.schedule?.last;
+    type MetadataRecord = Record<string, unknown>;
+    const mobilityMeta = (root.mobility && typeof root.mobility === "object")
+      ? (root.mobility as MetadataRecord)
+      : {};
+    const scheduleMeta =
+      (mobilityMeta.schedule && typeof mobilityMeta.schedule === "object")
+        ? (mobilityMeta.schedule as MetadataRecord)
+        : {};
+    const last = scheduleMeta.last;
     if (!last || !last.role || !last.vehicle || !last.origin) {
       await sendButtonsMessage(
         ctx,

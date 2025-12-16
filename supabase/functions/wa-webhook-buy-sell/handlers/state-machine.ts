@@ -22,8 +22,10 @@ import { logStructuredEvent } from "../../_shared/observability.ts";
  * @param ctx - Profile context with supabase client
  * @returns handled: true if state was handled, false otherwise
  */
+import type { ChatState } from "../../_shared/wa-webhook-shared/state/store.ts";
+
 export async function handleStateTransition(
-  state: any,
+  state: ChatState | null,
   text: string,
   ctx: ProfileContext,
   correlationId?: string,

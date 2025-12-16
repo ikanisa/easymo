@@ -516,9 +516,11 @@ async function storeLastScheduleContext(
       .eq("user_id", ctx.profileId!)
       .maybeSingle();
     if (error && error.code !== "PGRST116") return;
-    const root = (data?.metadata && typeof data.metadata === "object")
-      ? { ...(data!.metadata as any) }
-      : {};
+    type MetadataRecord = Record<string, unknown>;
+    const root: MetadataRecord =
+      (data?.metadata && typeof data.metadata === "object")
+        ? { ...(data.metadata as MetadataRecord) }
+        : {};
     const mobility = (root.mobility && typeof root.mobility === "object")
       ? { ...root.mobility }
       : {};

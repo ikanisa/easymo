@@ -90,7 +90,7 @@ async function listSubmissions(ctx: RouterContext): Promise<void> {
       _limit: 10,
     });
     if (error) throw error;
-    if (!data || !(data as any[]).length) {
+    if (!data || !Array.isArray(data) || data.length === 0) {
       await sendText(ctx.from, "No pending SUB requests.");
       return;
     }

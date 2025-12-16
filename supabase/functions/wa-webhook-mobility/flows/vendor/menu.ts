@@ -41,7 +41,12 @@ export async function handleVendorMenuMedia(
   try {
     record = await findActiveBarNumber(ctx.supabase, ctx.from);
   } catch (error) {
-    logStructuredEvent("VENDOR_MENU_LOOKUP_FAIL", { error: error.message, from: ctx.from }, "error");
+    logStructuredEvent("VENDOR_MENU_LOOKUP_FAIL", {
+      error: error.message,
+      from: maskPhone(ctx.from),
+      profileId: ctx.profileId,
+      operation: "vendor_menu_lookup",
+    }, "error");
     await sendText(
       ctx.from,
       t(ctx.locale, "vendor.menu.lookup_fail"),
