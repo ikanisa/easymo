@@ -61,7 +61,11 @@ async function handleSubCommand(
           ctx.from,
           `SUB ${action.toUpperCase()} for ${target}: ${status}`,
         );
-        await logAdminAction({ actor: ctx.from, target, action });
+        await logStructuredEvent("ADMIN_SUB_ACTION", {
+          actor: ctx.from,
+          target,
+          action,
+        });
       } catch (error) {
         logStructuredEvent("ADMIN_SUB_COMMAND_FAIL", {
           error: error instanceof Error ? error.message : String(error),
@@ -106,7 +110,7 @@ async function listSubmissions(ctx: RouterContext): Promise<void> {
       ctx.from,
       [`Pending SUB (${lines.length})`, ...lines].join("\n"),
     );
-    await logAdminAction({
+    await logStructuredEvent("ADMIN_SUB_LIST", {
       actor: ctx.from,
       action: "sub_list",
       count: lines.length,

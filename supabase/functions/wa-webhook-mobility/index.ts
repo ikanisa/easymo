@@ -27,7 +27,7 @@ import { supabase } from "./config.ts";
 import { recordLastLocation } from "./locations/favorites.ts";
 import { showMobilityMenu } from "./handlers/menu.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
-import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
+import { checkRateLimit } from "../_shared/rate-limit/index.ts";
 import { maskPhone } from "../_shared/phone-utils.ts";
 
 const STATE_KEYS = {
@@ -170,11 +170,11 @@ serve(async (req: Request): Promise<Response> => {
       key: `mobility:${from}`,
     });
 
-    if (!rateLimitCheck.allowed) {
+    if (!rateLimitResult.allowed) {
       logStructuredEvent("MOBILITY_RATE_LIMITED", {
         from: maskPhone(from),
-        remaining: rateLimitCheck.result.remaining,
-        resetAt: rateLimitCheck.result.resetAt.toISOString(),
+        remaining: rateLimitResult.remaining,
+        resetAt: rateLimitResult.resetAt.toISOString(),
         correlationId,
       }, "warn");
       return respond({ error: "rate_limit_exceeded" }, 429);
@@ -221,11 +221,14 @@ serve(async (req: Request): Promise<Response> => {
 
       if (isVehicleOption(id) && state?.key === STATE_KEYS.NEARBY_SELECT) {
         if (state.data && typeof state.data === "object") {
-          await handleVehicleSelection(
-            ctx,
-            state.data as Record<string, unknown>,
-            id,
-          );
+          const nearbyState = state.data as { mode?: string; vehicle?: string };
+          if (nearbyState.mode === "drivers" || nearbyState.mode === "passengers") {
+            await handleVehicleSelection(
+              ctx,
+              { mode: nearbyState.mode, vehicle: nearbyState.vehicle } as { mode: "drivers" | "passengers"; vehicle?: string },
+              id,
+            );
+          }
         }
         return respond({ success: true });
       }
@@ -303,11 +306,14 @@ serve(async (req: Request): Promise<Response> => {
 
         if (state?.key === STATE_KEYS.NEARBY_LOCATION) {
           if (state.data && typeof state.data === "object") {
-            await handleNearbyLocation(
-              ctx,
-              state.data as Record<string, unknown>,
-              coords,
-            );
+            const nearbyState = state.data as { mode?: string; vehicle?: string; pickup?: { lat: number; lng: number } };
+            if (nearbyState.mode === "drivers" || nearbyState.mode === "passengers") {
+              await handleNearbyLocation(
+                ctx,
+                { mode: nearbyState.mode, vehicle: nearbyState.vehicle, pickup: nearbyState.pickup } as { mode: "drivers" | "passengers"; vehicle?: string; pickup?: { lat: number; lng: number } },
+                coords,
+              );
+            }
           }
         } else if (state?.key === STATE_KEYS.GO_ONLINE) {
           await handleGoOnlineLocation(ctx, coords);
@@ -368,13 +374,31 @@ serve(async (req: Request): Promise<Response> => {
     const errorMessage = err instanceof Error ? err.message : String(err);
     const errorStack = err instanceof Error ? err.stack : undefined;
 
+    // Extract from and profileId from payload for error context
+    let errorFrom = "unknown";
+    let errorProfileId: string | undefined;
+    try {
+      const payload: WhatsAppWebhookPayload = JSON.parse(await req.clone().text());
+      const errorMessage = payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+      if (errorMessage?.from) {
+        errorFrom = maskPhone(errorMessage.from);
+        // Try to get profileId if we can
+        const { data: profileData } = await supabase.rpc("ensure_whatsapp_user", {
+          _wa_id: errorMessage.from,
+          _profile_name: "User",
+        });
+        errorProfileId = profileData?.profile_id;
+      }
+    } catch {
+      // Ignore errors in error handler
+    }
+
     // Add comprehensive error context (P1-015 fix)
     const errorContext = {
       service: "wa-webhook-mobility",
       requestId,
       correlationId,
-      from: from ? maskPhone(from) : "unknown",
-      profileId: ctx?.profileId,
+      from: errorFrom,
       operation: "webhook_processing",
     };
 

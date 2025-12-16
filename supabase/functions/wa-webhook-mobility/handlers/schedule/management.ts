@@ -160,7 +160,13 @@ export async function handleScheduleRecent(
       (mobilityMeta.schedule && typeof mobilityMeta.schedule === "object")
         ? (mobilityMeta.schedule as MetadataRecord)
         : {};
-    const last = scheduleMeta.last;
+    const last = scheduleMeta.last as {
+      role?: string;
+      vehicle?: string;
+      origin?: { lat: number; lng: number };
+      dropoff?: { lat: number; lng: number } | null;
+      travelLabel?: string | null;
+    } | undefined;
     if (!last || !last.role || !last.vehicle || !last.origin) {
       await sendButtonsMessage(
         ctx,
@@ -170,7 +176,7 @@ export async function handleScheduleRecent(
       return true;
     }
     const state: ScheduleState = {
-      role: last.role,
+      role: last.role as "driver" | "passenger",
       vehicle: last.vehicle,
       origin: last.origin,
       dropoff: last.dropoff ?? null,
