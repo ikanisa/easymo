@@ -50,59 +50,8 @@ export const BUTTON_HANDLERS: ButtonHandler[] = [
     description: "Go back to home",
   },
 
-  // Nearby Flows
-  {
-    id: "SEE_DRIVERS",
-    handler: "handleSeeDrivers",
-    category: "nearby",
-    description: "Find nearby drivers",
-  },
-  {
-    id: "SEE_PASSENGERS",
-    handler: "handleSeePassengers",
-    category: "nearby",
-    description: "Find nearby passengers",
-  },
-  {
-    id: "REFRESH_DRIVERS",
-    handler: "handleSeeDrivers",
-    category: "nearby",
-    description: "Refresh driver list",
-  },
-
-  // Schedule Flows
-  {
-    id: "SCHEDULE_TRIP",
-    handler: "handleScheduleTrip",
-    category: "schedule",
-    description: "Schedule a future trip",
-  },
-  {
-    id: "SCHEDULE_LIST",
-    handler: "handleScheduleList",
-    category: "schedule",
-    description: "View scheduled trips",
-  },
-  {
-    id: "SCHEDULE_CANCEL",
-    handler: "handleScheduleCancel",
-    category: "schedule",
-    description: "Cancel scheduled trip",
-  },
-
-  // Driver Actions
-  {
-    id: "GO_ONLINE",
-    handler: "handleGoOnline",
-    category: "driver",
-    description: "Driver goes online",
-  },
-  {
-    id: "GO_OFFLINE",
-    handler: "handleGoOffline",
-    category: "driver",
-    description: "Driver goes offline",
-  },
+  // Note: Nearby, Schedule, and Go Online/Offline handlers have been removed
+  // The simplified flow only handles "ride" button and location sharing
   {
     id: "DRIVER_VERIFICATION",
     handler: "handleDriverVerification",

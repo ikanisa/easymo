@@ -34,28 +34,17 @@ the system.**
 
 ## Features
 
-- 🚗 Trip scheduling (future trips)
-- 📍 Nearby driver/passenger search (creates trip intents)
-- 🔔 Ride subscriptions
-- 🚘 Vehicle plate registration
-- 🗓️ Schedule management
+- 🚗 Simple ride matching: Users choose "ride" from home menu, share location, get list of nearby drivers/passengers
+- 📍 Location-based matching: System finds top 10 opposite role users based on location
+- 👤 Role selection: First-time users select driver or passenger role (stored in profile)
 
-**Note**: The system does NOT manage active trips. Once users get a list of
-nearby drivers/passengers, they communicate directly via WhatsApp. The system
-only maintains:
-
-- Database of scheduled trips
-- Database of trip intents (for matching)
+**Note**: The system is simplified - no scheduling, no nearby driver/passenger specific flows, no vehicle management. Users share location and get a list of matches. They communicate directly via WhatsApp after matching.
 
 ## Files
 
-- `handlers/schedule.ts` - Trip scheduling re-exports
-- `handlers/schedule/booking.ts` - Trip scheduling logic
-- `handlers/schedule/management.ts` - Scheduled trip management
-- `handlers/nearby.ts` - Nearby driver/passenger search (creates trip intents)
-- `handlers/go_online.ts` - Driver online status
-- `handlers/vehicle_plate.ts` - Plate verification
-- `handlers/subscription.ts` - Ride subscriptions
+- `index.ts` - Main handler with simplified flow
+- `handlers/index.ts` - Handler registry (legacy, not actively used)
+- `router/button-handlers.ts` - Button handler mappings (documentation)
 
 ## Development
 
