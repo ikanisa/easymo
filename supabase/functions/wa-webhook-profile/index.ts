@@ -34,6 +34,8 @@ import { verifyWebhookSignature, checkIdempotency } from "../_shared/webhook-uti
 import { ensureProfile } from "../_shared/wa-webhook-shared/utils/profile.ts";
 import { CircuitBreaker } from "../_shared/circuit-breaker.ts";
 import { formatUnknownError, classifyError } from "./utils/error-handling.ts";
+import { parseCoordinates } from "./utils/coordinates.ts";
+import { sendTextMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
 
 const profileConfig = WEBHOOK_CONFIG.profile;
 
@@ -636,13 +638,38 @@ serve(async (req: Request): Promise<Response> => {
     // ============================================================
 
     // Handle location messages (when user shares location)
-    else if (
-      message.type === "location" &&
-      (state?.key === IDS.ADD_LOCATION || state?.key === "edit_location")
-    ) {
+    else if (message.type === "location") {
       const location = (message as any).location;
       const { handleLocationMessage } = await import("./handlers/locations.ts");
-      handled = await handleLocationMessage(ctx, location, state);
+      
+      // Try to handle with current state
+      if (state && (state.key === IDS.ADD_LOCATION || state.key === "edit_location")) {
+        handled = await handleLocationMessage(ctx, location, state);
+      } else {
+        // Fallback: Save location as "recent" if no specific state
+        const coords = parseCoordinates(location?.latitude, location?.longitude);
+        if (coords && ctx.profileId) {
+          try {
+            // Save to location cache for use by other services
+            await ctx.supabase.rpc("update_user_location_cache", {
+              _user_id: ctx.profileId,
+              _lat: coords.lat,
+              _lng: coords.lng,
+            });
+            await sendTextMessage(ctx, "📍 Location received! You can use this location in other services.");
+            handled = true;
+            logStructuredEvent("PROFILE_LOCATION_SAVED_FALLBACK", {
+              user: ctx.profileId,
+              lat: coords.lat,
+              lng: coords.lng,
+            });
+          } catch (error) {
+            logStructuredEvent("PROFILE_LOCATION_FALLBACK_ERROR", {
+              error: error instanceof Error ? error.message : String(error),
+            }, "error");
+          }
+        }
+      }
     }
 
     // Fallback: Detect phone number pattern (for MoMo QR without keywords)

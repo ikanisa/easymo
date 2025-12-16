@@ -149,7 +149,9 @@ export async function verifyWebhookRequest(
   };
 
   const meta = extractSignatureMetadata(req);
-  const isInternalForward = req.headers.get("x-wa-internal-forward") === "true";
+  // Validate internal forward with token to prevent spoofing
+  const { isValidInternalForward } = await import("./internal-forward.ts");
+  const isInternalForward = isValidInternalForward(req);
 
   // Check if secret is configured
   if (!fullConfig.appSecret) {

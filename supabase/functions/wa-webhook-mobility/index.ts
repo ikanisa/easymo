@@ -73,7 +73,9 @@ serve(async (req: Request): Promise<Response> => {
     const allowUnsigned =
       (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() ===
         "true";
-    const internalForward = req.headers.get("x-wa-internal-forward") === "true";
+    // Validate internal forward with token to prevent spoofing
+    const { isValidInternalForward } = await import("../_shared/security/internal-forward.ts");
+    const internalForward = isValidInternalForward(req);
 
     if (!appSecret) {
       logStructuredEvent("MOBILITY_AUTH_CONFIG_ERROR", {

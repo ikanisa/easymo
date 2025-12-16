@@ -285,6 +285,12 @@ export async function forwardToEdgeService(
   // Mark as internal forward to bypass signature verification in target service
   // (signature already verified in core, and body is re-stringified which changes it)
   forwardHeaders.set("x-wa-internal-forward", "true");
+  // Add security token to prevent header spoofing
+  const { generateInternalForwardToken } = await import("../_shared/security/internal-forward.ts");
+  const forwardToken = generateInternalForwardToken();
+  if (forwardToken) {
+    forwardHeaders.set("x-wa-internal-forward-token", forwardToken);
+  }
   // Add Authorization header for service-to-service calls
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (serviceRoleKey) {
