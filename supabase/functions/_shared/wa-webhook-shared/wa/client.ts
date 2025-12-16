@@ -40,7 +40,10 @@ type SendMeta = {
   kind?: string;
 };
 
-async function post(payload: Record<string, unknown>, meta?: SendMeta): Promise<void> {
+async function post(
+  payload: Record<string, unknown>,
+  meta?: SendMeta,
+): Promise<void> {
   let attempt = 0;
   while (attempt <= STATUS_RETRIES) {
     const res = await fetchWithTimeout(
@@ -79,12 +82,26 @@ async function post(payload: Record<string, unknown>, meta?: SendMeta): Promise<
   }
 }
 
+/**
+ * Sanitize text body to prevent injection attacks
+ * WhatsApp messages are plain text, but we still need to prevent control characters
+ */
+function sanitizeTextBody(body: string): string {
+  if (!body) return "";
+  // Remove null bytes and control characters (except newline, tab, carriage return)
+  return body
+    .replace(/\0/g, "") // Remove null bytes
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "") // Remove control chars except \n, \t, \r
+    .trim();
+}
+
 export async function sendText(to: string, body: string): Promise<void> {
+  const sanitizedBody = sanitizeTextBody(body);
   await post({
     messaging_product: "whatsapp",
     to,
     type: "text",
-    text: { body },
+    text: { body: sanitizedBody },
   }, { to, kind: "text" });
 }
 
@@ -93,9 +110,10 @@ export async function sendButtons(
   body: string,
   buttons: Array<{ id: string; title: string }>,
 ): Promise<void> {
+  const sanitizedBody = sanitizeTextBody(body);
   if ((Deno.env.get("LOG_LEVEL") ?? "").toLowerCase() === "debug") {
     console.debug("wa.payload.buttons_preview", {
-      bodyPreview: body?.slice(0, 40),
+      bodyPreview: sanitizedBody?.slice(0, 40),
       count: buttons?.length ?? 0,
       buttons: buttons.slice(0, 3).map((b) => ({
         id: b.id,
@@ -134,7 +152,10 @@ export async function sendList(
     }>;
   },
 ): Promise<void> {
-  const headerText = safeHeaderText(opts.title ?? "", WA_LIMITS_CONST.HEADER_TEXT);
+  const headerText = safeHeaderText(
+    opts.title ?? "",
+    WA_LIMITS_CONST.HEADER_TEXT,
+  );
   const baseSectionTitle = safeHeaderText(
     opts.sectionTitle ?? "",
     WA_LIMITS_CONST.SECTION_TITLE,
@@ -177,9 +198,7 @@ export async function sendList(
       }),
     );
   }
-  const headerPayload = headerText
-    ? { type: "text", text: headerText }
-    : null;
+  const headerPayload = headerText ? { type: "text", text: headerText } : null;
   await post({
     messaging_product: "whatsapp",
     to,

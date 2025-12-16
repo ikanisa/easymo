@@ -1,9 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { supabase } from "../_shared/wa-webhook-shared/config.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
-import { forwardToEdgeService, routeIncomingPayload, summarizeServiceHealth } from "./router.ts";
+import {
+  forwardToEdgeService,
+  routeIncomingPayload,
+  summarizeServiceHealth,
+} from "./router.ts";
 import { LatencyTracker } from "./telemetry.ts";
-import { checkRateLimit, cleanupRateLimitState } from "../_shared/service-resilience.ts";
+import {
+  checkRateLimit,
+  cleanupRateLimitState,
+} from "../_shared/service-resilience.ts";
 import { maskPhone } from "../_shared/phone-utils.ts";
 import { logError } from "../_shared/correlation-logging.ts";
 import { storeDLQEntry } from "../_shared/dlq-manager.ts";
@@ -32,7 +39,8 @@ const errorHandler = createErrorHandler("wa-webhook-core");
 
 const latencyTracker = new LatencyTracker({
   windowSize: 120,
-  coldStartSloMs: Number(Deno.env.get("WA_CORE_COLD_START_SLO_MS") ?? "1750") || 1750,
+  coldStartSloMs: Number(Deno.env.get("WA_CORE_COLD_START_SLO_MS") ?? "1750") ||
+    1750,
   p95SloMs: Number(Deno.env.get("WA_CORE_P95_SLO_MS") ?? "1200") || 1200,
 });
 
@@ -45,7 +53,8 @@ serve(async (req: Request): Promise<Response> => {
   const requestStart = performance.now();
   const url = new URL(req.url);
   const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
-  const correlationId = req.headers.get("x-correlation-id") ?? crypto.randomUUID();
+  const correlationId = req.headers.get("x-correlation-id") ??
+    crypto.randomUUID();
 
   // record cold start once per instance
   latencyTracker.recordColdStart(coldStartMarker, requestStart, correlationId);
@@ -66,9 +75,16 @@ serve(async (req: Request): Promise<Response> => {
     headers.set("X-Request-ID", requestId);
     headers.set("X-Correlation-ID", correlationId);
     headers.set("X-Routed-Service", routedService);
-    const durationMs = latencyTracker.recordLatency(performance.now() - requestStart, correlationId);
+    const durationMs = latencyTracker.recordLatency(
+      performance.now() - requestStart,
+      correlationId,
+    );
     headers.set("X-WA-Core-Latency", `${Math.round(durationMs)}ms`);
-    return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
   };
 
   const log = (
@@ -76,7 +92,12 @@ serve(async (req: Request): Promise<Response> => {
     details: Record<string, unknown> = {},
     level: "debug" | "info" | "warn" | "error" = "info",
   ) => {
-    logStructuredEvent(event, { service: "wa-webhook-core", requestId, path: url.pathname, ...details }, level);
+    logStructuredEvent(event, {
+      service: "wa-webhook-core",
+      requestId,
+      path: url.pathname,
+      ...details,
+    }, level);
   };
 
   // Health endpoint (single, consistent implementation)
@@ -94,15 +115,21 @@ serve(async (req: Request): Promise<Response> => {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       log("CORE_HEALTH_ERROR", { error: message }, "error");
-      return json({ status: "unhealthy", service: "wa-webhook-core", error: message }, { status: 503 });
+      return json({
+        status: "unhealthy",
+        service: "wa-webhook-core",
+        error: message,
+      }, { status: 503 });
     }
   }
 
   // Configuration check endpoint
-  if (url.pathname === "/config-check" || url.pathname.endsWith("/config-check")) {
+  if (
+    url.pathname === "/config-check" || url.pathname.endsWith("/config-check")
+  ) {
     // Use the env-check utility to validate required vars
     const envCheck = checkRequiredEnv(REQUIRED_CORE_VARS);
-    
+
     const configStatus = {
       service: "wa-webhook-core",
       timestamp: new Date().toISOString(),
@@ -110,17 +137,21 @@ serve(async (req: Request): Promise<Response> => {
         // Core Supabase
         SUPABASE_URL: !!Deno.env.get("SUPABASE_URL"),
         SUPABASE_SERVICE_ROLE_KEY: !!Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
-        
+
         // WhatsApp
-        WA_PHONE_ID: !!Deno.env.get("WA_PHONE_ID") || !!Deno.env.get("WHATSAPP_PHONE_NUMBER_ID"),
-        WA_TOKEN: !!Deno.env.get("WA_TOKEN") || !!Deno.env.get("WHATSAPP_ACCESS_TOKEN"),
-        WA_APP_SECRET: !!Deno.env.get("WA_APP_SECRET") || !!Deno.env.get("WHATSAPP_APP_SECRET"),
-        WA_VERIFY_TOKEN: !!Deno.env.get("WA_VERIFY_TOKEN") || !!Deno.env.get("WHATSAPP_VERIFY_TOKEN"),
-        
+        WA_PHONE_ID: !!Deno.env.get("WA_PHONE_ID") ||
+          !!Deno.env.get("WHATSAPP_PHONE_NUMBER_ID"),
+        WA_TOKEN: !!Deno.env.get("WA_TOKEN") ||
+          !!Deno.env.get("WHATSAPP_ACCESS_TOKEN"),
+        WA_APP_SECRET: !!Deno.env.get("WA_APP_SECRET") ||
+          !!Deno.env.get("WHATSAPP_APP_SECRET"),
+        WA_VERIFY_TOKEN: !!Deno.env.get("WA_VERIFY_TOKEN") ||
+          !!Deno.env.get("WHATSAPP_VERIFY_TOKEN"),
+
         // AI Providers
         OPENAI_API_KEY: !!Deno.env.get("OPENAI_API_KEY"),
         GEMINI_API_KEY: !!Deno.env.get("GEMINI_API_KEY"),
-        
+
         // Optional
         UPSTASH_REDIS_URL: !!Deno.env.get("UPSTASH_REDIS_URL"),
         UPSTASH_REDIS_TOKEN: !!Deno.env.get("UPSTASH_REDIS_TOKEN"),
@@ -128,9 +159,14 @@ serve(async (req: Request): Promise<Response> => {
       missing: envCheck.missing,
       warnings: envCheck.warnings,
     };
-    
-    log("CORE_CONFIG_CHECK", { missing: configStatus.missing, warnings: configStatus.warnings });
-    return json(configStatus, { status: configStatus.missing.length > 0 ? 503 : 200 });
+
+    log("CORE_CONFIG_CHECK", {
+      missing: configStatus.missing,
+      warnings: configStatus.warnings,
+    });
+    return json(configStatus, {
+      status: configStatus.missing.length > 0 ? 503 : 200,
+    });
   }
 
   // WhatsApp verification handshake (GET)
@@ -139,7 +175,13 @@ serve(async (req: Request): Promise<Response> => {
     const token = url.searchParams.get("hub.verify_token");
     const challenge = url.searchParams.get("hub.challenge");
     if (mode === "subscribe" && token === Deno.env.get("WA_VERIFY_TOKEN")) {
-      return new Response(challenge ?? "", { status: 200, headers: { "X-Request-ID": requestId, "X-Correlation-ID": correlationId } });
+      return new Response(challenge ?? "", {
+        status: 200,
+        headers: {
+          "X-Request-ID": requestId,
+          "X-Correlation-ID": correlationId,
+        },
+      });
     }
     return json({ error: "forbidden" }, { status: 403 });
   }
@@ -151,17 +193,17 @@ serve(async (req: Request): Promise<Response> => {
     if (!securityCheck.passed) {
       return finalize(securityCheck.response!, "wa-webhook-core");
     }
-    
+
     // Read raw body for signature verification
     const rawBody = await req.text();
-    
+
     // Phase 2: Enhanced signature verification
     const signatureResult = await verifyWebhookRequest(
       req,
       rawBody,
-      "wa-webhook-core"
+      "wa-webhook-core",
     );
-    
+
     if (!signatureResult.valid) {
       // Audit log failed authentication
       await auditLogger.logAuth(requestId, correlationId, "failure", {
@@ -170,49 +212,53 @@ serve(async (req: Request): Promise<Response> => {
         ipAddress: securityCheck.context.clientIp ?? undefined,
         userAgent: securityCheck.context.userAgent ?? undefined,
       });
-      
+
       const error = errorHandler.createError("AUTH_INVALID_SIGNATURE");
       return finalize(
         errorHandler.createErrorResponse(error, requestId, correlationId),
-        "wa-webhook-core"
+        "wa-webhook-core",
       );
     }
-    
+
     // Log successful authentication
     await auditLogger.logAuth(requestId, correlationId, "success", {
       method: signatureResult.method ?? undefined,
       ipAddress: securityCheck.context.clientIp ?? undefined,
     });
-    
+
     // Parse payload after verification
     const payload = JSON.parse(rawBody);
-    
+
     // Extract phone number for rate limiting
     const phoneNumber = extractPhoneFromPayload(payload);
     if (phoneNumber) {
       const rateCheck = checkRateLimit(phoneNumber);
       if (!rateCheck.allowed) {
-        log("CORE_RATE_LIMITED", { 
+        log("CORE_RATE_LIMITED", {
           phone: maskPhone(phoneNumber),
           resetAt: new Date(rateCheck.resetAt).toISOString(),
         }, "warn");
-        return json({ 
+        return json({
           error: "rate_limit_exceeded",
           retryAfter: Math.ceil((rateCheck.resetAt - Date.now()) / 1000),
-        }, { 
+        }, {
           status: 429,
-          headers: { "Retry-After": String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) },
+          headers: {
+            "Retry-After": String(
+              Math.ceil((rateCheck.resetAt - Date.now()) / 1000),
+            ),
+          },
         });
       }
     }
-    
+
     // Periodically cleanup rate limit state using deterministic counter
     if (requestCounter % CLEANUP_INTERVAL === 0) {
       cleanupRateLimitState();
     }
-    
+
     log("CORE_WEBHOOK_RECEIVED", { payloadType: typeof payload });
-    
+
     // Check for intent notification opt-out/opt-in FIRST (before any routing)
     const { handleIntentOptOut } = await import("./handlers/intent-opt-out.ts");
     const optOutHandled = await handleIntentOptOut(payload, supabase);
@@ -221,22 +267,24 @@ serve(async (req: Request): Promise<Response> => {
       // Return success to Meta - handler already sent response to user
       return finalize(
         json({ success: true, handled: "opt_out" }, { status: 200 }),
-        "wa-webhook-core"
+        "wa-webhook-core",
       );
     }
-    
+
     // Check if this is a call event BEFORE routing messages
     const calls = payload?.entry?.[0]?.changes?.[0]?.value?.calls;
     const callEvent = calls?.[0]; // Get first call from array
     if (callEvent) {
-      log("CORE_CALL_EVENT_DETECTED", { 
+      log("CORE_CALL_EVENT_DETECTED", {
         callId: callEvent.id,
         event: callEvent.event,
         from: callEvent.from?.slice(-4),
       });
-      
+
       // Forward directly to voice-calls handler
-      const voiceCallsUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/wa-webhook-voice-calls`;
+      const voiceCallsUrl = `${
+        Deno.env.get("SUPABASE_URL")
+      }/functions/v1/wa-webhook-voice-calls`;
       try {
         const forwardResponse = await fetch(voiceCallsUrl, {
           method: "POST",
@@ -244,46 +292,58 @@ serve(async (req: Request): Promise<Response> => {
             "Content-Type": "application/json",
             "X-Correlation-ID": correlationId,
             "X-Request-ID": requestId,
-            "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            "Authorization": `Bearer ${
+              Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+            }`,
           },
           body: JSON.stringify(payload),
         });
-        
+
         log("CORE_CALL_FORWARDED", {
           callId: callEvent.id,
           status: forwardResponse.status,
         });
-        
+
         return finalize(forwardResponse, "wa-webhook-voice-calls");
       } catch (forwardError) {
         log("CORE_CALL_FORWARD_ERROR", {
           callId: callEvent.id,
-          error: forwardError instanceof Error ? forwardError.message : String(forwardError),
+          error: forwardError instanceof Error
+            ? forwardError.message
+            : String(forwardError),
         }, "error");
-        
+
         // Return success to Meta to prevent retries, but log the error
-        return json({ success: true, error: "voice_call_forward_failed" }, { status: 200 });
+        return json({ success: true, error: "voice_call_forward_failed" }, {
+          status: 200,
+        });
       }
     }
-    
+
     const decision = await routeIncomingPayload(payload);
-    log("CORE_ROUTING_DECISION", { 
-      service: decision.service, 
+    log("CORE_ROUTING_DECISION", {
+      service: decision.service,
       reason: decision.reason,
-      routingText: decision.routingText 
+      routingText: decision.routingText,
     });
-    const forwarded = await forwardToEdgeService(decision, payload, req.headers);
+    const forwarded = await forwardToEdgeService(
+      decision,
+      payload,
+      req.headers,
+    );
     return finalize(forwarded, decision.service);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    logError("WA_WEBHOOK_CORE_ERROR", { correlationId, message }, { correlationId });
-    
+    logError("WA_WEBHOOK_CORE_ERROR", { correlationId, message }, {
+      correlationId,
+    });
+
     // Store failed message in DLQ for retry
     try {
       const rawBody = await req.clone().text();
       const payload = JSON.parse(rawBody);
       const phoneNumber = extractPhoneFromPayload(payload);
-      
+
       if (phoneNumber) {
         await storeDLQEntry(supabase, {
           phone_number: phoneNumber,
@@ -292,11 +352,13 @@ serve(async (req: Request): Promise<Response> => {
           request_id: requestId,
           payload: payload,
           error_message: message,
-          error_type: err instanceof Error ? err.constructor.name : "UnknownError",
+          error_type: err instanceof Error
+            ? err.constructor.name
+            : "UnknownError",
           status_code: 500,
           retry_count: 0,
         });
-        
+
         log("CORE_MESSAGE_QUEUED_FOR_RETRY", {
           phone: maskPhone(phoneNumber),
         }, "info");
@@ -304,10 +366,12 @@ serve(async (req: Request): Promise<Response> => {
     } catch (dlqError) {
       logError("CORE_DLQ_STORE_FAILED", {
         correlationId,
-        dlqError: dlqError instanceof Error ? dlqError.message : String(dlqError),
+        dlqError: dlqError instanceof Error
+          ? dlqError.message
+          : String(dlqError),
       }, { correlationId });
     }
-    
+
     // Phase 2: Enhanced error handling
     return finalize(
       await errorHandler.handleError(err, {
@@ -315,7 +379,7 @@ serve(async (req: Request): Promise<Response> => {
         correlationId,
         operation: "webhook_processing",
       }),
-      "wa-webhook-core"
+      "wa-webhook-core",
     );
   }
 });
@@ -325,7 +389,11 @@ serve(async (req: Request): Promise<Response> => {
  */
 function extractPhoneFromPayload(payload: unknown): string | null {
   try {
-    const p = payload as { entry?: Array<{ changes?: Array<{ value?: { messages?: Array<{ from?: string }> } }> }> };
+    const p = payload as {
+      entry?: Array<
+        { changes?: Array<{ value?: { messages?: Array<{ from?: string }> } }> }
+      >;
+    };
     const messages = p?.entry?.[0]?.changes?.[0]?.value?.messages;
     if (Array.isArray(messages) && messages.length > 0) {
       return messages[0]?.from ?? null;
