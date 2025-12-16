@@ -100,8 +100,8 @@ All webhook functions have `verify_jwt = false`:
 
 ### Required Functions:
 - ✅ `ensure_whatsapp_user(_wa_id, _profile_name)` - Fixed and deployed
-- ⚠️ `wallet_transfer_tokens` - **NEEDS VERIFICATION** (check if exists in migrations)
-- ⚠️ `get_wallet_balance` - **NEEDS VERIFICATION** (check if exists in migrations)
+- ✅ `wallet_delta_fn` - Exists in migration 20251211010300 (used for token transfers)
+- ✅ `get_wallet_balance` - Not needed (balance retrieved directly from wallet_accounts table)
 - ✅ `create_trip` - Exists in migrations
 
 ### Fallback Mechanisms:
@@ -128,15 +128,11 @@ All webhook functions have `verify_jwt = false`:
 ## ⚠️ 7. PRE-GO-LIVE VERIFICATION NEEDED
 
 ### Critical Checks:
-1. ⚠️ **Verify `wallet_transfer_tokens` RPC function exists**
-   - Check: `supabase/migrations` for wallet transfer function
-   - Action: Create migration if missing
+1. ✅ **Wallet functions verified**
+   - `wallet_delta_fn` exists and is used for token transfers
+   - Balance retrieved directly from `wallet_accounts` table
 
-2. ⚠️ **Verify `get_wallet_balance` RPC function exists**
-   - Check: `supabase/migrations` for wallet balance function
-   - Action: Create migration if missing
-
-3. ⚠️ **Test end-to-end flows:**
+2. ⚠️ **Test end-to-end flows:**
    - Mobility: ride → role → location → matches
    - Profile: wallet menu → earn tokens → transfer to partner
    - Buy-sell: search → AI agent response
@@ -203,7 +199,6 @@ All webhook functions have `verify_jwt = false`:
 **Critical Issues:** None blocking
 
 **Minor Issues:**
-- ⚠️ Verify wallet RPC functions exist
 - ⚠️ Run final UAT tests
 
 **Confidence Level:** 🟢 HIGH
