@@ -1,19 +1,19 @@
 /**
  * WhatsApp Profile Management Webhook Handler
- *
+ * 
  * Handles user profile management via WhatsApp Business API:
  * - Language preferences
  * - Location settings
  * - Profile information
  * - Help and support
- *
+ * 
  * Features:
  * - Circuit breaker protection for database operations
  * - Response caching for webhook retries (2-min TTL)
  * - Connection pooling for Supabase client
  * - Keep-alive headers for connection reuse
  * - Atomic idempotency checking
- *
+ * 
  * @module wa-webhook-profile
  * @version 3.0.0
  */
@@ -30,13 +30,10 @@ import type {
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import { WEBHOOK_CONFIG } from "../_shared/config/webhooks.ts";
-import {
-  checkIdempotency,
-  verifyWebhookSignature,
-} from "../_shared/webhook-utils.ts";
+import { verifyWebhookSignature, checkIdempotency } from "../_shared/webhook-utils.ts";
 import { ensureProfile } from "../_shared/wa-webhook-shared/utils/profile.ts";
 import { CircuitBreaker } from "../_shared/circuit-breaker.ts";
-import { classifyError, formatUnknownError } from "./utils/error-handling.ts";
+import { formatUnknownError, classifyError } from "./utils/error-handling.ts";
 
 const profileConfig = WEBHOOK_CONFIG.profile;
 
@@ -93,18 +90,16 @@ if (!envValid) {
     !SUPABASE_URL ? "SUPABASE_URL" : null,
     !SUPABASE_SERVICE_ROLE_KEY ? "SUPABASE_SERVICE_ROLE_KEY" : null,
   ].filter(Boolean);
-
+  
   logStructuredEvent("PROFILE_ENV_VALIDATION_FAILED", {
     service: SERVICE_NAME,
     missingVars,
   }, "error");
-
+  
   // In production, throw to prevent starting with invalid config
   const runtimeEnv = (Deno.env.get("DENO_ENV") ?? "development").toLowerCase();
   if (runtimeEnv === "production" || runtimeEnv === "prod") {
-    throw new Error(
-      `Missing required environment variables: ${missingVars.join(", ")}`,
-    );
+    throw new Error(`Missing required environment variables: ${missingVars.join(", ")}`);
   }
 }
 
@@ -177,12 +172,12 @@ serve(async (req: Request): Promise<Response> => {
     const mode = url.searchParams.get("hub.mode");
     const token = url.searchParams.get("hub.verify_token");
     const challenge = url.searchParams.get("hub.challenge");
-
+    
     const verifyToken = Deno.env.get("WA_VERIFY_TOKEN");
-
+    
     if (mode === "subscribe" && token && token === verifyToken) {
       logEvent("PROFILE_WEBHOOK_VERIFIED", { mode });
-      return new Response(challenge ?? "", {
+      return new Response(challenge ?? "", { 
         status: 200,
         headers: {
           "X-Request-ID": requestId,
@@ -190,15 +185,9 @@ serve(async (req: Request): Promise<Response> => {
         },
       });
     }
-
-    logEvent(
-      "PROFILE_VERIFICATION_FAILED",
-      { mode, hasToken: !!token },
-      "warn",
-    );
-    return json({ error: "forbidden", message: "Invalid verification token" }, {
-      status: 403,
-    });
+    
+    logEvent("PROFILE_VERIFICATION_FAILED", { mode, hasToken: !!token }, "warn");
+    return json({ error: "forbidden", message: "Invalid verification token" }, { status: 403 });
   }
 
   // POST webhook handling
@@ -208,7 +197,7 @@ serve(async (req: Request): Promise<Response> => {
       limit: profileConfig.rateLimit,
       windowSeconds: profileConfig.rateWindow,
     });
-
+    
     if (!rateLimitResult.allowed) {
       logEvent("PROFILE_RATE_LIMITED", {
         remaining: rateLimitResult.result.remaining,
@@ -219,104 +208,75 @@ serve(async (req: Request): Promise<Response> => {
 
     // Parse request body
     const rawBody = await req.text();
-
+    
     // Body size validation (P0 fix - Issue #2)
     if (rawBody.length > MAX_BODY_SIZE) {
-      logEvent("PROFILE_PAYLOAD_TOO_LARGE", {
-        size: rawBody.length,
+      logEvent("PROFILE_PAYLOAD_TOO_LARGE", { 
+        size: rawBody.length, 
         max: MAX_BODY_SIZE,
       }, "warn");
-      return json({
-        error: "payload_too_large",
+      return json({ 
+        error: "payload_too_large", 
         message: `Request body exceeds maximum size of ${MAX_BODY_SIZE} bytes`,
         max_size: MAX_BODY_SIZE,
       }, { status: 413 });
     }
-
+    
     let payload: WhatsAppWebhookPayload;
-
+    
     try {
       payload = JSON.parse(rawBody);
     } catch (parseError) {
-      logEvent("PROFILE_PARSE_ERROR", {
-        error: parseError instanceof Error
-          ? parseError.message
-          : String(parseError),
+      logEvent("PROFILE_PARSE_ERROR", { 
+        error: parseError instanceof Error ? parseError.message : String(parseError),
       }, "error");
-      return json({ error: "invalid_json", message: "Invalid JSON payload" }, {
-        status: 400,
-      });
+      return json({ error: "invalid_json", message: "Invalid JSON payload" }, { status: 400 });
     }
 
     // Verify webhook signature (security)
     const appSecret = Deno.env.get("WA_APP_SECRET") ?? "";
     const signature = req.headers.get("x-hub-signature-256") ?? "";
-    const runtimeEnv = (Deno.env.get("DENO_ENV") ?? "development")
-      .toLowerCase();
+    const runtimeEnv = (Deno.env.get("DENO_ENV") ?? "development").toLowerCase();
     const isProduction = runtimeEnv === "production" || runtimeEnv === "prod";
-
+    
     // Fix signature verification logic gap (P1 fix - Issue #8)
     // If appSecret is configured, always require a valid signature in production
     // If signature is present, always verify it regardless of environment
     if (isProduction) {
       if (!signature || !appSecret) {
         // Production must have both signature and secret
-        logEvent("PROFILE_SIGNATURE_MISSING", {
+        logEvent("PROFILE_SIGNATURE_MISSING", { 
           environment: "production",
           hasSignature: !!signature,
           hasAppSecret: !!appSecret,
         }, "error");
-        return json({
-          error: "unauthorized",
-          message: "Missing webhook signature or app secret",
-        }, { status: 401 });
+        return json({ error: "unauthorized", message: "Missing webhook signature or app secret" }, { status: 401 });
       }
-
-      const isValid = await verifyWebhookSignature(
-        rawBody,
-        signature,
-        appSecret,
-      );
+      
+      const isValid = await verifyWebhookSignature(rawBody, signature, appSecret);
       if (!isValid) {
-        logEvent("PROFILE_SIGNATURE_INVALID", {
+        logEvent("PROFILE_SIGNATURE_INVALID", { 
           environment: runtimeEnv,
           userAgent: req.headers.get("user-agent"),
         }, "error");
-        return json({
-          error: "unauthorized",
-          message: "Invalid webhook signature",
-        }, { status: 401 });
+        return json({ error: "unauthorized", message: "Invalid webhook signature" }, { status: 401 });
       }
     } else {
       // Non-production environment
       if (signature && appSecret) {
         // If both are provided, verify
-        const isValid = await verifyWebhookSignature(
-          rawBody,
-          signature,
-          appSecret,
-        );
+        const isValid = await verifyWebhookSignature(rawBody, signature, appSecret);
         if (!isValid) {
-          const allowBypass =
-            Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") === "true";
+          const allowBypass = Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") === "true";
           if (!allowBypass) {
-            logEvent(
-              "PROFILE_SIGNATURE_INVALID_DEV",
-              { bypass_disabled: true },
-              "warn",
-            );
-            return json({
-              error: "unauthorized",
-              message: "Invalid signature (dev bypass disabled)",
-            }, { status: 401 });
+            logEvent("PROFILE_SIGNATURE_INVALID_DEV", { bypass_disabled: true }, "warn");
+            return json({ error: "unauthorized", message: "Invalid signature (dev bypass disabled)" }, { status: 401 });
           }
-          logEvent("PROFILE_SIGNATURE_BYPASS_DEV", {
-            reason: "dev_mode_explicit",
-          }, "warn");
+          logEvent("PROFILE_SIGNATURE_BYPASS_DEV", { reason: "dev_mode_explicit" }, "warn");
         }
       } else if (signature && !appSecret) {
         // Signature provided but no secret to verify against - log warning
-        logEvent("PROFILE_SIGNATURE_NO_SECRET", {
+        logEvent("PROFILE_SIGNATURE_NO_SECRET", { 
           environment: runtimeEnv,
           hasSignature: true,
         }, "warn");
@@ -325,30 +285,21 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // Validate payload structure
-    if (
-      !payload.entry || !Array.isArray(payload.entry) ||
-      payload.entry.length === 0
-    ) {
+    if (!payload.entry || !Array.isArray(payload.entry) || payload.entry.length === 0) {
       logEvent("PROFILE_NO_ENTRIES", {}, "info");
       return json({ success: true, ignored: "no_entries" });
     }
 
     const entry = payload.entry[0];
-    if (
-      !entry.changes || !Array.isArray(entry.changes) ||
-      entry.changes.length === 0
-    ) {
+    if (!entry.changes || !Array.isArray(entry.changes) || entry.changes.length === 0) {
       logEvent("PROFILE_NO_CHANGES", {}, "info");
       return json({ success: true, ignored: "no_changes" });
     }
 
     const change = entry.changes[0];
     const value = change.value;
-
-    if (
-      !value.messages || !Array.isArray(value.messages) ||
-      value.messages.length === 0
-    ) {
+    
+    if (!value.messages || !Array.isArray(value.messages) || value.messages.length === 0) {
       logEvent("PROFILE_NO_MESSAGES", {}, "info");
       return json({ success: true, ignored: "no_messages" });
     }
@@ -357,7 +308,7 @@ serve(async (req: Request): Promise<Response> => {
     const from = message.from;
     const messageId = message.id;
 
-    logEvent("PROFILE_WEBHOOK_RECEIVED", {
+    logEvent("PROFILE_WEBHOOK_RECEIVED", { 
       from: from?.slice(-4),
       messageId: messageId?.slice(0, 8),
       type: message.type,
@@ -367,46 +318,33 @@ serve(async (req: Request): Promise<Response> => {
     const cacheKey = `${from}:${messageId}`;
     const cached = responseCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      logEvent(
-        "PROFILE_CACHE_HIT",
-        { messageId: messageId?.slice(0, 8) },
-        "info",
-      );
+      logEvent("PROFILE_CACHE_HIT", { messageId: messageId?.slice(0, 8) }, "info");
       return json(cached.response);
     }
-
+    
     // Database idempotency check (P0 fix - Issue #3)
     // Check if message has already been processed
     if (messageId) {
       try {
-        const alreadyProcessed = await checkIdempotency(
-          supabase,
-          messageId,
-          correlationId,
-        );
+        const alreadyProcessed = await checkIdempotency(supabase, messageId, correlationId);
         if (alreadyProcessed) {
-          logEvent("PROFILE_DUPLICATE_SKIPPED", {
-            messageId: messageId.slice(0, 8),
-          }, "info");
+          logEvent("PROFILE_DUPLICATE_SKIPPED", { messageId: messageId.slice(0, 8) }, "info");
           return json({ success: true, ignored: "duplicate" });
         }
       } catch (idempotencyError) {
         // Log but don't fail - idempotency check failure shouldn't block processing
         // Properly serialize error (handle Supabase error objects)
-        const errorMessage = idempotencyError instanceof Error
-          ? idempotencyError.message
-          : (idempotencyError && typeof idempotencyError === "object" &&
-              "message" in idempotencyError)
+        const errorMessage = idempotencyError instanceof Error 
+          ? idempotencyError.message 
+          : (idempotencyError && typeof idempotencyError === "object" && "message" in idempotencyError)
           ? String((idempotencyError as Record<string, unknown>).message)
           : String(idempotencyError);
-
+        
         logEvent("PROFILE_IDEMPOTENCY_CHECK_ERROR", {
           error: errorMessage,
-          errorCode:
-            (idempotencyError && typeof idempotencyError === "object" &&
-                "code" in idempotencyError)
-              ? String((idempotencyError as Record<string, unknown>).code)
-              : undefined,
+          errorCode: (idempotencyError && typeof idempotencyError === "object" && "code" in idempotencyError)
+            ? String((idempotencyError as Record<string, unknown>).code)
+            : undefined,
         }, "warn");
       }
     }
@@ -435,28 +373,25 @@ serve(async (req: Request): Promise<Response> => {
       dbCircuitBreaker.recordFailure(
         error instanceof Error ? error.message : String(error),
       );
-
+      
       const errorMessage = formatUnknownError(error);
-
+      
       // Classify error type
-      if (
-        errorMessage.includes("already registered") ||
-        errorMessage.includes("duplicate")
-      ) {
+      if (errorMessage.includes("already registered") || errorMessage.includes("duplicate")) {
         // User error - phone already exists (return 400, not 500)
-        logEvent("PROFILE_USER_ERROR", {
+        logEvent("PROFILE_USER_ERROR", { 
           error: "PHONE_DUPLICATE",
           from: from?.slice(-4),
         }, "warn");
-        return json({
+        return json({ 
           error: "USER_ERROR",
           code: "PHONE_DUPLICATE",
           message: "Phone number already registered",
         }, { status: 400 });
       }
-
+      
       // System error - database issue (return 500)
-      logEvent("PROFILE_SYSTEM_ERROR", {
+      logEvent("PROFILE_SYSTEM_ERROR", { 
         error: errorMessage,
         from: from?.slice(-4),
       }, "error");
@@ -488,6 +423,7 @@ serve(async (req: Request): Promise<Response> => {
       const id = buttonId || listId;
 
       if (id) {
+
         // Profile Home
         if (id === "profile") {
           const { startProfile } = await import("./handlers/menu.ts");
@@ -535,9 +471,7 @@ serve(async (req: Request): Promise<Response> => {
           );
           handled = await listSavedLocations(ctx);
         } else if (id === IDS.ADD_LOCATION || id === "add_location") {
-          const { showAddLocationTypeMenu } = await import(
-            "./handlers/locations.ts"
-          );
+          const { showAddLocationTypeMenu } = await import("./handlers/locations.ts");
           handled = await showAddLocationTypeMenu(ctx);
         } else if (id.startsWith("LOC::")) {
           const locationId = id.replace("LOC::", "");
@@ -552,14 +486,8 @@ serve(async (req: Request): Promise<Response> => {
         } // Confirm Save Location
         else if (id.startsWith("CONFIRM_SAVE_LOC::")) {
           const locationType = id.replace("CONFIRM_SAVE_LOC::", "");
-          const { confirmSaveLocation } = await import(
-            "./handlers/locations.ts"
-          );
-          handled = await confirmSaveLocation(
-            ctx,
-            locationType,
-            state ?? { key: "" },
-          );
+          const { confirmSaveLocation } = await import("./handlers/locations.ts");
+          handled = await confirmSaveLocation(ctx, locationType, state ?? { key: "" });
         } // Use Saved Location
         else if (id.startsWith("USE_LOC::")) {
           const locationId = id.replace("USE_LOC::", "");
@@ -568,23 +496,17 @@ serve(async (req: Request): Promise<Response> => {
         } // Edit Saved Location
         else if (id.startsWith("EDIT_LOC::")) {
           const locationId = id.replace("EDIT_LOC::", "");
-          const { handleEditLocation } = await import(
-            "./handlers/locations.ts"
-          );
+          const { handleEditLocation } = await import("./handlers/locations.ts");
           handled = await handleEditLocation(ctx, locationId);
         } // Delete Saved Location
         else if (id.startsWith("DELETE_LOC::")) {
           const locationId = id.replace("DELETE_LOC::", "");
-          const { handleDeleteLocationPrompt } = await import(
-            "./handlers/locations.ts"
-          );
+          const { handleDeleteLocationPrompt } = await import("./handlers/locations.ts");
           handled = await handleDeleteLocationPrompt(ctx, locationId);
         } // Confirm Delete Saved Location
         else if (id.startsWith("CONFIRM_DELETE_LOC::")) {
           const locationId = id.replace("CONFIRM_DELETE_LOC::", "");
-          const { confirmDeleteLocation } = await import(
-            "./handlers/locations.ts"
-          );
+          const { confirmDeleteLocation } = await import("./handlers/locations.ts");
           handled = await confirmDeleteLocation(ctx, locationId);
         } // Back to Profile
         else if (id === IDS.BACK_PROFILE) {
@@ -706,9 +628,7 @@ serve(async (req: Request): Promise<Response> => {
       } // Handle add location (text address)
       else if (state?.key === IDS.ADD_LOCATION && message.type === "text") {
         const address = (message.text as any)?.body ?? "";
-        const { handleLocationTextAddress } = await import(
-          "./handlers/locations.ts"
-        );
+        const { handleLocationTextAddress } = await import("./handlers/locations.ts");
         handled = await handleLocationTextAddress(ctx, address, state);
       }
     } // ============================================================
@@ -767,9 +687,7 @@ serve(async (req: Request): Promise<Response> => {
         path: url.pathname,
         error: errorMessage,
         stack: errorStack,
-        errorType: isUserError
-          ? "user_error"
-          : (isSystemError ? "system_error" : "unknown_error"),
+        errorType: isUserError ? "user_error" : (isSystemError ? "system_error" : "unknown_error"),
         statusCode,
         requestId,
         correlationId,
@@ -779,12 +697,8 @@ serve(async (req: Request): Promise<Response> => {
 
     return json(
       {
-        error: isUserError
-          ? "invalid_request"
-          : (isSystemError ? "service_unavailable" : "internal_error"),
-        message: isUserError
-          ? errorMessage
-          : "An unexpected error occurred. Please try again later.",
+        error: isUserError ? "invalid_request" : (isSystemError ? "service_unavailable" : "internal_error"),
+        message: isUserError ? errorMessage : "An unexpected error occurred. Please try again later.",
         service: SERVICE_NAME,
         requestId,
       },

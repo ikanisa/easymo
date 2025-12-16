@@ -1,19 +1,16 @@
 /**
  * Proactive Outreach Workflow
- *
+ * 
  * Implements the proactive vendor outreach conversation flow where the agent
  * gathers requirements, finds vendors, requests user consent, contacts vendors,
  * and returns verified availability.
- *
+ * 
  * @see docs/GROUND_RULES.md for observability requirements
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 import { logStructuredEvent } from "../../_shared/observability.ts";
-import {
-  type Vendor,
-  VendorOutreachService,
-} from "../services/vendor-outreach.ts";
+import { VendorOutreachService, type Vendor } from "../services/vendor-outreach.ts";
 import { UserMemoryService } from "../services/user-memory.ts";
 
 // =====================================================
@@ -77,9 +74,7 @@ export class ProactiveOutreachWorkflow {
     });
 
     // Check if we can recall user context for personalization
-    const userContext = await this.memoryService.getUserContext(
-      params.userPhone,
-    );
+    const userContext = await this.memoryService.getUserContext(params.userPhone);
 
     let message = "📋 *Let's find what you need!*\n\n";
 
@@ -89,8 +84,7 @@ export class ProactiveOutreachWorkflow {
     }
 
     message += "What items are you looking for?\n";
-    message +=
-      '_(You can list multiple items, e.g., "Paracetamol 500mg and Amoxicillin")_';
+    message += "_(You can list multiple items, e.g., \"Paracetamol 500mg and Amoxicillin\")_";
 
     const state: OutreachWorkflowState = {
       step: "gather_items",
@@ -119,36 +113,19 @@ export class ProactiveOutreachWorkflow {
 
     switch (currentState.step) {
       case "gather_items":
-        return await this.handleGatherItems(
-          userPhone,
-          userMessage,
-          currentState,
-        );
+        return await this.handleGatherItems(userPhone, userMessage, currentState);
 
       case "gather_location":
-        return await this.handleGatherLocation(
-          userPhone,
-          userMessage,
-          currentState,
-          location,
-        );
+        return await this.handleGatherLocation(userPhone, userMessage, currentState, location);
 
       case "propose_vendors":
         return await this.handleProposeVendors(userPhone, currentState);
 
       case "await_consent":
-        return await this.handleUserConsent(
-          userPhone,
-          userMessage,
-          currentState,
-        );
+        return await this.handleUserConsent(userPhone, userMessage, currentState);
 
       case "show_results":
-        return await this.handleShowResults(
-          userPhone,
-          userMessage,
-          currentState,
-        );
+        return await this.handleShowResults(userPhone, userMessage, currentState);
 
       default:
         return {
@@ -164,15 +141,14 @@ export class ProactiveOutreachWorkflow {
   private async handleGatherItems(
     userPhone: string,
     userMessage: string,
-    currentState: OutreachWorkflowState,
+    currentState: OutreachWorkflowState
   ): Promise<{ message: string; state: OutreachWorkflowState }> {
     // Simple parsing of items (can be enhanced with AI)
     const items = this.parseItemsList(userMessage);
 
     if (items.length === 0) {
       return {
-        message:
-          'I didn\'t catch that. Could you please tell me what items you need?\n\n_Example: "Paracetamol 500mg" or "Paracetamol and Ibuprofen"_',
+        message: "I didn't catch that. Could you please tell me what items you need?\n\n_Example: \"Paracetamol 500mg\" or \"Paracetamol and Ibuprofen\"_",
         state: currentState,
       };
     }
@@ -189,13 +165,7 @@ export class ProactiveOutreachWorkflow {
     }
 
     // Otherwise, ask for location
-    const message = `✅ Got it! You need:\n${
-      items.map((item, i) =>
-        `${i + 1}. ${item.name}${item.dosage ? ` ${item.dosage}` : ""}${
-          item.quantity ? ` x${item.quantity}` : ""
-        }`
-      ).join("\n")
-    }\n\n📍 *Share your location* so I can find nearby pharmacies:\n• Tap the 📎 attachment icon\n• Select 📍 Location\n• Choose "Send your current location"\n\n_Or type a location like "Kigali" or "Nyarugenge"_`;
+    const message = `✅ Got it! You need:\n${items.map((item, i) => `${i + 1}. ${item.name}${item.dosage ? ` ${item.dosage}` : ""}${item.quantity ? ` x${item.quantity}` : ""}`).join("\n")}\n\n📍 *Share your location* so I can find nearby pharmacies:\n• Tap the 📎 attachment icon\n• Select 📍 Location\n• Choose "Send your current location"\n\n_Or type a location like "Kigali" or "Nyarugenge"_`;
 
     return { message, state: newState };
   }
@@ -207,14 +177,14 @@ export class ProactiveOutreachWorkflow {
     userPhone: string,
     userMessage: string,
     currentState: OutreachWorkflowState,
-    location?: { lat: number; lng: number },
+    location?: { lat: number; lng: number }
   ): Promise<{ message: string; state: OutreachWorkflowState }> {
     let locationData: { lat: number; lng: number; text?: string } | undefined;
 
     if (location) {
       // GPS location shared
       locationData = location;
-
+      
       // Store as preferred location
       await this.memoryService.storePreferredLocation(userPhone, location);
     } else if (userMessage) {
@@ -245,7 +215,7 @@ export class ProactiveOutreachWorkflow {
    */
   private async handleProposeVendors(
     userPhone: string,
-    currentState: OutreachWorkflowState,
+    currentState: OutreachWorkflowState
   ): Promise<{ message: string; state: OutreachWorkflowState }> {
     // Find suitable vendors
     const category = currentState.selectedCategory || "pharmacy";
@@ -257,8 +227,7 @@ export class ProactiveOutreachWorkflow {
 
     if (vendors.length === 0) {
       return {
-        message:
-          `😔 I couldn't find any ${category} businesses near you that accept agent inquiries.\n\nWould you like to:\n1️⃣ Try a different area\n2️⃣ See all pharmacies (you'll contact them yourself)`,
+        message: `😔 I couldn't find any ${category} businesses near you that accept agent inquiries.\n\nWould you like to:\n1️⃣ Try a different area\n2️⃣ See all pharmacies (you'll contact them yourself)`,
         state: { ...currentState, step: "gather_location" },
       };
     }
@@ -272,14 +241,11 @@ export class ProactiveOutreachWorkflow {
 
     const topVendors = sortedVendors.slice(0, 5);
 
-    let message =
-      `🔍 *Found ${vendors.length} ${category} businesses near you!*\n\n`;
+    let message = `🔍 *Found ${vendors.length} ${category} businesses near you!*\n\n`;
     message += `Top ${topVendors.length} that typically respond quickly:\n\n`;
 
     topVendors.forEach((vendor, i) => {
-      const distance = vendor.distance_km
-        ? ` (${vendor.distance_km.toFixed(1)}km)`
-        : "";
+      const distance = vendor.distance_km ? ` (${vendor.distance_km.toFixed(1)}km)` : "";
       const responseTime = vendor.avg_response_time_minutes
         ? ` - Usually responds in ${vendor.avg_response_time_minutes} min`
         : "";
@@ -289,10 +255,8 @@ export class ProactiveOutreachWorkflow {
       message += `\n`;
     });
 
-    message +=
-      `\n📞 *Would you like me to contact these pharmacies on your behalf to check who has your items?*\n\n`;
-    message +=
-      `I'll message them and get back to you with confirmed availability in about 5 minutes. ⏳\n\n`;
+    message += `\n📞 *Would you like me to contact these pharmacies on your behalf to check who has your items?*\n\n`;
+    message += `I'll message them and get back to you with confirmed availability in about 5 minutes. ⏳\n\n`;
     message += `Reply:\n`;
     message += `✅ *YES* - I'll contact them for you\n`;
     message += `❌ *NO* - Show me the list so I can contact them myself`;
@@ -312,7 +276,7 @@ export class ProactiveOutreachWorkflow {
   private async handleUserConsent(
     userPhone: string,
     userMessage: string,
-    currentState: OutreachWorkflowState,
+    currentState: OutreachWorkflowState
   ): Promise<{ message: string; state: OutreachWorkflowState }> {
     const normalized = userMessage.toLowerCase().trim();
 
@@ -335,8 +299,7 @@ export class ProactiveOutreachWorkflow {
 
       if (!sessionResult.success || !sessionResult.sessionId) {
         return {
-          message:
-            "😔 Sorry, I had trouble setting up the outreach. Please try again or type *menu*.",
+          message: "😔 Sorry, I had trouble setting up the outreach. Please try again or type *menu*.",
           state: currentState,
         };
       }
@@ -350,14 +313,12 @@ export class ProactiveOutreachWorkflow {
 
       if (!contactResult.success) {
         return {
-          message:
-            "😔 Sorry, I had trouble contacting the vendors. Please try again or type *menu*.",
+          message: "😔 Sorry, I had trouble contacting the vendors. Please try again or type *menu*.",
           state: currentState,
         };
       }
 
-      const message =
-        `✅ *Great! I'm contacting ${contactResult.contacted} pharmacies now.*\n\n⏳ I'll get back to you in about 5 minutes with confirmed availability and prices.\n\n_You'll receive a notification when I have the results!_`;
+      const message = `✅ *Great! I'm contacting ${contactResult.contacted} pharmacies now.*\n\n⏳ I'll get back to you in about 5 minutes with confirmed availability and prices.\n\n_You'll receive a notification when I have the results!_`;
 
       const newState: OutreachWorkflowState = {
         ...currentState,
@@ -384,9 +345,7 @@ export class ProactiveOutreachWorkflow {
       let message = `📋 *Here are the pharmacies near you:*\n\n`;
 
       (currentState.foundVendors || []).forEach((vendor, i) => {
-        const distance = vendor.distance_km
-          ? ` (${vendor.distance_km.toFixed(1)}km)`
-          : "";
+        const distance = vendor.distance_km ? ` (${vendor.distance_km.toFixed(1)}km)` : "";
         message += `${i + 1}. *${vendor.name}*${distance}\n`;
         if (vendor.city) message += `   📍 ${vendor.city}\n`;
         if (vendor.phone) {
@@ -398,9 +357,7 @@ export class ProactiveOutreachWorkflow {
         message += `\n`;
       });
 
-      message += `\n_Reply with a number (1-${
-        currentState.foundVendors?.length || 0
-      }) to get full contact details_\n`;
+      message += `\n_Reply with a number (1-${currentState.foundVendors?.length || 0}) to get full contact details_\n`;
       message += `🔄 _Type *menu* for more options_`;
 
       return {
@@ -411,8 +368,7 @@ export class ProactiveOutreachWorkflow {
 
     // Unclear response - ask again
     return {
-      message:
-        `Please reply:\n✅ *YES* - I'll contact them for you\n❌ *NO* - Show me the list`,
+      message: `Please reply:\n✅ *YES* - I'll contact them for you\n❌ *NO* - Show me the list`,
       state: currentState,
     };
   }
@@ -423,7 +379,7 @@ export class ProactiveOutreachWorkflow {
   private async handleShowResults(
     userPhone: string,
     userMessage: string,
-    currentState: OutreachWorkflowState,
+    currentState: OutreachWorkflowState
   ): Promise<{ message: string; state: OutreachWorkflowState }> {
     const selection = parseInt(userMessage.trim());
 
@@ -433,9 +389,7 @@ export class ProactiveOutreachWorkflow {
       selection > (currentState.foundVendors?.length || 0)
     ) {
       return {
-        message: `Please reply with a number (1-${
-          currentState.foundVendors?.length || 0
-        }) or type *menu*.`,
+        message: `Please reply with a number (1-${currentState.foundVendors?.length || 0}) or type *menu*.`,
         state: currentState,
       };
     }
@@ -456,9 +410,7 @@ export class ProactiveOutreachWorkflow {
 
     if (selectedVendor.phone) {
       message += `\n📞 Contact: ${selectedVendor.phone}\n`;
-      message += `💬 WhatsApp: https://wa.me/${
-        selectedVendor.phone.replace(/\D/g, "")
-      }\n`;
+      message += `💬 WhatsApp: https://wa.me/${selectedVendor.phone.replace(/\D/g, "")}\n`;
     }
 
     message += `\n🔄 _Type *menu* to search for more businesses_`;
@@ -482,19 +434,14 @@ export class ProactiveOutreachWorkflow {
     quantity?: number;
     dosage?: string;
   }> {
-    const items: Array<{ name: string; quantity?: number; dosage?: string }> =
-      [];
+    const items: Array<{ name: string; quantity?: number; dosage?: string }> = [];
 
     // Split by common separators
-    const parts = message.split(/,|and|\n/i).map((s) => s.trim()).filter((s) =>
-      s
-    );
+    const parts = message.split(/,|and|\n/i).map((s) => s.trim()).filter((s) => s);
 
     for (const part of parts) {
       // Try to extract quantity (e.g., "x 10", "10x", "10 tablets")
-      const quantityMatch = part.match(
-        /(?:x\s*)?(\d+)(?:\s*x|\s+(?:tablets|pills|doses|boxes))?/i,
-      );
+      const quantityMatch = part.match(/(?:x\s*)?(\d+)(?:\s*x|\s+(?:tablets|pills|doses|boxes))?/i);
       const quantity = quantityMatch ? parseInt(quantityMatch[1]) : undefined;
 
       // Try to extract dosage (e.g., "500mg", "250 mg")

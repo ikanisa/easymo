@@ -6,11 +6,8 @@ import {
 import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
-import {
-  clearState,
-  setState,
-} from "../../_shared/wa-webhook-shared/state/store.ts";
-import { formatCoordinates, parseCoordinates } from "../utils/coordinates.ts";
+import { setState, clearState } from "../../_shared/wa-webhook-shared/state/store.ts";
+import { parseCoordinates, formatCoordinates } from "../utils/coordinates.ts";
 
 export async function listSavedLocations(
   ctx: RouterContext,
@@ -18,9 +15,7 @@ export async function listSavedLocations(
   if (!ctx.profileId) return false;
 
   // Show loading state
-  const { sendText } = await import(
-    "../../_shared/wa-webhook-shared/wa/client.ts"
-  );
+  const { sendText } = await import("../../_shared/wa-webhook-shared/wa/client.ts");
   await sendText(ctx.from, "⏳ Loading your saved locations...");
 
   const { data: locations, error } = await ctx.supabase
@@ -201,9 +196,7 @@ export async function handleLocationSelection(
 /**
  * Show location type selection menu for adding a new location
  */
-export async function showAddLocationTypeMenu(
-  ctx: RouterContext,
-): Promise<boolean> {
+export async function showAddLocationTypeMenu(ctx: RouterContext): Promise<boolean> {
   await sendListMessage(
     ctx,
     {
@@ -252,12 +245,12 @@ export async function promptAddLocation(
   locationType: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
-
+  
   await setState(ctx.supabase, ctx.profileId, {
     key: "add_location",
     data: { type: locationType },
   });
-
+  
   await sendButtonsMessage(
     ctx,
     `📍 *Add ${
@@ -278,10 +271,7 @@ export async function confirmSaveLocation(
   locationType: string,
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
-  if (
-    !ctx.profileId || !state || state.key !== "confirm_add_location" ||
-    !state.data
-  ) {
+  if (!ctx.profileId || !state || state.key !== "confirm_add_location" || !state.data) {
     return false;
   }
 
@@ -427,7 +417,7 @@ export async function handleEditLocation(
     key: "edit_location",
     data: { locationId, originalLabel: location.label },
   });
-
+  
   await sendButtonsMessage(
     ctx,
     `📍 *Edit: ${location.label}*\n\n` +
@@ -472,7 +462,7 @@ export async function handleDeleteLocationPrompt(
     key: "delete_location_confirm",
     data: { locationId, label: location.label },
   });
-
+  
   await sendButtonsMessage(
     ctx,
     `🗑️ *Delete Location?*\n\n` +
@@ -558,8 +548,7 @@ export async function handleLocationMessage(
   if (state.key === IDS.ADD_LOCATION && state.data?.type) {
     // Show confirmation for new location
     const locationType = state.data.type as string;
-    const address = location?.address ||
-      formatCoordinates(coords.lat, coords.lng);
+    const address = location?.address || formatCoordinates(coords.lat, coords.lng);
 
     await setState(ctx.supabase, ctx.profileId, {
       key: "confirm_add_location",

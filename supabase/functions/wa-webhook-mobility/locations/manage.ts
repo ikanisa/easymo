@@ -138,6 +138,10 @@ export async function handleSavedPlaceLocation(
   return true;
 }
 
+async function startAddFavoriteFlow(ctx: RouterContext): Promise<boolean> {
+  return await startSavedPlaceCreation(ctx);
+}
+
 export async function startSavedPlaceCreation(
   ctx: RouterContext,
 ): Promise<boolean> {

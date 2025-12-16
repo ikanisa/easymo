@@ -68,9 +68,7 @@ export async function listMyBusinesses(
     ctx,
     {
       title: "🏪 My Businesses",
-      body: `You have ${businesses.length} business${
-        businesses.length === 1 ? "" : "es"
-      }`,
+      body: `You have ${businesses.length} business${businesses.length === 1 ? "" : "es"}`,
       sectionTitle: "Businesses",
       buttonText: "View",
       rows,
@@ -134,7 +132,7 @@ export async function handleBusinessSelection(
 
   // Business detail view - show business info and management options
   let detailMessage = `📋 *${business.name}*\n\n`;
-
+  
   if (business.category) {
     detailMessage += `📂 Category: ${business.category}\n`;
   }
@@ -147,9 +145,9 @@ export async function handleBusinessSelection(
   if (business.description) {
     detailMessage += `\n📝 ${business.description}\n`;
   }
-
+  
   detailMessage += `\nWhat would you like to do?`;
-
+  
   await sendButtonsMessage(
     ctx,
     detailMessage,
@@ -157,8 +155,8 @@ export async function handleBusinessSelection(
       { id: `EDIT_BIZ::${business.id}`, title: "✏️ Edit Business" },
       { id: `DELETE_BIZ::${business.id}`, title: "🗑️ Delete Business" },
       { id: IDS.MY_BUSINESSES, title: "← Back to My Businesses" },
-    ],
+    ]
   );
-
+  
   return true;
 }

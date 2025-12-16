@@ -1,12 +1,6 @@
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
-import {
-  clearState,
-  setState,
-} from "../../_shared/wa-webhook-shared/state/store.ts";
-import {
-  sendButtonsMessage,
-  sendListMessage,
-} from "../../_shared/wa-webhook-shared/utils/reply.ts";
+import { setState, clearState } from "../../_shared/wa-webhook-shared/state/store.ts";
+import { sendButtonsMessage, sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
@@ -40,9 +34,7 @@ const BUSINESS_CATEGORIES = [
 /**
  * Start manual business addition workflow
  */
-export async function startManualBusinessAdd(
-  ctx: RouterContext,
-): Promise<boolean> {
+export async function startManualBusinessAdd(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
 
   await setState(ctx.supabase, ctx.profileId, {
@@ -58,9 +50,9 @@ export async function startManualBusinessAdd(
   await sendButtonsMessage(
     ctx,
     "🏪 *Add Your Business*\n\n" +
-      "Let's get your business set up! I'll guide you through a few quick steps.\n\n" +
-      "*Step 1 of 4: Business Name*\n\n" +
-      "Please type your business name:",
+    "Let's get your business set up! I'll guide you through a few quick steps.\n\n" +
+    "*Step 1 of 4: Business Name*\n\n" +
+    "Please type your business name:",
     [{ id: IDS.BACK_PROFILE, title: "← Cancel" }],
   );
 
@@ -127,8 +119,8 @@ async function handleNameStep(
   await sendButtonsMessage(
     ctx,
     `✅ Business name: *${name.trim()}*\n\n` +
-      "*Step 2 of 4: Description (Optional)*\n\n" +
-      "Provide a brief description of your business, or type 'skip' to continue:",
+    "*Step 2 of 4: Description (Optional)*\n\n" +
+    "Provide a brief description of your business, or type 'skip' to continue:",
     [
       { id: "skip_description", title: "Skip →" },
       { id: IDS.BACK_PROFILE, title: "← Cancel" },
@@ -174,10 +166,7 @@ async function handleDescriptionStep(
 
   await sendListMessage(ctx, {
     title: "📂 Select Category",
-    body:
-      `${
-        description.toLowerCase() === "skip" ? "" : `✅ Description saved\n\n`
-      }` +
+    body: `${description.toLowerCase() === "skip" ? "" : `✅ Description saved\n\n`}` +
       "*Step 3 of 4: Category*\n\n" +
       "Select the category that best describes your business:",
     sectionTitle: "Categories",
@@ -225,10 +214,10 @@ async function handleCategoryStep(
   await sendButtonsMessage(
     ctx,
     `✅ Category: *${category.name}*\n\n` +
-      "*Step 4 of 4: Location*\n\n" +
-      "Share your business location:\n" +
-      "• Send a location pin 📍, or\n" +
-      "• Type the address",
+    "*Step 4 of 4: Location*\n\n" +
+    "Share your business location:\n" +
+    "• Send a location pin 📍, or\n" +
+    "• Type the address",
     [
       { id: "skip_location", title: "Skip →" },
       { id: IDS.BACK_PROFILE, title: "← Cancel" },
@@ -336,10 +325,7 @@ async function handleConfirmStep(
   if (!ctx.profileId) return false;
 
   if (!state.name || !state.category) {
-    await sendText(
-      ctx.from,
-      "⚠️ Missing required information. Please start over.",
-    );
+    await sendText(ctx.from, "⚠️ Missing required information. Please start over.");
     await clearState(ctx.supabase, ctx.profileId);
     return true;
   }
@@ -396,8 +382,8 @@ async function handleConfirmStep(
     await sendButtonsMessage(
       ctx,
       `🎉 *Success!*\n\n` +
-        `Your business *${newBusiness.name}* has been created!\n\n` +
-        `You can now manage it from your profile.`,
+      `Your business *${newBusiness.name}* has been created!\n\n` +
+      `You can now manage it from your profile.`,
       [
         { id: IDS.MY_BUSINESSES, title: "View My Businesses" },
         { id: IDS.BACK_HOME, title: "← Home" },

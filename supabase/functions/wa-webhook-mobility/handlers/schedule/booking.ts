@@ -38,6 +38,7 @@ import {
   updateStoredVehicleType,
 } from "../vehicle_plate.ts";
 import { readLastLocation } from "../../locations/favorites.ts";
+import { checkLocationCache } from "../location_cache.ts";
 import {
   getFavoriteById,
   listFavorites,

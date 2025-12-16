@@ -1,17 +1,14 @@
 /**
  * Vendor Outreach Service
- *
+ * 
  * Handles proactive outreach to vendors on behalf of users.
  * Sends WhatsApp messages to vendors and tracks responses.
- *
+ * 
  * @see docs/GROUND_RULES.md for observability requirements
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
-import {
-  logStructuredEvent,
-  recordMetric,
-} from "../../_shared/observability.ts";
+import { logStructuredEvent, recordMetric } from "../../_shared/observability.ts";
 
 // =====================================================
 // TYPES
@@ -127,7 +124,7 @@ export class VendorOutreachService {
             userPhone: params.userPhone.slice(-4),
             correlationId: this.correlationId,
           },
-          "error",
+          "error"
         );
         return { success: false, error: error.message };
       }
@@ -159,7 +156,7 @@ export class VendorOutreachService {
     additionalData?: {
       final_recommendations?: unknown;
       completed_at?: string;
-    },
+    }
   ): Promise<{ success: boolean; error?: string }> {
     try {
       const updateData: Record<string, unknown> = { status };
@@ -167,8 +164,7 @@ export class VendorOutreachService {
         updateData.final_recommendations = additionalData.final_recommendations;
       }
       if (additionalData?.completed_at || status === "completed") {
-        updateData.completed_at = additionalData?.completed_at ||
-          new Date().toISOString();
+        updateData.completed_at = additionalData?.completed_at || new Date().toISOString();
       }
 
       const { error } = await this.supabase
@@ -185,7 +181,7 @@ export class VendorOutreachService {
             status,
             correlationId: this.correlationId,
           },
-          "error",
+          "error"
         );
         return { success: false, error: error.message };
       }
@@ -208,10 +204,7 @@ export class VendorOutreachService {
     limit?: number;
   }): Promise<Vendor[]> {
     try {
-      const limit = Math.min(
-        params.limit || MAX_VENDORS_TO_CONTACT,
-        MAX_VENDORS_TO_CONTACT,
-      );
+      const limit = Math.min(params.limit || MAX_VENDORS_TO_CONTACT, MAX_VENDORS_TO_CONTACT);
 
       // If we have location, search nearby businesses
       if (params.location) {
@@ -223,7 +216,7 @@ export class VendorOutreachService {
             user_lng: params.location.lng,
             radius_km: 10,
             result_limit: limit,
-          },
+          }
         );
 
         if (businesses && businesses.length > 0) {
@@ -245,9 +238,7 @@ export class VendorOutreachService {
       // Fallback: search by category without location
       const { data: businesses } = await this.supabase
         .from("businesses")
-        .select(
-          "id, name, phone, category, city, address, avg_response_time_minutes, accepts_agent_inquiries, agent_inquiry_phone",
-        )
+        .select("id, name, phone, category, city, address, avg_response_time_minutes, accepts_agent_inquiries, agent_inquiry_phone")
         .ilike("category", `%${params.category}%`)
         .eq("accepts_agent_inquiries", true)
         .limit(limit);
@@ -275,7 +266,7 @@ export class VendorOutreachService {
           category: params.category,
           correlationId: this.correlationId,
         },
-        "error",
+        "error"
       );
       return [];
     }
@@ -290,9 +281,7 @@ export class VendorOutreachService {
     items: Array<{ name: string; quantity?: number; dosage?: string }>;
   }): Promise<{ success: boolean; contacted: number; error?: string }> {
     try {
-      const responseDeadline = new Date(
-        Date.now() + RESPONSE_TIMEOUT_MINUTES * 60 * 1000,
-      );
+      const responseDeadline = new Date(Date.now() + RESPONSE_TIMEOUT_MINUTES * 60 * 1000);
 
       // Update session status and deadline
       await this.supabase
@@ -300,9 +289,7 @@ export class VendorOutreachService {
         .update({
           status: "contacting_vendors",
           response_deadline: responseDeadline.toISOString(),
-          vendors_contacted: params.vendors.map((v) => v.id).filter(
-            Boolean,
-          ) as string[],
+          vendors_contacted: params.vendors.map((v) => v.id).filter(Boolean) as string[],
         })
         .eq("id", params.sessionId);
 
@@ -323,11 +310,7 @@ export class VendorOutreachService {
         const vendorPhone = vendor.agent_inquiry_phone || vendor.phone;
         if (!vendorPhone) continue;
 
-        const message = this.formatVendorInquiryMessage(
-          vendor.name,
-          itemsList,
-          params.sessionId,
-        );
+        const message = this.formatVendorInquiryMessage(vendor.name, itemsList, params.sessionId);
 
         // Record the outgoing message
         const { error: messageError } = await this.supabase
@@ -349,18 +332,16 @@ export class VendorOutreachService {
               vendorPhone: vendorPhone.slice(-4),
               correlationId: this.correlationId,
             },
-            "error",
+            "error"
           );
           continue;
         }
 
         // Send WhatsApp message via Cloud API
         try {
-          const { sendText } = await import(
-            "../../_shared/wa-webhook-shared/wa/client.ts"
-          );
+          const { sendText } = await import("../../_shared/wa-webhook-shared/wa/client.ts");
           await sendText(vendorPhone, message);
-
+          
           logStructuredEvent("VENDOR_OUTREACH_WHATSAPP_SENT", {
             sessionId: params.sessionId,
             vendorPhone: vendorPhone.slice(-4),
@@ -371,13 +352,11 @@ export class VendorOutreachService {
           logStructuredEvent(
             "VENDOR_OUTREACH_WHATSAPP_FAILED",
             {
-              error: sendError instanceof Error
-                ? sendError.message
-                : String(sendError),
+              error: sendError instanceof Error ? sendError.message : String(sendError),
               vendorPhone: vendorPhone.slice(-4),
               correlationId: this.correlationId,
             },
-            "error",
+            "error"
           );
           // Continue anyway - message is recorded in DB for retry
         }
@@ -387,10 +366,7 @@ export class VendorOutreachService {
 
       // Update to collecting_responses status
       if (contactedCount > 0) {
-        await this.updateSessionStatus(
-          params.sessionId,
-          "collecting_responses",
-        );
+        await this.updateSessionStatus(params.sessionId, "collecting_responses");
       }
 
       logStructuredEvent("VENDOR_OUTREACH_MESSAGES_SENT", {
@@ -418,7 +394,7 @@ export class VendorOutreachService {
   private formatVendorInquiryMessage(
     vendorName: string,
     itemsList: string,
-    sessionId: string,
+    sessionId: string
   ): string {
     return `Hello ${vendorName}!
 
@@ -461,7 +437,7 @@ Reference: ${sessionId.slice(0, 8)}`;
 
       // Calculate response time
       const responseTimeSeconds = Math.floor(
-        (Date.now() - new Date(vendorMessage.message_sent_at).getTime()) / 1000,
+        (Date.now() - new Date(vendorMessage.message_sent_at).getTime()) / 1000
       );
 
       // Update vendor message record
@@ -523,10 +499,8 @@ Reference: ${sessionId.slice(0, 8)}`;
     const normalizedMessage = message.toLowerCase().trim();
 
     // Check for clear YES/NO
-    const hasYes = normalizedMessage.includes("yes") ||
-      normalizedMessage.includes("✅");
-    const hasNo = normalizedMessage.includes("no") ||
-      normalizedMessage.includes("❌");
+    const hasYes = normalizedMessage.includes("yes") || normalizedMessage.includes("✅");
+    const hasNo = normalizedMessage.includes("no") || normalizedMessage.includes("❌");
 
     if (hasNo && !hasYes) {
       return { hasItems: false, details: message };
@@ -585,21 +559,15 @@ Reference: ${sessionId.slice(0, 8)}`;
         return;
       }
 
-      const pendingCount = messages.filter((m) =>
-        m.response_status === "pending"
-      ).length;
+      const pendingCount = messages.filter((m) => m.response_status === "pending").length;
       const now = new Date();
-      const deadline = session.response_deadline
-        ? new Date(session.response_deadline)
-        : null;
+      const deadline = session.response_deadline ? new Date(session.response_deadline) : null;
 
       // Complete if all responded or deadline passed
       if (pendingCount === 0 || (deadline && now > deadline)) {
         // Mark timed-out messages
         if (deadline && now > deadline) {
-          const pendingMessages = messages.filter((m) =>
-            m.response_status === "pending"
-          );
+          const pendingMessages = messages.filter((m) => m.response_status === "pending");
           for (const msg of pendingMessages) {
             await this.supabase
               .from("agent_vendor_messages")
@@ -632,13 +600,8 @@ Reference: ${sessionId.slice(0, 8)}`;
 
         // Notify user of results
         try {
-          const { VendorResponseHandler } = await import(
-            "../handlers/vendor-response-handler.ts"
-          );
-          const handler = new VendorResponseHandler(
-            this.supabase,
-            this.correlationId,
-          );
+          const { VendorResponseHandler } = await import("../handlers/vendor-response-handler.ts");
+          const handler = new VendorResponseHandler(this.supabase, this.correlationId);
           await handler.notifyUser({
             sessionId,
             userPhone: session.user_phone,
@@ -646,9 +609,7 @@ Reference: ${sessionId.slice(0, 8)}`;
         } catch (notifyError) {
           // Log but don't fail - notification is best effort
           logStructuredEvent("VENDOR_OUTREACH_NOTIFY_USER_FAILED", {
-            error: notifyError instanceof Error
-              ? notifyError.message
-              : String(notifyError),
+            error: notifyError instanceof Error ? notifyError.message : String(notifyError),
             sessionId,
             userPhone: session.user_phone,
           }, "warn");
@@ -674,7 +635,7 @@ Reference: ${sessionId.slice(0, 8)}`;
           sessionId,
           correlationId: this.correlationId,
         },
-        "error",
+        "error"
       );
     }
   }
@@ -724,10 +685,10 @@ Reference: ${sessionId.slice(0, 8)}`;
         availability_details: m.availability_details,
         response_time_seconds: m.response_received_at && m.message_sent_at
           ? Math.floor(
-            (new Date(m.response_received_at).getTime() -
-              new Date(m.message_sent_at).getTime()) /
-              1000,
-          )
+              (new Date(m.response_received_at).getTime() -
+                new Date(m.message_sent_at).getTime()) /
+                1000
+            )
           : undefined,
       }));
     } catch {
