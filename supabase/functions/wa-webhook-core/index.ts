@@ -14,6 +14,7 @@ import { verifyWebhookRequest } from "../_shared/security/signature.ts";
 import { createAuditLogger } from "../_shared/security/audit-logger.ts";
 import { createErrorHandler } from "../_shared/errors/error-handler.ts";
 import { extractPhoneFromPayload } from "./utils/payload.ts";
+// Note: extractPhoneFromPayload is imported from utils/payload.ts, not defined locally
 
 const coldStartMarker = performance.now();
 

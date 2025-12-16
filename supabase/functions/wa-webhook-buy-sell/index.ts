@@ -360,7 +360,7 @@ serve(async (req: Request): Promise<Response> => {
             });
           } else {
             await recordMetric("buy_sell.state_transition.unhandled", 1, {
-              stateKey: state.key,
+              stateKey: state.key || "unknown",
             });
           }
         }
