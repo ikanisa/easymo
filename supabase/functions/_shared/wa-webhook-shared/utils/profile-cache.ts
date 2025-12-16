@@ -46,28 +46,62 @@ export async function getCachedProfile(
   
   // Cache miss - fetch from database
   try {
+    // Try RPC function first
     const { data, error } = await supabase.rpc("ensure_whatsapp_user", {
       _wa_id: phone,
       _profile_name: profileName,
     });
     
-    if (error || !data) {
-      return null;
+    if (!error && data && data.length > 0) {
+      // RPC function succeeded
+      const profile: ProfileCacheEntry = {
+        profile_id: data[0].profile_id || "",
+        user_id: data[0].user_id || data[0].profile_id || "",
+        locale: data[0].locale || "en",
+        phone,
+      };
+      
+      // Cache for 5 minutes
+      profileCache.set(cacheKey, profile, 300);
+      
+      return profile;
     }
     
-    const profile: ProfileCacheEntry = {
-      profile_id: data.profile_id || "",
-      user_id: data.user_id || data.profile_id || "",
-      locale: data.locale || "en",
-      phone,
-    };
+    // RPC function doesn't exist or returned NULL - use fallback
+    if (error && error.message?.includes("does not exist")) {
+      // Function doesn't exist - use ensureProfile fallback
+      const { ensureProfile } = await import("../state/store.ts");
+      const profileData = await ensureProfile(supabase, phone);
+      
+      if (profileData) {
+        // Get profile ID
+        const { data: profileRow } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("user_id", profileData.user_id)
+          .maybeSingle();
+        
+        const profile: ProfileCacheEntry = {
+          profile_id: profileRow?.id || "",
+          user_id: profileData.user_id,
+          locale: profileData.locale || "en",
+          phone,
+        };
+        
+        // Cache for 5 minutes
+        profileCache.set(cacheKey, profile, 300);
+        
+        return profile;
+      }
+    }
     
-    // Cache for 5 minutes
-    profileCache.set(cacheKey, profile, 300);
-    
-    return profile;
+    return null;
   } catch (error) {
     // Log error but don't throw - let caller handle
+    logStructuredEvent("PROFILE_CACHE_DB_FETCH_EXCEPTION", {
+      phone: `***${phone.slice(-4)}`,
+      error: error instanceof Error ? error.message : String(error),
+    }, "error");
     return null;
   }
 }

@@ -320,6 +320,57 @@ export async function ensureProfile(
   try {
     const desiredLocale = locale ?? null;
 
+    // Try RPC function first (if it exists)
+    try {
+      const { data: rpcData, error: rpcError } = await client.rpc(
+        "ensure_whatsapp_user",
+        {
+          _wa_id: whatsapp,
+          _profile_name: "User",
+        },
+      );
+
+      // If RPC function exists and returns data, use it
+      if (!rpcError && rpcData && rpcData.length > 0) {
+        const profile = rpcData[0];
+        const effectiveLocale = desiredLocale ?? profile.locale ?? "en";
+
+        // Update locale if needed
+        if (desiredLocale && profile.locale !== desiredLocale) {
+          await tryUpdateProfile(client, profile.user_id, {
+            language: desiredLocale,
+          });
+        }
+
+        await logStructuredEvent("PROFILE_ENSURED_VIA_RPC", {
+          masked_phone: maskMsisdn(normalizedE164),
+          user_id: profile.user_id,
+          locale: effectiveLocale,
+        });
+
+        return {
+          user_id: profile.user_id,
+          whatsapp_e164: normalizedE164,
+          locale: effectiveLocale,
+        };
+      }
+
+      // If RPC returns NULL, it means profile needs to be created via TypeScript
+      // Fall through to existing logic below
+      if (rpcError && !rpcError.message?.includes("does not exist")) {
+        // RPC function exists but returned error (not "function doesn't exist")
+        // Log and fall through to fallback logic
+        await logStructuredEvent("PROFILE_RPC_ERROR", {
+          error: rpcError.message,
+          masked_phone: maskMsisdn(normalizedE164),
+        }, "warn");
+      }
+    } catch (rpcErr) {
+      // RPC function might not exist - fall through to fallback logic
+      // This is expected during migration period
+    }
+
+    // Fallback: Use existing logic if RPC function doesn't exist or returned NULL
     // 1) Prefer existing profile (avoid auth calls)
     const lookupCandidates: Array<{ column: string; value: string }> = [
       { column: "whatsapp_number", value: digits },

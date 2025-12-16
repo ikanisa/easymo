@@ -256,6 +256,17 @@ export class LLMRouter {
     rules: AgentProviderRules,
     options: LLMCompletionOptions
   ): 'openai' | 'gemini' {
+    // Auto-detect provider from model name (highest priority)
+    if (options.model) {
+      const modelLower = options.model.toLowerCase();
+      if (modelLower.startsWith('gemini-')) {
+        return 'gemini';
+      }
+      if (modelLower.startsWith('gpt-') || modelLower.startsWith('o1-')) {
+        return 'openai';
+      }
+    }
+
     // Check if any tools require a specific provider
     if (options.tools && options.tools.length > 0) {
       const geminiTools = options.tools.filter(tool => 

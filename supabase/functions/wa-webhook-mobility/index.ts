@@ -140,26 +140,78 @@ serve(async (req: Request): Promise<Response> => {
     const from = message.from;
     const profileName = contacts?.profile?.name || "User";
 
-    // Ensure user exists
-    const { data: profileData, error: profileError } = await supabase.rpc(
-      "ensure_whatsapp_user",
-      {
-        _wa_id: from,
-        _profile_name: profileName,
-      },
-    );
+    // Ensure user exists - try RPC function first, fallback to ensureProfile
+    let profileId = "";
+    let locale: SupportedLanguage = "en";
+    let userId = "";
 
-    if (profileError) {
-      logStructuredEvent("MOBILITY_USER_ENSURE_ERROR", {
-        error: profileError.message,
-        from: from.slice(-4),
-        correlationId,
-      }, "error");
-      return respond({ error: "user_creation_failed" }, 500);
+    try {
+      const { data: profileData, error: profileError } = await supabase.rpc(
+        "ensure_whatsapp_user",
+        {
+          _wa_id: from,
+          _profile_name: profileName,
+        },
+      );
+
+      if (!profileError && profileData && profileData.length > 0) {
+        // RPC function succeeded
+        profileId = profileData[0]?.profile_id || "";
+        userId = profileData[0]?.user_id || "";
+        locale = (profileData[0]?.locale || "en") as SupportedLanguage;
+      } else if (profileError && profileError.message?.includes("does not exist")) {
+        // Function doesn't exist - use fallback
+        logStructuredEvent("MOBILITY_RPC_FUNCTION_MISSING", {
+          from: from.slice(-4),
+          correlationId,
+        }, "warn");
+        throw new Error("RPC function not available, using fallback");
+      } else if (profileError) {
+        // Other error - log and use fallback
+        logStructuredEvent("MOBILITY_USER_ENSURE_RPC_ERROR", {
+          error: profileError.message,
+          from: from.slice(-4),
+          correlationId,
+        }, "warn");
+        throw new Error("RPC function error, using fallback");
+      } else {
+        // RPC returned NULL - profile needs to be created via TypeScript
+        throw new Error("RPC returned NULL, using fallback");
+      }
+    } catch (rpcErr) {
+      // Fallback to ensureProfile utility
+      try {
+        const { ensureProfile } = await import(
+          "../_shared/wa-webhook-shared/state/store.ts"
+        );
+        const profile = await ensureProfile(supabase, from);
+        if (profile) {
+          userId = profile.user_id;
+          locale = (profile.locale || "en") as SupportedLanguage;
+          // Get profile ID from database
+          const { data: profileRow } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("user_id", userId)
+            .maybeSingle();
+          profileId = profileRow?.id || "";
+        } else {
+          logStructuredEvent("MOBILITY_USER_ENSURE_ERROR", {
+            error: "Failed to create profile via fallback",
+            from: from.slice(-4),
+            correlationId,
+          }, "error");
+          return respond({ error: "user_creation_failed" }, 500);
+        }
+      } catch (fallbackErr) {
+        logStructuredEvent("MOBILITY_USER_ENSURE_ERROR", {
+          error: fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr),
+          from: from.slice(-4),
+          correlationId,
+        }, "error");
+        return respond({ error: "user_creation_failed" }, 500);
+      }
     }
-
-    const profileId = profileData?.profile_id || "";
-    const locale = (profileData?.locale || "en") as SupportedLanguage;
 
     // Rate limiting check (P1-016 fix)
     const rateLimitCheck = await rateLimitMiddleware(req, {

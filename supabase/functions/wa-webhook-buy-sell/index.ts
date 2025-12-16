@@ -206,22 +206,18 @@ serve(async (req: Request): Promise<Response> => {
     });
 
     // Lookup profile once at the beginning (fixes duplicate lookups)
+    // Use ensureProfile utility which handles all column variations (phone_number, wa_id, etc.)
     let profile: { user_id: string; language?: string } | null = null;
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("user_id, language")
-        .eq("whatsapp_number", userPhone)
-        .maybeSingle();
-
-      if (error) {
-        logStructuredEvent("BUY_SELL_PROFILE_LOOKUP_ERROR", {
-          error: error.message,
-          userPhone: `***${userPhone.slice(-4)}`,
-          correlationId,
-        }, "error");
-      } else {
-        profile = data;
+      const { ensureProfile } = await import(
+        "../_shared/wa-webhook-shared/state/store.ts"
+      );
+      const profileData = await ensureProfile(supabase, userPhone);
+      if (profileData) {
+        profile = {
+          user_id: profileData.user_id,
+          language: profileData.locale,
+        };
       }
     } catch (err) {
       logStructuredEvent("BUY_SELL_PROFILE_LOOKUP_EXCEPTION", {

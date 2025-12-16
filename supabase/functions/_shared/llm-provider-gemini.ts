@@ -72,36 +72,51 @@ export class GeminiProvider implements LLMProvider {
         })),
       }] : undefined;
 
-      // Build chat history
+      // Build chat history (only user/model messages, no system)
+      // System instructions should be passed via systemInstruction parameter
       const history = [];
       
-      // Add system message as first user message if present
-      if (options.system) {
-        history.push({
-          role: 'user',
-          parts: [{ text: `[SYSTEM INSTRUCTIONS]\n${options.system}` }],
-        });
-        history.push({
-          role: 'model',
-          parts: [{ text: 'Understood. I will follow these instructions.' }],
-        });
-      }
-
-      // Add conversation history
+      // Add conversation history (skip system messages)
       for (let i = 0; i < options.messages.length - 1; i++) {
         const msg = options.messages[i];
+        // Skip system messages - they go in systemInstruction parameter
+        if (msg.role === 'system') {
+          continue;
+        }
         history.push({
           role: msg.role === 'user' ? 'user' : 'model',
           parts: [{ text: msg.content }],
         });
       }
 
+      // Ensure first message in history is from user (Gemini requirement)
+      if (history.length > 0 && history[0].role !== 'user') {
+        // If first message is model, we need to add a user message first
+        // This shouldn't happen in normal flow, but handle it gracefully
+        history.unshift({
+          role: 'user',
+          parts: [{ text: 'Hello' }],
+        });
+        history.push({
+          role: 'model',
+          parts: [{ text: 'Hi! How can I help you?' }],
+        });
+      }
+
       // Last message is the current user message
       const lastMessage = options.messages[options.messages.length - 1];
+      
+      // Ensure last message is from user
+      if (lastMessage.role !== 'user') {
+        throw new Error('Last message in Gemini chat must be from user role');
+      }
 
-      // Start chat session
+      // Start chat session with systemInstruction parameter
       const chat = model.startChat({
-        history,
+        systemInstruction: options.system ? {
+          parts: [{ text: options.system }],
+        } : undefined,
+        history: history.length > 0 ? history : undefined,
         tools,
         generationConfig: {
           temperature: options.temperature ?? 0.7,
