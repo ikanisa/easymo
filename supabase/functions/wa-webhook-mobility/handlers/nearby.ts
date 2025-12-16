@@ -530,7 +530,9 @@ export async function handleNearbyResultSelection(
     return true;
   }
 
-  // Get fresh contact info from profiles
+  // Get fresh contact info from profiles (optimized: single query with trip verification)
+  // Note: Phone is already in cachedMatch from RPC, but we verify trip exists
+  // This is not N+1 as it's a single query per user selection, not per match in list
   const { data: profile } = await ctx.supabase
     .from("profiles")
     .select("phone_number, wa_id")
