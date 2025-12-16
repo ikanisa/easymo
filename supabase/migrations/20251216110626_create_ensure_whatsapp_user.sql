@@ -66,7 +66,7 @@ BEGIN
   
   -- Try to find existing profile by wa_id (digits only)
   SELECT p.id, p.user_id, 
-         COALESCE(p.language, p.locale, 'en') as locale
+         COALESCE(p.language, 'en') as locale
   INTO v_existing_profile
   FROM public.profiles p
   WHERE p.wa_id = v_digits
@@ -76,7 +76,7 @@ BEGIN
   -- If not found, try phone_number
   IF NOT FOUND THEN
     SELECT p.id, p.user_id,
-           COALESCE(p.language, p.locale, 'en') as locale
+           COALESCE(p.language, 'en') as locale
     INTO v_existing_profile
     FROM public.profiles p
     WHERE p.phone_number = v_digits
@@ -126,7 +126,7 @@ BEGIN
       phone_number = COALESCE(profiles.phone_number, EXCLUDED.phone_number),
       full_name = COALESCE(profiles.full_name, EXCLUDED.full_name),
       updated_at = NOW()
-    RETURNING id, user_id, COALESCE(language, locale, 'en') INTO v_profile_id, v_user_id, v_locale;
+    RETURNING id, user_id, COALESCE(language, 'en') INTO v_profile_id, v_user_id, v_locale;
     
     RETURN QUERY SELECT v_profile_id, v_user_id, v_locale;
     RETURN;
