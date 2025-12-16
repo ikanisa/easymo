@@ -39,6 +39,14 @@ import { CircuitBreaker } from "../_shared/circuit-breaker.ts";
 import { classifyError, formatUnknownError } from "./utils/error-handling.ts";
 import { parseCoordinates } from "./utils/coordinates.ts";
 import { sendTextMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
+import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
+import { maskPhone } from "../_shared/phone-utils.ts";
+import type { SupportedLanguage } from "../_shared/wa-webhook-shared/i18n/language.ts";
+import type {
+  WhatsAppInteractiveMessage,
+  WhatsAppTextMessage,
+  WhatsAppLocationMessage,
+} from "../_shared/wa-webhook-shared/types.ts";
 
 const profileConfig = WEBHOOK_CONFIG.profile;
 
@@ -149,7 +157,7 @@ serve(async (req: Request): Promise<Response> => {
   const logEvent = (
     event: string,
     payload: Record<string, unknown> = {},
-    level: "debug" | "info" | "warn" | "error" = "info",
+    level: "info" | "warn" | "error" = "info",
   ) => {
     logStructuredEvent(event, {
       service: SERVICE_NAME,
@@ -484,7 +492,8 @@ serve(async (req: Request): Promise<Response> => {
 
     // Handle Interactive Messages (Buttons/Lists)
     if (message.type === "interactive") {
-      const interactive = message.interactive;
+      const interactiveMessage = message as WhatsAppInteractiveMessage;
+      const interactive = interactiveMessage.interactive;
       const buttonId = interactive?.button_reply?.id;
       const listId = interactive?.list_reply?.id;
       const id = buttonId || listId;
@@ -769,7 +778,7 @@ serve(async (req: Request): Promise<Response> => {
       const text = fallbackTextMessage.text?.body?.trim() ?? "";
       // Match phone patterns: +250788123456, 0788123456, 788123456, etc.
       const phonePattern = /^(\+?\d{10,15}|\d{9,10})$/;
-      if (phonePattern.test(text.replace(/[\s\-]/g, ""))) {
+      if (phonePattern.test(text.replace(/[\s-]/g, ""))) {
         // Looks like a phone number, treat as MoMo QR input
         const { handleMomoText } = await import(
           "../_shared/wa-webhook-shared/flows/momo/qr.ts"

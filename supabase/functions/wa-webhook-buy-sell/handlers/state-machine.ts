@@ -32,12 +32,20 @@ export async function handleStateTransition(
 ): Promise<{ handled: boolean }> {
   if (!state?.key) return { handled: false };
 
+  // Convert ProfileContext to RouterContext for handlers that need it
+  const routerCtx: RouterContext = {
+    supabase: ctx.supabase,
+    from: ctx.from,
+    profileId: ctx.profileId,
+    locale: ctx.locale === "rw" ? "en" : ctx.locale, // Map "rw" to "en" for compatibility
+  };
+
   // Business creation - name input
   if (state.key === "business_create_name") {
     const { handleCreateBusinessName } = await import(
       "../my-business/create.ts"
     );
-    await handleCreateBusinessName(ctx, text);
+    await handleCreateBusinessName(routerCtx, text);
 
     logStructuredEvent("BUY_SELL_CREATE_NAME_INPUT", {
       from: `***${ctx.from.slice(-4)}`,
@@ -54,7 +62,7 @@ export async function handleStateTransition(
       "../my-business/update.ts"
     );
     await handleUpdateBusinessField(
-      ctx,
+      routerCtx,
       String(state.data.businessId),
       "name",
       text,
@@ -75,7 +83,7 @@ export async function handleStateTransition(
       "../my-business/update.ts"
     );
     await handleUpdateBusinessField(
-      ctx,
+      routerCtx,
       String(state.data.businessId),
       "description",
       text,
@@ -95,7 +103,7 @@ export async function handleStateTransition(
     const { handleBusinessNameSearch } = await import(
       "../my-business/search.ts"
     );
-    await handleBusinessNameSearch(ctx, text);
+    await handleBusinessNameSearch(routerCtx, text);
 
     logStructuredEvent("BUY_SELL_SEARCH_NAME_INPUT", {
       from: `***${ctx.from.slice(-4)}`,
@@ -111,7 +119,7 @@ export async function handleStateTransition(
     const { handleManualBusinessStep } = await import(
       "../my-business/add_manual.ts"
     );
-    await handleManualBusinessStep(ctx, state.data, text);
+    await handleManualBusinessStep(routerCtx, state.data, text);
 
     logStructuredEvent("BUY_SELL_MANUAL_ADD_STEP", {
       from: `***${ctx.from.slice(-4)}`,

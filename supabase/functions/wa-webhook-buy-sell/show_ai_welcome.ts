@@ -4,17 +4,23 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js";
-import { sendText, sendButtons } from "../_shared/wa-webhook-shared/wa/client.ts";
-import { ensureProfile, setState } from "../_shared/wa-webhook-shared/state/store.ts";
+import {
+  sendButtons,
+  sendText,
+} from "../_shared/wa-webhook-shared/wa/client.ts";
+import {
+  ensureProfile,
+  setState,
+} from "../_shared/wa-webhook-shared/state/store.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 
 export async function showAIWelcome(
   userPhone: string,
-  userCountry: string = "RW"
+  userCountry: string = "RW",
 ): Promise<void> {
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
   );
 
   // Ensure profile exists and set state for AI chat mode
@@ -28,7 +34,7 @@ export async function showAIWelcome(
         agent_type: "buy_sell",
       },
     });
-    
+
     // Track AI session start
     await import("../_shared/observability.ts").then(({ recordMetric }) => {
       recordMetric("buy_sell.ai_session_start", 1, {
