@@ -1,16 +1,16 @@
 -- ============================================================================
--- Fix ensure_whatsapp_user Function - Fix ambiguous column reference
--- Migration: 20251216120001_fix_ensure_whatsapp_user_ambiguous.sql
+-- Fix ensure_whatsapp_user Function - Fix RETURNING clause syntax
+-- Migration: 20251216120002_fix_ensure_whatsapp_user_returning.sql
 -- Date: 2025-12-16
 --
 -- PURPOSE: 
--- Fix ambiguous column reference in ON CONFLICT clause
--- Column 'user_id' is ambiguous in RETURNING clause
+-- Fix RETURNING clause - use simple column names, not qualified names
+-- PostgreSQL RETURNING clause doesn't accept table-qualified column names
 -- ============================================================================
 
 BEGIN;
 
--- Recreate the function with qualified column references
+-- Recreate the function with correct RETURNING clause syntax
 CREATE OR REPLACE FUNCTION public.ensure_whatsapp_user(
   _wa_id TEXT,
   _profile_name TEXT DEFAULT NULL
@@ -112,7 +112,7 @@ BEGIN
   -- If auth user exists, create/update profile
   IF FOUND THEN
     -- Ensure profile exists for this user
-    -- Use explicit table qualification in UPDATE clause, but simple column names in RETURNING
+    -- In RETURNING clause, use simple column names (not table-qualified)
     INSERT INTO public.profiles (user_id, wa_id, phone_number, full_name, language)
     VALUES (v_existing_user_id, v_digits, v_normalized_phone, v_profile_name, v_locale)
     ON CONFLICT (user_id) 
