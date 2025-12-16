@@ -996,5 +996,5 @@
   "jobs.candidates.experience.unknown": "Inconnue",
   "bars.menu.select_prompt": "Veuillez d'abord choisir un lieu dans la liste, puis appuyez sur Voir le menu.",
   "buy_sell.welcome": "👋 Muraho! Je suis Kwizera, votre assistant de sourcing easyMO.\n\nJe vous aide à trouver des produits et services au Rwanda:\n🔍 Sourcer des articles difficiles à trouver (pièces détachées, médicaments, électronique)\n🏪 Vous connecter avec des vendeurs locaux vérifiés\n📞 Contacter des entreprises en votre nom pour vérifier la disponibilité\n\nDites-moi simplement ce dont vous avez besoin! Par exemple:\n• \"J'ai besoin de plaquettes de frein pour une RAV4 2010\"\n• \"Trouvez une pharmacie avec Augmentin 625mg près de Remera\"\n• \"Je cherche un plombier à Kigali\"\n\nVous pouvez également m'envoyer un message vocal - Je comprends le kinyarwanda, l'anglais, le français et le swahili.\n\nQue puis-je vous aider à trouver aujourd'hui?",
-  "buy_sell.greeting": "🛒 *Acheter & Vendre*\n\nComment puis-je vous aider aujourd'hui?",
+  "buy_sell.greeting": "🛒 *Acheter & Vendre*\n\nComment puis-je vous aider aujourd'hui?"
 }
