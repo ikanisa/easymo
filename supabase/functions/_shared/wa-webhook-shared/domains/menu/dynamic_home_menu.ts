@@ -1,7 +1,7 @@
-import type { RouterContext } from "../../types.ts";
 import { supabase } from "../../config.ts";
 import type { SupabaseClient } from "../../deps.ts";
 import { getOrSetCached } from "../../utils/cache.ts";
+import { logStructuredEvent } from "../../../observability/index.ts";
 
 const MENU_CACHE_ENABLED =
   (Deno.env.get("WA_MENU_CACHE_ENABLED") ?? "true").toLowerCase() !== "false";
@@ -44,7 +44,9 @@ export interface WhatsAppHomeMenuItem {
   active_countries: string[];
   display_order: number;
   icon: string | null;
-  country_specific_names: Record<string, { name?: string; description?: string }> | null;
+  country_specific_names:
+    | Record<string, { name?: string; description?: string }>
+    | null;
   created_at: string;
   updated_at: string;
 }
@@ -82,13 +84,16 @@ export async function fetchActiveMenuItems(
       .order("display_order", { ascending: true });
 
     if (error) {
-      console.error("Failed to fetch menu items:", error);
+      logStructuredEvent("MENU_FETCH_ERROR", {
+        countryCode,
+        error: error instanceof Error ? error.message : String(error),
+      }, "error");
       // Return empty array on error, fallback will handle it
       return [];
     }
 
     const items = (data || []) as WhatsAppHomeMenuItem[];
-    return items.map(item => ({
+    return items.map((item) => ({
       ...item,
       name: getLocalizedMenuName(item, countryCode),
     }));
@@ -115,7 +120,7 @@ export const HOME_MENU_KEY_ALIASES: Record<string, string> = {
   business_broker_agent: "buy_sell", // Alias for buy_sell
   insurance: "insurance", // Insurance service (not an AI agent)
   profile: "profile", // Profile service (not an agent)
-  
+
   // Legacy aliases - route to canonical services
   rides_agent: "rides",
   schedule_trip: "rides",
@@ -128,10 +133,10 @@ export const HOME_MENU_KEY_ALIASES: Record<string, string> = {
   general_broker: "buy_sell",
   motor_insurance: "insurance",
   insurance_agent: "insurance",
-  momo_qr: "profile",  // Payment QR accessed via profile
-  token_transfer: "profile",  // Wallet transfers via profile
+  momo_qr: "profile", // Payment QR accessed via profile
+  token_transfer: "profile", // Wallet transfers via profile
   profile_assets: "profile",
-  
+
   // Deprecated (removed domains) - route to profile
   waiter_agent: "profile",
   jobs_agent: "profile",
@@ -202,7 +207,7 @@ export function getMenuItemTranslationKeys(
       descriptionKey: "home.rows.profile.description",
     },
     // Legacy mappings (backward compatibility) - deprecated agents route to profile
-    rides: {
+    rides_agent: {
       titleKey: "home.rows.rides.title",
       descriptionKey: "home.rows.rides.description",
     },

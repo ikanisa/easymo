@@ -7,6 +7,7 @@
 import type { RouterContext } from "../types.ts";
 import { supabase } from "../config.ts";
 import type { SupabaseClient } from "../deps.ts";
+import { logStructuredEvent } from "../../observability/index.ts";
 
 export interface SubmenuItem {
   key: string;
@@ -28,20 +29,24 @@ export interface SubmenuItem {
  */
 export async function fetchSubmenuItems(
   parentKey: string,
-  countryCode: string = 'RW',
-  language: string = 'en',
+  countryCode: string = "RW",
+  language: string = "en",
   client?: SupabaseClient,
 ): Promise<SubmenuItem[]> {
   const db = client || supabase;
 
-  const { data, error } = await db.rpc('get_submenu_items', {
+  const { data, error } = await db.rpc("get_submenu_items", {
     p_parent_key: parentKey,
     p_country_code: countryCode,
     p_language: language,
   });
 
   if (error) {
-    console.error(`Failed to fetch submenu items for ${parentKey}:`, error);
+    logStructuredEvent("SUBMENU_FETCH_ERROR", {
+      parentKey,
+      countryCode,
+      error: error instanceof Error ? error.message : String(error),
+    }, "error");
     return [];
   }
 
@@ -67,11 +72,22 @@ export async function fetchProfileMenuItems(
   });
 
   if (error) {
-    console.error("Failed to fetch profile menu items:", error);
+    logStructuredEvent("PROFILE_MENU_FETCH_ERROR", {
+      countryCode,
+      error: error instanceof Error ? error.message : String(error),
+    }, "error");
     return [];
   }
 
-  return (data || []).map((item: any) => ({
+  return (data || []).map((item: {
+    key: string;
+    name?: string;
+    icon?: string | null;
+    display_order: number;
+    action_type: string;
+    action_target: string | null;
+    description: string | null;
+  }) => ({
     key: item.key,
     name: item.name ?? "",
     icon: null,
@@ -98,7 +114,7 @@ export function submenuItemsToRows(
     return {
       id: idMapper ? idMapper(routeId) : routeId,
       title: item.icon ? `${item.icon} ${item.name}` : item.name,
-      description: item.description || '',
+      description: item.description || "",
     };
   });
 }
@@ -117,14 +133,14 @@ export async function getSubmenuRows(
   ctx: RouterContext,
   parentKey: string,
   backButtonId: string,
-  backButtonText: string = 'Back to Menu',
+  backButtonText: string = "Back to Menu",
   idMapper?: (key: string) => string,
 ): Promise<Array<{ id: string; title: string; description: string }>> {
   const countryCode = (ctx as { countryCode?: string }).countryCode ?? "RW";
   const items = await fetchSubmenuItems(
     parentKey,
     countryCode,
-    ctx.locale || 'en',
+    ctx.locale || "en",
     ctx.supabase,
   );
 
@@ -134,7 +150,7 @@ export async function getSubmenuRows(
   rows.push({
     id: backButtonId,
     title: backButtonText,
-    description: 'Return to previous menu',
+    description: "Return to previous menu",
   });
 
   return rows;
@@ -149,10 +165,10 @@ export async function getSubmenuRows(
  */
 export async function hasSubmenu(
   parentKey: string,
-  countryCode: string = 'RW',
+  countryCode: string = "RW",
   client?: SupabaseClient,
 ): Promise<boolean> {
-  const items = await fetchSubmenuItems(parentKey, countryCode, 'en', client);
+  const items = await fetchSubmenuItems(parentKey, countryCode, "en", client);
   return items.length > 0;
 }
 
@@ -164,13 +180,13 @@ export async function hasSubmenu(
  */
 export function getSubmenuAction(item: SubmenuItem): string {
   switch (item.action_type) {
-    case 'ai_agent':
+    case "ai_agent":
       return item.action_target || `ai_agent_${item.key}`;
-    case 'external':
-      return item.action_target || '';
-    case 'navigate':
+    case "external":
+      return item.action_target || "";
+    case "navigate":
       return item.action_target || item.key;
-    case 'action':
+    case "action":
     default:
       return item.action_target || item.key;
   }

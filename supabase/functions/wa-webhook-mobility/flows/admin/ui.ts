@@ -1,6 +1,7 @@
 import type { RouterContext } from "../../types.ts";
 import { sendButtons, sendList } from "../../wa/client.ts";
 import { t } from "../../i18n/translator.ts";
+import { logStructuredEvent } from "../../../_shared/observability/index.ts";
 
 type SendAttemptState = {
   sent: boolean;
@@ -15,12 +16,13 @@ async function withSendGuard(
   label: string,
   send: () => Promise<void>,
 ): Promise<void> {
-  const existing = (ctx as any)[ADMIN_SEND_GUARD_KEY] as
-    | SendAttemptState
-    | undefined;
+  const ctxWithState = ctx as RouterContext & {
+    [ADMIN_SEND_GUARD_KEY]?: SendAttemptState;
+  };
+  const existing = ctxWithState[ADMIN_SEND_GUARD_KEY];
   const state: SendAttemptState = existing ?? { sent: false, attempts: 0 };
   if (!existing) {
-    (ctx as any)[ADMIN_SEND_GUARD_KEY] = state;
+    ctxWithState[ADMIN_SEND_GUARD_KEY] = state;
   }
   state.attempts += 1;
   if (state.sent) {
@@ -38,7 +40,11 @@ async function withSendGuard(
     await send();
   } catch (error) {
     state.lastLabel = `${label}:error`;
-    console.error("admin.send_guard.error", error);
+    logStructuredEvent("ADMIN_SEND_GUARD_ERROR", {
+      from: ctx.from,
+      label,
+      error: error instanceof Error ? error.message : String(error),
+    }, "error");
     throw error;
   }
 }
