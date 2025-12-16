@@ -122,7 +122,7 @@ BEGIN
       phone_number = COALESCE(p.phone_number, EXCLUDED.phone_number),
       full_name = COALESCE(p.full_name, EXCLUDED.full_name),
       updated_at = NOW()
-    RETURNING p.id, p.user_id, COALESCE(p.language, 'en') 
+    RETURNING id, user_id, COALESCE(language, 'en') 
     INTO v_profile_id, v_user_id, v_locale;
     
     RETURN QUERY SELECT v_profile_id, v_user_id, v_locale;
