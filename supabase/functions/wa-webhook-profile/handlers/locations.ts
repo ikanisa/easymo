@@ -511,6 +511,12 @@ export async function confirmDeleteLocation(
       error: error.message,
     }, "error");
   } else {
+    // P2-005: Add metrics for critical operations
+    await recordMetric("profile.location.deleted", 1, {
+      locationId,
+      profileId: ctx.profileId,
+    });
+    
     await clearState(ctx.supabase, ctx.profileId);
     await sendButtonsMessage(
       ctx,
