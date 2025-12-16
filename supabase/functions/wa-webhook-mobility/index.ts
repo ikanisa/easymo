@@ -29,6 +29,7 @@ import { showMobilityMenu } from "./handlers/menu.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { checkRateLimit } from "../_shared/rate-limit/index.ts";
 import { maskPhone } from "../_shared/phone-utils.ts";
+import { isValidInternalForward } from "../_shared/security/internal-forward.ts";
 
 const STATE_KEYS = {
   NEARBY_SELECT: "mobility_nearby_select",
@@ -76,9 +77,6 @@ serve(async (req: Request): Promise<Response> => {
       (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() ===
         "true";
     // Validate internal forward with token to prevent spoofing
-    const { isValidInternalForward } = await import(
-      "../../_shared/security/internal-forward.ts"
-    );
     const internalForward = isValidInternalForward(req);
 
     if (!appSecret) {

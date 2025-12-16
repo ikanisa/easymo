@@ -681,14 +681,16 @@ export class CircuitBreaker {
 export async function checkIdempotency(
   supabase: SupabaseClient,
   whatsappMessageId: string,
-  correlationId: string
+  correlationId: string,
+  phoneNumber?: string
 ): Promise<boolean> {
   try {
+    // Use wa_events table instead of processed_webhook_messages (which doesn't exist)
     const { data, error } = await supabase
-      .from('processed_webhook_messages')
-      .select('id')
-      .eq('whatsapp_message_id', whatsappMessageId)
-      .single();
+      .from('wa_events')
+      .select('message_id')
+      .eq('message_id', whatsappMessageId)
+      .maybeSingle();
     
     if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
       throw error;
@@ -738,18 +740,23 @@ export async function recordProcessedMessage(
   conversationId: string | null,
   correlationId: string,
   processingTimeMs: number,
+  phoneNumber?: string,
   payload?: unknown
 ): Promise<void> {
   try {
+    // Use wa_events table instead of processed_webhook_messages (which doesn't exist)
+    // Ensure phone_number is never null (required by database constraint)
+    const phone = phoneNumber || "unknown";
+    
     const { error } = await supabase
-      .from('processed_webhook_messages')
+      .from('wa_events')
       .insert({
-        whatsapp_message_id: whatsappMessageId,
-        conversation_id: conversationId,
-        correlation_id: correlationId,
-        processing_time_ms: processingTimeMs,
-        payload: payload || null,
-        processed_at: new Date().toISOString(),
+        message_id: whatsappMessageId,
+        phone_number: phone,
+        event_type: 'webhook_processed',
+        timestamp: new Date().toISOString(),
+        body: payload ? JSON.stringify(payload) : null,
+        status: 'processed',
       });
     
     if (error) {

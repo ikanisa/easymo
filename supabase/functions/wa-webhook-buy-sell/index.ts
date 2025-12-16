@@ -187,7 +187,7 @@ serve(async (req: Request): Promise<Response> => {
     const messageId = payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0]
       ?.id;
     if (messageId) {
-      const claimed = await claimEvent(messageId);
+      const claimed = await claimEvent(messageId, userPhone);
       if (!claimed) {
         await logStructuredEvent("BUY_SELL_DIR_DUPLICATE_BLOCKED", {
           message_id: messageId,

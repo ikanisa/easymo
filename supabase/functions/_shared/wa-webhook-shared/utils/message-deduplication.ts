@@ -27,11 +27,11 @@ export async function isNewMessage(
   }
 
   try {
-    // Check if message exists in processed_webhook_messages
+    // Check if message exists in wa_events (processed_webhook_messages doesn't exist)
     const { data, error } = await supabase
-      .from("processed_webhook_messages")
-      .select("id, processed_at")
-      .eq("whatsapp_message_id", messageId)
+      .from("wa_events")
+      .select("message_id, created_at")
+      .eq("message_id", messageId)
       .maybeSingle();
 
     if (error) {
@@ -47,7 +47,7 @@ export async function isNewMessage(
       logStructuredEvent("MESSAGE_DEDUPLICATED", {
         messageId,
         correlationId,
-        originalProcessedAt: data.processed_at,
+        originalProcessedAt: data.created_at,
       });
       return false;
     }
@@ -76,20 +76,25 @@ export async function isNewMessage(
 export async function markMessageProcessed(
   messageId: string,
   correlationId: string,
+  phoneNumber?: string,
   conversationId?: string | null,
   payload?: Record<string, unknown>,
   processingTimeMs?: number
 ): Promise<void> {
   try {
+    // Use wa_events table instead of processed_webhook_messages (which doesn't exist)
+    // Ensure phone_number is never null (required by database constraint)
+    const phone = phoneNumber || "unknown";
+    
     const { error } = await supabase
-      .from("processed_webhook_messages")
+      .from("wa_events")
       .insert({
-        whatsapp_message_id: messageId,
-        correlation_id: correlationId,
-        conversation_id: conversationId,
-        payload: payload || {},
-        processing_time_ms: processingTimeMs,
-        processed_at: new Date().toISOString(),
+        message_id: messageId,
+        phone_number: phone,
+        event_type: 'message_processed',
+        timestamp: new Date().toISOString(),
+        body: payload ? JSON.stringify(payload) : null,
+        status: 'processed',
       });
 
     if (error) {

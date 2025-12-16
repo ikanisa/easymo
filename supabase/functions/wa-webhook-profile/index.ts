@@ -399,6 +399,7 @@ serve(async (req: Request): Promise<Response> => {
           supabase,
           messageId,
           correlationId,
+          from, // Pass phone number for wa_events table
         );
         if (alreadyProcessed) {
           logEvent("PROFILE_DUPLICATE_SKIPPED", {

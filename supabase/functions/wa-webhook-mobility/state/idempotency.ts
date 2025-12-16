@@ -29,13 +29,21 @@ function isNoUniqueConstraint(err: unknown): boolean {
     msg.includes("does not have a unique constraint");
 }
 
-export async function claimEvent(id: string): Promise<boolean> {
+export async function claimEvent(id: string, phoneNumber?: string): Promise<boolean> {
   // Prefer new column name
+  // Ensure phone_number is never null (required by database constraint)
+  const phone = phoneNumber || "unknown";
+  
   try {
     const { data, error } = await supabase
       .from("wa_events")
       .upsert(
-        { message_id: id, event_type: IDEMPOTENCY_EVENT_TYPE },
+        { 
+          message_id: id, 
+          event_type: IDEMPOTENCY_EVENT_TYPE,
+          phone_number: phone,
+          timestamp: new Date().toISOString(),
+        },
         { onConflict: "message_id", ignoreDuplicates: true },
       )
       .select("message_id");
@@ -49,10 +57,12 @@ export async function claimEvent(id: string): Promise<boolean> {
         id,
       ).maybeSingle();
       if (!pre.error && pre.data) return false; // already exists
-      // try plain insert
+      // try plain insert with phone_number
       const ins = await supabase.from("wa_events").insert({
         message_id: id,
         event_type: IDEMPOTENCY_EVENT_TYPE,
+        phone_number: phone,
+        timestamp: new Date().toISOString(),
       });
       if (ins.error) throw ins.error;
       return true;
@@ -63,7 +73,12 @@ export async function claimEvent(id: string): Promise<boolean> {
       .from("wa_events")
       .upsert(
         // @ts-ignore: legacy column
-        { wa_message_id: id, event_type: IDEMPOTENCY_EVENT_TYPE },
+        { 
+          wa_message_id: id, 
+          event_type: IDEMPOTENCY_EVENT_TYPE,
+          phone_number: phone,
+          timestamp: new Date().toISOString(),
+        },
         // @ts-ignore: legacy column
         { onConflict: "wa_message_id", ignoreDuplicates: true },
       )
