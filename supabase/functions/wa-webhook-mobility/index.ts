@@ -301,6 +301,15 @@ serve(async (req: Request): Promise<Response> => {
           return respond({ success: true });
         }
 
+        if (!tripData) {
+          logStructuredEvent("MOBILITY_TRIP_CREATE_NO_DATA", {
+            from: from.slice(-4),
+            correlationId,
+          }, "error");
+          await sendText(from, "Sorry, there was an error. Please try again.");
+          return respond({ success: true });
+        }
+
         // Find opposite role users (top 10) - simple query
         const oppositeRole = mobilityRole === "driver" ? "passenger" : "driver";
         

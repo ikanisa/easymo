@@ -1,0 +1,7 @@
+{
+  "name": "wa-webhook-voice-calls",
+  "version": "1.0.0",
+  "verify_jwt": false,
+  "description": "WhatsApp voice calls webhook handler"
+}
+
