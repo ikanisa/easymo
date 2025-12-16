@@ -112,16 +112,17 @@ BEGIN
   -- If auth user exists, create/update profile
   IF FOUND THEN
     -- Ensure profile exists for this user
-    -- In ON CONFLICT DO UPDATE SET, use unqualified table name (profiles) not public.profiles
-    INSERT INTO public.profiles (user_id, wa_id, phone_number, full_name, language)
+    -- In ON CONFLICT DO UPDATE SET, use unqualified column names (they refer to the target table)
+    -- Use EXCLUDED to refer to the row that would have been inserted
+    INSERT INTO public.profiles AS p (user_id, wa_id, phone_number, full_name, language)
     VALUES (v_existing_user_id, v_digits, v_normalized_phone, v_profile_name, v_locale)
     ON CONFLICT (user_id) 
     DO UPDATE SET
-      wa_id = COALESCE(profiles.wa_id, EXCLUDED.wa_id),
-      phone_number = COALESCE(profiles.phone_number, EXCLUDED.phone_number),
-      full_name = COALESCE(profiles.full_name, EXCLUDED.full_name),
+      wa_id = COALESCE(p.wa_id, EXCLUDED.wa_id),
+      phone_number = COALESCE(p.phone_number, EXCLUDED.phone_number),
+      full_name = COALESCE(p.full_name, EXCLUDED.full_name),
       updated_at = NOW()
-    RETURNING id, user_id, COALESCE(language, 'en') 
+    RETURNING p.id, p.user_id, COALESCE(p.language, 'en') 
     INTO v_profile_id, v_user_id, v_locale;
     
     RETURN QUERY SELECT v_profile_id, v_user_id, v_locale;
