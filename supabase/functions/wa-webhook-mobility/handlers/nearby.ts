@@ -509,16 +509,23 @@ export async function handleNearbyResultSelection(
     return true;
   }
 
-  // CRITICAL FIX: Verify match still exists and hasn't expired in database
-  const { data: trip, error: tripError } = await ctx.supabase
+  // OPTIMIZED: Single query with join to verify trip and get profile (P1-019, P1-020 fix)
+  // This combines trip verification and profile lookup into one query instead of two
+  const { data: tripWithProfile, error: queryError } = await ctx.supabase
     .from("trips")
-    .select("id, status, expires_at, user_id")
+    .select(`
+      id,
+      status,
+      expires_at,
+      user_id,
+      profiles!inner(phone_number, wa_id)
+    `)
     .eq("id", cachedMatch.tripId)
     .eq("status", "open")
     .gt("expires_at", new Date().toISOString())
     .maybeSingle();
 
-  if (tripError || !trip) {
+  if (queryError || !tripWithProfile) {
     await sendText(
       ctx.from,
       t(ctx.locale, "mobility.nearby.match_expired", {
@@ -530,14 +537,11 @@ export async function handleNearbyResultSelection(
     return true;
   }
 
-  // Get fresh contact info from profiles (optimized: single query with trip verification)
-  // Note: Phone is already in cachedMatch from RPC, but we verify trip exists
-  // This is not N+1 as it's a single query per user selection, not per match in list
-  const { data: profile } = await ctx.supabase
-    .from("profiles")
-    .select("phone_number, wa_id")
-    .eq("user_id", trip.user_id)
-    .maybeSingle();
+  // Extract profile from joined result
+  const profile = tripWithProfile.profiles as {
+    phone_number?: string | null;
+    wa_id?: string | null;
+  } | null;
 
   const whatsapp = profile?.phone_number || profile?.wa_id ||
     cachedMatch.whatsapp;
