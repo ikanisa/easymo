@@ -1067,6 +1067,8 @@
   "jobs.seeker.onboarding.success": "✅ Job seeker profile created! You can now browse and apply for jobs.",
   "jobs.seeker.onboarding.creation_failed": "⚠️ Failed to create profile. Please try again.",
   "marketplace.payment.error": "⚠️ Payment failed. Please try again or contact support.",
+  "buy_sell.welcome": "👋 Muraho! I'm Kwizera, your easyMO sourcing assistant.\n\nI help you find products and services in Rwanda:\n🔍 Source hard-to-find items (spare parts, medicine, electronics)\n🏪 Connect you with verified local vendors\n📞 Contact businesses on your behalf to check availability\n\nJust tell me what you need! For example:\n• \"I need brake pads for a 2010 RAV4\"\n• \"Find a pharmacy with Augmentin 625mg near Remera\"\n• \"Looking for a plumber in Kigali\"\n\nYou can also send me a voice note - I understand Kinyarwanda, English, French, and Swahili.\n\nWhat can I help you find today?",
+  "buy_sell.greeting": "🛒 *Buy & Sell*\n\nHow can I help you today?",
   "mobility.nearby.recent_searches.title_drivers": "🔍 Recent Driver Searches",
   "mobility.nearby.recent_searches.title_passengers": "🔍 Recent Passenger Searches",
   "mobility.nearby.recent_searches.body_drivers": "Search again from a recent location or share a new one:",

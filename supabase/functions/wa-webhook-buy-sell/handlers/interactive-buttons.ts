@@ -47,23 +47,29 @@ export async function handleInteractiveButton(
 
   // Handle initial menu selection from home menu
   if (buttonId === "buy_sell" || buttonId === "buy_and_sell" || buttonId === "business_broker_agent" || buttonId === "buy_and_sell_agent") {
-    const { MarketplaceAgent, WELCOME_MESSAGE } = await import("../core/agent.ts");
+    const { MarketplaceAgent, getWelcomeMessage, getGreetingMessage } = await import("../core/agent.ts");
     const { sendText } = await import("../../_shared/wa-webhook-shared/wa/client.ts");
     
     // Load or create context
     const context = await MarketplaceAgent.loadContext(from, supabase);
     const isNewSession = !context.conversationHistory || context.conversationHistory.length === 0;
     
+    // Get user locale from context
+    const locale = ctx.locale === "rw" ? "en" : ctx.locale; // Map "rw" to "en" for compatibility
+    
     if (isNewSession) {
-      // Send welcome message for new sessions
-      await sendText(from, WELCOME_MESSAGE);
+      // Send localized welcome message for new sessions
+      const welcomeMessage = await getWelcomeMessage(locale);
+      await sendText(from, welcomeMessage);
       logStructuredEvent("BUY_SELL_WELCOME_FROM_MENU", {
         from: `***${from.slice(-4)}`,
+        locale,
         correlationId,
       });
     } else {
-      // For returning users, just send a greeting
-      await sendText(from, "🛒 *Buy & Sell*\n\nHow can I help you today?");
+      // For returning users, send localized greeting
+      const greetingMessage = await getGreetingMessage(locale);
+      await sendText(from, greetingMessage);
     }
     
     return { handled: true, action: "welcome_shown" };

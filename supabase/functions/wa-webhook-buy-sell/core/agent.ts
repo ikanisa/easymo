@@ -73,7 +73,31 @@ const AI_MAX_TOKENS = parseInt(Deno.env.get("MARKETPLACE_AI_MAX_TOKENS") || "102
 // Maximum number of conversation history entries to store (prevents unbounded growth)
 const MAX_CONVERSATION_HISTORY_SIZE = 20;
 
-// Welcome message for new/first-time users - Kwizera persona
+/**
+ * Get localized welcome message for Kwizera persona
+ * @param locale - User's preferred language (en, fr, sw, rw)
+ * @returns Localized welcome message
+ */
+export async function getWelcomeMessage(locale: string = "en"): Promise<string> {
+  const { t } = await import("../../_shared/wa-webhook-shared/i18n/translator.ts");
+  // Map "rw" to "en" as Kinyarwanda is not fully supported in UI
+  const supportedLocale = locale === "rw" ? "en" : locale;
+  return t(supportedLocale as "en" | "fr" | "sw", "buy_sell.welcome");
+}
+
+/**
+ * Get localized greeting for returning users
+ * @param locale - User's preferred language (en, fr, sw, rw)
+ * @returns Localized greeting message
+ */
+export async function getGreetingMessage(locale: string = "en"): Promise<string> {
+  const { t } = await import("../../_shared/wa-webhook-shared/i18n/translator.ts");
+  // Map "rw" to "en" as Kinyarwanda is not fully supported in UI
+  const supportedLocale = locale === "rw" ? "en" : locale;
+  return t(supportedLocale as "en" | "fr" | "sw", "buy_sell.greeting");
+}
+
+// Legacy export for backward compatibility (deprecated - use getWelcomeMessage instead)
 export const WELCOME_MESSAGE = `👋 Muraho! I'm Kwizera, your easyMO sourcing assistant.
 
 I help you find products and services in Rwanda:

@@ -383,8 +383,11 @@ serve(async (req: Request): Promise<Response> => {
       // Reset conversation context
       await MarketplaceAgent.resetContext(userPhone, supabase);
 
-      // Send welcome message
-      await sendText(userPhone, WELCOME_MESSAGE);
+      // Send localized welcome message
+      const locale = profile?.language || "en";
+      const { getWelcomeMessage } = await import("./core/agent.ts");
+      const welcomeMessage = await getWelcomeMessage(locale);
+      await sendText(userPhone, welcomeMessage);
 
       const duration = Date.now() - startTime;
       recordMetric("buy_sell.welcome_shown", 1, {
@@ -401,7 +404,10 @@ serve(async (req: Request): Promise<Response> => {
 
     // For new sessions with actual text, show welcome first then process
     if (isNewSession && text) {
-      await sendText(userPhone, WELCOME_MESSAGE);
+      const locale = profile?.language || "en";
+      const { getWelcomeMessage } = await import("./core/agent.ts");
+      const welcomeMessage = await getWelcomeMessage(locale);
+      await sendText(userPhone, welcomeMessage);
 
       await logStructuredEvent("BUY_SELL_WELCOME_NEW_USER", {
         from: `***${userPhone.slice(-4)}`,
