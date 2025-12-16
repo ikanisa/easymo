@@ -276,7 +276,7 @@ serve(async (req: Request): Promise<Response> => {
         }
 
         // Save location to trips table (active ride request)
-        const { data: trip, error: tripError } = await supabase
+        const { data: tripData, error: tripError } = await supabase
           .from("trips")
           .insert({
             user_id: userId,
