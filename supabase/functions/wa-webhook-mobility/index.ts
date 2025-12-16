@@ -77,7 +77,7 @@ serve(async (req: Request): Promise<Response> => {
         "true";
     // Validate internal forward with token to prevent spoofing
     const { isValidInternalForward } = await import(
-      "../_shared/security/internal-forward.ts"
+      "../../_shared/security/internal-forward.ts"
     );
     const internalForward = isValidInternalForward(req);
 

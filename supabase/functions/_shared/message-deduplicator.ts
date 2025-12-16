@@ -95,11 +95,14 @@ export class MessageDeduplicator {
    * Stores in wa_events table for future deduplication checks
    */
   async recordMessage(metadata: MessageMetadata): Promise<void> {
+    // Ensure phone_number is never null (required by database constraint)
+    const phoneNumber = metadata.from || "unknown";
+    
     const { error } = await this.supabase
       .from(this.tableName)
       .insert({
         message_id: metadata.messageId,
-        phone_number: metadata.from,
+        phone_number: phoneNumber,
         event_type: metadata.type,
         timestamp: metadata.timestamp,
         body: metadata.body,
