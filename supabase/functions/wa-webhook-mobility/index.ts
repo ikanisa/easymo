@@ -1,43 +1,20 @@
 // wa-webhook-mobility - Simplified version
+// Simple flow: User chooses ride → shares location → sees list of drivers/passengers
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { logStructuredEvent } from "../_shared/observability/index.ts";
-import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
-import {
-  handleNearbyLocation,
-  handleSeeDrivers,
-  handleSeePassengers,
-  handleVehicleSelection,
-  isVehicleOption,
-} from "./handlers/nearby.ts";
-import {
-  handleScheduleLocation,
-  handleScheduleRole,
-  handleScheduleVehicle,
-  startScheduleTrip,
-} from "./handlers/schedule.ts";
-import {
-  handleGoOffline,
-  handleGoOnlineLocation,
-  startGoOnline,
-} from "./handlers/go_online.ts";
+import { supabase } from "./config.ts";
+import { sendText, sendButtons, sendList } from "./wa/client.ts";
+import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
+import { isValidInternalForward } from "../_shared/security/internal-forward.ts";
 import type { RouterContext, WhatsAppWebhookPayload } from "./types.ts";
 import type { SupportedLanguage } from "./i18n/language.ts";
-import { IDS } from "./wa/ids.ts";
-import { supabase } from "./config.ts";
-import { recordLastLocation } from "./locations/favorites.ts";
-import { showMobilityMenu } from "./handlers/menu.ts";
-import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
-import { checkRateLimit } from "../_shared/rate-limit/index.ts";
-import { maskPhone } from "../_shared/phone-utils.ts";
-import { isValidInternalForward } from "../_shared/security/internal-forward.ts";
+import { ensureProfile } from "../_shared/wa-webhook-shared/state/store.ts";
 
-const STATE_KEYS = {
-  NEARBY_SELECT: "mobility_nearby_select",
-  NEARBY_LOCATION: "mobility_nearby_location",
-  GO_ONLINE: "mobility_go_online",
-  SCHEDULE_ROLE: "mobility_schedule_role",
-  SCHEDULE_LOCATION: "mobility_schedule_location",
-  SCHEDULE_VEHICLE: "mobility_schedule_vehicle",
+// Button IDs
+const BUTTON_IDS = {
+  RIDE: "ride",
+  DRIVER: "driver",
+  PASSENGER: "passenger",
 } as const;
 
 serve(async (req: Request): Promise<Response> => {
@@ -64,7 +41,7 @@ serve(async (req: Request): Promise<Response> => {
     // Read raw body for signature verification
     const rawBody = await req.text();
 
-    // Verify WhatsApp signature (Security requirement)
+    // Verify WhatsApp signature
     const signatureHeader = req.headers.has("x-hub-signature-256")
       ? "x-hub-signature-256"
       : req.headers.has("x-hub-signature")
@@ -76,7 +53,6 @@ serve(async (req: Request): Promise<Response> => {
     const allowUnsigned =
       (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() ===
         "true";
-    // Validate internal forward with token to prevent spoofing
     const internalForward = isValidInternalForward(req);
 
     if (!appSecret) {
@@ -128,7 +104,7 @@ serve(async (req: Request): Promise<Response> => {
       }
     }
 
-    // Parse payload after verification
+    // Parse payload
     const payload: WhatsAppWebhookPayload = JSON.parse(rawBody);
     const message = payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
     const contacts = payload.entry?.[0]?.changes?.[0]?.value?.contacts?.[0];
@@ -140,7 +116,7 @@ serve(async (req: Request): Promise<Response> => {
     const from = message.from;
     const profileName = contacts?.profile?.name || "User";
 
-    // Ensure user exists - try RPC function first, fallback to ensureProfile
+    // Ensure user exists
     let profileId = "";
     let locale: SupportedLanguage = "en";
     let userId = "";
@@ -154,55 +130,16 @@ serve(async (req: Request): Promise<Response> => {
         },
       );
 
-      if (!profileError) {
-        // RPC function call succeeded (no error)
-        if (profileData && profileData.length > 0) {
-          // RPC function returned profile data
-          profileId = profileData[0]?.profile_id || "";
-          userId = profileData[0]?.user_id || "";
-          locale = (profileData[0]?.locale || "en") as SupportedLanguage;
-        } else {
-          // RPC returned empty result (NULL) - profile needs to be created via TypeScript
-          logStructuredEvent("MOBILITY_RPC_RETURNED_NULL", {
-            from: from.slice(-4),
-            correlationId,
-          }, "info");
-          throw new Error("RPC returned NULL, using fallback");
-        }
-      } else if (profileError && (
-        profileError.message?.includes("does not exist") ||
-        profileError.message?.includes("Could not find the function") ||
-        profileError.code === "PGRST204"
-      )) {
-        // Function doesn't exist in PostgREST schema cache - use fallback
-        logStructuredEvent("MOBILITY_RPC_FUNCTION_MISSING", {
-          from: from.slice(-4),
-          correlationId,
-          errorCode: profileError.code,
-          errorMessage: profileError.message,
-        }, "warn");
-        throw new Error("RPC function not available, using fallback");
-      } else if (profileError) {
-        // Other error - log and use fallback
-        logStructuredEvent("MOBILITY_USER_ENSURE_RPC_ERROR", {
-          error: profileError.message,
-          errorCode: profileError.code,
-          from: from.slice(-4),
-          correlationId,
-        }, "warn");
-        throw new Error("RPC function error, using fallback");
-      }
-    } catch (rpcErr) {
-      // Fallback to ensureProfile utility
-      try {
-        const { ensureProfile } = await import(
-          "../_shared/wa-webhook-shared/state/store.ts"
-        );
+      if (!profileError && profileData && profileData.length > 0) {
+        profileId = profileData[0]?.profile_id || "";
+        userId = profileData[0]?.user_id || "";
+        locale = (profileData[0]?.locale || "en") as SupportedLanguage;
+      } else {
+        // Fallback to ensureProfile utility
         const profile = await ensureProfile(supabase, from);
         if (profile) {
           userId = profile.user_id;
           locale = (profile.locale || "en") as SupportedLanguage;
-          // Get profile ID from database
           const { data: profileRow } = await supabase
             .from("profiles")
             .select("id")
@@ -211,50 +148,43 @@ serve(async (req: Request): Promise<Response> => {
           profileId = profileRow?.id || "";
         } else {
           logStructuredEvent("MOBILITY_USER_ENSURE_ERROR", {
-            error: "Failed to create profile via fallback",
+            error: "Failed to create profile",
             from: from.slice(-4),
             correlationId,
           }, "error");
           return respond({ error: "user_creation_failed" }, 500);
         }
-      } catch (fallbackErr) {
-        logStructuredEvent("MOBILITY_USER_ENSURE_ERROR", {
-          error: fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr),
-          from: from.slice(-4),
-          correlationId,
-        }, "error");
-        return respond({ error: "user_creation_failed" }, 500);
       }
-    }
-
-    // Rate limiting check (P1-016 fix)
-    const rateLimitCheck = await rateLimitMiddleware(req, {
-      limit: 100, // 100 requests per minute per user
-      windowSeconds: 60,
-      key: `mobility:${from}`,
-    });
-
-    if (!rateLimitResult.allowed) {
-      logStructuredEvent("MOBILITY_RATE_LIMITED", {
-        from: maskPhone(from),
-        remaining: rateLimitResult.remaining,
-        resetAt: rateLimitResult.resetAt.toISOString(),
+    } catch (err) {
+      logStructuredEvent("MOBILITY_USER_ENSURE_ERROR", {
+        error: err instanceof Error ? err.message : String(err),
+        from: from.slice(-4),
         correlationId,
-      }, "warn");
-      return respond({ error: "rate_limit_exceeded" }, 429);
+      }, "error");
+      return respond({ error: "user_creation_failed" }, 500);
     }
 
-    const ctx: RouterContext = {
-      supabase,
-      from,
-      profileId,
-      locale,
-    };
+    // Context for potential future use
+    // const ctx: RouterContext = {
+    //   supabase,
+    //   from,
+    //   profileId,
+    //   locale,
+    // };
 
-    // Get state
-    const state = profileId ? await getState(supabase, profileId) : null;
+    // Get user's mobility role from profile
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("mobility_role")
+      .eq("user_id", userId)
+      .maybeSingle();
 
-    // Handle interactive messages
+    const mobilityRole = profile?.mobility_role as "driver" | "passenger" | null;
+
+    // Simple state tracking (we'll use a simple approach without user_state table for now)
+    // State is handled per-request based on user's role and current flow
+
+    // Handle interactive messages (buttons)
     if (message.type === "interactive") {
       const interactive = message.interactive as {
         button_reply?: { id?: string };
@@ -266,77 +196,45 @@ serve(async (req: Request): Promise<Response> => {
         return respond({ success: true });
       }
 
-      // Main menu
-      if (id === IDS.RIDES_MENU || id === "rides_agent" || id === "rides") {
-        await showMobilityMenu(ctx);
-        return respond({ success: true });
-      }
-
-      // Nearby flows
-      if (id === IDS.SEE_DRIVERS) {
-        await handleSeeDrivers(ctx);
-        return respond({ success: true });
-      }
-
-      if (id === IDS.SEE_PASSENGERS) {
-        await handleSeePassengers(ctx);
-        return respond({ success: true });
-      }
-
-      if (isVehicleOption(id) && state?.key === STATE_KEYS.NEARBY_SELECT) {
-        if (state.data && typeof state.data === "object") {
-          const nearbyState = state.data as { mode?: string; vehicle?: string };
-          if (nearbyState.mode === "drivers" || nearbyState.mode === "passengers") {
-            await handleVehicleSelection(
-              ctx,
-              { mode: nearbyState.mode, vehicle: nearbyState.vehicle } as { mode: "drivers" | "passengers"; vehicle?: string },
-              id,
-            );
-          }
-        }
-        return respond({ success: true });
-      }
-
-      // Go online/offline
-      if (id === IDS.GO_ONLINE || id === "driver_go_online") {
-        await startGoOnline(ctx);
-        return respond({ success: true });
-      }
-
-      if (id === IDS.GO_OFFLINE) {
-        await handleGoOffline(ctx);
-        return respond({ success: true });
-      }
-
-      // Schedule flows
-      if (id === IDS.SCHEDULE_TRIP) {
-        await startScheduleTrip(
-          ctx,
-          state || { key: "mobility_menu", data: {} },
-        );
-        return respond({ success: true });
-      }
-
-      if (
-        (id === IDS.ROLE_DRIVER || id === IDS.ROLE_PASSENGER) &&
-        state?.key === STATE_KEYS.SCHEDULE_ROLE
-      ) {
-        await handleScheduleRole(ctx, id);
-        return respond({ success: true });
-      }
-
-      if (
-        isVehicleOption(id) &&
-        (state?.key === STATE_KEYS.SCHEDULE_LOCATION ||
-          state?.key === STATE_KEYS.SCHEDULE_VEHICLE)
-      ) {
-        if (state.data && typeof state.data === "object") {
-          await handleScheduleVehicle(
-            ctx,
-            state.data as Record<string, unknown>,
-            id,
+      // User chose "ride" from home menu
+      if (id === BUTTON_IDS.RIDE || id === "rides" || id === "rides_agent") {
+        // Check if user has mobility role set
+        if (!mobilityRole) {
+          // First time - ask for role
+          await sendButtons(
+            from,
+            "Are you a driver or passenger?",
+            [
+              { id: BUTTON_IDS.DRIVER, title: "🚗 Driver" },
+              { id: BUTTON_IDS.PASSENGER, title: "👤 Passenger" },
+            ],
           );
+          // State is implicit - user needs to select role
+        } else {
+          // User has role - ask for location
+          await sendText(
+            from,
+            "Please share your current location 📍",
+          );
+          // State is implicit - user needs to share location
         }
+        return respond({ success: true });
+      }
+
+      // User selected driver or passenger
+      if (id === BUTTON_IDS.DRIVER || id === BUTTON_IDS.PASSENGER) {
+        const role = id === BUTTON_IDS.DRIVER ? "driver" : "passenger";
+        // Save role to profile
+        await supabase
+          .from("profiles")
+          .update({ mobility_role: role })
+          .eq("user_id", userId);
+        // Ask for location
+        await sendText(
+          from,
+          "Please share your current location 📍",
+        );
+        // State is implicit - user needs to share location
         return respond({ success: true });
       }
     }
@@ -364,32 +262,128 @@ serve(async (req: Request): Promise<Response> => {
           return respond({ error: "invalid_location" }, 400);
         }
 
-        const coords = { lat, lng };
-
-        await recordLastLocation(ctx, coords).catch(() => {});
-
-        if (state?.key === STATE_KEYS.NEARBY_LOCATION) {
-          if (state.data && typeof state.data === "object") {
-            const nearbyState = state.data as { mode?: string; vehicle?: string; pickup?: { lat: number; lng: number } };
-            if (nearbyState.mode === "drivers" || nearbyState.mode === "passengers") {
-              await handleNearbyLocation(
-                ctx,
-                { mode: nearbyState.mode, vehicle: nearbyState.vehicle, pickup: nearbyState.pickup } as { mode: "drivers" | "passengers"; vehicle?: string; pickup?: { lat: number; lng: number } },
-                coords,
-              );
-            }
-          }
-        } else if (state?.key === STATE_KEYS.GO_ONLINE) {
-          await handleGoOnlineLocation(ctx, coords);
-        } else if (state?.key === STATE_KEYS.SCHEDULE_LOCATION) {
-          if (state.data && typeof state.data === "object") {
-            await handleScheduleLocation(
-              ctx,
-              state.data as Record<string, unknown>,
-              coords,
-            );
-          }
+        // Check if user has role
+        if (!mobilityRole) {
+          await sendButtons(
+            from,
+            "Please select your role first:",
+            [
+              { id: BUTTON_IDS.DRIVER, title: "🚗 Driver" },
+              { id: BUTTON_IDS.PASSENGER, title: "👤 Passenger" },
+            ],
+          );
+          return respond({ success: true });
         }
+
+        // Save location to trips table (active ride request)
+        const { data: trip, error: tripError } = await supabase
+          .from("trips")
+          .insert({
+            user_id: userId,
+            phone: from,
+            role: mobilityRole,
+            vehicle_type: "car", // Default, can be enhanced later
+            pickup_lat: lat,
+            pickup_lng: lng,
+            status: "open",
+            expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutes
+          })
+          .select()
+          .single();
+
+        if (tripError) {
+          logStructuredEvent("MOBILITY_TRIP_CREATE_ERROR", {
+            error: tripError.message,
+            from: from.slice(-4),
+            correlationId,
+          }, "error");
+          await sendText(from, "Sorry, there was an error. Please try again.");
+          return respond({ success: true });
+        }
+
+        // Find opposite role users (top 10) - simple query
+        const oppositeRole = mobilityRole === "driver" ? "passenger" : "driver";
+        
+        // Simple query to find nearby trips with opposite role
+        // Using Haversine distance calculation (simplified)
+        const { data: matches, error: matchError } = await supabase
+          .from("trips")
+          .select(`
+            id,
+            phone,
+            pickup_lat,
+            pickup_lng,
+            ref_code,
+            created_at,
+            profiles!inner(full_name, phone_number, wa_id)
+          `)
+          .eq("role", oppositeRole)
+          .eq("status", "open")
+          .gt("expires_at", new Date().toISOString())
+          .neq("user_id", userId) // Exclude own trips
+          .order("created_at", { ascending: false })
+          .limit(10);
+
+        if (matchError) {
+          logStructuredEvent("MOBILITY_MATCH_ERROR", {
+            error: matchError.message,
+            from: from.slice(-4),
+            correlationId,
+          }, "error");
+        }
+
+        // State cleared - location received and processed
+
+        // Send list of matches
+        if (matches && Array.isArray(matches) && matches.length > 0) {
+          // Calculate simple distance for each match (Haversine formula simplified)
+          const rows = matches.slice(0, 10).map((match: {
+            id?: string;
+            phone?: string;
+            pickup_lat?: number;
+            pickup_lng?: number;
+            ref_code?: string;
+            profiles?: { full_name?: string; phone_number?: string };
+          }, index: number) => {
+            // Simple distance calculation (approximate)
+            const latDiff = Math.abs(lat - (match.pickup_lat || 0));
+            const lngDiff = Math.abs(lng - (match.pickup_lng || 0));
+            const distanceKm = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff) * 111; // Rough conversion
+            const estimatedMinutes = Math.round(distanceKm * 2); // Rough estimate: 2 min per km
+            
+            const displayName = match.profiles?.full_name || 
+                               match.profiles?.phone_number || 
+                               match.phone || 
+                               "User";
+            
+            return {
+              id: `contact_${match.phone || match.id || index}`,
+              title: `${displayName}`,
+              description: `📍 ${match.ref_code || ""} | ~${estimatedMinutes} min away`,
+            };
+          });
+
+          await sendList(from, {
+            title: `Available ${oppositeRole === "driver" ? "Drivers" : "Passengers"}`,
+            body: `Found ${matches.length} ${oppositeRole}s nearby. Your location: ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+            buttonText: "Select",
+            rows,
+          });
+        } else {
+          await sendText(
+            from,
+            `No ${oppositeRole}s found nearby. Your location has been saved. Try again later.`,
+          );
+        }
+
+        logStructuredEvent("MOBILITY_LOCATION_SAVED", {
+          from: from.slice(-4),
+          role: mobilityRole,
+          lat,
+          lng,
+          matches_count: matches?.length || 0,
+          correlationId,
+        });
       }
       return respond({ success: true });
     }
@@ -399,17 +393,6 @@ serve(async (req: Request): Promise<Response> => {
       const textMessage = message.text as { body?: string } | undefined;
       const text = (textMessage?.body?.toLowerCase() || "").trim();
 
-      // Validate text input (prevent injection attacks)
-      if (text.length > 1000) {
-        logStructuredEvent("MOBILITY_TEXT_TOO_LONG", {
-          length: text.length,
-          from: from.slice(-4),
-          correlationId,
-        }, "warn");
-        return respond({ error: "text_too_long" }, 400);
-      }
-
-      // P2-001: Expanded keyword matching for better intent recognition
       // Main menu triggers
       if (
         text === "rides" ||
@@ -420,79 +403,24 @@ serve(async (req: Request): Promise<Response> => {
         text === "taxi" ||
         text === "menu"
       ) {
-        await showMobilityMenu(ctx);
-        return respond({ success: true });
-      }
-
-      // Driver/ride search keywords
-      if (
-        text.includes("driver") ||
-        text.includes("ride") ||
-        text.includes("find driver") ||
-        text.includes("need driver") ||
-        text.includes("looking for driver") ||
-        text.includes("taxi") ||
-        text.includes("moto") ||
-        text.includes("motorcycle") ||
-        text.includes("bike") ||
-        text.includes("cab")
-      ) {
-        await handleSeeDrivers(ctx);
-        return respond({ success: true });
-      }
-
-      // Passenger search keywords
-      if (
-        text.includes("passenger") ||
-        text.includes("find passenger") ||
-        text.includes("looking for passenger") ||
-        text.includes("rider") ||
-        text.includes("customer") ||
-        text.includes("pickup")
-      ) {
-        await handleSeePassengers(ctx);
-        return respond({ success: true });
-      }
-
-      // Schedule/book keywords
-      if (
-        text.includes("schedule") ||
-        text.includes("book") ||
-        text.includes("booking") ||
-        text.includes("reserve") ||
-        text.includes("later") ||
-        text.includes("future") ||
-        text.includes("appointment")
-      ) {
-        await startScheduleTrip(
-          ctx,
-          state || { key: "mobility_menu", data: {} },
-        );
-        return respond({ success: true });
-      }
-
-      // Go online keywords
-      if (
-        text.includes("go online") ||
-        text.includes("online") ||
-        text.includes("available") ||
-        text.includes("start driving") ||
-        text === "online" ||
-        text.includes("go live")
-      ) {
-        await startGoOnline(ctx);
-        return respond({ success: true });
-      }
-
-      // Go offline keywords
-      if (
-        text.includes("go offline") ||
-        text.includes("offline") ||
-        text.includes("stop driving") ||
-        text === "offline" ||
-        text.includes("stop")
-      ) {
-        await handleGoOffline(ctx);
+        // Same as button handler
+        if (!mobilityRole) {
+          await sendButtons(
+            from,
+            "Are you a driver or passenger?",
+            [
+              { id: BUTTON_IDS.DRIVER, title: "🚗 Driver" },
+              { id: BUTTON_IDS.PASSENGER, title: "👤 Passenger" },
+            ],
+          );
+          // State is implicit
+        } else {
+          await sendText(
+            from,
+            "Please share your current location 📍",
+          );
+          // State is implicit
+        }
         return respond({ success: true });
       }
     }
@@ -502,36 +430,10 @@ serve(async (req: Request): Promise<Response> => {
     const errorMessage = err instanceof Error ? err.message : String(err);
     const errorStack = err instanceof Error ? err.stack : undefined;
 
-    // Extract from and profileId from payload for error context
-    let errorFrom = "unknown";
-    let errorProfileId: string | undefined;
-    try {
-      const payload: WhatsAppWebhookPayload = JSON.parse(await req.clone().text());
-      const errorMessage = payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
-      if (errorMessage?.from) {
-        errorFrom = maskPhone(errorMessage.from);
-        // Try to get profileId if we can
-        const { data: profileData } = await supabase.rpc("ensure_whatsapp_user", {
-          _wa_id: errorMessage.from,
-          _profile_name: "User",
-        });
-        errorProfileId = profileData?.profile_id;
-      }
-    } catch {
-      // Ignore errors in error handler
-    }
-
-    // Add comprehensive error context (P1-015 fix)
-    const errorContext = {
+    logStructuredEvent("MOBILITY_ERROR", {
       service: "wa-webhook-mobility",
       requestId,
       correlationId,
-      from: errorFrom,
-      operation: "webhook_processing",
-    };
-
-    logStructuredEvent("MOBILITY_ERROR", {
-      ...errorContext,
       error: errorMessage,
       errorType: err instanceof Error ? err.constructor.name : "Unknown",
       stack: errorStack,
@@ -542,5 +444,5 @@ serve(async (req: Request): Promise<Response> => {
 
 logStructuredEvent("SERVICE_STARTED", {
   service: "wa-webhook-mobility",
-  version: "2.0.0",
+  version: "3.0.0",
 });
