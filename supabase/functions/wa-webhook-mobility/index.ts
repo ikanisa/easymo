@@ -345,26 +345,90 @@ serve(async (req: Request): Promise<Response> => {
         return respond({ error: "text_too_long" }, 400);
       }
 
-      if (text === "rides" || text === "rides_agent") {
+      // P2-001: Expanded keyword matching for better intent recognition
+      // Main menu triggers
+      if (
+        text === "rides" ||
+        text === "rides_agent" ||
+        text === "ride" ||
+        text === "mobility" ||
+        text === "transport" ||
+        text === "taxi" ||
+        text === "menu"
+      ) {
         await showMobilityMenu(ctx);
         return respond({ success: true });
       }
 
-      if (text.includes("driver") || text.includes("ride")) {
+      // Driver/ride search keywords
+      if (
+        text.includes("driver") ||
+        text.includes("ride") ||
+        text.includes("find driver") ||
+        text.includes("need driver") ||
+        text.includes("looking for driver") ||
+        text.includes("taxi") ||
+        text.includes("moto") ||
+        text.includes("motorcycle") ||
+        text.includes("bike") ||
+        text.includes("cab")
+      ) {
         await handleSeeDrivers(ctx);
         return respond({ success: true });
       }
 
-      if (text.includes("passenger")) {
+      // Passenger search keywords
+      if (
+        text.includes("passenger") ||
+        text.includes("find passenger") ||
+        text.includes("looking for passenger") ||
+        text.includes("rider") ||
+        text.includes("customer") ||
+        text.includes("pickup")
+      ) {
         await handleSeePassengers(ctx);
         return respond({ success: true });
       }
 
-      if (text.includes("schedule") || text.includes("book")) {
+      // Schedule/book keywords
+      if (
+        text.includes("schedule") ||
+        text.includes("book") ||
+        text.includes("booking") ||
+        text.includes("reserve") ||
+        text.includes("later") ||
+        text.includes("future") ||
+        text.includes("appointment")
+      ) {
         await startScheduleTrip(
           ctx,
           state || { key: "mobility_menu", data: {} },
         );
+        return respond({ success: true });
+      }
+
+      // Go online keywords
+      if (
+        text.includes("go online") ||
+        text.includes("online") ||
+        text.includes("available") ||
+        text.includes("start driving") ||
+        text === "online" ||
+        text.includes("go live")
+      ) {
+        await startGoOnline(ctx);
+        return respond({ success: true });
+      }
+
+      // Go offline keywords
+      if (
+        text.includes("go offline") ||
+        text.includes("offline") ||
+        text.includes("stop driving") ||
+        text === "offline" ||
+        text.includes("stop")
+      ) {
+        await handleGoOffline(ctx);
         return respond({ success: true });
       }
     }

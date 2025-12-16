@@ -17,6 +17,7 @@ import { getAppConfig } from "../utils/app_config.ts";
 import { waChatLink } from "../utils/links.ts";
 import { maskPhone } from "../flows/support.ts";
 import { logStructuredEvent, recordMetric } from "../../_shared/observability.ts";
+import { sendText } from "../wa/client.ts";
 import { emitAlert } from "../observe/alert.ts";
 import {
   safeRowTitle,
