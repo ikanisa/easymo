@@ -26,6 +26,7 @@ import { IDS } from "./wa/ids.ts";
 import { supabase } from "./config.ts";
 import { recordLastLocation } from "./locations/favorites.ts";
 import { showMobilityMenu } from "./handlers/menu.ts";
+import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 
 const STATE_KEYS = {
   NEARBY_SELECT: "mobility_nearby_select",
@@ -44,6 +45,9 @@ serve(async (req: Request): Promise<Response> => {
     });
   };
 
+  const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
+  const correlationId = req.headers.get("x-correlation-id") ?? requestId;
+
   // Health check
   if (req.method === "GET") {
     const url = new URL(req.url);
@@ -54,8 +58,74 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Parse payload
-    const payload: WhatsAppWebhookPayload = await req.json();
+    // Read raw body for signature verification
+    const rawBody = await req.text();
+
+    // Verify WhatsApp signature (Security requirement)
+    const signatureHeader = req.headers.has("x-hub-signature-256")
+      ? "x-hub-signature-256"
+      : req.headers.has("x-hub-signature")
+      ? "x-hub-signature"
+      : null;
+    const signature = signatureHeader ? req.headers.get(signatureHeader) : null;
+    const appSecret = Deno.env.get("WHATSAPP_APP_SECRET") ??
+      Deno.env.get("WA_APP_SECRET");
+    const allowUnsigned =
+      (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() ===
+        "true";
+    const internalForward = req.headers.get("x-wa-internal-forward") === "true";
+
+    if (!appSecret) {
+      logStructuredEvent("MOBILITY_AUTH_CONFIG_ERROR", {
+        error: "WHATSAPP_APP_SECRET not configured",
+        correlationId,
+      }, "error");
+      return respond({ error: "server_misconfigured" }, 500);
+    }
+
+    let isValidSignature = false;
+    if (signature) {
+      try {
+        isValidSignature = await verifyWebhookSignature(
+          rawBody,
+          signature,
+          appSecret,
+        );
+        if (isValidSignature) {
+          logStructuredEvent("MOBILITY_SIGNATURE_VALID", {
+            signatureHeader,
+            correlationId,
+          });
+        }
+      } catch (err) {
+        logStructuredEvent("MOBILITY_SIGNATURE_ERROR", {
+          error: err instanceof Error ? err.message : String(err),
+          correlationId,
+        }, "error");
+      }
+    }
+
+    if (!isValidSignature) {
+      if (allowUnsigned || internalForward) {
+        logStructuredEvent("MOBILITY_AUTH_BYPASS", {
+          reason: internalForward
+            ? "internal_forward"
+            : signature
+            ? "signature_mismatch"
+            : "no_signature",
+          correlationId,
+        }, "warn");
+      } else {
+        logStructuredEvent("MOBILITY_AUTH_FAILED", {
+          signatureProvided: !!signature,
+          correlationId,
+        }, "warn");
+        return respond({ error: "unauthorized" }, 401);
+      }
+    }
+
+    // Parse payload after verification
+    const payload: WhatsAppWebhookPayload = JSON.parse(rawBody);
     const message = payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
     const contacts = payload.entry?.[0]?.changes?.[0]?.value?.contacts?.[0];
 
@@ -67,10 +137,22 @@ serve(async (req: Request): Promise<Response> => {
     const profileName = contacts?.profile?.name || "User";
 
     // Ensure user exists
-    const { data: profileData } = await supabase.rpc("ensure_whatsapp_user", {
-      _wa_id: from,
-      _profile_name: profileName,
-    });
+    const { data: profileData, error: profileError } = await supabase.rpc(
+      "ensure_whatsapp_user",
+      {
+        _wa_id: from,
+        _profile_name: profileName,
+      },
+    );
+
+    if (profileError) {
+      logStructuredEvent("MOBILITY_USER_ENSURE_ERROR", {
+        error: profileError.message,
+        from: from.slice(-4),
+        correlationId,
+      }, "error");
+      return respond({ error: "user_creation_failed" }, 500);
+    }
 
     const profileId = profileData?.profile_id || "";
     const locale = (profileData?.locale || "en") as SupportedLanguage;
@@ -87,7 +169,10 @@ serve(async (req: Request): Promise<Response> => {
 
     // Handle interactive messages
     if (message.type === "interactive") {
-      const interactive = message.interactive as any;
+      const interactive = message.interactive as {
+        button_reply?: { id?: string };
+        list_reply?: { id?: string };
+      };
       const id = interactive?.button_reply?.id || interactive?.list_reply?.id;
 
       if (!id) {
@@ -112,7 +197,13 @@ serve(async (req: Request): Promise<Response> => {
       }
 
       if (isVehicleOption(id) && state?.key === STATE_KEYS.NEARBY_SELECT) {
-        await handleVehicleSelection(ctx, state.data as any, id);
+        if (state.data && typeof state.data === "object") {
+          await handleVehicleSelection(
+            ctx,
+            state.data as Record<string, unknown>,
+            id,
+          );
+        }
         return respond({ success: true });
       }
 
@@ -129,7 +220,7 @@ serve(async (req: Request): Promise<Response> => {
 
       // Schedule flows
       if (id === IDS.SCHEDULE_TRIP) {
-        await startScheduleTrip(ctx, state as any);
+        await startScheduleTrip(ctx, state || { key: "mobility_menu", data: {} });
         return respond({ success: true });
       }
 
@@ -146,28 +237,62 @@ serve(async (req: Request): Promise<Response> => {
         (state?.key === STATE_KEYS.SCHEDULE_LOCATION ||
           state?.key === STATE_KEYS.SCHEDULE_VEHICLE)
       ) {
-        await handleScheduleVehicle(ctx, state.data as any, id);
+        if (state.data && typeof state.data === "object") {
+          await handleScheduleVehicle(
+            ctx,
+            state.data as Record<string, unknown>,
+            id,
+          );
+        }
         return respond({ success: true });
       }
     }
 
     // Handle location messages
     if (message.type === "location") {
-      const loc = message.location as any;
+      const loc = message.location as
+        | { latitude?: number; longitude?: number }
+        | undefined;
       if (loc?.latitude && loc?.longitude) {
-        const coords = {
-          lat: Number(loc.latitude),
-          lng: Number(loc.longitude),
-        };
+        const lat = Number(loc.latitude);
+        const lng = Number(loc.longitude);
+
+        // Validate coordinates
+        if (
+          isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 ||
+          lng > 180
+        ) {
+          logStructuredEvent("MOBILITY_INVALID_LOCATION", {
+            lat,
+            lng,
+            from: from.slice(-4),
+            correlationId,
+          }, "warn");
+          return respond({ error: "invalid_location" }, 400);
+        }
+
+        const coords = { lat, lng };
 
         await recordLastLocation(ctx, coords).catch(() => {});
 
         if (state?.key === STATE_KEYS.NEARBY_LOCATION) {
-          await handleNearbyLocation(ctx, state.data as any, coords);
+          if (state.data && typeof state.data === "object") {
+            await handleNearbyLocation(
+              ctx,
+              state.data as Record<string, unknown>,
+              coords,
+            );
+          }
         } else if (state?.key === STATE_KEYS.GO_ONLINE) {
           await handleGoOnlineLocation(ctx, coords);
         } else if (state?.key === STATE_KEYS.SCHEDULE_LOCATION) {
-          await handleScheduleLocation(ctx, state.data as any, coords);
+          if (state.data && typeof state.data === "object") {
+            await handleScheduleLocation(
+              ctx,
+              state.data as Record<string, unknown>,
+              coords,
+            );
+          }
         }
       }
       return respond({ success: true });
@@ -175,7 +300,18 @@ serve(async (req: Request): Promise<Response> => {
 
     // Handle text messages
     if (message.type === "text") {
-      const text = (message.text as any)?.body?.toLowerCase() || "";
+      const textMessage = message.text as { body?: string } | undefined;
+      const text = (textMessage?.body?.toLowerCase() || "").trim();
+
+      // Validate text input (prevent injection attacks)
+      if (text.length > 1000) {
+        logStructuredEvent("MOBILITY_TEXT_TOO_LONG", {
+          length: text.length,
+          from: from.slice(-4),
+          correlationId,
+        }, "warn");
+        return respond({ error: "text_too_long" }, 400);
+      }
 
       if (text === "rides" || text === "rides_agent") {
         await showMobilityMenu(ctx);
@@ -193,15 +329,21 @@ serve(async (req: Request): Promise<Response> => {
       }
 
       if (text.includes("schedule") || text.includes("book")) {
-        await startScheduleTrip(ctx, state as any);
+        await startScheduleTrip(ctx, state || { key: "mobility_menu", data: {} });
         return respond({ success: true });
       }
     }
 
     return respond({ success: true });
   } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    const errorStack = err instanceof Error ? err.stack : undefined;
+
     logStructuredEvent("MOBILITY_ERROR", {
-      error: err instanceof Error ? err.message : String(err),
+      error: errorMessage,
+      stack: errorStack,
+      correlationId,
+      requestId,
     }, "error");
     return respond({ error: "internal_error" }, 500);
   }
