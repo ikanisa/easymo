@@ -116,11 +116,12 @@ BEGIN
     VALUES (v_existing_user_id, v_digits, v_normalized_phone, v_profile_name, v_locale)
     ON CONFLICT (user_id) 
     DO UPDATE SET
-      wa_id = COALESCE(profiles.wa_id, EXCLUDED.wa_id),
-      phone_number = COALESCE(profiles.phone_number, EXCLUDED.phone_number),
-      full_name = COALESCE(profiles.full_name, EXCLUDED.full_name),
+      wa_id = COALESCE(public.profiles.wa_id, EXCLUDED.wa_id),
+      phone_number = COALESCE(public.profiles.phone_number, EXCLUDED.phone_number),
+      full_name = COALESCE(public.profiles.full_name, EXCLUDED.full_name),
       updated_at = NOW()
-    RETURNING id, user_id, COALESCE(language, 'en') INTO v_profile_id, v_user_id, v_locale;
+    RETURNING public.profiles.id, public.profiles.user_id, COALESCE(public.profiles.language, 'en') 
+    INTO v_profile_id, v_user_id, v_locale;
     
     RETURN QUERY SELECT v_profile_id, v_user_id, v_locale;
     RETURN;
