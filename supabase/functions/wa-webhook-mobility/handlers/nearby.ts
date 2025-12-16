@@ -23,7 +23,6 @@ import {
   safeRowTitle,
   timeAgo,
 } from "../../_shared/wa-webhook-shared/utils/text.ts";
-import { sendText } from "../wa/client.ts";
 import {
   buildButtons,
   homeOnly,
