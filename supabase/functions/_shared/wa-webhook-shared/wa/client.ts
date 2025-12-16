@@ -112,7 +112,7 @@ export async function sendButtons(
 ): Promise<void> {
   const sanitizedBody = sanitizeTextBody(body);
   if ((Deno.env.get("LOG_LEVEL") ?? "").toLowerCase() === "debug") {
-    console.debug("wa.payload.buttons_preview", {
+    logStructuredEvent("WA_PAYLOAD_BUTTONS_PREVIEW", {
       bodyPreview: sanitizedBody?.slice(0, 40),
       count: buttons?.length ?? 0,
       buttons: buttons.slice(0, 3).map((b) => ({
@@ -186,17 +186,18 @@ export async function sendList(
     buttonText,
     sections,
   });
-  if (issues.length) console.warn("wa_client.validate_warn", { issues });
+  if (issues.length) {
+    logStructuredEvent("WA_CLIENT_VALIDATE_WARN", { issues }, "warn");
+  }
   if ((Deno.env.get("LOG_LEVEL") ?? "").toLowerCase() === "debug") {
-    console.debug(
-      "wa.payload.list_preview",
-      previewListPayload({
+    logStructuredEvent("WA_PAYLOAD_LIST_PREVIEW", {
+      ...previewListPayload({
         title: headerText,
         body: bodyText,
         buttonText,
         sections,
       }),
-    );
+    });
   }
   const headerPayload = headerText ? { type: "text", text: headerText } : null;
   await post({

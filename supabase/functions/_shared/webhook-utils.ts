@@ -228,9 +228,7 @@ export class Logger {
       ...data,
     };
 
-    console.log(JSON.stringify(logEntry));
-
-    // Also use structured event logging
+    // Use structured event logging (P2-006: removed console.log)
     if (level === "error") {
       logError(message, new Error(message), { ...this.context, ...data });
     } else {
@@ -282,7 +280,7 @@ export class Metrics {
       await recordMetric(name, value, tags);
     } catch (error) {
       // Don't throw - metrics failures shouldn't break the flow
-      console.error("Failed to record metric:", error);
+      logError("WEBHOOK_METRIC_RECORD_FAILED", error, { metric: name });
     }
   }
 
@@ -296,7 +294,7 @@ export class Metrics {
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      console.error("Failed to record gauge:", error);
+      logError("WEBHOOK_GAUGE_RECORD_FAILED", error, { gauge: metricName });
     }
   }
 
@@ -310,7 +308,7 @@ export class Metrics {
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      console.error("Failed to record histogram:", error);
+      logError("WEBHOOK_HISTOGRAM_RECORD_FAILED", error, { histogram: metricName });
     }
   }
 }
@@ -926,18 +924,12 @@ export async function addToDeadLetterQueue(
     });
     
   } catch (dlqError) {
-    logError("add_to_dlq", dlqError instanceof Error ? dlqError : new Error(String(dlqError)), {
+    // Critical: If we can't add to DLQ, log prominently (P2-006: replaced console.error)
+    logError("CRITICAL_DLQ_FAILURE", dlqError instanceof Error ? dlqError : new Error(String(dlqError)), {
       correlationId,
-      originalError: originalError.message, // Use originalError
-    });
-    
-    // Critical: If we can't add to DLQ, log prominently
-    console.error(JSON.stringify({
-      event: "CRITICAL_DLQ_FAILURE",
-      correlationId,
-      originalError: originalError.message, // Use originalError
+      originalError: originalError.message,
       dlqError: dlqError instanceof Error ? dlqError.message : String(dlqError),
-    }));
+    });
   }
 }
 
