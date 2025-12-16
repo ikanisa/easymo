@@ -2,10 +2,8 @@
  * WhatsApp Profile Management Webhook Handler
  *
  * Handles user profile management via WhatsApp Business API:
- * - Language preferences
- * - Location settings
- * - Profile information
- * - Help and support
+ * - QR Code generation
+ * - Wallet & Tokens (balance, earn by sharing, transfer to partners)
  *
  * Features:
  * - Circuit breaker protection for database operations
@@ -37,7 +35,6 @@ import {
 import { ensureProfile } from "../_shared/wa-webhook-shared/utils/profile.ts";
 import { CircuitBreaker } from "../_shared/circuit-breaker.ts";
 import { classifyError, formatUnknownError } from "./utils/error-handling.ts";
-import { parseCoordinates } from "./utils/coordinates.ts";
 import { sendTextMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
 import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
 import { maskPhone } from "../_shared/phone-utils.ts";
@@ -510,20 +507,20 @@ serve(async (req: Request): Promise<Response> => {
         if (id === "profile") {
           const { startProfile } = await import("./handlers/menu.ts");
           handled = await startProfile(ctx, state ?? { key: "home" });
-        } // Profile Edit
-        else if (id === "EDIT_PROFILE" || id === "edit_profile") {
-          const { startEditProfile } = await import("./handlers/edit.ts");
-          handled = await startEditProfile(ctx);
-        } else if (id === "EDIT_PROFILE_NAME") {
-          const { promptEditName } = await import("./handlers/edit.ts");
-          handled = await promptEditName(ctx);
-        } else if (id === "EDIT_PROFILE_LANGUAGE") {
-          const { promptEditLanguage } = await import("./handlers/edit.ts");
-          handled = await promptEditLanguage(ctx);
-        } else if (id.startsWith("LANG::")) {
-          const languageCode = id.replace("LANG::", "");
-          const { handleEditLanguage } = await import("./handlers/edit.ts");
-          handled = await handleEditLanguage(ctx, languageCode);
+        } // Wallet
+        else if (id === "WALLET" || id === "wallet") {
+          const { showWalletMenu } = await import("./handlers/wallet.ts");
+          handled = await showWalletMenu(ctx);
+        } else if (id === "WALLET_EARN") {
+          const { showEarnTokens } = await import("./handlers/wallet.ts");
+          handled = await showEarnTokens(ctx);
+        } else if (id === "WALLET_TRANSFER") {
+          const { showTransferPartners } = await import("./handlers/wallet.ts");
+          handled = await showTransferPartners(ctx);
+        } else if (id.startsWith("TRANSFER_TO::")) {
+          const partnerId = id.replace("TRANSFER_TO::", "");
+          const { handlePartnerSelection } = await import("./handlers/wallet.ts");
+          handled = await handlePartnerSelection(ctx, partnerId);
         } // MoMo QR Code
         else if (id === "MOMO_QR" || id === "momo_qr") {
           const { startMomoQr } = await import(
@@ -543,67 +540,6 @@ serve(async (req: Request): Promise<Response> => {
             id,
             state ?? { key: "home", data: {} },
           );
-        } // Saved Locations
-        else if (
-          id === IDS.SAVED_LOCATIONS || id === "SAVED_LOCATIONS" ||
-          id === "saved_locations"
-        ) {
-          const { listSavedLocations } = await import(
-            "./handlers/locations.ts"
-          );
-          handled = await listSavedLocations(ctx);
-        } else if (id === IDS.ADD_LOCATION || id === "add_location") {
-          const { showAddLocationTypeMenu } = await import(
-            "./handlers/locations.ts"
-          );
-          handled = await showAddLocationTypeMenu(ctx);
-        } else if (id.startsWith("LOC::")) {
-          const locationId = id.replace("LOC::", "");
-          const { handleLocationSelection } = await import(
-            "./handlers/locations.ts"
-          );
-          handled = await handleLocationSelection(ctx, locationId);
-        } else if (id.startsWith("ADD_LOC::")) {
-          const locationType = id.replace("ADD_LOC::", "");
-          const { promptAddLocation } = await import("./handlers/locations.ts");
-          handled = await promptAddLocation(ctx, locationType);
-        } // Confirm Save Location
-        else if (id.startsWith("CONFIRM_SAVE_LOC::")) {
-          const locationType = id.replace("CONFIRM_SAVE_LOC::", "");
-          const { confirmSaveLocation } = await import(
-            "./handlers/locations.ts"
-          );
-          handled = await confirmSaveLocation(
-            ctx,
-            locationType,
-            state ?? { key: "" },
-          );
-        } // Use Saved Location
-        else if (id.startsWith("USE_LOC::")) {
-          const locationId = id.replace("USE_LOC::", "");
-          const { handleUseLocation } = await import("./handlers/locations.ts");
-          handled = await handleUseLocation(ctx, locationId);
-        } // Edit Saved Location
-        else if (id.startsWith("EDIT_LOC::")) {
-          const locationId = id.replace("EDIT_LOC::", "");
-          const { handleEditLocation } = await import(
-            "./handlers/locations.ts"
-          );
-          handled = await handleEditLocation(ctx, locationId);
-        } // Delete Saved Location
-        else if (id.startsWith("DELETE_LOC::")) {
-          const locationId = id.replace("DELETE_LOC::", "");
-          const { handleDeleteLocationPrompt } = await import(
-            "./handlers/locations.ts"
-          );
-          handled = await handleDeleteLocationPrompt(ctx, locationId);
-        } // Confirm Delete Saved Location
-        else if (id.startsWith("CONFIRM_DELETE_LOC::")) {
-          const locationId = id.replace("CONFIRM_DELETE_LOC::", "");
-          const { confirmDeleteLocation } = await import(
-            "./handlers/locations.ts"
-          );
-          handled = await confirmDeleteLocation(ctx, locationId);
         } // Back to Profile
         else if (id === IDS.BACK_PROFILE) {
           const { startProfile } = await import("./handlers/menu.ts");
@@ -718,66 +654,16 @@ serve(async (req: Request): Promise<Response> => {
           // User mentioned "momo" or "qr", start the flow
           handled = await startMomoQr(ctx, state ?? { key: "home" });
         }
-      } // Handle profile edit name
-      else if (state?.key === IDS.EDIT_PROFILE_NAME) {
-        const { handleEditName } = await import("./handlers/edit.ts");
-        handled = await handleEditName(ctx, textMessage.text?.body ?? "");
-      } // Handle add location (text address)
-      else if (state?.key === IDS.ADD_LOCATION && message.type === "text") {
-        const address = textMessage.text?.body ?? "";
-        const { handleLocationTextAddress } = await import(
-          "./handlers/locations.ts"
-        );
-        handled = await handleLocationTextAddress(ctx, address, state);
+      } // Handle wallet transfer amount
+      else if (state?.key === "wallet_transfer_amount") {
+        const { processTransfer } = await import("./handlers/wallet.ts");
+        handled = await processTransfer(ctx, textMessage.text?.body ?? "", state);
       }
     } // ============================================================
     // PHASE 2: Menu Upload Media Handler
     // ============================================================
 
-    // Handle location messages (when user shares location)
-    else if (message.type === "location") {
-      const locationMessage = message as WhatsAppLocationMessage;
-      const location = locationMessage.location;
-      const { handleLocationMessage } = await import("./handlers/locations.ts");
-
-      // Try to handle with current state
-      if (
-        state &&
-        (state.key === IDS.ADD_LOCATION || state.key === "edit_location")
-      ) {
-        handled = await handleLocationMessage(ctx, location, state);
-      } else {
-        // Fallback: Save location as "recent" if no specific state
-        const coords = parseCoordinates(
-          location?.latitude,
-          location?.longitude,
-        );
-        if (coords && ctx.profileId) {
-          try {
-            // Save to location cache for use by other services
-            await ctx.supabase.rpc("update_user_location_cache", {
-              _user_id: ctx.profileId,
-              _lat: coords.lat,
-              _lng: coords.lng,
-            });
-            await sendTextMessage(
-              ctx,
-              "📍 Location received! You can use this location in other services.",
-            );
-            handled = true;
-            logStructuredEvent("PROFILE_LOCATION_SAVED_FALLBACK", {
-              user: ctx.profileId,
-              lat: coords.lat,
-              lng: coords.lng,
-            });
-          } catch (error) {
-            logStructuredEvent("PROFILE_LOCATION_FALLBACK_ERROR", {
-              error: error instanceof Error ? error.message : String(error),
-            }, "error");
-          }
-        }
-      }
-    }
+    // Location messages are no longer handled by profile service
 
     // Fallback: Detect phone number pattern (for MoMo QR without keywords)
     if (!handled && message.type === "text") {

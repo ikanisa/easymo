@@ -7,20 +7,10 @@ import { logStructuredEvent } from "../../_shared/observability.ts";
 export const PROFILE_STATE_HOME = "profile_home";
 
 /**
- * Hard-coded Profile Menu Items
- * Simple, fast, no database queries required
- * Rwanda-only for now (as per requirements)
- *
- * NOTE: Wallet is handled by wa-webhook-wallet service (accessed via main menu)
- * QR Code uses shared MoMo QR flow
+ * Simplified Profile Menu Items
+ * Only QR Code and Wallet
  */
 const PROFILE_MENU_ITEMS = [
-  {
-    id: "EDIT_PROFILE",
-    icon: "✏️",
-    title: "Edit Profile",
-    description: "Update name & language",
-  },
   {
     id: IDS.MOMO_QR,
     icon: "📱",
@@ -28,10 +18,10 @@ const PROFILE_MENU_ITEMS = [
     description: "Your payment QR code",
   },
   {
-    id: "SAVED_LOCATIONS",
-    icon: "📍",
-    title: "Saved Places",
-    description: "Home, work, favorites",
+    id: "WALLET",
+    icon: "💳",
+    title: "Wallet & Tokens",
+    description: "Balance, earn, and transfer",
   },
   {
     id: IDS.BACK_MENU,
@@ -43,7 +33,6 @@ const PROFILE_MENU_ITEMS = [
 
 /**
  * Display the profile menu
- * Simple, instant response - no database queries for menu items
  */
 export async function startProfile(
   ctx: RouterContext,
@@ -74,7 +63,7 @@ export async function startProfile(
     ctx,
     {
       title: "👤 Profile",
-      body: "Manage your account, wallet, and favorite locations.",
+      body: "Manage your QR code and wallet tokens.",
       sectionTitle: "Profile",
       buttonText: "View",
       rows,
