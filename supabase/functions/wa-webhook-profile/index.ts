@@ -53,7 +53,13 @@ const profileConfig = WEBHOOK_CONFIG.profile;
 const SERVICE_NAME = "wa-webhook-profile";
 const SERVICE_VERSION = "3.0.0";
 const MAX_BODY_SIZE = profileConfig.maxBodySize;
-const MAX_CACHE_SIZE = 1000; // Maximum number of cached responses to prevent memory leaks
+// Make cache size configurable via environment variable (P2-003 fix)
+const MAX_CACHE_SIZE = parseInt(
+  Deno.env.get("PROFILE_CACHE_MAX_SIZE") || 
+  Deno.env.get("WA_CACHE_MAX_SIZE") || 
+  "1000",
+  10
+); // Maximum number of cached responses to prevent memory leaks
 
 // Circuit breaker for database operations
 const dbCircuitBreaker = new CircuitBreaker({

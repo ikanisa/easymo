@@ -301,6 +301,28 @@ BEGIN
 END;
 $$;
 
+-- Function to cleanup expired marketplace conversations (P2-004 fix)
+CREATE OR REPLACE FUNCTION cleanup_expired_marketplace_conversations()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  cleanup_count INTEGER;
+BEGIN
+  DELETE FROM marketplace_conversations
+  WHERE expires_at IS NOT NULL
+    AND expires_at < NOW();
+  
+  GET DIAGNOSTICS cleanup_count = ROW_COUNT;
+  
+  IF cleanup_count > 0 THEN
+    RAISE NOTICE 'Cleaned up % expired marketplace conversations', cleanup_count;
+  END IF;
+END;
+$$;
+
 -- =====================================================
 -- CREATE PHONE NUMBER NORMALIZATION FUNCTION
 -- =====================================================
@@ -343,6 +365,7 @@ $$;
 
 COMMENT ON FUNCTION cleanup_old_conversation_history IS 'Cleans up conversation history to keep only the last 20 messages per conversation';
 COMMENT ON FUNCTION cleanup_expired_agent_memory IS 'Removes expired agent user memory entries';
+COMMENT ON FUNCTION cleanup_expired_marketplace_conversations IS 'Removes expired marketplace conversations (older than expires_at)';
 COMMENT ON FUNCTION normalize_phone_number IS 'Normalizes phone numbers to E.164 format (+250XXXXXXXXX)';
 
 COMMIT;

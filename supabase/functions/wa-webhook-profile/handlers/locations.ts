@@ -5,7 +5,7 @@ import {
 } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
-import { logStructuredEvent } from "../../_shared/observability.ts";
+import { logStructuredEvent, recordMetric } from "../../_shared/observability.ts";
 import { setState, clearState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import { parseCoordinates, formatCoordinates } from "../utils/coordinates.ts";
 
@@ -334,6 +334,12 @@ export async function confirmSaveLocation(
       type: locationType,
     }, "error");
   } else {
+    // P2-005: Add metrics for critical operations
+    await recordMetric("profile.location.saved", 1, {
+      type: locationType,
+      profileId: ctx.profileId,
+    });
+    
     await sendButtonsMessage(
       ctx,
       `✅ Your ${locationType} location has been saved!\n\nYou can now use it for rides and deliveries.`,

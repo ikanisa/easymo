@@ -16,7 +16,7 @@ import { MOBILITY_CONFIG } from "../../_shared/wa-webhook-shared/config/mobility
 import { getAppConfig } from "../utils/app_config.ts";
 import { waChatLink } from "../utils/links.ts";
 import { maskPhone } from "../flows/support.ts";
-import { logStructuredEvent } from "../../_shared/observability.ts";
+import { logStructuredEvent, recordMetric } from "../../_shared/observability.ts";
 import { emitAlert } from "../observe/alert.ts";
 import {
   safeRowTitle,
@@ -225,6 +225,12 @@ export async function handleSeeDrivers(ctx: RouterContext): Promise<boolean> {
   });
 
   await sendVehicleSelector(ctx, "drivers");
+  
+  // P2-005: Add metrics for critical operations
+  await recordMetric("mobility.nearby.drivers_initiated", 1, {
+    profileId: ctx.profileId,
+  });
+  
   return true;
 }
 
@@ -311,6 +317,12 @@ export async function handleSeePassengers(
     data: { mode: "passengers" },
   });
   await sendVehicleSelector(ctx, "passengers");
+  
+  // P2-005: Add metrics for critical operations
+  await recordMetric("mobility.nearby.passengers_initiated", 1, {
+    profileId: ctx.profileId,
+  });
+  
   return true;
 }
 
@@ -595,6 +607,13 @@ export async function handleNearbyResultSelection(
   // Clear state
   await clearState(ctx.supabase, ctx.profileId);
 
+  // P2-005: Add metrics for critical operations
+  await recordMetric("mobility.nearby.match_selected", 1, {
+    mode: state.mode,
+    vehicle: state.vehicle,
+    profileId: ctx.profileId,
+  });
+  
   // Log success
   await logStructuredEvent("MATCH_SELECTED", {
     mode: state.mode,

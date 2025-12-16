@@ -7,7 +7,7 @@ import {
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 import { setState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import { handleBusinessSelection } from "./list.ts";
-import { logStructuredEvent } from "../../_shared/observability.ts";
+import { logStructuredEvent, recordMetric } from "../../_shared/observability.ts";
 
 export async function startEditBusiness(
   ctx: RouterContext,
@@ -122,6 +122,13 @@ export async function handleUpdateBusinessField(
     return true;
   }
 
+  // P2-005: Add metrics for critical operations
+  await recordMetric("buy_sell.business.updated", 1, {
+    businessId,
+    field,
+    profileId: ctx.profileId,
+  });
+  
   await sendTextMessage(
     ctx,
     `✅ Business ${field} updated successfully!`,

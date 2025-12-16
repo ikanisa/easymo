@@ -20,11 +20,17 @@ CREATE TABLE IF NOT EXISTS marketplace_conversations (
   pending_vendor_outreach JSONB,
   current_inquiry_id UUID,
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  expires_at TIMESTAMPTZ DEFAULT NOW() + INTERVAL '30 days' -- Auto-expire old conversations (P2-004 fix)
 );
 
 CREATE INDEX IF NOT EXISTS idx_marketplace_conversations_updated_at 
   ON marketplace_conversations(updated_at);
+
+-- Index on expires_at for cleanup queries (P2-004 fix)
+CREATE INDEX IF NOT EXISTS idx_marketplace_conversations_expires_at 
+  ON marketplace_conversations(expires_at) 
+  WHERE expires_at IS NOT NULL;
 
 -- =====================================================
 -- MARKETPLACE LISTINGS
