@@ -154,29 +154,43 @@ serve(async (req: Request): Promise<Response> => {
         },
       );
 
-      if (!profileError && profileData && profileData.length > 0) {
-        // RPC function succeeded
-        profileId = profileData[0]?.profile_id || "";
-        userId = profileData[0]?.user_id || "";
-        locale = (profileData[0]?.locale || "en") as SupportedLanguage;
-      } else if (profileError && profileError.message?.includes("does not exist")) {
-        // Function doesn't exist - use fallback
+      if (!profileError) {
+        // RPC function call succeeded (no error)
+        if (profileData && profileData.length > 0) {
+          // RPC function returned profile data
+          profileId = profileData[0]?.profile_id || "";
+          userId = profileData[0]?.user_id || "";
+          locale = (profileData[0]?.locale || "en") as SupportedLanguage;
+        } else {
+          // RPC returned empty result (NULL) - profile needs to be created via TypeScript
+          logStructuredEvent("MOBILITY_RPC_RETURNED_NULL", {
+            from: from.slice(-4),
+            correlationId,
+          }, "info");
+          throw new Error("RPC returned NULL, using fallback");
+        }
+      } else if (profileError && (
+        profileError.message?.includes("does not exist") ||
+        profileError.message?.includes("Could not find the function") ||
+        profileError.code === "PGRST204"
+      )) {
+        // Function doesn't exist in PostgREST schema cache - use fallback
         logStructuredEvent("MOBILITY_RPC_FUNCTION_MISSING", {
           from: from.slice(-4),
           correlationId,
+          errorCode: profileError.code,
+          errorMessage: profileError.message,
         }, "warn");
         throw new Error("RPC function not available, using fallback");
       } else if (profileError) {
         // Other error - log and use fallback
         logStructuredEvent("MOBILITY_USER_ENSURE_RPC_ERROR", {
           error: profileError.message,
+          errorCode: profileError.code,
           from: from.slice(-4),
           correlationId,
         }, "warn");
         throw new Error("RPC function error, using fallback");
-      } else {
-        // RPC returned NULL - profile needs to be created via TypeScript
-        throw new Error("RPC returned NULL, using fallback");
       }
     } catch (rpcErr) {
       // Fallback to ensureProfile utility

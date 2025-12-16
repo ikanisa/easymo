@@ -44,9 +44,14 @@ BEGIN
   -- Remove all non-digit characters and add + prefix
   v_digits := REGEXP_REPLACE(_wa_id, '[^0-9]', '', 'g');
   
-  -- Validate we have digits
-  IF v_digits IS NULL OR LENGTH(v_digits) < 6 OR LENGTH(v_digits) > 15 THEN
-    RAISE EXCEPTION 'Invalid phone number format: %', _wa_id;
+  -- Validate we have digits (allow shorter numbers for testing, but warn)
+  IF v_digits IS NULL OR LENGTH(v_digits) < 4 OR LENGTH(v_digits) > 15 THEN
+    RAISE EXCEPTION 'Invalid phone number format: % (length: %)', _wa_id, COALESCE(LENGTH(v_digits), 0);
+  END IF;
+  
+  -- Warn if phone number seems incomplete (less than 9 digits)
+  IF LENGTH(v_digits) < 9 THEN
+    RAISE WARNING 'Phone number seems incomplete: % (only % digits)', _wa_id, LENGTH(v_digits);
   END IF;
   
   -- Create E.164 format
@@ -161,6 +166,13 @@ COMMENT ON FUNCTION public.ensure_whatsapp_user IS
 Returns existing profile if found, or NULL if profile needs to be created via TypeScript (which handles auth user creation).
 Parameters: _wa_id (phone number), _profile_name (optional display name).
 Returns: { profile_id, user_id, locale } or NULL if not found.';
+
+-- ============================================================================
+-- PART 4: Refresh PostgREST schema cache
+-- ============================================================================
+
+-- Notify PostgREST to refresh its schema cache so the new function is visible
+NOTIFY pgrst, 'reload schema';
 
 COMMIT;
 
