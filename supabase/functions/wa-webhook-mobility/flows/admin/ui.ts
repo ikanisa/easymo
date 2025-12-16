@@ -24,7 +24,7 @@ async function withSendGuard(
   }
   state.attempts += 1;
   if (state.sent) {
-    console.warn("admin.send_guard.block", {
+    logStructuredEvent("ADMIN_SEND_GUARD_BLOCK", {
       from: ctx.from,
       label,
       attempts: state.attempts,

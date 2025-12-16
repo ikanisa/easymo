@@ -24,11 +24,19 @@ const base = {
 } as const;
 
 Deno.test("isTextMessage narrows text payloads", () => {
-  const textMsg: WhatsAppTextMessage = { ...base, type: "text", text: { body: "hello" } };
+  const textMsg: WhatsAppTextMessage = {
+    ...base,
+    type: "text",
+    text: { body: "hello" },
+  };
   assertEquals(isTextMessage(textMsg), true);
   const notText = { ...base, type: "image", image: {} } as WhatsAppMessage;
   assertEquals(isTextMessage(notText), false);
-  const malformed = { ...base, type: "text", text: 123 } as unknown as WhatsAppMessage;
+  const malformed = {
+    ...base,
+    type: "text",
+    text: 123,
+  } as unknown as WhatsAppMessage;
   assertEquals(isTextMessage(malformed), false);
 });
 
@@ -81,24 +89,51 @@ Deno.test("isLocationMessage validates coordinates payload", () => {
     location: { latitude: "1.23", longitude: "4.56" },
   };
   assertEquals(isLocationMessage(locationMsg), true);
-  const malformed = { ...base, type: "location", location: 123 } as unknown as WhatsAppMessage;
+  const malformed = {
+    ...base,
+    type: "location",
+    location: 123,
+  } as unknown as WhatsAppMessage;
   assertEquals(isLocationMessage(malformed), false);
 });
 
 Deno.test("isMediaMessage recognises image and document payloads", () => {
-  const imageMsg: WhatsAppMediaMessage = { ...base, type: "image", image: { id: "media" } };
+  const imageMsg: WhatsAppMediaMessage = {
+    ...base,
+    type: "image",
+    image: { id: "media" },
+  };
   assertEquals(isMediaMessage(imageMsg), true);
-  const docMsg: WhatsAppMediaMessage = { ...base, type: "document", document: { id: "doc" } };
+  const docMsg: WhatsAppMediaMessage = {
+    ...base,
+    type: "document",
+    document: { id: "doc" },
+  };
   assertEquals(isMediaMessage(docMsg), true);
-  const malformed = { ...base, type: "document", document: 123 } as unknown as WhatsAppMessage;
+  const malformed = {
+    ...base,
+    type: "document",
+    document: 123,
+  } as unknown as WhatsAppMessage;
   assertEquals(isMediaMessage(malformed), false);
-  assertEquals(isMediaMessage({ ...base, type: "text", text: { body: "hi" } }), false);
+  assertEquals(
+    isMediaMessage({ ...base, type: "text", text: { body: "hi" } }),
+    false,
+  );
 });
 
 Deno.test("getTextBody trims and validates text payloads", () => {
-  const textMsg: WhatsAppTextMessage = { ...base, type: "text", text: { body: "  Hello  " } };
+  const textMsg: WhatsAppTextMessage = {
+    ...base,
+    type: "text",
+    text: { body: "  Hello  " },
+  };
   assertEquals(getTextBody(textMsg), "Hello");
-  const empty: WhatsAppTextMessage = { ...base, type: "text", text: { body: "   " } };
+  const empty: WhatsAppTextMessage = {
+    ...base,
+    type: "text",
+    text: { body: "   " },
+  };
   assertEquals(getTextBody(empty), null);
   const missing = { ...base, type: "text" } as unknown as WhatsAppTextMessage;
   assertEquals(getTextBody(missing), null);

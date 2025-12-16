@@ -121,8 +121,7 @@ export function calculateDistance(
   const R = 6371; // Earth's radius in km
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
       Math.cos((lat2 * Math.PI) / 180) *
       Math.sin(dLng / 2) *
@@ -225,7 +224,9 @@ export function formatBusiness(business: {
   }
 
   if (business.rating) {
-    formatted += `${formatRating(business.rating)} ${business.rating.toFixed(1)}\n`;
+    formatted += `${formatRating(business.rating)} ${
+      business.rating.toFixed(1)
+    }\n`;
   }
 
   if (business.phone) {
@@ -246,30 +247,53 @@ export function extractWhatsAppMessage(payload: unknown): {
   from: string;
   body: string;
   type: string;
-  location?: { latitude: number; longitude: number; name?: string; address?: string };
+  location?: {
+    latitude: number;
+    longitude: number;
+    name?: string;
+    address?: string;
+  };
   image?: { id?: string; link?: string; url?: string };
-  interactive?: { list_reply?: { id: string; title: string }; button_reply?: { id: string; title: string } };
+  interactive?: {
+    list_reply?: { id: string; title: string };
+    button_reply?: { id: string; title: string };
+  };
   messageId?: string;
 } | null {
   try {
     const p = payload as Record<string, unknown>;
-    
+
     // Standard WhatsApp webhook format
     if (p?.entry) {
-      const entry = p.entry as Array<{ changes?: Array<{ value?: { messages?: Array<Record<string, unknown>> } }> }>;
+      const entry = p.entry as Array<
+        {
+          changes?: Array<
+            { value?: { messages?: Array<Record<string, unknown>> } }
+          >;
+        }
+      >;
       const msg = entry?.[0]?.changes?.[0]?.value?.messages?.[0];
       if (msg) {
         return {
           from: msg.from as string,
-          body:
-            (typeof (msg.text as Record<string, unknown>)?.body === 'string' ? (msg.text as Record<string, unknown>)?.body : null) ||
+          body: (typeof (msg.text as Record<string, unknown>)?.body === "string"
+            ? (msg.text as Record<string, unknown>)?.body
+            : null) ||
             ((msg.interactive as any)?.button_reply?.title as string) ||
             ((msg.interactive as any)?.list_reply?.title as string) ||
             "",
           type: msg.type as string,
-          location: msg.location as { latitude: number; longitude: number; name?: string; address?: string },
+          location: msg.location as {
+            latitude: number;
+            longitude: number;
+            name?: string;
+            address?: string;
+          },
           image: msg.image as { id?: string; link?: string; url?: string },
-          interactive: msg.interactive as { list_reply?: { id: string; title: string }; button_reply?: { id: string; title: string } },
+          interactive: msg.interactive as {
+            list_reply?: { id: string; title: string };
+            button_reply?: { id: string; title: string };
+          },
           messageId: msg.id as string,
         };
       }
@@ -281,7 +305,12 @@ export function extractWhatsAppMessage(payload: unknown): {
         from: p.from as string,
         body: p.body as string,
         type: (p.type as string) || "text",
-        location: p.location as { latitude: number; longitude: number; name?: string; address?: string },
+        location: p.location as {
+          latitude: number;
+          longitude: number;
+          name?: string;
+          address?: string;
+        },
         messageId: p.id as string,
       };
     }
@@ -405,7 +434,9 @@ export function logMarketplaceEvent(
     maskedDetails.from = maskPhone(maskedDetails.from as string);
   }
   if (maskedDetails.seller_phone) {
-    maskedDetails.seller_phone = maskPhone(maskedDetails.seller_phone as string);
+    maskedDetails.seller_phone = maskPhone(
+      maskedDetails.seller_phone as string,
+    );
   }
   if (maskedDetails.buyer_phone) {
     maskedDetails.buyer_phone = maskPhone(maskedDetails.buyer_phone as string);

@@ -95,12 +95,12 @@ export async function hasAnyRecentLocation(
   userId: string,
 ): Promise<boolean> {
   const { data } = await client
-    .from('recent_locations')
-    .select('id')
-    .eq('user_id', userId)
-    .order('captured_at', { ascending: false })
+    .from("recent_locations")
+    .select("id")
+    .eq("user_id", userId)
+    .order("captured_at", { ascending: false })
     .limit(1);
-  
+
   return data !== null && data.length > 0;
 }
 
@@ -112,12 +112,12 @@ export async function getLastLocation(
   userId: string,
 ): Promise<{ lat: number; lng: number } | null> {
   const { data } = await client
-    .from('recent_locations')
-    .select('lat, lng')
-    .eq('user_id', userId)
-    .order('captured_at', { ascending: false })
+    .from("recent_locations")
+    .select("lat, lng")
+    .eq("user_id", userId)
+    .order("captured_at", { ascending: false })
     .limit(1);
-  
+
   if (data && data.length > 0) {
     return { lat: data[0].lat, lng: data[0].lng };
   }

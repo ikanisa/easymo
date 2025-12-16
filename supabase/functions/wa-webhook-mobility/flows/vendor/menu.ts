@@ -2,11 +2,11 @@ import type { RouterContext } from "../../types.ts";
 import type { SupabaseClient } from "../../deps.ts";
 import { MENU_MEDIA_BUCKET } from "../../config.ts";
 import { fetchWhatsAppMedia } from "../../utils/media.ts";
-import { logEvent, logStructuredEvent } from "../../../_shared/observability.ts";
+import { logStructuredEvent } from "../../../_shared/observability.ts";
 import { sendText } from "../../wa/client.ts";
 import { t } from "../../i18n/translator.ts";
 import { findActiveBarNumber } from "../../utils/bar_numbers.ts";
-import { getState } from "../../state/store.ts";
+import { getState } from "../../../_shared/wa-webhook-shared/state/store.ts";
 
 const DEFAULT_FILENAME = "upload.bin";
 
@@ -24,7 +24,12 @@ export async function handleVendorMenuMedia(
   if (ctx.profileId) {
     const state = await getState(ctx.supabase, ctx.profileId);
     if (state.key === "restaurant_upload" && state.data?.barId) {
-      return await handleRestaurantMenuUpload(ctx, msg, mediaId, state.data.barId as string);
+      return await handleRestaurantMenuUpload(
+        ctx,
+        msg,
+        mediaId,
+        state.data.barId as string,
+      );
     }
   }
 
@@ -33,7 +38,10 @@ export async function handleVendorMenuMedia(
   try {
     record = await findActiveBarNumber(ctx.supabase, ctx.from);
   } catch (error) {
-    console.error("vendor.menu.lookup_fail", error, { from: ctx.from });
+    logStructuredEvent("VENDOR_MENU_LOOKUP_FAIL", {
+      error: error.message,
+      from: ctx.from,
+    }, "error");
     await sendText(
       ctx.from,
       t(ctx.locale, "vendor.menu.lookup_fail"),
@@ -49,7 +57,7 @@ export async function handleVendorMenuMedia(
   }
 
   if (!record?.bar_id) {
-    console.warn("vendor.menu.no_bar_mapping", {
+    logStructuredEvent("VENDOR_MENU_NO_BAR_MAPPING", {
       from: ctx.from,
       tried: ctx.from,
     });
@@ -100,7 +108,6 @@ export async function handleVendorMenuMedia(
 
     await triggerOcrProcessing(ctx.supabase);
   } catch (err) {
-    console.error("vendor.menu.store_fail", err, { mediaId, from: ctx.from });
     await logStructuredEvent("VENDOR_MENU_UPLOAD_FAIL", {
       wa_id: `***${ctx.from.slice(-4)}`,
       reason: err instanceof Error ? err.message : String(err ?? "unknown"),
@@ -124,7 +131,7 @@ async function handleRestaurantMenuUpload(
     const media = await fetchWhatsAppMedia(mediaId);
     const filename = pickFilename(msg, media.filename, mediaId);
     const path = `${barId}/${crypto.randomUUID()}-${filename}`;
-    
+
     // Upload to storage
     const { error: uploadError } = await ctx.supabase.storage.from(
       MENU_MEDIA_BUCKET,
@@ -169,7 +176,6 @@ async function handleRestaurantMenuUpload(
     // Trigger OCR processing
     await triggerOcrProcessing(ctx.supabase);
   } catch (err) {
-    console.error("restaurant.menu.upload_fail", err, { mediaId, from: ctx.from });
     await logStructuredEvent("RESTAURANT_MENU_UPLOAD_FAIL", {
       wa_id: `***${ctx.from.slice(-4)}`,
       reason: err instanceof Error ? err.message : String(err ?? "unknown"),
@@ -186,7 +192,9 @@ async function handleRestaurantMenuUpload(
 async function triggerOcrProcessing(client: SupabaseClient): Promise<void> {
   try {
     logStructuredEvent("VENDOR_MENU_OCR_START", {}, "info");
-    const { error } = await client.functions.invoke("unified-ocr", { body: { domain: "menu" } });
+    const { error } = await client.functions.invoke("unified-ocr", {
+      body: { domain: "menu" },
+    });
     if (error) throw error;
     logStructuredEvent("VENDOR_MENU_OCR_PROCESSOR_OK", {}, "info");
     logStructuredEvent("VENDOR_MENU_OCR_NOTIFIER_SKIPPED", {}, "info");
@@ -199,16 +207,18 @@ async function triggerOcrProcessing(client: SupabaseClient): Promise<void> {
       let bodyText: string | null = null;
       try {
         bodyText = await response.text();
-      } catch (_) {
+      } catch {
         bodyText = null;
       }
-      console.error("vendor.menu.ocr_trigger_fail", {
+      logStructuredEvent("VENDOR_MENU_OCR_TRIGGER_FAIL", {
         status: response.status,
         statusText: response.statusText,
-        body: bodyText,
-      });
+        body: bodyText?.slice(0, 200),
+      }, "error");
     } else {
-      console.error("vendor.menu.ocr_trigger_fail", error);
+      logStructuredEvent("VENDOR_MENU_OCR_TRIGGER_FAIL", {
+        error: error instanceof Error ? error.message : String(error),
+      }, "error");
     }
   }
 }

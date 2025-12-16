@@ -1,6 +1,6 @@
 /**
  * Marketplace AI Agent Tests
- * 
+ *
  * Tests for the conversational marketplace agent including:
  * - Intent classification
  * - Entity extraction
@@ -9,14 +9,20 @@
  * - Welcome message for new users
  */
 
-import { assertEquals, assertExists } from "https://deno.land/std@0.168.0/testing/asserts.ts";
-import { 
-  MarketplaceAgent, 
+import {
+  assertEquals,
+  assertExists,
+} from "https://deno.land/std@0.168.0/testing/asserts.ts";
+import {
+  BUSINESS_CATEGORIES,
+  MarketplaceAgent,
   type MarketplaceContext,
   WELCOME_MESSAGE,
-  BUSINESS_CATEGORIES,
 } from "../core/agent.ts";
-import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
+import {
+  createClient,
+  type SupabaseClient,
+} from "https://esm.sh/@supabase/supabase-js";
 
 // Type for mock Supabase client that satisfies the minimum interface needed for testing
 interface MockSupabaseClient {
@@ -46,7 +52,7 @@ interface MockSupabaseClient {
 // Mock Supabase client for testing
 const createMockSupabase = (): MockSupabaseClient => {
   const mockData: Record<string, unknown> = {};
-  
+
   return {
     from: (table: string) => ({
       select: () => ({
@@ -82,12 +88,28 @@ const createMockSupabase = (): MockSupabaseClient => {
         return { data: [], error: null };
       }
       if (fn === "search_businesses_nearby") {
-        return { 
+        return {
           data: [
-            { id: "1", name: "Kigali Pharmacy", category: "pharmacy", city: "Kigali", phone: "+250788123456", rating: 4.5, distance_km: 0.5 },
-            { id: "2", name: "Rwanda Pharmacy", category: "pharmacy", city: "Kigali", phone: "+250788654321", rating: 4.2, distance_km: 1.2 },
-          ], 
-          error: null 
+            {
+              id: "1",
+              name: "Kigali Pharmacy",
+              category: "pharmacy",
+              city: "Kigali",
+              phone: "+250788123456",
+              rating: 4.5,
+              distance_km: 0.5,
+            },
+            {
+              id: "2",
+              name: "Rwanda Pharmacy",
+              category: "pharmacy",
+              city: "Kigali",
+              phone: "+250788654321",
+              rating: 4.2,
+              distance_km: 1.2,
+            },
+          ],
+          error: null,
         };
       }
       return { data: null, error: null };
@@ -110,7 +132,10 @@ Deno.test("WELCOME_MESSAGE - exists and contains key information", () => {
   assertEquals(WELCOME_MESSAGE.includes("Kwizera"), true);
   assertEquals(WELCOME_MESSAGE.includes("easyMO"), true);
   assertEquals(WELCOME_MESSAGE.includes("Rwanda"), true);
-  assertEquals(WELCOME_MESSAGE.includes("What can I help you find today"), true);
+  assertEquals(
+    WELCOME_MESSAGE.includes("What can I help you find today"),
+    true,
+  );
 });
 
 // =====================================================
@@ -121,10 +146,10 @@ Deno.test("MarketplaceAgent - loadContext creates new context for new user", asy
   const mockSupabase = createMockSupabase();
   // Cast to SupabaseClient for static method calls
   const context = await MarketplaceAgent.loadContext(
-    "+250788123456", 
-    mockSupabase as unknown as SupabaseClient
+    "+250788123456",
+    mockSupabase as unknown as SupabaseClient,
   );
-  
+
   assertEquals(context.phone, "+250788123456");
   assertEquals(context.flowType, null);
   assertEquals(context.conversationHistory.length, 0);
@@ -134,8 +159,8 @@ Deno.test("MarketplaceAgent - resetContext clears conversation", async () => {
   const mockSupabase = createMockSupabase();
   // Cast to SupabaseClient for static method calls
   await MarketplaceAgent.resetContext(
-    "+250788123456", 
-    mockSupabase as unknown as SupabaseClient
+    "+250788123456",
+    mockSupabase as unknown as SupabaseClient,
   );
   // If no error thrown, reset was successful
   assertEquals(true, true);
@@ -148,9 +173,9 @@ Deno.test({
   fn: async () => {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") || "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "",
     );
-    
+
     const agent = new MarketplaceAgent(supabase, "test");
     const context: MarketplaceContext = {
       phone: "+250788999999",
@@ -159,12 +184,12 @@ Deno.test({
       collectedData: {},
       conversationHistory: [],
     };
-    
+
     const response = await agent.process(
       "I want to sell my dining table for 50000 RWF",
-      context
+      context,
     );
-    
+
     assertExists(response.message);
     assertEquals(typeof response.message, "string");
   },
@@ -176,9 +201,9 @@ Deno.test({
   fn: async () => {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") || "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "",
     );
-    
+
     const agent = new MarketplaceAgent(supabase, "test");
     const context: MarketplaceContext = {
       phone: "+250788999999",
@@ -188,12 +213,12 @@ Deno.test({
       conversationHistory: [],
       location: { lat: -1.9441, lng: 30.0619 }, // Kigali
     };
-    
+
     const response = await agent.process(
       "Looking for a pharmacy nearby",
-      context
+      context,
     );
-    
+
     assertExists(response.message);
     assertEquals(typeof response.message, "string");
   },
@@ -205,9 +230,9 @@ Deno.test({
   fn: async () => {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") || "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "",
     );
-    
+
     const agent = new MarketplaceAgent(supabase, "test");
     const context: MarketplaceContext = {
       phone: "+250788999999",
@@ -216,11 +241,15 @@ Deno.test({
       collectedData: {},
       conversationHistory: [],
     };
-    
+
     const response = await agent.process("asdfghjkl", context);
-    
+
     assertExists(response.message);
     // Should ask for clarification
-    assertEquals(response.message.includes("understand") || response.message.includes("clarify"), true);
+    assertEquals(
+      response.message.includes("understand") ||
+        response.message.includes("clarify"),
+      true,
+    );
   },
 });

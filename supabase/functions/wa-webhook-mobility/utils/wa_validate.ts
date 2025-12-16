@@ -35,7 +35,10 @@ export function validateListMessage(input: ListInput): string[] {
     issues.push("WA_LIST_NO_ROWS");
     return issues;
   }
-  const totalRows = sections.reduce((sum, section) => sum + section.rows.length, 0);
+  const totalRows = sections.reduce(
+    (sum, section) => sum + section.rows.length,
+    0,
+  );
   if (totalRows === 0) issues.push("WA_LIST_NO_ROWS");
   if (input.body && input.body.length > WA_LIMITS.BODY) {
     issues.push("WA_BODY_TOO_LONG");

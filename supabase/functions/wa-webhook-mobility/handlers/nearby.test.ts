@@ -8,8 +8,16 @@
 Deno.env.set("SUPABASE_URL", "http://localhost:54321");
 Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key");
 
-import { assertEquals, assertExists } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import { describe, it, beforeEach, afterEach } from "https://deno.land/std@0.208.0/testing/bdd.ts";
+import {
+  assertEquals,
+  assertExists,
+} from "https://deno.land/std@0.208.0/assert/mod.ts";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  it,
+} from "https://deno.land/std@0.208.0/testing/bdd.ts";
 
 // Mock types
 type MockContext = {
@@ -52,7 +60,11 @@ class MockSupabaseClient {
           },
         }),
         limit: (count: number) => ({
-          then: async (resolve: (value: { data: unknown[] | null; error: Error | null }) => void) => {
+          then: async (
+            resolve: (
+              value: { data: unknown[] | null; error: Error | null },
+            ) => void,
+          ) => {
             const data = this.mockData[table]?.slice(0, count) || [];
             resolve({ data, error: this.mockErrors[table] || null });
           },
@@ -121,8 +133,8 @@ describe("Nearby Handlers - Driver Discovery", () => {
   describe("Vehicle Selection", () => {
     it("should accept valid vehicle type", () => {
       const vehicleTypes = ["sedan", "suv", "motorcycle", "bus", "truck"];
-      
-      vehicleTypes.forEach(type => {
+
+      vehicleTypes.forEach((type) => {
         // Test vehicle type validation logic
         assertEquals(typeof type, "string");
         assertEquals(type.length > 0, true);
@@ -131,10 +143,12 @@ describe("Nearby Handlers - Driver Discovery", () => {
 
     it("should reject invalid vehicle type", () => {
       const invalidTypes = ["", "invalid", "car123"];
-      
-      invalidTypes.forEach(type => {
+
+      invalidTypes.forEach((type) => {
         // Test validation would reject these
-        const isValid = ["sedan", "suv", "motorcycle", "bus", "truck"].includes(type);
+        const isValid = ["sedan", "suv", "motorcycle", "bus", "truck"].includes(
+          type,
+        );
         assertEquals(isValid, false);
       });
     });
@@ -149,13 +163,12 @@ describe("Nearby Handlers - Driver Discovery", () => {
         { latitude: 90, longitude: 180 },
       ];
 
-      validCoords.forEach(coords => {
-        const isValid = 
-          coords.latitude >= -90 && 
+      validCoords.forEach((coords) => {
+        const isValid = coords.latitude >= -90 &&
           coords.latitude <= 90 &&
-          coords.longitude >= -180 && 
+          coords.longitude >= -180 &&
           coords.longitude <= 180;
-        
+
         assertEquals(isValid, true);
       });
     });
@@ -167,15 +180,14 @@ describe("Nearby Handlers - Driver Discovery", () => {
         { latitude: NaN, longitude: 30 },
       ];
 
-      invalidCoords.forEach(coords => {
-        const isValid = 
-          coords.latitude >= -90 && 
+      invalidCoords.forEach((coords) => {
+        const isValid = coords.latitude >= -90 &&
           coords.latitude <= 90 &&
-          coords.longitude >= -180 && 
+          coords.longitude >= -180 &&
           coords.longitude <= 180 &&
           !isNaN(coords.latitude) &&
           !isNaN(coords.longitude);
-        
+
         assertEquals(isValid, false);
       });
     });
@@ -280,7 +292,10 @@ describe("Nearby Handlers - Driver Discovery", () => {
         status: "pending",
       };
 
-      mockClient.setMockData("mobility_trip_matches", [{ id: "match-uuid", ...matchData }]);
+      mockClient.setMockData("mobility_trip_matches", [{
+        id: "match-uuid",
+        ...matchData,
+      }]);
 
       const result = await mockClient
         .from("mobility_trip_matches")

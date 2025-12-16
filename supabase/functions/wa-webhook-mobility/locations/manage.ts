@@ -1,5 +1,5 @@
 import type { RouterContext } from "../types.ts";
-import { setState } from "../state/store.ts";
+import { setState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import { t } from "../i18n/translator.ts";
 import {
   type FavoriteKind,
@@ -136,10 +136,6 @@ export async function handleSavedPlaceLocation(
   );
   await startSavedPlaces(ctx);
   return true;
-}
-
-async function startAddFavoriteFlow(ctx: RouterContext): Promise<boolean> {
-  return await startSavedPlaceCreation(ctx);
 }
 
 export async function startSavedPlaceCreation(

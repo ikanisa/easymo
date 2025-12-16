@@ -1,6 +1,6 @@
 /**
  * Error Handling Utilities
- * 
+ *
  * Provides utilities for formatting and classifying error messages
  * to determine appropriate HTTP status codes.
  */
@@ -34,21 +34,19 @@ export function classifyError(error: unknown): {
   statusCode: number;
 } {
   const errorMessage = formatUnknownError(error);
-  
-  const isUserError = 
-    errorMessage.includes("validation") || 
+
+  const isUserError = errorMessage.includes("validation") ||
     errorMessage.includes("invalid") ||
     errorMessage.includes("not found") ||
     errorMessage.includes("already exists");
-    
-  const isSystemError = 
-    errorMessage.includes("database") ||
+
+  const isSystemError = errorMessage.includes("database") ||
     errorMessage.includes("connection") ||
     errorMessage.includes("timeout") ||
     errorMessage.includes("ECONNREFUSED");
-  
+
   const statusCode = isUserError ? 400 : (isSystemError ? 503 : 500);
-  
+
   return { isUserError, isSystemError, statusCode };
 }
 
@@ -66,7 +64,7 @@ export function serializeError(error: unknown): {
       stack: error.stack,
     };
   }
-  
+
   if (error && typeof error === "object") {
     const err = error as Record<string, unknown>;
     return {
@@ -74,9 +72,8 @@ export function serializeError(error: unknown): {
       code: err.code ? String(err.code) : undefined,
     };
   }
-  
+
   return {
     message: String(error),
   };
 }
-

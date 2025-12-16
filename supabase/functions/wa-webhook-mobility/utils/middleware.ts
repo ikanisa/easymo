@@ -1,18 +1,22 @@
 /**
  * Enhanced Middleware Integration for wa-webhook
- * 
+ *
  * Provides middleware functions that integrate rate limiting, caching,
  * error handling, and metrics without modifying existing code.
- * 
+ *
  * These can be optionally integrated into the existing pipeline.
- * 
+ *
  * @see docs/GROUND_RULES.md
  */
 
-import type { PreparedWebhook, PreparedResponse } from "../router/pipeline.ts";
+import type { PreparedResponse, PreparedWebhook } from "../router/pipeline.ts";
 import { checkRateLimit } from "./rate_limiter.ts";
-import { getCached, setCached, getOrSetCached } from "./cache.ts";
-import { handleWebhookError, WebhookError, ErrorCode } from "./error_handler.ts";
+import { getCached, getOrSetCached, setCached } from "./cache.ts";
+import {
+  ErrorCode,
+  handleWebhookError,
+  WebhookError,
+} from "./error_handler.ts";
 import { incrementMetric, recordMetricHistogram } from "./metrics_collector.ts";
 import { loadConfig } from "./config_validator.ts";
 
@@ -20,12 +24,12 @@ const config = loadConfig();
 
 /**
  * Apply rate limiting middleware
- * 
+ *
  * Can be called from existing pipeline to add rate limiting
  */
 export function applyRateLimiting(
   phoneNumber: string,
-  correlationId: string
+  correlationId: string,
 ): { allowed: boolean; response?: Response } {
   if (!config.enableRateLimiting) {
     return { allowed: true };
@@ -56,7 +60,7 @@ export function applyRateLimiting(
           "X-RateLimit-Remaining": String(result.remaining),
           "X-RateLimit-Reset": String(result.resetTime),
         },
-      }
+      },
     );
 
     return { allowed: false, response };
@@ -70,7 +74,7 @@ export function applyRateLimiting(
  */
 export function trackWebhookMetrics(
   prepared: PreparedWebhook,
-  startTime: number
+  startTime: number,
 ): void {
   const duration = Date.now() - startTime;
 
@@ -91,12 +95,12 @@ export function trackWebhookMetrics(
 
 /**
  * Cache user context with automatic expiration
- * 
+ *
  * Can be used in message_context.ts to cache user lookups
  */
 export async function getCachedUserContext(
   phoneNumber: string,
-  fetcher: () => Promise<any>
+  fetcher: () => Promise<any>,
 ): Promise<any> {
   if (!config.enableCaching) {
     return await fetcher();
@@ -108,7 +112,7 @@ export async function getCachedUserContext(
 
 /**
  * Wrap error with enhanced error handling
- * 
+ *
  * Can be used in existing try-catch blocks to enhance error responses
  */
 export async function wrapError(
@@ -119,7 +123,7 @@ export async function wrapError(
     userId?: string;
     operation?: string;
     duration?: number;
-  }
+  },
 ): Promise<Response> {
   incrementMetric("wa_webhook_errors", 1, {
     operation: context.operation || "unknown",
@@ -128,7 +132,7 @@ export async function wrapError(
   return await handleWebhookError(
     error,
     context,
-    config.enableUserErrorNotifications
+    config.enableUserErrorNotifications,
   );
 }
 
@@ -138,7 +142,7 @@ export async function wrapError(
 export function addRateLimitHeaders(
   response: Response,
   phoneNumber: string,
-  correlationId: string
+  correlationId: string,
 ): Response {
   if (!config.enableRateLimiting) {
     return response;
@@ -159,13 +163,13 @@ export function addRateLimitHeaders(
 
 /**
  * Middleware function to enhance PreparedWebhook
- * 
+ *
  * This can be called after processWebhookRequest to add enhancements
  */
 export async function enhanceWebhookRequest(
   req: Request,
   prepared: PreparedWebhook | PreparedResponse,
-  startTime: number
+  startTime: number,
 ): Promise<PreparedWebhook | PreparedResponse> {
   // If it's already a response, return it
   if (prepared.type === "response") {
@@ -176,12 +180,12 @@ export async function enhanceWebhookRequest(
   trackWebhookMetrics(prepared, startTime);
 
   // Apply rate limiting to each unique sender
-  const uniqueSenders = new Set(prepared.messages.map(msg => msg.from));
+  const uniqueSenders = new Set(prepared.messages.map((msg) => msg.from));
   const correlationId = crypto.randomUUID();
 
   for (const sender of uniqueSenders) {
     const rateLimitResult = applyRateLimiting(sender, correlationId);
-    
+
     if (!rateLimitResult.allowed && rateLimitResult.response) {
       return {
         type: "response",
@@ -200,7 +204,7 @@ export async function enhanceWebhookRequest(
 export function logWebhookCompletion(
   prepared: PreparedWebhook,
   startTime: number,
-  success: boolean
+  success: boolean,
 ): void {
   const duration = Date.now() - startTime;
 
@@ -222,14 +226,14 @@ export function logWebhookCompletion(
 
 /**
  * Example: Enhanced message processor wrapper
- * 
+ *
  * This shows how to wrap existing handleMessage calls with enhancements
  */
 export async function processMessageWithEnhancements(
   ctx: any,
   msg: any,
   state: any,
-  handleMessage: (ctx: any, msg: any, state: any) => Promise<void>
+  handleMessage: (ctx: any, msg: any, state: any) => Promise<void>,
 ): Promise<void> {
   const startTime = Date.now();
   const correlationId = crypto.randomUUID();
@@ -242,7 +246,7 @@ export async function processMessageWithEnhancements(
         "Rate limit exceeded",
         ErrorCode.RATE_LIMIT_ERROR,
         429,
-        { retryAfter: 60 }
+        { retryAfter: 60 },
       );
     }
 
@@ -265,7 +269,6 @@ export async function processMessageWithEnhancements(
       type: msg.type || "unknown",
       status: "success",
     });
-
   } catch (error) {
     // Track error
     const duration = Date.now() - startTime;
@@ -287,9 +290,9 @@ export async function processMessageWithEnhancements(
  * Utility to check if enhancements are enabled
  */
 export function areEnhancementsEnabled(): boolean {
-  return config.enableRateLimiting || 
-         config.enableCaching || 
-         config.enableUserErrorNotifications;
+  return config.enableRateLimiting ||
+    config.enableCaching ||
+    config.enableUserErrorNotifications;
 }
 
 /**

@@ -1,4 +1,5 @@
 export {
+  formatTravelLabel,
   handleScheduleChangeVehicle,
   handleScheduleDropoff,
   handleScheduleLocation,
@@ -10,11 +11,10 @@ export {
   handleScheduleVehicle,
   isScheduleResult,
   isScheduleRole,
-  startScheduleSavedLocationPicker,
-  startScheduleTrip,
-  formatTravelLabel,
   type ScheduleSavedPickerState,
   type ScheduleState,
+  startScheduleSavedLocationPicker,
+  startScheduleTrip,
 } from "./schedule/booking.ts";
 
 export {

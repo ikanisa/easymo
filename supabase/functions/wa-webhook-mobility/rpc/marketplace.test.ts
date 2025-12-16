@@ -150,7 +150,10 @@ Deno.test("listBusinesses throws when all fallbacks fail", async () => {
 Deno.test("listBusinesses surfaces permission errors before fallbacks", async () => {
   const client = new StubSupabaseClient({
     nearby_businesses_v2: [
-      { data: null, error: { message: "permission denied for table business" } },
+      {
+        data: null,
+        error: { message: "permission denied for table business" },
+      },
     ],
     nearby_businesses: [
       { data: [{ id: "should_not_use" }], error: null },
@@ -158,7 +161,8 @@ Deno.test("listBusinesses surfaces permission errors before fallbacks", async ()
   });
 
   await assertRejects(
-    () => listBusinesses(client as unknown as any, { lat: 0, lng: 0 }, "food", 2),
+    () =>
+      listBusinesses(client as unknown as any, { lat: 0, lng: 0 }, "food", 2),
     "permission denied",
   );
   assertEquals(client.calls.length, 1);

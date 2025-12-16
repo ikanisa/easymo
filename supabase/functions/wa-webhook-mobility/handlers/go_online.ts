@@ -2,11 +2,17 @@
 // Allows drivers to quickly share their location and start receiving ride requests
 
 import type { RouterContext } from "../types.ts";
-import { clearState, setState } from "../state/store.ts";
+import {
+  clearState,
+  setState,
+} from "../../_shared/wa-webhook-shared/state/store.ts";
 import { t } from "../i18n/translator.ts";
 import { IDS } from "../wa/ids.ts";
 import { sendText } from "../wa/client.ts";
-import { homeOnly, sendButtonsMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
+import {
+  homeOnly,
+  sendButtonsMessage,
+} from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
 import { getCachedLocation, saveLocationToCache } from "../locations/cache.ts";
 import { getStoredVehicleType } from "./vehicle_plate.ts";
@@ -100,7 +106,9 @@ export async function handleGoOnlineLocation(
       } catch (tripError) {
         await logStructuredEvent("DRIVER_TRIP_CREATE_FAILED", {
           userId: ctx.profileId,
-          error: tripError instanceof Error ? tripError.message : String(tripError),
+          error: tripError instanceof Error
+            ? tripError.message
+            : String(tripError),
         });
         // Continue even if trip creation fails
       }
@@ -117,7 +125,9 @@ export async function handleGoOnlineLocation(
       } catch (intentError) {
         await logStructuredEvent("DRIVER_INTENT_SAVE_FAILED", {
           userId: ctx.profileId,
-          error: intentError instanceof Error ? intentError.message : String(intentError),
+          error: intentError instanceof Error
+            ? intentError.message
+            : String(intentError),
         });
       }
 

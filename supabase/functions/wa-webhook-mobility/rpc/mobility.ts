@@ -5,9 +5,10 @@ import type { RecurrenceType } from "../../_shared/wa-webhook-shared/domains/int
 // Scheduled trips use longer window (7 days)
 const DEFAULT_TRIP_EXPIRY_MINUTES = 30;
 const envExpiryMinutes = Number(Deno.env.get("MOBILITY_TRIP_EXPIRY_MINUTES"));
-const TRIP_EXPIRY_MINUTES = Number.isFinite(envExpiryMinutes) && envExpiryMinutes > 0 
-  ? envExpiryMinutes 
-  : DEFAULT_TRIP_EXPIRY_MINUTES;
+const TRIP_EXPIRY_MINUTES =
+  Number.isFinite(envExpiryMinutes) && envExpiryMinutes > 0
+    ? envExpiryMinutes
+    : DEFAULT_TRIP_EXPIRY_MINUTES;
 const TRIP_EXPIRY_MS = TRIP_EXPIRY_MINUTES * 60 * 1000;
 
 // Schema check removed for V2 migration
@@ -43,15 +44,19 @@ export async function insertTrip(
     pickupText?: string;
     scheduledAt?: Date | string;
     recurrence?: RecurrenceType;
-    phone?: string;  // Added for simplified schema
+    phone?: string; // Added for simplified schema
   },
 ): Promise<string> {
   // Guard against malformed coordinates before persisting
   if (!Number.isFinite(params.lat) || !Number.isFinite(params.lng)) {
     throw new Error("Invalid coordinates: lat and lng must be finite numbers");
   }
-  if (params.lat < -90 || params.lat > 90 || params.lng < -180 || params.lng > 180) {
-    throw new Error("Invalid coordinates: lat must be [-90,90], lng must be [-180,180]");
+  if (
+    params.lat < -90 || params.lat > 90 || params.lng < -180 || params.lng > 180
+  ) {
+    throw new Error(
+      "Invalid coordinates: lat must be [-90,90], lng must be [-180,180]",
+    );
   }
 
   // Get phone number from params or fetch from profile
@@ -67,9 +72,9 @@ export async function insertTrip(
 
   // Calculate scheduled time
   const scheduledFor = params.scheduledAt
-    ? (params.scheduledAt instanceof Date 
-        ? params.scheduledAt 
-        : new Date(params.scheduledAt))
+    ? (params.scheduledAt instanceof Date
+      ? params.scheduledAt
+      : new Date(params.scheduledAt))
     : null;
 
   // Use simplified create_trip RPC function
@@ -79,7 +84,7 @@ export async function insertTrip(
     _user_id: params.userId,
     _phone: phone,
     _role: params.role,
-    _vehicle: params.vehicleType,  // Maps to vehicle_type column in database
+    _vehicle: params.vehicleType, // Maps to vehicle_type column in database
     _pickup_lat: params.lat,
     _pickup_lng: params.lng,
     _pickup_text: params.pickupText ?? null,
@@ -104,10 +109,16 @@ export async function updateTripDropoff(
   },
 ): Promise<void> {
   if (!Number.isFinite(params.lat) || !Number.isFinite(params.lng)) {
-    throw new Error("Invalid dropoff coordinates: lat and lng must be finite numbers");
+    throw new Error(
+      "Invalid dropoff coordinates: lat and lng must be finite numbers",
+    );
   }
-  if (params.lat < -90 || params.lat > 90 || params.lng < -180 || params.lng > 180) {
-    throw new Error("Invalid dropoff coordinates: lat must be [-90,90], lng must be [-180,180]");
+  if (
+    params.lat < -90 || params.lat > 90 || params.lng < -180 || params.lng > 180
+  ) {
+    throw new Error(
+      "Invalid dropoff coordinates: lat must be [-90,90], lng must be [-180,180]",
+    );
   }
   const { error } = await client
     .from("trips") // Canonical table
@@ -124,7 +135,7 @@ export async function updateTripDropoff(
 export type MatchResult = {
   trip_id: string;
   user_id: string;
-  phone: string;  // Now directly from trips table
+  phone: string; // Now directly from trips table
   ref_code: string;
   role: "driver" | "passenger";
   vehicle: string;
@@ -188,8 +199,12 @@ export async function updateTripLocation(
   if (!Number.isFinite(params.lat) || !Number.isFinite(params.lng)) {
     throw new Error("Invalid coordinates: lat and lng must be finite numbers");
   }
-  if (params.lat < -90 || params.lat > 90 || params.lng < -180 || params.lng > 180) {
-    throw new Error("Invalid coordinates: lat must be [-90,90], lng must be [-180,180]");
+  if (
+    params.lat < -90 || params.lat > 90 || params.lng < -180 || params.lng > 180
+  ) {
+    throw new Error(
+      "Invalid coordinates: lat must be [-90,90], lng must be [-180,180]",
+    );
   }
   const { error } = await client
     .from("trips") // Canonical table

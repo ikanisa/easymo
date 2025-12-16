@@ -124,6 +124,7 @@ export const IDS = {
   // Go Online feature
   GO_ONLINE: "driver_go_online",
   GO_OFFLINE: "go_offline",
+  DRIVER_SUB_PAY: "driver_sub_pay",
   USE_CACHED_LOCATION: "use_cached_location",
   USE_LAST_LOCATION: "USE_LAST_LOCATION",
   // Recent actions

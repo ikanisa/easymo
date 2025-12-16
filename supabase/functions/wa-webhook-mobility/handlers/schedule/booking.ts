@@ -1,5 +1,8 @@
 import type { ButtonSpec, RouterContext } from "../../types.ts";
-import { clearState, setState } from "../../state/store.ts";
+import {
+  clearState,
+  setState,
+} from "../../../_shared/wa-webhook-shared/state/store.ts";
 import { IDS } from "../../wa/ids.ts";
 import { VEHICLE_OPTIONS, vehicleFromId } from "../nearby.ts";
 import { t } from "../../i18n/translator.ts";
@@ -16,7 +19,10 @@ import { getAppConfig } from "../../utils/app_config.ts";
 import { waChatLink } from "../../utils/links.ts";
 import { maskPhone } from "../../flows/support.ts";
 import { logStructuredEvent } from "../../../_shared/observability.ts";
-import { safeRowTitle, timeAgo } from "../../../_shared/wa-webhook-shared/utils/text.ts";
+import {
+  safeRowTitle,
+  timeAgo,
+} from "../../../_shared/wa-webhook-shared/utils/text.ts";
 import { sendText } from "../../wa/client.ts";
 import {
   buildButtons,
@@ -32,7 +38,6 @@ import {
   updateStoredVehicleType,
 } from "../vehicle_plate.ts";
 import { readLastLocation } from "../../locations/favorites.ts";
-import { checkLocationCache } from "../location_cache.ts";
 import {
   getFavoriteById,
   listFavorites,

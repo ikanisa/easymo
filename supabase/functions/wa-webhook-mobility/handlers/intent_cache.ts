@@ -12,8 +12,8 @@ export type NearbyIntentSnapshot = {
 // Intent cache TTL: configurable via environment variable, default 10 minutes
 const DEFAULT_INTENT_TTL_MINUTES = 10;
 const envTtlMinutes = Number(Deno.env.get("MOBILITY_INTENT_TTL_MINUTES"));
-const INTENT_TTL_MINUTES = Number.isFinite(envTtlMinutes) && envTtlMinutes > 0 
-  ? envTtlMinutes 
+const INTENT_TTL_MINUTES = Number.isFinite(envTtlMinutes) && envTtlMinutes > 0
+  ? envTtlMinutes
   : DEFAULT_INTENT_TTL_MINUTES;
 const INTENT_TTL_MS = INTENT_TTL_MINUTES * 60 * 1000;
 

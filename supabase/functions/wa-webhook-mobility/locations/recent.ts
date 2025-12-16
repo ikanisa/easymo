@@ -4,8 +4,14 @@ import { logStructuredEvent } from "../../_shared/observability.ts";
 const TTL_MINUTES = 30;
 
 export type RecentSource =
-  | 'bars' | 'pharmacies' | 'quincailleries' | 'shops'
-  | 'notary' | 'property' | 'marketplace' | 'mobility';
+  | "bars"
+  | "pharmacies"
+  | "quincailleries"
+  | "shops"
+  | "notary"
+  | "property"
+  | "marketplace"
+  | "mobility";
 
 export async function saveRecentLocation(
   ctx: RouterContext,
@@ -16,7 +22,7 @@ export async function saveRecentLocation(
   if (!ctx.profileId) return;
   const expires = new Date(Date.now() + TTL_MINUTES * 60 * 1000).toISOString();
   try {
-    await ctx.supabase.from('recent_locations').insert({
+    await ctx.supabase.from("recent_locations").insert({
       user_id: ctx.profileId,
       source: source ?? null,
       lat: coords.lat,
@@ -38,14 +44,14 @@ export async function getRecentLocation(
 ): Promise<{ lat: number; lng: number } | null> {
   if (!ctx.profileId) return null;
   let query = ctx.supabase
-    .from('recent_locations')
-    .select('lat,lng,source,captured_at,expires_at')
-    .eq('user_id', ctx.profileId)
-    .gt('expires_at', new Date().toISOString())
-    .order('captured_at', { ascending: false })
+    .from("recent_locations")
+    .select("lat,lng,source,captured_at,expires_at")
+    .eq("user_id", ctx.profileId)
+    .gt("expires_at", new Date().toISOString())
+    .order("captured_at", { ascending: false })
     .limit(1);
   if (preferred) {
-    query = query.eq('source', preferred);
+    query = query.eq("source", preferred);
   }
   try {
     const { data } = await query;
@@ -69,7 +75,7 @@ export async function recordRecentActivity(
 ): Promise<void> {
   if (!ctx.profileId) return;
   try {
-    await ctx.supabase.from('recent_activities').insert({
+    await ctx.supabase.from("recent_activities").insert({
       user_id: ctx.profileId,
       activity_type: activityType,
       ref_id: refId ?? null,
@@ -83,4 +89,3 @@ export async function recordRecentActivity(
     });
   }
 }
-

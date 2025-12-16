@@ -55,7 +55,8 @@ async function purgeWaEvents(): Promise<void> {
   const query = supabase
     .from("wa_events")
     .delete({ count: "exact" });
-  const lt = (query as { lt?: (column: string, value: string) => typeof query }).lt;
+  const lt =
+    (query as { lt?: (column: string, value: string) => typeof query }).lt;
   if (!lt) {
     logStructuredEvent("RETENTION_WA_EVENTS_SKIP", {
       reason: "lt not supported by client stub",
@@ -82,7 +83,8 @@ async function purgeWebhookLogs(): Promise<void> {
   const query = supabase
     .from("webhook_logs")
     .delete({ count: "exact" });
-  const lt = (query as { lt?: (column: string, value: string) => typeof query }).lt;
+  const lt =
+    (query as { lt?: (column: string, value: string) => typeof query }).lt;
   if (!lt) {
     logStructuredEvent("RETENTION_WEBHOOK_LOGS_SKIP", {
       reason: "lt not supported by client stub",

@@ -1,9 +1,14 @@
 import { logMetric } from "./logging.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
 
-type MetricDimensions = Record<string, string | number | boolean | null | undefined>;
+type MetricDimensions = Record<
+  string,
+  string | number | boolean | null | undefined
+>;
 
-function normaliseDimensions(dimensions: MetricDimensions): Record<string, string> {
+function normaliseDimensions(
+  dimensions: MetricDimensions,
+): Record<string, string> {
   const entries = Object.entries(dimensions)
     .filter(([, value]) => value !== undefined && value !== null)
     .map(([key, value]) => [key, String(value)] as const);

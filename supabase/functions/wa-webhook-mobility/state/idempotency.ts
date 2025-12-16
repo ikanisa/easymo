@@ -15,15 +15,18 @@ function getPgError(err: unknown): { code?: string; message?: string } {
 function isMissingColumn(err: unknown, column: string): boolean {
   const e = getPgError(err);
   const msg = (e.message || "").toLowerCase();
-  return msg.includes(`'${column.toLowerCase()}'`) && (msg.includes("column") || msg.includes("schema cache"));
+  return msg.includes(`'${column.toLowerCase()}'`) &&
+    (msg.includes("column") || msg.includes("schema cache"));
 }
 
 function isNoUniqueConstraint(err: unknown): boolean {
   const e = getPgError(err);
   const msg = (e.message || "").toLowerCase();
   // PostgREST uses PGRST204 for several schema errors
-  return (e.code === "PGRST204" && (msg.includes("unique") || msg.includes("conflict"))) ||
-    msg.includes("no unique") || msg.includes("does not have a unique constraint");
+  return (e.code === "PGRST204" &&
+    (msg.includes("unique") || msg.includes("conflict"))) ||
+    msg.includes("no unique") ||
+    msg.includes("does not have a unique constraint");
 }
 
 export async function claimEvent(id: string): Promise<boolean> {
@@ -41,10 +44,16 @@ export async function claimEvent(id: string): Promise<boolean> {
   } catch (err) {
     if (isNoUniqueConstraint(err)) {
       // Fallback path when UNIQUE(message_id) is missing: best-effort select then insert (race-prone)
-      const pre = await supabase.from("wa_events").select("message_id").eq("message_id", id).maybeSingle();
+      const pre = await supabase.from("wa_events").select("message_id").eq(
+        "message_id",
+        id,
+      ).maybeSingle();
       if (!pre.error && pre.data) return false; // already exists
       // try plain insert
-      const ins = await supabase.from("wa_events").insert({ message_id: id, event_type: IDEMPOTENCY_EVENT_TYPE });
+      const ins = await supabase.from("wa_events").insert({
+        message_id: id,
+        event_type: IDEMPOTENCY_EVENT_TYPE,
+      });
       if (ins.error) throw ins.error;
       return true;
     }

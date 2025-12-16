@@ -2,14 +2,14 @@
  * WhatsApp Buy & Sell - Pure AI Agent Conversation
  *
  * SINGLE RESPONSIBILITY: AI-powered conversational marketplace assistant
- * 
+ *
  * Scope:
  * - Welcome new users with AI agent introduction
  * - Pass all messages to AI agent for natural language processing
  * - Handle location sharing for nearby business search
  * - Manage user's business listings (My Businesses)
  * - WhatsApp deep links (wa.me/{phone})
- * 
+ *
  * Flow:
  * 1. User taps "Buy and Sell" → AI welcomes them
  * 2. User sends any message → AI agent handles it
@@ -24,13 +24,17 @@ import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import { claimEvent } from "../_shared/wa-webhook-shared/state/idempotency.ts";
 import { extractWhatsAppMessage } from "./utils/index.ts";
-import { MarketplaceAgent, WELCOME_MESSAGE, type BuyAndSellContext } from "./core/agent.ts";
+import {
+  type BuyAndSellContext,
+  MarketplaceAgent,
+  WELCOME_MESSAGE,
+} from "./core/agent.ts";
 import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
 import { classifyError, serializeError } from "./utils/error-handling.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
 );
 
 serve(async (req: Request): Promise<Response> => {
@@ -68,16 +72,19 @@ serve(async (req: Request): Promise<Response> => {
 
     // WhatsApp webhook verification
     if (mode === "subscribe" && token === Deno.env.get("WA_VERIFY_TOKEN")) {
-      return new Response(challenge ?? "", { 
+      return new Response(challenge ?? "", {
         status: 200,
-        headers: { "X-Request-ID": requestId, "X-Correlation-ID": correlationId },
+        headers: {
+          "X-Request-ID": requestId,
+          "X-Correlation-ID": correlationId,
+        },
       });
     }
 
     // Health check (no verification params)
     if (!mode && !token) {
       const health = await MarketplaceAgent.healthCheck();
-      
+
       return respond({
         status: "healthy",
         service: "wa-webhook-buy-sell",
@@ -109,8 +116,11 @@ serve(async (req: Request): Promise<Response> => {
       ? "x-hub-signature"
       : null;
     const signature = signatureHeader ? req.headers.get(signatureHeader) : null;
-    const appSecret = Deno.env.get("WHATSAPP_APP_SECRET") ?? Deno.env.get("WA_APP_SECRET");
-    const allowUnsigned = (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() === "true";
+    const appSecret = Deno.env.get("WHATSAPP_APP_SECRET") ??
+      Deno.env.get("WA_APP_SECRET");
+    const allowUnsigned =
+      (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() ===
+        "true";
     const internalForward = req.headers.get("x-wa-internal-forward") === "true";
 
     if (!appSecret) {
@@ -124,7 +134,11 @@ serve(async (req: Request): Promise<Response> => {
     let isValidSignature = false;
     if (signature) {
       try {
-        isValidSignature = await verifyWebhookSignature(rawBody, signature, appSecret);
+        isValidSignature = await verifyWebhookSignature(
+          rawBody,
+          signature,
+          appSecret,
+        );
         if (isValidSignature) {
           logStructuredEvent("BUY_SELL_DIR_SIGNATURE_VALID", {
             signatureHeader,
@@ -142,7 +156,11 @@ serve(async (req: Request): Promise<Response> => {
     if (!isValidSignature) {
       if (allowUnsigned || internalForward) {
         logStructuredEvent("BUY_SELL_DIR_AUTH_BYPASS", {
-          reason: internalForward ? "internal_forward" : signature ? "signature_mismatch" : "no_signature",
+          reason: internalForward
+            ? "internal_forward"
+            : signature
+            ? "signature_mismatch"
+            : "no_signature",
           correlationId,
         }, "warn");
       } else {
@@ -166,7 +184,8 @@ serve(async (req: Request): Promise<Response> => {
     const userPhone = message.from;
 
     // CRITICAL: Deduplicate messages using message_id to prevent spam
-    const messageId = payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.id;
+    const messageId = payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0]
+      ?.id;
     if (messageId) {
       const claimed = await claimEvent(messageId);
       if (!claimed) {
@@ -189,21 +208,33 @@ serve(async (req: Request): Promise<Response> => {
     // === INTERACTIVE HANDLERS ===
 
     // Button replies (common actions + My Business management)
-    if (message.type === "interactive" && message.interactive?.button_reply?.id) {
+    if (
+      message.type === "interactive" && message.interactive?.button_reply?.id
+    ) {
       const buttonId = message.interactive.button_reply.id;
-      
+
       logStructuredEvent("BUY_SELL_BUTTON_CLICKED", {
         buttonId,
         userPhone: `***${userPhone.slice(-4)}`,
         correlationId,
       });
-      
-      const { handleInteractiveButton } = await import("./handlers/interactive-buttons.ts");
-      
-      const result = await handleInteractiveButton(buttonId, userPhone, supabase, correlationId);
+
+      const { handleInteractiveButton } = await import(
+        "./handlers/interactive-buttons.ts"
+      );
+
+      const result = await handleInteractiveButton(
+        buttonId,
+        userPhone,
+        supabase,
+        correlationId,
+      );
       if (result.handled) {
         await recordMetric("buy_sell.button.handled", 1, { buttonId });
-        return respond({ success: true, message: result.action || "button_handled" });
+        return respond({
+          success: true,
+          message: result.action || "button_handled",
+        });
       } else {
         await recordMetric("buy_sell.button.unhandled", 1, { buttonId });
       }
@@ -216,17 +247,22 @@ serve(async (req: Request): Promise<Response> => {
       // Validate location data
       const lat = message.location.latitude;
       const lng = message.location.longitude;
-      
-      if (typeof lat !== "number" || typeof lng !== "number" || 
-          isNaN(lat) || isNaN(lng) ||
-          lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+
+      if (
+        typeof lat !== "number" || typeof lng !== "number" ||
+        isNaN(lat) || isNaN(lng) ||
+        lat < -90 || lat > 90 || lng < -180 || lng > 180
+      ) {
         logStructuredEvent("BUY_SELL_INVALID_LOCATION", {
           lat,
           lng,
           userPhone: `***${userPhone.slice(-4)}`,
           correlationId,
         }, "warn");
-        await sendText(userPhone, "⚠️ Invalid location data. Please share your location again.");
+        await sendText(
+          userPhone,
+          "⚠️ Invalid location data. Please share your location again.",
+        );
         return respond({ success: true, message: "invalid_location" });
       }
 
@@ -238,7 +274,7 @@ serve(async (req: Request): Promise<Response> => {
             .select("user_id, language")
             .eq("whatsapp_number", userPhone)
             .maybeSingle();
-          
+
           if (error) {
             logStructuredEvent("BUY_SELL_PROFILE_LOOKUP_ERROR", {
               error: error.message,
@@ -259,18 +295,24 @@ serve(async (req: Request): Promise<Response> => {
 
       if (profile) {
         // Load or create context with location
-        const context: BuyAndSellContext = await MarketplaceAgent.loadContext(userPhone, supabase);
+        const context: BuyAndSellContext = await MarketplaceAgent.loadContext(
+          userPhone,
+          supabase,
+        );
         context.location = {
           lat,
           lng,
         };
-        
+
         // Process location with agent
         const agent = new MarketplaceAgent(supabase, correlationId);
         const response = await agent.process("I shared my location", context);
-        
+
         await sendText(userPhone, response.message);
-        return respond({ success: true, message: "location_processed_by_agent" });
+        return respond({
+          success: true,
+          message: "location_processed_by_agent",
+        });
       }
     }
 
@@ -284,7 +326,7 @@ serve(async (req: Request): Promise<Response> => {
           .select("user_id, language")
           .eq("whatsapp_number", userPhone)
           .maybeSingle();
-        
+
         if (error) {
           logStructuredEvent("BUY_SELL_PROFILE_LOOKUP_ERROR", {
             error: error.message,
@@ -304,7 +346,9 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     if (profile) {
-      const { getState } = await import("../_shared/wa-webhook-shared/state/store.ts");
+      const { getState } = await import(
+        "../_shared/wa-webhook-shared/state/store.ts"
+      );
       const state = await getState(supabase, profile.user_id);
 
       // Handle state transitions using state machine handler
@@ -314,25 +358,41 @@ serve(async (req: Request): Promise<Response> => {
           userPhone: `***${userPhone.slice(-4)}`,
           correlationId,
         });
-        
-        const { handleStateTransition } = await import("./handlers/state-machine.ts");
-        const { getProfileContext } = await import("./handlers/interactive-buttons.ts");
-        
+
+        const { handleStateTransition } = await import(
+          "./handlers/state-machine.ts"
+        );
+        const { getProfileContext } = await import(
+          "./handlers/interactive-buttons.ts"
+        );
+
         const ctx = await getProfileContext(userPhone, supabase);
         if (ctx) {
-          const result = await handleStateTransition(state, text, ctx, correlationId);
+          const result = await handleStateTransition(
+            state,
+            text,
+            ctx,
+            correlationId,
+          );
           if (result.handled) {
-            await recordMetric("buy_sell.state_transition.handled", 1, { stateKey: state.key });
-            return respond({ success: true, message: "state_transition_handled" });
+            await recordMetric("buy_sell.state_transition.handled", 1, {
+              stateKey: state.key,
+            });
+            return respond({
+              success: true,
+              message: "state_transition_handled",
+            });
           } else {
-            await recordMetric("buy_sell.state_transition.unhandled", 1, { stateKey: state.key });
+            await recordMetric("buy_sell.state_transition.unhandled", 1, {
+              stateKey: state.key,
+            });
           }
         }
       }
     }
 
     // === AI AGENT PROCESSING ===
-    
+
     // Home/menu/reset commands → show welcome message and reset context
     const lower = text.toLowerCase();
     if (
@@ -346,37 +406,38 @@ serve(async (req: Request): Promise<Response> => {
     ) {
       // Reset conversation context
       await MarketplaceAgent.resetContext(userPhone, supabase);
-      
+
       // Send welcome message
       await sendText(userPhone, WELCOME_MESSAGE);
-      
+
       const duration = Date.now() - startTime;
       recordMetric("buy_sell.welcome_shown", 1, {
         duration_ms: duration,
       });
-      
+
       return respond({ success: true, message: "welcome_shown" });
     }
-    
+
     // Load context for regular messages (after filtering out reset commands)
     const context = await MarketplaceAgent.loadContext(userPhone, supabase);
-    const isNewSession = !context.conversationHistory || context.conversationHistory.length === 0;
-    
+    const isNewSession = !context.conversationHistory ||
+      context.conversationHistory.length === 0;
+
     // For new sessions with actual text, show welcome first then process
     if (isNewSession && text) {
       await sendText(userPhone, WELCOME_MESSAGE);
-      
+
       await logStructuredEvent("BUY_SELL_WELCOME_NEW_USER", {
         from: `***${userPhone.slice(-4)}`,
         firstMessage: text.slice(0, 50),
         correlationId,
       });
     }
-    
+
     // Process message with AI agent (passing the pre-loaded context)
     const agent = new MarketplaceAgent(supabase, correlationId);
     const response = await agent.process(text, context);
-    
+
     // Send response to user
     await sendText(userPhone, response.message);
 
@@ -389,9 +450,10 @@ serve(async (req: Request): Promise<Response> => {
     return respond({ success: true, action: response.action });
   } catch (error) {
     const duration = Date.now() - startTime;
-    const { message: errorMessage, stack: errorStack, code: errorCode } = serializeError(error);
+    const { message: errorMessage, stack: errorStack, code: errorCode } =
+      serializeError(error);
     const { isUserError, isSystemError, statusCode } = classifyError(error);
-    
+
     logStructuredEvent(
       "BUY_SELL_ERROR",
       {
@@ -401,20 +463,28 @@ serve(async (req: Request): Promise<Response> => {
         durationMs: duration,
         requestId,
         correlationId,
-        errorType: isUserError ? "user_error" : (isSystemError ? "system_error" : "unknown_error"),
+        errorType: isUserError
+          ? "user_error"
+          : (isSystemError ? "system_error" : "unknown_error"),
         statusCode,
       },
       isSystemError ? "error" : "warn",
     );
 
     recordMetric("buy_sell.message.error", 1, {
-      error_type: isUserError ? "user_error" : (isSystemError ? "system_error" : "unknown_error"),
+      error_type: isUserError
+        ? "user_error"
+        : (isSystemError ? "system_error" : "unknown_error"),
     });
 
     // Return appropriate status code
-    return respond({ 
-      error: isUserError ? "invalid_request" : (isSystemError ? "service_unavailable" : "internal_error"),
-      message: isUserError ? errorMessage : "An error occurred. Please try again later.",
+    return respond({
+      error: isUserError
+        ? "invalid_request"
+        : (isSystemError ? "service_unavailable" : "internal_error"),
+      message: isUserError
+        ? errorMessage
+        : "An error occurred. Please try again later.",
     }, { status: statusCode });
   }
 });

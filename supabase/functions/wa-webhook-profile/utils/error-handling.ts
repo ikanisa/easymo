@@ -1,6 +1,6 @@
 /**
  * Error Handling Utilities
- * 
+ *
  * Provides utilities for formatting and sanitizing error messages
  * to prevent exposing internal details to users.
  */
@@ -30,7 +30,7 @@ export function formatUnknownError(error: unknown): string {
  */
 export function sanitizeErrorMessage(error: unknown): string {
   const message = formatUnknownError(error);
-  
+
   // List of patterns that indicate internal/sensitive errors
   const sensitivePatterns = [
     /column|table|relation|schema/i,
@@ -41,18 +41,18 @@ export function sanitizeErrorMessage(error: unknown): string {
     /connection|timeout/i,
     /env|environment/i,
   ];
-  
+
   for (const pattern of sensitivePatterns) {
     if (pattern.test(message)) {
       return "An error occurred. Please try again later.";
     }
   }
-  
+
   // Truncate long error messages
   if (message.length > 100) {
     return message.substring(0, 100) + "...";
   }
-  
+
   return message;
 }
 
@@ -65,23 +65,20 @@ export function classifyError(error: unknown): {
   statusCode: number;
 } {
   const errorMessage = formatUnknownError(error);
-  
-  const isUserError = 
-    errorMessage.includes("validation") || 
+
+  const isUserError = errorMessage.includes("validation") ||
     errorMessage.includes("invalid") ||
     errorMessage.includes("not found") ||
     errorMessage.includes("already exists") ||
     errorMessage.includes("duplicate") ||
     errorMessage.includes("already registered");
-    
-  const isSystemError = 
-    errorMessage.includes("database") ||
+
+  const isSystemError = errorMessage.includes("database") ||
     errorMessage.includes("connection") ||
     errorMessage.includes("timeout") ||
     errorMessage.includes("ECONNREFUSED");
-  
+
   const statusCode = isUserError ? 400 : (isSystemError ? 503 : 500);
-  
+
   return { isUserError, isSystemError, statusCode };
 }
-

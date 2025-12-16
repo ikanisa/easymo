@@ -1,9 +1,9 @@
 /**
  * Enhanced Metrics Collection for wa-webhook
- * 
+ *
  * Provides in-memory metrics aggregation with periodic flushing.
  * Complements existing observability without replacing it.
- * 
+ *
  * @see docs/GROUND_RULES.md
  */
 
@@ -38,13 +38,17 @@ class MetricsCollector {
   /**
    * Increment a counter
    */
-  incrementCounter(name: string, value: number = 1, dimensions: Record<string, string | number> = {}): void {
+  incrementCounter(
+    name: string,
+    value: number = 1,
+    dimensions: Record<string, string | number> = {},
+  ): void {
     const key = this.getDimensionKey(dimensions);
-    
+
     if (!this.counters.has(name)) {
       this.counters.set(name, new Map());
     }
-    
+
     const counter = this.counters.get(name)!;
     counter.set(key, (counter.get(key) || 0) + value);
   }
@@ -52,31 +56,39 @@ class MetricsCollector {
   /**
    * Set a gauge value
    */
-  setGauge(name: string, value: number, dimensions: Record<string, string | number> = {}): void {
+  setGauge(
+    name: string,
+    value: number,
+    dimensions: Record<string, string | number> = {},
+  ): void {
     const key = this.getDimensionKey(dimensions);
-    
+
     if (!this.gauges.has(name)) {
       this.gauges.set(name, new Map());
     }
-    
+
     this.gauges.get(name)!.set(key, value);
   }
 
   /**
    * Record a histogram value (for durations, sizes, etc.)
    */
-  recordHistogram(name: string, value: number, dimensions: Record<string, string | number> = {}): void {
+  recordHistogram(
+    name: string,
+    value: number,
+    dimensions: Record<string, string | number> = {},
+  ): void {
     const key = this.getDimensionKey(dimensions);
-    
+
     if (!this.histograms.has(name)) {
       this.histograms.set(name, new Map());
     }
-    
+
     const histogram = this.histograms.get(name)!;
     if (!histogram.has(key)) {
       histogram.set(key, []);
     }
-    
+
     histogram.get(key)!.push(value);
   }
 
@@ -85,12 +97,12 @@ class MetricsCollector {
    */
   private getDimensionKey(dimensions: Record<string, string | number>): string {
     if (Object.keys(dimensions).length === 0) return "default";
-    
+
     const sorted = Object.entries(dimensions)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([k, v]) => `${k}:${v}`)
       .join(",");
-    
+
     return sorted;
   }
 
@@ -99,13 +111,13 @@ class MetricsCollector {
    */
   private parseDimensionKey(key: string): Record<string, string> {
     if (key === "default") return {};
-    
+
     const dimensions: Record<string, string> = {};
-    key.split(",").forEach(pair => {
+    key.split(",").forEach((pair) => {
       const [k, v] = pair.split(":");
       if (k && v) dimensions[k] = v;
     });
-    
+
     return dimensions;
   }
 
@@ -123,7 +135,16 @@ class MetricsCollector {
     p99: number;
   } {
     if (values.length === 0) {
-      return { count: 0, sum: 0, min: 0, max: 0, avg: 0, p50: 0, p95: 0, p99: 0 };
+      return {
+        count: 0,
+        sum: 0,
+        min: 0,
+        max: 0,
+        avg: 0,
+        p50: 0,
+        p95: 0,
+        p99: 0,
+      };
     }
 
     const sorted = [...values].sort((a, b) => a - b);
@@ -244,7 +265,7 @@ class MetricsCollector {
           .map(([k, v]) => `${k}="${v}"`)
           .join(",");
         const labelStr = labels ? `{${labels}}` : "";
-        
+
         lines.push(`${name}_count${labelStr} ${stats.count}`);
         lines.push(`${name}_sum${labelStr} ${stats.sum}`);
         lines.push(`${name}_min${labelStr} ${stats.min}`);
@@ -302,7 +323,7 @@ export function getMetricsCollector(): MetricsCollector {
 export function incrementMetric(
   name: string,
   value: number = 1,
-  dimensions: Record<string, string | number> = {}
+  dimensions: Record<string, string | number> = {},
 ): void {
   getMetricsCollector().incrementCounter(name, value, dimensions);
 }
@@ -310,7 +331,7 @@ export function incrementMetric(
 export function setMetricGauge(
   name: string,
   value: number,
-  dimensions: Record<string, string | number> = {}
+  dimensions: Record<string, string | number> = {},
 ): void {
   getMetricsCollector().setGauge(name, value, dimensions);
 }
@@ -318,7 +339,7 @@ export function setMetricGauge(
 export function recordMetricHistogram(
   name: string,
   value: number,
-  dimensions: Record<string, string | number> = {}
+  dimensions: Record<string, string | number> = {},
 ): void {
   getMetricsCollector().recordHistogram(name, value, dimensions);
 }

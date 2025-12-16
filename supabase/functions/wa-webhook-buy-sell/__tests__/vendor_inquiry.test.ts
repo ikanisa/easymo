@@ -8,7 +8,10 @@
  * - Shortlist formatting
  */
 
-import { assertEquals, assertExists } from "https://deno.land/std@0.168.0/testing/asserts.ts";
+import {
+  assertEquals,
+  assertExists,
+} from "https://deno.land/std@0.168.0/testing/asserts.ts";
 
 // Import the functions we're testing - since some need Supabase, we test helpers directly
 // and mock the database calls
@@ -35,10 +38,16 @@ function parseVendorResponse(text: string): {
   }
 
   // Check for positive responses
-  const yesMatch = normalized.match(/^(yes|yee|yeah|ndabifite|tubifite)\s*([\d,.]+)?\s*([\d,.]+)?/i);
+  const yesMatch = normalized.match(
+    /^(yes|yee|yeah|ndabifite|tubifite)\s*([\d,.]+)?\s*([\d,.]+)?/i,
+  );
   if (yesMatch) {
-    const price = yesMatch[2] ? parseFloat(yesMatch[2].replace(/,/g, "")) : undefined;
-    const quantity = yesMatch[3] ? parseInt(yesMatch[3].replace(/,/g, ""), 10) : undefined;
+    const price = yesMatch[2]
+      ? parseFloat(yesMatch[2].replace(/,/g, ""))
+      : undefined;
+    const quantity = yesMatch[3]
+      ? parseInt(yesMatch[3].replace(/,/g, ""), 10)
+      : undefined;
 
     return {
       status: "yes",
@@ -177,7 +186,9 @@ function formatVendorShortlist(
     );
   }
 
-  let message = `✅ *${confirmed.length} Business${confirmed.length > 1 ? "es" : ""} Confirmed*\n\n`;
+  let message = `✅ *${confirmed.length} Business${
+    confirmed.length > 1 ? "es" : ""
+  } Confirmed*\n\n`;
   message += `These have "${requestSummary}" right now:\n\n`;
 
   confirmed.forEach((vendor, index) => {
@@ -333,7 +344,9 @@ function generateConsentMessage(
 
   if (businesses.length <= 3) {
     businesses.forEach((biz, i) => {
-      const distance = biz.distanceKm ? ` (${biz.distanceKm.toFixed(1)}km)` : "";
+      const distance = biz.distanceKm
+        ? ` (${biz.distanceKm.toFixed(1)}km)`
+        : "";
       text += `${i + 1}. ${biz.name}${distance}\n`;
     });
     text += "\n";
@@ -347,7 +360,8 @@ function generateConsentMessage(
     text += "\n\n";
   }
 
-  text += `I can message up to ${count} of them on your behalf to check if they have what you need.\n\n`;
+  text +=
+    `I can message up to ${count} of them on your behalf to check if they have what you need.\n\n`;
   text += `_Do you want me to contact them for you?_`;
 
   return {
@@ -431,16 +445,22 @@ function generateVendorOutreachMessage(
   const details: string[] = [];
   if (payload.item) details.push(payload.item);
   if (payload.quantity) details.push(`Qty: ${payload.quantity}`);
-  if (payload.budget) details.push(`Budget: ${payload.budget.toLocaleString()} RWF`);
+  if (payload.budget) {
+    details.push(`Budget: ${payload.budget.toLocaleString()} RWF`);
+  }
   if (payload.timeframe) details.push(`When: ${payload.timeframe}`);
   if (payload.brand) details.push(`Brand: ${payload.brand}`);
 
-  const detailsText = details.length > 0 ? details.join("\n") : params.requestSummary;
+  const detailsText = details.length > 0
+    ? details.join("\n")
+    : params.requestSummary;
 
   if (lang === "rw" || lang === "kinyarwanda") {
     return (
       `Muraho ${businessName},\n\n` +
-      `Ndi EasyMO assistant. Umukiriya uri hafi ${payload.pickupArea || "Kigali"} arashaka:\n\n` +
+      `Ndi EasyMO assistant. Umukiriya uri hafi ${
+        payload.pickupArea || "Kigali"
+      } arashaka:\n\n` +
       `${detailsText}\n\n` +
       `Mufite ibi bintu ubu?\n\n` +
       `Subiza:\n` +

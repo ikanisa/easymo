@@ -4,17 +4,14 @@
  */
 
 export { handleCreateBusinessName } from "./create.ts";
-export { 
+export {
+  handleBusinessSelection,
   listMyBusinesses,
   startCreateBusiness,
-  handleBusinessSelection,
 } from "./list.ts";
 export {
-  startEditBusiness,
-  promptEditField,
   handleUpdateBusinessField,
+  promptEditField,
+  startEditBusiness,
 } from "./update.ts";
-export {
-  confirmDeleteBusiness,
-  handleDeleteBusiness,
-} from "./delete.ts";
+export { confirmDeleteBusiness, handleDeleteBusiness } from "./delete.ts";

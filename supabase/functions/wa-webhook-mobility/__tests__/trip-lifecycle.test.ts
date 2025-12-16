@@ -39,20 +39,38 @@ transitionSuite.test("open cannot transition to completed", () => {
 });
 
 transitionSuite.test("matched can transition to in_progress", () => {
-  assertEquals(isValidTransition(TripStatus.MATCHED, TripStatus.IN_PROGRESS), true);
+  assertEquals(
+    isValidTransition(TripStatus.MATCHED, TripStatus.IN_PROGRESS),
+    true,
+  );
 });
 
 transitionSuite.test("completed cannot transition", () => {
   assertEquals(isValidTransition(TripStatus.COMPLETED, TripStatus.OPEN), false);
-  assertEquals(isValidTransition(TripStatus.COMPLETED, TripStatus.CANCELLED), false);
+  assertEquals(
+    isValidTransition(TripStatus.COMPLETED, TripStatus.CANCELLED),
+    false,
+  );
 });
 
 transitionSuite.test("all states can transition to cancelled except terminal states", () => {
   assertEquals(isValidTransition(TripStatus.OPEN, TripStatus.CANCELLED), true);
-  assertEquals(isValidTransition(TripStatus.MATCHED, TripStatus.CANCELLED), true);
-  assertEquals(isValidTransition(TripStatus.IN_PROGRESS, TripStatus.CANCELLED), true);
-  assertEquals(isValidTransition(TripStatus.COMPLETED, TripStatus.CANCELLED), false);
-  assertEquals(isValidTransition(TripStatus.CANCELLED, TripStatus.CANCELLED), false);
+  assertEquals(
+    isValidTransition(TripStatus.MATCHED, TripStatus.CANCELLED),
+    true,
+  );
+  assertEquals(
+    isValidTransition(TripStatus.IN_PROGRESS, TripStatus.CANCELLED),
+    true,
+  );
+  assertEquals(
+    isValidTransition(TripStatus.COMPLETED, TripStatus.CANCELLED),
+    false,
+  );
+  assertEquals(
+    isValidTransition(TripStatus.CANCELLED, TripStatus.CANCELLED),
+    false,
+  );
 });
 
 console.log("✅ Trip lifecycle tests loaded");

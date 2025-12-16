@@ -1,6 +1,6 @@
 /**
  * Menu Handler for Mobility Webhook
- * 
+ *
  * Handles the main mobility menu display and navigation.
  */
 
@@ -15,9 +15,9 @@ import { supabase } from "../config.ts";
  */
 export async function showMobilityMenu(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
-  
+
   await setState(supabase, ctx.profileId, { key: "mobility_menu", data: {} });
-  
+
   const rows = [
     {
       id: IDS.SEE_DRIVERS,
@@ -40,7 +40,7 @@ export async function showMobilityMenu(ctx: RouterContext): Promise<boolean> {
       description: "Share your location to receive ride offers.",
     },
   ];
-  
+
   await sendListMessage(
     ctx,
     {
@@ -52,7 +52,6 @@ export async function showMobilityMenu(ctx: RouterContext): Promise<boolean> {
     },
     { emoji: "🚗" },
   );
-  
+
   return true;
 }
-

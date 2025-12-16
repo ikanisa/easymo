@@ -16,7 +16,7 @@ export async function findNearbyLocations(
     .eq("user_id", userId);
 
   if (error || !data) {
-    console.error("location_dedup.query_fail", error);
+    // Error logged by caller
     return [];
   }
 

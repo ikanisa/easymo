@@ -4,9 +4,14 @@
  */
 
 import { assertEquals } from "https://deno.land/std@0.203.0/testing/asserts.ts";
-import { createMockSupabase, createTestSuite } from "../../_shared/testing/test-utils.ts";
+import {
+  createMockSupabase,
+  createTestSuite,
+} from "../../_shared/testing/test-utils.ts";
 
-function validateTransferAmount(amount: number): { valid: boolean; error?: string } {
+function validateTransferAmount(
+  amount: number,
+): { valid: boolean; error?: string } {
   if (typeof amount !== "number" || isNaN(amount)) {
     return { valid: false, error: "Amount must be a number" };
   }

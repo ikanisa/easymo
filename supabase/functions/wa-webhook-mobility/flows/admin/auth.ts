@@ -13,9 +13,9 @@ function normalizePhone(value: string): string {
   if (!value) return value;
   let s = value.trim();
   if (!s) return s;
-  
-  const digits = s.replace(/[^0-9]/g, '');
-  
+
+  const digits = s.replace(/[^0-9]/g, "");
+
   if (!s.startsWith("+")) {
     if (digits.startsWith("250") || digits.startsWith("356")) {
       return `+${digits}`;
@@ -32,22 +32,24 @@ function normalizePhone(value: string): string {
  */
 async function loadAdminNumbers(ctx: RouterContext): Promise<Set<string>> {
   const now = Date.now();
-  
+
   if (cache && (now - cache.loadedAt) < CACHE_TTL_MS) {
     return cache.numbers;
   }
 
   try {
     const numbers = await getAdminAuthNumbers(ctx.supabase);
-    
+
     cache = {
       numbers,
       loadedAt: now,
     };
-    
+
     return cache.numbers;
   } catch (error) {
-    console.error("admin.load_numbers_fail", error);
+    logStructuredEvent("ADMIN_LOAD_NUMBERS_FAIL", {
+      error: error instanceof Error ? error.message : String(error),
+    }, "error");
     cache = { numbers: new Set(), loadedAt: now };
     return cache.numbers;
   }

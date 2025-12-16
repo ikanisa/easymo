@@ -1,5 +1,5 @@
 import type { RouterContext } from "../../types.ts";
-import type { ChatState } from "../../state/store.ts";
+import type { ChatState } from "../../../_shared/wa-webhook-shared/state/store.ts";
 import { sendText } from "../../wa/client.ts";
 import { ADMIN_ROW_IDS } from "./hub.ts";
 import { ensureAdmin } from "./state.ts";
@@ -15,8 +15,10 @@ export async function handleAdminRow(
   switch (id) {
     case ADMIN_ROW_IDS.DIAG_MENU_RECONCILE: {
       try {
-        const { data, error } = await ctx.supabase.rpc('reconcile_menu_business_links');
-        const updated = typeof data === 'number' ? data : 0;
+        const { data, error } = await ctx.supabase.rpc(
+          "reconcile_menu_business_links",
+        );
+        const updated = typeof data === "number" ? data : 0;
         if (error) throw error;
         await sendText(
           ctx.from,
@@ -25,7 +27,9 @@ export async function handleAdminRow(
       } catch (err) {
         await sendText(
           ctx.from,
-          `Reconcile failed: ${err instanceof Error ? err.message : String(err ?? 'error')}`,
+          `Reconcile failed: ${
+            err instanceof Error ? err.message : String(err ?? "error")
+          }`,
         );
       }
       return true;

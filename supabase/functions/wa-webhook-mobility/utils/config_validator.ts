@@ -1,9 +1,9 @@
 /**
  * Enhanced Configuration Validation for wa-webhook
- * 
+ *
  * Validates all required environment variables and provides defaults.
  * Complements existing config.ts without modifying it.
- * 
+ *
  * @see docs/GROUND_RULES.md
  */
 
@@ -62,31 +62,55 @@ export function validateAndLoadConfig(): ConfigValidationResult {
 
   // Check required environment variables
   const requiredEnvVars = [
-    { keys: ["WA_PHONE_ID", "WHATSAPP_PHONE_NUMBER_ID"], name: "WhatsApp Phone ID" },
+    {
+      keys: ["WA_PHONE_ID", "WHATSAPP_PHONE_NUMBER_ID"],
+      name: "WhatsApp Phone ID",
+    },
     { keys: ["WA_TOKEN", "WHATSAPP_ACCESS_TOKEN"], name: "WhatsApp Token" },
-    { keys: ["WA_APP_SECRET", "WHATSAPP_APP_SECRET"], name: "WhatsApp App Secret" },
-    { keys: ["WA_VERIFY_TOKEN", "WHATSAPP_VERIFY_TOKEN"], name: "WhatsApp Verify Token" },
+    {
+      keys: ["WA_APP_SECRET", "WHATSAPP_APP_SECRET"],
+      name: "WhatsApp App Secret",
+    },
+    {
+      keys: ["WA_VERIFY_TOKEN", "WHATSAPP_VERIFY_TOKEN"],
+      name: "WhatsApp Verify Token",
+    },
     { keys: ["SUPABASE_URL", "SERVICE_URL"], name: "Supabase URL" },
     {
-      keys: ["SUPABASE_SERVICE_ROLE_KEY", "SERVICE_ROLE_KEY", "WA_SUPABASE_SERVICE_ROLE_KEY"],
-      name: "Supabase Service Role Key"
+      keys: [
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "SERVICE_ROLE_KEY",
+        "WA_SUPABASE_SERVICE_ROLE_KEY",
+      ],
+      name: "Supabase Service Role Key",
     },
   ];
 
   for (const envVar of requiredEnvVars) {
     if (!getEnv(...envVar.keys)) {
-      errors.push(`Missing required environment variable: ${envVar.name} (${envVar.keys.join(" or ")})`);
+      errors.push(
+        `Missing required environment variable: ${envVar.name} (${
+          envVar.keys.join(" or ")
+        })`,
+      );
     }
   }
 
   // Check optional but recommended variables
   const recommendedEnvVars = [
-    { keys: ["WA_BOT_NUMBER_E164", "WHATSAPP_PHONE_NUMBER_E164"], name: "WhatsApp Bot Number" },
+    {
+      keys: ["WA_BOT_NUMBER_E164", "WHATSAPP_PHONE_NUMBER_E164"],
+      name: "WhatsApp Bot Number",
+    },
   ];
 
   for (const envVar of recommendedEnvVars) {
     if (!getEnv(...envVar.keys)) {
-      warnings.push(`Missing recommended environment variable: ${envVar.name} (${envVar.keys.join(" or ")})`);
+      warnings.push(
+        `Missing recommended environment variable: ${envVar.name} (${
+          envVar.keys.join(" or ")
+        })`,
+      );
     }
   }
 
@@ -103,7 +127,7 @@ export function validateAndLoadConfig(): ConfigValidationResult {
     const value = parseInt(Deno.env.get(config.key) || String(config.default));
     if (isNaN(value) || value < config.min || value > config.max) {
       warnings.push(
-        `${config.key} is invalid or out of range [${config.min}, ${config.max}]. Using default: ${config.default}`
+        `${config.key} is invalid or out of range [${config.min}, ${config.max}]. Using default: ${config.default}`,
       );
     }
   }
@@ -136,21 +160,28 @@ export function loadConfig(): EnvConfig {
     waToken: getEnv("WA_TOKEN", "WHATSAPP_ACCESS_TOKEN") || "",
     waAppSecret: getEnv("WA_APP_SECRET", "WHATSAPP_APP_SECRET") || "",
     waVerifyToken: getEnv("WA_VERIFY_TOKEN", "WHATSAPP_VERIFY_TOKEN") || "",
-    waBotNumberE164: getEnv("WA_BOT_NUMBER_E164", "WHATSAPP_PHONE_NUMBER_E164") || "",
+    waBotNumberE164:
+      getEnv("WA_BOT_NUMBER_E164", "WHATSAPP_PHONE_NUMBER_E164") || "",
 
     // Supabase
     supabaseUrl: getEnv("SUPABASE_URL", "SERVICE_URL") || "",
     supabaseServiceRoleKey: getEnv(
       "WA_SUPABASE_SERVICE_ROLE_KEY",
       "SUPABASE_SERVICE_ROLE_KEY",
-      "SERVICE_ROLE_KEY"
+      "SERVICE_ROLE_KEY",
     ) || "",
     supabaseAnonKey: getEnv("SUPABASE_ANON_KEY"),
 
     // Rate Limiting
-    rateLimitWindowMs: parseInt(Deno.env.get("WA_RATE_LIMIT_WINDOW_MS") || "60000"),
-    rateLimitMaxRequests: parseInt(Deno.env.get("WA_RATE_LIMIT_MAX_REQUESTS") || "100"),
-    rateLimitBlacklistThreshold: parseInt(Deno.env.get("WA_RATE_LIMIT_BLACKLIST_THRESHOLD") || "10"),
+    rateLimitWindowMs: parseInt(
+      Deno.env.get("WA_RATE_LIMIT_WINDOW_MS") || "60000",
+    ),
+    rateLimitMaxRequests: parseInt(
+      Deno.env.get("WA_RATE_LIMIT_MAX_REQUESTS") || "100",
+    ),
+    rateLimitBlacklistThreshold: parseInt(
+      Deno.env.get("WA_RATE_LIMIT_BLACKLIST_THRESHOLD") || "10",
+    ),
 
     // Caching
     cacheDefaultTTL: parseInt(Deno.env.get("WA_CACHE_DEFAULT_TTL") || "300"),
@@ -166,10 +197,12 @@ export function loadConfig(): EnvConfig {
     // Feature Flags
     enableRateLimiting: Deno.env.get("WA_ENABLE_RATE_LIMITING") !== "false",
     enableCaching: Deno.env.get("WA_ENABLE_CACHING") !== "false",
-    enableUserErrorNotifications: Deno.env.get("WA_ENABLE_USER_ERROR_NOTIFICATIONS") === "true",
+    enableUserErrorNotifications:
+      Deno.env.get("WA_ENABLE_USER_ERROR_NOTIFICATIONS") === "true",
 
     // Environment
-    environment: Deno.env.get("APP_ENV") || Deno.env.get("NODE_ENV") || "production",
+    environment: Deno.env.get("APP_ENV") || Deno.env.get("NODE_ENV") ||
+      "production",
   };
 }
 
@@ -178,7 +211,7 @@ export function loadConfig(): EnvConfig {
  */
 export function printConfigStatus(): void {
   const validation = validateAndLoadConfig();
-  
+
   if (validation.errors.length > 0) {
     await logStructuredEvent("CONFIG_VALIDATION_ERRORS", {
       errors: validation.errors,
@@ -203,10 +236,10 @@ export function printConfigStatus(): void {
  */
 export function assertConfigValid(): void {
   const validation = validateAndLoadConfig();
-  
+
   if (!validation.valid) {
     throw new Error(
-      `Configuration validation failed:\n${validation.errors.join("\n")}`
+      `Configuration validation failed:\n${validation.errors.join("\n")}`,
     );
   }
 }

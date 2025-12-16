@@ -66,7 +66,9 @@ export async function promptEditField(
 
   await sendButtonsMessage(
     ctx,
-    `✏️ *Edit ${field.charAt(0).toUpperCase() + field.slice(1)}*\n\n${prompts[field]}`,
+    `✏️ *Edit ${field.charAt(0).toUpperCase() + field.slice(1)}*\n\n${
+      prompts[field]
+    }`,
     [{ id: `BACK_BIZ::${businessId}`, title: "← Cancel" }],
   );
 
@@ -87,7 +89,9 @@ export async function handleUpdateBusinessField(
   if (trimmedValue.length < 2) {
     await sendTextMessage(
       ctx,
-      `⚠️ ${field.charAt(0).toUpperCase() + field.slice(1)} must be at least 2 characters long. Please try again.`,
+      `⚠️ ${
+        field.charAt(0).toUpperCase() + field.slice(1)
+      } must be at least 2 characters long. Please try again.`,
     );
     return true;
   }
@@ -95,12 +99,19 @@ export async function handleUpdateBusinessField(
   if (trimmedValue.length > (field === "name" ? 100 : 500)) {
     await sendTextMessage(
       ctx,
-      `⚠️ ${field.charAt(0).toUpperCase() + field.slice(1)} is too long. Please keep it under ${field === "name" ? 100 : 500} characters.`,
+      `⚠️ ${
+        field.charAt(0).toUpperCase() + field.slice(1)
+      } is too long. Please keep it under ${
+        field === "name" ? 100 : 500
+      } characters.`,
     );
     return true;
   }
 
-  const updates: Record<string, unknown> = { [field]: trimmedValue, updated_at: new Date().toISOString() };
+  const updates: Record<string, unknown> = {
+    [field]: trimmedValue,
+    updated_at: new Date().toISOString(),
+  };
 
   const { error } = await ctx.supabase
     .from("businesses")

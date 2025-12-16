@@ -46,8 +46,9 @@ export type WhatsAppMessage = {
   [key: string]: unknown;
 };
 
-export type RawWhatsAppMessage = Partial<WhatsAppMessage> &
-  Record<string, unknown>;
+export type RawWhatsAppMessage =
+  & Partial<WhatsAppMessage>
+  & Record<string, unknown>;
 
 export type WhatsAppTextMessage = WhatsAppMessage & {
   type: "text";

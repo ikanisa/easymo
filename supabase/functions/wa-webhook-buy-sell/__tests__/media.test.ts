@@ -1,10 +1,13 @@
 /**
  * Media Upload Tests
- * 
+ *
  * Tests for photo/document upload functionality
  */
 
-import { assertEquals, assertExists } from "https://deno.land/std@0.168.0/testing/asserts.ts";
+import {
+  assertEquals,
+  assertExists,
+} from "https://deno.land/std@0.168.0/testing/asserts.ts";
 import { handleMediaUpload } from "../media.ts";
 import type { MarketplaceContext } from "../types.ts";
 
@@ -13,7 +16,9 @@ Deno.test("handleMediaUpload - rejects media without active listing", async () =
     storage: {
       from: () => ({
         upload: async () => ({ data: null, error: null }),
-        getPublicUrl: () => ({ data: { publicUrl: "http://example.com/image.jpg" } }),
+        getPublicUrl: () => ({
+          data: { publicUrl: "http://example.com/image.jpg" },
+        }),
       }),
     },
     from: () => ({
@@ -50,7 +55,7 @@ Deno.test("handleMediaUpload - rejects media without active listing", async () =
     "+250788123456",
     message,
     context,
-    mockSupabase
+    mockSupabase,
   );
 
   assertEquals(response.includes("creating a listing"), true);
@@ -58,7 +63,7 @@ Deno.test("handleMediaUpload - rejects media without active listing", async () =
 
 Deno.test("handleMediaUpload - rejects video uploads", async () => {
   const mockSupabase = {} as any;
-  
+
   const context: MarketplaceContext = {
     phone: "+250788123456",
     flowType: "selling",
@@ -79,9 +84,12 @@ Deno.test("handleMediaUpload - rejects video uploads", async () => {
     "+250788123456",
     message,
     context,
-    mockSupabase
+    mockSupabase,
   );
 
   assertEquals(response.includes("video") || response.includes("Video"), true);
-  assertEquals(response.includes("not supported") || response.includes("aren't supported"), true);
+  assertEquals(
+    response.includes("not supported") || response.includes("aren't supported"),
+    true,
+  );
 });

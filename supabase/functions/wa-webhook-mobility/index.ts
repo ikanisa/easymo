@@ -1,744 +1,213 @@
-// wa-webhook-mobility - Standalone version
+// wa-webhook-mobility - Simplified version
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { logStructuredEvent } from "../_shared/observability/index.ts";
-import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
-import { clearState, getState } from "../_shared/wa-webhook-shared/state/store.ts";
+import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
 import {
-  handleChangeVehicleRequest,
   handleNearbyLocation,
-  handleNearbyResultSelection,
-  handleNearbySavedLocationSelection,
-  handleRecentSearchSelection,
   handleSeeDrivers,
   handleSeePassengers,
-  handleUseCachedLocation,
   handleVehicleSelection,
   isVehicleOption,
-  startNearbySavedLocationPicker,
 } from "./handlers/nearby.ts";
 import {
-  handleScheduleChangeVehicle,
-  handleScheduleDropoff,
   handleScheduleLocation,
-  handleScheduleRecurrenceSelection,
-  handleScheduleRefresh,
-  handleScheduleResultSelection,
   handleScheduleRole,
-  handleScheduleSavedLocationSelection,
-  handleScheduleSkipDropoff,
-  handleScheduleTimeSelection,
   handleScheduleVehicle,
-  startScheduleSavedLocationPicker,
   startScheduleTrip,
 } from "./handlers/schedule.ts";
 import {
   handleGoOffline,
   handleGoOnlineLocation,
-  handleGoOnlineUseCached,
   startGoOnline,
 } from "./handlers/go_online.ts";
-import {
-  handleVehiclePlateInput,
-  parsePlateState,
-  vehiclePlateStateKey,
-} from "./handlers/vehicle_plate.ts";
-import type {
-  RouterContext,
-  WhatsAppWebhookPayload,
-} from "./types.ts";
+import type { RouterContext, WhatsAppWebhookPayload } from "./types.ts";
+import type { SupportedLanguage } from "./i18n/language.ts";
 import { IDS } from "./wa/ids.ts";
-import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
-import { sendButtonsMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
+import { supabase } from "./config.ts";
 import { recordLastLocation } from "./locations/favorites.ts";
-import { sendText } from "./wa/client.ts";
-import { t } from "./i18n/translator.ts";
-// Import supabase and config from config (uses proper environment variable fallbacks)
-import { supabase, WA_APP_SECRET } from "./config.ts";
-// Fallback: also try direct env read in case Supabase binding has issues
-const WA_APP_SECRET_DIRECT = Deno.env.get("WHATSAPP_APP_SECRET") ?? Deno.env.get("WA_APP_SECRET");
-// Debug logging removed - use structured logging instead
-// Import location utilities
-import { getLastLocation } from "./locations/cache.ts";
-import { getLocationReusedMessage } from "../_shared/wa-webhook-shared/locations/messages.ts";
-import { formatUnknownError, classifyError } from "./utils/error-handling.ts";
-
-// Default age estimate for recent location (in minutes)
-const DEFAULT_LOCATION_AGE_MINUTES = 5;
+import { showMobilityMenu } from "./handlers/menu.ts";
 
 const STATE_KEYS = {
-  MOBILITY: {
-    NEARBY_SELECT: "mobility_nearby_select",
-    NEARBY_LOCATION: "mobility_nearby_location",
-    NEARBY_RESULTS: "mobility_nearby_results",
-    GO_ONLINE: "mobility_go_online",
-    LOCATION_SAVED_PICKER: "mobility_location_saved_picker",
-    SCHEDULE_ROLE: "mobility_schedule_role",
-    SCHEDULE_VEHICLE: "mobility_schedule_vehicle",
-    SCHEDULE_LOCATION: "mobility_schedule_location",
-    SCHEDULE_DROPOFF: "mobility_schedule_dropoff",
-    SCHEDULE_TIME: "mobility_schedule_time",
-    SCHEDULE_RECURRENCE: "mobility_schedule_recurrence",
-    SCHEDULE_RESULTS: "mobility_schedule_results",
-  },
+  NEARBY_SELECT: "mobility_nearby_select",
+  NEARBY_LOCATION: "mobility_nearby_location",
+  GO_ONLINE: "mobility_go_online",
+  SCHEDULE_ROLE: "mobility_schedule_role",
+  SCHEDULE_LOCATION: "mobility_schedule_location",
+  SCHEDULE_VEHICLE: "mobility_schedule_vehicle",
 } as const;
 
-// Note: supabase client is imported from ./config.ts with proper env var fallbacks
-
 serve(async (req: Request): Promise<Response> => {
-  // Rate limiting (100 req/min for high-volume WhatsApp)
-  const rateLimitCheck = await rateLimitMiddleware(req, {
-    limit: 100,
-    windowSeconds: 60,
-  });
-
-  if (!rateLimitCheck.allowed) {
-    return rateLimitCheck.response!;
-  }
-
-  const url = new URL(req.url);
-  const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
-  const correlationId = req.headers.get("x-correlation-id") ?? requestId;
-
-  const respond = (body: unknown, init: ResponseInit = {}): Response => {
-    const headers = new Headers(init.headers);
-    headers.set("Content-Type", "application/json");
-    headers.set("X-Request-ID", requestId);
-    headers.set("X-Correlation-ID", correlationId);
-    headers.set("X-Service", "wa-webhook-mobility");
-    return new Response(JSON.stringify(body), { ...init, headers });
-  };
-
-  const logEvent = (
-    event: string,
-    details: Record<string, unknown> = {},
-    level: "debug" | "info" | "warn" | "error" = "info",
-  ) => {
-    logStructuredEvent(event, {
-      service: "wa-webhook-mobility",
-      requestId,
-      correlationId,
-      path: url.pathname,
-      ...details,
-    }, level);
+  const respond = (body: unknown, status = 200): Response => {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { "Content-Type": "application/json" },
+    });
   };
 
   // Health check
-  if (url.pathname === "/health" || url.pathname.endsWith("/health")) {
-    return respond({
-      status: "healthy",
-      service: "wa-webhook-mobility",
-      timestamp: new Date().toISOString(),
-    });
-  }
-
-  // Webhook verification
   if (req.method === "GET") {
-    const mode = url.searchParams.get("hub.mode");
-    const token = url.searchParams.get("hub.verify_token");
-    const challenge = url.searchParams.get("hub.challenge");
-
-    if (mode === "subscribe" && token === Deno.env.get("WA_VERIFY_TOKEN")) {
-      return new Response(challenge ?? "", { status: 200 });
+    const url = new URL(req.url);
+    if (url.pathname === "/health") {
+      return respond({ status: "ok" });
     }
-    return respond({ error: "forbidden" }, { status: 403 });
+    return respond({ error: "not_found" }, 404);
   }
 
-  // Main webhook handler
   try {
-    // Read raw body for signature verification
-    const rawBody = await req.text();
+    // Parse payload
+    const payload: WhatsAppWebhookPayload = await req.json();
+    const message = payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+    const contacts = payload.entry?.[0]?.changes?.[0]?.value?.contacts?.[0];
 
-    // Protect against large payloads
-    const MAX_BODY_SIZE = 1024 * 1024; // 1MB
-    if (rawBody.length > MAX_BODY_SIZE) {
-      logStructuredEvent("MOBILITY_PAYLOAD_TOO_LARGE", { size: rawBody.length }, "warn");
-      return respond({ error: "payload_too_large" }, { status: 413 });
-    }
-
-    const signatureHeader = req.headers.has("x-hub-signature-256")
-      ? "x-hub-signature-256"
-      : req.headers.has("x-hub-signature")
-      ? "x-hub-signature"
-      : null;
-    const signature = signatureHeader ? req.headers.get(signatureHeader) : null;
-    const signatureMeta = (() => {
-      if (!signature) {
-        return {
-          provided: false,
-          header: signatureHeader,
-          method: null as string | null,
-          sample: null as string | null,
-        };
-      }
-      const [method, hash] = signature.split("=", 2);
-      return {
-        provided: true,
-        header: signatureHeader,
-        method: method?.toLowerCase() ?? null,
-        sample: hash ? `${hash.slice(0, 6)}…${hash.slice(-4)}` : null,
-      };
-    })();
-    const appSecret = WA_APP_SECRET || WA_APP_SECRET_DIRECT;
-    const runtimeEnv =
-      (Deno.env.get("APP_ENV") ?? Deno.env.get("NODE_ENV") ?? "development")
-        .toLowerCase();
-    const allowUnsigned = runtimeEnv !== "production" &&
-      runtimeEnv !== "prod" &&
-      (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() ===
-        "true";
-    const internalForward = req.headers.get("x-wa-internal-forward") === "true";
-    const allowInternalForward =
-      (Deno.env.get("WA_ALLOW_INTERNAL_FORWARD") ?? "false").toLowerCase() ===
-        "true";
-
-    if (!appSecret) {
-      logStructuredEvent(
-        "MOBILITY_AUTH_CONFIG_ERROR",
-        { reason: "missing_app_secret", message: "WA_APP_SECRET not found in environment" },
-        "error",
-      );
-      return respond({ error: "server_misconfigured" }, { status: 500 });
-    }
-
-    if (appSecret.length < 10) {
-      logStructuredEvent(
-        "MOBILITY_AUTH_CONFIG_WARNING",
-        { reason: "app_secret_too_short", length: appSecret.length, message: "WA_APP_SECRET seems invalid (too short)" },
-        "error",
-      );
-    }
-
-    // Diagnostic: Log what we're about to verify
-    logStructuredEvent("MOBILITY_SIGNATURE_VERIFICATION_ATTEMPT", {
-      hasSignature: !!signature,
-      signatureHeader,
-      signatureLength: signature?.length ?? 0,
-      payloadLength: rawBody.length,
-      appSecretLength: appSecret.length,
-      appSecretPrefix: appSecret.substring(0, 10),
-    }, "info");
-
-    let isValidSignature = false;
-    if (signature) {
-      try {
-        isValidSignature = await verifyWebhookSignature(
-          rawBody,
-          signature,
-          appSecret,
-        );
-        if (isValidSignature) {
-          logStructuredEvent("MOBILITY_SIGNATURE_VALID", {
-            signatureHeader,
-            signatureMethod: signatureMeta.method,
-          });
-        } else {
-          // Compute what the signature SHOULD be for debugging
-          const encoder = new TextEncoder();
-          const key = await crypto.subtle.importKey(
-            "raw",
-            encoder.encode(appSecret),
-            { name: "HMAC", hash: "SHA-256" },
-            false,
-            ["sign"],
-          );
-          const signatureBytes = await crypto.subtle.sign(
-            "HMAC",
-            key,
-            encoder.encode(rawBody),
-          );
-          const expectedHash = Array.from(new Uint8Array(signatureBytes))
-            .map((b) => b.toString(16).padStart(2, "0"))
-            .join("");
-          const receivedHash = signature.split("=")[1]?.toLowerCase() ?? "";
-          
-          logStructuredEvent("MOBILITY_SIGNATURE_MISMATCH", {
-            signatureProvided: true,
-            signatureHeader,
-            signatureMethod: signatureMeta.method,
-            signatureSample: signatureMeta.sample,
-            payloadSize: rawBody.length,
-            appSecretLength: appSecret.length,
-            receivedHashSample: receivedHash.slice(0, 16),
-            expectedHashSample: expectedHash.slice(0, 16),
-            hashMatch: receivedHash === expectedHash,
-            diagnostic: "App secret mismatch or body modified. Verify WA_APP_SECRET matches WhatsApp Business API App Secret.",
-          }, "warn");
-        }
-      } catch (err) {
-        logStructuredEvent("MOBILITY_SIGNATURE_ERROR", {
-          error: err instanceof Error ? err.message : String(err),
-        }, "error");
-      }
-    }
-
-    if (!isValidSignature) {
-      const bypass = allowUnsigned || (internalForward && allowInternalForward);
-      if (bypass) {
-        logStructuredEvent("MOBILITY_AUTH_BYPASS", {
-          reason: internalForward
-            ? "internal_forward"
-            : signature
-            ? "signature_mismatch"
-            : "no_signature",
-          signatureHeader,
-          signatureMethod: signatureMeta.method,
-          signatureSample: signatureMeta.sample,
-          userAgent: req.headers.get("user-agent"),
-        }, "warn");
-      } else {
-        logStructuredEvent("MOBILITY_AUTH_FAILED", {
-          signatureProvided: signatureMeta.provided,
-          signatureHeader,
-          signatureMethod: signatureMeta.method,
-          signatureSample: signatureMeta.sample,
-          userAgent: req.headers.get("user-agent"),
-          isInternalForward: internalForward,
-          allowInternalForward,
-          diagnostic: internalForward 
-            ? "Internal forward detected but WA_ALLOW_INTERNAL_FORWARD is not enabled. Set WA_ALLOW_INTERNAL_FORWARD=true if requests come from wa-webhook-core."
-            : "Signature verification failed. Verify WA_APP_SECRET matches WhatsApp Business API App Secret.",
-        }, "warn");
-        return respond({ error: "unauthorized" }, { status: 401 });
-      }
-    }
-
-    let payload: WhatsAppWebhookPayload;
-    try {
-      payload = rawBody ? JSON.parse(rawBody) : {} as WhatsAppWebhookPayload;
-    } catch (err) {
-      logStructuredEvent("MOBILITY_PAYLOAD_INVALID_JSON", {
-        error: err instanceof Error ? err.message : String(err),
-      }, "warn");
-      return respond({ error: "invalid_payload" }, { status: 400 });
-    }
-    const entry = payload.entry?.[0];
-    const change = entry?.changes?.[0];
-    const value = change?.value;
-    const message = value?.messages?.[0];
-
-    if (!message) {
-      return respond({ success: true, ignored: "no_message" });
+    if (!message || !message.from) {
+      return respond({ success: true });
     }
 
     const from = message.from;
-    if (!from) {
-      return respond({ success: true, ignored: "no_sender" });
-    }
+    const profileName = contacts?.profile?.name || "User";
 
-    // 1. Build Context - Auto-create profile if needed
-    const { ensureProfile } = await import(
-      "../_shared/wa-webhook-shared/utils/profile.ts"
-    );
-    const profile = await ensureProfile(supabase, from);
+    // Ensure user exists
+    const { data: profileData } = await supabase.rpc("ensure_whatsapp_user", {
+      _wa_id: from,
+      _profile_name: profileName,
+    });
+
+    const profileId = profileData?.profile_id || "";
+    const locale = (profileData?.locale || "en") as SupportedLanguage;
 
     const ctx: RouterContext = {
       supabase,
       from,
-      profileId: profile?.user_id,
-      locale: (profile?.language as any) || "en",
+      profileId,
+      locale,
     };
 
-    // 2. Get State
-    const state = ctx.profileId
-      ? await getState(supabase, ctx.profileId)
-      : null;
+    // Get state
+    const state = profileId ? await getState(supabase, profileId) : null;
 
-    // 3. Dispatch
-    let handled = false;
-
-    // A. Handle Interactive Messages (Buttons/Lists)
+    // Handle interactive messages
     if (message.type === "interactive") {
       const interactive = message.interactive as any;
-      const buttonId = interactive?.button_reply?.id;
-      const listId = interactive?.list_reply?.id;
-      const id = buttonId || listId;
+      const id = interactive?.button_reply?.id || interactive?.list_reply?.id;
 
-      if (id) {
-
-        // Mobility main menu - handle all variations of menu keys
-        if (
-          id === IDS.RIDES_MENU || 
-          id === "rides_agent" || 
-          id === "rides" ||
-          id === "mobility"
-        ) {
-          const { showMobilityMenu } = await import("./handlers/menu.ts");
-          handled = await showMobilityMenu(ctx);
-        } else if (id === IDS.BACK_MENU || id === IDS.BACK_HOME) {
-          const { showMobilityMenu } = await import("./handlers/menu.ts");
-          handled = await showMobilityMenu(ctx);
-        } // Nearby Flows
-        else if (id === IDS.SEE_DRIVERS) {
-          handled = await handleSeeDrivers(ctx);
-        } else if (id === IDS.SEE_PASSENGERS) {
-          handled = await handleSeePassengers(ctx);
-        } else if (
-          isVehicleOption(id) &&
-          state?.key === STATE_KEYS.MOBILITY.NEARBY_SELECT
-        ) {
-          handled = await handleVehicleSelection(ctx, state.data as any, id);
-        } else if (
-          id.startsWith("MTCH::") &&
-          state?.key === STATE_KEYS.MOBILITY.NEARBY_RESULTS
-        ) {
-          handled = await handleNearbyResultSelection(
-            ctx,
-            state.data as any,
-            id,
-          );
-        } else if (id === IDS.MOBILITY_CHANGE_VEHICLE) {
-          handled = await handleChangeVehicleRequest(ctx, state?.data as any);
-        } else if (
-          id === IDS.USE_CACHED_LOCATION &&
-          state?.key === STATE_KEYS.MOBILITY.NEARBY_LOCATION
-        ) {
-          handled = await handleUseCachedLocation(ctx, state.data as any);
-        } else if (
-          id === IDS.USE_LAST_LOCATION &&
-          state?.key === STATE_KEYS.MOBILITY.NEARBY_LOCATION
-        ) {
-          // Handle "Use Last Location" - reuse recent location
-          if (!ctx.profileId) {
-            handled = false;
-          } else {
-            // Use local getLastLocation from ./locations/cache.ts (already imported at top)
-            const lastLoc = await getLastLocation(ctx.supabase, ctx.profileId);
-
-            if (lastLoc?.lat && lastLoc?.lng) {
-              // Show confirmation message using imported getLocationReusedMessage
-              await sendText(
-                ctx.from,
-                getLocationReusedMessage(DEFAULT_LOCATION_AGE_MINUTES, ctx.locale),
-              );
-
-              // Continue with matching flow
-              handled = await handleNearbyLocation(ctx, state.data as any, {
-                lat: lastLoc.lat,
-                lng: lastLoc.lng,
-              });
-            } else {
-              // No previous location found
-              await sendText(
-                ctx.from,
-                t(ctx.locale, "location.no_recent_found", {
-                  defaultValue:
-                    "No previous location found. Please share your location.",
-                }),
-              );
-              handled = true;
-            }
-          }
-        } else if (
-          id === IDS.USE_CACHED_LOCATION &&
-          state?.key === STATE_KEYS.MOBILITY.GO_ONLINE
-        ) {
-          handled = await handleGoOnlineUseCached(ctx);
-        } else if (
-          id === IDS.LOCATION_SAVED_LIST &&
-          state?.key === STATE_KEYS.MOBILITY.NEARBY_LOCATION
-        ) {
-          handled = await startNearbySavedLocationPicker(
-            ctx,
-            state.data as any,
-          );
-        } else if (
-          id.startsWith("FAV::") &&
-          state?.key === STATE_KEYS.MOBILITY.LOCATION_SAVED_PICKER &&
-          state.data?.source === "nearby"
-        ) {
-          handled = await handleNearbySavedLocationSelection(
-            ctx,
-            state.data as any,
-            id,
-          );
-        } else if (
-          id.startsWith("RECENT_SEARCH::") &&
-          state?.key === STATE_KEYS.MOBILITY.NEARBY_SELECT
-        ) {
-          // Handle recent search selection (removed SHARE_NEW_LOCATION option)
-          handled = await handleRecentSearchSelection(ctx, id);
-        } else if (
-          id === "USE_CURRENT_LOCATION" &&
-          state?.key === STATE_KEYS.MOBILITY.LOCATION_SAVED_PICKER &&
-          state.data?.source === "nearby"
-        ) {
-          handled = await handleNearbySavedLocationSelection(
-            ctx,
-            state.data as any,
-            id,
-          );
-        } else if (
-          id === "USE_CURRENT_LOCATION" &&
-          state?.key === STATE_KEYS.MOBILITY.LOCATION_SAVED_PICKER &&
-          state.data?.source === "schedule"
-        ) {
-          handled = await handleScheduleSavedLocationSelection(
-            ctx,
-            state.data as any,
-            id,
-          );
-        } // Go Online / Offline Flows
-        else if (id === IDS.GO_ONLINE || id === "driver_go_online") {
-          handled = await startGoOnline(ctx);
-        } else if (id === IDS.GO_OFFLINE) {
-          handled = await handleGoOffline(ctx);
-        } // Share easyMO
-        else if (id === IDS.SHARE_EASYMO) {
-          if (ctx.profileId) {
-            const { data: link } = await ctx.supabase
-              .from("referral_links")
-              .select("code")
-              .eq("user_id", ctx.profileId)
-              .eq("active", true)
-              .single();
-
-            const referralCode = link?.code || ctx.profileId.slice(0, 8);
-            const shareUrl =
-              `https://wa.me/250788346193?text=Join%20me%20on%20easyMO!%20Use%20code%20${referralCode}`;
-
-            await sendText(
-              ctx.from,
-              `🔗 *Share easyMO with friends!*\n\nYour referral link:\n${shareUrl}\n\nShare this link and earn tokens when friends join! 🎉`,
-            );
-            handled = true;
-          }
-        } // Schedule Flows
-        else if (id === IDS.SCHEDULE_TRIP) {
-          handled = await startScheduleTrip(ctx, state as any);
-        } else if (
-          (id === IDS.ROLE_DRIVER || id === IDS.ROLE_PASSENGER) &&
-          state?.key === STATE_KEYS.MOBILITY.SCHEDULE_ROLE
-        ) {
-          handled = await handleScheduleRole(ctx, id);
-        } else if (
-          isVehicleOption(id) &&
-          (state?.key === STATE_KEYS.MOBILITY.SCHEDULE_LOCATION ||
-            state?.key === STATE_KEYS.MOBILITY.SCHEDULE_VEHICLE)
-        ) {
-          handled = await handleScheduleVehicle(ctx, state.data as any, id);
-        } else if (
-          id === IDS.MOBILITY_CHANGE_VEHICLE &&
-          state?.key?.includes("schedule_")
-        ) {
-          handled = await handleScheduleChangeVehicle(ctx, state.data as any);
-        } else if (
-          id === IDS.SCHEDULE_SKIP_DROPOFF &&
-          state?.key === STATE_KEYS.MOBILITY.SCHEDULE_DROPOFF
-        ) {
-          handled = await handleScheduleSkipDropoff(ctx, state.data as any);
-        } else if (
-          id.startsWith("time::") &&
-          state?.key === STATE_KEYS.MOBILITY.SCHEDULE_TIME
-        ) {
-          handled = await handleScheduleTimeSelection(
-            ctx,
-            state.data as any,
-            id,
-          );
-        } else if (
-          id.startsWith("recur::") &&
-          state?.key === STATE_KEYS.MOBILITY.SCHEDULE_RECURRENCE
-        ) {
-          handled = await handleScheduleRecurrenceSelection(
-            ctx,
-            state.data as any,
-            id,
-          );
-        } else if (
-          id.startsWith("MTCH::") &&
-          state?.key === STATE_KEYS.MOBILITY.SCHEDULE_RESULTS
-        ) {
-          handled = await handleScheduleResultSelection(
-            ctx,
-            state.data as any,
-            id,
-          );
-        } else if (
-          id === IDS.SCHEDULE_REFRESH_RESULTS &&
-          state?.key === STATE_KEYS.MOBILITY.SCHEDULE_RESULTS
-        ) {
-          handled = await handleScheduleRefresh(ctx, state.data as any);
-        } else if (
-          id === IDS.USE_LAST_LOCATION &&
-          state?.key === STATE_KEYS.MOBILITY.SCHEDULE_LOCATION
-        ) {
-          // Handle "Use Last Location" for schedule pickup
-          if (!ctx.profileId) {
-            handled = false;
-          } else {
-            // Use local getLastLocation from ./locations/cache.ts (already imported at top)
-            const lastLoc = await getLastLocation(ctx.supabase, ctx.profileId);
-
-            if (lastLoc?.lat && lastLoc?.lng) {
-              // Show confirmation message using imported getLocationReusedMessage
-              await sendText(
-                ctx.from,
-                getLocationReusedMessage(DEFAULT_LOCATION_AGE_MINUTES, ctx.locale),
-              );
-
-              // Continue with schedule flow
-              handled = await handleScheduleLocation(ctx, state.data as any, {
-                lat: lastLoc.lat,
-                lng: lastLoc.lng,
-              });
-            } else {
-              await sendText(
-                ctx.from,
-                t(ctx.locale, "location.no_recent_found", {
-                  defaultValue:
-                    "No previous location found. Please share your location.",
-                }),
-              );
-              handled = true;
-            }
-          }
-        } else if (
-          id === IDS.LOCATION_SAVED_LIST &&
-          state?.key === STATE_KEYS.MOBILITY.SCHEDULE_LOCATION
-        ) {
-          handled = await startScheduleSavedLocationPicker(
-            ctx,
-            state.data as any,
-            "pickup",
-          );
-        } else if (
-          id === IDS.LOCATION_SAVED_LIST &&
-          state?.key === STATE_KEYS.MOBILITY.SCHEDULE_DROPOFF
-        ) {
-          handled = await startScheduleSavedLocationPicker(
-            ctx,
-            state.data as any,
-            "dropoff",
-          );
-        } else if (
-          id.startsWith("FAV::") &&
-          state?.key === STATE_KEYS.MOBILITY.LOCATION_SAVED_PICKER &&
-          state.data?.source === "schedule"
-        ) {
-          handled = await handleScheduleSavedLocationSelection(
-            ctx,
-            state.data as any,
-            id,
-          );
-        }
-        // NOTE: Driver verification handlers removed per GROUND_RULES
-        // (driver_verification.ts, ai-agents/, fare.ts are prohibited in mobility function)
+      if (!id) {
+        return respond({ success: true });
       }
-    } // B. Handle Location Messages
-    else if (message.type === "location") {
+
+      // Main menu
+      if (id === IDS.RIDES_MENU || id === "rides_agent" || id === "rides") {
+        await showMobilityMenu(ctx);
+        return respond({ success: true });
+      }
+
+      // Nearby flows
+      if (id === IDS.SEE_DRIVERS) {
+        await handleSeeDrivers(ctx);
+        return respond({ success: true });
+      }
+
+      if (id === IDS.SEE_PASSENGERS) {
+        await handleSeePassengers(ctx);
+        return respond({ success: true });
+      }
+
+      if (isVehicleOption(id) && state?.key === STATE_KEYS.NEARBY_SELECT) {
+        await handleVehicleSelection(ctx, state.data as any, id);
+        return respond({ success: true });
+      }
+
+      // Go online/offline
+      if (id === IDS.GO_ONLINE || id === "driver_go_online") {
+        await startGoOnline(ctx);
+        return respond({ success: true });
+      }
+
+      if (id === IDS.GO_OFFLINE) {
+        await handleGoOffline(ctx);
+        return respond({ success: true });
+      }
+
+      // Schedule flows
+      if (id === IDS.SCHEDULE_TRIP) {
+        await startScheduleTrip(ctx, state as any);
+        return respond({ success: true });
+      }
+
+      if (
+        (id === IDS.ROLE_DRIVER || id === IDS.ROLE_PASSENGER) &&
+        state?.key === STATE_KEYS.SCHEDULE_ROLE
+      ) {
+        await handleScheduleRole(ctx, id);
+        return respond({ success: true });
+      }
+
+      if (
+        isVehicleOption(id) &&
+        (state?.key === STATE_KEYS.SCHEDULE_LOCATION ||
+          state?.key === STATE_KEYS.SCHEDULE_VEHICLE)
+      ) {
+        await handleScheduleVehicle(ctx, state.data as any, id);
+        return respond({ success: true });
+      }
+    }
+
+    // Handle location messages
+    if (message.type === "location") {
       const loc = message.location as any;
-      if (loc && loc.latitude && loc.longitude) {
+      if (loc?.latitude && loc?.longitude) {
         const coords = {
           lat: Number(loc.latitude),
           lng: Number(loc.longitude),
         };
-        // Location logged at debug level for privacy
-        await recordLastLocation(ctx, coords).catch((e) => {
-          logStructuredEvent("WARNING", {
-            data: "mobility.record_location_fail",
-            e,
-          });
-        });
 
-        // Existing location handlers
-        if (state?.key === STATE_KEYS.MOBILITY.NEARBY_LOCATION) {
-          handled = await handleNearbyLocation(ctx, state.data as any, coords);
-        } else if (state?.key === STATE_KEYS.MOBILITY.GO_ONLINE) {
-          handled = await handleGoOnlineLocation(ctx, coords);
-        } else if (state?.key === STATE_KEYS.MOBILITY.SCHEDULE_LOCATION) {
-          handled = await handleScheduleLocation(
-            ctx,
-            state.data as any,
-            coords,
-          );
-        } else if (state?.key === STATE_KEYS.MOBILITY.SCHEDULE_DROPOFF) {
-          handled = await handleScheduleDropoff(ctx, state.data as any, coords);
+        await recordLastLocation(ctx, coords).catch(() => {});
+
+        if (state?.key === STATE_KEYS.NEARBY_LOCATION) {
+          await handleNearbyLocation(ctx, state.data as any, coords);
+        } else if (state?.key === STATE_KEYS.GO_ONLINE) {
+          await handleGoOnlineLocation(ctx, coords);
+        } else if (state?.key === STATE_KEYS.SCHEDULE_LOCATION) {
+          await handleScheduleLocation(ctx, state.data as any, coords);
         }
       }
-    } // C. Handle Image/Document Messages - Note: License upload removed per GROUND_RULES
-    // D. Handle Text Messages (Keywords/Fallbacks)
-    else if (message.type === "text") {
-      const text = (message.text as any)?.body?.toLowerCase() ?? "";
-      const rawText = (message.text as any)?.body ?? "";
+      return respond({ success: true });
+    }
 
-      // Vehicle plate registration input
-      if (state?.key === vehiclePlateStateKey) {
-        const resumeData = parsePlateState(state.data);
-        if (resumeData) {
-          const error = await handleVehiclePlateInput(ctx, resumeData, rawText);
-          if (error) {
-            // Validation failed, show error
-            await sendButtonsMessage(
-              ctx,
-              `⚠️ ${error}\n\nPlease try again:`,
-              [{ id: IDS.BACK_MENU, title: "← Cancel" }],
-            );
-            handled = true;
-          } else {
-            // Success! Clear state and resume flow
-            await clearState(ctx.supabase, ctx.profileId!);
-            await sendText(
-              ctx.from,
-              `✅ Vehicle registered! Plate: ${rawText.toUpperCase()}`,
-            );
+    // Handle text messages
+    if (message.type === "text") {
+      const text = (message.text as any)?.body?.toLowerCase() || "";
 
-            // Resume the original flow
-            if (resumeData.type === "go_online") {
-              handled = await startGoOnline(ctx);
-            } else if (resumeData.type === "nearby_passengers") {
-              handled = await handleSeePassengers(ctx);
-            } else if (resumeData.type === "schedule_role") {
-              handled = await startScheduleTrip(ctx, state as any);
-            } else {
-              handled = true;
-            }
-          }
-        }
-      } // Check for menu selection keys first
-      else if (text === "rides_agent" || text === "rides") {
-        const { showMobilityMenu } = await import("./handlers/menu.ts");
-        handled = await showMobilityMenu(ctx);
-      } // Simple keyword triggers if not in a specific flow or if flow allows interruption
-      else if (text.includes("driver") || text.includes("ride")) {
-        handled = await handleSeeDrivers(ctx);
-      } else if (text.includes("passenger")) {
-        handled = await handleSeePassengers(ctx);
-      } else if (text.includes("schedule") || text.includes("book")) {
-        handled = await startScheduleTrip(ctx, state as any);
+      if (text === "rides" || text === "rides_agent") {
+        await showMobilityMenu(ctx);
+        return respond({ success: true });
+      }
+
+      if (text.includes("driver") || text.includes("ride")) {
+        await handleSeeDrivers(ctx);
+        return respond({ success: true });
+      }
+
+      if (text.includes("passenger")) {
+        await handleSeePassengers(ctx);
+        return respond({ success: true });
+      }
+
+      if (text.includes("schedule") || text.includes("book")) {
+        await startScheduleTrip(ctx, state as any);
+        return respond({ success: true });
       }
     }
 
-    if (!handled) {
-      // If we have state but didn't handle the input, maybe show a generic "I didn't understand" or just ignore
-      // For now, we'll just log it.
-      logStructuredEvent("MOBILITY_UNHANDLED_MESSAGE", { from, type: message.type });
-    }
-
-    return respond({ success: true, handled });
+    return respond({ success: true });
   } catch (err) {
-    const errorMessage = formatUnknownError(err);
-    const { isUserError, isSystemError, statusCode } = classifyError(err);
-    
-    logStructuredEvent("MOBILITY_WEBHOOK_ERROR", {
-      error: errorMessage,
-      errorType: isUserError ? "user_error" : (isSystemError ? "system_error" : "unknown_error"),
-      statusCode,
-      requestId,
-      correlationId,
-    }, isSystemError ? "error" : "warn");
-
-    return respond({
-      error: isUserError ? "invalid_request" : (isSystemError ? "service_unavailable" : "internal_error"),
-      message: isUserError ? errorMessage : "An error occurred. Please try again later.",
-      service: "wa-webhook-mobility",
-      requestId,
-    }, {
-      status: statusCode,
-    });
+    logStructuredEvent("MOBILITY_ERROR", {
+      error: err instanceof Error ? err.message : String(err),
+    }, "error");
+    return respond({ error: "internal_error" }, 500);
   }
 });
 
 logStructuredEvent("SERVICE_STARTED", {
   service: "wa-webhook-mobility",
-  version: "1.1.0",
+  version: "2.0.0",
 });

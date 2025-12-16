@@ -1,6 +1,12 @@
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
-import { setState, clearState } from "../../_shared/wa-webhook-shared/state/store.ts";
-import { sendListMessage, sendButtonsMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
+import {
+  clearState,
+  setState,
+} from "../../_shared/wa-webhook-shared/state/store.ts";
+import {
+  sendButtonsMessage,
+  sendListMessage,
+} from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
@@ -22,7 +28,9 @@ type SearchResult = {
 /**
  * Start business search flow - prompt user to enter business name
  */
-export async function startBusinessSearch(ctx: RouterContext): Promise<boolean> {
+export async function startBusinessSearch(
+  ctx: RouterContext,
+): Promise<boolean> {
   if (!ctx.profileId) return false;
 
   await setState(ctx.supabase, ctx.profileId, {
@@ -38,8 +46,8 @@ export async function startBusinessSearch(ctx: RouterContext): Promise<boolean> 
   await sendButtonsMessage(
     ctx,
     "🔍 *Search for Your Business*\n\n" +
-    "Please type the name of your business to search our directory of 3000+ businesses.\n\n" +
-    "We'll help you claim it or add it manually if not found.",
+      "Please type the name of your business to search our directory of 3000+ businesses.\n\n" +
+      "We'll help you claim it or add it manually if not found.",
     [
       { id: IDS.BUSINESS_ADD_MANUAL, title: "Add Manually" },
       { id: IDS.BACK_PROFILE, title: "← Cancel" },
@@ -63,7 +71,7 @@ export async function handleBusinessNameSearch(
     await sendText(
       ctx.from,
       "⚠️ Please enter at least 2 characters to search.\n\n" +
-      "Type the name of your business:",
+        "Type the name of your business:",
     );
     return true;
   }
@@ -120,7 +128,7 @@ export async function handleBusinessNameSearch(
       await sendButtonsMessage(
         ctx,
         `🔍 *No businesses found for "${searchTerm}"*\n\n` +
-        "Would you like to add it manually?",
+          "Would you like to add it manually?",
         [
           { id: IDS.BUSINESS_ADD_MANUAL, title: "✅ Add Manually" },
           { id: IDS.BUSINESS_SEARCH, title: "🔄 Search Again" },
@@ -183,7 +191,9 @@ async function showSearchResults(
   const rows = results.map((result) => ({
     id: `claim::${result.id}`,
     title: result.name.substring(0, 24), // WhatsApp limit
-    description: `${result.category_name || "Business"} • ${result.location_text || "Location TBD"} • ${Math.round(result.similarity_score * 100)}% match`,
+    description: `${result.category_name || "Business"} • ${
+      result.location_text || "Location TBD"
+    } • ${Math.round(result.similarity_score * 100)}% match`,
   }));
 
   // Add action buttons
@@ -209,7 +219,8 @@ async function showSearchResults(
     ctx,
     {
       title: `🔍 Found ${results.length} businesses`,
-      body: `Search results for "${searchTerm}":\n\nSelect your business to claim it, or add a new one if yours isn't listed.`,
+      body:
+        `Search results for "${searchTerm}":\n\nSelect your business to claim it, or add a new one if yours isn't listed.`,
       sectionTitle: "Search Results",
       rows,
       buttonText: "Select",
@@ -259,7 +270,7 @@ export async function handleBusinessClaim(
     await sendButtonsMessage(
       ctx,
       `⚠️ *${business.name}* is already claimed by another owner.\n\n` +
-      "If you believe this is your business, please contact support.",
+        "If you believe this is your business, please contact support.",
       [
         { id: IDS.BUSINESS_SEARCH, title: "Search Again" },
         { id: IDS.BACK_PROFILE, title: "← Back" },
@@ -295,7 +306,7 @@ export async function handleBusinessClaim(
   await sendButtonsMessage(
     ctx,
     `${details}\n\n*Claim this business?*\n\n` +
-    "You'll be able to manage it from your profile.",
+      "You'll be able to manage it from your profile.",
     [
       { id: IDS.BUSINESS_CLAIM_CONFIRM, title: "✅ Yes, Claim It" },
       { id: IDS.BUSINESS_SEARCH, title: "← Back to Search" },
@@ -357,8 +368,8 @@ export async function confirmBusinessClaim(
     await sendButtonsMessage(
       ctx,
       `✅ *Success!*\n\n` +
-      `You've claimed *${business?.name || "this business"}*.\n\n` +
-      `You can now manage it from your profile.`,
+        `You've claimed *${business?.name || "this business"}*.\n\n` +
+        `You can now manage it from your profile.`,
       [
         { id: IDS.MY_BUSINESSES, title: "View My Businesses" },
         { id: IDS.BACK_HOME, title: "← Home" },

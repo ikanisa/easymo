@@ -1,9 +1,9 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import {
-  isLocationCacheValid,
-  getLocationCacheAge,
-  formatLocationCacheAge,
   checkLocationCache,
+  formatLocationCacheAge,
+  getLocationCacheAge,
+  isLocationCacheValid,
   LOCATION_CACHE_MINUTES,
 } from "./location_cache.ts";
 
@@ -40,10 +40,10 @@ Deno.test("getLocationCacheAge - calculates correct age", () => {
 
 Deno.test("formatLocationCacheAge - formats correctly", () => {
   assertEquals(formatLocationCacheAge(null), "never cached");
-  
+
   const justNow = new Date(Date.now() - 30 * 1000).toISOString();
   assertEquals(formatLocationCacheAge(justNow), "just now");
-  
+
   const fiveMins = new Date(Date.now() - 5 * 60 * 1000).toISOString();
   const formatted = formatLocationCacheAge(fiveMins);
   assertEquals(formatted.includes("mins ago"), true);
@@ -53,12 +53,12 @@ Deno.test("checkLocationCache - identifies need for refresh", () => {
   const result1 = checkLocationCache(null);
   assertEquals(result1.needsRefresh, true);
   assertEquals(result1.message?.includes("Please share"), true);
-  
+
   const expired = new Date(Date.now() - 40 * 60 * 1000).toISOString();
   const result2 = checkLocationCache(expired);
   assertEquals(result2.needsRefresh, true);
   assertEquals(result2.message?.includes("too old"), true);
-  
+
   const fresh = new Date(Date.now() - 5 * 60 * 1000).toISOString();
   const result3 = checkLocationCache(fresh);
   assertEquals(result3.needsRefresh, false);

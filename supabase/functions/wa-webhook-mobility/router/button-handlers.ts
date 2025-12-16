@@ -1,9 +1,9 @@
 /**
  * Mobility Button Handler Mappings
- * 
+ *
  * Documents all button IDs used in wa-webhook-mobility
  * Maps button IDs to their handler functions
- * 
+ *
  * Phase 4: Documentation for future router extraction
  */
 

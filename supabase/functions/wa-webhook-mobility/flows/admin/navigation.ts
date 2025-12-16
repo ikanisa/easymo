@@ -1,5 +1,5 @@
 import type { RouterContext } from "../../types.ts";
-import type { ChatState } from "../../state/store.ts";
+import type { ChatState } from "../../../_shared/wa-webhook-shared/state/store.ts";
 import { ADMIN_STATE, nextAdminBack } from "./state.ts";
 import { openAdminHub, showAdminHubList } from "./hub.ts";
 

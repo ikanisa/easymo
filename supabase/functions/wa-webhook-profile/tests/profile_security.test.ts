@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createClient } from "https://esm.sh/@supabase/supabase-js";
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
 
 // Mock Supabase client for testing
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "http://localhost:54321",
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "test-key"
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "test-key",
 );
 
 describe("Profile Edit", () => {
@@ -19,13 +19,13 @@ describe("Profile Edit", () => {
       .insert({ wa_id: "+250788000001", name: "Test User", language: "en" })
       .select()
       .single();
-    
+
     testUserId = profile?.user_id;
     testCtx = {
       supabase,
       from: "+250788000001",
       profileId: testUserId,
-      locale: "en"
+      locale: "en",
     };
   });
 
@@ -38,7 +38,7 @@ describe("Profile Edit", () => {
 
   it("should update user name", async () => {
     const { handleEditName } = await import("../profile/edit.ts");
-    
+
     const result = await handleEditName(testCtx, "New Test Name");
     expect(result).toBe(true);
 
@@ -53,7 +53,7 @@ describe("Profile Edit", () => {
 
   it("should reject name that is too short", async () => {
     const { handleEditName } = await import("../profile/edit.ts");
-    
+
     const result = await handleEditName(testCtx, "A");
     expect(result).toBe(true); // Returns true but doesn't update
 
@@ -68,7 +68,7 @@ describe("Profile Edit", () => {
 
   it("should update user language", async () => {
     const { handleEditLanguage } = await import("../profile/edit.ts");
-    
+
     const result = await handleEditLanguage(testCtx, "fr");
     expect(result).toBe(true);
 
@@ -83,7 +83,7 @@ describe("Profile Edit", () => {
 
   it("should reject invalid language code", async () => {
     const { handleEditLanguage } = await import("../profile/edit.ts");
-    
+
     const result = await handleEditLanguage(testCtx, "invalid");
     expect(result).toBe(false);
 
@@ -107,19 +107,19 @@ describe("Transfer Security", () => {
       .insert({ wa_id: "+250788000002", name: "Security Test" })
       .select()
       .single();
-    
+
     testUserId = profile?.user_id;
     testCtx = {
       supabase,
       from: "+250788000002",
       profileId: testUserId,
-      locale: "en"
+      locale: "en",
     };
 
     // Create wallet with balance
     await supabase.from("wallets").insert({
       user_id: testUserId,
-      balance: 100000
+      balance: 100000,
     });
   });
 
@@ -132,7 +132,7 @@ describe("Transfer Security", () => {
 
   it("should reject transfer below minimum", async () => {
     const { validateTransfer } = await import("../wallet/security.ts");
-    
+
     const result = await validateTransfer(testCtx, 5, testUserId);
     expect(result.valid).toBe(false);
     expect(result.errorCode).toBe("amount_too_small");
@@ -140,7 +140,7 @@ describe("Transfer Security", () => {
 
   it("should reject transfer above maximum", async () => {
     const { validateTransfer } = await import("../wallet/security.ts");
-    
+
     const result = await validateTransfer(testCtx, 60000, testUserId);
     expect(result.valid).toBe(false);
     expect(result.errorCode).toBe("amount_too_large");
@@ -148,7 +148,7 @@ describe("Transfer Security", () => {
 
   it("should require confirmation for large transfers", async () => {
     const { validateTransfer } = await import("../wallet/security.ts");
-    
+
     const result = await validateTransfer(testCtx, 15000, testUserId);
     expect(result.valid).toBe(true);
     expect(result.requiresConfirmation).toBe(true);
@@ -156,7 +156,7 @@ describe("Transfer Security", () => {
 
   it("should allow normal transfers", async () => {
     const { validateTransfer } = await import("../wallet/security.ts");
-    
+
     const result = await validateTransfer(testCtx, 500, testUserId);
     expect(result.valid).toBe(true);
     expect(result.requiresConfirmation).toBe(false);
@@ -172,13 +172,16 @@ describe("Wallet RPC Functions", () => {
       .insert({ wa_id: "+250788000003", name: "RPC Test" })
       .select()
       .single();
-    
+
     testUserId = profile?.user_id;
   });
 
   afterEach(async () => {
     if (testUserId) {
-      await supabase.from("wallet_transactions").delete().eq("user_id", testUserId);
+      await supabase.from("wallet_transactions").delete().eq(
+        "user_id",
+        testUserId,
+      );
       await supabase.from("wallets").delete().eq("user_id", testUserId);
       await supabase.from("profiles").delete().eq("user_id", testUserId);
     }
@@ -190,7 +193,7 @@ describe("Wallet RPC Functions", () => {
       p_amount: 1000,
       p_reference_type: "test",
       p_reference_id: crypto.randomUUID(),
-      p_description: "Test credit"
+      p_description: "Test credit",
     });
 
     expect(error).toBeNull();
@@ -205,7 +208,7 @@ describe("Wallet RPC Functions", () => {
       p_user_id: testUserId,
       p_amount: 5000,
       p_reference_type: "test",
-      p_reference_id: crypto.randomUUID()
+      p_reference_id: crypto.randomUUID(),
     });
 
     // Then debit
@@ -214,7 +217,7 @@ describe("Wallet RPC Functions", () => {
       p_amount: 1000,
       p_reference_type: "test",
       p_reference_id: crypto.randomUUID(),
-      p_description: "Test debit"
+      p_description: "Test debit",
     });
 
     expect(error).toBeNull();
@@ -228,7 +231,7 @@ describe("Wallet RPC Functions", () => {
       p_user_id: testUserId,
       p_amount: 1000,
       p_reference_type: "test",
-      p_reference_id: crypto.randomUUID()
+      p_reference_id: crypto.randomUUID(),
     });
 
     expect(data[0]?.success).toBe(false);
@@ -240,7 +243,7 @@ describe("Wallet RPC Functions", () => {
       p_user_id: testUserId,
       p_amount: 500,
       p_reference_type: "test_credit",
-      p_reference_id: crypto.randomUUID()
+      p_reference_id: crypto.randomUUID(),
     });
 
     const { data: transactions } = await supabase

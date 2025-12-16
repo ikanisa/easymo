@@ -1,53 +1,53 @@
 {
   "home.rows.jobs.title": "💼 Emplois & Petits Boulots",
   "home.rows.jobs.description": "Trouver du travail ou publier des offres - des petits boulots aux postes à temps plein",
-  
+
   "jobs.menu.title": "💼 Tableau d'emploi",
   "jobs.menu.greeting": "💼 Tableau d'emploi\n\nTrouvez du travail ou publiez des offres. Que vous cherchiez un petit boulot d'une journée ou un poste à temps plein, nous avons ce qu'il vous faut!",
   "jobs.menu.button": "Choisir une Action",
   "jobs.menu.section": "Choisis une option",
-  
+
   "jobs.menu.find.title": "🔍 Trouver un Emploi",
   "jobs.menu.find.description": "Rechercher des emplois correspondant à vos compétences",
-  
+
   "jobs.menu.post.title": "📝 Publier une Offre",
   "jobs.menu.post.description": "Embaucher quelqu'un pour une tâche ou un poste",
-  
+
   "jobs.menu.myApplications.title": "📋 Mes Candidatures",
   "jobs.menu.myApplications.description": "Voir les emplois auxquels vous avez postulé",
-  
+
   "jobs.menu.myJobs.title": "💼 Mes Offres Publiées",
   "jobs.menu.myJobs.description": "Gérer vos offres et voir les candidats",
-  
+
   "jobs.seeker.welcome": "🔍 *Trouver un Emploi*\n\nDites-moi quel type de travail vous recherchez. Décrivez-le naturellement:\n\n• Type d'emploi (nettoyage, livraison, construction, bureau, etc.)\n• Lieu (quel quartier ou ville?)\n• Quand êtes-vous disponible\n• Combien vous espérez gagner\n\nPar exemple: _\"J'ai besoin d'un travail d'une journée samedi à Kimironko, peut-être comme chauffeur ou chargement de stock, 10 000 FRW\"_\n\nAllez-y, tapez votre message! 👇",
-  
+
   "jobs.poster.welcome": "📝 *Publier une Offre*\n\nParlez-moi du poste à pourvoir. Décrivez-le naturellement en un message:\n\n• Ce dont vous avez besoin\n• Où (lieu)\n• Quand (date/heure)\n• Combien vous paierez\n• Les exigences\n\nPar exemple: _\"Besoin d'un serveur pour événement samedi soir à Remera, 10 000 FRW pour 4 heures, doit parler anglais et français\"_\n\nAllez-y, décrivez votre offre! 👇",
-  
+
   "jobs.applications.header": "📋 *Vos Candidatures*",
   "jobs.applications.none": "Vous n'avez postulé à aucun emploi pour le moment.\n\nRépondez *Trouver un Emploi* pour commencer!",
   "jobs.applications.footer": "\n💡 Répondez avec le numéro pour voir les détails complets.",
-  
+
   "jobs.myJobs.header": "💼 *Vos Offres Publiées*",
   "jobs.myJobs.none": "Vous n'avez publié aucune offre pour le moment.\n\nRépondez *Publier une Offre* pour embaucher!",
   "jobs.myJobs.footer": "\n💡 Répondez avec le numéro pour voir les candidats.",
-  
+
   "jobs.status.pending": "⏳ En attente",
   "jobs.status.open": "✅ Ouvert",
   "jobs.status.closed": "🔒 Fermé",
   "jobs.status.reviewing": "👀 En révision",
   "jobs.status.accepted": "✅ Accepté",
   "jobs.status.rejected": "❌ Non sélectionné",
-  
+
   "jobs.type.one_day": "Une Journée",
   "jobs.type.short_term": "Court Terme",
   "jobs.type.part_time": "Temps Partiel",
   "jobs.type.full_time": "Temps Plein",
   "jobs.type.contract": "Contrat",
   "jobs.type.gig": "Petit Boulot",
-  
+
   "jobs.pay.negotiable": "Négociable",
   "jobs.applicants": "candidat(s)",
-  
+
   "jobs.error.agent_failed": "Désolé, un problème est survenu. Veuillez réessayer dans un moment.",
   "jobs.error.something_wrong": "Quelque chose s'est mal passé. Réessayez plus tard ou tapez *menu* pour revenir.",
   "jobs.error.fetch_failed": "Désolé, impossible de charger ces informations. Veuillez réessayer."

@@ -14,7 +14,7 @@ import { lazy, preloadHandlers } from "../../_shared/handlers/lazy-loader.ts";
  */
 export const nearbyHandler = lazy(
   "mobility:nearby",
-  () => import("./nearby.ts")
+  () => import("./nearby.ts"),
 );
 
 /**
@@ -22,7 +22,7 @@ export const nearbyHandler = lazy(
  */
 export const scheduleHandler = lazy(
   "mobility:schedule",
-  () => import("./schedule.ts")
+  () => import("./schedule.ts"),
 );
 
 /**
@@ -30,7 +30,7 @@ export const scheduleHandler = lazy(
  */
 export const onlineHandler = lazy(
   "mobility:online",
-  () => import("./go_online.ts")
+  () => import("./go_online.ts"),
 );
 
 // NOTE: Driver verification handler removed per GROUND_RULES

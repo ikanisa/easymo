@@ -10,7 +10,7 @@ export const PROFILE_STATE_HOME = "profile_home";
  * Hard-coded Profile Menu Items
  * Simple, fast, no database queries required
  * Rwanda-only for now (as per requirements)
- * 
+ *
  * NOTE: Wallet is handled by wa-webhook-wallet service (accessed via main menu)
  * QR Code uses shared MoMo QR flow
  */

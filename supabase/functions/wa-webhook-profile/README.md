@@ -5,6 +5,7 @@ WhatsApp Business API webhook handler for user profile management.
 ## Overview
 
 Handles incoming WhatsApp messages for:
+
 - Language preference updates
 - Location settings
 - Profile information
@@ -13,18 +14,21 @@ Handles incoming WhatsApp messages for:
 ## Features
 
 ### Phase 1 (Completed)
+
 - ✅ Duplicate phone registration error handling
 - ✅ Consolidated error logging
 - ✅ Auth bypass warning suppression (dev)
 - ✅ Atomic idempotency with unique constraint
 
 ### Phase 2 (Completed)
+
 - ✅ Connection pooling (Supabase client)
 - ✅ Keep-alive headers
 - ✅ Circuit breaker protection
 - ✅ Response caching (2-min TTL)
 
 ### Phase 3 (In Progress)
+
 - ✅ Standardized response utilities
 - ✅ JSDoc documentation
 - ⏳ Handler extraction
@@ -51,10 +55,12 @@ wa-webhook-profile/
 Webhook endpoint for WhatsApp Business API.
 
 **Request Headers:**
+
 - `x-hub-signature-256`: WhatsApp signature (production only)
 - `x-request-id`: Optional request ID for tracing
 
 **Request Body:**
+
 ```json
 {
   "entry": [{
@@ -73,6 +79,7 @@ Webhook endpoint for WhatsApp Business API.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -83,6 +90,7 @@ Webhook endpoint for WhatsApp Business API.
 ## Configuration
 
 Environment variables:
+
 - `SUPABASE_URL`: Supabase project URL
 - `SUPABASE_SERVICE_ROLE_KEY`: Service role key
 - `WA_VERIFY_TOKEN`: WhatsApp verification token
@@ -90,17 +98,18 @@ Environment variables:
 
 ## Performance
 
-| Metric | Before | After Phases 1-2 | Improvement |
-|--------|--------|------------------|-------------|
-| Error Rate | 100% | 0% | -100% |
-| P50 Latency | 1850ms | 500ms | -73% |
-| P95 Latency | 1850ms | 800ms | -57% |
-| Cold Start | 87ms | <50ms | -43% |
-| Logs/Request | 8-10 | 2-3 | -70% |
+| Metric       | Before | After Phases 1-2 | Improvement |
+| ------------ | ------ | ---------------- | ----------- |
+| Error Rate   | 100%   | 0%               | -100%       |
+| P50 Latency  | 1850ms | 500ms            | -73%        |
+| P95 Latency  | 1850ms | 800ms            | -57%        |
+| Cold Start   | 87ms   | <50ms            | -43%        |
+| Logs/Request | 8-10   | 2-3              | -70%        |
 
 ## Circuit Breaker
 
 Protects against cascading database failures:
+
 - **Threshold**: 5 failures within 60s window
 - **Recovery**: 2 consecutive successes
 - **Timeout**: 60s before retry
@@ -109,6 +118,7 @@ Protects against cascading database failures:
 ## Caching
 
 Response cache for webhook retries:
+
 - **TTL**: 2 minutes
 - **Key**: `${phoneNumber}:${messageId}`
 - **Cleanup**: Every 60 seconds
@@ -117,6 +127,7 @@ Response cache for webhook retries:
 ## Idempotency
 
 Atomic duplicate detection:
+
 - **Table**: `processed_webhooks`
 - **Constraint**: `UNIQUE(message_id, webhook_type)`
 - **Handling**: Returns cached response on duplicate
@@ -141,6 +152,7 @@ supabase functions deploy wa-webhook-profile
 ## Monitoring
 
 Key events logged:
+
 - `PROFILE_MESSAGE_PROCESSING`: Message received
 - `PROFILE_CACHE_HIT`: Cache hit
 - `PROFILE_DB_CIRCUIT_OPEN`: Circuit breaker opened
@@ -150,6 +162,7 @@ Key events logged:
 ## Error Handling
 
 Standard error responses:
+
 ```typescript
 {
   error: "service_unavailable",
@@ -160,6 +173,7 @@ Standard error responses:
 ```
 
 Error codes:
+
 - `unauthorized`: Invalid/missing signature
 - `invalid_payload`: Malformed request
 - `service_unavailable`: Circuit breaker open

@@ -1,5 +1,5 @@
 import type { RouterContext } from "../../types.ts";
-import { setState } from "../../state/store.ts";
+import { setState } from "../../../_shared/wa-webhook-shared/state/store.ts";
 import { sendText } from "../../wa/client.ts";
 import { isAdminNumber } from "./auth.ts";
 

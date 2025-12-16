@@ -52,7 +52,9 @@ export type CurrencyPreference = {
   decimals: number;
 };
 
-export function resolveUserCurrency(msisdn?: string | null): CurrencyPreference {
+export function resolveUserCurrency(
+  msisdn?: string | null,
+): CurrencyPreference {
   if (msisdn) {
     const normalized = msisdn.trim();
     for (const preset of PRESETS) {

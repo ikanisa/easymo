@@ -1,12 +1,15 @@
 import type { RouterContext } from "../types.ts";
 import { t } from "../i18n/translator.ts";
 import {
+  type FavoriteKind,
   favoriteKindLabel,
   readLastLocation,
   saveFavorite,
-  type FavoriteKind,
 } from "./favorites.ts";
-import { homeOnly, sendButtonsMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
+import {
+  homeOnly,
+  sendButtonsMessage,
+} from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { IDS } from "../wa/ids.ts";
 
 export const LOCATION_KIND_BY_ID: Record<string, FavoriteKind> = {

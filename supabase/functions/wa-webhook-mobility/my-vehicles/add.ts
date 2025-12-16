@@ -1,8 +1,14 @@
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
 import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
-import { sendButtonsMessage, sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
+import {
+  sendButtonsMessage,
+  sendListMessage,
+} from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
-import { setState, clearState } from "../../_shared/wa-webhook-shared/state/store.ts";
+import {
+  clearState,
+  setState,
+} from "../../_shared/wa-webhook-shared/state/store.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
 
 /**
@@ -10,7 +16,10 @@ import { logStructuredEvent } from "../../_shared/observability.ts";
  */
 export async function startAddVehicle(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) {
-    await sendText(ctx.from, "⚠️ Please create your profile first before adding a vehicle.");
+    await sendText(
+      ctx.from,
+      "⚠️ Please create your profile first before adding a vehicle.",
+    );
     return true;
   }
 
@@ -91,22 +100,22 @@ export async function handleVehicleTypeSelection(
   await sendButtonsMessage(
     ctx,
     `🚗 *Add ${vehicleName}*\n\n` +
-    "Please type your vehicle's number plate.\n\n" +
-    "📋 *Examples:*\n" +
-    "• RAB 123 B (car)\n" +
-    "• RA 123 B (moto)\n" +
-    "• RAC 456 A (truck)\n\n" +
-    "Type the plate number below:",
+      "Please type your vehicle's number plate.\n\n" +
+      "📋 *Examples:*\n" +
+      "• RAB 123 B (car)\n" +
+      "• RA 123 B (moto)\n" +
+      "• RAC 456 A (truck)\n\n" +
+      "Type the plate number below:",
     [
       { id: IDS.MY_VEHICLES, title: "← Cancel" },
     ],
   );
 
-  logStructuredEvent("VEHICLE_TYPE_SELECTED", { 
-    userId: ctx.profileId, 
-    vehicleType 
+  logStructuredEvent("VEHICLE_TYPE_SELECTED", {
+    userId: ctx.profileId,
+    vehicleType,
   });
-  
+
   return true;
 }
 
@@ -117,14 +126,14 @@ export async function handleVehicleTypeSelection(
 function isValidPlateNumber(plate: string): boolean {
   // Normalize: remove extra spaces, convert to uppercase
   const normalized = plate.toUpperCase().replace(/\s+/g, " ").trim();
-  
+
   // Rwanda plate patterns:
   // Cars: RAB 123 A (3 letters + 3 digits + 1 letter)
   // Motos: RA 123 B (2 letters + 3 digits + 1 letter)
   // Trucks: RAC 123 A, etc.
   const carPattern = /^R[A-Z]{2}\s?\d{3}\s?[A-Z]$/;
   const motoPattern = /^R[A-Z]\s?\d{3}\s?[A-Z]$/;
-  
+
   return carPattern.test(normalized) || motoPattern.test(normalized);
 }
 
@@ -157,12 +166,12 @@ export async function handleVehiclePlateInput(
     await sendButtonsMessage(
       ctx,
       "⚠️ *Invalid plate number format*\n\n" +
-      `You entered: ${plateText}\n\n` +
-      "Please enter a valid Rwandan plate number:\n" +
-      "• RAB 123 B (car)\n" +
-      "• RA 123 B (moto)\n" +
-      "• RAC 456 A (truck)\n\n" +
-      "Type the correct plate number:",
+        `You entered: ${plateText}\n\n` +
+        "Please enter a valid Rwandan plate number:\n" +
+        "• RAB 123 B (car)\n" +
+        "• RA 123 B (moto)\n" +
+        "• RAC 456 A (truck)\n\n" +
+        "Type the correct plate number:",
       [
         { id: IDS.MY_VEHICLES, title: "← Cancel" },
       ],
@@ -193,8 +202,8 @@ export async function handleVehiclePlateInput(
         await sendButtonsMessage(
           ctx,
           "⚠️ *Vehicle Already Registered*\n\n" +
-          `The vehicle with plate *${plateNumber}* is already registered to another user.\n\n` +
-          "If you believe this is an error, please contact support.",
+            `The vehicle with plate *${plateNumber}* is already registered to another user.\n\n` +
+            "If you believe this is an error, please contact support.",
           [
             { id: "ADD_VEHICLE", title: "🔄 Try Different Plate" },
             { id: IDS.MY_VEHICLES, title: "← Back" },
@@ -217,7 +226,7 @@ export async function handleVehiclePlateInput(
         await sendButtonsMessage(
           ctx,
           "ℹ️ *Vehicle Already Added*\n\n" +
-          `The vehicle with plate *${plateNumber}* is already in your vehicles list.`,
+            `The vehicle with plate *${plateNumber}* is already in your vehicles list.`,
           [
             { id: IDS.MY_VEHICLES, title: "📋 View My Vehicles" },
             { id: IDS.BACK_PROFILE, title: "← Back to Profile" },
@@ -239,15 +248,20 @@ export async function handleVehiclePlateInput(
       });
 
     if (vehicleError || !vehicleId) {
-      throw new Error(vehicleError?.message || "Failed to create vehicle record");
+      throw new Error(
+        vehicleError?.message || "Failed to create vehicle record",
+      );
     }
 
     // Create vehicle ownership (without insurance certificate)
-    const { error: ownershipError } = await ctx.supabase.rpc("create_vehicle_ownership", {
-      p_vehicle_id: vehicleId,
-      p_user_id: ctx.profileId,
-      p_certificate_id: null,
-    });
+    const { error: ownershipError } = await ctx.supabase.rpc(
+      "create_vehicle_ownership",
+      {
+        p_vehicle_id: vehicleId,
+        p_user_id: ctx.profileId,
+        p_certificate_id: null,
+      },
+    );
 
     if (ownershipError) {
       logStructuredEvent("VEHICLE_OWNERSHIP_ERROR", {
@@ -277,9 +291,9 @@ export async function handleVehiclePlateInput(
     await sendButtonsMessage(
       ctx,
       `✅ *Vehicle Added Successfully!*\n\n` +
-      `🚗 *Plate Number:* ${plateNumber}\n` +
-      `🚙 *Type:* ${vehicleName}\n\n` +
-      `Your vehicle is now registered and ready to use for rides!`,
+        `🚗 *Plate Number:* ${plateNumber}\n` +
+        `🚙 *Type:* ${vehicleName}\n\n` +
+        `Your vehicle is now registered and ready to use for rides!`,
       [
         { id: IDS.MY_VEHICLES, title: "📋 View My Vehicles" },
         { id: IDS.BACK_PROFILE, title: "← Back to Profile" },
@@ -294,10 +308,9 @@ export async function handleVehiclePlateInput(
     });
 
     return true;
-
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
-    
+
     logStructuredEvent("VEHICLE_ADD_ERROR", {
       userId: ctx.profileId,
       plate: plateNumber,
@@ -309,8 +322,8 @@ export async function handleVehiclePlateInput(
     await sendButtonsMessage(
       ctx,
       `❌ *Failed to add vehicle*\n\n` +
-      `Error: ${errorMsg}\n\n` +
-      `Please try again or contact support if the issue persists.`,
+        `Error: ${errorMsg}\n\n` +
+        `Please try again or contact support if the issue persists.`,
       [
         { id: "ADD_VEHICLE", title: "🔄 Try Again" },
         { id: IDS.MY_VEHICLES, title: "← Back" },

@@ -1,4 +1,7 @@
-import { assert, assertEquals } from "https://deno.land/std@0.203.0/testing/asserts.ts";
+import {
+  assert,
+  assertEquals,
+} from "https://deno.land/std@0.203.0/testing/asserts.ts";
 
 const envReady = (() => {
   Deno.env.set("SUPABASE_URL", "http://localhost");
@@ -47,7 +50,10 @@ function createSupabaseStub() {
               return {
                 select() {
                   return {
-                    single: async () => ({ data: { id: "conv-1" }, error: null }),
+                    single: async () => ({
+                      data: { id: "conv-1" },
+                      error: null,
+                    }),
                   };
                 },
               };

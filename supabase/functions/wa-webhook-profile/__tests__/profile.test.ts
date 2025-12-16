@@ -17,7 +17,7 @@ function validateProfileUpdate(data: ProfileUpdateData): {
   errors: Record<string, string>;
 } {
   const errors: Record<string, string> = {};
-  
+
   if (data.full_name !== undefined) {
     if (data.full_name.trim().length < 2) {
       errors.full_name = "Name must be at least 2 characters";
@@ -26,21 +26,21 @@ function validateProfileUpdate(data: ProfileUpdateData): {
       errors.full_name = "Name must be less than 100 characters";
     }
   }
-  
+
   if (data.email !== undefined) {
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailPattern.test(data.email)) {
       errors.email = "Invalid email format";
     }
   }
-  
+
   if (data.language !== undefined) {
     const validLanguages = ["en", "fr", "rw", "sw"];
     if (!validLanguages.includes(data.language)) {
       errors.language = "Unsupported language";
     }
   }
-  
+
   return {
     valid: Object.keys(errors).length === 0,
     errors,

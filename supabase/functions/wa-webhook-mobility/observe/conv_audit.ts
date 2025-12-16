@@ -146,8 +146,7 @@ export async function recordInbound(
         conversation_id: insertedMessage.conversation_id ?? conversationId,
         direction: "inbound",
         sender_msisdn: ctx.from,
-        recipient_msisdn:
-          coerceString(record["to"]) ??
+        recipient_msisdn: coerceString(record["to"]) ??
           coerceString(record["recipient_id"]) ??
           DEFAULT_RECIPIENT,
         wa_message_id: coerceString(record["id"]),

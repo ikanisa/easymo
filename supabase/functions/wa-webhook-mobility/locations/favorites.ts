@@ -86,10 +86,11 @@ export async function saveFavorite(
   ctx: RouterContext,
   kind: FavoriteKind,
   coords: { lat: number; lng: number },
-  options: { label?: string; address?: string | null; skipDedup?: boolean } = {},
+  options: { label?: string; address?: string | null; skipDedup?: boolean } =
+    {},
 ): Promise<UserFavorite | null> {
   if (!ctx.profileId) return null;
-  
+
   // Validate coordinates
   if (!Number.isFinite(coords.lat) || coords.lat < -90 || coords.lat > 90) {
     return null;
@@ -97,9 +98,9 @@ export async function saveFavorite(
   if (!Number.isFinite(coords.lng) || coords.lng < -180 || coords.lng > 180) {
     return null;
   }
-  
+
   const normalizedLabel = options.label?.trim() || favoriteKindLabel(kind);
-  
+
   // Phase 2.1: Auto-geocode if no address provided
   let finalAddress = options.address;
   if (!finalAddress) {
@@ -114,19 +115,19 @@ export async function saveFavorite(
   // Phase 2.2: Check for duplicates (skip if explicitly requested)
   if (!options.skipDedup) {
     const dupCheck = await checkDuplicateLocation(
-      ctx.supabase,
+      ctx.supabase as any,
       ctx.profileId,
       coords,
       50, // 50m radius
     );
-    
+
     if (dupCheck.isDuplicate && dupCheck.nearbyLocations.length > 0) {
       const closest = dupCheck.nearbyLocations[0];
       // Return the existing location instead of creating duplicate
       return getFavoriteById(ctx, closest.id);
     }
   }
-  
+
   // Check if a location with this kind already exists for this user
   const { data: existing } = await ctx.supabase
     .from("saved_locations")
@@ -179,7 +180,7 @@ export async function updateFavorite(
   options: { label?: string; address?: string | null } = {},
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
-  
+
   // Validate coordinates
   if (!Number.isFinite(coords.lat) || coords.lat < -90 || coords.lat > 90) {
     return false;
@@ -187,7 +188,7 @@ export async function updateFavorite(
   if (!Number.isFinite(coords.lng) || coords.lng < -180 || coords.lng > 180) {
     return false;
   }
-  
+
   const payload: Record<string, unknown> = {
     lat: coords.lat,
     lng: coords.lng,
@@ -242,10 +243,10 @@ function normalizeSavedLocations(rows: SavedLocationRow[]): UserFavorite[] {
   const favorites: UserFavorite[] = [];
   for (const row of rows) {
     if (!Number.isFinite(row.lat) || !Number.isFinite(row.lng)) continue;
-    
+
     favorites.push({
       id: row.id,
-      kind: row.kind || 'other',
+      kind: row.kind || "other",
       label: row.label,
       address: row.address ?? null,
       lat: row.lat,
@@ -344,10 +345,12 @@ export async function readLastLocation(
       typeof last.lat === "number" &&
       typeof last.lng === "number"
     ) {
-      return { 
-        lat: last.lat, 
+      return {
+        lat: last.lat,
         lng: last.lng,
-        capturedAt: typeof last.capturedAt === "string" ? last.capturedAt : undefined
+        capturedAt: typeof last.capturedAt === "string"
+          ? last.capturedAt
+          : undefined,
       };
     }
   } catch (err) {

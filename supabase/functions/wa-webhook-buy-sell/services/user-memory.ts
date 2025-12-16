@@ -1,25 +1,28 @@
 /**
  * User Memory Service
- * 
+ *
  * Manages user preferences, past orders, and learned behaviors
  * to provide personalized service across sessions.
- * 
+ *
  * @see docs/GROUND_RULES.md for observability requirements
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
-import { logStructuredEvent, recordMetric } from "../../_shared/observability.ts";
+import {
+  logStructuredEvent,
+  recordMetric,
+} from "../../_shared/observability.ts";
 
 // =====================================================
 // TYPES
 // =====================================================
 
-export type MemoryType = 
-  | "preference" 
-  | "past_order" 
-  | "favorite_vendor" 
-  | "location" 
-  | "medical_info" 
+export type MemoryType =
+  | "preference"
+  | "past_order"
+  | "favorite_vendor"
+  | "location"
+  | "medical_info"
   | "feedback";
 
 export interface UserMemory {
@@ -64,18 +67,21 @@ export class UserMemoryService {
    */
   async storeMemory(
     userPhone: string,
-    entry: MemoryEntry
+    entry: MemoryEntry,
   ): Promise<{ success: boolean; memoryId?: string; error?: string }> {
     try {
-      const { data, error } = await this.supabase.rpc("upsert_agent_user_memory", {
-        p_user_phone: userPhone,
-        p_memory_type: entry.memory_type,
-        p_memory_key: entry.memory_key,
-        p_memory_value: entry.memory_value,
-        p_confidence: entry.confidence || 1.0,
-        p_source: entry.source || "inferred",
-        p_expires_at: entry.expires_at || null,
-      });
+      const { data, error } = await this.supabase.rpc(
+        "upsert_agent_user_memory",
+        {
+          p_user_phone: userPhone,
+          p_memory_type: entry.memory_type,
+          p_memory_key: entry.memory_key,
+          p_memory_value: entry.memory_value,
+          p_confidence: entry.confidence || 1.0,
+          p_source: entry.source || "inferred",
+          p_expires_at: entry.expires_at || null,
+        },
+      );
 
       if (error) {
         logStructuredEvent(
@@ -86,7 +92,7 @@ export class UserMemoryService {
             memoryType: entry.memory_type,
             correlationId: this.correlationId,
           },
-          "error"
+          "error",
         );
         return { success: false, error: error.message };
       }
@@ -117,7 +123,7 @@ export class UserMemoryService {
    */
   async recallMemories(
     userPhone: string,
-    memoryTypes?: MemoryType[]
+    memoryTypes?: MemoryType[],
   ): Promise<UserMemory[]> {
     try {
       const { data, error } = await this.supabase.rpc("get_user_memories", {
@@ -133,7 +139,7 @@ export class UserMemoryService {
             userPhone: userPhone.slice(-4),
             correlationId: this.correlationId,
           },
-          "error"
+          "error",
         );
         return [];
       }
@@ -157,7 +163,7 @@ export class UserMemoryService {
           userPhone: userPhone.slice(-4),
           correlationId: this.correlationId,
         },
-        "error"
+        "error",
       );
       return [];
     }
@@ -169,7 +175,7 @@ export class UserMemoryService {
   async getMemory(
     userPhone: string,
     memoryType: MemoryType,
-    memoryKey: string
+    memoryKey: string,
   ): Promise<UserMemory | null> {
     try {
       const { data, error } = await this.supabase
@@ -204,7 +210,7 @@ export class UserMemoryService {
    */
   async storePreferredLocation(
     userPhone: string,
-    location: { lat: number; lng: number; text?: string }
+    location: { lat: number; lng: number; text?: string },
   ): Promise<{ success: boolean; error?: string }> {
     return await this.storeMemory(userPhone, {
       memory_type: "location",
@@ -226,7 +232,7 @@ export class UserMemoryService {
       vendor_name?: string;
       total_price?: number;
       currency?: string;
-    }
+    },
   ): Promise<{ success: boolean; error?: string }> {
     const orderKey = `order_${Date.now()}`;
     return await this.storeMemory(userPhone, {
@@ -250,7 +256,7 @@ export class UserMemoryService {
       vendor_name: string;
       category?: string;
       reason?: string;
-    }
+    },
   ): Promise<{ success: boolean; error?: string }> {
     return await this.storeMemory(userPhone, {
       memory_type: "favorite_vendor",
@@ -267,7 +273,7 @@ export class UserMemoryService {
   async storePreference(
     userPhone: string,
     preferenceKey: string,
-    preferenceValue: unknown
+    preferenceValue: unknown,
   ): Promise<{ success: boolean; error?: string }> {
     return await this.storeMemory(userPhone, {
       memory_type: "preference",
@@ -291,7 +297,9 @@ export class UserMemoryService {
       const memories = await this.recallMemories(userPhone);
 
       const context = {
-        location: undefined as { lat: number; lng: number; text?: string } | undefined,
+        location: undefined as
+          | { lat: number; lng: number; text?: string }
+          | undefined,
         past_orders: [] as Array<Record<string, unknown>>,
         favorite_vendors: [] as Array<Record<string, unknown>>,
         preferences: {} as Record<string, unknown>,
@@ -323,10 +331,10 @@ export class UserMemoryService {
       // Sort past orders by recency (use_count is a proxy)
       context.past_orders.sort((a, b) => {
         const aUseCount = memories.find(
-          (m) => m.memory_type === "past_order" && m.memory_value === a
+          (m) => m.memory_type === "past_order" && m.memory_value === a,
         )?.use_count || 0;
         const bUseCount = memories.find(
-          (m) => m.memory_type === "past_order" && m.memory_value === b
+          (m) => m.memory_type === "past_order" && m.memory_value === b,
         )?.use_count || 0;
         return bUseCount - aUseCount;
       });
@@ -340,7 +348,7 @@ export class UserMemoryService {
           userPhone: userPhone.slice(-4),
           correlationId: this.correlationId,
         },
-        "error"
+        "error",
       );
       return {
         location: undefined,
@@ -355,7 +363,7 @@ export class UserMemoryService {
    * Infer user preferences from past behavior
    */
   async inferPreferences(
-    userPhone: string
+    userPhone: string,
   ): Promise<{
     typical_items?: Array<string>;
     typical_vendors?: Array<string>;
@@ -426,7 +434,7 @@ export class UserMemoryService {
           userPhone: userPhone.slice(-4),
           correlationId: this.correlationId,
         },
-        "error"
+        "error",
       );
       return {};
     }
@@ -435,7 +443,9 @@ export class UserMemoryService {
   /**
    * Clean up expired memories
    */
-  async cleanupExpiredMemories(): Promise<{ success: boolean; deletedCount?: number }> {
+  async cleanupExpiredMemories(): Promise<
+    { success: boolean; deletedCount?: number }
+  > {
     try {
       const { data, error } = await this.supabase
         .from("agent_user_memory")
@@ -450,7 +460,7 @@ export class UserMemoryService {
             error: error.message,
             correlationId: this.correlationId,
           },
-          "error"
+          "error",
         );
         return { success: false };
       }

@@ -1,5 +1,5 @@
 /**
- * Nearby Handler Tests  
+ * Nearby Handler Tests
  * Tests for driver/passenger matching functionality
  */
 
@@ -13,15 +13,19 @@ function isValidVehicleType(type: string): boolean {
   return VEHICLE_TYPES.includes(type.replace("veh_", ""));
 }
 
-function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+function calculateDistance(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): number {
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLng/2) * Math.sin(dLng/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
 
@@ -46,7 +50,7 @@ distanceSuite.test("calculates distance between locations", () => {
     TEST_LOCATIONS.kigaliCenter.lat,
     TEST_LOCATIONS.kigaliCenter.lng,
     TEST_LOCATIONS.kimironko.lat,
-    TEST_LOCATIONS.kimironko.lng
+    TEST_LOCATIONS.kimironko.lng,
   );
   assertEquals(distance > 0, true);
   assertEquals(distance < 100, true);
@@ -57,7 +61,7 @@ distanceSuite.test("returns zero for same location", () => {
     TEST_LOCATIONS.kigaliCenter.lat,
     TEST_LOCATIONS.kigaliCenter.lng,
     TEST_LOCATIONS.kigaliCenter.lat,
-    TEST_LOCATIONS.kigaliCenter.lng
+    TEST_LOCATIONS.kigaliCenter.lng,
   );
   assertEquals(distance, 0);
 });

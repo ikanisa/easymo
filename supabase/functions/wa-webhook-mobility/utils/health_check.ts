@@ -1,9 +1,9 @@
 /**
  * Enhanced Health Check for wa-webhook
- * 
+ *
  * Provides comprehensive health monitoring including rate limiter,
  * cache, and database connectivity.
- * 
+ *
  * @see docs/GROUND_RULES.md
  */
 
@@ -41,16 +41,16 @@ const startTime = Date.now();
  */
 async function checkDatabase(): Promise<HealthCheckResult> {
   const start = Date.now();
-  
+
   try {
     // Simple query to check connectivity
     const { error } = await supabase
       .from("profiles")
       .select("id")
       .limit(1);
-    
+
     const responseTime = Date.now() - start;
-    
+
     if (error) {
       return {
         healthy: false,
@@ -59,7 +59,7 @@ async function checkDatabase(): Promise<HealthCheckResult> {
         responseTime,
       };
     }
-    
+
     return {
       healthy: true,
       message: "Database connected",
@@ -82,7 +82,7 @@ function checkRateLimiter(): HealthCheckResult {
   try {
     const stats = getRateLimitStats();
     const healthy = stats.bucketsCount < 5000; // Alert if too many buckets
-    
+
     return {
       healthy,
       message: healthy ? "Rate limiter operational" : "Rate limiter degraded",
@@ -104,7 +104,7 @@ function checkCache(): HealthCheckResult {
   try {
     const stats = getCacheStats();
     const healthy = stats.size < stats.maxSize * 0.9;
-    
+
     return {
       healthy,
       message: healthy ? "Cache operational" : "Cache near capacity",
@@ -125,7 +125,7 @@ function checkCache(): HealthCheckResult {
 function checkMetrics(): HealthCheckResult {
   try {
     const stats = getMetricsStats();
-    
+
     return {
       healthy: true,
       message: "Metrics collector operational",
@@ -152,11 +152,11 @@ export async function performHealthCheck(): Promise<HealthCheck> {
   ]);
 
   const checks = { database, rateLimiter, cache, metrics };
-  
+
   // Determine overall health
-  const allHealthy = Object.values(checks).every(check => check.healthy);
-  const anyUnhealthy = Object.values(checks).some(check => !check.healthy);
-  
+  const allHealthy = Object.values(checks).every((check) => check.healthy);
+  const anyUnhealthy = Object.values(checks).some((check) => !check.healthy);
+
   let status: "healthy" | "degraded" | "unhealthy";
   if (allHealthy) {
     status = "healthy";
@@ -171,7 +171,8 @@ export async function performHealthCheck(): Promise<HealthCheck> {
     status,
     checks,
     version: "2.0.0",
-    environment: Deno.env.get("APP_ENV") || Deno.env.get("NODE_ENV") || "production",
+    environment: Deno.env.get("APP_ENV") || Deno.env.get("NODE_ENV") ||
+      "production",
     timestamp: new Date().toISOString(),
     uptime: Math.floor((Date.now() - startTime) / 1000), // seconds
   };
@@ -182,10 +183,13 @@ export async function performHealthCheck(): Promise<HealthCheck> {
  */
 export async function createHealthCheckResponse(): Promise<Response> {
   const health = await performHealthCheck();
-  
-  const statusCode = health.status === "healthy" ? 200 : 
-                     health.status === "degraded" ? 200 : 503;
-  
+
+  const statusCode = health.status === "healthy"
+    ? 200
+    : health.status === "degraded"
+    ? 200
+    : 503;
+
   return new Response(
     JSON.stringify(health, null, 2),
     {
@@ -194,7 +198,7 @@ export async function createHealthCheckResponse(): Promise<Response> {
         "Content-Type": "application/json",
         "Cache-Control": "no-cache, no-store, must-revalidate",
       },
-    }
+    },
   );
 }
 
@@ -213,14 +217,14 @@ export function createLivenessResponse(): Response {
  */
 export async function createReadinessResponse(): Promise<Response> {
   const database = await checkDatabase();
-  
+
   if (database.healthy) {
     return new Response("Ready", {
       status: 200,
       headers: { "Content-Type": "text/plain" },
     });
   }
-  
+
   return new Response("Not Ready", {
     status: 503,
     headers: { "Content-Type": "text/plain" },

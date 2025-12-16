@@ -1,8 +1,8 @@
 /**
  * Media Upload Handler for Marketplace
- * 
+ *
  * Handles photo uploads from WhatsApp messages for marketplace listings.
- * 
+ *
  * @see docs/GROUND_RULES.md for observability requirements
  */
 
@@ -32,7 +32,7 @@ async function downloadWhatsAppMedia(mediaId: string): Promise<Blob> {
         headers: {
           Authorization: `Bearer ${WA_ACCESS_TOKEN}`,
         },
-      }
+      },
     );
 
     if (!urlResponse.ok) {
@@ -67,7 +67,7 @@ async function downloadWhatsAppMedia(mediaId: string): Promise<Blob> {
         mediaId,
         error: error instanceof Error ? error.message : String(error),
       },
-      "error"
+      "error",
     );
     throw error;
   }
@@ -80,7 +80,7 @@ async function uploadToStorage(
   supabase: SupabaseClient,
   blob: Blob,
   listingId: string,
-  phone: string
+  phone: string,
 ): Promise<string> {
   const timestamp = Date.now();
   const sanitizedPhone = phone.replace(/[^0-9]/g, "");
@@ -118,7 +118,7 @@ export async function handleMediaUpload(
   userPhone: string,
   message: WhatsAppMediaMessage,
   context: MarketplaceContext,
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
 ): Promise<string> {
   try {
     // Validate that we're in a flow where photos are expected
@@ -154,7 +154,7 @@ export async function handleMediaUpload(
       supabase,
       blob,
       context.currentListingId,
-      userPhone
+      userPhone,
     );
 
     // Update listing with new photo
@@ -204,7 +204,7 @@ export async function handleMediaUpload(
         phone: userPhone.slice(-4),
         error: error instanceof Error ? error.message : String(error),
       },
-      "error"
+      "error",
     );
 
     return (
@@ -218,18 +218,21 @@ export async function handleMediaUpload(
  * Create storage bucket if it doesn't exist
  */
 export async function ensureStorageBucket(
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
 ): Promise<void> {
   const { data: buckets } = await supabase.storage.listBuckets();
 
   const bucketExists = buckets?.some((b) => b.name === "marketplace-images");
 
   if (!bucketExists) {
-    const { error } = await supabase.storage.createBucket("marketplace-images", {
-      public: true,
-      fileSizeLimit: 5242880, // 5MB
-      allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
-    });
+    const { error } = await supabase.storage.createBucket(
+      "marketplace-images",
+      {
+        public: true,
+        fileSizeLimit: 5242880, // 5MB
+        allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
+      },
+    );
 
     if (error && !error.message.includes("already exists")) {
       throw new Error(`Failed to create bucket: ${error.message}`);

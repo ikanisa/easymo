@@ -5,7 +5,7 @@ import { sendWhatsAppMessage } from "../../wa/send.ts";
 
 /**
  * Agent Quote Request Handler
- * 
+ *
  * Sends quote requests to vendors (drivers, pharmacies, etc.) via WhatsApp
  * and handles their responses for agent negotiation sessions.
  */
@@ -69,19 +69,25 @@ export async function sendDriverQuoteRequest(
 /**
  * Format driver quote request message
  */
-function formatDriverQuoteRequest(details: QuoteRequestParams["requestDetails"]): string {
+function formatDriverQuoteRequest(
+  details: QuoteRequestParams["requestDetails"],
+): string {
   let message = "🚕 *New Ride Request - Quote Needed*\n\n";
 
   if (details.pickup?.text) {
     message += `📍 *Pickup:* ${details.pickup.text}\n`;
   } else if (details.pickup) {
-    message += `📍 *Pickup:* ${details.pickup.lat.toFixed(5)}, ${details.pickup.lng.toFixed(5)}\n`;
+    message += `📍 *Pickup:* ${details.pickup.lat.toFixed(5)}, ${
+      details.pickup.lng.toFixed(5)
+    }\n`;
   }
 
   if (details.dropoff?.text) {
     message += `🎯 *Dropoff:* ${details.dropoff.text}\n`;
   } else if (details.dropoff) {
-    message += `🎯 *Dropoff:* ${details.dropoff.lat.toFixed(5)}, ${details.dropoff.lng.toFixed(5)}\n`;
+    message += `🎯 *Dropoff:* ${details.dropoff.lat.toFixed(5)}, ${
+      details.dropoff.lng.toFixed(5)
+    }\n`;
   }
 
   if (details.distance) {
@@ -177,7 +183,8 @@ export async function handleDriverQuoteResponse(
         to: ctx.from,
         type: "text",
         text: {
-          body: "❌ Invalid quote format. Please reply with a price (e.g., '3500 RWF')",
+          body:
+            "❌ Invalid quote format. Please reply with a price (e.g., '3500 RWF')",
         },
       });
       return true;
@@ -209,7 +216,9 @@ export async function handleDriverQuoteResponse(
       type: "text",
       text: {
         body: `✅ Quote received: ${parsed.priceAmount} RWF${
-          parsed.estimatedTimeMinutes ? ` (${parsed.estimatedTimeMinutes} min)` : ""
+          parsed.estimatedTimeMinutes
+            ? ` (${parsed.estimatedTimeMinutes} min)`
+            : ""
         }\n\nThank you! The customer will be notified.`,
       },
     });
@@ -261,7 +270,9 @@ export async function sendQuotePresentationToUser(
 
     // Format presentation message
     let message = "🎯 *Found Drivers for Your Trip!*\n\n";
-    message += `I collected ${quotes.length} quote${quotes.length > 1 ? "s" : ""} for you:\n\n`;
+    message += `I collected ${quotes.length} quote${
+      quotes.length > 1 ? "s" : ""
+    } for you:\n\n`;
 
     quotes.forEach((quote, index) => {
       message += `${index + 1}️⃣ *${quote.price_amount} RWF*`;

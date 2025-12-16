@@ -1,5 +1,8 @@
 import type { ButtonSpec, RouterContext } from "../types.ts";
-import { clearState, setState } from "../state/store.ts";
+import {
+  clearState,
+  setState,
+} from "../../_shared/wa-webhook-shared/state/store.ts";
 import { t } from "../i18n/translator.ts";
 import { IDS } from "../wa/ids.ts";
 import {
@@ -795,7 +798,7 @@ async function sendVehicleSelector(ctx: RouterContext, mode: NearbyMode) {
 /**
  * Show user's recent search locations for quick re-search
  * Returns true if recent searches were shown, false if none available
- * 
+ *
  * NOTE: Currently unused but available for future "Recent Searches" feature
  */
 // deno-lint-ignore no-unused-vars

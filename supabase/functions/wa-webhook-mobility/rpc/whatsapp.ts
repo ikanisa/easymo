@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "../deps.ts";
-import { sendText as sendTextMessage, sendList, sendButtons, sendTemplate } from "../wa/client.ts";
+import {
+  sendButtons,
+  sendList,
+  sendTemplate,
+  sendText as sendTextMessage,
+} from "../wa/client.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
 import { maskE164 } from "../../_shared/wa-webhook-shared/utils/text.ts";
 import type { ApprovedTemplate } from "../shared/template_registry.ts";
@@ -117,12 +122,17 @@ export async function sendTemplateMessage(
   }
 }
 
-function sanitizeAudit(audit?: Record<string, unknown>): Record<string, unknown> {
+function sanitizeAudit(
+  audit?: Record<string, unknown>,
+): Record<string, unknown> {
   if (!audit) return {};
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(audit)) {
     if (value === undefined) continue;
-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean" || value === null) {
+    if (
+      typeof value === "string" || typeof value === "number" ||
+      typeof value === "boolean" || value === null
+    ) {
       result[key] = value;
     }
   }

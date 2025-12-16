@@ -7,7 +7,10 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
-import { logStructuredEvent, recordMetric } from "../../_shared/observability.ts";
+import {
+  logStructuredEvent,
+  recordMetric,
+} from "../../_shared/observability.ts";
 
 // =====================================================
 // TYPES

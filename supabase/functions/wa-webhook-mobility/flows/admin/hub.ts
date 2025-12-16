@@ -39,7 +39,10 @@ export async function showAdminHubList(ctx: RouterContext): Promise<void> {
       body: "Pick a tool. ← Back returns here.",
       sectionTitle: "Ops tools",
       rows: [
-        { id: ADMIN_ROW_IDS.DIAG_MENU_RECONCILE, title: "Reconcile Menus ↔ Business" },
+        {
+          id: ADMIN_ROW_IDS.DIAG_MENU_RECONCILE,
+          title: "Reconcile Menus ↔ Business",
+        },
         { id: IDS.BACK_MENU, title: "← Back" },
       ],
     },

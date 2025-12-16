@@ -1,5 +1,8 @@
 import { WA_PHONE_ID, WA_TOKEN } from "../config.ts";
-import { delay, fetchWithTimeout } from "../../_shared/wa-webhook-shared/utils/http.ts";
+import {
+  delay,
+  fetchWithTimeout,
+} from "../../_shared/wa-webhook-shared/utils/http.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
 
 export class WhatsAppClientError extends Error {
@@ -89,7 +92,7 @@ export async function sendButtons(
         id: b.id,
         title: b.title.slice(0, 20),
       })),
-    }, "debug");
+    }, "info");
   }
   await post({
     messaging_product: "whatsapp",
@@ -110,7 +113,12 @@ export async function sendButtons(
 
 export async function sendLocation(
   to: string,
-  location: { latitude: number; longitude: number; name?: string; address?: string },
+  location: {
+    latitude: number;
+    longitude: number;
+    name?: string;
+    address?: string;
+  },
 ): Promise<void> {
   const latitude = Number(location.latitude);
   const longitude = Number(location.longitude);
@@ -119,8 +127,12 @@ export async function sendLocation(
     to,
     type: "location",
     location: {
-      latitude: Number.isFinite(latitude) ? Number(latitude.toFixed(6)) : latitude,
-      longitude: Number.isFinite(longitude) ? Number(longitude.toFixed(6)) : longitude,
+      latitude: Number.isFinite(latitude)
+        ? Number(latitude.toFixed(6))
+        : latitude,
+      longitude: Number.isFinite(longitude)
+        ? Number(longitude.toFixed(6))
+        : longitude,
       ...(location.name ? { name: location.name.slice(0, 100) } : {}),
       ...(location.address ? { address: location.address.slice(0, 300) } : {}),
     },
@@ -141,7 +153,10 @@ export async function sendList(
     }>;
   },
 ): Promise<void> {
-  const headerText = safeHeaderText(opts.title ?? "", WA_LIMITS_CONST.HEADER_TEXT);
+  const headerText = safeHeaderText(
+    opts.title ?? "",
+    WA_LIMITS_CONST.HEADER_TEXT,
+  );
   const baseSectionTitle = safeHeaderText(
     opts.sectionTitle ?? "",
     WA_LIMITS_CONST.SECTION_TITLE,
@@ -172,7 +187,9 @@ export async function sendList(
     buttonText,
     sections,
   });
-  if (issues.length) logStructuredEvent("WA_CLIENT_VALIDATE_WARN", { issues }, "warn");
+  if (issues.length) {
+    logStructuredEvent("WA_CLIENT_VALIDATE_WARN", { issues }, "warn");
+  }
   if ((Deno.env.get("LOG_LEVEL") ?? "").toLowerCase() === "debug") {
     logStructuredEvent(
       "WA_LIST_PREVIEW",
@@ -182,12 +199,10 @@ export async function sendList(
         buttonText,
         sections,
       }),
-      "debug"
+      "info",
     );
   }
-  const headerPayload = headerText
-    ? { type: "text", text: headerText }
-    : null;
+  const headerPayload = headerText ? { type: "text", text: headerText } : null;
   await post({
     messaging_product: "whatsapp",
     to,
