@@ -315,22 +315,19 @@ export async function ensureProfile(
         input_length: whatsapp.length,
         digits_only: whatsapp.replace(/[^0-9]/g, "").length,
       }, "warn");
-      // Don't throw - return a minimal profile record to allow processing to continue
-      // This handles edge cases like test numbers or incomplete phone numbers
-      const digits = whatsapp.replace(/[^0-9]/g, "");
-      if (digits.length >= 4) {
-        // For very short numbers, create a minimal profile
-        // This allows the system to continue processing even with incomplete numbers
-        await logStructuredEvent("USING_MINIMAL_PROFILE_FOR_INVALID_NUMBER", {
+      // For very short numbers (like test numbers), use a fallback normalization
+      // This allows the system to continue processing even with incomplete numbers
+      const inputDigits = whatsapp.replace(/[^0-9]/g, "");
+      if (inputDigits.length >= 4 && inputDigits.length < 8) {
+        await logStructuredEvent("USING_FALLBACK_NORMALIZATION_FOR_SHORT_NUMBER", {
           masked_input: maskMsisdn(whatsapp),
+          digits_length: inputDigits.length,
         }, "warn");
-        // Continue with fallback normalization
-        normalizedE164 = `+${digits}`;
-        // Pad with zeros if too short (for testing purposes)
-        if (digits.length < 8) {
-          normalizedE164 = `+250${digits.padStart(9, "0")}`;
-        }
+        // Use a default country code (250 for Rwanda) and pad the number
+        normalizedE164 = `+250${inputDigits.padStart(9, "0")}`;
+        digits = normalizedE164.replace(/^\+/, "");
       } else {
+        // Too short or invalid - throw the error
         throw error;
       }
     } else {
