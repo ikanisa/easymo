@@ -1,14 +1,14 @@
 // wa-webhook-mobility - Simplified version
 // Simple flow: User chooses ride → shares location → sees list of drivers/passengers
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { logStructuredEvent } from "../_shared/observability/index.ts";
-import { supabase } from "./config.ts";
-import { sendText, sendButtons, sendList } from "./wa/client.ts";
-import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
-import { isValidInternalForward } from "../_shared/security/internal-forward.ts";
-import type { RouterContext, WhatsAppWebhookPayload } from "./types.ts";
-import type { SupportedLanguage } from "./i18n/language.ts";
 import { ensureProfile } from "../_shared/wa-webhook-shared/state/store.ts";
+import { isValidInternalForward } from "../_shared/security/internal-forward.ts";
+import { logStructuredEvent } from "../_shared/observability/index.ts";
+import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
+import { supabase } from "./config.ts";
+import type { SupportedLanguage } from "./i18n/language.ts";
+import type { WhatsAppWebhookPayload } from "./types.ts";
+import { sendButtons, sendList, sendText } from "./wa/client.ts";
 
 // Button IDs
 const BUTTON_IDS = {
