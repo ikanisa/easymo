@@ -15,6 +15,7 @@ import {
   getCachedProfile,
   invalidateProfileCache,
   getProfileCacheStats,
+  clearProfileCache,
 } from "./profile-cache.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
 
@@ -30,6 +31,7 @@ function createMockSupabaseClient(
 }
 
 Deno.test("Profile Cache - getCachedProfile returns cached profile on second call", async () => {
+  clearProfileCache();
   const mockProfile = {
     profile_id: "test-profile-id",
     user_id: "test-user-id",
@@ -55,6 +57,7 @@ Deno.test("Profile Cache - getCachedProfile returns cached profile on second cal
 });
 
 Deno.test("Profile Cache - getCachedProfile handles database errors gracefully", async () => {
+  clearProfileCache();
   const supabase = createMockSupabaseClient({
     data: null,
     error: { message: "Database error" },
@@ -65,6 +68,7 @@ Deno.test("Profile Cache - getCachedProfile handles database errors gracefully",
 });
 
 Deno.test("Profile Cache - getCachedProfile handles missing profile", async () => {
+  clearProfileCache();
   const supabase = createMockSupabaseClient({
     data: null,
     error: null,
@@ -75,6 +79,7 @@ Deno.test("Profile Cache - getCachedProfile handles missing profile", async () =
 });
 
 Deno.test("Profile Cache - invalidateProfileCache removes entry from cache", async () => {
+  clearProfileCache();
   const mockProfile = {
     profile_id: "test-profile-id",
     user_id: "test-user-id",
@@ -107,6 +112,7 @@ Deno.test("Profile Cache - getProfileCacheStats returns cache statistics", () =>
 });
 
 Deno.test("Profile Cache - different phone numbers are cached separately", async () => {
+  clearProfileCache();
   const supabase1 = createMockSupabaseClient({
     data: {
       profile_id: "profile-1",

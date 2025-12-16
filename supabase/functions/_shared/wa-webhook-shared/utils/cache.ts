@@ -28,7 +28,7 @@ const DEFAULT_CONFIG: CacheConfig = {
   checkPeriod: parseInt(Deno.env.get("WA_CACHE_CHECK_PERIOD") || "600"), // 10 minutes
 };
 
-class CacheManager {
+export class CacheManager {
   private cache: Map<string, CacheEntry<any>> = new Map();
   private config: CacheConfig;
   private stats = {

@@ -89,3 +89,10 @@ export function getProfileCacheStats() {
   return profileCache.getStats();
 }
 
+/**
+ * Clear the profile cache (for testing purposes)
+ */
+export function clearProfileCache(): void {
+  profileCache.clear();
+}
+
