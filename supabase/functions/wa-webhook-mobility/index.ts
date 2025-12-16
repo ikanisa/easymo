@@ -163,6 +163,23 @@ serve(async (req: Request): Promise<Response> => {
     const profileId = profileData?.profile_id || "";
     const locale = (profileData?.locale || "en") as SupportedLanguage;
 
+    // Rate limiting check (P1-016 fix)
+    const rateLimitCheck = await rateLimitMiddleware(req, {
+      limit: 100, // 100 requests per minute per user
+      windowSeconds: 60,
+      key: `mobility:${from}`,
+    });
+
+    if (!rateLimitCheck.allowed) {
+      logStructuredEvent("MOBILITY_RATE_LIMITED", {
+        from: maskPhone(from),
+        remaining: rateLimitCheck.result.remaining,
+        resetAt: rateLimitCheck.result.resetAt.toISOString(),
+        correlationId,
+      }, "warn");
+      return respond({ error: "rate_limit_exceeded" }, 429);
+    }
+
     const ctx: RouterContext = {
       supabase,
       from,
@@ -351,11 +368,21 @@ serve(async (req: Request): Promise<Response> => {
     const errorMessage = err instanceof Error ? err.message : String(err);
     const errorStack = err instanceof Error ? err.stack : undefined;
 
-    logStructuredEvent("MOBILITY_ERROR", {
-      error: errorMessage,
-      stack: errorStack,
-      correlationId,
+    // Add comprehensive error context (P1-015 fix)
+    const errorContext = {
+      service: "wa-webhook-mobility",
       requestId,
+      correlationId,
+      from: from ? maskPhone(from) : "unknown",
+      profileId: ctx?.profileId,
+      operation: "webhook_processing",
+    };
+
+    logStructuredEvent("MOBILITY_ERROR", {
+      ...errorContext,
+      error: errorMessage,
+      errorType: err instanceof Error ? err.constructor.name : "Unknown",
+      stack: errorStack,
     }, "error");
     return respond({ error: "internal_error" }, 500);
   }
