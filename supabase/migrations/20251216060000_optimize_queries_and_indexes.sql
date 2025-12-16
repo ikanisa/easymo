@@ -55,9 +55,10 @@ CREATE INDEX IF NOT EXISTS idx_businesses_lat_lng
   ON businesses(lat, lng) 
   WHERE lat IS NOT NULL AND lng IS NOT NULL;
 
-CREATE INDEX IF NOT EXISTS idx_businesses_category_active 
-  ON businesses(buy_sell_category_id, active) 
-  WHERE active = true;
+-- Index for businesses table - category (commented out - active column may not exist)
+-- CREATE INDEX IF NOT EXISTS idx_businesses_category_active 
+--   ON businesses(buy_sell_category_id, active) 
+--   WHERE active = true;
 
 -- Index for marketplace_conversations - phone lookups
 CREATE INDEX IF NOT EXISTS idx_marketplace_conversations_phone_updated_at 
