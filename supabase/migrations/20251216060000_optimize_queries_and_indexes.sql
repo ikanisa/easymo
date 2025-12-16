@@ -33,22 +33,22 @@ CREATE INDEX IF NOT EXISTS idx_profiles_wa_id
 CREATE INDEX IF NOT EXISTS idx_profiles_user_id_language 
   ON profiles(user_id, language);
 
--- Index for user_state table - state lookups
-CREATE INDEX IF NOT EXISTS idx_user_state_user_id_key 
-  ON user_state(user_id, key) 
-  WHERE key IS NOT NULL;
+-- Index for user_state table - state lookups (commented out - table may not exist)
+-- CREATE INDEX IF NOT EXISTS idx_user_state_user_id_key 
+--   ON user_state(user_id, key) 
+--   WHERE key IS NOT NULL;
 
--- Index for saved_locations table
-CREATE INDEX IF NOT EXISTS idx_saved_locations_user_id 
-  ON saved_locations(user_id);
+-- Index for saved_locations table (commented out - table may not exist)
+-- CREATE INDEX IF NOT EXISTS idx_saved_locations_user_id 
+--   ON saved_locations(user_id);
+--
+-- CREATE INDEX IF NOT EXISTS idx_saved_locations_user_id_label 
+--   ON saved_locations(user_id, label);
 
-CREATE INDEX IF NOT EXISTS idx_saved_locations_user_id_label 
-  ON saved_locations(user_id, label);
-
--- Index for location_cache table
-CREATE INDEX IF NOT EXISTS idx_location_cache_user_id_expires_at 
-  ON location_cache(user_id, expires_at) 
-  WHERE expires_at IS NOT NULL;
+-- Index for location_cache table (commented out - table may not exist)
+-- CREATE INDEX IF NOT EXISTS idx_location_cache_user_id_expires_at 
+--   ON location_cache(user_id, expires_at) 
+--   WHERE expires_at IS NOT NULL;
 
 -- Index for businesses table - location-based queries
 CREATE INDEX IF NOT EXISTS idx_businesses_lat_lng 
@@ -87,9 +87,9 @@ CREATE INDEX IF NOT EXISTS idx_agent_user_memory_user_phone_updated_at
 
 ANALYZE trips;
 ANALYZE profiles;
-ANALYZE user_state;
-ANALYZE saved_locations;
-ANALYZE location_cache;
+-- ANALYZE user_state; -- Table may not exist
+-- ANALYZE saved_locations; -- Table may not exist
+-- ANALYZE location_cache; -- Table may not exist
 ANALYZE businesses;
 ANALYZE marketplace_conversations;
 ANALYZE marketplace_listings;
