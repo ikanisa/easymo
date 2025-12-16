@@ -160,7 +160,7 @@ export async function sendList(
     opts.sectionTitle ?? "",
     WA_LIMITS_CONST.SECTION_TITLE,
   ) || "Options";
-  const bodyText = (opts.body ?? "").slice(0, WA_LIMITS_CONST.BODY).trim();
+  const bodyText = sanitizeTextBody((opts.body ?? "").slice(0, WA_LIMITS_CONST.BODY));
   const buttonText = safeButtonTitle(opts.buttonText ?? "Choose");
   const sectionsInput = Array.isArray(opts.sections) && opts.sections.length
     ? opts.sections
