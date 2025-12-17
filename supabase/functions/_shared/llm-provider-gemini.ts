@@ -112,18 +112,39 @@ export class GeminiProvider implements LLMProvider {
       }
 
       // Start chat session with systemInstruction parameter
-      const chat = model.startChat({
-        systemInstruction: options.system ? {
-          parts: [{ text: options.system }],
-        } : undefined,
-        history: history.length > 0 ? history : undefined,
-        tools,
+      // Use v1 API (not v1beta) for better compatibility
+      const chatConfig: {
+        systemInstruction?: { parts: Array<{ text: string }> };
+        history?: Array<{ role: string; parts: Array<{ text: string }> }>;
+        tools?: Array<{ functionDeclarations: unknown[] }>;
+        generationConfig?: {
+          temperature?: number;
+          maxOutputTokens?: number;
+          topP?: number;
+        };
+      } = {
         generationConfig: {
           temperature: options.temperature ?? 0.7,
           maxOutputTokens: options.maxTokens,
           topP: options.topP,
         },
-      });
+      };
+      
+      if (options.system) {
+        chatConfig.systemInstruction = {
+          parts: [{ text: options.system }],
+        };
+      }
+      
+      if (history.length > 0) {
+        chatConfig.history = history;
+      }
+      
+      if (tools) {
+        chatConfig.tools = tools;
+      }
+      
+      const chat = model.startChat(chatConfig);
 
       // Send message
       const result = await chat.sendMessage(lastMessage.content);

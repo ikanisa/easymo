@@ -26,6 +26,10 @@ CREATE TABLE IF NOT EXISTS public.vendors (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- Ensure columns exist if table was partially created in earlier runs
+ALTER TABLE public.vendors 
+  ADD COLUMN IF NOT EXISTS country_code TEXT;
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_vendors_phone ON public.vendors(phone);
 CREATE INDEX IF NOT EXISTS idx_vendors_country_code ON public.vendors(country_code);
@@ -36,12 +40,18 @@ CREATE INDEX IF NOT EXISTS idx_vendors_location ON public.vendors(lat, lng) WHER
 ALTER TABLE public.vendors ENABLE ROW LEVEL SECURITY;
 
 -- Service role policy
-CREATE POLICY "service_role_manage_vendors" ON public.vendors
-  FOR ALL USING (auth.role() = 'service_role');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'vendors' AND policyname = 'service_role_manage_vendors') THEN
+    CREATE POLICY "service_role_manage_vendors" ON public.vendors
+      FOR ALL USING (auth.role() = 'service_role');
+  END IF;
 
--- Read policy for authenticated users
-CREATE POLICY "authenticated_read_vendors" ON public.vendors
-  FOR SELECT USING (auth.role() = 'authenticated');
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'vendors' AND policyname = 'authenticated_read_vendors') THEN
+    CREATE POLICY "authenticated_read_vendors" ON public.vendors
+      FOR SELECT USING (auth.role() = 'authenticated');
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 2. WHATSAPP BROADCAST REQUESTS
@@ -66,8 +76,13 @@ CREATE INDEX IF NOT EXISTS idx_whatsapp_broadcast_requests_status
 ALTER TABLE public.whatsapp_broadcast_requests ENABLE ROW LEVEL SECURITY;
 
 -- Service role policy
-CREATE POLICY "service_role_manage_whatsapp_broadcast_requests" ON public.whatsapp_broadcast_requests
-  FOR ALL USING (auth.role() = 'service_role');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'whatsapp_broadcast_requests' AND policyname = 'service_role_manage_whatsapp_broadcast_requests') THEN
+    CREATE POLICY "service_role_manage_whatsapp_broadcast_requests" ON public.whatsapp_broadcast_requests
+      FOR ALL USING (auth.role() = 'service_role');
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 3. WHATSAPP BROADCAST TARGETS
@@ -96,8 +111,13 @@ CREATE INDEX IF NOT EXISTS idx_whatsapp_broadcast_targets_status
 ALTER TABLE public.whatsapp_broadcast_targets ENABLE ROW LEVEL SECURITY;
 
 -- Service role policy
-CREATE POLICY "service_role_manage_whatsapp_broadcast_targets" ON public.whatsapp_broadcast_targets
-  FOR ALL USING (auth.role() = 'service_role');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'whatsapp_broadcast_targets' AND policyname = 'service_role_manage_whatsapp_broadcast_targets') THEN
+    CREATE POLICY "service_role_manage_whatsapp_broadcast_targets" ON public.whatsapp_broadcast_targets
+      FOR ALL USING (auth.role() = 'service_role');
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 4. WHATSAPP OPT-OUTS
@@ -118,8 +138,13 @@ CREATE INDEX IF NOT EXISTS idx_whatsapp_opt_outs_business_phone
 ALTER TABLE public.whatsapp_opt_outs ENABLE ROW LEVEL SECURITY;
 
 -- Service role policy
-CREATE POLICY "service_role_manage_whatsapp_opt_outs" ON public.whatsapp_opt_outs
-  FOR ALL USING (auth.role() = 'service_role');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'whatsapp_opt_outs' AND policyname = 'service_role_manage_whatsapp_opt_outs') THEN
+    CREATE POLICY "service_role_manage_whatsapp_opt_outs" ON public.whatsapp_opt_outs
+      FOR ALL USING (auth.role() = 'service_role');
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 5. WHATSAPP BUSINESS REPLIES
@@ -147,8 +172,13 @@ CREATE INDEX IF NOT EXISTS idx_whatsapp_business_replies_action
 ALTER TABLE public.whatsapp_business_replies ENABLE ROW LEVEL SECURITY;
 
 -- Service role policy
-CREATE POLICY "service_role_manage_whatsapp_business_replies" ON public.whatsapp_business_replies
-  FOR ALL USING (auth.role() = 'service_role');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'whatsapp_business_replies' AND policyname = 'service_role_manage_whatsapp_business_replies') THEN
+    CREATE POLICY "service_role_manage_whatsapp_business_replies" ON public.whatsapp_business_replies
+      FOR ALL USING (auth.role() = 'service_role');
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 6. SOURCING REQUESTS
@@ -172,8 +202,13 @@ CREATE INDEX IF NOT EXISTS idx_sourcing_requests_status
 ALTER TABLE public.sourcing_requests ENABLE ROW LEVEL SECURITY;
 
 -- Service role policy
-CREATE POLICY "service_role_manage_sourcing_requests" ON public.sourcing_requests
-  FOR ALL USING (auth.role() = 'service_role');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'sourcing_requests' AND policyname = 'service_role_manage_sourcing_requests') THEN
+    CREATE POLICY "service_role_manage_sourcing_requests" ON public.sourcing_requests
+      FOR ALL USING (auth.role() = 'service_role');
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 7. CANDIDATE VENDORS
@@ -202,8 +237,13 @@ CREATE INDEX IF NOT EXISTS idx_candidate_vendors_phone
 ALTER TABLE public.candidate_vendors ENABLE ROW LEVEL SECURITY;
 
 -- Service role policy
-CREATE POLICY "service_role_manage_candidate_vendors" ON public.candidate_vendors
-  FOR ALL USING (auth.role() = 'service_role');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'candidate_vendors' AND policyname = 'service_role_manage_candidate_vendors') THEN
+    CREATE POLICY "service_role_manage_candidate_vendors" ON public.candidate_vendors 
+      FOR ALL USING (auth.role() = 'service_role');
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 8. JOBS TABLE (Background Processing)
@@ -230,8 +270,13 @@ CREATE INDEX IF NOT EXISTS idx_jobs_created_at ON public.jobs(created_at DESC);
 ALTER TABLE public.jobs ENABLE ROW LEVEL SECURITY;
 
 -- Service role policy
-CREATE POLICY "service_role_manage_jobs" ON public.jobs
-  FOR ALL USING (auth.role() = 'service_role');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'jobs' AND policyname = 'service_role_manage_jobs') THEN
+    CREATE POLICY "service_role_manage_jobs" ON public.jobs
+      FOR ALL USING (auth.role() = 'service_role');
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 9. CONVERSATIONS TABLE (State Management)
@@ -252,8 +297,13 @@ CREATE INDEX IF NOT EXISTS idx_conversations_user_id ON public.conversations(use
 ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
 
 -- Service role policy
-CREATE POLICY "service_role_manage_conversations" ON public.conversations
-  FOR ALL USING (auth.role() = 'service_role');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'conversations' AND policyname = 'service_role_manage_conversations') THEN
+    CREATE POLICY "service_role_manage_conversations" ON public.conversations
+      FOR ALL USING (auth.role() = 'service_role');
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 10. INBOUND MESSAGES (Audit Log)
@@ -278,8 +328,13 @@ CREATE INDEX IF NOT EXISTS idx_inbound_messages_created_at ON public.inbound_mes
 ALTER TABLE public.inbound_messages ENABLE ROW LEVEL SECURITY;
 
 -- Service role policy
-CREATE POLICY "service_role_manage_inbound_messages" ON public.inbound_messages
-  FOR ALL USING (auth.role() = 'service_role');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'inbound_messages' AND policyname = 'service_role_manage_inbound_messages') THEN
+    CREATE POLICY "service_role_manage_inbound_messages" ON public.inbound_messages
+      FOR ALL USING (auth.role() = 'service_role');
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 11. USER LOCATIONS
@@ -303,8 +358,13 @@ CREATE INDEX IF NOT EXISTS idx_user_locations_expires_at ON public.user_location
 ALTER TABLE public.user_locations ENABLE ROW LEVEL SECURITY;
 
 -- Service role policy
-CREATE POLICY "service_role_manage_user_locations" ON public.user_locations
-  FOR ALL USING (auth.role() = 'service_role');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'user_locations' AND policyname = 'service_role_manage_user_locations') THEN
+    CREATE POLICY "service_role_manage_user_locations" ON public.user_locations
+      FOR ALL USING (auth.role() = 'service_role');
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 12. RPC FUNCTIONS

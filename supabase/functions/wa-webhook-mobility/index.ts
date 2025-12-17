@@ -1,457 +1,365 @@
-// wa-webhook-mobility - Simplified version
-// Simple flow: User chooses ride → shares location → sees list of drivers/passengers
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { ensureProfile } from "../_shared/wa-webhook-shared/state/store.ts";
-import { isValidInternalForward } from "../_shared/security/internal-forward.ts";
-import { logStructuredEvent } from "../_shared/observability/index.ts";
-import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
-import { supabase } from "./config.ts";
-import type { SupportedLanguage } from "./i18n/language.ts";
-import type { WhatsAppWebhookPayload } from "./types.ts";
-import { sendButtons, sendList, sendText } from "./wa/client.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
-// Button IDs
-const BUTTON_IDS = {
-  RIDE: "ride",
-  DRIVER: "driver",
-  PASSENGER: "passenger",
-} as const;
+function envAny(keys: string[], required = true): string {
+  for (const k of keys) {
+    const v = Deno.env.get(k);
+    if (v && v.trim()) return v.trim();
+  }
+  if (required) throw new Error(`Missing env var: ${keys.join(" or ")}`);
+  return "";
+}
 
-serve(async (req: Request): Promise<Response> => {
-  const respond = (body: unknown, status = 200): Response => {
-    return new Response(JSON.stringify(body), {
-      status,
-      headers: { "Content-Type": "application/json" },
+const SUPABASE_URL = envAny(["SUPABASE_URL"]);
+const SUPABASE_SERVICE_ROLE_KEY = envAny(["SUPABASE_SERVICE_ROLE_KEY"]);
+
+const WA_PHONE_NUMBER_ID = envAny([
+  "WHATSAPP_PHONE_NUMBER_ID",
+  "WA_PHONE_NUMBER_ID",
+  "WA_PHONE_ID",
+  "WABA_PHONE_NUMBER_ID",
+]);
+
+const WA_ACCESS_TOKEN = envAny([
+  "WHATSAPP_ACCESS_TOKEN",
+  "WA_ACCESS_TOKEN",
+  "WA_TOKEN",
+  "WABA_ACCESS_TOKEN",
+]);
+
+const WA_VERIFY_TOKEN = envAny([
+  "WHATSAPP_VERIFY_TOKEN",
+  "WA_VERIFY_TOKEN",
+], false);
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+function truncate(s: string, n: number) {
+  if (!s) return s;
+  return s.length <= n ? s : s.slice(0, Math.max(0, n - 1)) + "…";
+}
+
+function formatDistance(distanceM: number) {
+  const km = distanceM / 1000;
+  if (km < 1) return `${Math.round(distanceM)} m`;
+  return `${km.toFixed(1)} km`;
+}
+
+async function waSend(payload: unknown) {
+  const url = `https://graph.facebook.com/v19.0/${WA_PHONE_NUMBER_ID}/messages`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${WA_ACCESS_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error("WA send failed:", res.status, text);
+  }
+}
+
+async function sendHome(to: string) {
+  await waSend({
+    messaging_product: "whatsapp",
+    to,
+    type: "interactive",
+    interactive: {
+      type: "list",
+      body: { text: "Home menu" },
+      action: {
+        button: "Open",
+        sections: [
+          {
+            title: "Services",
+            rows: [
+              { id: "home_rides", title: "Rides", description: "Find nearby drivers/passengers" },
+            ],
+          },
+        ],
+      },
+    },
+  });
+}
+
+async function sendRoleMenu(to: string) {
+  await waSend({
+    messaging_product: "whatsapp",
+    to,
+    type: "interactive",
+    interactive: {
+      type: "list",
+      body: { text: "Choose your role" },
+      action: {
+        button: "Select",
+        sections: [
+          {
+            title: "Mobility",
+            rows: [
+              { id: "role_driver", title: "Driver", description: "See nearby passengers" },
+              { id: "role_passenger", title: "Passenger", description: "See nearby drivers" },
+            ],
+          },
+        ],
+      },
+    },
+  });
+}
+
+async function askLocation(to: string, role: "driver" | "passenger") {
+  await waSend({
+    messaging_product: "whatsapp",
+    to,
+    type: "text",
+    text: {
+      body:
+        `✅ Role set: ${role.toUpperCase()}\n\n` +
+        `Now share your *current location*:\n` +
+        `📎 Attach → Location → Send your current location\n\n` +
+        `Then I'll show you the nearest 9 ${role === "driver" ? "passengers" : "drivers"}.`,
+    },
+  });
+}
+
+async function sendNearbyList(
+  to: string,
+  targetRole: "driver" | "passenger",
+  items: Array<{ wa_id: string; display_name: string | null; distance_m: number; last_seen: string }>,
+) {
+  const rows = items.slice(0, 9).map((x) => {
+    const title = truncate((x.display_name || "").trim() || x.wa_id, 24);
+    const desc = truncate(`${formatDistance(x.distance_m)} away`, 72);
+    return { id: `pick:${x.wa_id}`, title, description: desc };
+  });
+
+  if (rows.length === 0) {
+    await waSend({
+      messaging_product: "whatsapp",
+      to,
+      type: "text",
+      text: { body: `No nearby ${targetRole}s found. Share your location again in a minute.` },
     });
-  };
-
-  const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
-  const correlationId = req.headers.get("x-correlation-id") ?? requestId;
-
-  // Health check
-  if (req.method === "GET") {
-    const url = new URL(req.url);
-    if (url.pathname === "/health") {
-      return respond({ status: "ok" });
-    }
-    return respond({ error: "not_found" }, 404);
+    return;
   }
 
+  await waSend({
+    messaging_product: "whatsapp",
+    to,
+    type: "interactive",
+    interactive: {
+      type: "list",
+      body: { text: `Nearest ${rows.length} ${targetRole}s` },
+      action: { button: "Choose", sections: [{ title: "Nearby", rows }] },
+    },
+  });
+}
+
+async function sendWaLink(to: string, targetWaId: string) {
+  const link = `https://wa.me/${targetWaId}?text=${encodeURIComponent(
+    "Hi! I found you via easyMO mobility. Are you available?",
+  )}`;
+  await waSend({
+    messaging_product: "whatsapp",
+    to,
+    type: "text",
+    text: { body: `Here's the contact link:\n${link}` },
+  });
+}
+
+/**
+ * Accept both:
+ * - Raw Meta payload: body.entry[0].changes[0].value.messages[0]
+ * - Forwarded payloads: body.value.messages[0], body.messages[0], body.msg, body.message
+ */
+function extractIncoming(body: any): { msg: any; contact: any } {
+  const value =
+    body?.entry?.[0]?.changes?.[0]?.value ??
+    body?.value ??
+    body;
+
+  const msg =
+    value?.messages?.[0] ??
+    body?.messages?.[0] ??
+    body?.msg ??
+    body?.message ??
+    null;
+
+  const contact =
+    value?.contacts?.[0] ??
+    body?.contacts?.[0] ??
+    body?.contact ??
+    null;
+
+  return { msg, contact };
+}
+
+function interactiveId(msg: any): string {
+  return (
+    msg?.interactive?.list_reply?.id ||
+    msg?.interactive?.button_reply?.id ||
+    msg?.list_reply?.id ||
+    msg?.button_reply?.id ||
+    msg?.payload?.id ||
+    ""
+  );
+}
+
+function normalizeAction(idRaw: string): string {
+  const id = String(idRaw || "").trim();
+
+  // Home -> Rides synonyms (to match whatever core/router used previously)
+  if (["home_rides", "rides", "mobility", "rides_agent", "rides_menu"].includes(id)) return "home_rides";
+
+  // Role synonyms
+  if (["role_driver", "driver", "as_driver", "i_am_driver"].includes(id)) return "role_driver";
+  if (["role_passenger", "passenger", "as_passenger", "i_am_passenger"].includes(id)) return "role_passenger";
+
+  return id;
+}
+
+Deno.serve(async (req) => {
+  const url = new URL(req.url);
+
+  // Health endpoint for runbooks/monitoring
+  if (req.method === "GET" && (url.pathname.endsWith("/health") || url.pathname === "/health")) {
+    return Response.json({
+      ok: true,
+      env: {
+        SUPABASE_URL: !!Deno.env.get("SUPABASE_URL"),
+        SUPABASE_SERVICE_ROLE_KEY: !!Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
+        WHATSAPP_PHONE_NUMBER_ID: !!Deno.env.get("WHATSAPP_PHONE_NUMBER_ID"),
+        WHATSAPP_ACCESS_TOKEN: !!Deno.env.get("WHATSAPP_ACCESS_TOKEN"),
+        WHATSAPP_VERIFY_TOKEN: !!Deno.env.get("WHATSAPP_VERIFY_TOKEN"),
+        WA_PHONE_NUMBER_ID: !!Deno.env.get("WA_PHONE_NUMBER_ID") || !!Deno.env.get("WA_PHONE_ID"),
+        WA_ACCESS_TOKEN: !!Deno.env.get("WA_ACCESS_TOKEN") || !!Deno.env.get("WA_TOKEN"),
+        WA_VERIFY_TOKEN: !!Deno.env.get("WA_VERIFY_TOKEN"),
+      },
+    });
+  }
+
+  // Meta verification
+  if (req.method === "GET") {
+    const mode = url.searchParams.get("hub.mode");
+    const token = url.searchParams.get("hub.verify_token");
+    const challenge = url.searchParams.get("hub.challenge");
+    if (mode === "subscribe" && challenge && WA_VERIFY_TOKEN && token === WA_VERIFY_TOKEN) {
+      return new Response(challenge, { status: 200 });
+    }
+    return new Response("Forbidden", { status: 403 });
+  }
+
+  if (req.method !== "POST") return new Response("OK", { status: 200 });
+
+  let body: any;
   try {
-    // Read raw body for signature verification
-    const rawBody = await req.text();
+    body = await req.json();
+  } catch {
+    return new Response("Bad Request", { status: 400 });
+  }
 
-    // Verify WhatsApp signature
-    const signatureHeader = req.headers.has("x-hub-signature-256")
-      ? "x-hub-signature-256"
-      : req.headers.has("x-hub-signature")
-      ? "x-hub-signature"
-      : null;
-    const signature = signatureHeader ? req.headers.get(signatureHeader) : null;
-    const appSecret = Deno.env.get("WHATSAPP_APP_SECRET") ??
-      Deno.env.get("WA_APP_SECRET");
-    const allowUnsigned =
-      (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() ===
-        "true";
-    const internalForward = isValidInternalForward(req);
+  const { msg, contact } = extractIncoming(body);
+  if (!msg?.from) return new Response("OK", { status: 200 });
 
-    if (!appSecret) {
-      logStructuredEvent("MOBILITY_AUTH_CONFIG_ERROR", {
-        error: "WHATSAPP_APP_SECRET not configured",
-        correlationId,
-      }, "error");
-      return respond({ error: "server_misconfigured" }, 500);
+  const from = String(msg.from);
+  const displayName = String(contact?.profile?.name || contact?.name || "");
+
+  await supabase.rpc("mobility_touch_user", { p_wa_id: from, p_display_name: displayName });
+
+  // TEXT -> always Home (simple)
+  if (msg.type === "text") {
+    await supabase.from("mobility_users").update({ flow_state: "home" }).eq("wa_id", from);
+    await sendHome(from);
+    return new Response("OK", { status: 200 });
+  }
+
+  // INTERACTIVE selections
+  if (msg.type === "interactive" || msg.interactive) {
+    const raw = interactiveId(msg);
+    const id = normalizeAction(raw);
+
+    if (id === "home_rides") {
+      await supabase.from("mobility_users").update({ flow_state: "choose_role" }).eq("wa_id", from);
+      await sendRoleMenu(from);
+      return new Response("OK", { status: 200 });
     }
 
-    let isValidSignature = false;
-    if (signature) {
-      try {
-        isValidSignature = await verifyWebhookSignature(
-          rawBody,
-          signature,
-          appSecret,
-        );
-        if (isValidSignature) {
-          logStructuredEvent("MOBILITY_SIGNATURE_VALID", {
-            signatureHeader,
-            correlationId,
-          });
-        }
-      } catch (err) {
-        logStructuredEvent("MOBILITY_SIGNATURE_ERROR", {
-          error: err instanceof Error ? err.message : String(err),
-          correlationId,
-        }, "error");
-      }
+    if (id === "role_driver" || id === "role_passenger") {
+      const role = id === "role_driver" ? "driver" : "passenger";
+      await supabase.rpc("mobility_set_flow", { p_wa_id: from, p_role: role, p_flow_state: "await_location" });
+      await askLocation(from, role);
+      return new Response("OK", { status: 200 });
     }
 
-    if (!isValidSignature) {
-      if (allowUnsigned || internalForward) {
-        logStructuredEvent("MOBILITY_AUTH_BYPASS", {
-          reason: internalForward
-            ? "internal_forward"
-            : signature
-            ? "signature_mismatch"
-            : "no_signature",
-          correlationId,
-        }, "warn");
-      } else {
-        logStructuredEvent("MOBILITY_AUTH_FAILED", {
-          signatureProvided: !!signature,
-          correlationId,
-        }, "warn");
-        return respond({ error: "unauthorized" }, 401);
-      }
+    if (String(id).startsWith("pick:")) {
+      const target = String(id).slice("pick:".length);
+      await sendWaLink(from, target);
+      return new Response("OK", { status: 200 });
     }
 
-    // Parse payload
-    const payload: WhatsAppWebhookPayload = JSON.parse(rawBody);
-    const message = payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
-    const contacts = payload.entry?.[0]?.changes?.[0]?.value?.contacts?.[0];
+    await sendHome(from);
+    return new Response("OK", { status: 200 });
+  }
 
-    if (!message || !message.from) {
-      return respond({ success: true });
+  // LOCATION -> upsert presence + find nearest 9 opposite role
+  if (msg.type === "location" || msg.location) {
+    const lat = Number(msg.location?.latitude);
+    const lng = Number(msg.location?.longitude);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      await waSend({
+        messaging_product: "whatsapp",
+        to: from,
+        type: "text",
+        text: { body: "I couldn't read that location. Please share your current location again (Attach → Location)." },
+      });
+      return new Response("OK", { status: 200 });
     }
 
-    const from = message.from;
-    const profileName = contacts?.profile?.name || "User";
-
-    // Ensure user exists
-    let profileId = "";
-    let locale: SupportedLanguage = "en";
-    let userId = "";
-
-    try {
-      const { data: profileData, error: profileError } = await supabase.rpc(
-        "ensure_whatsapp_user",
-        {
-          _wa_id: from,
-          _profile_name: profileName,
-        },
-      );
-
-      if (!profileError && profileData && profileData.length > 0) {
-        profileId = profileData[0]?.profile_id || "";
-        userId = profileData[0]?.user_id || "";
-        locale = (profileData[0]?.locale || "en") as SupportedLanguage;
-      } else {
-        // Fallback to ensureProfile utility
-        const profile = await ensureProfile(supabase, from);
-        if (profile) {
-          userId = profile.user_id;
-          locale = (profile.locale || "en") as SupportedLanguage;
-          const { data: profileRow } = await supabase
-            .from("profiles")
-            .select("id")
-            .eq("user_id", userId)
-            .maybeSingle();
-          profileId = profileRow?.id || "";
-        } else {
-          logStructuredEvent("MOBILITY_USER_ENSURE_ERROR", {
-            error: "Failed to create profile",
-            from: from.slice(-4),
-            correlationId,
-          }, "error");
-          return respond({ error: "user_creation_failed" }, 500);
-        }
-      }
-    } catch (err) {
-      logStructuredEvent("MOBILITY_USER_ENSURE_ERROR", {
-        error: err instanceof Error ? err.message : String(err),
-        from: from.slice(-4),
-        correlationId,
-      }, "error");
-      return respond({ error: "user_creation_failed" }, 500);
-    }
-
-    // Context for potential future use
-    // const ctx: RouterContext = {
-    //   supabase,
-    //   from,
-    //   profileId,
-    //   locale,
-    // };
-
-    // Get user's mobility role from profile
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("mobility_role")
-      .eq("user_id", userId)
+    const { data: me } = await supabase
+      .from("mobility_users")
+      .select("role_pref")
+      .eq("wa_id", from)
       .maybeSingle();
 
-    const mobilityRole = profile?.mobility_role as "driver" | "passenger" | null;
-
-    // Simple state tracking (we'll use a simple approach without user_state table for now)
-    // State is handled per-request based on user's role and current flow
-
-    // Handle interactive messages (buttons)
-    if (message.type === "interactive") {
-      const interactive = message.interactive as {
-        button_reply?: { id?: string };
-        list_reply?: { id?: string };
-      };
-      const id = interactive?.button_reply?.id || interactive?.list_reply?.id;
-
-      if (!id) {
-        return respond({ success: true });
-      }
-
-      // User chose "ride" from home menu
-      if (id === BUTTON_IDS.RIDE || id === "rides" || id === "rides_agent") {
-        // Check if user has mobility role set
-        if (!mobilityRole) {
-          // First time - ask for role
-          await sendButtons(
-            from,
-            "Are you a driver or passenger?",
-            [
-              { id: BUTTON_IDS.DRIVER, title: "🚗 Driver" },
-              { id: BUTTON_IDS.PASSENGER, title: "👤 Passenger" },
-            ],
-          );
-          // State is implicit - user needs to select role
-        } else {
-          // User has role - ask for location
-          await sendText(
-            from,
-            "Please share your current location 📍",
-          );
-          // State is implicit - user needs to share location
-        }
-        return respond({ success: true });
-      }
-
-      // User selected driver or passenger
-      if (id === BUTTON_IDS.DRIVER || id === BUTTON_IDS.PASSENGER) {
-        const role = id === BUTTON_IDS.DRIVER ? "driver" : "passenger";
-        // Save role to profile
-        await supabase
-          .from("profiles")
-          .update({ mobility_role: role })
-          .eq("user_id", userId);
-        // Ask for location
-        await sendText(
-          from,
-          "Please share your current location 📍",
-        );
-        // State is implicit - user needs to share location
-        return respond({ success: true });
-      }
+    const rolePref = (me?.role_pref as ("driver" | "passenger" | null)) ?? null;
+    if (!rolePref) {
+      await sendRoleMenu(from);
+      return new Response("OK", { status: 200 });
     }
 
-    // Handle location messages
-    if (message.type === "location") {
-      const loc = message.location as
-        | { latitude?: number; longitude?: number }
-        | undefined;
-      if (loc?.latitude && loc?.longitude) {
-        const lat = Number(loc.latitude);
-        const lng = Number(loc.longitude);
+    await supabase.rpc("mobility_upsert_presence", { p_wa_id: from, p_role: rolePref, p_lat: lat, p_lng: lng });
 
-        // Validate coordinates
-        if (
-          isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 ||
-          lng > 180
-        ) {
-          logStructuredEvent("MOBILITY_INVALID_LOCATION", {
-            lat,
-            lng,
-            from: from.slice(-4),
-            correlationId,
-          }, "warn");
-          return respond({ error: "invalid_location" }, 400);
-        }
+    const targetRole = rolePref === "driver" ? "passenger" : "driver";
 
-        // Check if user has role
-        if (!mobilityRole) {
-          await sendButtons(
-            from,
-            "Please select your role first:",
-            [
-              { id: BUTTON_IDS.DRIVER, title: "🚗 Driver" },
-              { id: BUTTON_IDS.PASSENGER, title: "👤 Passenger" },
-            ],
-          );
-          return respond({ success: true });
-        }
+    let { data: nearby } = await supabase.rpc("mobility_find_nearby", {
+      p_wa_id: from,
+      p_target_role: targetRole,
+      p_lat: lat,
+      p_lng: lng,
+      p_limit: 9,
+      p_max_km: 5,
+      p_ttl_minutes: 30,
+    });
 
-        // Save location to trips table (active ride request)
-        const { data: tripData, error: tripError } = await supabase
-          .from("trips")
-          .insert({
-            user_id: userId,
-            phone: from,
-            role: mobilityRole,
-            vehicle_type: "car", // Default, can be enhanced later
-            pickup_lat: lat,
-            pickup_lng: lng,
-            status: "open",
-            expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutes
-          })
-          .select()
-          .single();
-
-        if (tripError) {
-          logStructuredEvent("MOBILITY_TRIP_CREATE_ERROR", {
-            error: tripError.message,
-            from: from.slice(-4),
-            correlationId,
-          }, "error");
-          await sendText(from, "Sorry, there was an error. Please try again.");
-          return respond({ success: true });
-        }
-
-        if (!tripData) {
-          logStructuredEvent("MOBILITY_TRIP_CREATE_NO_DATA", {
-            from: from.slice(-4),
-            correlationId,
-          }, "error");
-          await sendText(from, "Sorry, there was an error. Please try again.");
-          return respond({ success: true });
-        }
-
-        // Find opposite role users (top 10) - simple query
-        const oppositeRole = mobilityRole === "driver" ? "passenger" : "driver";
-        
-        // Simple query to find nearby trips with opposite role
-        // Using Haversine distance calculation (simplified)
-        const { data: matches, error: matchError } = await supabase
-          .from("trips")
-          .select(`
-            id,
-            phone,
-            pickup_lat,
-            pickup_lng,
-            ref_code,
-            created_at,
-            profiles!inner(full_name, phone_number, wa_id)
-          `)
-          .eq("role", oppositeRole)
-          .eq("status", "open")
-          .gt("expires_at", new Date().toISOString())
-          .neq("user_id", userId) // Exclude own trips
-          .order("created_at", { ascending: false })
-          .limit(10);
-
-        if (matchError) {
-          logStructuredEvent("MOBILITY_MATCH_ERROR", {
-            error: matchError.message,
-            from: from.slice(-4),
-            correlationId,
-          }, "error");
-        }
-
-        // State cleared - location received and processed
-
-        // Send list of matches
-        if (matches && Array.isArray(matches) && matches.length > 0) {
-          // Calculate simple distance for each match (Haversine formula simplified)
-          const rows = matches.slice(0, 10).map((match: {
-            id?: string;
-            phone?: string;
-            pickup_lat?: number;
-            pickup_lng?: number;
-            ref_code?: string;
-            profiles?: { full_name?: string; phone_number?: string };
-          }, index: number) => {
-            // Simple distance calculation (approximate)
-            const latDiff = Math.abs(lat - (match.pickup_lat || 0));
-            const lngDiff = Math.abs(lng - (match.pickup_lng || 0));
-            const distanceKm = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff) * 111; // Rough conversion
-            const estimatedMinutes = Math.round(distanceKm * 2); // Rough estimate: 2 min per km
-            
-            const displayName = match.profiles?.full_name || 
-                               match.profiles?.phone_number || 
-                               match.phone || 
-                               "User";
-            
-            return {
-              id: `contact_${match.phone || match.id || index}`,
-              title: `${displayName}`,
-              description: `📍 ${match.ref_code || ""} | ~${estimatedMinutes} min away`,
-            };
-          });
-
-          await sendList(from, {
-            title: `Available ${oppositeRole === "driver" ? "Drivers" : "Passengers"}`,
-            body: `Found ${matches.length} ${oppositeRole}s nearby. Your location: ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
-            buttonText: "Select",
-            rows,
-          });
-        } else {
-          await sendText(
-            from,
-            `No ${oppositeRole}s found nearby. Your location has been saved. Try again later.`,
-          );
-        }
-
-        logStructuredEvent("MOBILITY_LOCATION_SAVED", {
-          from: from.slice(-4),
-          role: mobilityRole,
-          lat,
-          lng,
-          matches_count: matches?.length || 0,
-          correlationId,
-        });
-      }
-      return respond({ success: true });
+    if (!nearby || nearby.length === 0) {
+      ({ data: nearby } = await supabase.rpc("mobility_find_nearby", {
+        p_wa_id: from,
+        p_target_role: targetRole,
+        p_lat: lat,
+        p_lng: lng,
+        p_limit: 9,
+        p_max_km: 15,
+        p_ttl_minutes: 30,
+      }));
     }
 
-    // Handle text messages
-    if (message.type === "text") {
-      const textMessage = message.text as { body?: string } | undefined;
-      const text = (textMessage?.body?.toLowerCase() || "").trim();
-
-      // Main menu triggers
-      if (
-        text === "rides" ||
-        text === "rides_agent" ||
-        text === "ride" ||
-        text === "mobility" ||
-        text === "transport" ||
-        text === "taxi" ||
-        text === "menu"
-      ) {
-        // Same as button handler
-        if (!mobilityRole) {
-          await sendButtons(
-            from,
-            "Are you a driver or passenger?",
-            [
-              { id: BUTTON_IDS.DRIVER, title: "🚗 Driver" },
-              { id: BUTTON_IDS.PASSENGER, title: "👤 Passenger" },
-            ],
-          );
-          // State is implicit
-        } else {
-          await sendText(
-            from,
-            "Please share your current location 📍",
-          );
-          // State is implicit
-        }
-        return respond({ success: true });
-      }
-    }
-
-    return respond({ success: true });
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : String(err);
-    const errorStack = err instanceof Error ? err.stack : undefined;
-
-    logStructuredEvent("MOBILITY_ERROR", {
-      service: "wa-webhook-mobility",
-      requestId,
-      correlationId,
-      error: errorMessage,
-      errorType: err instanceof Error ? err.constructor.name : "Unknown",
-      stack: errorStack,
-    }, "error");
-    return respond({ error: "internal_error" }, 500);
+    await sendNearbyList(from, targetRole, (nearby || []) as any[]);
+    return new Response("OK", { status: 200 });
   }
-});
 
-logStructuredEvent("SERVICE_STARTED", {
-  service: "wa-webhook-mobility",
-  version: "3.0.0",
+  // Anything else -> Home
+  await sendHome(from);
+  return new Response("OK", { status: 200 });
 });

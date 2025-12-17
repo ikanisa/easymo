@@ -1,6 +1,2 @@
-{
-  "name": "wa-webhook-mobility",
-  "version": "2.2.1",
-  "verify_jwt": false,
-  "description": "Ride booking and transport services"
-}
+{"verify_jwt": false}
+

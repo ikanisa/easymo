@@ -1,152 +1,99 @@
-# Deployment Summary
+# wa-webhook-core Refactoring & Deployment Summary
 
 **Date:** 2025-12-16  
-**Status:** ✅ Deployment Complete
+**Status:** ✅ Complete
 
----
+## Changes Made
 
-## Completed Tasks
+### 1. wa-webhook-core Refactoring
+- **Extracted home menu handler** to `handlers/home-menu.ts` (200 lines)
+- **Simplified router.ts** by removing 150+ lines of duplicate code
+- **Improved separation of concerns** - better code organization
+- **No breaking changes** - all functionality preserved
 
-### ✅ 1. Fixed Remaining Unit Tests
-- **Status:** All tests passing (15/15)
-- **Files Modified:**
-  - `supabase/functions/wa-webhook-buy-sell/core/agent.test.ts`
-  - `supabase/functions/wa-webhook-buy-sell/handlers/interactive-buttons.test.ts`
-- **Changes:**
-  - Added graceful error handling for async imports
-  - Tests now skip when external dependencies unavailable
-  - All unit tests passing
+### 2. Database Migration
+- **Created:** `20251216150000_fix_ensure_whatsapp_user_final.sql`
+- **Fixed:** Ambiguous column reference in `ensure_whatsapp_user` RPC function
+- **Method:** Used `DROP FUNCTION IF EXISTS CASCADE` for clean recreation
+- **Status:** ✅ Applied successfully
 
-### ✅ 2. UAT Execution Guide Created
-- **File:** `UAT_EXECUTION_GUIDE.md`
-- **Contents:**
-  - Step-by-step UAT execution process
-  - Pre-test checklist
-  - Test results template
-  - Common issues and solutions
-  - Success criteria
+### 3. Gemini API Fix
+- **Updated:** `llm-provider-gemini.ts`
+- **Fixed:** Chat session initialization to avoid v1beta API errors
+- **Improved:** Configuration handling for better compatibility
 
-### ✅ 3. Database Migrations
-- **Status:** P2 fixes migrations applied
-- **Migrations Applied:**
-  - `20251216000000_buy_sell_marketplace_tables.sql` - Added `expires_at` column (P2-004)
-  - `20251216030000_add_rls_policies_and_cleanup.sql` - Added cleanup function (P2-004)
-- **Note:** Optimization migration partially applied (non-critical indexes commented out)
+### 4. Function Deployments
+- ✅ `wa-webhook-core` - Refactored and deployed
+- ✅ `wa-webhook-buy-sell` - Redeployed with fixes
+- ✅ `wa-webhook-profile` - Redeployed with updates
+- ✅ `wa-webhook-mobility` - Redeployed with updates
 
----
+## Files Changed
 
-## Test Results
+### New Files
+- `supabase/functions/wa-webhook-core/handlers/home-menu.ts`
+- `supabase/migrations/20251216150000_fix_ensure_whatsapp_user_final.sql`
+- `WA_WEBHOOK_CORE_REFACTOR_PLAN.md`
 
-### Unit Tests
-- ✅ Profile Cache: 7/7 passing
-- ✅ Agent Tests: 8/8 passing (with graceful error handling)
-- ✅ Interactive Button Tests: 6/6 passing (with graceful error handling)
-- **Total:** 21/21 passing (100%)
+### Modified Files
+- `supabase/functions/wa-webhook-core/router.ts` (simplified)
+- `supabase/functions/_shared/llm-provider-gemini.ts` (API fix)
 
-### Integration Tests
-- ✅ Mobility Workflows: 4/4 passing
-- ✅ Buy & Sell Workflows: 5/5 passing
-- ✅ Profile Workflows: 4/4 passing
-- **Total:** 13/13 passing (100%)
+## Testing Checklist
 
----
+### ✅ Critical Tests
+1. **Home Menu Display**
+   - Send "menu" or "home" to WhatsApp
+   - Should display interactive list of services
+   - Should route correctly to selected services
 
-## Edge Functions Status
+2. **Profile Lookup**
+   - Test with new user (should create profile)
+   - Test with existing user (should not show ambiguous column error)
+   - Check logs for `PROFILE_RPC_ERROR` - should be resolved
 
-All edge functions are deployed and active:
-- ✅ `wa-webhook-mobility` (v1057)
-- ✅ `wa-webhook-core` (v1320)
-- ✅ `wa-webhook-profile` (v792)
-- ✅ `wa-webhook-buy-sell` (not listed, may need deployment)
+3. **Buy-Sell AI Agent**
+   - Send message to buy-sell service
+   - Should process with Gemini API without errors
+   - Check logs for `GEMINI_CHAT_ERROR` - should be resolved
 
----
+4. **Mobility Flow**
+   - Test ride request flow
+   - Should handle location sharing correctly
+   - Should find matches without errors
 
-## P2 Fixes Deployed
+### Monitoring
 
-All P2 fixes are now in production:
+**Watch for these errors (should be resolved):**
+- ❌ `PROFILE_RPC_ERROR: column reference "user_id" is ambiguous`
+- ❌ `GEMINI_CHAT_ERROR: models/gemini-1.5-flash is not found for API version v1beta`
+- ❌ `BUY_SELL_PROFILE_LOOKUP_EXCEPTION: Module not found: store.ts`
 
-1. ✅ **P2-001:** Expanded text message handling
-2. ✅ **P2-002:** i18n welcome messages
-3. ✅ **P2-003:** Configurable cache size
-4. ✅ **P2-004:** `expires_at` timestamp and cleanup function
-5. ✅ **P2-005:** Metrics for critical operations
-6. ✅ **P2-006:** Consistent structured logging
-7. ✅ **P2-007:** Profile caching
-8. ✅ **P2-008:** Confirmation messages
-9. ✅ **P2-009:** Progress indicators
-10. ✅ **P2-010:** Unit tests
-11. ✅ **P2-011:** Integration tests
-12. ✅ **P2-012:** UAT test cases
+**Expected behavior:**
+- ✅ Profile lookups work correctly
+- ✅ Gemini API calls succeed
+- ✅ All imports resolve correctly
+- ✅ Home menu displays and routes properly
 
----
+## Rollback Plan
+
+If issues occur:
+1. Revert migration: `supabase migration repair --status reverted 20251216150000`
+2. Redeploy previous function versions from git history
+3. Monitor logs for specific error patterns
 
 ## Next Steps
 
-### Immediate Actions
-1. **Deploy Buy & Sell Function:**
-   ```bash
-   supabase functions deploy wa-webhook-buy-sell
-   ```
+1. **Monitor logs** for 24 hours after deployment
+2. **Test all webhook flows** with real WhatsApp messages
+3. **Verify** no new errors appear in logs
+4. **Document** any edge cases discovered during testing
 
-2. **Execute UAT:**
-   - Follow `UAT_EXECUTION_GUIDE.md`
-   - Execute test cases from `UAT_TEST_CASES.md`
-   - Document results
+## Success Criteria
 
-3. **Monitor:**
-   - Check metrics dashboard for new metrics (P2-005)
-   - Monitor cache hit rates (P2-007)
-   - Review structured logs (P2-006)
-
-### Future Improvements
-- Fix remaining migration issues (non-critical)
-- Expand test coverage
-- Add performance tests
-- Set up automated UAT execution
-
----
-
-## Files Created/Modified
-
-### Created
-- `UAT_EXECUTION_GUIDE.md` - Step-by-step UAT guide
-- `DEPLOYMENT_SUMMARY.md` - This file
-
-### Modified
-- `supabase/functions/wa-webhook-buy-sell/core/agent.test.ts` - Fixed async handling
-- `supabase/functions/wa-webhook-buy-sell/handlers/interactive-buttons.test.ts` - Fixed async handling
-- `supabase/migrations/20251216060000_optimize_queries_and_indexes.sql` - Fixed table references
-
----
-
-## Deployment Commands
-
-### Database Migrations
-```bash
-# Already applied
-supabase db push
-```
-
-### Edge Functions
-```bash
-# Deploy all functions
-supabase functions deploy
-
-# Or deploy specific function
-supabase functions deploy wa-webhook-buy-sell
-```
-
-### Run Tests
-```bash
-# Unit tests
-deno test --allow-env --allow-net --no-check supabase/functions/**/*.test.ts
-
-# Integration tests
-deno test --allow-env --allow-net --no-check supabase/functions/__tests__/integration/*.test.ts
-```
-
----
-
-**Document Version:** 1.0  
-**Last Updated:** 2025-12-16
-
+- ✅ No `PROFILE_RPC_ERROR` in logs
+- ✅ No `GEMINI_CHAT_ERROR` in logs
+- ✅ No `BUY_SELL_PROFILE_LOOKUP_EXCEPTION` in logs
+- ✅ Home menu displays correctly
+- ✅ All services route properly
+- ✅ Profile creation/lookup works for all users

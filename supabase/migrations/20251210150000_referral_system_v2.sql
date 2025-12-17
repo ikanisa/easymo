@@ -19,9 +19,43 @@ CREATE TABLE IF NOT EXISTS public.promo_rules (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Create referral_links table (needed by referral functions)
+CREATE TABLE IF NOT EXISTS public.referral_links (
+    code TEXT PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES public.profiles(user_id) ON DELETE CASCADE,
+    active BOOLEAN NOT NULL DEFAULT true,
+    short_url TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_shared_at TIMESTAMPTZ,
+    CONSTRAINT referral_links_user_id_key UNIQUE (user_id)
+);
+
+-- Create referral_attributions table (needed by referral functions)
+CREATE TABLE IF NOT EXISTS public.referral_attributions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code TEXT NOT NULL REFERENCES public.referral_links(code),
+    sharer_user_id UUID NOT NULL REFERENCES public.profiles(user_id) ON DELETE CASCADE,
+    joiner_user_id UUID NOT NULL REFERENCES public.profiles(user_id) ON DELETE CASCADE,
+    first_message_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    credited BOOLEAN NOT NULL DEFAULT false,
+    credited_tokens INTEGER NOT NULL DEFAULT 0,
+    reason TEXT
+);
+
 -- Ensure description column exists if table was created before
 DO $$
 BEGIN
+    -- Guard: table may be created by a later migration
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public'
+          AND table_name = 'referral_attributions'
+    ) THEN
+        RAISE NOTICE 'public.referral_attributions does not exist yet (created by a later migration). Skipping.';
+        RETURN;
+    END IF;
+
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
         WHERE table_schema = 'public' 
@@ -447,6 +481,8 @@ $$;
 ALTER TABLE public.promo_rules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.wallet_accounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.referral_ledger ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.referral_links ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.referral_attributions ENABLE ROW LEVEL SECURITY;
 
 -- Promo rules: service role only
 DO $$
@@ -467,6 +503,20 @@ BEGIN
     
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'wallet_accounts' AND policyname = 'service_role_manage_wallets') THEN
         CREATE POLICY "service_role_manage_wallets" ON public.wallet_accounts 
+            FOR ALL USING (auth.role() = 'service_role');
+    END IF;
+END $$;
+
+-- Referral links and attributions: service role manage
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'referral_links' AND policyname = 'service_role_manage_referral_links') THEN
+        CREATE POLICY "service_role_manage_referral_links" ON public.referral_links
+            FOR ALL USING (auth.role() = 'service_role');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'referral_attributions' AND policyname = 'service_role_manage_referral_attributions') THEN
+        CREATE POLICY "service_role_manage_referral_attributions" ON public.referral_attributions
             FOR ALL USING (auth.role() = 'service_role');
     END IF;
 END $$;

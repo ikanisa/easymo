@@ -4,33 +4,53 @@
 
 BEGIN;
 
--- Clean AI agents table - keep only buy_and_sell
--- First, delete related records in dependent tables
-DELETE FROM ai_agent_tools WHERE agent_id IN (
-  SELECT id FROM ai_agents WHERE slug NOT IN ('buy_and_sell', 'buy_sell')
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'ai_agents'
+  ) THEN
+    RAISE NOTICE 'Skipping 20251213000000_cleanup_deprecated_domains: ai_agents table missing.';
+    RETURN;
+  END IF;
 
-DELETE FROM ai_agent_personas WHERE agent_id IN (
-  SELECT id FROM ai_agents WHERE slug NOT IN ('buy_and_sell', 'buy_sell')
-);
+  -- Clean AI agents table - keep only buy_and_sell
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'ai_agent_tools'
+  ) THEN
+    DELETE FROM ai_agent_tools WHERE agent_id IN (
+      SELECT id FROM ai_agents WHERE slug NOT IN ('buy_and_sell', 'buy_sell')
+    );
+  END IF;
 
-DELETE FROM ai_agent_system_instructions WHERE agent_id IN (
-  SELECT id FROM ai_agents WHERE slug NOT IN ('buy_and_sell', 'buy_sell')
-);
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'ai_agent_personas'
+  ) THEN
+    DELETE FROM ai_agent_personas WHERE agent_id IN (
+      SELECT id FROM ai_agents WHERE slug NOT IN ('buy_and_sell', 'buy_sell')
+    );
+  END IF;
 
--- Delete the agents themselves
-DELETE FROM ai_agents WHERE slug NOT IN ('buy_and_sell', 'buy_sell');
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'ai_agent_system_instructions'
+  ) THEN
+    DELETE FROM ai_agent_system_instructions WHERE agent_id IN (
+      SELECT id FROM ai_agents WHERE slug NOT IN ('buy_and_sell', 'buy_sell')
+    );
+  END IF;
 
--- Update menu items to remove deleted services
--- Note: Keeping rides and insurance as they are now WhatsApp workflows
-DELETE FROM menu_items WHERE slug IN ('jobs', 'waiter', 'farmer', 'real_estate', 'sales', 'property');
+  DELETE FROM ai_agents WHERE slug NOT IN ('buy_and_sell', 'buy_sell');
 
--- Archive old conversations from deleted agents if needed
--- (Optional: You may want to keep conversations for historical records)
--- UPDATE whatsapp_conversations 
--- SET status = 'archived'
--- WHERE agent_id IN (
---   SELECT id FROM ai_agents WHERE slug IN ('jobs', 'waiter', 'farmer', 'real_estate', 'sales', 'property')
--- );
+  -- Update menu items to remove deleted services
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'menu_items'
+  ) THEN
+    DELETE FROM menu_items WHERE slug IN ('jobs', 'waiter', 'farmer', 'real_estate', 'sales', 'property');
+  END IF;
+END $$;
 
 COMMIT;

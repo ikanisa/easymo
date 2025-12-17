@@ -72,30 +72,50 @@ DROP TABLE IF EXISTS public.property_viewings CASCADE;
 -- =====================================================
 
 -- Remove match events for deprecated agents
-DELETE FROM public.agent_match_events 
-WHERE event_type IN ('job_match', 'property_match', 'restaurant_match', 'farm_product_match');
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'agent_match_events'
+  ) THEN
+    DELETE FROM public.agent_match_events 
+    WHERE event_type IN ('job_match', 'property_match', 'restaurant_match', 'farm_product_match');
+  ELSE
+    RAISE NOTICE 'Skipping agent_match_events cleanup: table missing.';
+  END IF;
 
--- =====================================================
--- CLEANUP INTENTS AND CONVERSATIONS
--- =====================================================
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'parsed_intents'
+  ) THEN
+    DELETE FROM public.parsed_intents 
+    WHERE intent_type IN (
+      'search_jobs', 'apply_job', 'view_job',
+      'search_property', 'view_property', 'schedule_viewing',
+      'view_menu', 'order_food', 'view_bars',
+      'farmer_inquiry', 'view_produce'
+    );
+  ELSE
+    RAISE NOTICE 'Skipping parsed_intents cleanup: table missing.';
+  END IF;
 
--- Remove intents related to deprecated domains
-DELETE FROM public.parsed_intents 
-WHERE intent_type IN (
-  'search_jobs', 'apply_job', 'view_job',
-  'search_property', 'view_property', 'schedule_viewing',
-  'view_menu', 'order_food', 'view_bars',
-  'farmer_inquiry', 'view_produce'
-);
-
--- Archive conversations from deleted agents
--- (Keeping for historical records, but marking as archived)
-UPDATE public.whatsapp_conversations 
-SET metadata = COALESCE(metadata, '{}'::jsonb) || '{"archived_domain": true}'::jsonb
-WHERE agent_id IN (
-  SELECT id FROM ai_agents 
-  WHERE slug IN ('jobs', 'waiter', 'farmer', 'real_estate', 'property', 'sales_cold_caller')
-);
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'whatsapp_conversations'
+  ) AND EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'ai_agents'
+  ) THEN
+    UPDATE public.whatsapp_conversations 
+    SET metadata = COALESCE(metadata, '{}'::jsonb) || '{"archived_domain": true}'::jsonb
+    WHERE agent_id IN (
+      SELECT id FROM ai_agents 
+      WHERE slug IN ('jobs', 'waiter', 'farmer', 'real_estate', 'property', 'sales_cold_caller')
+    );
+  ELSE
+    RAISE NOTICE 'Skipping whatsapp_conversations archival: prerequisite tables missing.';
+  END IF;
+END $$;
 
 -- =====================================================
 -- VERIFICATION & LOGGING

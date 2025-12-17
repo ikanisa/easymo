@@ -38,7 +38,16 @@ DROP FUNCTION IF EXISTS public.get_admin_contacts(TEXT, TEXT) CASCADE;
 -- This table stores the WhatsApp admin contact that users should message
 -- ============================================================================
 
--- Add comment to clarify purpose
-COMMENT ON TABLE public.insurance_admin_contacts IS 'Admin contact information for insurance services - used to provide contact details to users';
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'insurance_admin_contacts'
+  ) THEN
+    COMMENT ON TABLE public.insurance_admin_contacts IS 'Admin contact information for insurance services - used to provide contact details to users';
+  ELSE
+    RAISE NOTICE 'Skipping insurance_admin_contacts comment: table missing.';
+  END IF;
+END $$;
 
 COMMIT;

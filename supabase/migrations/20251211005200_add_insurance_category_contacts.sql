@@ -6,13 +6,29 @@ BEGIN;
 
 -- Update existing admin_auth contacts to also handle insurance if no insurance-specific contacts exist
 -- This ensures backward compatibility
-UPDATE public.insurance_admin_contacts
-SET category = 'insurance'
-WHERE category = 'admin_auth'
-  AND NOT EXISTS (
-    SELECT 1 FROM public.insurance_admin_contacts 
-    WHERE category = 'insurance' AND is_active = true
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'insurance_admin_contacts'
+  ) THEN
+    RAISE NOTICE 'Skipping 20251211005200_add_insurance_category_contacts: public.insurance_admin_contacts does not exist yet.';
+    RETURN;
+  END IF;
+
+  UPDATE public.insurance_admin_contacts
+  SET category = 'insurance'
+  WHERE category = 'admin_auth'
+    AND NOT EXISTS (
+      SELECT 1 FROM public.insurance_admin_contacts 
+      WHERE category = 'insurance' AND is_active = true
+    );
+
+  COMMENT ON TABLE public.insurance_admin_contacts IS 
+    'Unified admin/support contacts table. Filter by category for specific use cases: admin_auth, insurance, support, general, escalation';
+END $$;
 
 -- Alternatively, if you want dedicated insurance contacts, insert them:
 -- Uncomment and modify the following to add insurance-specific contacts:
@@ -34,9 +50,5 @@ ON CONFLICT (destination) DO UPDATE SET
   priority = EXCLUDED.priority,
   is_active = EXCLUDED.is_active;
 */
-
--- Add comment explaining the change
-COMMENT ON TABLE public.insurance_admin_contacts IS 
-  'Unified admin/support contacts table. Filter by category for specific use cases: admin_auth, insurance, support, general, escalation';
 
 COMMIT;

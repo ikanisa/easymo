@@ -5,6 +5,9 @@
 -- =====================================================
 -- MARKETPLACE CONVERSATIONS
 -- =====================================================
+CREATE EXTENSION IF NOT EXISTS cube;
+CREATE EXTENSION IF NOT EXISTS earthdistance;
+
 CREATE TABLE IF NOT EXISTS marketplace_conversations (
   phone TEXT PRIMARY KEY,
   flow_type TEXT,
@@ -142,4 +145,3 @@ CREATE INDEX IF NOT EXISTS idx_agent_user_memory_type_key
   ON agent_user_memory(memory_type, key);
 CREATE INDEX IF NOT EXISTS idx_agent_user_memory_expires_at 
   ON agent_user_memory(expires_at) WHERE expires_at IS NOT NULL;
-

@@ -3,22 +3,32 @@
 
 BEGIN;
 
--- Add parsed_by column
-ALTER TABLE public.vendor_sms_transactions
-ADD COLUMN IF NOT EXISTS parsed_by TEXT 
-CHECK (parsed_by IS NULL OR parsed_by IN ('openai', 'gemini', 'regex'));
+DO $$
+BEGIN
+  -- Only run if the table exists in this project.
+  IF to_regclass('public.vendor_sms_transactions') IS NOT NULL THEN
 
--- Add comment
-COMMENT ON COLUMN public.vendor_sms_transactions.parsed_by IS 
-'Which parser processed this SMS: openai (primary), gemini (fallback), or regex (final fallback)';
+    EXECUTE 'ALTER TABLE public.vendor_sms_transactions
+             ADD COLUMN IF NOT EXISTS parsed_by TEXT';
 
--- Create index for filtering by parser
-CREATE INDEX IF NOT EXISTS idx_vendor_txns_parsed_by 
-ON public.vendor_sms_transactions(parsed_by);
+    EXECUTE 'ALTER TABLE public.vendor_sms_transactions
+             DROP CONSTRAINT IF EXISTS vendor_sms_transactions_parsed_by_check';
 
--- Update existing records to 'regex' since they were parsed before AI integration
-UPDATE public.vendor_sms_transactions 
-SET parsed_by = 'regex' 
-WHERE parsed_by IS NULL;
+    EXECUTE 'ALTER TABLE public.vendor_sms_transactions
+             ADD CONSTRAINT vendor_sms_transactions_parsed_by_check
+             CHECK (parsed_by IS NULL OR parsed_by IN (''openai'', ''gemini'', ''regex''))';
+
+    EXECUTE 'COMMENT ON COLUMN public.vendor_sms_transactions.parsed_by IS
+             ''Which parser processed this SMS: openai (primary), gemini (fallback), or regex (final fallback)''';
+
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_vendor_txns_parsed_by
+             ON public.vendor_sms_transactions(parsed_by)';
+
+    EXECUTE 'UPDATE public.vendor_sms_transactions
+             SET parsed_by = ''regex''
+             WHERE parsed_by IS NULL';
+
+  END IF;
+END $$;
 
 COMMIT;
