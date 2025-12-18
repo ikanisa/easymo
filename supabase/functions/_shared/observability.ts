@@ -1,5 +1,6 @@
-import * as Sentry from "npm:@sentry/deno@8.37.1";
-import type { Event, EventHint } from "npm:@sentry/types@8.37.1";
+let Sentry: any = null;
+type Event = any;
+type EventHint = any;
 
 const EMAIL_REGEX = /([A-Z0-9._%+-]{2})[A-Z0-9._%+-]*(@[A-Z0-9.-]+\.[A-Z]{2,})/gi;
 const PHONE_REGEX = /(\+?\d{2})\d{3,8}(\d{2})/g;
@@ -98,17 +99,32 @@ const profilesSampleRate = parseSampleRate(
   environment === "production" ? 0.1 : 1
 );
 
-const scrubEvent = (event: Event, _hint?: EventHint) => scrubPII(event) as Event;
+const scrubEvent = (event: any, _hint?: any) => scrubPII(event) as any;
 
 if (sentryDsn) {
-  Sentry.init({
-    dsn: sentryDsn,
-    environment,
-    release,
-    tracesSampleRate,
-    // profilesSampleRate not supported in Deno - removed
-    beforeSend: scrubEvent as any, // Type assertion for Deno compatibility
-  });
+  (async () => {
+    try {
+      const mod = await import("npm:@sentry/deno@8.37.1");
+      Sentry = mod;
+      if (Sentry && typeof Sentry.init === "function") {
+        Sentry.init({
+          dsn: sentryDsn,
+          environment,
+          release,
+          tracesSampleRate,
+          // profilesSampleRate not supported in Deno - removed
+          beforeSend: scrubEvent as any,
+        });
+      }
+    } catch (e) {
+      nativeConsole.warn(JSON.stringify({
+        level: "warn",
+        event: "sentry.import_failed",
+        error: typeof e === "object" ? (e as any).message ?? String(e) : String(e),
+        timestamp: new Date().toISOString(),
+      }));
+    }
+  })();
 }
 
 const posthogApiKey = Deno.env.get("POSTHOG_API_KEY");
