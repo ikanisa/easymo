@@ -24,7 +24,7 @@ export async function fetchInsuranceContacts(
   try {
     const result = await supabase
       .from("insurance_admin_contacts")
-      .select("phone, display_name")
+      .select("*")
       .eq("is_active", true)
       .order("created_at", { ascending: true });
 
@@ -37,7 +37,14 @@ export async function fetchInsuranceContacts(
       return { contacts: null, error: result.error };
     }
     
-    return { contacts: result.data, error: null };
+    // Normalize DB rows to expected interface: support both 'phone' and legacy 'destination'
+    const rows: any[] = result.data ?? [];
+    const contacts = rows.map((r) => ({
+      display_name: r.display_name ?? r.name ?? null,
+      phone: (r.phone ?? r.destination ?? r.phone) ?? null,
+    })).filter(c => c.phone && c.display_name) as InsuranceContact[];
+
+    return { contacts, error: null };
   } catch (e) {
     const error = e instanceof Error ? e : new Error(String(e));
     await logStructuredEvent("INSURANCE_DB_EXCEPTION", {
