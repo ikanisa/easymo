@@ -27,38 +27,7 @@
   - Multi-stage Next.js build
   - Standalone output enabled
 
-### 2. Vendor Portal PWA (Onboarded Vendors)
-
-- **Name**: `easymo-vendor`
-- **Path**: `/waiter-pwa`
-- **Type**: `internal_vendor`
-- **Tech Stack**: Next.js 15, React 18, TypeScript 5.5
-- **Dev Command**: `pnpm dev` (port 3001)
-- **Build Command**: `pnpm build`
-- **Start Command**: `pnpm start`
-- **Dockerfile**: ⚠️ Needs creation (similar to admin-app)
-- **Auth Required**: Yes - IAP + Supabase vendor role
-- **Notes**:
-  - For onboarded vendors (bars, restaurants)
-  - Previously called "waiter-pwa"
-  - NO public signup - vendors created via Admin
-
-### 3. Client PWA (End Users - Public)
-
-- **Name**: `easymo-client`
-- **Path**: `/client-pwa`
-- **Type**: `public_app`
-- **Tech Stack**: Next.js 15, React 19, TypeScript 5.7
-- **Dev Command**: `pnpm dev` (port 3002)
-- **Build Command**: `pnpm build`
-- **Start Command**: `pnpm start`
-- **Dockerfile**: ⚠️ Needs creation
-- **Auth Required**: No IAP (public), optional Supabase auth for features
-- **Notes**:
-  - Public-facing consumer app
-  - Mobility, marketplace features
-
-### 4. Voice Bridge (SIP ↔ WhatsApp ↔ OpenAI Realtime)
+### 2. Voice Bridge (SIP ↔ WhatsApp ↔ OpenAI Realtime)
 
 - **Name**: `easymo-voice-bridge`
 - **Path**: `/services/voice-bridge`
@@ -74,7 +43,7 @@
   - Connects to OpenAI Realtime API
   - WebSocket server for real-time audio
 
-### 5. WhatsApp Webhook Router (Meta API)
+### 3. WhatsApp Webhook Router (Meta API)
 
 - **Name**: `easymo-wa-router`
 - **Path**: `/services/whatsapp-webhook-worker`
@@ -90,7 +59,7 @@
   - Routes to appropriate Edge Functions
   - Uses Meta WhatsApp Cloud API only (NO Twilio)
 
-### 6. Agent Core / Call Center Backend
+### 4. Agent Core / Call Center Backend
 
 - **Name**: `easymo-agent-core`
 - **Path**: `/services/agent-core`
@@ -200,43 +169,34 @@ These stay on Supabase (Deno runtime):
 ### Phase 1 (Week 1) - Core Services
 
 1. ✅ Admin PWA (`easymo-admin`)
-2. Vendor Portal PWA (`easymo-vendor`)
-3. WhatsApp Router (`easymo-wa-router`)
-4. Agent Core (`easymo-agent-core`)
+2. WhatsApp Router (`easymo-wa-router`)
+3. Agent Core (`easymo-agent-core`)
 
 ### Phase 2 (Week 2) - Voice & Mobility
 
-5. Voice Bridge (`easymo-voice-bridge`)
-6. Voice Media services (3 services)
-7. Mobility Orchestrator
-8. Client PWA (`easymo-client`)
+4. Voice Bridge (`easymo-voice-bridge`)
+5. Voice Media services (3 services)
+6. Mobility Orchestrator
 
 ### Phase 3 (Week 3+) - Supporting Services
 
-9. Wallet, Ranking, Video services
-10. Background workers → Cloud Run Jobs
-11. Monitoring & optimization
+7. Wallet, Ranking, Video services
+8. Background workers → Cloud Run Jobs
+9. Monitoring & optimization
 
 ---
 
 ## Service Dependencies
 
 ```
-┌─────────────────┐
-│   Admin PWA     │──┐
-│  (internal)     │  │
-└─────────────────┘  │
-                      │
-┌─────────────────┐  │     ┌─────────────────┐
-│  Vendor Portal  │──┼────▶│   Supabase DB   │
-│  (internal)     │  │     │   + Auth + RLS  │
-└─────────────────┘  │     └─────────────────┘
-                      │              ▲
-┌─────────────────┐  │              │
-│   Client PWA    │──┘              │
-│   (public)      │                 │
-└─────────────────┘                 │
-                                     │
+┌─────────────────┐                 │
+│   Admin PWA     │─────────────────┼────▶┌─────────────────┐
+│  (internal)     │                 │     │   Supabase DB   │
+└─────────────────┘                 │     │   + Auth + RLS  │
+                                     │     └─────────────────┘
+                                     │              ▲
+                                     │              │
+                                     │              │
 ┌─────────────────┐     ┌─────────────────┐
 │ WhatsApp Router │────▶│ Supabase Edge   │
 │  (Meta API)     │     │   Functions     │
@@ -261,10 +221,10 @@ These stay on Supabase (Deno runtime):
 ## Next Steps
 
 1. ✅ Review services overview
-2. Create Dockerfiles for missing services (Vendor Portal, Client PWA, Agent Core)
+2. Create Dockerfiles for missing services (Agent Core)
 3. Set up Artifact Registry
 4. Define environment variables per service
-5. Create IAP config for Admin + Vendor Portal
+5. Create IAP config for Admin
 6. Build CI/CD with GitHub Actions
 
 See:

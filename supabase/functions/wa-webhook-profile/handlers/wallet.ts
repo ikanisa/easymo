@@ -1,387 +1,351 @@
-import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
-import { ensureReferralLink } from "../../_shared/wa-webhook-shared/utils/share.ts";
-import { setState } from "../../_shared/wa-webhook-shared/state/store.ts";
-import { t } from "../../_shared/wa-webhook-shared/i18n/translator.ts";
-import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
+import { maskPhone, normalizePhone } from "../../_shared/phone-utils.ts";
+import type { SupabaseClient } from "../../_shared/wa-webhook-shared/deps.ts";
+import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import {
-  sendButtonsMessage,
-  sendListMessage,
-  sendTextMessage,
-} from "../../_shared/wa-webhook-shared/utils/reply.ts";
+  clearState,
+  setState,
+} from "../../_shared/wa-webhook-shared/state/store.ts";
+import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
+import { sendTextMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 
-const WALLET_STATE_HOME = "wallet_home";
-const WALLET_STATE_TRANSFER_PARTNER = "wallet_transfer_partner";
-const WALLET_STATE_TRANSFER_AMOUNT = "wallet_transfer_amount";
+const STATE_WALLET_NUMBER = "WALLET_WAIT_NUMBER";
+const STATE_WALLET_AMOUNT = "WALLET_WAIT_AMOUNT";
 
 /**
- * Show wallet menu with balance, earn, and transfer options
+ * Wallet - Transfer Tokens ONLY (TWO STEPS)
+ * Step 1: Get recipient number
+ * Step 2: Get amount and execute transfer
  */
-export async function showWalletMenu(
+export async function handleWallet(
   ctx: RouterContext,
+  text: string,
+  state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
 
-  // Get wallet balance
-  const { data: wallet } = await ctx.supabase
-    .from("wallet_accounts")
-    .select("tokens")
-    .eq("profile_id", ctx.profileId)
-    .maybeSingle();
+  // Step 1: Prompt for recipient number
+  if (state.key !== STATE_WALLET_NUMBER && state.key !== STATE_WALLET_AMOUNT) {
+    return await promptRecipientNumber(ctx);
+  }
 
-  const balance = wallet?.tokens || 0;
+  // Step 1: Validate and store recipient number
+  if (state.key === STATE_WALLET_NUMBER) {
+    const recipient = normalizePhone(text);
 
-  await setState(ctx.supabase, ctx.profileId, {
-    key: WALLET_STATE_HOME,
-    data: {},
-  });
+    if (!recipient) {
+      await sendTextMessage(
+        ctx,
+        `❌ *Invalid Number Format*\n\n` +
+          `I couldn't recognize that number. 😔\n\n` +
+          `*Please send a valid WhatsApp number:*\n` +
+          `• Format: +250788123456 or 0788123456\n\n` +
+          `*Examples:*\n` +
+          `• +250788123456\n` +
+          `• 0788123456\n\n` +
+          `Try again! 💪`,
+      );
+      return true;
+    }
 
-  const rows = [
-    {
-      id: "WALLET_EARN",
-      title: "💰 Earn Tokens",
-      description: "Share easyMO to earn tokens",
-    },
-    {
-      id: "WALLET_TRANSFER",
-      title: "💸 Transfer to Partner",
-      description: "Send tokens to allowed partners",
-    },
-    {
-      id: IDS.BACK_MENU,
-      title: "← Back",
-      description: "",
-    },
-  ];
+    // Check if sending to self
+    if (recipient === normalizePhone(ctx.from)) {
+      await sendTextMessage(
+        ctx,
+        `😅 *Can't Send to Yourself*\n\n` +
+          `You cannot send tokens to your own number!\n\n` +
+          `Please enter a different recipient number. 👥`,
+      );
+      return await promptRecipientNumber(ctx);
+    }
 
-  await sendListMessage(
-    ctx,
-    {
-      title: "💳 Wallet & Tokens",
-      body: `Your balance: *${balance} TOK*\n\nEarn tokens by sharing easyMO with your contacts. Transfer tokens to allowed partners only.`,
-      sectionTitle: "Options",
-      buttonText: "Select",
-      rows,
-    },
-  );
-
-  await logStructuredEvent("WALLET_MENU_DISPLAYED", {
-    userId: ctx.profileId,
-    balance,
-    locale: ctx.locale,
-  });
-
-  return true;
-}
-
-/**
- * Show earn tokens menu (share easyMO)
- */
-export async function showEarnTokens(
-  ctx: RouterContext,
-): Promise<boolean> {
-  if (!ctx.profileId) return false;
-
-  try {
-    const link = await ensureReferralLink(ctx.supabase, ctx.profileId);
-    
-    const shareText = [
-      t(ctx.locale, "wallet.earn.forward.instructions"),
-      t(ctx.locale, "wallet.earn.share_text_intro"),
-      link.waLink,
-      t(ctx.locale, "wallet.earn.copy.code", { code: link.code }),
-      t(ctx.locale, "wallet.earn.note.keep_code"),
-    ].join("\n\n");
-
-    await sendButtonsMessage(
-      ctx,
-      shareText,
-      [
-        { id: "WALLET", title: "← Back to Wallet" },
-        { id: IDS.BACK_MENU, title: "🏠 Home" },
-      ],
-    );
-
-    await logStructuredEvent("WALLET_EARN_SHOWN", {
-      userId: ctx.profileId,
-      code: link.code,
-      locale: ctx.locale,
+    await setState(ctx.supabase, ctx.profileId, {
+      key: STATE_WALLET_AMOUNT,
+      data: { recipient },
     });
 
-    return true;
-  } catch (error) {
-    await logStructuredEvent("WALLET_EARN_ERROR", {
-      userId: ctx.profileId,
-      error: error instanceof Error ? error.message : String(error),
-    }, "error");
+    // Get sender balance
+    const balance = await getBalance(ctx);
 
-    await sendButtonsMessage(
+    await sendTextMessage(
       ctx,
-      t(ctx.locale, "wallet.earn.error"),
-      [
-        { id: "WALLET", title: "← Back to Wallet" },
-        { id: IDS.BACK_MENU, title: "🏠 Home" },
-      ],
+      `💰 *Enter Amount*\n\n` +
+        `How many tokens do you want to send to ${maskPhone(recipient)}?\n\n` +
+        `Your balance: *${balance} TOK*\n\n` +
+        `💡 Enter a number (e.g., 10, 50, 100)`,
     );
+    return true;
+  }
+
+  // Step 2: Validate amount and execute transfer
+  if (state.key === STATE_WALLET_AMOUNT) {
+    const recipient = state.data?.recipient as string;
+    if (!recipient) {
+      await clearState(ctx.supabase, ctx.profileId);
+      return await promptRecipientNumber(ctx);
+    }
+
+    const amount = parseInt(text.trim().replace(/\D/g, ""), 10);
+
+    if (isNaN(amount) || amount <= 0) {
+      await sendTextMessage(
+        ctx,
+        `❌ *Invalid Amount*\n\n` +
+          `Please send a valid number.\n\n` +
+          `*Examples:*\n` +
+          `• 10\n` +
+          `• 50\n` +
+          `• 100\n\n` +
+          `💡 Enter only the number (no text or symbols)`,
+      );
+      return true;
+    }
+
+    // Get sender balance
+    const balance = await getBalance(ctx);
+
+    if (amount > balance) {
+      await sendTextMessage(
+        ctx,
+        `❌ *Insufficient Balance*\n\n` +
+          `You tried to send *${amount} tokens*, but you only have *${balance} TOK*.\n\n` +
+          `💡 Please enter a smaller amount (max: ${balance} tokens)`,
+      );
+      return true;
+    }
+
+    // Execute transfer
+    const result = await executeTransfer(ctx, recipient, amount);
+
+    if (result.success) {
+      await clearState(ctx.supabase, ctx.profileId);
+      await sendTextMessage(
+        ctx,
+        `✅ *Transfer Successful!*\n\n` +
+          `Sent *${amount} tokens* to ${maskPhone(recipient)}.\n\n` +
+          `Your new balance: *${result.newBalance} TOK*\n\n` +
+          `💡 The recipient has been notified!`,
+      );
+    } else {
+      await sendTextMessage(
+        ctx,
+        `❌ *Transfer Failed*\n\n` +
+          `Sorry, the transfer couldn't be completed.\n\n` +
+          `*Error:* ${result.error}\n\n` +
+          `💡 Please try again, or contact support if the problem persists.`,
+      );
+    }
 
     return true;
   }
+
+  return false;
 }
 
 /**
- * Show list of allowed partners for transfer
+ * Prompt for recipient number (Step 1)
  */
-export async function showTransferPartners(
-  ctx: RouterContext,
-): Promise<boolean> {
+async function promptRecipientNumber(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
 
-  // Get wallet balance
-  const { data: wallet } = await ctx.supabase
-    .from("wallet_accounts")
-    .select("tokens")
-    .eq("profile_id", ctx.profileId)
-    .maybeSingle();
-
-  const balance = wallet?.tokens || 0;
+  const balance = await getBalance(ctx);
 
   if (balance === 0) {
     await sendTextMessage(
       ctx,
-      "⚠️ You don't have any tokens to transfer. Earn tokens by sharing easyMO with your contacts.",
+      "⚠️ You don't have any tokens to transfer.\n\nEarn tokens by sharing easyMO with your contacts!",
     );
-    return true;
-  }
-
-  // Get allowed partners
-  const { data: partners, error: partnersError } = await ctx.supabase
-    .from("allowed_partners")
-    .select("id, partner_name, partner_phone, partner_type, description")
-    .eq("is_active", true)
-    .order("partner_name");
-
-  if (partnersError || !partners || partners.length === 0) {
-    await sendTextMessage(
-      ctx,
-      "⚠️ No partners available for transfers at this time. Please check back later.",
-    );
-    await logStructuredEvent("WALLET_TRANSFER_NO_PARTNERS", {
-      userId: ctx.profileId,
-      error: partnersError?.message,
-    }, "warn");
     return true;
   }
 
   await setState(ctx.supabase, ctx.profileId, {
-    key: WALLET_STATE_TRANSFER_PARTNER,
+    key: STATE_WALLET_NUMBER,
     data: {},
-  });
-
-  const rows = partners.map((partner) => ({
-    id: `TRANSFER_TO::${partner.id}`,
-    title: partner.partner_name,
-    description: `${partner.partner_type} | ${partner.description || ""}`,
-  }));
-
-  rows.push({
-    id: "WALLET",
-    title: "← Back to Wallet",
-    description: "",
-  });
-
-  await sendListMessage(
-    ctx,
-    {
-      title: "💸 Transfer Tokens",
-      body: `Your balance: *${balance} TOK*\n\nSelect a partner to transfer tokens to:`,
-      sectionTitle: "Partners",
-      buttonText: "Select",
-      rows,
-    },
-  );
-
-  await logStructuredEvent("WALLET_TRANSFER_PARTNERS_SHOWN", {
-    userId: ctx.profileId,
-    partnerCount: partners.length,
-    balance,
-  });
-
-  return true;
-}
-
-/**
- * Handle partner selection and prompt for amount
- */
-export async function handlePartnerSelection(
-  ctx: RouterContext,
-  partnerId: string,
-): Promise<boolean> {
-  if (!ctx.profileId) return false;
-
-  // Get partner details
-  const { data: partner, error: partnerError } = await ctx.supabase
-    .from("allowed_partners")
-    .select("id, partner_name, partner_phone, partner_type")
-    .eq("id", partnerId)
-    .eq("is_active", true)
-    .maybeSingle();
-
-  if (partnerError || !partner) {
-    await sendTextMessage(
-      ctx,
-      "⚠️ Partner not found or no longer available. Please select another partner.",
-    );
-    return showTransferPartners(ctx);
-  }
-
-  // Get wallet balance
-  const { data: wallet } = await ctx.supabase
-    .from("wallet_accounts")
-    .select("tokens")
-    .eq("profile_id", ctx.profileId)
-    .maybeSingle();
-
-  const balance = wallet?.tokens || 0;
-
-  await setState(ctx.supabase, ctx.profileId, {
-    key: WALLET_STATE_TRANSFER_AMOUNT,
-    data: { partnerId: partner.id, partnerName: partner.partner_name },
   });
 
   await sendTextMessage(
     ctx,
-    `💸 Transfer to: *${partner.partner_name}*\n\nYour balance: *${balance} TOK*\n\nHow many tokens do you want to transfer?\n\nSend a number (e.g., 10, 50, 100)`,
+    `💰 *Transfer Tokens*\n\n` +
+      `Your current balance: *${balance} TOK*\n\n` +
+      `📱 *Send Recipient Number*\n` +
+      `Enter the WhatsApp number of the person you want to send tokens to.\n\n` +
+      `*Examples:*\n` +
+      `• +250788123456\n` +
+      `• 0788123456\n\n` +
+      `💡 They'll receive a notification when tokens arrive!`,
   );
-
-  await logStructuredEvent("WALLET_TRANSFER_AMOUNT_PROMPT", {
-    userId: ctx.profileId,
-    partnerId: partner.id,
-    balance,
-  });
 
   return true;
 }
 
 /**
- * Process token transfer to partner
+ * Execute token transfer
  */
-export async function processTransfer(
+async function executeTransfer(
   ctx: RouterContext,
-  amountText: string,
-  state: { key: string; data?: Record<string, unknown> },
-): Promise<boolean> {
-  if (!ctx.profileId || !state.data) return false;
+  recipientPhone: string,
+  amount: number,
+): Promise<{ success: boolean; error?: string; newBalance?: number }> {
+  if (!ctx.profileId) return { success: false, error: "No profile ID" };
 
-  const partnerId = state.data.partnerId as string;
-  const partnerName = state.data.partnerName as string;
+  try {
+    // Ensure recipient profile exists
+    // Try both wa_id and phone_number
+    const normalizedPhone = recipientPhone.startsWith('+') ? recipientPhone : `+${recipientPhone}`;
+    const waId = recipientPhone.replace(/^\+/, '');
+    
+    const { data: recipientProfile } = await ctx.supabase
+      .from("profiles")
+      .select("user_id")
+      .or(`wa_id.eq.${waId},phone_number.eq.${normalizedPhone},phone_number.eq.${recipientPhone}`)
+      .maybeSingle();
 
-  // Parse amount
-  const amount = parseInt(amountText.trim(), 10);
-  if (isNaN(amount) || amount <= 0) {
-    await sendTextMessage(
-      ctx,
-      "⚠️ Please send a valid number (e.g., 10, 50, 100).",
-    );
-    return true;
-  }
+    let recipientId: string;
 
-  // Get wallet balance
-  const { data: wallet, error: walletError } = await ctx.supabase
-    .from("wallet_accounts")
-    .select("tokens")
-    .eq("profile_id", ctx.profileId)
-    .maybeSingle();
+    if (recipientProfile?.user_id) {
+      recipientId = recipientProfile.user_id;
+    } else {
+      // Recipient profile not found - return error
+      // Profile creation should go through ensureProfile in the main handler
+      return { 
+        success: false, 
+        error: "Recipient profile not found. Please ensure the recipient has an account." 
+      };
+    }
 
-  if (walletError || !wallet) {
-    await sendTextMessage(
-      ctx,
-      "⚠️ Error accessing your wallet. Please try again.",
-    );
-    await logStructuredEvent("WALLET_TRANSFER_ERROR", {
-      userId: ctx.profileId,
-      error: walletError?.message || "Wallet not found",
-    }, "error");
-    return true;
-  }
+    // Generate transfer reference ID for idempotency
+    const transferRef =
+      `transfer_${ctx.profileId}_${recipientId}_${Date.now()}`;
 
-  const balance = wallet.tokens || 0;
+    // Check if transfer already processed (idempotency)
+    const { data: existing } = await ctx.supabase
+      .from("token_transfers")
+      .select("id, status")
+      .eq("from_user_id", ctx.profileId)
+      .eq("to_user_id", recipientId)
+      .eq("amount", amount)
+      .gte("created_at", new Date(Date.now() - 60000).toISOString()) // Last minute
+      .maybeSingle();
 
-  if (amount > balance) {
-    await sendTextMessage(
-      ctx,
-      `⚠️ Insufficient balance. You have *${balance} TOK*. Please enter a smaller amount.`,
-    );
-    return true;
-  }
+    if (existing && existing.status === "completed") {
+      const balance = await getBalance(ctx);
+      return { success: true, newBalance: balance };
+    }
 
-  // Verify partner still exists and is active
-  const { data: partner, error: partnerError } = await ctx.supabase
-    .from("allowed_partners")
-    .select("id, partner_name, partner_phone")
-    .eq("id", partnerId)
-    .eq("is_active", true)
-    .maybeSingle();
+    // Execute transfer in transaction (debit sender, credit recipient)
+    const { error: debitError } = await ctx.supabase.rpc("wallet_delta_fn", {
+      p_profile_id: ctx.profileId,
+      p_amount_tokens: -amount,
+      p_entry_type: "transfer_out",
+      p_reference_table: "token_transfers",
+      p_description: `Transfer to ${maskPhone(recipientPhone)}`,
+    });
 
-  if (partnerError || !partner) {
-    await sendTextMessage(
-      ctx,
-      "⚠️ Partner no longer available. Please select another partner.",
-    );
-    return showTransferPartners(ctx);
-  }
+    if (debitError) {
+      return { success: false, error: debitError.message };
+    }
 
-  // Execute transfer using wallet_delta_fn
-  const { error: transferError } = await ctx.supabase.rpc("wallet_delta_fn", {
-    p_profile_id: ctx.profileId,
-    p_amount_tokens: -amount, // Negative for debit
-    p_entry_type: "partner_transfer",
-    p_reference_table: "allowed_partners",
-    p_reference_id: partner.id,
-    p_description: `Transfer to ${partner.partner_name}`,
-  });
+    const { error: creditError } = await ctx.supabase.rpc("wallet_delta_fn", {
+      p_profile_id: recipientId,
+      p_amount_tokens: amount,
+      p_entry_type: "transfer_in",
+      p_reference_table: "token_transfers",
+      p_description: `Transfer from ${maskPhone(ctx.from)}`,
+    });
 
-  if (transferError) {
-    await sendTextMessage(
-      ctx,
-      "⚠️ Transfer failed. Please try again.",
-    );
-    await logStructuredEvent("WALLET_TRANSFER_ERROR", {
-      userId: ctx.profileId,
-      partnerId: partner.id,
+    if (creditError) {
+      // Rollback: credit back to sender
+      await ctx.supabase.rpc("wallet_delta_fn", {
+        p_profile_id: ctx.profileId,
+        p_amount_tokens: amount,
+        p_entry_type: "transfer_rollback",
+        p_description: "Rollback failed transfer",
+      });
+      return { success: false, error: "Failed to credit recipient" };
+    }
+
+    // Record transfer
+    await ctx.supabase.from("token_transfers").insert({
+      from_user_id: ctx.profileId,
+      to_user_id: recipientId,
       amount,
-      error: transferError.message,
+      status: "completed",
+      client_ref: transferRef,
+    });
+
+    // Send notification to recipient
+    try {
+      const recipientBalance = await getBalanceForUser(
+        ctx.supabase,
+        recipientId,
+      );
+      await sendText(
+        recipientPhone,
+        `🎉 *Tokens Received!*\n\n` +
+          `You received *${amount} tokens* from ${maskPhone(ctx.from)}!\n\n` +
+          `Your new balance: *${recipientBalance} TOK*\n\n` +
+          `💡 Use tokens to access premium features on easyMO!`,
+      );
+    } catch {
+      // Non-fatal - notification failed but transfer succeeded
+      await ctx.supabase
+        .from("token_transfers")
+        .update({ status: "failed_notify" })
+        .eq("client_ref", transferRef);
+    }
+
+    const newBalance = await getBalance(ctx);
+
+    await logStructuredEvent("WALLET_TRANSFER_SUCCESS", {
+      fromUserId: ctx.profileId,
+      toUserId: recipientId,
+      amount,
+      newBalance,
+    });
+
+    return { success: true, newBalance };
+  } catch (error) {
+    await logStructuredEvent("WALLET_TRANSFER_ERROR", {
+      userId: ctx.profileId,
+      error: error instanceof Error ? error.message : String(error),
     }, "error");
-    return true;
+
+    return { success: false, error: "Transfer failed" };
   }
-
-  // Get updated balance
-  const { data: updatedWallet } = await ctx.supabase
-    .from("wallet_accounts")
-    .select("tokens")
-    .eq("profile_id", ctx.profileId)
-    .maybeSingle();
-
-  const newBalance = updatedWallet?.tokens || 0;
-
-  await sendTextMessage(
-    ctx,
-    `✅ Transfer successful!\n\n*${amount} TOK* transferred to ${partner.partner_name}\n\nNew balance: *${newBalance} TOK*`,
-  );
-
-  // Clear state
-  await setState(ctx.supabase, ctx.profileId, {
-    key: WALLET_STATE_HOME,
-    data: {},
-  });
-
-  await logStructuredEvent("WALLET_TRANSFER_SUCCESS", {
-    userId: ctx.profileId,
-    partnerId: partner.id,
-    partnerName: partner.partner_name,
-    amount,
-    oldBalance: balance,
-    newBalance,
-  });
-
-  return true;
 }
+
+/**
+ * Get wallet balance for current user
+ */
+async function getBalance(ctx: RouterContext): Promise<number> {
+  if (!ctx.profileId) return 0;
+  return await getBalanceForUser(ctx.supabase, ctx.profileId);
+}
+
+/**
+ * Get wallet balance for any user
+ * Uses wallet_accounts table (column: tokens, key: profile_id)
+ */
+async function getBalanceForUser(
+  supabase: SupabaseClient,
+  profileId: string,
+): Promise<number> {
+  try {
+    const { data } = await supabase
+      .from("wallet_accounts")
+      .select("tokens")
+      .eq("profile_id", profileId)
+      .maybeSingle();
+
+    return data?.tokens || 0;
+  } catch (error) {
+    // If table doesn't exist yet, return 0 (will be created by migration)
+    logStructuredEvent("WALLET_BALANCE_QUERY_ERROR", {
+      profileId,
+      error: error instanceof Error ? error.message : String(error),
+    }, "error");
+    return 0;
+  }
+}
+
+// normalizePhone is now imported from shared phone-utils

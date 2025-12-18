@@ -6,7 +6,8 @@ export type ChatState = { key: string; data?: Record<string, unknown> };
 
 type ProfileRecord = {
   user_id: string;
-  whatsapp_e164: string | null;
+  wa_id?: string | null;
+  phone_number?: string | null;
   locale: string | null;
 };
 
@@ -15,6 +16,8 @@ const ALLOWED_PREFIXES = (Deno.env.get("WA_ALLOWED_MSISDN_PREFIXES") ?? "")
   .split(",")
   .map((value) => value.trim())
   .filter((value) => value.length > 0);
+const ENFORCE_PREFIXES = (Deno.env.get("WA_ENFORCE_PREFIXES") ?? "false")
+  .toLowerCase() === "true";
 
 export class InvalidWhatsAppNumberError extends Error {
   constructor(readonly msisdn: string) {
@@ -33,6 +36,7 @@ function normalizeWhatsAppNumber(raw: string): string {
     throw new InvalidWhatsAppNumberError(normalized);
   }
   if (
+    ENFORCE_PREFIXES &&
     ALLOWED_PREFIXES.length &&
     !ALLOWED_PREFIXES.some((prefix) => normalized.startsWith(prefix))
   ) {
@@ -274,27 +278,32 @@ async function loadChatStateRow(
   client = supabase,
   userId: string,
 ): Promise<unknown> {
-  const orderColumns = ["updated_at", "last_updated"];
-  for (const column of orderColumns) {
-    const { data, error } = await client
-      .from("chat_state")
-      .select("state")
-      .eq("user_id", userId)
-      .order(column, { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (error?.code === "42703") continue;
-    if (error && error.code !== "PGRST116") throw error;
-    return (data as any)?.state;
-  }
-
-  const { data, error } = await client
-    .from("chat_state")
-    .select("state")
+  // Get user's phone number from profile
+  const { data: profile } = await client
+    .from("profiles")
+    .select("wa_id, phone_number")
     .eq("user_id", userId)
     .maybeSingle();
-  if (error && error.code !== "PGRST116") throw error;
-  return (data as any)?.state;
+  
+  // Use phone_number if available, otherwise wa_id
+  const phoneForSession = profile?.phone_number || profile?.wa_id;
+  if (!phoneForSession) {
+    return null;
+  }
+
+  // Use user_sessions table instead of non-existent chat_state
+  const { data, error } = await client
+    .from("user_sessions")
+    .select("context")
+    .eq("phone_number", phoneForSession)
+    .maybeSingle();
+  
+  if (error && error.code !== "PGRST116") {
+    // If table doesn't exist or error, return null (will use default state)
+    return null;
+  }
+  
+  return (data as any)?.context || null;
 }
 
 export async function ensureProfile(
@@ -355,39 +364,57 @@ export async function ensureProfile(
       );
 
       // If RPC function exists and returns data, use it
-      if (!rpcError && rpcData && rpcData.length > 0) {
+      if (!rpcError && rpcData && Array.isArray(rpcData) && rpcData.length > 0) {
         const profile = rpcData[0];
-        const effectiveLocale = desiredLocale ?? profile.locale ?? "en";
+        // Check if profile has valid user_id (not NULL)
+        if (profile && profile.user_id) {
+          const effectiveLocale = desiredLocale ?? profile.locale ?? "en";
 
-        // Update locale if needed
-        if (desiredLocale && profile.locale !== desiredLocale) {
-          await tryUpdateProfile(client, profile.user_id, {
-            language: desiredLocale,
+          // Update locale if needed
+          if (desiredLocale && profile.locale !== desiredLocale) {
+            await tryUpdateProfile(client, profile.user_id, {
+              language: desiredLocale,
+            });
+          }
+
+          await logStructuredEvent("PROFILE_ENSURED_VIA_RPC", {
+            masked_phone: maskMsisdn(normalizedE164),
+            user_id: profile.user_id,
+            locale: effectiveLocale,
           });
+
+          return {
+            user_id: profile.user_id,
+            wa_id: digits,
+            phone_number: normalizedE164,
+            locale: effectiveLocale,
+          };
         }
-
-        await logStructuredEvent("PROFILE_ENSURED_VIA_RPC", {
-          masked_phone: maskMsisdn(normalizedE164),
-          user_id: profile.user_id,
-          locale: effectiveLocale,
-        });
-
-        return {
-          user_id: profile.user_id,
-          whatsapp_e164: normalizedE164,
-          locale: effectiveLocale,
-        };
+        // If RPC returned empty array or NULL user_id, fall through to fallback
       }
 
-      // If RPC returns NULL, it means profile needs to be created via TypeScript
-      // Fall through to existing logic below
-      if (rpcError && !rpcError.message?.includes("does not exist")) {
-        // RPC function exists but returned error (not "function doesn't exist")
-        // Log and fall through to fallback logic
-        await logStructuredEvent("PROFILE_RPC_ERROR", {
-          error: rpcError.message,
-          masked_phone: maskMsisdn(normalizedE164),
-        }, "warn");
+      // If RPC returns error or NULL, fall through to fallback logic
+      if (rpcError) {
+        // Properly serialize error for logging
+        const errorMessage = rpcError instanceof Error 
+          ? rpcError.message 
+          : (rpcError && typeof rpcError === "object" && "message" in rpcError)
+          ? String((rpcError as Record<string, unknown>).message)
+          : String(rpcError);
+        
+        const errorCode = (rpcError && typeof rpcError === "object" && "code" in rpcError)
+          ? String((rpcError as Record<string, unknown>).code)
+          : undefined;
+        
+        // Only log as warning if it's not a "function doesn't exist" error
+        // Ambiguity errors should be logged but we'll use fallback
+        if (!errorMessage.includes("does not exist")) {
+          await logStructuredEvent("PROFILE_RPC_ERROR", {
+            error: errorMessage,
+            errorCode,
+            masked_phone: maskMsisdn(normalizedE164),
+          }, "warn");
+        }
       }
     } catch (rpcErr) {
       // RPC function might not exist - fall through to fallback logic
@@ -397,13 +424,10 @@ export async function ensureProfile(
     // Fallback: Use existing logic if RPC function doesn't exist or returned NULL
     // 1) Prefer existing profile (avoid auth calls)
     const lookupCandidates: Array<{ column: string; value: string }> = [
-      { column: "whatsapp_number", value: digits },
       { column: "wa_id", value: digits },
-      { column: "whatsapp_e164", value: normalizedE164 },
       { column: "phone_number", value: normalizedE164 },
-      { column: "phone_e164", value: normalizedE164 },
-      { column: "whatsapp_number", value: normalizedE164 },
       { column: "wa_id", value: normalizedE164 },
+      { column: "phone_number", value: digits },
     ];
 
     let existingUserId: string | null = null;
@@ -442,7 +466,8 @@ export async function ensureProfile(
 
       return {
         user_id: existingUserId,
-        whatsapp_e164: normalizedE164,
+        wa_id: digits,
+        phone_number: normalizedE164,
         locale: effectiveLocale,
       };
     }
@@ -452,13 +477,10 @@ export async function ensureProfile(
     const userId = await getOrCreateAuthUserId(client, normalizedE164);
     await ensureProfileRowExists(client, userId);
 
-    // 3) Best-effort: persist phone mapping across known column variants
-    // This ensures WhatsApp number is stored in all possible columns
-    await tryUpdateProfile(client, userId, { whatsapp_number: digits });
+    // 3) Best-effort: persist phone mapping in actual columns
+    // Store in both wa_id (digits) and phone_number (E.164 format)
     await tryUpdateProfile(client, userId, { wa_id: digits });
-    await tryUpdateProfile(client, userId, { whatsapp_e164: normalizedE164 });
     await tryUpdateProfile(client, userId, { phone_number: normalizedE164 });
-    await tryUpdateProfile(client, userId, { phone_e164: normalizedE164 });
 
     // 4) Best-effort: persist preferred language across known column variants
     const effectiveLocale = desiredLocale ??
@@ -480,7 +502,8 @@ export async function ensureProfile(
 
     return {
       user_id: userId,
-      whatsapp_e164: normalizedE164,
+      wa_id: digits,
+      phone_number: normalizedE164,
       locale: effectiveLocale,
     };
   } catch (error) {
@@ -526,60 +549,73 @@ export async function setState(
   userId: string,
   state: ChatState,
 ): Promise<void> {
-  const nowIso = new Date().toISOString();
-  const base = { user_id: userId, state };
-
-  const candidates: Array<Record<string, unknown>> = [
-    { ...base, state_key: state.key, updated_at: nowIso },
-    { ...base, state_key: state.key, last_updated: nowIso },
-    { ...base, updated_at: nowIso },
-    { ...base, last_updated: nowIso },
-    base,
-  ];
-
-  for (const payload of candidates) {
-    const { error } = await client
-      .from("chat_state")
-      .upsert(payload, { onConflict: "user_id" });
-    if (!error) return;
-    if (error.code === "42703") continue; // missing column
-    if (error.code === "42P10") {
-      // No unique constraint on user_id: update-or-insert fallback
-      const { data: existing, error: selectError } = await client
-        .from("chat_state")
-        .select("user_id")
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (selectError && selectError.code !== "PGRST116") throw selectError;
-
-      if (existing) {
-        const { error: updateError } = await client
-          .from("chat_state")
-          .update(payload)
-          .eq("user_id", userId);
-        if (updateError) throw updateError;
-        return;
-      }
-
-      const { error: insertError } = await client.from("chat_state").insert(
-        payload,
-      );
-      if (insertError) throw insertError;
-      return;
-    }
-    throw error;
+  // Get user's phone number from profile
+  const { data: profile } = await client
+    .from("profiles")
+    .select("wa_id, phone_number")
+    .eq("user_id", userId)
+    .maybeSingle();
+  
+  // Use phone_number if available, otherwise wa_id
+  const phoneForSession = profile?.phone_number || profile?.wa_id;
+  if (!phoneForSession) {
+    logStructuredEvent("SET_STATE_NO_PHONE", { userId }, "error");
+    return; // Can't set state without phone number
   }
 
-  throw new Error("Unable to persist chat state (schema mismatch)");
+  // Use user_sessions table instead of non-existent chat_state
+  const { error } = await client
+    .from("user_sessions")
+    .upsert({
+      phone_number: phoneForSession,
+      context: { key: state.key, data: state.data || {} },
+      last_interaction: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: "phone_number",
+    });
+  
+  if (error) {
+    logStructuredEvent("SET_STATE_ERROR", {
+      userId,
+      error: error.message,
+    }, "error");
+    // Don't throw - state management should be resilient
+  }
 }
 
 export async function clearState(
   client = supabase,
   userId: string,
 ): Promise<void> {
+  // Get user's phone number from profile
+  const { data: profile } = await client
+    .from("profiles")
+    .select("wa_id, phone_number")
+    .eq("user_id", userId)
+    .maybeSingle();
+  
+  // Use phone_number if available, otherwise wa_id
+  const phoneForSession = profile?.phone_number || profile?.wa_id;
+  if (!phoneForSession) {
+    return; // Nothing to clear
+  }
+
+  // Use user_sessions table instead of non-existent chat_state
   const { error } = await client
-    .from("chat_state")
-    .delete()
-    .eq("user_id", userId);
-  if (error && error.code !== "PGRST116") throw error;
+    .from("user_sessions")
+    .update({
+      context: {},
+      active_service: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("phone_number", phoneForSession);
+  
+  if (error && error.code !== "PGRST116") {
+    logStructuredEvent("CLEAR_STATE_ERROR", {
+      userId,
+      error: error.message,
+    }, "error");
+    // Don't throw - state management should be resilient
+  }
 }

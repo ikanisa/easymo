@@ -3,8 +3,6 @@ import { setState } from "../state/store.ts";
 import { IDS } from "../wa/ids.ts";
 import { maskPhone } from "./support.ts";
 import { sendListMessage } from "../utils/reply.ts";
-// REMOVED: import { evaluateMotorInsuranceGate, recordMotorInsuranceHidden } from "../domains/insurance/gate.ts";
-// Gate functionality temporarily disabled - file removed
 import { t, type TranslationKey } from "../i18n/translator.ts";
 import {
   fetchActiveMenuItems,
@@ -106,11 +104,8 @@ async function buildRows(options: {
   locale: RouterContext["locale"];
   ctx: RouterContext;
 }): Promise<MenuRow[]> {
-  // Extract country code from E.164 phone number (e.g., +250... -> RW)
-  const countryCode = getCountryFromPhone(options.ctx.from);
-  
-  // Fetch dynamic menu items from database
-  const menuItems = await fetchActiveMenuItems(countryCode, options.ctx.supabase);
+  // Fetch dynamic menu items from database (Rwanda-only, no country filtering)
+  const menuItems = await fetchActiveMenuItems(options.ctx.supabase);
   
   // Build menu rows from dynamic items
   const dynamicRows: MenuRow[] = menuItems.map((item) => {
@@ -125,45 +120,7 @@ async function buildRows(options: {
     };
   });
 
-  // Recent resume rows (bar/property/pharmacy)
-  try {
-    if (options.ctx.profileId) {
-      const { data: recent } = await options.ctx.supabase
-        .from('recent_activities')
-        .select('activity_type, ref_id, details')
-        .eq('user_id', options.ctx.profileId)
-        .order('occurred_at', { ascending: false })
-        .limit(10);
-      const last = Array.isArray(recent) && recent[0] ? recent[0] as any : null;
-      if (last && (last.activity_type === 'bar_menu' || last.activity_type === 'bar_detail')) {
-        const barId = String(last.ref_id || (last.details?.barId ?? ''));
-        const barName = String(last.details?.barName || '').trim() || 'your last bar';
-        if (barId) {
-          dynamicRows.unshift({
-            id: `bar_resume::${barId}`,
-            title: t(options.locale, 'home.buttons.resume' as TranslationKey, { bar: barName }),
-            description: t(options.locale, 'home.resume.body' as TranslationKey, { bar: barName }),
-          });
-        }
-      }
-      const hasProperty = (recent || []).some((r: any) => String(r.activity_type) === 'property_search');
-      if (hasProperty) {
-        dynamicRows.unshift({
-          id: 'property_resume',
-          title: t(options.locale, 'home.resume.property.title' as TranslationKey),
-          description: t(options.locale, 'home.resume.property.description' as TranslationKey),
-        });
-      }
-      const hasPharmacy = (recent || []).some((r: any) => String(r.activity_type) === 'pharmacy_search');
-      if (hasPharmacy) {
-        dynamicRows.unshift({
-          id: 'pharmacy_resume',
-          title: t(options.locale, 'home.resume.pharmacy.title' as TranslationKey),
-          description: t(options.locale, 'home.resume.pharmacy.description' as TranslationKey),
-        });
-      }
-    }
-  } catch (_) { /* non-fatal */ }
+  // Recent resume rows removed - features deleted (bars, properties, pharmacies)
   
   // Filter motor insurance if not allowed
   const filteredRows = options.showInsurance
@@ -173,25 +130,4 @@ async function buildRows(options: {
   return filteredRows;
 }
 
-function getCountryFromPhone(phone: string): string {
-  // Map country codes for supported East/Central African countries
-  const countryMap: Record<string, string> = {
-    "250": "RW", // Rwanda
-    "257": "BI", // Burundi
-    "255": "TZ", // Tanzania
-    "243": "CD", // DR Congo
-    "260": "ZM", // Zambia
-    "228": "TG", // Togo
-  };
-  
-  // Extract prefix from E.164 format (+250... or 250...)
-  const cleanPhone = phone.replace(/^\+/, "");
-  for (const [prefix, country] of Object.entries(countryMap)) {
-    if (cleanPhone.startsWith(prefix)) {
-      return country;
-    }
-  }
-  
-  // Default to Rwanda
-  return "RW";
-}
+// Country detection removed - system is Rwanda-only

@@ -31,7 +31,7 @@ microservices. For Fly.io deployment, we're migrating the following critical ser
 
 ### 1.2 Vendor Portal PWA (`easymo-vendor`)
 
-- **Path:** `client-pwa/` or `apps/router-fn/` (needs verification)
+- **Path:** Removed (no longer exists)
 - **Tech Stack:** Next.js, React, TypeScript
 - **Current Start:** `next start`
 - **Purpose:** Vendor-only portal for:

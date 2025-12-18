@@ -1,3 +1,5 @@
+/// <reference types="https://deno.land/x/types/index.d.ts" />
+
 /**
  * WhatsApp Profile Management Webhook Handler
  *
@@ -20,10 +22,11 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "@supabase/supabase-js";
 import { logStructuredEvent } from "../_shared/observability/index.ts";
 import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
-import { sendButtonsMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
 import type {
   RouterContext,
   WhatsAppWebhookPayload,
+  WhatsAppInteractiveMessage,
+  WhatsAppTextMessage,
 } from "../_shared/wa-webhook-shared/types.ts";
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
@@ -38,12 +41,6 @@ import { classifyError, formatUnknownError } from "./utils/error-handling.ts";
 import { sendTextMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
 import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
 import { maskPhone } from "../_shared/phone-utils.ts";
-import type { SupportedLanguage } from "../_shared/wa-webhook-shared/i18n/language.ts";
-import type {
-  WhatsAppInteractiveMessage,
-  WhatsAppTextMessage,
-  WhatsAppLocationMessage,
-} from "../_shared/wa-webhook-shared/types.ts";
 
 const profileConfig = WEBHOOK_CONFIG.profile;
 
@@ -67,32 +64,63 @@ const dbCircuitBreaker = new CircuitBreaker({
 });
 
 // Simple response cache for recent requests (helps with webhook retries)
+// Uses LRU-style eviction: oldest entries are removed first when at capacity
 interface CacheEntry {
   response: { success: boolean; ignored?: string };
   timestamp: number;
+  lastAccessed: number; // For LRU tracking
 }
 const responseCache = new Map<string, CacheEntry>();
 const CACHE_TTL = 120000; // 2 minutes
+const CACHE_CLEANUP_INTERVAL = 30000; // 30 seconds (improved from 60s)
+
+// Helper function to evict oldest entries (LRU)
+function evictOldestEntries(targetSize: number) {
+  if (responseCache.size <= targetSize) return;
+  
+  const entries = Array.from(responseCache.entries())
+    .sort((a, b) => a[1].lastAccessed - b[1].lastAccessed); // Sort by last accessed time
+  
+  const toRemove = entries.slice(0, responseCache.size - targetSize);
+  for (const [key] of toRemove) {
+    responseCache.delete(key);
+  }
+  
+  logStructuredEvent("PROFILE_CACHE_EVICTED", {
+    evictedCount: toRemove.length,
+    remainingSize: responseCache.size,
+    targetSize,
+  }, "info");
+}
 
 // Cleanup old cache entries periodically and enforce size limit
 setInterval(() => {
   const now = Date.now();
+  let expiredCount = 0;
+  
   // Remove expired entries
   for (const [key, entry] of responseCache.entries()) {
     if (now - entry.timestamp > CACHE_TTL) {
       responseCache.delete(key);
+      expiredCount++;
     }
   }
-  // Enforce size limit by removing oldest entries if needed
+  
+  // Enforce size limit using LRU eviction
   if (responseCache.size > MAX_CACHE_SIZE) {
-    const entries = Array.from(responseCache.entries())
-      .sort((a, b) => a[1].timestamp - b[1].timestamp);
-    const toRemove = entries.slice(0, responseCache.size - MAX_CACHE_SIZE);
-    for (const [key] of toRemove) {
-      responseCache.delete(key);
-    }
+    evictOldestEntries(MAX_CACHE_SIZE);
   }
-}, 60000); // Cleanup every minute
+  
+  // Log cache stats periodically (every 5 minutes)
+  if (Math.random() < 0.1) { // ~10% chance per cleanup cycle = ~every 5 minutes
+    logStructuredEvent("PROFILE_CACHE_STATS", {
+      size: responseCache.size,
+      maxSize: MAX_CACHE_SIZE,
+      expiredCount,
+      utilizationPercent: Math.round((responseCache.size / MAX_CACHE_SIZE) * 100),
+    });
+  }
+}, CACHE_CLEANUP_INTERVAL);
 
 // Environment variable validation at startup
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -140,6 +168,93 @@ const supabase = createClient(
   },
 );
 
+/**
+ * Handle referral code application (automatic earning)
+ * Called when a new user sends a referral code
+ */
+async function handleReferralCode(
+  ctx: RouterContext,
+  code: string,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+
+  try {
+    // Apply referral code using RPC function
+    const { data, error } = await ctx.supabase.rpc("referral_apply_code_v2", {
+      _joiner_profile_id: ctx.profileId,
+      _joiner_whatsapp: ctx.from,
+      _code: code,
+      _idempotency_key: `ref_${ctx.profileId}_${code}_${Date.now()}`,
+    });
+
+    if (error) {
+      await logStructuredEvent("REFERRAL_APPLY_ERROR", {
+        userId: ctx.profileId,
+        code,
+        error: error.message,
+      }, "error");
+      await sendTextMessage(ctx, "⚠️ Invalid referral code. Please try again.");
+      return true;
+    }
+
+    const result = Array.isArray(data) ? data[0] : data;
+    
+    if (!result?.applied) {
+      // Code invalid or already used
+      const reason = result?.reason || "unknown";
+      if (reason === "already_attributed" || reason === "existing_user") {
+        await sendTextMessage(
+          ctx,
+          "✅ Welcome to easyMO! You're already registered. Send 'menu' to get started.",
+        );
+      } else {
+        await sendTextMessage(ctx, "⚠️ Invalid referral code. Please check and try again.");
+      }
+      return true;
+    }
+
+    // Success - tokens credited
+    const tokensAwarded = result.tokens_awarded || 10;
+    const promoterWhatsapp = result.promoter_whatsapp;
+
+    // Send welcome message to joiner
+    await sendTextMessage(
+      ctx,
+      `🎉 Welcome to easyMO!\n\nYou've been referred by a friend. Send 'menu' to explore our services.`,
+    );
+
+    // Send notification to referrer (if we have their WhatsApp)
+    if (promoterWhatsapp) {
+      try {
+        await sendText(
+          promoterWhatsapp,
+          `🎉 You earned *${tokensAwarded} tokens* because ${maskPhone(ctx.from)} started using easyMO.`,
+        );
+      } catch {
+        // Non-fatal - notification failed but credit succeeded
+      }
+    }
+
+    await logStructuredEvent("REFERRAL_APPLIED_SUCCESS", {
+      joinerId: ctx.profileId,
+      promoterId: result.promoter_profile_id,
+      tokensAwarded,
+      code,
+    });
+
+    return true;
+  } catch (error) {
+    await logStructuredEvent("REFERRAL_APPLY_EXCEPTION", {
+      userId: ctx.profileId,
+      code,
+      error: error instanceof Error ? error.message : String(error),
+    }, "error");
+
+    await sendTextMessage(ctx, "⚠️ Error processing referral code. Please try again.");
+    return true;
+  }
+}
+
 serve(async (req: Request): Promise<Response> => {
   const url = new URL(req.url);
   const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
@@ -181,6 +296,8 @@ serve(async (req: Request): Promise<Response> => {
       circuitBreaker: dbCircuitBreaker.getMetrics(),
       cacheSize: responseCache.size,
       maxCacheSize: MAX_CACHE_SIZE,
+      cacheUtilizationPercent: Math.round((responseCache.size / MAX_CACHE_SIZE) * 100),
+      cacheCleanupInterval: CACHE_CLEANUP_INTERVAL,
       envValid,
     });
   }
@@ -191,7 +308,8 @@ serve(async (req: Request): Promise<Response> => {
     const token = url.searchParams.get("hub.verify_token");
     const challenge = url.searchParams.get("hub.challenge");
 
-    const verifyToken = Deno.env.get("WA_VERIFY_TOKEN");
+    const verifyToken = Deno.env.get("WA_VERIFY_TOKEN") ??
+      Deno.env.get("WHATSAPP_VERIFY_TOKEN");
 
     if (mode === "subscribe" && token && token === verifyToken) {
       logEvent("PROFILE_WEBHOOK_VERIFIED", { mode });
@@ -262,18 +380,19 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // Verify webhook signature (security)
-    const appSecret = Deno.env.get("WA_APP_SECRET") ?? "";
+    const appSecret = Deno.env.get("WA_APP_SECRET") ??
+      Deno.env.get("WHATSAPP_APP_SECRET") ?? "";
     const signature = req.headers.get("x-hub-signature-256") ?? "";
     const runtimeEnv = (Deno.env.get("DENO_ENV") ?? "development")
       .toLowerCase();
     const isProduction = runtimeEnv === "production" || runtimeEnv === "prod";
+    const allowUnsigned = isProduction
+      ? false
+      : (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") === "true");
 
-    // Fix signature verification logic gap (P1 fix - Issue #8)
-    // If appSecret is configured, always require a valid signature in production
-    // If signature is present, always verify it regardless of environment
+    // Fix signature verification logic gap: prod requires signature+secret; dev only bypasses if explicitly allowed
     if (isProduction) {
       if (!signature || !appSecret) {
-        // Production must have both signature and secret
         logEvent("PROFILE_SIGNATURE_MISSING", {
           environment: "production",
           hasSignature: !!signature,
@@ -301,18 +420,14 @@ serve(async (req: Request): Promise<Response> => {
         }, { status: 401 });
       }
     } else {
-      // Non-production environment
       if (signature && appSecret) {
-        // If both are provided, verify
         const isValid = await verifyWebhookSignature(
           rawBody,
           signature,
           appSecret,
         );
         if (!isValid) {
-          const allowBypass =
-            Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") === "true";
-          if (!allowBypass) {
+          if (!allowUnsigned) {
             logEvent(
               "PROFILE_SIGNATURE_INVALID_DEV",
               { bypass_disabled: true },
@@ -328,13 +443,11 @@ serve(async (req: Request): Promise<Response> => {
           }, "warn");
         }
       } else if (signature && !appSecret) {
-        // Signature provided but no secret to verify against - log warning
         logEvent("PROFILE_SIGNATURE_NO_SECRET", {
           environment: runtimeEnv,
           hasSignature: true,
         }, "warn");
       }
-      // If neither signature nor secret, allow in non-production (dev mode)
     }
 
     // Validate payload structure
@@ -356,7 +469,12 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const change = entry.changes[0];
-    const value = change.value;
+    const value = change?.value;
+
+    if (!value) {
+      logEvent("PROFILE_NO_VALUE", {}, "info");
+      return json({ success: true, ignored: "no_value" });
+    }
 
     if (
       !value.messages || !Array.isArray(value.messages) ||
@@ -367,12 +485,20 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const message = value.messages[0];
-    const from = message.from;
-    const messageId = message.id;
+    const from = message?.from;
+    const messageId = message?.id;
+
+    if (!from || !messageId) {
+      logEvent("PROFILE_MISSING_MESSAGE_FIELDS", {
+        hasFrom: !!from,
+        hasMessageId: !!messageId,
+      }, "warn");
+      return json({ success: true, ignored: "missing_fields" });
+    }
 
     logEvent("PROFILE_WEBHOOK_RECEIVED", {
-      from: from?.slice(-4),
-      messageId: messageId?.slice(0, 8),
+      from: from.slice(-4),
+      messageId: messageId.slice(0, 8),
       type: message.type,
     });
 
@@ -380,6 +506,9 @@ serve(async (req: Request): Promise<Response> => {
     const cacheKey = `${from}:${messageId}`;
     const cached = responseCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      // Update last accessed time for LRU tracking
+      cached.lastAccessed = Date.now();
+      
       logEvent(
         "PROFILE_CACHE_HIT",
         { messageId: messageId?.slice(0, 8) },
@@ -445,6 +574,18 @@ serve(async (req: Request): Promise<Response> => {
     try {
       profile = await ensureProfile(supabase, from);
       dbCircuitBreaker.recordSuccess();
+      
+      // If profile is null, it means we couldn't create/find the profile
+      // This is a system error, not a user error
+      if (!profile) {
+        logEvent("PROFILE_NOT_FOUND_OR_CREATED", {
+          from: from?.slice(-4),
+        }, "error");
+        return json({
+          error: "internal_error",
+          message: "Failed to process profile",
+        }, { status: 500 });
+      }
     } catch (error) {
       dbCircuitBreaker.recordFailure(
         error instanceof Error ? error.message : String(error),
@@ -473,6 +614,7 @@ serve(async (req: Request): Promise<Response> => {
       logEvent("PROFILE_SYSTEM_ERROR", {
         error: errorMessage,
         from: from?.slice(-4),
+        errorType: error instanceof Error ? error.constructor.name : typeof error,
       }, "error");
       return json({
         error: "internal_error",
@@ -484,13 +626,22 @@ serve(async (req: Request): Promise<Response> => {
       supabase,
       from,
       profileId: profile?.user_id,
-      locale: (profile?.language as SupportedLanguage) || "en",
+      locale: "en", // Profile service uses hardcoded English strings, no translations
     };
 
-    // Get State
-    const state = ctx.profileId
-      ? await getState(supabase, ctx.profileId)
-      : null;
+    // Get State (with error handling)
+    let state = null;
+    if (ctx.profileId) {
+      try {
+        state = await getState(supabase, ctx.profileId);
+      } catch (error) {
+        // Log but continue - state fetch failure shouldn't block processing
+        logEvent("PROFILE_STATE_FETCH_ERROR", {
+          userId: ctx.profileId,
+          error: error instanceof Error ? error.message : String(error),
+        }, "warn");
+      }
+    }
 
     let handled = false;
 
@@ -504,166 +655,97 @@ serve(async (req: Request): Promise<Response> => {
 
       if (id) {
         // Profile Home
-        if (id === "profile") {
+        if (id === "profile" || id === "PROFILE") {
           const { startProfile } = await import("./handlers/menu.ts");
           handled = await startProfile(ctx, state ?? { key: "home" });
-        } // Wallet
+        }
+        // MoMo QR Code
+        else if (id === IDS.MOMO_QR || id === "MOMO_QR") {
+          const { handleMomoQr } = await import("./handlers/momo-qr.ts");
+          handled = await handleMomoQr(ctx, "", state ?? { key: "", data: {} });
+        }
+        // Wallet (Transfer Tokens)
         else if (id === "WALLET" || id === "wallet") {
-          const { showWalletMenu } = await import("./handlers/wallet.ts");
-          handled = await showWalletMenu(ctx);
-        } else if (id === "WALLET_EARN") {
-          const { showEarnTokens } = await import("./handlers/wallet.ts");
-          handled = await showEarnTokens(ctx);
-        } else if (id === "WALLET_TRANSFER") {
-          const { showTransferPartners } = await import("./handlers/wallet.ts");
-          handled = await showTransferPartners(ctx);
-        } else if (id.startsWith("TRANSFER_TO::")) {
-          const partnerId = id.replace("TRANSFER_TO::", "");
-          const { handlePartnerSelection } = await import("./handlers/wallet.ts");
-          handled = await handlePartnerSelection(ctx, partnerId);
-        } // MoMo QR Code
-        else if (id === "MOMO_QR" || id === "momo_qr") {
-          const { startMomoQr } = await import(
-            "../_shared/wa-webhook-shared/flows/momo/qr.ts"
-          );
-          handled = await startMomoQr(ctx, state ?? { key: "home" });
-        } // MoMo QR Flow buttons
-        else if (
-          id === IDS.MOMO_QR_MY || id === IDS.MOMO_QR_NUMBER ||
-          id === IDS.MOMO_QR_CODE
-        ) {
-          const { handleMomoButton } = await import(
-            "../_shared/wa-webhook-shared/flows/momo/qr.ts"
-          );
-          handled = await handleMomoButton(
-            ctx,
-            id,
-            state ?? { key: "home", data: {} },
-          );
-        } // Back to Profile
-        else if (id === IDS.BACK_PROFILE) {
+          const { handleWallet } = await import("./handlers/wallet.ts");
+          handled = await handleWallet(ctx, "", state ?? { key: "", data: {} });
+        }
+        // Share EasyMO
+        else if (id === IDS.SHARE_EASYMO || id === "SHARE_EASYMO") {
+          const { handleShareEasyMO } = await import("./handlers/share.ts");
+          handled = await handleShareEasyMO(ctx);
+        }
+        // MoMo QR choice buttons
+        else if (id === IDS.MOMO_QR_MY || id === IDS.MOMO_QR_NUMBER || id === IDS.MOMO_QR_CODE) {
+          const { handleMomoQr } = await import("./handlers/momo-qr.ts");
+          handled = await handleMomoQr(ctx, id, state ?? { key: "MOMO_WAIT_CHOICE", data: {} });
+        }
+        // Back to Profile
+        else if (id === IDS.PROFILE || id === "PROFILE") {
           const { startProfile } = await import("./handlers/menu.ts");
           handled = await startProfile(ctx, state ?? { key: "home" });
-        } // Back to Menu (from submenus)
+        }
+        // Back to Menu
         else if (id === IDS.BACK_MENU || id === "back_menu") {
-          const { startProfile } = await import("./handlers/menu.ts");
-          handled = await startProfile(ctx, state ?? { key: "home" });
-        } // Share EasyMO
-        else if (id === IDS.SHARE_EASYMO) {
-          if (ctx.profileId) {
-            const { ensureReferralLink } = await import(
-              "../_shared/wa-webhook-shared/utils/share.ts"
-            );
-            const { t } = await import(
-              "../_shared/wa-webhook-shared/i18n/translator.ts"
-            );
-            try {
-              const link = await ensureReferralLink(
-                ctx.supabase,
-                ctx.profileId,
-              );
-              const shareText = [
-                t(ctx.locale, "wallet.earn.forward.instructions"),
-                t(ctx.locale, "wallet.earn.share_text_intro"),
-                link.waLink,
-                t(ctx.locale, "wallet.earn.copy.code", { code: link.code }),
-                t(ctx.locale, "wallet.earn.note.keep_code"),
-              ].join("\n\n");
-
-              await sendButtonsMessage(
-                ctx,
-                shareText,
-                [
-                  {
-                    id: IDS.WALLET_EARN,
-                    title: t(ctx.locale, "wallet.earn.button"),
-                  },
-                  { id: IDS.BACK_PROFILE, title: "← Back" },
-                ],
-              );
-              handled = true;
-            } catch {
-              await sendButtonsMessage(
-                ctx,
-                t(ctx.locale, "wallet.earn.error"),
-                [{ id: IDS.BACK_PROFILE, title: "← Back" }],
-              );
-              handled = true;
-            }
-          }
-        } // MoMo QR
-        else if (id === IDS.MOMO_QR || id.startsWith("momoqr_")) {
-          const { handleMomoButton, startMomoQr } = await import(
-            "../_shared/wa-webhook-shared/flows/momo/qr.ts"
-          );
-          const momoState = state ?? { key: "momo_qr_menu", data: {} };
-          if (id === IDS.MOMO_QR) {
-            handled = await startMomoQr(ctx, momoState);
-          } else {
-            handled = await handleMomoButton(ctx, id, momoState);
-          }
+          // Return to core home menu - send empty response to let core handle it
+          handled = true;
         }
       }
-    } // Handle Text Messages
+    }     // Handle Text Messages
     else if (message.type === "text") {
       const textMessage = message as WhatsAppTextMessage;
-      const text = textMessage.text?.body?.toLowerCase() ?? "";
-      const originalText = textMessage.text?.body?.trim() ?? "";
-      const upperText = originalText.toUpperCase();
+      const text = textMessage.text?.body?.trim() ?? "";
+      const lowerText = text.toLowerCase();
+      const upperText = text.toUpperCase();
 
-      // PRIORITY: Check for referral code (REF:CODE or standalone 6-12 char alphanumeric code)
-      // This handles new users who click referral links and send the code
-      // Patterns match wa-webhook-core/router.ts for consistency
-      const refMatch = originalText.match(/^REF[:\s]+([A-Z0-9]{4,12})$/i);
-      const isStandaloneCode = /^[A-Z0-9]{6,12}$/.test(upperText) &&
-        !/^(HELLO|THANKS|CANCEL|SUBMIT|ACCEPT|REJECT|STATUS|URGENT|PLEASE|PROFILE|WALLET)$/
-          .test(upperText);
+      const phonePattern = /^(\+?\d{10,15}|\d{9,10})$/;
+      const looksLikePhone = phonePattern.test(text.replace(/[\s-]/g, ""));
 
-      if (refMatch || isStandaloneCode) {
-        // Referral codes are handled by wa-webhook-wallet
-        logEvent(
-          "PROFILE_REFERRAL_DEPRECATED",
-          { type: "referral_code" },
-          "warn",
-        );
-        await sendText(
-          ctx.from,
-          "⚠️ Referral feature has been moved. Please restart by sending 'hi' or 'menu'.",
-        );
-        handled = true;
-      } // Check for menu selection key first
-      else if (text === "profile") {
+      // PRIORITY: MoMo flows (state or phone) before referral detection
+      if (state?.key === "MOMO_WAIT_CHOICE" || state?.key === "MOMO_WAIT_VALUE") {
+        const { handleMomoQr } = await import("./handlers/momo-qr.ts");
+        handled = await handleMomoQr(ctx, text, state);
+      } else if (looksLikePhone) {
+        const { handleMomoQr } = await import("./handlers/momo-qr.ts");
+        handled = await handleMomoQr(ctx, text, state ?? { key: "MOMO_WAIT_VALUE", data: {} });
+      }
+
+      // Referral codes (REF:CODE or 6-12 alphanumeric) when not handled above and not a phone number
+      if (!handled && !looksLikePhone) {
+        const refMatch = text.match(/^(?:EASYMO\s+)?REF[:\s]+([A-Z0-9]{4,12})$/i);
+        
+        // Exclude pure numeric strings (phone numbers) - referral codes should have letters
+        const isPureNumber = /^\d+$/.test(text.replace(/[\s+()-]/g, ""));
+        const isStandaloneCode = !isPureNumber && 
+                                 /^[A-Z0-9]{6,12}$/.test(upperText) &&
+                                 !/^(HELLO|THANKS|CANCEL|SUBMIT|ACCEPT|REJECT|STATUS|URGENT|PLEASE|PROFILE|WALLET|MOMO|PHARMACY|PHARMACIES)$/i
+                                   .test(upperText);
+
+        if (refMatch || isStandaloneCode) {
+          const code = refMatch ? refMatch[1].toUpperCase() : upperText;
+          handled = await handleReferralCode(ctx, code);
+        }
+      }
+      // Profile menu
+      if (!handled && lowerText === "profile") {
         const { startProfile } = await import("./handlers/menu.ts");
         handled = await startProfile(ctx, state ?? { key: "home" });
-      } // MOMO QR Text - handle state-based input or keywords
-      else if (
-        state?.key?.startsWith("momo_qr") || text.includes("momo") ||
-        text.includes("qr")
-      ) {
-        const { handleMomoText, startMomoQr } = await import(
-          "../_shared/wa-webhook-shared/flows/momo/qr.ts"
-        );
-        if (state?.key?.startsWith("momo_qr")) {
-          // User is in MoMo flow, handle their text input
-          handled = await handleMomoText(
-            ctx,
-            textMessage.text?.body ?? "",
-            state,
-          );
-        } else {
-          // User mentioned "momo" or "qr", start the flow
-          handled = await startMomoQr(ctx, state ?? { key: "home" });
-        }
-      } // Handle wallet transfer amount
-      else if (state?.key === "wallet_transfer_amount") {
-        const { processTransfer } = await import("./handlers/wallet.ts");
-        handled = await processTransfer(ctx, textMessage.text?.body ?? "", state);
       }
-    } // ============================================================
-    // PHASE 2: Menu Upload Media Handler
-    // ============================================================
-
-    // Location messages are no longer handled by profile service
+      // Wallet - handle state-based input
+      else if (!handled && (state?.key === "WALLET_WAIT_NUMBER" || state?.key === "WALLET_WAIT_AMOUNT")) {
+        const { handleWallet } = await import("./handlers/wallet.ts");
+        handled = await handleWallet(ctx, text, state);
+      }
+      // MoMo QR keyword
+      else if (!handled && (lowerText.includes("momo") || lowerText.includes("qr"))) {
+        const { handleMomoQr } = await import("./handlers/momo-qr.ts");
+        handled = await handleMomoQr(ctx, "", state ?? { key: "", data: {} });
+      }
+      // Wallet keyword
+      else if (!handled && (lowerText.includes("wallet") || lowerText.includes("transfer"))) {
+        const { handleWallet } = await import("./handlers/wallet.ts");
+        handled = await handleWallet(ctx, "", state ?? { key: "", data: {} });
+      }
+    }
 
     // Fallback: Detect phone number pattern (for MoMo QR without keywords)
     if (!handled && message.type === "text") {
@@ -673,10 +755,8 @@ serve(async (req: Request): Promise<Response> => {
       const phonePattern = /^(\+?\d{10,15}|\d{9,10})$/;
       if (phonePattern.test(text.replace(/[\s-]/g, ""))) {
         // Looks like a phone number, treat as MoMo QR input
-        const { handleMomoText } = await import(
-          "../_shared/wa-webhook-shared/flows/momo/qr.ts"
-        );
-        handled = await handleMomoText(ctx, text, state ?? { key: "home" });
+        const { handleMomoQr } = await import("./handlers/momo-qr.ts");
+        handled = await handleMomoQr(ctx, text, state ?? { key: "MOMO_WAIT_VALUE", data: {} });
       }
     }
 
@@ -690,12 +770,20 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // Cache successful response
+    // Cache successful response with LRU tracking
     const successResponse = { success: true, handled };
     if (messageId) {
+      const now = Date.now();
+      
+      // Evict oldest entries if at capacity before adding new entry
+      if (responseCache.size >= MAX_CACHE_SIZE) {
+        evictOldestEntries(MAX_CACHE_SIZE - 1);
+      }
+      
       responseCache.set(cacheKey, {
         response: successResponse,
-        timestamp: Date.now(),
+        timestamp: now,
+        lastAccessed: now,
       });
     }
 

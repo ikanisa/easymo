@@ -17,18 +17,15 @@ export type {
   CacheStats,
 } from "./memory-cache.ts";
 
-export {
   cacheMiddleware,
   clearResponseCache,
   getResponseCacheStats,
 } from "./cache-middleware.ts";
 
-export type {
   CachedResponse,
   CacheConfig,
 } from "./cache-middleware.ts";
 
-export {
   getCachedProfile,
   getCachedProfileByPhone,
   invalidateProfileCache,

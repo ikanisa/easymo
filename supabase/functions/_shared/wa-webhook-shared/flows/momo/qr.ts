@@ -11,7 +11,6 @@ import { maskPhone } from "../support.ts";
 import { buildWaLink } from "../../utils/share.ts";
 import { logMomoQrRequest } from "../../rpc/momo.ts";
 import { logEvent } from "../../../observability/index.ts";
-import {
   buildButtons,
   sendButtonsMessage,
   sendListMessage,

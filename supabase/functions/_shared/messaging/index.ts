@@ -13,7 +13,6 @@ export {
 } from "./builder.ts";
 
 // Components
-export {
   // Confirmations
   successMessage,
   errorMessage,
@@ -41,7 +40,6 @@ export {
 } from "./components/index.ts";
 
 // Client
-export {
   getWhatsAppClient,
   sendText,
   sendButtons,

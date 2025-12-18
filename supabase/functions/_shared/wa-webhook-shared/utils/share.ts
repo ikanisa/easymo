@@ -26,7 +26,7 @@ export async function ensureReferralLink(
   try {
     const { data: prof } = await client
       .from("profiles")
-      .select("referral_code, whatsapp_e164")
+      .select("referral_code, wa_id, phone_number")
       .eq("user_id", profileId)
       .maybeSingle();
     if (prof?.referral_code && typeof prof.referral_code === "string") {

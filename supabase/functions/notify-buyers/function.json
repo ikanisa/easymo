@@ -1,0 +1,6 @@
+{
+  "name": "notify-buyers",
+  "version": "1.0.0",
+  "verify_jwt": false,
+  "description": "AI-powered marketplace assistant for buy and sell"
+}

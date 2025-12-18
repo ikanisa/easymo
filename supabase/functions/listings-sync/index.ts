@@ -1,11 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js";
-import { logStructuredEvent } from "../_shared/observability.ts";
 import { GoogleGenerativeAI } from "npm:@google/generative-ai";
-import { logStructuredEvent } from "../_shared/observability.ts";
 import { googleSearch } from "shared/google_search.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,

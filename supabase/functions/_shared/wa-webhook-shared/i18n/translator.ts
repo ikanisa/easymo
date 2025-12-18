@@ -1,20 +1,17 @@
 import { DEFAULT_LANGUAGE, type SupportedLanguage } from "./language.ts";
 import EN from "./messages/en.json" with { type: "json" };
-import FR from "./messages/fr.json" with { type: "json" };
-import ES from "./messages/es.json" with { type: "json" };
-import PT from "./messages/pt.json" with { type: "json" };
-import DE from "./messages/de.json" with { type: "json" };
 
 type Params = Record<string, string | number>;
 type Catalog = Record<string, unknown>;
 
+// Rwanda-only, English-only system
 const CATALOGS: Record<SupportedLanguage, Catalog> = {
   en: EN as Catalog,
-  fr: FR as Catalog,
-  es: ES as Catalog,
-  pt: PT as Catalog,
-  de: DE as Catalog,
-  sw: EN as Catalog,
+  fr: EN as Catalog,  // Fallback to English
+  es: EN as Catalog,  // Fallback to English
+  pt: EN as Catalog,  // Fallback to English
+  de: EN as Catalog,  // Fallback to English
+  sw: EN as Catalog,  // Fallback to English
 };
 
 export type TranslationKey = string;

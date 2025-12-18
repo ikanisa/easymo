@@ -1,6 +1,0 @@
-{
-  "name": "wa-webhook-profile",
-  "version": "3.0.0",
-  "verify_jwt": false,
-  "description": "User profile and wallet management"
-}

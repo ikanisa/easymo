@@ -1,3 +1,5 @@
+/// <reference types="https://deno.land/x/types/index.d.ts" />
+
 /**
  * LLM Router - Intelligent routing between OpenAI and Gemini
  * 
@@ -287,65 +289,8 @@ export class LLMRouter {
    * Load agent provider rules from database
    */
   private async getAgentProviderRules(agentSlug: string): Promise<AgentProviderRules> {
-    try {
-      const { data, error } = await this.supabase
-        .from('agent_configurations')
-        .select('agent_type, primary_provider, fallback_provider, provider_config, model_config, routing_config, is_active')
-        .eq('agent_type', agentSlug)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (error || !data) {
-        return this.getDefaultRules(agentSlug);
-      }
-
-      // Prefer new columns if present
-      const primary = (data as any).primary_provider as ('openai' | 'gemini') | null;
-      const fallback = (data as any).fallback_provider as ('openai' | 'gemini') | null;
-      const providerCfgRaw = (data as any).provider_config as any | null;
-      const modelConfig = (data as any).model_config as any || {};
-      const routingConfig = (data as any).routing_config as any || {};
-
-      // Build provider config from new provider_config or fallback to legacy model_config
-      const openaiCfg = providerCfgRaw?.openai || {
-        model: modelConfig.openai_model || 'gpt-4-turbo-preview',
-        temperature: modelConfig.temperature,
-        max_tokens: modelConfig.max_tokens,
-      };
-      const geminiCfg = providerCfgRaw?.gemini || {
-        model: modelConfig.gemini_model || 'gemini-1.5-flash',
-        temperature: modelConfig.temperature,
-        max_tokens: modelConfig.max_tokens,
-      };
-
-      return {
-        agentSlug,
-        primaryProvider: primary ?? (modelConfig.primary_provider || 'openai'),
-        fallbackProvider: fallback ?? (modelConfig.fallback_provider || 'gemini'),
-        providerConfig: {
-          openai: {
-            provider: 'openai',
-            primaryModel: openaiCfg.model,
-            temperature: openaiCfg.temperature,
-            maxTokens: openaiCfg.max_tokens,
-          },
-          gemini: {
-            provider: 'gemini',
-            primaryModel: geminiCfg.model,
-            temperature: geminiCfg.temperature,
-            maxTokens: geminiCfg.max_tokens,
-          },
-        },
-        toolProviders: routingConfig.tool_providers || {},
-      };
-
-    } catch (error) {
-      logError("load_agent_provider_rules", error, {
-        agentSlug,
-        correlationId: this.config.correlationId,
-      });
-      return this.getDefaultRules(agentSlug);
-    }
+    // agent_configurations table doesn't exist - use default rules
+    return this.getDefaultRules(agentSlug);
   }
 
   /**

@@ -1,3 +1,4 @@
+/// <reference types="https://deno.land/x/types/index.d.ts" />
 
 import { getRoutingText } from "../_shared/wa-webhook-shared/utils/messages.ts";
 import type { WhatsAppWebhookPayload, RouterContext, WhatsAppMessage, WhatsAppCallEvent } from "../_shared/wa-webhook-shared/types.ts";
@@ -19,6 +20,11 @@ import {
 import { addToDeadLetterQueue } from "../_shared/dead-letter-queue.ts";
 import { circuitBreakerManager } from "../_shared/circuit-breaker.ts";
 import { logError, logWarn, logInfo } from "../_shared/correlation-logging.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
+import {
+  buildMenuKeyMap,
+  ROUTED_SERVICES,
+} from "../_shared/route-config.ts";
 
 type RoutingDecision = {
   service: string;
@@ -39,52 +45,71 @@ type HealthStatus = {
 
 // WhatsAppHomeMenuItem type moved to handlers/home-menu.ts
 
-import {
-  buildMenuKeyMap,
-  ROUTED_SERVICES,
-} from "../_shared/route-config.ts";
-
 
 // Build SERVICE_KEY_MAP from consolidated route config
 const SERVICE_KEY_MAP = buildMenuKeyMap();
 
 /**
- * Handle insurance agent request - dynamically fetch contacts from admin_contacts table
- * Queries admin_contacts table for category='insurance' and sends list of available contacts
+ * Handle insurance agent request - dynamically fetch contacts from insurance_admin_contacts table
+ * Simple 2-step flow: User taps insurance → Get contacts → Send message with contact numbers
  */
-export async function handleInsuranceAgentRequest(phoneNumber: string): Promise<void> {
+export async function handleInsuranceAgentRequest(phoneNumber: string, correlationId?: string): Promise<void> {
+  const corrId = correlationId || crypto.randomUUID();
+  const maskedPhone = phoneNumber ? `***${phoneNumber.slice(-4)}` : "unknown";
+  
   try {
-    // Query admin_contacts for active insurance contacts
+    await logStructuredEvent("INSURANCE_REQUEST_START", {
+      from: maskedPhone,
+      correlationId: corrId,
+    });
+
+    // Query insurance_admin_contacts for active insurance contacts
+    // Simplified schema: phone, display_name, is_active only
     const { data: contacts, error } = await supabase
-      .from("admin_contacts")
-      .select("phone_number, name")
-      .eq("category", "insurance")
+      .from("insurance_admin_contacts")
+      .select("phone, display_name")
       .eq("is_active", true)
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: true }); // Use created_at for ordering
 
     if (error) {
-      logError("INSURANCE_CONTACT_QUERY_ERROR", { error: error.message }, { correlationId: crypto.randomUUID() });
-      await sendText(phoneNumber, "For insurance services, please contact our support team.");
+      await logStructuredEvent("INSURANCE_CONTACT_QUERY_ERROR", {
+        from: maskedPhone,
+        error: error.message,
+        correlationId: corrId,
+      }, "error");
+      
+      await sendText(phoneNumber, "🛡️ *Insurance Services*\n\nFor insurance services, please contact our support team.");
       return;
     }
 
     if (!contacts || contacts.length === 0) {
-      logWarn("NO_INSURANCE_CONTACT_FOUND", {}, { correlationId: crypto.randomUUID() });
-      await sendText(phoneNumber, "Insurance services are currently unavailable. Please try again later.");
+      await logStructuredEvent("INSURANCE_NO_CONTACTS_FOUND", {
+        from: maskedPhone,
+        correlationId: corrId,
+      }, "warn");
+      
+      await sendText(phoneNumber, "🛡️ *Insurance Services*\n\nInsurance services are currently unavailable. Please try again later.");
       return;
     }
+
+    await logStructuredEvent("INSURANCE_CONTACTS_FETCHED", {
+      from: maskedPhone,
+      contactCount: contacts.length,
+      correlationId: corrId,
+    });
 
     // Build engaging message with emojis and prefilled WhatsApp message
     let message = "🛡️ *Insurance Made Easy!*\n\n";
     message += "Get protected today! Our insurance team is ready to help you.\n\n";
-    message += "📞 *Contact us now:*\n\n";
+    message += "📞 *Contact our agents:*\n\n";
     
     const prefilledMessage = encodeURIComponent("Hi, I need motor insurance. Can you help me with a quote?");
     
     contacts.forEach((contact, index) => {
-      const cleanNumber = contact.phone_number.replace(/^\+/, "");
+      // Clean phone number: remove + and non-digits for wa.me link
+      const cleanNumber = contact.phone.replace(/^\+/, "").replace(/\D/g, "");
       const whatsappLink = `https://wa.me/${cleanNumber}?text=${prefilledMessage}`;
-      message += `${index + 1}. ${contact.name}\n`;
+      message += `${index + 1}. ${contact.display_name}\n`;
       message += `   💬 ${whatsappLink}\n\n`;
     });
     
@@ -92,14 +117,21 @@ export async function handleInsuranceAgentRequest(phoneNumber: string): Promise<
     
     await sendText(phoneNumber, message.trim());
     
-    logInfo("INSURANCE_CONTACTS_SENT", { 
-      to: phoneNumber.substring(0, 6) + "***",
-      contactCount: contacts.length 
-    }, { correlationId: crypto.randomUUID() });
+    await logStructuredEvent("INSURANCE_MESSAGE_SENT", {
+      from: maskedPhone,
+      contactCount: contacts.length,
+      correlationId: corrId,
+    });
   } catch (err) {
-    logError("INSURANCE_HANDLER_ERROR", { error: String(err) }, { correlationId: crypto.randomUUID() });
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    await logStructuredEvent("INSURANCE_HANDLER_ERROR", {
+      from: maskedPhone,
+      error: errorMessage,
+      correlationId: corrId,
+    }, "error");
+    
     // Send fallback message on any error
-    await sendText(phoneNumber, "For insurance services, please contact our support team.");
+    await sendText(phoneNumber, "🛡️ *Insurance Services*\n\nFor insurance services, please contact our support team.");
   }
 }
 
@@ -142,12 +174,19 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
     // This handles new users clicking referral links with unique codes
     // Patterns (case-insensitive):
     //   - "REF:ABC12345" or "REF ABC12345" (with 4-12 alphanumeric characters after prefix)
-    //   - Standalone codes: 6-12 alphanumeric characters (avoiding common words)
+    //   - Standalone codes: 6-12 alphanumeric characters (avoiding common words and phone numbers)
     const hasRefPrefix = /^REF[:\s]+[A-Z0-9]{4,12}$/i.test(trimmedText);
-    const isStandaloneCode = /^[A-Z0-9]{6,12}$/.test(upperText) && 
-                            !/^(HELLO|THANKS|CANCEL|SUBMIT|ACCEPT|REJECT|STATUS|URGENT|PLEASE|INSURANCE)$/.test(upperText);
     
-    const isReferralCode = hasRefPrefix || isStandaloneCode;
+    // Exclude phone numbers: if it's all digits and 9-15 chars, it's a phone number, not a referral code
+    const isPhoneNumber = /^\d{9,15}$/.test(trimmedText.replace(/[\s+()-]/g, ""));
+    
+    // Standalone codes must be alphanumeric (mix of letters and numbers), not pure numbers
+    // Exclude common words and pure numeric strings (phone numbers)
+    const isStandaloneCode = /^[A-Z0-9]{6,12}$/.test(upperText) && 
+                            !/^\d+$/.test(trimmedText) && // Exclude pure numbers (phone numbers)
+                            !/^(HELLO|THANKS|CANCEL|SUBMIT|ACCEPT|REJECT|STATUS|URGENT|PLEASE|INSURANCE|PHARMACY|PHARMACIES)$/.test(upperText);
+    
+    const isReferralCode = !isPhoneNumber && (hasRefPrefix || isStandaloneCode);
     
     if (isReferralCode) {
       logInfo("WA_CORE_REFERRAL_CODE_DETECTED", { 
@@ -183,7 +222,7 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
     // Only handle direct text "insurance_agent" here
     if (normalized === "insurance_agent") {
       if (phoneNumber) {
-        await handleInsuranceAgentRequest(phoneNumber);
+        await handleInsuranceAgentRequest(phoneNumber, crypto.randomUUID());
       }
       return {
         service: "wa-webhook-core",
@@ -228,6 +267,7 @@ export async function forwardToEdgeService(
   payload: WhatsAppWebhookPayload,
   headers?: Headers,
 ): Promise<Response> {
+  // Declare correlationId first before any usage
   const correlationId = headers?.get("X-Correlation-ID") ?? crypto.randomUUID();
   
   const targetService = decision.service;
@@ -246,7 +286,6 @@ export async function forwardToEdgeService(
   if (targetService === "wa-webhook-core") {
     // Handle home menu in core
     const { handleHomeMenu } = await import("./handlers/home-menu.ts");
-    const correlationId = headers?.get("X-Correlation-ID") ?? crypto.randomUUID();
     return await handleHomeMenu(payload, headers, correlationId);
   }
 
@@ -263,7 +302,7 @@ export async function forwardToEdgeService(
     if (message) {
       await addToDeadLetterQueue(supabase, {
         message_id: message.id,
-        from_number: message.from,
+        from_number: message.from ?? "unknown",
         payload,
         error_message: `Circuit breaker open for ${targetService}`,
       }, correlationId);
@@ -330,7 +369,7 @@ export async function forwardToEdgeService(
           supabase,
           {
             message_id: message.id,
-            from_number: message.from,
+            from_number: message.from ?? "unknown",
             payload,
             error_message: `Service ${targetService} not deployed (404)`,
           },
@@ -338,7 +377,6 @@ export async function forwardToEdgeService(
         );
       }
       const { handleHomeMenu } = await import("./handlers/home-menu.ts");
-      const correlationId = headers?.get("X-Correlation-ID") ?? crypto.randomUUID();
       return await handleHomeMenu(payload, headers, correlationId);
     }
 
@@ -350,6 +388,8 @@ export async function forwardToEdgeService(
     return response;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    const errorName = error instanceof Error ? error.constructor.name : "UnknownError";
     
     // Record failure for circuit breaker
     recordServiceFailure(targetService, "error", correlationId);
@@ -357,27 +397,42 @@ export async function forwardToEdgeService(
     logError("WA_CORE_ROUTING_FAILURE", {
       service: targetService,
       error: errorMessage,
+      errorName,
+      errorStack: errorStack?.substring(0, 500), // Limit stack trace length
+      url,
     }, { correlationId });
 
     // Add failed payload to DLQ
     const message = getFirstMessage(payload);
     if (message) {
-      await addToDeadLetterQueue(supabase, {
-        message_id: message.id,
-        from_number: message.from,
-        payload,
-        error_message: errorMessage,
-        error_stack: error instanceof Error ? error.stack : undefined,
-      }, correlationId);
+      try {
+        await addToDeadLetterQueue(supabase, {
+          message_id: message.id,
+          from_number: message.from,
+          payload,
+          error_message: errorMessage,
+          error_stack: errorStack,
+        }, correlationId);
+      } catch (dlqError) {
+        logError("WA_CORE_DLQ_STORE_FAILED", {
+          service: targetService,
+          dlqError: dlqError instanceof Error ? dlqError.message : String(dlqError),
+        }, { correlationId });
+      }
     }
 
+    // Return 503 (Service Unavailable) instead of 500 to indicate temporary failure
     return new Response(JSON.stringify({
       success: false,
       service: targetService,
       error: "Service temporarily unavailable",
+      retry_after: 60,
     }), {
       status: 503,
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Retry-After": "60",
+      },
     });
   }
 }

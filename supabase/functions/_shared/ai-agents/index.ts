@@ -25,7 +25,6 @@ export {
   recordCollaboration,
   buildAgentKnowledgeSummary,
 } from './agent-collaboration.ts';
-export type {
   AgentCapability,
   AgentRequest,
   AgentCollaboration,

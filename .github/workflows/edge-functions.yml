@@ -1,0 +1,30 @@
+name: Edge Functions CI
+
+on:
+  push:
+    paths:
+      - "supabase/functions/**"
+      - "supabase/migrations/**"
+      - ".github/workflows/edge-functions.yml"
+  pull_request:
+    paths:
+      - "supabase/functions/**"
+      - "supabase/migrations/**"
+
+jobs:
+  lint-and-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      - name: Format check
+        run: deno fmt --check supabase/functions
+      - name: Lint
+        run: deno lint supabase/functions
+      - name: Type check (edge functions)
+        run: deno check supabase/functions/**/*.ts
+      - name: Run unit tests (edge functions)
+        run: deno test --ignore=**/__tests__/**

@@ -330,7 +330,6 @@ easymo-/
 │   └── profile/          # User profiles
 ├── admin-app/             # Admin dashboard (Next.js)
 ├── waiter-pwa/            # Waiter app (PWA)
-├── client-pwa/            # Customer app (PWA)
 ├── supabase/
 │   ├── functions/        # Edge functions
 │   └── migrations/       # SQL migrations

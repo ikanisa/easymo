@@ -16,6 +16,9 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js';
 import { logStructuredEvent } from '../_shared/observability.ts';
 import { createWebRTCBridge } from './webrtc-bridge.ts';
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
+import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
+import { claimEvent } from "../_shared/wa-webhook-shared/state/idempotency.ts";
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -25,7 +28,9 @@ const supabase = createClient(
 // Configuration
 const WHATSAPP_ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN') ?? Deno.env.get('WABA_ACCESS_TOKEN') ?? '';
 const WHATSAPP_PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') ?? Deno.env.get('WABA_PHONE_NUMBER_ID') ?? '';
-const WA_VERIFY_TOKEN = Deno.env.get('WA_VERIFY_TOKEN') ?? '';
+const WA_VERIFY_TOKEN = Deno.env.get('WA_VERIFY_TOKEN') ?? Deno.env.get("WHATSAPP_VERIFY_TOKEN") ?? '';
+const WA_APP_SECRET = Deno.env.get("WA_APP_SECRET") ?? Deno.env.get("WHATSAPP_APP_SECRET") ?? '';
+const ALLOW_UNSIGNED = (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() === "true";
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') ?? '';
 const OPENAI_ORG_ID = Deno.env.get('OPENAI_ORG_ID') ?? '';
 const OPENAI_REALTIME_MODEL = Deno.env.get('OPENAI_REALTIME_MODEL') ?? 'gpt-4o-realtime-preview';
@@ -379,8 +384,51 @@ serve(async (req: Request): Promise<Response> => {
     return new Response('Forbidden', { status: 403 });
   }
 
+  // Rate limit to protect public webhook
+  const rate = await rateLimitMiddleware(req, { limit: 60, windowSeconds: 60 });
+  if (!rate.allowed) {
+    return rate.response ?? new Response(JSON.stringify({ error: "rate_limited" }), {
+      status: 429,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // Read raw body for signature verification
+  const rawBody = await req.text();
+
+  // Signature verification (required in prod if secret configured)
+  const signature = req.headers.get("x-hub-signature-256") ??
+    req.headers.get("x-hub-signature") ?? "";
+  const runtimeEnv = (Deno.env.get("DENO_ENV") ?? "development").toLowerCase();
+  const isProd = runtimeEnv === "production" || runtimeEnv === "prod";
+  if (WA_APP_SECRET) {
+    if (!signature && isProd && !ALLOW_UNSIGNED) {
+      logStructuredEvent('WA_VOICE_SIGNATURE_MISSING', { correlationId, runtimeEnv });
+      return new Response(JSON.stringify({ error: "unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (signature) {
+      const valid = await verifyWebhookSignature(rawBody, signature, WA_APP_SECRET);
+      if (!valid && !(ALLOW_UNSIGNED && !isProd)) {
+        logStructuredEvent('WA_VOICE_SIGNATURE_INVALID', { correlationId, runtimeEnv });
+        return new Response(JSON.stringify({ error: "unauthorized" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    }
+  } else if (isProd && !ALLOW_UNSIGNED) {
+    logStructuredEvent('WA_VOICE_SIGNATURE_SECRET_MISSING', { correlationId, runtimeEnv });
+    return new Response(JSON.stringify({ error: "unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   try {
-    const payload: CallWebhook = await req.json();
+    const payload: CallWebhook = rawBody ? JSON.parse(rawBody) : {} as CallWebhook;
 
     // Extract calls from webhook
     const calls = payload?.entry?.[0]?.changes?.[0]?.value?.calls;
@@ -392,6 +440,17 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const call = calls[0];
+
+    // Idempotency: skip duplicate call events
+    if (call.id) {
+      const claimed = await claimEvent(call.id, call.from);
+      if (!claimed) {
+        logStructuredEvent('WA_CALL_DUPLICATE_SKIPPED', { callId: call.id, correlationId });
+        return new Response(JSON.stringify({ success: true, message: 'duplicate' }), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    }
 
     logStructuredEvent('WA_CALL_EVENT', {
       event: call.event,

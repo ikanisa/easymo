@@ -1,3 +1,5 @@
+/// <reference types="https://deno.land/x/types/index.d.ts" />
+
 import { SupabaseClient } from "@supabase/supabase-js";
 import { logStructuredEvent } from "./observability.ts";
 
@@ -27,18 +29,17 @@ export async function addToDeadLetterQueue(
     nextRetry.setMinutes(nextRetry.getMinutes() + delayMinutes);
 
     const { error } = await supabase
-      .from("wa_dead_letter_queue")
-      .upsert({
-        message_id: message.message_id,
-        from_number: message.from_number,
+      .from("webhook_dlq")
+      .insert({
+        phone_number: message.from_number,
+        service: "wa-webhook-core",
+        correlation_id: correlationId,
         payload: message.payload,
         error_message: message.error_message,
-        error_stack: message.error_stack,
+        error_type: "webhook_error",
         retry_count: retryCount,
         next_retry_at: nextRetry.toISOString(),
-        processed: false,
-      }, {
-        onConflict: "message_id",
+        status: "pending",
       });
 
     if (error) {
@@ -72,9 +73,9 @@ export async function getRetriableMessages(
   limit = 10
 ): Promise<any[]> {
   const { data, error } = await supabase
-    .from("wa_dead_letter_queue")
+    .from("webhook_dlq")
     .select("*")
-    .eq("processed", false)
+    .eq("status", "pending")
     .lt("retry_count", 3)
     .lte("next_retry_at", new Date().toISOString())
     .order("next_retry_at", { ascending: true })
@@ -97,18 +98,26 @@ export async function markMessageProcessed(
   success: boolean
 ): Promise<void> {
   const update: any = {
-    processed: success,
-    processed_at: new Date().toISOString(),
+    status: success ? "reprocessed" : "failed",
+    reprocessed_at: success ? new Date().toISOString() : null,
+    last_retry_at: new Date().toISOString(),
   };
 
   if (!success) {
-    update.retry_count = supabase.rpc("increment", { x: 1 });
+    // Increment retry count
+    const { data: current } = await supabase
+      .from("webhook_dlq")
+      .select("retry_count")
+      .eq("id", messageId)
+      .single();
+    
+    update.retry_count = (current?.retry_count ?? 0) + 1;
   }
 
   await supabase
-    .from("wa_dead_letter_queue")
+    .from("webhook_dlq")
     .update(update)
-    .eq("message_id", messageId);
+    .eq("id", messageId);
 }
 
 /**

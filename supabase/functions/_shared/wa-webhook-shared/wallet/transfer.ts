@@ -47,38 +47,39 @@ export async function transferTokens(
     // Normalize phone number to E.164 format
     const normalizedPhone = recipientPhone.startsWith('+') ? recipientPhone : `+${recipientPhone}`;
     
-    // Find recipient using whatsapp_e164 - try multiple columns
-    let recipient: { user_id: string; name?: string; whatsapp_e164?: string } | null = null;
+    // Find recipient using wa_id and phone_number columns
+    let recipient: { user_id: string; name?: string; wa_id?: string; phone_number?: string } | null = null;
     
-    // Try whatsapp_e164 first (primary)
+    // Try wa_id first (digits only)
+    const waId = normalizedPhone.replace(/^\+/, '');
     const { data: recipient1 } = await ctx.supabase
       .from("profiles")
-      .select("user_id, name, whatsapp_e164")
-      .eq("whatsapp_e164", normalizedPhone)
+      .select("user_id, full_name, wa_id, phone_number")
+      .eq("wa_id", waId)
       .maybeSingle();
     
     if (recipient1?.user_id) {
-      recipient = recipient1;
+      recipient = { 
+        user_id: recipient1.user_id, 
+        name: recipient1.full_name || undefined,
+        wa_id: recipient1.wa_id || undefined,
+        phone_number: recipient1.phone_number || undefined
+      };
     } else {
-      // Fallback: try wa_id (WhatsApp ID without +)
-      const waId = normalizedPhone.replace('+', '');
+      // Fallback: try phone_number (E.164 format)
       const { data: recipient2 } = await ctx.supabase
         .from("profiles")
-        .select("user_id, name, whatsapp_e164")
-        .eq("wa_id", waId)
+        .select("user_id, full_name, wa_id, phone_number")
+        .or(`phone_number.eq.${normalizedPhone},phone_number.eq.${waId}`)
         .maybeSingle();
       
       if (recipient2?.user_id) {
-        recipient = recipient2;
-      } else {
-        // Fallback: try phone column
-        const { data: recipient3 } = await ctx.supabase
-          .from("profiles")
-          .select("user_id, name, whatsapp_e164")
-          .eq("phone", normalizedPhone)
-          .maybeSingle();
-        
-        recipient = recipient3;
+        recipient = { 
+          user_id: recipient2.user_id, 
+          name: recipient2.full_name || undefined,
+          wa_id: recipient2.wa_id || undefined,
+          phone_number: recipient2.phone_number || undefined
+        };
       }
     }
 
@@ -101,7 +102,7 @@ export async function transferTokens(
         };
       }
       
-      recipient = { user_id: newProfile.user_id, name: undefined, whatsapp_e164: normalizedPhone };
+      recipient = { user_id: newProfile.user_id, name: undefined, phone_number: normalizedPhone, wa_id: waId };
       
       await logStructuredEvent("TRANSFER_RECIPIENT_CREATED", {
         userId: ctx.profileId,
@@ -110,8 +111,8 @@ export async function transferTokens(
       });
     }
     
-    // Get actual WhatsApp number for notifications (use whatsapp_e164 if available, else normalized)
-    const recipientWhatsApp = recipient.whatsapp_e164 || normalizedPhone;
+    // Get actual WhatsApp number for notifications (use phone_number if available, else normalized)
+    const recipientWhatsApp = recipient.phone_number || recipient.wa_id || normalizedPhone;
 
     if (recipient.user_id === ctx.profileId) {
       return {

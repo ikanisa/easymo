@@ -1,184 +1,25 @@
 /**
  * Buy & Sell Agent Configuration and Phone Utilities
  * 
- * Configuration for regional operations and phone number utilities:
- * - African country codes mapping
- * - Blocked countries (geo-blocking)
- * - Market configurations
- * - Phone number normalization
- * - Country detection from phone
+ * Configuration for Rwanda-only operations and phone number utilities:
+ * - Phone number normalization (Rwanda format: +250...)
  * 
- * @see docs/GROUND_RULES.md for geo-blocking requirements
+ * System is Rwanda-only, no country filtering or geo-blocking needed.
  */
 
 // =====================================================
-// COUNTRY CODES
-// =====================================================
-
-// African country codes mapping (prefix to ISO code)
-export const AFRICAN_COUNTRY_CODES: Record<string, string> = {
-  "237": "CM", // Cameroon
-  "225": "CI", // Côte d'Ivoire
-  "233": "GH", // Ghana
-  "234": "NG", // Nigeria
-  "254": "KE", // Kenya
-  "255": "TZ", // Tanzania
-  "256": "UG", // Uganda
-  "250": "RW", // Rwanda
-  "257": "BI", // Burundi
-  "243": "CD", // DR Congo
-  "242": "CG", // Congo
-  "221": "SN", // Senegal
-  "223": "ML", // Mali
-  "226": "BF", // Burkina Faso
-  "227": "NE", // Niger
-  "228": "TG", // Togo
-  "229": "BJ", // Benin
-  "230": "MU", // Mauritius
-  "231": "LR", // Liberia
-  "232": "SL", // Sierra Leone
-  "235": "TD", // Chad
-  "236": "CF", // Central African Republic
-  "238": "CV", // Cape Verde
-  "239": "ST", // São Tomé and Príncipe
-  "240": "GQ", // Equatorial Guinea
-  "241": "GA", // Gabon
-  "244": "AO", // Angola
-  "245": "GW", // Guinea-Bissau
-  "248": "SC", // Seychelles
-  "249": "SD", // Sudan
-  "251": "ET", // Ethiopia
-  "252": "SO", // Somalia
-  "253": "DJ", // Djibouti
-  "258": "MZ", // Mozambique
-  "260": "ZM", // Zambia
-  "261": "MG", // Madagascar
-  "262": "RE", // Réunion
-  "263": "ZW", // Zimbabwe
-  "264": "NA", // Namibia
-  "265": "MW", // Malawi
-  "266": "LS", // Lesotho
-  "267": "BW", // Botswana
-  "268": "SZ", // Eswatini
-  "269": "KM", // Comoros
-  "27": "ZA",  // South Africa
-};
-
-// =====================================================
-// GEO-BLOCKING
-// =====================================================
-
-// Blocked countries for Buy & Sell agent (as per product requirements)
-// Service only available in Rwanda initially
-export const BLOCKED_COUNTRIES = ["UG", "KE", "NG", "ZA"];
-
-// Country names for user-friendly messages
-const COUNTRY_NAMES: Record<string, string> = {
-  RW: "Rwanda",
-  KE: "Kenya",
-  TZ: "Tanzania",
-  UG: "Uganda",
-  NG: "Nigeria",
-  ZA: "South Africa",
-  GH: "Ghana",
-  CM: "Cameroon",
-  ET: "Ethiopia",
-  SO: "Somalia",
-  DJ: "Djibouti",
-  BI: "Burundi",
-  MZ: "Mozambique",
-  ZM: "Zambia",
-  MG: "Madagascar",
-  ZW: "Zimbabwe",
-  MW: "Malawi",
-  BW: "Botswana",
-  SZ: "Eswatini",
-  KM: "Comoros",
-  SS: "South Sudan",
-  CD: "DR Congo",
-  CI: "Côte d'Ivoire",
-  SN: "Senegal",
-  ML: "Mali",
-};
-
-// =====================================================
-// MARKET CONFIGURATION
-// =====================================================
-
-export interface MarketConfig {
-  countryCode: string;
-  countryName: string;
-  currency: string;
-  timezone: string;
-  enabled: boolean;
-}
-
-export const MARKET_CONFIG: Record<string, MarketConfig> = {
-  CM: {
-    countryCode: "CM",
-    countryName: "Cameroon",
-    currency: "XAF",
-    timezone: "Africa/Douala",
-    enabled: true
-  },
-  RW: {
-    countryCode: "RW",
-    countryName: "Rwanda",
-    currency: "RWF",
-    timezone: "Africa/Kigali",
-    enabled: true
-  },
-  TZ: {
-    countryCode: "TZ",
-    countryName: "Tanzania",
-    currency: "TZS",
-    timezone: "Africa/Dar_es_Salaam",
-    enabled: true
-  },
-  // Blocked countries (for reference only)
-  UG: {
-    countryCode: "UG",
-    countryName: "Uganda",
-    currency: "UGX",
-    timezone: "Africa/Kampala",
-    enabled: false
-  },
-  KE: {
-    countryCode: "KE",
-    countryName: "Kenya",
-    currency: "KES",
-    timezone: "Africa/Nairobi",
-    enabled: false
-  },
-  NG: {
-    countryCode: "NG",
-    countryName: "Nigeria",
-    currency: "NGN",
-    timezone: "Africa/Lagos",
-    enabled: false
-  },
-  ZA: {
-    countryCode: "ZA",
-    countryName: "South Africa",
-    currency: "ZAR",
-    timezone: "Africa/Johannesburg",
-    enabled: false
-  }
-};
-
-// =====================================================
-// PHONE NUMBER UTILITIES
+// PHONE NUMBER UTILITIES (Rwanda-only)
 // =====================================================
 
 /**
- * Normalize phone number to E.164 format
+ * Normalize phone number to E.164 format (Rwanda: +250...)
  * 
  * Examples:
- * - "0788123456" (RW) -> "+250788123456"
+ * - "0788123456" -> "+250788123456"
  * - "+250788123456" -> "+250788123456"
- * - "788123456" (RW) -> "+250788123456"
+ * - "788123456" -> "+250788123456"
  */
-export function normalizePhoneNumber(phone: string, defaultCountryCode: string = "250"): string {
+export function normalizePhoneNumber(phone: string): string {
   if (!phone) return "";
 
   // Remove all non-digit characters
@@ -189,13 +30,9 @@ export function normalizePhoneNumber(phone: string, defaultCountryCode: string =
     cleaned = cleaned.substring(1);
   }
 
-  // If doesn't start with country code, add default
-  const startsWithCountryCode = Object.keys(AFRICAN_COUNTRY_CODES).some(
-    code => cleaned.startsWith(code)
-  );
-
-  if (!startsWithCountryCode) {
-    cleaned = defaultCountryCode + cleaned;
+  // If doesn't start with 250 (Rwanda), add it
+  if (!cleaned.startsWith("250")) {
+    cleaned = "250" + cleaned;
   }
 
   // Always return with + prefix
@@ -203,142 +40,43 @@ export function normalizePhoneNumber(phone: string, defaultCountryCode: string =
 }
 
 /**
- * Get country from phone number
- * 
- * Examples:
- * - "+250788123456" -> "RW"
- * - "+234123456789" -> "NG"
- * - "+1234567890" -> null
- */
-export function getCountryFromPhone(phone: string): string | null {
-  const normalized = normalizePhoneNumber(phone);
-  
-  // Remove + sign
-  const cleaned = normalized.replace(/^\+/, "");
-
-  // Try to match country codes (longest first for proper matching)
-  const sortedCodes = Object.keys(AFRICAN_COUNTRY_CODES)
-    .sort((a, b) => b.length - a.length);
-
-  for (const code of sortedCodes) {
-    if (cleaned.startsWith(code)) {
-      return AFRICAN_COUNTRY_CODES[code];
-    }
-  }
-
-  return null;
-}
-
-/**
- * Check if phone number is from a blocked country
- */
-export function isBlockedPhone(phone: string): boolean {
-  const country = getCountryFromPhone(phone);
-  return country ? BLOCKED_COUNTRIES.includes(country) : false;
-}
-
-/**
- * Check if country code is blocked
- */
-export function isBlockedCountry(countryCode: string): boolean {
-  return BLOCKED_COUNTRIES.includes(countryCode.toUpperCase());
-}
-
-/**
- * Get country name from country code
- */
-export function getCountryName(countryCode: string): string | null {
-  return COUNTRY_NAMES[countryCode.toUpperCase()] || null;
-}
-
-/**
- * Get market config for a phone number
- */
-export function getMarketConfig(phone: string): MarketConfig | null {
-  const country = getCountryFromPhone(phone);
-  return country ? MARKET_CONFIG[country] || null : null;
-}
-
-/**
- * Validate phone number format
+ * Validate phone number format (Rwanda: +250XXXXXXXXX)
  */
 export function isValidPhoneNumber(phone: string): boolean {
   const normalized = normalizePhoneNumber(phone);
-  // Basic validation: should start with + and have 10-15 digits
-  return /^\+\d{10,15}$/.test(normalized);
+  // Rwanda format: +250 followed by 9 digits
+  return /^\+250\d{9}$/.test(normalized);
 }
 
 /**
  * Mask phone number for logging (PII protection)
  * 
- * Always masks the middle digits to protect privacy.
- * Short numbers get extra masking for safety.
- * 
  * Examples:
  * - "+250788123456" -> "+250****3456"
- * - "+250788" -> "+2****8" (short numbers still masked)
  */
 export function maskPhone(phone: string): string {
   const normalized = normalizePhoneNumber(phone);
   
-  // For very short numbers (likely invalid), mask almost everything
+  // For very short numbers, mask almost everything
   if (normalized.length <= 5) {
     return normalized.slice(0, 2) + "***";
   }
   
-  // For short numbers (5-10 chars), show first 2 and last 1
-  if (normalized.length < 10) {
-    return normalized.slice(0, 2) + "****" + normalized.slice(-1);
-  }
-  
-  // Standard masking: show country code (+XXX) and last 4 digits
-  return normalized.replace(/(\+\d{3})\d+(\d{4})/, "$1****$2");
+  // Standard masking: show +250 and last 4 digits
+  return normalized.replace(/(\+250)\d+(\d{4})/, "$1****$2");
 }
 
 /**
- * Format phone number for display
+ * Format phone number for display (Rwanda format)
  * 
  * Examples:
  * - "+250788123456" -> "+250 788 123 456"
- * - "+234123456789" -> "+234 123 456 789"
  */
 export function formatPhoneDisplay(phone: string): string {
   const normalized = normalizePhoneNumber(phone);
-  const cleaned = normalized.replace(/^\+/, "");
+  const cleaned = normalized.replace(/^\+250/, "");
   
-  // Get country code
-  const country = getCountryFromPhone(normalized);
-  if (!country) return normalized;
-
-  // Find the country code length
-  let codeLength = 0;
-  for (const [code, iso] of Object.entries(AFRICAN_COUNTRY_CODES)) {
-    if (iso === country) {
-      codeLength = code.length;
-      break;
-    }
-  }
-
-  const countryCode = cleaned.substring(0, codeLength);
-  const number = cleaned.substring(codeLength);
-
-  // Format: +XXX XXX XXX XXX
-  const parts = number.match(/.{1,3}/g) || [];
-  return `+${countryCode} ${parts.join(" ")}`;
+  // Format: +250 XXX XXX XXX
+  const parts = cleaned.match(/.{1,3}/g) || [];
+  return `+250 ${parts.join(" ")}`;
 }
-
-// =====================================================
-// LEGACY ALIASES (for backward compatibility)
-// =====================================================
-
-/** @deprecated Use normalizePhoneNumber instead */
-export const normalizePhone = normalizePhoneNumber;
-
-/** @deprecated Use getCountryFromPhone instead */
-export const detectCountryFromPhone = getCountryFromPhone;
-
-/** @deprecated Use isBlockedPhone instead */
-export const isPhoneBlocked = isBlockedPhone;
-
-/** @deprecated Use isBlockedCountry instead */
-export const isCountryBlocked = isBlockedCountry;

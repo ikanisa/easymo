@@ -6,35 +6,28 @@
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent } from "../../_shared/observability.ts";
+import { normalizePhone, isValidPhone, getCountryCode } from "../../_shared/phone-utils.ts";
 
 export interface InsuranceContact {
   display_name: string;
-  destination: string;
+  phone: string;
 }
 
 /**
  * Fetch active insurance contacts from database
+ * Simplified schema: phone, display_name, is_active only
  */
 export async function fetchInsuranceContacts(
   supabase: SupabaseClient,
   requestId: string,
 ): Promise<{ contacts: InsuranceContact[] | null; error: Error | null }> {
-  // Set a reasonable timeout to avoid long-running queries
-  const queryTimeout = setTimeout(() => {
-    throw new Error("Database query timeout");
-  }, 5000); // 5 second timeout
-
   try {
     const result = await supabase
       .from("insurance_admin_contacts")
-      .select("display_name, destination")
-      .eq("channel", "whatsapp")
-      .eq("category", "insurance")
+      .select("phone, display_name")
       .eq("is_active", true)
-      .order("display_order", { ascending: true });
-    
-    clearTimeout(queryTimeout);
-    
+      .order("created_at", { ascending: true });
+
     if (result.error) {
       await logStructuredEvent("INSURANCE_DB_ERROR", {
         requestId,
@@ -46,7 +39,6 @@ export async function fetchInsuranceContacts(
     
     return { contacts: result.data, error: null };
   } catch (e) {
-    clearTimeout(queryTimeout);
     const error = e instanceof Error ? e : new Error(String(e));
     await logStructuredEvent("INSURANCE_DB_EXCEPTION", {
       requestId,
@@ -58,34 +50,87 @@ export async function fetchInsuranceContacts(
 }
 
 /**
+ * Validate and normalize phone number for WhatsApp link
+ * Returns normalized number (without +) or null if invalid
+ */
+function validateAndNormalizePhone(phone: string): string | null {
+  if (!phone || typeof phone !== "string") {
+    return null;
+  }
+  
+  // Normalize phone number (keeps + if present)
+  const normalized = normalizePhone(phone.trim());
+  
+  // Validate phone number format
+  if (!isValidPhone(normalized)) {
+    return null;
+  }
+  
+  // Extract country code to validate it exists
+  const countryCode = getCountryCode(normalized);
+  if (!countryCode) {
+    // If no country code detected, try to add + if missing
+    const withPlus = normalized.startsWith("+") ? normalized : `+${normalized}`;
+    if (isValidPhone(withPlus) && getCountryCode(withPlus)) {
+      return withPlus.replace(/^\+/, ""); // Remove + for wa.me link
+    }
+    return null;
+  }
+  
+  // Remove + prefix for wa.me link (wa.me requires number without +)
+  return normalized.replace(/^\+/, "");
+}
+
+/**
  * Format insurance contacts into WhatsApp links
+ * Validates phone numbers and filters out invalid ones
  */
 export async function formatContactLinks(
   contacts: InsuranceContact[],
   requestId: string,
 ): Promise<string> {
-  const contactLinks = contacts
-    .map((c) => {
-      // Clean phone number: remove spaces, dashes, and + prefix for wa.me link
-      const cleanNumber = c.destination
-        .replace(/[\s\-+]/g, "")
-        .replace(/^00/, ""); // Also handle 00 prefix
+  const validContacts: Array<{ name: string; phone: string }> = [];
+  const invalidContacts: Array<{ name: string; phone: string }> = [];
+  
+  for (const contact of contacts) {
+    const normalizedPhone = validateAndNormalizePhone(contact.phone);
+    
+    if (normalizedPhone) {
+      validContacts.push({
+        name: contact.display_name,
+        phone: normalizedPhone,
+      });
+    } else {
+      invalidContacts.push({
+        name: contact.display_name,
+        phone: contact.phone,
+      });
       
-      // Basic validation: ensure it's a valid phone number (digits only, 10-15 chars)
-      if (!/^\d{10,15}$/.test(cleanNumber)) {
-        logStructuredEvent("INSURANCE_INVALID_PHONE_FORMAT", {
-          requestId,
-          destination: c.destination,
-          displayName: c.display_name,
-        }, "warn");
-        return null; // Skip invalid numbers
-      }
-      
-      return `• ${c.display_name}: https://wa.me/${cleanNumber}`;
-    })
-    .filter((link): link is string => link !== null) // Remove null entries
+      // Log invalid phone number for monitoring
+      await logStructuredEvent("INSURANCE_INVALID_PHONE_FORMAT", {
+        requestId,
+        phone: contact.phone,
+        displayName: contact.display_name,
+        normalized: normalizePhone(contact.phone),
+      }, "warn");
+    }
+  }
+  
+  // Log summary of validation results
+  if (invalidContacts.length > 0) {
+    await logStructuredEvent("INSURANCE_PHONE_VALIDATION_SUMMARY", {
+      requestId,
+      totalContacts: contacts.length,
+      validCount: validContacts.length,
+      invalidCount: invalidContacts.length,
+      invalidPhones: invalidContacts.map(c => c.phone),
+    }, "warn");
+  }
+  
+  // Format valid contacts as WhatsApp links
+  const contactLinks = validContacts
+    .map((c) => `• ${c.name}: https://wa.me/${c.phone}`)
     .join("\n");
   
   return contactLinks;
 }
-

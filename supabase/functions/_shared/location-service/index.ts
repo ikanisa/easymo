@@ -213,29 +213,6 @@ export async function resolveUserLocation(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Deprecation Bridge (for migration period)
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * @deprecated Use cacheLocation() instead
- * Bridge for code still using whatsapp_users.location_cache
- */
-export async function updateLegacyLocationCache(
-  supabase: SupabaseClient,
-  userId: string,
-  location: Location
-): Promise<void> {
-  // Write to new system
-  await cacheLocation(supabase, userId, location, "legacy_bridge");
-  
-  // Log deprecation warning
-  console.warn(
-    "[LocationService] updateLegacyLocationCache is deprecated. " +
-    "Migrate to cacheLocation()"
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
 // Enhanced Cache Functions (Using New RPC Functions)
 // ═══════════════════════════════════════════════════════════════════════════
 

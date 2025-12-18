@@ -16,7 +16,7 @@ const COLORS = {
   blue: '\x1b[34m',
 };
 
-const DIRS_TO_SCAN = ['services', 'packages', 'admin-app', 'client-pwa'];
+const DIRS_TO_SCAN = ['services', 'packages', 'admin-app'];
 const FILE_EXTENSIONS = ['.ts', '.tsx'];
 
 function scanDirectory(dir, results = { files: [], totalCount: 0, byDir: {} }) {

@@ -16,11 +16,7 @@
 
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent, recordMetric } from "../_shared/observability.ts";
-import { 
-  getCountryFromPhone, 
-  isBlockedCountry,
-  BLOCKED_COUNTRIES 
-} from "../_shared/buy-sell-config.ts";
+// Country blocking removed - Rwanda-only system
 import { generateContent, extractIntent, SYSTEM_INSTRUCTION_RESPONSE } from "../_shared/gemini.ts";
 import { SOURCING_TOOLS_CONFIG } from "../_shared/buy-sell-tools.ts";
 import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
@@ -89,14 +85,7 @@ async function processJob(
 
     const state: ConversationStep = conversation?.state_json || { step: "COLLECT_INTENT" };
 
-    // Check geo-blocking (Kwizera persona - polite message)
-    const userCountry = getCountryFromPhone(from);
-    if (userCountry && isBlockedCountry(userCountry)) {
-      await sendText(
-        from,
-        `I'm sorry, easyMO's sourcing service is not yet available in your region. ` +
-        `We currently serve Rwanda. Stay tuned for expansion! 🌍`
-      );
+    // Rwanda-only system - no geo-blocking needed
 
       await logStructuredEvent("USER_GEO_BLOCKED", {
         userId,

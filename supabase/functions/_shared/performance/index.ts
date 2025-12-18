@@ -12,13 +12,11 @@ export {
   locationCache,
 } from "../cache/memory-cache.ts";
 
-export {
   cacheMiddleware,
   clearResponseCache,
   getResponseCacheStats,
 } from "../cache/cache-middleware.ts";
 
-export {
   getCachedProfile,
   getCachedProfileByPhone,
   invalidateProfileCache,
@@ -37,7 +35,6 @@ export {
 // Database
 export { QueryBuilder, query } from "../database/query-builder.ts";
 
-export {
   getProfileById,
   getProfileByPhone,
   findNearbyDrivers,
@@ -48,7 +45,6 @@ export {
   getTransactionHistory,
 } from "../database/optimized-queries.ts";
 
-export {
   getClientPool,
   getPooledClient,
   getSupabaseClient,
@@ -56,7 +52,6 @@ export {
 } from "../database/client-pool.ts";
 
 // Deduplication
-export {
   deduplicationMiddleware,
   checkDuplicate,
   getDeduplicationStats,
@@ -64,7 +59,6 @@ export {
 } from "../middleware/deduplication.ts";
 
 // Lazy Loading
-export {
   lazy,
   registerLazyHandler,
   getLazyHandler,
@@ -75,7 +69,6 @@ export {
 } from "../handlers/lazy-loader.ts";
 
 // Metrics
-export {
   incrementCounter,
   getCounter,
   setGauge,
@@ -95,7 +88,6 @@ export {
   exportPrometheusMetrics,
 } from "../observability/metrics.ts";
 
-export {
   performanceMiddleware,
   trackColdStart,
   trackHandler,
@@ -103,14 +95,12 @@ export {
   trackApiCall,
 } from "../observability/performance-middleware.ts";
 
-export {
   generatePerformanceReport,
   handlePerformanceRequest,
   getHealthMetrics,
 } from "../observability/performance-endpoint.ts";
 
 // Warmup
-export {
   warmup,
   backgroundWarmup,
   warmupOnce,

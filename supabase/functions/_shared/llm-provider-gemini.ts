@@ -1,3 +1,5 @@
+/// <reference types="https://deno.land/x/types/index.d.ts" />
+
 /**
  * Google Gemini LLM Provider Implementation
  * 

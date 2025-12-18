@@ -1,10 +1,10 @@
 /**
- * CRITICAL: Kinyarwanda (rw) is BLOCKED from UI translations
- * Do NOT add 'rw' to SupportedLanguage or SUPPORTED array
+ * Rwanda-only, English-only system
+ * All languages fallback to English
  */
 export type SupportedLanguage = "en" | "fr" | "es" | "pt" | "de" | "sw";
 
-const SUPPORTED: SupportedLanguage[] = ["en", "fr", "es", "pt", "de", "sw"];
+const SUPPORTED: SupportedLanguage[] = ["en"];  // Only English supported
 export const DEFAULT_LANGUAGE: SupportedLanguage = "en";
 
 // Explicitly blocked languages (DO NOT USE in UI)

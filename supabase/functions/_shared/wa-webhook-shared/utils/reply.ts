@@ -34,9 +34,8 @@ export async function sendButtonsMessage(
   let augmented = [...buttons];
   // Auto-append Share button if room (<3 actions)
   try {
-    const hasAdmin = buttons.some((b) =>
-      typeof b?.id === 'string' && (b.id.startsWith('ADMIN::') || b.id.toLowerCase().includes('admin'))
-    );
+    // Admin check removed - admin flows deleted
+    const hasAdmin = false;
     const canAutoShare = Boolean(
       !hasAdmin &&
         augmented.length < 3 &&

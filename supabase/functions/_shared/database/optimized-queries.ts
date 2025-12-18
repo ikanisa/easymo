@@ -20,7 +20,7 @@ export async function getProfileById(
   userId: string,
   options: { useCache?: boolean; fields?: string } = {}
 ): Promise<any | null> {
-  const { useCache = true, fields = "user_id, whatsapp_e164, full_name, language" } = options;
+  const { useCache = true, fields = "user_id, wa_id, phone_number, full_name, language" } = options;
 
   if (useCache) {
     const cached = await getCachedProfile(supabase, userId);
@@ -43,11 +43,15 @@ export async function getProfileByPhone(
   phone: string,
   options: { fields?: string } = {}
 ): Promise<any | null> {
-  const { fields = "user_id, whatsapp_e164, full_name, language" } = options;
+  const { fields = "user_id, wa_id, phone_number, full_name, language" } = options;
 
+  // Try both wa_id and phone_number to handle different formats
+  const normalizedPhone = phone.startsWith('+') ? phone : `+${phone}`;
+  const waId = phone.replace(/^\+/, '');
+  
   const result = await query(supabase, "profiles")
     .select(fields)
-    .eq("whatsapp_e164", phone)
+    .or(`wa_id.eq.${waId},phone_number.eq.${normalizedPhone},phone_number.eq.${phone}`)
     .single();
 
   return result.data;

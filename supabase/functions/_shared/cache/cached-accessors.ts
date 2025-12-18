@@ -46,10 +46,14 @@ export async function getCachedProfileByPhone(
   const cacheKey = `profile:phone:${phone}`;
 
   return profileCache.getOrSet(cacheKey, async () => {
+    // Try both wa_id and phone_number to handle different formats
+    const normalizedPhone = phone.startsWith('+') ? phone : `+${phone}`;
+    const waId = phone.replace(/^\+/, '');
+    
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
-      .eq("whatsapp_e164", phone)
+      .or(`wa_id.eq.${waId},phone_number.eq.${normalizedPhone},phone_number.eq.${phone}`)
       .maybeSingle();
 
     if (error) {

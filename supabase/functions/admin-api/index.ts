@@ -214,7 +214,7 @@ async function handleUsers(req: Request): Promise<Response> {
   try {
     const { data, error, count } = await supabase
       .from("profiles")
-      .select("id,phone_e164,name,created_at", { count: "exact" })
+      .select("id,phone_number,wa_id,full_name,created_at", { count: "exact" })
       .order("created_at", { ascending: false })
       .range(query.offset, query.offset + query.limit - 1);
 

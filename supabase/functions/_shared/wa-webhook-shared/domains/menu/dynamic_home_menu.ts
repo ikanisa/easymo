@@ -18,35 +18,31 @@ export type MenuItemKey =
   | "business_broker_agent" // Alias for buy_sell
   | "insurance" // Insurance service (not an AI agent)
   | "profile" // Profile service (not an agent)
-  // Legacy keys (kept for backward compatibility, marked as deprecated)
-  | "rides_agent" // @deprecated Use rides
-  | "nearby_drivers" // @deprecated Covered by rides
-  | "nearby_passengers" // @deprecated Covered by rides
-  | "schedule_trip" // @deprecated Covered by rides
-  | "motor_insurance" // @deprecated Use insurance
-  | "nearby_pharmacies" // @deprecated Covered by buy_sell
-  | "quincailleries" // @deprecated Covered by buy_sell
-  | "shops_services" // @deprecated Covered by buy_sell
-  | "property_rentals" // @deprecated Covered by buy_sell
-  | "bars_restaurants" // @deprecated Covered by buy_sell
-  | "momo_qr" // @deprecated Moved to separate payment flow
-  | "notary_services" // @deprecated Covered by buy_sell
-  | "profile_assets" // @deprecated Use profile
-  | "token_transfer" // @deprecated Moved to wallet
-  | "general_broker" // @deprecated Use buy_sell
-  | "customer_support"; // @deprecated Accessed via support flow
+  // Legacy keys (kept for backward compatibility)
+  | "rides_agent"
+  | "nearby_drivers"
+  | "nearby_passengers"
+  | "schedule_trip"
+  | "motor_insurance"
+  | "nearby_pharmacies"
+  | "quincailleries"
+  | "shops_services"
+  | "property_rentals"
+  | "bars_restaurants"
+  | "momo_qr"
+  | "notary_services"
+  | "profile_assets"
+  | "token_transfer"
+  | "general_broker"
+  | "customer_support";
 
 export interface WhatsAppHomeMenuItem {
   id: string;
   name: string;
   key: MenuItemKey;
   is_active: boolean;
-  active_countries: string[];
   display_order: number;
   icon: string | null;
-  country_specific_names:
-    | Record<string, { name?: string; description?: string }>
-    | null;
   created_at: string;
   updated_at: string;
 }
@@ -54,49 +50,31 @@ export interface WhatsAppHomeMenuItem {
 /**
  * Get localized menu item name for a specific country
  */
-export function getLocalizedMenuName(
-  item: WhatsAppHomeMenuItem,
-  countryCode: string,
-): string {
-  if (item.country_specific_names && item.country_specific_names[countryCode]) {
-    return item.country_specific_names[countryCode].name || item.name;
-  }
-  return item.name;
-}
-
 /**
- * Fetch active menu items from database filtered by country
- * Returns items with country-specific names applied
+ * Fetch active menu items from database (Rwanda-only, no country filtering)
  */
 export async function fetchActiveMenuItems(
-  countryCode: string,
   client?: SupabaseClient,
 ): Promise<WhatsAppHomeMenuItem[]> {
   const db = client || supabase;
-  const cacheKey = `menu:home:${countryCode}`;
+  const cacheKey = `menu:home:rwanda`;
 
   const fetcher = async (): Promise<WhatsAppHomeMenuItem[]> => {
     const { data, error } = await db
       .from("whatsapp_home_menu_items")
       .select("*")
       .eq("is_active", true)
-      .contains("active_countries", [countryCode])
       .order("display_order", { ascending: true });
 
     if (error) {
       logStructuredEvent("MENU_FETCH_ERROR", {
-        countryCode,
         error: error instanceof Error ? error.message : String(error),
       }, "error");
       // Return empty array on error, fallback will handle it
       return [];
     }
 
-    const items = (data || []) as WhatsAppHomeMenuItem[];
-    return items.map((item) => ({
-      ...item,
-      name: getLocalizedMenuName(item, countryCode),
-    }));
+    return (data || []) as WhatsAppHomeMenuItem[];
   };
 
   if (!MENU_CACHE_ENABLED) {
@@ -137,7 +115,7 @@ export const HOME_MENU_KEY_ALIASES: Record<string, string> = {
   token_transfer: "profile", // Wallet transfers via profile
   profile_assets: "profile",
 
-  // Deprecated (removed domains) - route to profile
+  // Legacy (removed domains) - route to profile
   waiter_agent: "profile",
   jobs_agent: "profile",
   jobs: "profile",
@@ -161,9 +139,8 @@ export function normalizeMenuKey(key: string): string {
 
 /**
  * Map menu item keys to IDS constants
- * @deprecated Use normalizeMenuKey instead for cleaner semantic
- * Note: This function has been updated to align with HOME_MENU_KEY_ALIASES
- * for consistency. All legacy keys now route to canonical agents.
+ * Note: This function uses HOME_MENU_KEY_ALIASES for consistency.
+ * All legacy keys route to canonical agents.
  */
 export function getMenuItemId(key: MenuItemKey): string {
   // Use the same mapping as HOME_MENU_KEY_ALIASES for consistency
@@ -206,7 +183,7 @@ export function getMenuItemTranslationKeys(
       titleKey: "home.rows.profile.title",
       descriptionKey: "home.rows.profile.description",
     },
-    // Legacy mappings (backward compatibility) - deprecated agents route to profile
+    // Legacy mappings (backward compatibility) - legacy agents route to profile
     rides_agent: {
       titleKey: "home.rows.rides.title",
       descriptionKey: "home.rows.rides.description",

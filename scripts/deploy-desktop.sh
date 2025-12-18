@@ -1,6 +1,6 @@
 #!/bin/bash
 # EasyMO Desktop App Build Script
-# Builds Admin Panel and Client Portal desktop apps
+# Builds Admin Panel desktop app
 # Internal use only
 
 set -e
@@ -57,40 +57,15 @@ build_admin() {
     echo "   Output: admin-app/src-tauri/target/release/bundle/"
 }
 
-build_client() {
-    echo ""
-    echo "📦 Building Client Portal Desktop..."
-    cd "$ROOT_DIR/client-pwa"
-    pnpm install
-    
-    if [ -n "$TAURI_TARGET" ]; then
-        TAURI_ENV_PLATFORM=1 pnpm tauri build --target "$TAURI_TARGET"
-    else
-        TAURI_ENV_PLATFORM=1 pnpm tauri:build
-    fi
-    
-    echo "✅ Client Portal built!"
-    echo "   Output: client-pwa/src-tauri/target/release/bundle/"
-}
-
-case "${1:-all}" in
+case "${1:-admin}" in
     admin)
         build_admin
         ;;
-    client)
-        build_client
-        ;;
-    all)
-        build_admin
-        build_client
-        ;;
     *)
-        echo "Usage: $0 [admin|client|all] [mac|mac-arm|win]"
+        echo "Usage: $0 [admin] [mac|mac-arm|win]"
         echo ""
         echo "Apps:"
-        echo "  admin  - Build Admin Panel only"
-        echo "  client - Build Client Portal only"
-        echo "  all    - Build both (default)"
+        echo "  admin  - Build Admin Panel (default)"
         echo ""
         echo "Targets:"
         echo "  mac     - macOS Intel"

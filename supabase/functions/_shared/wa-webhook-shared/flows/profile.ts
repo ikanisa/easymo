@@ -4,7 +4,7 @@ import { handleProfileMenu } from "../domains/profile/index.ts";
 export const PROFILE_STATE_KEY = "profile_menu";
 
 /**
- * Display the Profile menu with options for managing businesses, vehicles, and tokens
+ * Display the Profile menu with options for managing tokens and sharing
  * Delegates to the comprehensive Profile hub implementation
  */
 export async function sendProfileMenu(

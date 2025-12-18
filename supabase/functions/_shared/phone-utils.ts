@@ -92,33 +92,8 @@ export function getCountryCode(phone: string): string | null {
 
 /**
  * Map country dial code to ISO 3166-1 alpha-2 country code
- * 
- * @param countryCode - Country dial code (e.g., "250", "356")
- * @returns ISO 3166-1 alpha-2 country code (e.g., "RW", "MT")
- * 
- * @example
- * mapCountryCode("250") // Returns "RW" (Rwanda)
- * mapCountryCode("356") // Returns "MT" (Malta)
- * mapCountryCode(null) // Returns "RW" (default)
+ * Rwanda-only system - always returns "RW"
  */
-export function mapCountryCode(countryCode: string | null): string {
-  if (!countryCode) return "RW";
-  
-  const countryMap: Record<string, string> = {
-    "250": "RW", // Rwanda
-    "257": "BI", // Burundi
-    "255": "TZ", // Tanzania
-    "243": "CD", // DRC
-    "260": "ZM", // Zambia
-    "228": "TG", // Togo
-    "356": "MT", // Malta
-    "254": "KE", // Kenya
-    "256": "UG", // Uganda
-    "1": "US",   // USA/Canada
-    "44": "GB",  // UK
-    "33": "FR",  // France
-    "49": "DE",  // Germany
-  };
-  
-  return countryMap[countryCode] || "RW";
+export function mapCountryCode(_countryCode: string | null): string {
+  return "RW"; // System is Rwanda-only
 }

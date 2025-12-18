@@ -28,7 +28,7 @@ type WhatsAppHomeMenuItem = {
   icon: string | null;
   display_order: number;
   is_active: boolean;
-  active_countries: string[];
+  // active_countries removed - Rwanda-only system
 };
 
 function getFirstMessage(payload: WhatsAppWebhookPayload): WhatsAppMessage | undefined {
@@ -127,7 +127,7 @@ export async function handleHomeMenu(
   } else if (selection === "insurance") {
     // Handle insurance inline - show contacts directly
     logInfo("INSURANCE_SELECTED", { from: phoneNumber }, { correlationId: corrId });
-    await handleInsuranceAgentRequest(phoneNumber);
+    await handleInsuranceAgentRequest(phoneNumber, corrId);
     return new Response(JSON.stringify({ success: true, insurance_sent: true }), { status: 200 });
   } else if (selection) {
     const isInteractive = Boolean(interactiveId);

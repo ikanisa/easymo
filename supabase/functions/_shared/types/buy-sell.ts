@@ -1,205 +1,199 @@
 /**
- * Buy & Sell Agent Type Definitions
+ * Shared Type Definitions for Buy & Sell Agent
  * 
- * TypeScript interfaces for the Buy & Sell agent enhancement:
- * - WhatsApp message payloads
- * - Intent extraction
- * - Vendor management
- * - Sourcing workflow
+ * Centralized type definitions used across the sourcing agent system
  */
 
-// WhatsApp webhook payload (WhatsApp Cloud Business API)
+// =====================================================
+// WHATSAPP MESSAGE TYPES
+// =====================================================
+
 export interface WhatsAppMessage {
-  from: string;
-  id: string;
-  timestamp: string;
-  type: "text" | "audio" | "image" | "document" | "button" | "interactive";
-  text?: {
-    body: string;
-  };
-  audio?: {
+  object: string;
+  entry: {
     id: string;
-    mime_type: string;
-  };
-  image?: {
-    id: string;
-    mime_type: string;
-    caption?: string;
-  };
-  button?: {
-    text: string;
-    payload: string;
-  };
-  interactive?: {
-    type: string;
-    button_reply?: {
-      id: string;
-      title: string;
-    };
-    list_reply?: {
-      id: string;
-      title: string;
-    };
-  };
-  context?: {
-    message_id: string;
-  };
+    changes: {
+      value: {
+        messaging_product: string;
+        metadata: { display_phone_number: string; phone_number_id: string };
+        contacts: { profile: { name: string }; wa_id: string }[];
+        messages: {
+          from: string;
+          id: string;
+          timestamp: string;
+          type: "text" | "audio" | "location" | "interactive" | "image";
+          text?: { body: string };
+          audio?: { id: string; mime_type: string };
+          image?: { id: string; mime_type: string; caption?: string };
+          location?: { latitude: number; longitude: number; name?: string; address?: string };
+          interactive?: { 
+            button_reply?: { id: string; title: string }; 
+            list_reply?: { id: string; title: string } 
+          };
+        }[];
+      };
+      field: string;
+    }[];
+  }[];
 }
 
-// Extracted intent from user message
+// =====================================================
+// INTENT EXTRACTION TYPES
+// =====================================================
+
 export interface ExtractedIntent {
-  need_type: "product" | "service" | "medicine" | "general";
-  description: string;
-  quantity?: string;
-  urgency?: "urgent" | "today" | "this_week" | "flexible";
-  location?: string;
-  special_requirements?: string[];
-  confidence: number;
+  need_type: "product" | "service" | "medicine" | "unknown";
+  query: string;
+  specs: Record<string, unknown>;
+  budget: { currency: string; max: number | null };
+  urgency: "now" | "today" | "this_week" | "flexible";
+  location: { lat: number | null; lng: number | null; text: string | null };
+  country_code: string | null;
+  blocked_market: boolean;
+  is_missing_info: boolean;
+  missing_info_question: string | null;
+  detected_language: string; // e.g. "en", "fr", "sw", "rw"
+  confidence?: number; // 0-1
 }
 
-// Vendor candidate from search
+// =====================================================
+// VENDOR TYPES
+// =====================================================
+
 export interface VendorCandidate {
-  id?: string;
+  id?: string; // UUID if internal
   name: string;
-  phone?: string;
   address?: string;
+  phone?: string;
+  website?: string;
+  lat?: number;
+  lng?: number;
+  google_maps_uri?: string;
   place_id?: string;
-  source: "google_search" | "google_maps" | "existing_vendor";
+  source: "google_maps" | "google_search" | "internal_db";
   score?: number;
-  is_onboarded?: boolean;
-  created_at?: string;
+  reason?: string;
+  is_onboarded: boolean;
+  rating?: number;
 }
 
-// Internal vendor record
 export interface Vendor {
   id: string;
   business_name: string;
   phone: string;
-  lat?: number;
-  lng?: number;
+  lat: number;
+  lng: number;
   is_opted_in: boolean;
   is_onboarded: boolean;
   average_rating: number;
   positive_response_count: number;
-  tags?: string[];
-  created_at: string;
-  updated_at: string;
 }
 
-// Vendor inquiry/request
 export interface VendorInquiry {
   id: string;
-  buyer_phone: string;
-  buyer_profile_id?: string;
-  request_summary: string;
-  request_type: "product" | "service" | "medicine" | "general";
-  business_ids: string[];
-  status: "pending" | "sent" | "completed" | "failed" | "cancelled";
-  vendors_contacted: number;
-  vendors_responded: number;
-  created_at: string;
-  updated_at: string;
-  expires_at: string;
-  metadata?: Record<string, any>;
+  request_id: string;
+  vendor_id: string;
+  status: string;
+  sent_at: string;
+  vendors?: {
+    phone: string;
+    business_name: string;
+  };
 }
 
-// Vendor response to inquiry
 export interface VendorResponse {
   id: string;
   inquiry_id: string;
-  business_id: string;
-  business_name: string;
-  business_phone?: string;
-  message_sent: string;
-  sent_at: string;
-  responded_at?: string;
-  status: "sent" | "delivered" | "read" | "responded" | "failed";
-  response_text?: string;
-  error_message?: string;
+  vendor_id: string;
+  raw_text: string;
+  availability?: string;
   created_at: string;
 }
 
-// WhatsApp broadcast request
-export interface WhatsAppBroadcastRequest {
+// =====================================================
+// SOURCING REQUEST TYPES
+// =====================================================
+
+export interface SourcingRequest {
+  id: string;
+  user_id: string;
+  user_phone: string;
+  intent_json: ExtractedIntent;
+  status: "pending" | "processing" | "completed" | "failed";
+  created_at: string;
+  completed_at?: string;
+  error_message?: string;
+}
+
+// =====================================================
+// MARKET KNOWLEDGE TYPES
+// =====================================================
+
+export interface MarketKnowledge {
+  id: string;
+  fact_text: string;
+  tags: string[];
+  created_at: string;
+  source?: string;
+  confidence?: number;
+}
+
+// =====================================================
+// BROADCAST TYPES
+// =====================================================
+
+export interface BroadcastRequest {
   id: string;
   request_id: string;
   user_location_label?: string;
   need_description: string;
-  status: "pending" | "sent" | "completed" | "failed";
+  status: "processing" | "sent" | "error";
   created_at: string;
 }
 
-// WhatsApp broadcast target
-export interface WhatsAppBroadcastTarget {
+export interface BroadcastTarget {
   id: string;
   broadcast_id: string;
   business_name: string;
   business_phone: string;
   country_code?: string;
-  status: "pending" | "sent" | "delivered" | "failed";
-  message_sid?: string;
+  status: "pending" | "sent" | "error";
+  twilio_message_sid?: string;
   created_at: string;
 }
 
-// WhatsApp business reply
-export interface WhatsAppBusinessReply {
-  id: string;
-  business_phone: string;
-  raw_body: string;
-  action?: "HAVE_IT" | "NO_STOCK" | "STOP_MESSAGES";
-  has_stock?: boolean;
-  broadcast_target_id?: string;
-  created_at: string;
-}
+// =====================================================
+// JOB QUEUE TYPES
+// =====================================================
 
-// Sourcing request
-export interface SourcingRequest {
-  id: string;
-  user_id: string;
-  intent_json: Record<string, any>;
-  status: "pending" | "processing" | "completed" | "failed";
-  created_at: string;
-}
-
-// Job queue entry
 export interface Job {
   id: string;
   user_id: string;
-  type: string;
-  payload_json: Record<string, any>;
+  job_type: "sourcing" | "broadcast" | "notification";
+  payload_json: Record<string, unknown>;
   status: "pending" | "processing" | "completed" | "failed";
+  priority: number;
+  created_at: string;
+  started_at?: string;
+  completed_at?: string;
   error_message?: string;
-  created_at: string;
-  updated_at: string;
+  retry_count: number;
 }
 
-// Conversation state
-export interface ConversationState {
-  id: string;
-  user_id: string;
-  state_json: {
-    step: string;
-    data?: Record<string, any>;
+// =====================================================
+// USER CONTEXT TYPES
+// =====================================================
+
+export interface UserContext {
+  pastRequests: Array<{
+    intent_json: ExtractedIntent;
+    status: string;
+    created_at: string;
+  }>;
+  globalKnowledge: MarketKnowledge[];
+  userPreferences?: {
+    preferredLanguage?: string;
+    preferredCurrency?: string;
+    defaultLocation?: { lat: number; lng: number };
   };
-  created_at: string;
-  updated_at: string;
-}
-
-// Inbound message audit
-export interface InboundMessage {
-  id: string;
-  user_id?: string;
-  type?: string;
-  text?: string;
-  media_url?: string;
-  wa_message_id?: string;
-  created_at: string;
-}
-
-// Opt-out record
-export interface WhatsAppOptOut {
-  id: string;
-  business_phone: string;
-  reason?: string;
-  created_at: string;
 }

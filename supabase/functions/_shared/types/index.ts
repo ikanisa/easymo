@@ -19,7 +19,6 @@ export type {
 } from "./context.ts";
 
 // Message types
-export type {
   WhatsAppMessage,
   MessageType,
   TextMessage,
@@ -41,7 +40,6 @@ export type {
 } from "./messages.ts";
 
 // Response types
-export type {
   SuccessResponse,
   ErrorResponse,
   ApiResponse,

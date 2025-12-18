@@ -134,6 +134,7 @@ export interface GenerateContentOptions {
   systemInstruction?: string;
   tools?: any[];
   toolConfig?: any;
+  thinkingBudget?: number; // For Gemini 3 Pro models (32k tokens)
   generationConfig?: {
     temperature?: number;
     maxOutputTokens?: number;
@@ -166,6 +167,7 @@ export async function generateContent(
     systemInstruction,
     tools,
     toolConfig,
+    thinkingBudget,
     generationConfig,
     maxRetries = 3,
     correlationId
@@ -203,6 +205,16 @@ export async function generateContent(
 
       if (generationConfig) {
         payload.generationConfig = generationConfig;
+      }
+
+      // Add thinking budget for Gemini 3 Pro models
+      if (thinkingBudget && thinkingBudget > 0) {
+        if (!payload.generationConfig) {
+          payload.generationConfig = {};
+        }
+        payload.generationConfig.thinkingConfig = {
+          thinkingBudget: thinkingBudget
+        };
       }
 
       // Make API request
@@ -252,17 +264,19 @@ export async function generateContent(
           args: part.functionCall.args
         }));
 
-      if (functionCalls && functionCalls.length > 0) {
-        return { functionCalls, finishReason };
-      }
-
-      // Extract text
+      // Extract text (may be present even with function calls)
       const text = content.parts
+        ?.filter((part: any) => part.text)
         ?.map((part: any) => part.text)
         .filter(Boolean)
-        .join("");
+        .join("") || undefined;
 
-      return { text, finishReason };
+      // Return both if present
+      if (functionCalls && functionCalls.length > 0) {
+        return { functionCalls, text, finishReason };
+      }
+
+      return { text: text || "", finishReason };
 
     } catch (error) {
       lastError = error as Error;

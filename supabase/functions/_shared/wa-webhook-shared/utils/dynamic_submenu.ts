@@ -21,31 +21,39 @@ export interface SubmenuItem {
 
 /**
  * Fetch submenu items for a parent menu from database
- * @param parentKey - The parent menu key (e.g., 'jobs', 'property_rentals', 'wallet')
- * @param countryCode - User's country code for filtering
- * @param language - User's language preference
+ * @param parentKey - The parent menu key (e.g., 'profile', 'wallet')
  * @param client - Optional Supabase client
  * @returns Array of submenu items
  */
 export async function fetchSubmenuItems(
   parentKey: string,
-  countryCode: string = "RW",
-  language: string = "en",
   client?: SupabaseClient,
 ): Promise<SubmenuItem[]> {
   const db = client || supabase;
 
+  // Rwanda-only system - no country filtering needed
+  // Note: If get_submenu_items RPC exists, it may need to be updated to remove country parameters
+  // For now, return empty array if RPC requires country (will be handled by migration)
   const { data, error } = await db.rpc("get_submenu_items", {
     p_parent_key: parentKey,
-    p_country_code: countryCode,
-    p_language: language,
-  });
+  }).catch(() => ({ data: null, error: { message: "RPC may need country parameter - update required" } }));
 
   if (error) {
+    // Properly serialize error objects
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : (error && typeof error === "object" && "message" in error)
+      ? String((error as Record<string, unknown>).message)
+      : String(error);
+    
+    const errorCode = (error && typeof error === "object" && "code" in error)
+      ? String((error as Record<string, unknown>).code)
+      : undefined;
+    
     logStructuredEvent("SUBMENU_FETCH_ERROR", {
       parentKey,
-      countryCode,
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage,
+      errorCode,
     }, "error");
     return [];
   }
@@ -54,27 +62,33 @@ export async function fetchSubmenuItems(
 }
 
 /**
- * Fetch profile menu items from database
- * @param countryCode - User's country code for filtering
- * @param language - User's language preference
+ * Fetch profile menu items from database (Rwanda-only, no country filtering)
  * @param client - Optional Supabase client
  * @returns Array of profile menu items
  */
 export async function fetchProfileMenuItems(
-  countryCode: string = "RW",
-  _language: string = "en",
   client?: SupabaseClient,
 ): Promise<SubmenuItem[]> {
   const db = client || supabase;
 
-  const { data, error } = await db.rpc("get_profile_menu_items", {
-    user_country_code: countryCode,
-  });
+  const { data, error } = await db.rpc("get_profile_menu_items");
 
   if (error) {
+    // Properly serialize error objects (Supabase errors have message/code properties)
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : (error && typeof error === "object" && "message" in error)
+      ? String((error as Record<string, unknown>).message)
+      : String(error);
+    
+    const errorCode = (error && typeof error === "object" && "code" in error)
+      ? String((error as Record<string, unknown>).code)
+      : undefined;
+    
     logStructuredEvent("PROFILE_MENU_FETCH_ERROR", {
-      countryCode,
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage,
+      errorCode,
+      errorType: error instanceof Error ? "Error" : typeof error,
     }, "error");
     return [];
   }
@@ -136,11 +150,9 @@ export async function getSubmenuRows(
   backButtonText: string = "Back to Menu",
   idMapper?: (key: string) => string,
 ): Promise<Array<{ id: string; title: string; description: string }>> {
-  const countryCode = (ctx as { countryCode?: string }).countryCode ?? "RW";
+  // Rwanda-only system - no country filtering
   const items = await fetchSubmenuItems(
     parentKey,
-    countryCode,
-    ctx.locale || "en",
     ctx.supabase,
   );
 
@@ -157,18 +169,16 @@ export async function getSubmenuRows(
 }
 
 /**
- * Check if a submenu exists and has items
+ * Check if a submenu exists and has items (Rwanda-only, no country filtering)
  * @param parentKey - Parent menu key
- * @param countryCode - User's country code
  * @param client - Optional Supabase client
  * @returns True if submenu exists with active items
  */
 export async function hasSubmenu(
   parentKey: string,
-  countryCode: string = "RW",
   client?: SupabaseClient,
 ): Promise<boolean> {
-  const items = await fetchSubmenuItems(parentKey, countryCode, "en", client);
+  const items = await fetchSubmenuItems(parentKey, client);
   return items.length > 0;
 }
 

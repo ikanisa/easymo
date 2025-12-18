@@ -334,13 +334,35 @@ Deno.serve(async (req: Request): Promise<Response> => {
         // This is a vendor replying
         const action = parseVendorAction(messageText);
 
+        // Get broadcast target ID if available (link reply to broadcast)
+        let broadcastTargetId: string | null = null;
+        try {
+          // Try to find the most recent broadcast target for this vendor
+          const { data: recentTarget } = await supabase
+            .from("whatsapp_broadcast_targets")
+            .select("id")
+            .eq("business_phone", from)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          
+          broadcastTargetId = recentTarget?.id || null;
+        } catch (error) {
+          // Continue without broadcast target ID
+        }
+
         // Log vendor reply
-        await supabase.from("whatsapp_business_replies").insert({
-          business_phone: from,
-          raw_body: messageText,
-          action,
-          has_stock: action === "HAVE_IT"
-        });
+        const { data: insertedReply } = await supabase
+          .from("whatsapp_business_replies")
+          .insert({
+            business_phone: from,
+            raw_body: messageText,
+            action,
+            has_stock: action === "HAVE_IT",
+            broadcast_target_id: broadcastTargetId,
+          })
+          .select()
+          .single();
 
         // Handle STOP messages
         if (action === "STOP_MESSAGES") {
@@ -377,8 +399,23 @@ Deno.serve(async (req: Request): Promise<Response> => {
           });
 
           await recordMetric("vendor.positive_response", 1);
+        }
 
-          // TODO: Notify matching buyers
+        // Notify user of vendor response (for both HAVE_IT and NO_STOCK)
+        if ((action === "HAVE_IT" || action === "NO_STOCK") && insertedReply) {
+          try {
+            // Import and call notification function
+            const { notifyUserOfVendorResponse } = await import("../_shared/vendor-response-notification.ts");
+            await notifyUserOfVendorResponse(supabase, insertedReply as any, correlationId);
+          } catch (error) {
+            logStructuredEvent("VENDOR_RESPONSE_NOTIFICATION_ERROR", {
+              from: maskPhone(from),
+              replyId: insertedReply.id,
+              error: error instanceof Error ? error.message : String(error),
+              correlationId
+            }, "warn");
+            // Don't block the flow if notification fails
+          }
         }
       } else {
         // This is a user message - add to job queue for agent processing

@@ -14,7 +14,6 @@ export type {
   StateMachineConfig,
 } from "./state-machine.ts";
 
-export {
   getState,
   setState,
   clearState,

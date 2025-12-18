@@ -1,6 +1,6 @@
 #!/bin/bash
 # EasyMO Cloudflare Pages Deployment Script
-# Deploys Admin Panel and Client Portal PWAs
+# Deploys Admin Panel PWA
 # Internal use only - not for public deployment
 
 set -e
@@ -35,34 +35,13 @@ deploy_admin() {
     echo "✅ Admin Panel deployed!"
 }
 
-deploy_client() {
-    echo ""
-    echo "📦 Building Client Portal..."
-    cd "$ROOT_DIR/client-pwa"
-    pnpm install
-    pnpm pages:build
-    
-    echo "🚀 Deploying Client Portal to Cloudflare Pages..."
-    pnpm pages:deploy
-    echo "✅ Client Portal deployed!"
-}
-
-case "${1:-all}" in
+case "${1:-admin}" in
     admin)
         deploy_admin
         ;;
-    client)
-        deploy_client
-        ;;
-    all)
-        deploy_admin
-        deploy_client
-        ;;
     *)
-        echo "Usage: $0 [admin|client|all]"
-        echo "  admin  - Deploy Admin Panel only"
-        echo "  client - Deploy Client Portal only"
-        echo "  all    - Deploy both (default)"
+        echo "Usage: $0 [admin]"
+        echo "  admin  - Deploy Admin Panel (default)"
         exit 1
         ;;
 esac

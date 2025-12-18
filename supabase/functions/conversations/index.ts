@@ -8,13 +8,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { logStructuredEvent } from "../_shared/observability.ts";
 import { z } from "zod";
-import { logStructuredEvent } from "../_shared/observability.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
 import { getAdminToken } from "../_shared/env.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
 
 const BASE_HEADERS: Record<string, string> = {
   "content-type": "application/json; charset=utf-8",

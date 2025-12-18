@@ -38,9 +38,9 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
     priority: 1,
   },
   {
-    // Wallet service - dedicated microservice for financial operations
-    // Extracted from wa-webhook-profile for single-responsibility
-    service: "wa-webhook-wallet",
+    // Wallet service - handled by wa-webhook-profile
+    // Wallet operations are part of profile service (not a separate microservice)
+    service: "wa-webhook-profile",
     keywords: [
       "wallet", "token", "transfer", "redeem", "earn", "reward", "balance",
       "payment", "pay", "deposit", "withdraw", "money", "referral", "cashout", "cash out",
@@ -72,7 +72,7 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
     // Buy & Sell + Support - consolidated marketplace service
     // Support functionality merged here per comprehensive cleanup (Phase 2)
     // Handles both marketplace transactions and customer support inquiries
-    service: "wa-webhook-buy-sell",
+    service: "notify-buyers",
     keywords: [
       // Marketplace keywords
       "buy", "sell", "category", "categories", "browse", "directory", "shops", "business", "marketplace",
@@ -109,8 +109,7 @@ export const ROUTED_SERVICES: readonly string[] = [
   "wa-webhook-mobility",
   "wa-webhook-insurance",
   "wa-webhook-profile",
-  "wa-webhook-wallet",
-  "wa-webhook-buy-sell",
+  "notify-buyers",
   "wa-webhook-voice-calls",
 ] as const;
 
@@ -137,8 +136,7 @@ export function buildMenuKeyMap(): Record<string, string> {
  */
 export const STATE_PATTERNS: Array<{ patterns: string[]; service: string }> = [
   { patterns: ["mobility", "trip_", "ride_"], service: "wa-webhook-mobility" },
-  { patterns: ["wallet_", "payment_", "transfer_", "momo_qr_"], service: "wa-webhook-wallet" },
-  { patterns: ["shop_", "buy_sell_", "buy_sell_location", "buy_sell_results", "buy_sell_menu", "business_", "directory_", "support_"], service: "wa-webhook-buy-sell" },
+  { patterns: ["wallet_", "payment_", "transfer_", "momo_qr_"], service: "wa-webhook-profile" },
   { 
     patterns: [
       // Marketplace patterns
@@ -146,7 +144,7 @@ export const STATE_PATTERNS: Array<{ patterns: string[]; service: string }> = [
       // Support patterns (consolidated from wa-agent-support)
       "support_",
     ],
-    service: "wa-webhook-buy-sell",
+    service: "notify-buyers",
   },
 ];
 
