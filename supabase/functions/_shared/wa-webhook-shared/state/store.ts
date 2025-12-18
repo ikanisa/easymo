@@ -28,20 +28,12 @@ export class InvalidWhatsAppNumberError extends Error {
 function normalizeWhatsAppNumber(raw: string): string {
   const trimmed = raw.trim();
   const digits = trimmed.replace(/[^0-9]/g, "");
-  if (!digits) {
+  if (!digits || digits.length === 0) {
     throw new InvalidWhatsAppNumberError(raw);
   }
+  // Accept any phone number format - just normalize to E.164-like format with +
+  // No regex validation or prefix restrictions - allow all country codes
   const normalized = `+${digits}`;
-  if (!WA_NUMBER_REGEX.test(normalized)) {
-    throw new InvalidWhatsAppNumberError(normalized);
-  }
-  if (
-    ENFORCE_PREFIXES &&
-    ALLOWED_PREFIXES.length &&
-    !ALLOWED_PREFIXES.some((prefix) => normalized.startsWith(prefix))
-  ) {
-    throw new InvalidWhatsAppNumberError(normalized);
-  }
   return normalized;
 }
 

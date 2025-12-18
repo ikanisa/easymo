@@ -1,4 +1,9 @@
 /// <reference types="https://deno.land/x/types/index.d.ts" />
+/// <reference lib="deno.ns" />
+
+// Allow Node-based unit tests to import this module without the Deno global.
+// deno-lint-ignore no-explicit-any
+declare const Deno: { env?: { get(key: string): string | undefined } } | undefined;
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { supabase } from "../_shared/wa-webhook-shared/config.ts";
@@ -39,16 +44,25 @@ const securityMiddleware = createSecurityMiddleware("wa-webhook-core", {
 const auditLogger = createAuditLogger("wa-webhook-core", supabase);
 const errorHandler = createErrorHandler("wa-webhook-core");
 
+// Constants
+const LATENCY_WINDOW_SIZE = 120;
+const DEFAULT_COLD_START_SLO_MS = 1750;
+const DEFAULT_P95_SLO_MS = 1200;
+const CLEANUP_INTERVAL = 100; // Cleanup every N requests
+
+const getEnvValue = (key: string): string | undefined => {
+  return typeof Deno !== "undefined" && Deno?.env?.get ? Deno.env.get(key) : undefined;
+};
+
 const latencyTracker = new LatencyTracker({
-  windowSize: 120,
-  coldStartSloMs: Number(Deno.env.get("WA_CORE_COLD_START_SLO_MS") ?? "1750") ||
-    1750,
-  p95SloMs: Number(Deno.env.get("WA_CORE_P95_SLO_MS") ?? "1200") || 1200,
+  windowSize: LATENCY_WINDOW_SIZE,
+  coldStartSloMs: Number(getEnvValue("WA_CORE_COLD_START_SLO_MS") ?? String(DEFAULT_COLD_START_SLO_MS)) ||
+    DEFAULT_COLD_START_SLO_MS,
+  p95SloMs: Number(getEnvValue("WA_CORE_P95_SLO_MS") ?? String(DEFAULT_P95_SLO_MS)) || DEFAULT_P95_SLO_MS,
 });
 
 // Request counter for deterministic cleanup scheduling
 let requestCounter = 0;
-const CLEANUP_INTERVAL = 100; // Cleanup every N requests
 
 serve(async (req: Request): Promise<Response> => {
   requestCounter++;
@@ -137,26 +151,26 @@ serve(async (req: Request): Promise<Response> => {
       timestamp: new Date().toISOString(),
       environment: {
         // Core Supabase
-        SUPABASE_URL: !!Deno.env.get("SUPABASE_URL"),
-        SUPABASE_SERVICE_ROLE_KEY: !!Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
+        SUPABASE_URL: !!getEnvValue("SUPABASE_URL"),
+        SUPABASE_SERVICE_ROLE_KEY: !!getEnvValue("SUPABASE_SERVICE_ROLE_KEY"),
 
         // WhatsApp
-        WA_PHONE_ID: !!Deno.env.get("WA_PHONE_ID") ||
-          !!Deno.env.get("WHATSAPP_PHONE_NUMBER_ID"),
-        WA_TOKEN: !!Deno.env.get("WA_TOKEN") ||
-          !!Deno.env.get("WHATSAPP_ACCESS_TOKEN"),
-        WA_APP_SECRET: !!Deno.env.get("WA_APP_SECRET") ||
-          !!Deno.env.get("WHATSAPP_APP_SECRET"),
-        WA_VERIFY_TOKEN: !!Deno.env.get("WA_VERIFY_TOKEN") ||
-          !!Deno.env.get("WHATSAPP_VERIFY_TOKEN"),
+        WA_PHONE_ID: !!getEnvValue("WA_PHONE_ID") ||
+          !!getEnvValue("WHATSAPP_PHONE_NUMBER_ID"),
+        WA_TOKEN: !!getEnvValue("WA_TOKEN") ||
+          !!getEnvValue("WHATSAPP_ACCESS_TOKEN"),
+        WA_APP_SECRET: !!getEnvValue("WA_APP_SECRET") ||
+          !!getEnvValue("WHATSAPP_APP_SECRET"),
+        WA_VERIFY_TOKEN: !!getEnvValue("WA_VERIFY_TOKEN") ||
+          !!getEnvValue("WHATSAPP_VERIFY_TOKEN"),
 
         // AI Providers
-        OPENAI_API_KEY: !!Deno.env.get("OPENAI_API_KEY"),
-        GEMINI_API_KEY: !!Deno.env.get("GEMINI_API_KEY"),
+        OPENAI_API_KEY: !!getEnvValue("OPENAI_API_KEY"),
+        GEMINI_API_KEY: !!getEnvValue("GEMINI_API_KEY"),
 
         // Optional
-        UPSTASH_REDIS_URL: !!Deno.env.get("UPSTASH_REDIS_URL"),
-        UPSTASH_REDIS_TOKEN: !!Deno.env.get("UPSTASH_REDIS_TOKEN"),
+        UPSTASH_REDIS_URL: !!getEnvValue("UPSTASH_REDIS_URL"),
+        UPSTASH_REDIS_TOKEN: !!getEnvValue("UPSTASH_REDIS_TOKEN"),
       },
       missing: envCheck.missing,
       warnings: envCheck.warnings,
@@ -176,7 +190,7 @@ serve(async (req: Request): Promise<Response> => {
     const mode = url.searchParams.get("hub.mode");
     const token = url.searchParams.get("hub.verify_token");
     const challenge = url.searchParams.get("hub.challenge");
-    if (mode === "subscribe" && token === Deno.env.get("WA_VERIFY_TOKEN")) {
+    if (mode === "subscribe" && token === getEnvValue("WA_VERIFY_TOKEN")) {
       return new Response(challenge ?? "", {
         status: 200,
         headers: {
@@ -189,6 +203,7 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   // Webhook ingress (POST)
+  let rawBody: string | null = null;
   try {
     // Phase 2: Run security middleware checks
     const securityCheck = await securityMiddleware.check(req);
@@ -196,8 +211,8 @@ serve(async (req: Request): Promise<Response> => {
       return finalize(securityCheck.response!, "wa-webhook-core");
     }
 
-    // Read raw body for signature verification
-    const rawBody = await req.text();
+    // Read raw body for signature verification (store for potential DLQ use)
+    rawBody = await req.text();
 
     // Phase 2: Enhanced signature verification
     const signatureResult = await verifyWebhookRequest(
@@ -228,8 +243,19 @@ serve(async (req: Request): Promise<Response> => {
       ipAddress: securityCheck.context.clientIp ?? undefined,
     });
 
-    // Parse payload after verification
-    const payload = JSON.parse(rawBody);
+    // Parse payload after verification with error handling
+    let payload: unknown;
+    try {
+      payload = JSON.parse(rawBody);
+    } catch (parseError) {
+      log("CORE_JSON_PARSE_ERROR", {
+        error: parseError instanceof Error ? parseError.message : String(parseError),
+      }, "error");
+      return json({
+        error: "invalid_json",
+        message: "Failed to parse request body as JSON",
+      }, { status: 400 });
+    }
 
     // Extract phone number for rate limiting
     const phoneNumber = extractPhoneFromPayload(payload);
@@ -285,7 +311,7 @@ serve(async (req: Request): Promise<Response> => {
 
       // Forward directly to voice-calls handler
       const voiceCallsUrl = `${
-        Deno.env.get("SUPABASE_URL")
+        getEnvValue("SUPABASE_URL") ?? ""
       }/functions/v1/wa-webhook-voice-calls`;
       try {
         const forwardResponse = await fetch(voiceCallsUrl, {
@@ -295,7 +321,7 @@ serve(async (req: Request): Promise<Response> => {
             "X-Correlation-ID": correlationId,
             "X-Request-ID": requestId,
             "Authorization": `Bearer ${
-              Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+              getEnvValue("SUPABASE_SERVICE_ROLE_KEY") ?? ""
             }`,
           },
           body: JSON.stringify(payload),
@@ -341,37 +367,74 @@ serve(async (req: Request): Promise<Response> => {
     });
 
     // Store failed message in DLQ for retry
-    try {
-      const rawBody = await req.clone().text();
-      const payload = JSON.parse(rawBody);
-      const phoneNumber = extractPhoneFromPayload(payload);
+    // Use rawBody from outer scope if available, otherwise try to clone request
+    if (rawBody) {
+      try {
+        const payload = JSON.parse(rawBody);
+        const phoneNumber = extractPhoneFromPayload(payload);
 
-      if (phoneNumber) {
-        await storeDLQEntry(supabase, {
-          phone_number: phoneNumber,
-          service: "wa-webhook-core",
-          correlation_id: correlationId,
-          request_id: requestId,
-          payload: payload,
-          error_message: message,
-          error_type: err instanceof Error
-            ? err.constructor.name
-            : "UnknownError",
-          status_code: 500,
-          retry_count: 0,
-        });
+        if (phoneNumber) {
+          await storeDLQEntry(supabase, {
+            phone_number: phoneNumber,
+            service: "wa-webhook-core",
+            correlation_id: correlationId,
+            request_id: requestId,
+            payload: payload,
+            error_message: message,
+            error_type: err instanceof Error
+              ? err.constructor.name
+              : "UnknownError",
+            status_code: 500,
+            retry_count: 0,
+          });
 
-        log("CORE_MESSAGE_QUEUED_FOR_RETRY", {
-          phone: maskPhone(phoneNumber),
-        }, "info");
+          log("CORE_MESSAGE_QUEUED_FOR_RETRY", {
+            phone: maskPhone(phoneNumber),
+          }, "info");
+        }
+      } catch (dlqError) {
+        logError("CORE_DLQ_STORE_FAILED", {
+          correlationId,
+          dlqError: dlqError instanceof Error
+            ? dlqError.message
+            : String(dlqError),
+        }, { correlationId });
       }
-    } catch (dlqError) {
-      logError("CORE_DLQ_STORE_FAILED", {
-        correlationId,
-        dlqError: dlqError instanceof Error
-          ? dlqError.message
-          : String(dlqError),
-      }, { correlationId });
+    } else {
+      // If rawBody is not available, try to clone request as fallback
+      try {
+        const clonedBody = await req.clone().text();
+        const payload = JSON.parse(clonedBody);
+        const phoneNumber = extractPhoneFromPayload(payload);
+
+        if (phoneNumber) {
+          await storeDLQEntry(supabase, {
+            phone_number: phoneNumber,
+            service: "wa-webhook-core",
+            correlation_id: correlationId,
+            request_id: requestId,
+            payload: payload,
+            error_message: message,
+            error_type: err instanceof Error
+              ? err.constructor.name
+              : "UnknownError",
+            status_code: 500,
+            retry_count: 0,
+          });
+
+          log("CORE_MESSAGE_QUEUED_FOR_RETRY", {
+            phone: maskPhone(phoneNumber),
+          }, "info");
+        }
+      } catch (dlqError) {
+        logError("CORE_DLQ_STORE_FAILED", {
+          correlationId,
+          dlqError: dlqError instanceof Error
+            ? dlqError.message
+            : String(dlqError),
+          note: "Could not read request body for DLQ storage",
+        }, { correlationId });
+      }
     }
 
     // Phase 2: Enhanced error handling

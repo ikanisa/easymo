@@ -24,7 +24,7 @@ const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta";
  */
 export async function parseWithGemini(rawMessage: string): Promise<GeminiParseResult> {
   const apiKey = requireEnv("GEMINI_API_KEY");
-  const model = Deno.env.get("GEMINI_MODEL") ?? "gemini-1.5-flash";
+  const model = Deno.env.get("GEMINI_MODEL") ?? "gemini-2.5-flash"; // Fast parsing
 
   const systemPrompt = `You are a specialized Mobile Money SMS parser for Rwanda (MTN, Airtel) and Kenya (M-PESA).
 Extract transaction details from payment SMS messages and return strictly valid JSON.

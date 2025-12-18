@@ -312,7 +312,7 @@ export class LLMRouter {
           },
           gemini: {
             provider: 'gemini',
-            primaryModel: 'gemini-1.5-flash',
+            primaryModel: 'gemini-2.5-flash', // Fast, cost-efficient for general tasks
             temperature: 0.7,
             maxTokens: 1000,
           },
@@ -332,7 +332,7 @@ export class LLMRouter {
         },
         gemini: {
           provider: 'gemini',
-          primaryModel: 'gemini-1.5-flash',
+          primaryModel: 'gemini-2.5-flash', // Fast, cost-efficient
         },
       },
     };

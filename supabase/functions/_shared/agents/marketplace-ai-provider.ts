@@ -61,7 +61,7 @@ export class DualAIProvider {
       const response = await this.router.execute(
         'marketplace-agent', // Agent slug for config lookup
         {
-          model: Deno.env.get('MARKETPLACE_AI_MODEL') || 'gemini-1.5-flash', // Configurable via env
+          model: Deno.env.get('MARKETPLACE_AI_MODEL') || 'gemini-3-flash', // Best speed-to-intelligence for marketplace
           messages: llmMessages,
           temperature: options?.temperature ?? 0.7,
           maxTokens: options?.maxTokens ?? 1024,

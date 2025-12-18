@@ -13,11 +13,9 @@ import { logStructuredEvent } from "../../_shared/observability.ts";
 // =====================================================
 
 /**
- * Rwanda phone number validation pattern
- * Matches: +250XXXXXXXXX, 250XXXXXXXXX, 07XXXXXXXX
- * Rwanda country code is 250, local numbers start with 07
+ * Phone number validation - accepts any format from any country
+ * No pattern restrictions - allows all phone number formats
  */
-const RWANDA_PHONE_PATTERN = /^(250|07)\d{8,9}$/;
 
 // =====================================================
 // TYPES
@@ -357,25 +355,25 @@ export function parsePriceFromText(text: string): number | null {
 
 /**
  * Validate phone number format
+ * Accepts any phone number format from any country code - no format restrictions
  */
 export function isValidPhone(phone: string): boolean {
-  // Rwanda phone formats: +250... or 07...
-  const cleaned = phone.replace(/\D/g, "");
-  return RWANDA_PHONE_PATTERN.test(cleaned);
+  if (!phone || typeof phone !== "string") return false;
+  // Accept any non-empty string as a valid phone number
+  // No format validation - allow all country codes and formats
+  return phone.trim().length > 0;
 }
 
 /**
- * Normalize phone number to international format
+ * Normalize phone number - keep original format, only remove non-numeric characters except leading +
+ * No country-specific normalization - preserves all formats
  */
 export function normalizePhone(phone: string): string {
-  const cleaned = phone.replace(/\D/g, "");
-  if (cleaned.startsWith("07")) {
-    return "250" + cleaned.slice(1);
-  }
-  if (cleaned.startsWith("250")) {
-    return cleaned;
-  }
-  return cleaned;
+  if (!phone || typeof phone !== "string") return "";
+  // Keep leading + if present, then only digits and + signs
+  const hasPlus = phone.startsWith("+");
+  const digits = phone.replace(/[^0-9+]/g, "");
+  return hasPlus ? digits : digits.replace(/\+/g, "");
 }
 
 // =====================================================

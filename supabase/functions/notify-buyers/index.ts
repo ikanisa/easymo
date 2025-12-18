@@ -497,6 +497,39 @@ async function handleWhatsAppWebhook(req: Request): Promise<Response> {
       }
     }
 
+    // List replies (e.g., user selects "Buy & Sell" from the home menu)
+    if (message.type === "interactive" && message.interactive?.list_reply?.id) {
+      const listId = message.interactive.list_reply.id.trim().toLowerCase();
+
+      // Entry points routed from wa-webhook-core home menu
+      if (
+        [
+          "buy_sell",
+          "buy_and_sell",
+          "buy_and_sell_agent",
+          "buy_sell_agent",
+          "marketplace",
+          "shops_services",
+        ].includes(listId)
+      ) {
+        // Reset context and show welcome, but do not treat the menu title as a user query
+        await EnhancedMarketplaceAgent.resetContext(normalizedPhone, supabase);
+
+        const locale = profile?.language || "en";
+        const { getWelcomeMessage } = await import("./core/agent.ts");
+        const welcomeMessage = await getWelcomeMessage(locale);
+        await sendText(userPhone, welcomeMessage);
+
+        await logStructuredEvent("NOTIFY_BUYERS_MENU_ENTRY", {
+          listId,
+          userPhone: `***${userPhone.slice(-4)}`,
+          correlationId,
+        });
+
+        return respond({ success: true, message: "menu_entry" });
+      }
+    }
+
     // === LOCATION HANDLER ===
 
     // Location sharing - pass to AI agent with location context

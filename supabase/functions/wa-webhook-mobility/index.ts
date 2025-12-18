@@ -211,8 +211,8 @@ async function processReferralCode(
   } else if (text.startsWith("REF")) {
     const match = text.match(/REF[:\s]+([A-Z0-9]{4,12})/);
     if (match) code = match[1];
-  } else if (/^[A-Z0-9]{6,12}$/.test(text)) {
-    // Standalone code (6-12 alphanumeric)
+  } else if (/^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{6,12}$/.test(text)) {
+    // Standalone code (6-12 alphanumeric, must include letters + digits)
     code = text;
   }
 

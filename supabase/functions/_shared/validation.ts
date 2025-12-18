@@ -10,8 +10,8 @@ import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
  * Common validation schemas
  */
 export const schemas = {
-  // MSISDN validation (E.164 format)
-  msisdn: z.string().regex(/^\+?[0-9]{10,15}$/, "Invalid phone number format"),
+  // MSISDN validation (permissive: allow any non-empty string)
+  msisdn: z.string().min(1, "Invalid phone number"),
   
   // Token validation (alphanumeric, 4-100 chars)
   token: z.string().min(4).max(100).regex(/^[A-Za-z0-9:_-]+$/, "Invalid token format"),

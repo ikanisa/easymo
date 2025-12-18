@@ -45,13 +45,13 @@ export function maskPhone(
 
 /**
  * Validate if a string looks like a phone number
- * Basic validation - starts with + and contains 10-15 digits
+ * Accepts any phone number format from any country code - no format restrictions
  */
 export function isValidPhone(phone: string): boolean {
-  if (!phone) return false;
-  const normalized = normalizePhone(phone);
-  const digits = normalized.replace(/\+/, "");
-  return digits.length >= 10 && digits.length <= 15;
+  if (!phone || typeof phone !== "string") return false;
+  // Accept any non-empty string as a valid phone number
+  // No format validation - allow all country codes and formats
+  return phone.trim().length > 0;
 }
 
 /**

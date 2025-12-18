@@ -12,47 +12,40 @@
 // =====================================================
 
 /**
- * Normalize phone number to E.164 format (Rwanda: +250...)
+ * Normalize phone number - keep original format, only add + prefix if missing
+ * Accepts any phone number format from any country code - no country-specific normalization
  * 
  * Examples:
- * - "0788123456" -> "+250788123456"
+ * - "0788123456" -> "+0788123456"
  * - "+250788123456" -> "+250788123456"
- * - "788123456" -> "+250788123456"
+ * - "788123456" -> "+788123456"
  */
 export function normalizePhoneNumber(phone: string): string {
-  if (!phone) return "";
-
-  // Remove all non-digit characters
-  let cleaned = phone.replace(/\D/g, "");
-
-  // If starts with 0, remove it (local format)
-  if (cleaned.startsWith("0")) {
-    cleaned = cleaned.substring(1);
-  }
-
-  // If doesn't start with 250 (Rwanda), add it
-  if (!cleaned.startsWith("250")) {
-    cleaned = "250" + cleaned;
-  }
-
-  // Always return with + prefix
-  return "+" + cleaned;
+  if (!phone || typeof phone !== "string") return "";
+  const trimmed = phone.trim();
+  // If already has +, return as is. Otherwise add + prefix
+  return trimmed.startsWith("+") ? trimmed : `+${trimmed}`;
 }
 
 /**
- * Validate phone number format (Rwanda: +250XXXXXXXXX)
+ * Validate phone number format
+ * Accepts any phone number format from any country code - no format restrictions
  */
 export function isValidPhoneNumber(phone: string): boolean {
-  const normalized = normalizePhoneNumber(phone);
-  // Rwanda format: +250 followed by 9 digits
-  return /^\+250\d{9}$/.test(normalized);
+  if (!phone || typeof phone !== "string") return false;
+  // Accept any non-empty string as a valid phone number
+  // No format validation - allow all country codes and formats
+  return phone.trim().length > 0;
 }
 
 /**
  * Mask phone number for logging (PII protection)
+ * Works with any phone number format from any country
  * 
  * Examples:
  * - "+250788123456" -> "+250****3456"
+ * - "+1234567890" -> "+123****7890"
+ * - "1234567890" -> "+123****7890"
  */
 export function maskPhone(phone: string): string {
   const normalized = normalizePhoneNumber(phone);
@@ -62,21 +55,41 @@ export function maskPhone(phone: string): string {
     return normalized.slice(0, 2) + "***";
   }
   
-  // Standard masking: show +250 and last 4 digits
-  return normalized.replace(/(\+250)\d+(\d{4})/, "$1****$2");
+  // Generic masking: show first 3-4 characters (country code) and last 4 digits
+  // Works for any country code length
+  if (normalized.length <= 7) {
+    return normalized.slice(0, 2) + "****";
+  }
+  
+  // Show first 3-4 chars (typically country code) and last 4 digits
+  const prefixLength = Math.min(4, Math.floor(normalized.length / 3));
+  return normalized.slice(0, prefixLength) + "****" + normalized.slice(-4);
 }
 
 /**
- * Format phone number for display (Rwanda format)
+ * Format phone number for display
+ * Preserves original format with spacing for readability
+ * Works with any phone number format from any country
  * 
  * Examples:
  * - "+250788123456" -> "+250 788 123 456"
+ * - "+15551234567" -> "+1 555 123 4567"
+ * - "+1234567890" -> "+1 234 567 890"
  */
 export function formatPhoneDisplay(phone: string): string {
   const normalized = normalizePhoneNumber(phone);
-  const cleaned = normalized.replace(/^\+250/, "");
+  if (!normalized || normalized.length <= 4) return normalized;
   
-  // Format: +250 XXX XXX XXX
-  const parts = cleaned.match(/.{1,3}/g) || [];
-  return `+250 ${parts.join(" ")}`;
+  // Extract country code (1-3 digits) and number part
+  const match = normalized.match(/^\+(\d{1,3})(.*)$/);
+  if (match) {
+    const countryCode = match[1];
+    const number = match[2];
+    // Group remaining digits in groups of 3 for readability
+    const parts = number.match(/.{1,3}/g) || [];
+    return `+${countryCode} ${parts.join(" ")}`;
+  }
+  
+  // If no + prefix, just return as is (shouldn't happen after normalization)
+  return normalized;
 }

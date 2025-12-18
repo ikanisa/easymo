@@ -92,7 +92,7 @@ export async function extractIntent(
 
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-2.5-flash", // Fast intent extraction for buy & sell
       generationConfig: {
         temperature: 0.3,
         topP: 0.95,
@@ -146,7 +146,7 @@ export async function transcribeAudio(
 
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-2.5-flash", // Fast transcription
     });
 
     const result = await model.generateContent([
@@ -197,7 +197,7 @@ export async function generateResponse(
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash-exp",
+        model: "gemini-2.5-flash", // Fast transcription
         generationConfig: {
           temperature: 0.7,
           topP: 0.95,
@@ -258,7 +258,7 @@ export async function analyzeImage(
 
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-2.5-flash", // Fast transcription
     });
 
     const result = await model.generateContent([
@@ -303,7 +303,7 @@ export async function executeSourcing(
 
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-3-flash", // Complex reasoning for vendor search with tools
       tools: [
         { googleSearch: {} },
         ...(userLocation ? [{ googleMaps: {} }] : []),

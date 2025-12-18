@@ -172,11 +172,19 @@ export async function sendList(
     title: safeHeaderText(section.title ?? "", WA_LIMITS_CONST.SECTION_TITLE) ||
       baseSectionTitle,
     rows: (section.rows ?? []).slice(0, WA_LIMITS_CONST.MAX_ROWS_PER_SECTION)
-      .map((row) => ({
-        id: row.id,
-        title: safeRowTitle(row.title),
-        description: row.description ? safeRowDesc(row.description) : undefined,
-      })),
+      .map((row) => {
+        const id = String(row.id ?? "");
+        const sanitizedTitle = safeRowTitle(row.title);
+        const title = sanitizedTitle || safeRowTitle(id) || "Option";
+        if (!sanitizedTitle) {
+          logStructuredEvent("WA_LIST_ROW_TITLE_FALLBACK", { id }, "warn");
+        }
+        return {
+          id,
+          title,
+          description: row.description ? safeRowDesc(row.description) : undefined,
+        };
+      }),
   }));
 
   // Validate and optionally preview payload

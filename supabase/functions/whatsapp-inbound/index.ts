@@ -167,7 +167,7 @@ async function transcribeVoiceNote(
         }
       ],
       {
-        model: "gemini-2.0-flash-exp",
+        model: "gemini-2.5-flash", // Fast message processing
         generationConfig: {
           temperature: 0.1,
           maxOutputTokens: 500

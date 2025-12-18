@@ -1,14 +1,21 @@
 /// <reference types="https://deno.land/x/types/index.d.ts" />
+/// <reference lib="deno.ns" />
+
+// Allow Node-based unit tests to import this module without the Deno global.
+// deno-lint-ignore no-explicit-any
+declare const Deno: { env?: { get(key: string): string | undefined } } | undefined;
 
 import { getRoutingText } from "../_shared/wa-webhook-shared/utils/messages.ts";
 import type { WhatsAppWebhookPayload, RouterContext, WhatsAppMessage, WhatsAppCallEvent } from "../_shared/wa-webhook-shared/types.ts";
 import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
 import { supabase } from "../_shared/wa-webhook-shared/config.ts";
 import type { SupabaseClient } from "../_shared/wa-webhook-shared/deps.ts";
+import { getFirstMessage } from "./utils/message-extraction.ts";
 import {
   clearActiveService,
   getSessionByPhone,
   setActiveService,
+  touchSession,
 } from "../_shared/session-manager.ts";
 import {
   isServiceCircuitOpen,
@@ -25,6 +32,7 @@ import {
   buildMenuKeyMap,
   ROUTED_SERVICES,
 } from "../_shared/route-config.ts";
+import { handleInsuranceAgentRequest } from "./handlers/insurance.ts";
 
 type RoutingDecision = {
   service: string;
@@ -53,208 +61,192 @@ const SERVICE_KEY_MAP = buildMenuKeyMap();
  * Handle insurance agent request - dynamically fetch contacts from insurance_admin_contacts table
  * Simple 2-step flow: User taps insurance → Get contacts → Send message with contact numbers
  */
-export async function handleInsuranceAgentRequest(phoneNumber: string, correlationId?: string): Promise<void> {
-  const corrId = correlationId || crypto.randomUUID();
-  const maskedPhone = phoneNumber ? `***${phoneNumber.slice(-4)}` : "unknown";
-  
-  try {
-    await logStructuredEvent("INSURANCE_REQUEST_START", {
-      from: maskedPhone,
-      correlationId: corrId,
-    });
+// Helper function for safe Deno.env access
+const getEnvValue = (key: string): string | undefined => {
+  return typeof Deno !== "undefined" && Deno?.env?.get ? Deno.env.get(key) : undefined;
+};
 
-    // Query insurance_admin_contacts for active insurance contacts
-    // Simplified schema: phone, display_name, is_active only
-    const { data: contacts, error } = await supabase
-      .from("insurance_admin_contacts")
-      .select("phone, display_name")
-      .eq("is_active", true)
-      .order("created_at", { ascending: true }); // Use created_at for ordering
+// Constants
+const MICROSERVICES_BASE_URL = `${getEnvValue("SUPABASE_URL") ?? ""}/functions/v1`;
+const ROUTER_TIMEOUT_MS = Math.max(Number(getEnvValue("WA_ROUTER_TIMEOUT_MS") ?? "4000") || 4000, 1000);
 
-    if (error) {
-      await logStructuredEvent("INSURANCE_CONTACT_QUERY_ERROR", {
-        from: maskedPhone,
-        error: error.message,
-        correlationId: corrId,
-      }, "error");
-      
-      await sendText(phoneNumber, "🛡️ *Insurance Services*\n\nFor insurance services, please contact our support team.");
-      return;
-    }
+function extractReferralCode(text: string): string | null {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
 
-    if (!contacts || contacts.length === 0) {
-      await logStructuredEvent("INSURANCE_NO_CONTACTS_FOUND", {
-        from: maskedPhone,
-        correlationId: corrId,
-      }, "warn");
-      
-      await sendText(phoneNumber, "🛡️ *Insurance Services*\n\nInsurance services are currently unavailable. Please try again later.");
-      return;
-    }
+  const explicit = trimmed.match(
+    /^(?:EASYMO\s+)?REF[:\s]+([A-Z0-9]{4,12})$/i,
+  );
+  if (explicit) return explicit[1].toUpperCase();
 
-    await logStructuredEvent("INSURANCE_CONTACTS_FETCHED", {
-      from: maskedPhone,
-      contactCount: contacts.length,
-      correlationId: corrId,
-    });
+  const upper = trimmed.toUpperCase();
+  // Standalone codes must include BOTH letters and digits to avoid false positives ("RESTAURANT", etc.)
+  if (/^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{6,12}$/.test(upper)) return upper;
 
-    // Build engaging message with emojis and prefilled WhatsApp message
-    let message = "🛡️ *Insurance Made Easy!*\n\n";
-    message += "Get protected today! Our insurance team is ready to help you.\n\n";
-    message += "📞 *Contact our agents:*\n\n";
-    
-    const prefilledMessage = encodeURIComponent("Hi, I need motor insurance. Can you help me with a quote?");
-    
-    contacts.forEach((contact, index) => {
-      // Clean phone number: remove + and non-digits for wa.me link
-      const cleanNumber = contact.phone.replace(/^\+/, "").replace(/\D/g, "");
-      const whatsappLink = `https://wa.me/${cleanNumber}?text=${prefilledMessage}`;
-      message += `${index + 1}. ${contact.display_name}\n`;
-      message += `   💬 ${whatsappLink}\n\n`;
-    });
-    
-    message += "✨ _Fast quotes • Easy claims • Peace of mind_";
-    
-    await sendText(phoneNumber, message.trim());
-    
-    await logStructuredEvent("INSURANCE_MESSAGE_SENT", {
-      from: maskedPhone,
-      contactCount: contacts.length,
-      correlationId: corrId,
-    });
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : String(err);
-    await logStructuredEvent("INSURANCE_HANDLER_ERROR", {
-      from: maskedPhone,
-      error: errorMessage,
-      correlationId: corrId,
-    }, "error");
-    
-    // Send fallback message on any error
-    await sendText(phoneNumber, "🛡️ *Insurance Services*\n\nFor insurance services, please contact our support team.");
-  }
+  return null;
 }
 
-const MICROSERVICES_BASE_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1`;
-const ROUTER_TIMEOUT_MS = Math.max(Number(Deno.env.get("WA_ROUTER_TIMEOUT_MS") ?? "4000") || 4000, 1000);
+function isHomeCommand(text: string): boolean {
+  const normalized = text.trim().toLowerCase();
+  return /^(hi|hello|hey|hola|bonjour|menu|home|exit|start|help|\?)$/i.test(
+    normalized,
+  ) || normalized === "menu" || normalized === "home" || normalized === "exit";
+}
 
-function getFirstMessage(payload: WhatsAppWebhookPayload): WhatsAppMessage | undefined {
-  for (const entry of payload?.entry ?? []) {
-    for (const change of entry?.changes ?? []) {
-      const messages = change?.value?.messages;
-      if (Array.isArray(messages) && messages.length > 0) {
-        return messages[0] as WhatsAppMessage;
-      }
-    }
+function normalizePhoneDigits(raw: string): { digits: string; e164: string } | null {
+  const digits = raw.replace(/[^0-9]/g, "");
+  if (!digits) return null;
+  return { digits, e164: `+${digits}` };
+}
+
+async function isExistingUser(phoneNumber: string): Promise<boolean> {
+  const normalized = normalizePhoneDigits(phoneNumber);
+  if (!normalized) return false;
+
+  try {
+    // Prefer profiles check (fast path)
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("user_id")
+      .or(
+        [
+          `wa_id.eq.${normalized.digits}`,
+          `wa_id.eq.${normalized.e164}`,
+          `phone_number.eq.${normalized.digits}`,
+          `phone_number.eq.${normalized.e164}`,
+        ].join(","),
+      )
+      .limit(1)
+      .maybeSingle();
+
+    if (!profileError && profile?.user_id) return true;
+  } catch {
+    // best-effort; fall through to auth check
   }
-  return undefined;
+
+  try {
+    // Some users may exist in auth without a profile row yet
+    const { data: authUser, error: authError } = await supabase
+      .schema("auth")
+      .from("users")
+      .select("id")
+      .eq("phone", normalized.e164)
+      .limit(1)
+      .maybeSingle();
+
+    if (!authError && authUser?.id) return true;
+  } catch {
+    // ignore
+  }
+
+  return false;
 }
 
 export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Promise<RoutingDecision> {
   const routingMessage = getFirstMessage(payload);
-  
-  // Handle voice/audio messages -> Route to Voice Calls Handler
-  if (routingMessage?.type === 'audio' || routingMessage?.type === 'voice') {
-    return {
-      service: "wa-webhook-voice-calls",
-      reason: "keyword",
-      routingText: "[VOICE_MESSAGE]",
-    };
-  }
-  
+
   const routingText = routingMessage ? getRoutingText(routingMessage) : null;
   const phoneNumber = routingMessage?.from ?? null;
+  const messageType = routingMessage?.type ?? null;
+  const isInteractive = messageType === "interactive";
+  const isText = messageType === "text";
+  let session:
+    | Awaited<ReturnType<typeof getSessionByPhone>>
+    | null = null;
+  let sessionLoaded = false;
+  const loadSession = async () => {
+    if (sessionLoaded) return session;
+    sessionLoaded = true;
+    if (!phoneNumber) return null;
+    session = await getSessionByPhone(supabase, phoneNumber);
+    return session;
+  };
 
-  if (routingText) {
+  // Load session BEFORE checking first message to avoid race conditions
+  const currentSession = phoneNumber ? await loadSession() : null;
+  
+  // Determine if this is truly the first message (no existing session)
+  const isFirstMessage = Boolean(phoneNumber) && !currentSession;
+
+  // Text: "menu/home/exit/hello" -> always go back to core home menu (and clear active service)
+  if (isText && routingText && isHomeCommand(routingText)) {
+    if (phoneNumber) {
+      await clearActiveService(supabase, phoneNumber);
+      await touchSession(supabase, phoneNumber);
+    }
+    return {
+      service: "wa-webhook-core",
+      reason: "home_menu",
+      routingText,
+    };
+  }
+
+  // Interactive: route via menu IDs only (keeps services separate from free-text typing)
+  if (isInteractive && routingText) {
     const normalized = routingText.trim().toLowerCase();
-    const trimmedText = routingText.trim();
-    const upperText = trimmedText.toUpperCase();
-    
-    // PRIORITY: Route referral codes (REF:CODE or standalone codes) to profile service
-    // This handles new users clicking referral links with unique codes
-    // Patterns (case-insensitive):
-    //   - "REF:ABC12345" or "REF ABC12345" (with 4-12 alphanumeric characters after prefix)
-    //   - Standalone codes: 6-12 alphanumeric characters (avoiding common words and phone numbers)
-    const hasRefPrefix = /^REF[:\s]+[A-Z0-9]{4,12}$/i.test(trimmedText);
-    
-    // Exclude phone numbers: if it's all digits and 9-15 chars, it's a phone number, not a referral code
-    const isPhoneNumber = /^\d{9,15}$/.test(trimmedText.replace(/[\s+()-]/g, ""));
-    
-    // Standalone codes must be alphanumeric (mix of letters and numbers), not pure numbers
-    // Exclude common words and pure numeric strings (phone numbers)
-    const isStandaloneCode = /^[A-Z0-9]{6,12}$/.test(upperText) && 
-                            !/^\d+$/.test(trimmedText) && // Exclude pure numbers (phone numbers)
-                            !/^(HELLO|THANKS|CANCEL|SUBMIT|ACCEPT|REJECT|STATUS|URGENT|PLEASE|INSURANCE|PHARMACY|PHARMACIES)$/.test(upperText);
-    
-    const isReferralCode = !isPhoneNumber && (hasRefPrefix || isStandaloneCode);
-    
-    if (isReferralCode) {
-      logInfo("WA_CORE_REFERRAL_CODE_DETECTED", { 
-        code: trimmedText.substring(0, 8) + "***",
-        from: phoneNumber?.substring(0, 6) ?? "unknown"
-      }, { correlationId: crypto.randomUUID() });
+    const target = SERVICE_KEY_MAP[normalized];
+    if (target) {
       if (phoneNumber) {
-        await setActiveService(supabase, phoneNumber, "wa-webhook-profile");
+        await setActiveService(supabase, phoneNumber, target);
+        await touchSession(supabase, phoneNumber);
       }
       return {
-        service: "wa-webhook-profile",
-        reason: "keyword",
-        routingText,
-      };
-    }
-    
-    // Always show home menu for generic greetings and menu keywords
-    // This ensures users get the home menu regardless of other settings
-    const isGreeting = /^(hi|hello|hey|hola|bonjour|menu|home|exit|start|help|\?)$/i.test(normalized);
-    
-    if (isGreeting || normalized === "menu" || normalized === "home" || normalized === "exit") {
-      if (phoneNumber) {
-        await clearActiveService(supabase, phoneNumber);
-      }
-      return {
-        service: "wa-webhook-core",
-        reason: "home_menu",
-        routingText,
-      };
-    }
-    
-    // Note: Insurance is handled in handleHomeMenu when selected from menu
-    // Only handle direct text "insurance_agent" here
-    if (normalized === "insurance_agent") {
-      if (phoneNumber) {
-        await handleInsuranceAgentRequest(phoneNumber, crypto.randomUUID());
-      }
-      return {
-        service: "wa-webhook-core",
-        reason: "keyword",
-        routingText,
-      };
-    }
-    
-    if (SERVICE_KEY_MAP[normalized]) {
-      if (phoneNumber) {
-        await setActiveService(supabase, phoneNumber, SERVICE_KEY_MAP[normalized]);
-      }
-      return {
-        service: SERVICE_KEY_MAP[normalized],
+        service: target,
         reason: "keyword",
         routingText,
       };
     }
   }
 
-  if (phoneNumber) {
-    const session = await getSessionByPhone(supabase, phoneNumber);
-    if (session?.active_service && ROUTED_SERVICES.includes(session.active_service)) {
+  // PRIORITY: If user is already in a service, keep routing ALL subsequent messages there
+  // This ensures Buy & Sell AI agent captures ANY word when user is in conversation
+  if (phoneNumber && currentSession?.active_service) {
+    const active = currentSession.active_service;
+    if (ROUTED_SERVICES.includes(active)) {
+      // Ensure session is touched to keep it alive
+      await touchSession(supabase, phoneNumber);
       return {
-        service: session.active_service,
+        service: active,
         reason: "state",
         routingText,
       };
     }
   }
 
-  // Default: show home menu for any unrecognized text
+  // Text: referral codes ONLY for truly new users AND only on their FIRST ever message
+  // CRITICAL: If NOT first message, NEVER check for referral codes (all text is ignored for referral)
+  if (isText && routingText && phoneNumber && isFirstMessage) {
+    // Check if user is new before processing referral code
+    const existing = await isExistingUser(phoneNumber);
+    if (!existing) {
+      // Only check for referral codes if user is NEW and this is their FIRST message
+      const code = extractReferralCode(routingText);
+      if (code) {
+        logInfo(
+          "WA_CORE_REFERRAL_CODE_DETECTED",
+          { code: `${code.substring(0, 8)}***`, from: phoneNumber.substring(0, 6) },
+          { correlationId: crypto.randomUUID() },
+        );
+        // Create session after referral code detection but before routing
+        await touchSession(supabase, phoneNumber);
+        return {
+          service: "wa-webhook-profile",
+          reason: "keyword",
+          routingText,
+        };
+      }
+    }
+    // If first message but no referral code or existing user, create session and continue
+    await touchSession(supabase, phoneNumber);
+  } else {
+    // Not first message - ensure session exists
+    if (phoneNumber) {
+      await touchSession(supabase, phoneNumber);
+    }
+  }
+
+  // Default: show home menu/welcome message for any unrecognized text
+  // This handles cases where user sends any text that doesn't match keywords
   return {
     service: "wa-webhook-core",
     reason: "home_menu",
@@ -325,6 +317,17 @@ export async function forwardToEdgeService(
   forwardHeaders.set("X-Routed-From", "wa-webhook-core");
   forwardHeaders.set("X-Routed-Service", targetService);
   forwardHeaders.set("X-Correlation-ID", correlationId);
+  // Mark referral flows so downstream services don't misclassify normal text as a code.
+  if (
+    targetService === "wa-webhook-profile" &&
+    decision.reason === "keyword" &&
+    decision.routingText
+  ) {
+    const referralCode = extractReferralCode(decision.routingText);
+    if (referralCode) {
+      forwardHeaders.set("x-wa-referral-flow", "true");
+    }
+  }
   // Mark as internal forward to bypass signature verification in target service
   // (signature already verified in core, and body is re-stringified which changes it)
   forwardHeaders.set("x-wa-internal-forward", "true");
@@ -335,7 +338,7 @@ export async function forwardToEdgeService(
     forwardHeaders.set("x-wa-internal-forward-token", forwardToken);
   }
   // Add Authorization header for service-to-service calls
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const serviceRoleKey = getEnvValue("SUPABASE_SERVICE_ROLE_KEY");
   if (serviceRoleKey) {
     forwardHeaders.set("Authorization", `Bearer ${serviceRoleKey}`);
   }

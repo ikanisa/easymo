@@ -108,7 +108,7 @@ Respond ONLY with valid JSON matching this exact structure:
 }`;
 
     const response = await gemini.chat({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash', // Fast structured extraction
       messages: [{ role: 'user', content: structurePrompt }],
       temperature: 0.3, // Low temperature for structured extraction
     });
@@ -422,7 +422,7 @@ Respond with JSON:
 }`;
 
     const result = await gemini.chat({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash', // Fast validation
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.2, // Low temperature for validation
     });

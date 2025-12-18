@@ -218,7 +218,7 @@ Focus on businesses that are most likely to fulfill this need.`;
   const searchResult = await generateContent(
     searchPrompt,
     {
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-3-flash", // Complex reasoning for agent worker
       systemInstruction: SYSTEM_INSTRUCTION_RESPONSE,
       tools: SOURCING_TOOLS_CONFIG.tools,
       toolConfig: SOURCING_TOOLS_CONFIG.toolConfig,

@@ -52,6 +52,12 @@ export function validateListMessage(input: ListInput): string[] {
     const rowCount = Math.min(rows.length, WA_LIMITS.MAX_ROWS_PER_SECTION);
     for (let i = 0; i < rowCount; i++) {
       const r = rows[i];
+      if (!String(r.id ?? "").trim()) {
+        issues.push(`WA_ROW_${sectionIndex}_${i}_ID_REQUIRED`);
+      }
+      if (!String(r.title ?? "").trim()) {
+        issues.push(`WA_ROW_${sectionIndex}_${i}_TITLE_REQUIRED`);
+      }
       if (r.title && r.title.length > WA_LIMITS.ROW_TITLE) {
         issues.push(`WA_ROW_${sectionIndex}_${i}_TITLE_TOO_LONG`);
       }

@@ -3,35 +3,23 @@
  * Handles user requests for help/support by showing insurance admin contacts
  */
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js";
 import { logStructuredEvent } from "../../_shared/observability.ts";
+import { supabase } from "../../_shared/wa-webhook-shared/config.ts";
 import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
-
-interface InsuranceAdminContact {
-  id: string;
-  channel: string;
-  destination: string;
-  display_name: string;
-  is_active: boolean;
-}
 
 export async function handleHelpRequest(
   phoneNumber: string
 ): Promise<void> {
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
 
   try {
     await logStructuredEvent("HELP_REQUEST_RECEIVED", {
       phoneNumber: phoneNumber.substring(phoneNumber.length - 4),
     });
 
-    // Fetch active insurance admin contacts
+    // Fetch active insurance admin contacts using simplified schema (phone, display_name, is_active)
     const { data: contacts, error } = await supabase
       .from("insurance_admin_contacts")
-      .select("id, channel, destination, display_name, is_active")
+      .select("phone, display_name")
       .eq("is_active", true)
       .order("created_at", { ascending: true });
 
@@ -64,33 +52,17 @@ export async function handleHelpRequest(
     let message = "🆘 *Help & Support*\n\n";
     message += "Contact our team for assistance:\n\n";
 
-    const whatsappContacts = contacts.filter(c => c.channel === "whatsapp");
-    const otherContacts = contacts.filter(c => c.channel !== "whatsapp");
+    // All contacts are WhatsApp numbers, show with clickable links
+    contacts.forEach((contact, index) => {
+      // Create WhatsApp link (wa.me format)
+      const cleanNumber = contact.phone.replace(/[^0-9]/g, '');
+      const waLink = `https://wa.me/${cleanNumber}`;
+      
+      message += `${index + 1}. *${contact.display_name}*\n`;
+      message += `   ${waLink}\n\n`;
+    });
 
-    // Show WhatsApp contacts with clickable links
-    if (whatsappContacts.length > 0) {
-      whatsappContacts.forEach((contact, index) => {
-        // Create WhatsApp link (wa.me format)
-        const cleanNumber = contact.destination.replace(/[^0-9]/g, '');
-        const waLink = `https://wa.me/${cleanNumber}`;
-        
-        message += `• *${contact.display_name}*\n`;
-        message += `  ${waLink}\n\n`;
-      });
-    }
-
-    // Show other contact types
-    if (otherContacts.length > 0) {
-      message += "\n📧 *Other Contacts:*\n";
-      otherContacts.forEach((contact) => {
-        const icon = contact.channel === "email" ? "📧" : 
-                     contact.channel === "phone" ? "📞" : 
-                     contact.channel === "sms" ? "💬" : "📞";
-        message += `${icon} ${contact.display_name}: ${contact.destination}\n`;
-      });
-    }
-
-    message += "\n_Tap any link above to start chatting on WhatsApp._\n\n";
+    message += "_Tap any link above to start chatting on WhatsApp._\n\n";
     message += "Or chat with our AI assistant for immediate help.\n";
 
     await sendText(phoneNumber, message);
@@ -109,7 +81,6 @@ export async function handleHelpRequest(
     await logStructuredEvent("HELP_CONTACTS_SENT", {
       phoneNumber: phoneNumber.substring(phoneNumber.length - 4),
       contactCount: contacts.length,
-      whatsappCount: whatsappContacts.length,
     });
 
   } catch (error) {

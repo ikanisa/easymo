@@ -41,6 +41,7 @@ import { classifyError, formatUnknownError } from "./utils/error-handling.ts";
 import { sendTextMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
 import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
 import { maskPhone } from "../_shared/phone-utils.ts";
+import { isValidInternalForward } from "../_shared/security/internal-forward.ts";
 
 const profileConfig = WEBHOOK_CONFIG.profile;
 
@@ -141,7 +142,11 @@ if (!envValid) {
   }, "error");
 
   // In production, throw to prevent starting with invalid config
-  const runtimeEnv = (Deno.env.get("DENO_ENV") ?? "development").toLowerCase();
+  const runtimeEnv = (Deno.env.get("APP_ENV") ??
+    Deno.env.get("DENO_ENV") ??
+    Deno.env.get("NODE_ENV") ??
+    Deno.env.get("ENVIRONMENT") ??
+    "development").toLowerCase();
   if (runtimeEnv === "production" || runtimeEnv === "prod") {
     throw new Error(
       `Missing required environment variables: ${missingVars.join(", ")}`,
@@ -167,6 +172,22 @@ const supabase = createClient(
     },
   },
 );
+
+function isAuthorizedCoreForward(req: Request): boolean {
+  const routedFrom = req.headers.get("x-routed-from") ?? req.headers.get("X-Routed-From");
+  if (routedFrom !== "wa-webhook-core") return false;
+
+  const auth = req.headers.get("authorization");
+  if (!auth) return false;
+
+  const match = auth.match(/^Bearer\s+(.+)$/i);
+  if (!match) return false;
+
+  const token = match[1].trim();
+  if (!token) return false;
+
+  return Boolean(SUPABASE_SERVICE_ROLE_KEY && token === SUPABASE_SERVICE_ROLE_KEY);
+}
 
 /**
  * Handle referral code application (automatic earning)
@@ -259,6 +280,8 @@ serve(async (req: Request): Promise<Response> => {
   const url = new URL(req.url);
   const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
   const correlationId = req.headers.get("x-correlation-id") ?? requestId;
+  const isReferralFlow = (req.headers.get("x-wa-referral-flow") ?? "false")
+    .toLowerCase() === "true";
 
   // Helper: JSON response with consistent headers
   const json = (body: unknown, init: ResponseInit = {}): Response => {
@@ -383,15 +406,27 @@ serve(async (req: Request): Promise<Response> => {
     const appSecret = Deno.env.get("WA_APP_SECRET") ??
       Deno.env.get("WHATSAPP_APP_SECRET") ?? "";
     const signature = req.headers.get("x-hub-signature-256") ?? "";
-    const runtimeEnv = (Deno.env.get("DENO_ENV") ?? "development")
-      .toLowerCase();
+    const runtimeEnv = (Deno.env.get("APP_ENV") ??
+      Deno.env.get("DENO_ENV") ??
+      Deno.env.get("NODE_ENV") ??
+      Deno.env.get("ENVIRONMENT") ??
+      "development").toLowerCase();
     const isProduction = runtimeEnv === "production" || runtimeEnv === "prod";
-    const allowUnsigned = isProduction
-      ? false
-      : (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") === "true");
+    const allowUnsigned = !isProduction &&
+      (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() ===
+        "true";
+
+    // Allow internal forwards from wa-webhook-core (raw body is re-stringified so signature won't match)
+    const isInternalForward = isValidInternalForward(req) || isAuthorizedCoreForward(req);
+    if (isInternalForward) {
+      logEvent("PROFILE_INTERNAL_FORWARD_ACCEPTED", {
+        hasForwardToken: req.headers.has("x-wa-internal-forward-token"),
+        hasAuthorization: req.headers.has("authorization"),
+      });
+    }
 
     // Fix signature verification logic gap: prod requires signature+secret; dev only bypasses if explicitly allowed
-    if (isProduction) {
+    if (isProduction && !isInternalForward) {
       if (!signature || !appSecret) {
         logEvent("PROFILE_SIGNATURE_MISSING", {
           environment: "production",
@@ -419,7 +454,7 @@ serve(async (req: Request): Promise<Response> => {
           message: "Invalid webhook signature",
         }, { status: 401 });
       }
-    } else {
+    } else if (!isInternalForward) {
       if (signature && appSecret) {
         const isValid = await verifyWebhookSignature(
           rawBody,
@@ -697,33 +732,37 @@ serve(async (req: Request): Promise<Response> => {
       const lowerText = text.toLowerCase();
       const upperText = text.toUpperCase();
 
-      const phonePattern = /^(\+?\d{10,15}|\d{9,10})$/;
-      const looksLikePhone = phonePattern.test(text.replace(/[\s-]/g, ""));
+      // Only treat pure numeric inputs (with separators) as MoMo inputs.
+      // This avoids misclassifying normal text as MoMo values.
+      const looksLikeMomoInput =
+        /^[0-9+()\s-]+$/.test(text) && text.replace(/\D/g, "").length >= 4;
 
-      // PRIORITY: MoMo flows (state or phone) before referral detection
-      if (state?.key === "MOMO_WAIT_CHOICE" || state?.key === "MOMO_WAIT_VALUE") {
-        const { handleMomoQr } = await import("./handlers/momo-qr.ts");
-        handled = await handleMomoQr(ctx, text, state);
-      } else if (looksLikePhone) {
-        const { handleMomoQr } = await import("./handlers/momo-qr.ts");
-        handled = await handleMomoQr(ctx, text, state ?? { key: "MOMO_WAIT_VALUE", data: {} });
-      }
-
-      // Referral codes (REF:CODE or 6-12 alphanumeric) when not handled above and not a phone number
-      if (!handled && !looksLikePhone) {
-        const refMatch = text.match(/^(?:EASYMO\s+)?REF[:\s]+([A-Z0-9]{4,12})$/i);
-        
-        // Exclude pure numeric strings (phone numbers) - referral codes should have letters
-        const isPureNumber = /^\d+$/.test(text.replace(/[\s+()-]/g, ""));
-        const isStandaloneCode = !isPureNumber && 
-                                 /^[A-Z0-9]{6,12}$/.test(upperText) &&
-                                 !/^(HELLO|THANKS|CANCEL|SUBMIT|ACCEPT|REJECT|STATUS|URGENT|PLEASE|PROFILE|WALLET|MOMO|PHARMACY|PHARMACIES)$/i
-                                   .test(upperText);
-
+      // Referral flow (ONLY when explicitly routed from wa-webhook-core on a new user's FIRST message)
+      // If this flag is set, it means router confirmed: new user + first message + referral code detected
+      // If flag is NOT set, NEVER process referral codes - user is not new or not first message
+      if (isReferralFlow) {
+        // Extract referral code from text (already validated by router)
+        const refMatch = text.match(
+          /^(?:EASYMO\s+)?REF[:\s]+([A-Z0-9]{4,12})$/i,
+        );
+        const isStandaloneCode = /^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{6,12}$/.test(
+          upperText,
+        );
         if (refMatch || isStandaloneCode) {
           const code = refMatch ? refMatch[1].toUpperCase() : upperText;
           handled = await handleReferralCode(ctx, code);
         }
+      }
+      // NOTE: If isReferralFlow is false, we intentionally skip referral code processing
+      // This ensures referral codes are ONLY processed for new users on their first message
+
+      // PRIORITY: MoMo flows (state or numeric input) before other commands
+      if (state?.key === "MOMO_WAIT_CHOICE" || state?.key === "MOMO_WAIT_VALUE") {
+        const { handleMomoQr } = await import("./handlers/momo-qr.ts");
+        handled = await handleMomoQr(ctx, text, state);
+      } else if (!handled && looksLikeMomoInput) {
+        const { handleMomoQr } = await import("./handlers/momo-qr.ts");
+        handled = await handleMomoQr(ctx, text, state ?? { key: "MOMO_WAIT_VALUE", data: {} });
       }
       // Profile menu
       if (!handled && lowerText === "profile") {
@@ -751,10 +790,10 @@ serve(async (req: Request): Promise<Response> => {
     if (!handled && message.type === "text") {
       const fallbackTextMessage = message as WhatsAppTextMessage;
       const text = fallbackTextMessage.text?.body?.trim() ?? "";
-      // Match phone patterns: +250788123456, 0788123456, 788123456, etc.
-      const phonePattern = /^(\+?\d{10,15}|\d{9,10})$/;
-      if (phonePattern.test(text.replace(/[\s-]/g, ""))) {
-        // Looks like a phone number, treat as MoMo QR input
+      const looksLikeMomoInput =
+        /^[0-9+()\s-]+$/.test(text) && text.replace(/\D/g, "").length >= 4;
+      if (looksLikeMomoInput) {
+        // Looks like a MoMo input, treat as MoMo QR input
         const { handleMomoQr } = await import("./handlers/momo-qr.ts");
         handled = await handleMomoQr(ctx, text, state ?? { key: "MOMO_WAIT_VALUE", data: {} });
       }

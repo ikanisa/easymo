@@ -121,12 +121,14 @@ export function maskEmail(email: string): string {
 // ============================================================================
 
 /**
- * Validate phone number format (E.164)
+ * Validate phone number format
+ * Accepts any phone number format from any country code - no format restrictions
  */
 export function isValidPhoneNumber(phone: string): boolean {
-  // E.164 format: + followed by 1-15 digits
-  const e164Pattern = /^\+[1-9]\d{1,14}$/;
-  return e164Pattern.test(phone);
+  if (!phone || typeof phone !== "string") return false;
+  // Accept any non-empty string as a valid phone number
+  // No format validation - allow all country codes and formats
+  return phone.trim().length > 0;
 }
 
 /**
@@ -289,10 +291,7 @@ export function validateInput(
       case "phone": {
         const phoneStr = String(value);
         const sanitizedPhone = sanitizePhoneNumber(phoneStr);
-        if (!isValidPhoneNumber(sanitizedPhone)) {
-          errors[field] = `${field} must be a valid phone number in E.164 format`;
-          break;
-        }
+        // Accept any phone number format - no validation
         sanitized[field] = sanitizedPhone;
         break;
       }

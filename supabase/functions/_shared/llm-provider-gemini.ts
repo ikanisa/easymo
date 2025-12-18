@@ -32,10 +32,10 @@ enum FunctionDeclarationSchemaType {
 export class GeminiProvider implements LLMProvider {
   readonly name = 'gemini';
   readonly supportedModels = [
-    'gemini-1.5-pro',
-    'gemini-1.5-flash',
-    'gemini-1.0-pro',
-    'gemini-pro-vision',
+    'gemini-3-pro',      // Maximum intelligence for complex reasoning
+    'gemini-3-flash',    // Best speed-to-intelligence ratio (recommended)
+    'gemini-2.5-flash',  // Balanced, fast, cost-efficient (recommended for general tasks)
+    'gemini-2.5-flash-lite', // Fastest, most cost-efficient
   ];
 
   private client: GoogleGenerativeAI;
@@ -62,7 +62,7 @@ export class GeminiProvider implements LLMProvider {
       });
 
       const model = this.client.getGenerativeModel({ 
-        model: options.model || 'gemini-1.5-flash',
+        model: options.model || 'gemini-2.5-flash',
       });
 
       // Convert tools to Gemini format
@@ -174,7 +174,7 @@ export class GeminiProvider implements LLMProvider {
 
       recordMetric("llm.chat.request", 1, {
         provider: "gemini",
-        model: options.model || 'gemini-1.5-flash',
+        model: options.model || 'gemini-2.5-flash',
         duration_ms: duration,
       });
 
@@ -182,7 +182,7 @@ export class GeminiProvider implements LLMProvider {
         content,
         toolCalls,
         metadata: {
-          model: options.model || 'gemini-1.5-flash',
+          model: options.model || 'gemini-2.5-flash',
           provider: 'gemini',
           finishReason: response.candidates?.[0]?.finishReason,
         },
@@ -199,7 +199,7 @@ export class GeminiProvider implements LLMProvider {
 
       recordMetric("llm.chat.error", 1, {
         provider: "gemini",
-        model: options.model || 'gemini-1.5-flash',
+        model: options.model || 'gemini-2.5-flash',
       });
 
       throw error;
@@ -252,7 +252,7 @@ export class GeminiProvider implements LLMProvider {
       const imageBuffer = await imageResponse.arrayBuffer();
       const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
 
-      const model = this.client.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = this.client.getGenerativeModel({ model: "gemini-2.5-flash" });
 
       const result = await model.generateContent([
         { text: prompt },
@@ -286,7 +286,7 @@ export class GeminiProvider implements LLMProvider {
   async healthCheck(): Promise<boolean> {
     try {
       // Make a minimal request to check API health
-      const model = this.client.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = this.client.getGenerativeModel({ model: 'gemini-2.5-flash' }); // Health check
       await model.generateContent("test");
       return true;
     } catch (error) {

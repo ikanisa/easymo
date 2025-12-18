@@ -34,14 +34,6 @@ export async function sendSMS(
     // MTN Rwanda SMS API endpoint
     const apiUrl = config.apiUrl || "https://api.mtn.rw/v1/sms/send";
 
-    // Validate phone number format
-    if (!message.to.match(/^\+250[0-9]{9}$/)) {
-      return {
-        success: false,
-        error: "Invalid phone number format. Expected: +250XXXXXXXXX",
-      };
-    }
-
     // Prepare request payload
     const payload = {
       sender: config.senderId,
@@ -166,38 +158,25 @@ export function formatSMSMessage(
 }
 
 /**
- * Validate Rwanda phone number
+ * Validate phone number - accepts any format from any country
+ * No format restrictions - allows all phone number formats
  */
 export function validateRwandaPhone(phone: string): {
   valid: boolean;
   normalized?: string;
   error?: string;
 } {
-  // Remove all non-digit characters
-  const digits = phone.replace(/\D/g, "");
-
-  // Check if it starts with country code
-  if (digits.startsWith("250")) {
-    if (digits.length === 12) {
-      const normalized = `+${digits}`;
-      return { valid: true, normalized };
-    }
-    return { valid: false, error: "Invalid length with country code" };
+  if (!phone || typeof phone !== "string" || phone.trim().length === 0) {
+    return { valid: false, error: "Phone number cannot be empty" };
   }
-
-  // Check if it's a local number
-  if (digits.length === 9 && /^(78|79|73|72)/.test(digits)) {
-    const normalized = `+250${digits}`;
-    return { valid: true, normalized };
-  }
-
-  if (digits.length === 10 && /^0(78|79|73|72)/.test(digits)) {
-    const normalized = `+250${digits.slice(1)}`;
-    return { valid: true, normalized };
-  }
-
-  return {
-    valid: false,
-    error: "Invalid Rwanda phone number. Expected: 078XXXXXXX, 079XXXXXXX, 073XXXXXXX, or 072XXXXXXX",
-  };
+  
+  // Normalize: keep leading + if present, extract digits
+  const trimmed = phone.trim();
+  const hasPlus = trimmed.startsWith("+");
+  const digits = trimmed.replace(/[^0-9]/g, "");
+  
+  // Accept any format - just normalize to E.164-like format if possible
+  const normalized = hasPlus ? `+${digits}` : `+${digits}`;
+  
+  return { valid: true, normalized };
 }

@@ -41,6 +41,11 @@ export async function handleStateTransition(
     return { handled: false };
   }
 
+  // "PROFILE_MENU" state - user came from profile menu, treat as new conversation
+  if (state.key === "PROFILE_MENU") {
+    return { handled: false };
+  }
+
   // State key not recognized (only log for states we don't expect)
   logStructuredEvent("BUY_SELL_UNKNOWN_STATE", {
     from: `***${ctx.from.slice(-4)}`,

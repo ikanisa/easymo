@@ -163,7 +163,7 @@ export async function generateContent(
   options: GenerateContentOptions = {}
 ): Promise<GenerateContentResult> {
   const {
-    model = "gemini-2.0-flash-exp",
+    model = "gemini-2.5-flash", // Default to 2.5 Flash for general tasks (best balance of speed/cost)
     systemInstruction,
     tools,
     toolConfig,
@@ -317,7 +317,7 @@ export async function generateAudio(
       throw new Error("GEMINI_API_KEY not configured");
     }
 
-    const model = "gemini-2.0-flash-exp";
+    const model = "gemini-2.5-flash"; // Fast audio transcription
     const url = `${GEMINI_BASE_URL}/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
 
     const payload = {
@@ -388,7 +388,7 @@ export async function extractIntent(
   const result = await generateContent(
     `Extract the user's intent from this message:\n\n"${message}"${contextText}`,
     {
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-2.5-flash", // Fast intent extraction
       systemInstruction: SYSTEM_INSTRUCTION_INTENT,
       generationConfig: {
         temperature: 0.3,

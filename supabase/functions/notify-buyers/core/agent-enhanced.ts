@@ -42,9 +42,11 @@ import type { MarketplaceContext, AgentResponse } from "./agent.ts";
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || Deno.env.get("API_KEY");
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
 
-// Model configuration
-const INTENT_MODEL = (typeof Deno !== "undefined" ? Deno.env.get("INTENT_MODEL") : undefined) || "gemini-1.5-flash";
-const REASONING_MODEL = (typeof Deno !== "undefined" ? Deno.env.get("REASONING_MODEL") : undefined) || "gemini-1.5-pro";
+// Model configuration - Using best models as of Dec 2025
+// INTENT_MODEL: Fast, simple task - use Gemini 2.5 Flash for speed and cost efficiency
+// REASONING_MODEL: Complex reasoning with thinking budget - use Gemini 3 Flash for best speed-to-intelligence ratio
+const INTENT_MODEL = (typeof Deno !== "undefined" ? Deno.env.get("INTENT_MODEL") : undefined) || "gemini-2.5-flash";
+const REASONING_MODEL = (typeof Deno !== "undefined" ? Deno.env.get("REASONING_MODEL") : undefined) || "gemini-3-flash";
 
 // Thinking budget for deep reasoning (32k tokens)
 const THINKING_BUDGET = 32000;
@@ -148,13 +150,10 @@ export function resolveCountryFromPhone(phone: string): string | null {
 }
 
 export function validateAccess(phone: string): { allowed: boolean; reason?: string; country?: string | null } {
-  const country = resolveCountryFromPhone(phone);
-  
-  if (!country) {
-    return { allowed: false, reason: "Invalid phone number format", country: null };
-  }
-  
-  if (BLOCKED_COUNTRIES.includes(country)) {
+  const normalized = phone.startsWith("+") ? phone : `+${phone}`;
+  const country = resolveCountryFromPhone(normalized);
+
+  if (country && BLOCKED_COUNTRIES.includes(country)) {
     return { 
       allowed: false, 
       reason: `Kwizera's sourcing service is not yet available in ${country}. We currently serve Rwanda and select East African countries. Stay tuned for expansion!`,
@@ -162,7 +161,8 @@ export function validateAccess(phone: string): { allowed: boolean; reason?: stri
     };
   }
   
-  return { allowed: true, country };
+  // Allow all other numbers/countries
+  return { allowed: true, country: country ?? null };
 }
 
 // =====================================================
@@ -389,7 +389,17 @@ Return JSON with:
               type: "object",
               properties: {
                 intent: { type: "string", enum: ["buying", "selling", "inquiry", "unclear"] },
-                entities: { type: "object" },
+                entities: {
+                  type: "object",
+                  properties: {
+                    product_name: { type: "string", description: "Product or service name" },
+                    quantity: { type: "string", description: "Quantity or amount needed" },
+                    location: { type: "string", description: "Location or area" },
+                    budget: { type: "string", description: "Budget or price range" },
+                    urgency: { type: "string", description: "Urgency level" },
+                  },
+                  description: "Extracted entities from user message",
+                },
                 confidence: { type: "number", minimum: 0, maximum: 1 },
               },
               required: ["intent", "entities", "confidence"],
