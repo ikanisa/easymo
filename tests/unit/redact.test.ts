@@ -10,7 +10,11 @@ import {
     redactRawPayload,
     safeLog,
     hashForLog,
+    containsE164Phone,
+    extractE164Phones,
+    redactOcrContent,
 } from "../../src/security/redact";
+
 
 describe("redact utilities", () => {
     describe("maskPhone", () => {
@@ -160,6 +164,101 @@ describe("redact utilities", () => {
             const hash1 = hashForLog("value-1");
             const hash2 = hashForLog("value-2");
             expect(hash1).not.toBe(hash2);
+        });
+    });
+
+    describe("containsE164Phone", () => {
+        it("should detect E.164 phone numbers", () => {
+            expect(containsE164Phone("+250788123456")).toBe(true);
+            expect(containsE164Phone("+1234567890123")).toBe(true);
+            expect(containsE164Phone("Call me at +250788123456 please")).toBe(true);
+        });
+
+        it("should not detect non-E.164 numbers", () => {
+            expect(containsE164Phone("0788123456")).toBe(false);
+            expect(containsE164Phone("123456")).toBe(false);
+            expect(containsE164Phone("regular text")).toBe(false);
+        });
+
+        it("should handle null/undefined", () => {
+            expect(containsE164Phone(null as unknown as string)).toBe(false);
+            expect(containsE164Phone(undefined as unknown as string)).toBe(false);
+            expect(containsE164Phone("")).toBe(false);
+        });
+    });
+
+    describe("extractE164Phones", () => {
+        it("should extract all E.164 numbers", () => {
+            const result = extractE164Phones("Call +250788111111 or +250788222222");
+            expect(result).toHaveLength(2);
+            expect(result).toContain("+250788111111");
+            expect(result).toContain("+250788222222");
+        });
+
+        it("should return empty array when no matches", () => {
+            expect(extractE164Phones("no phones here")).toEqual([]);
+            expect(extractE164Phones("")).toEqual([]);
+        });
+    });
+
+    describe("redactOcrContent", () => {
+        it("should truncate and redact OCR content", () => {
+            const longOcrText = "Patient: John Doe, Phone: +250788123456, Prescription: Paracetamol 500mg, Date: 25/12/2024";
+            const result = redactOcrContent(longOcrText);
+
+            expect(result).not.toBeNull();
+            expect(result).toContain("[OCR:");
+            expect(result).not.toContain("+250788123456");
+        });
+
+        it("should mask medication doses", () => {
+            const result = redactOcrContent("Take 500mg twice daily");
+            expect(result).toContain("[DOSE]");
+        });
+
+        it("should mask dates", () => {
+            const result = redactOcrContent("Issued on 25/12/2024");
+            expect(result).toContain("[DATE]");
+        });
+
+        it("should handle null/undefined", () => {
+            expect(redactOcrContent(null)).toBeNull();
+            expect(redactOcrContent(undefined)).toBeNull();
+        });
+    });
+
+    describe("E.164 leak prevention", () => {
+        it("safeLog output should never contain full E.164 phone numbers", () => {
+            const sensitivePayload = {
+                client_phone: "+250788123456",
+                vendor_phone: "+250788654321",
+                message: "Contact +250788999999 for details",
+                nested: {
+                    phone: "+250788888888",
+                },
+            };
+
+            const logged = safeLog(sensitivePayload);
+            const logString = JSON.stringify(logged);
+
+            // Should not contain any full E.164 numbers
+            expect(containsE164Phone(logString)).toBe(false);
+        });
+
+        it("redactRawPayload should mask all phone fields", () => {
+            const payload = {
+                phone: "+250788123456",
+                client_phone: "+250788654321",
+                data: {
+                    whatsapp_number: "+250788111111",
+                },
+            };
+
+            const redacted = redactRawPayload(payload);
+
+            expect(redacted.phone).toBe("***456");
+            expect(redacted.client_phone).toBe("***321");
+            expect(redacted.data.whatsapp_number).toBe("***111");
         });
     });
 });

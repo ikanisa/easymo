@@ -66,6 +66,76 @@ export function redactContent(
 }
 
 // =============================================================================
+// E.164 Phone Detection (for log verification)
+// =============================================================================
+
+/**
+ * E.164 phone number pattern.
+ * Matches: +250788123456, +1234567890123
+ */
+const E164_PATTERN = /\+\d{10,15}/g;
+
+/**
+ * Check if a string contains any E.164 phone numbers.
+ * Used for log verification to ensure no full phone numbers leak.
+ *
+ * @param text - Text to check
+ * @returns true if any E.164 numbers found
+ */
+export function containsE164Phone(text: string): boolean {
+    if (!text || typeof text !== "string") return false;
+    // Create new regex to avoid stateful issues with 'g' flag
+    return /\+\d{10,15}/.test(text);
+}
+
+
+/**
+ * Extract all E.164 phone numbers from text.
+ * Used for debugging/testing only.
+ *
+ * @param text - Text to search
+ * @returns Array of E.164 numbers found
+ */
+export function extractE164Phones(text: string): string[] {
+    if (!text || typeof text !== "string") return [];
+    return text.match(E164_PATTERN) || [];
+}
+
+// =============================================================================
+// OCR Content Protection
+// =============================================================================
+
+/**
+ * Redact OCR content for safe logging.
+ * More aggressive than standard redaction — truncates and removes medical info.
+ *
+ * @param ocrContent - Raw OCR extracted text
+ * @returns Safely redacted content for logging
+ */
+export function redactOcrContent(ocrContent: string | null | undefined): string | null {
+    if (!ocrContent) return null;
+
+    // Always truncate OCR content aggressively for logs
+    const truncated = ocrContent.slice(0, 100);
+
+    // Apply standard redaction
+    let redacted = redactContent(truncated, { truncate: 100 });
+
+    // Additional medical/prescription redaction
+    if (redacted) {
+        // Mask potential medication names (common patterns)
+        redacted = redacted.replace(/\b\d+\s*(mg|ml|mcg|g|iu)\b/gi, "[DOSE]");
+
+        // Mask dates
+        redacted = redacted.replace(/\b\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}\b/g, "[DATE]");
+    }
+
+    return redacted ? `[OCR:${redacted.length}chars] ${redacted}...` : null;
+}
+
+
+
+// =============================================================================
 // Payload Redaction (Deep)
 // =============================================================================
 
