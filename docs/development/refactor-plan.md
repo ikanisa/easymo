@@ -149,6 +149,7 @@ Acceptance Criteria:
 
 Status:
 - Pilot: tracking-service strict TS flags enabled (noUncheckedIndexedAccess, noImplicitOverride, noFallthroughCasesInSwitch)
+- Pilot: ranking-service strict TS flags enabled (noUncheckedIndexedAccess, noImplicitOverride, noFallthroughCasesInSwitch)
 
 ### Phase 5 — Testing Unification
 **Goal:** Standardize tests and add coverage where it matters.
@@ -161,6 +162,10 @@ Deliverables:
 Acceptance Criteria:
 - All services use Vitest
 - CI test step succeeds across services
+
+Status:
+- Added @easymo/test-utils package scaffold
+- Migrated @easymo/messaging test runner to Vitest
 
 ### Phase 6 — Observability
 **Goal:** Standard logging + metrics for key flows.
