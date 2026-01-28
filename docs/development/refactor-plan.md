@@ -208,6 +208,9 @@ Deliverables:
 Acceptance Criteria:
 - p95 latency improvement is measurable in logs/metrics
 
+Status:
+- Added opt-in rate limiting for wallet-service and agent-core (RATE_LIMIT_* env)
+
 ---
 
 ## Execution Order (strict)

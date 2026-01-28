@@ -3,6 +3,7 @@ import {
   isFeatureEnabled,
   metricsHandler,
   metricsMiddleware,
+  rateLimit,
   setRequestId,
 } from "@easymo/commons";
 import { PrismaService } from "@easymo/db";
@@ -50,6 +51,11 @@ export const buildApp = (deps: AppDependencies = {}) => {
   app.use(express.json());
   const metricsRegistry = createMetricsRegistry("wallet_service");
   app.use(metricsMiddleware(metricsRegistry));
+  if (process.env.RATE_LIMIT_ENABLED === "true") {
+    const windowMs = Number(process.env.RATE_LIMIT_WINDOW_MS ?? "60000");
+    const max = Number(process.env.RATE_LIMIT_MAX ?? "120");
+    app.use(rateLimit({ windowMs, max }));
+  }
   app.use((req, res, next) => {
     const headerId = typeof req.headers["x-request-id"] === "string" ? req.headers["x-request-id"] : undefined;
     const requestId = headerId?.trim() || randomUUID();

@@ -11,6 +11,9 @@ const schema = z.object({
   OPENAI_API_KEY: z.string().min(10),
   REDIS_URL: z.string().optional(),
   KAFKA_BROKERS: z.string().optional(),
+  RATE_LIMIT_ENABLED: z.string().optional(),
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().optional(),
+  RATE_LIMIT_MAX: z.coerce.number().optional(),
 });
 
 export const env = validateEnv(schema, {

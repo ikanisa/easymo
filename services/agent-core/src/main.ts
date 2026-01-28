@@ -3,6 +3,7 @@ import {
   createMetricsRegistry,
   metricsHandler,
   metricsMiddleware,
+  rateLimit,
   runWithRequestContext,
 } from "@easymo/commons";
 import { ValidationPipe } from "@nestjs/common";
@@ -28,6 +29,11 @@ async function bootstrap() {
   const metricsRegistry = createMetricsRegistry("agent_core");
   app.use(metricsMiddleware(metricsRegistry));
   app.get("/metrics", metricsHandler(metricsRegistry));
+  if (process.env.RATE_LIMIT_ENABLED === "true") {
+    const windowMs = Number(process.env.RATE_LIMIT_WINDOW_MS ?? "60000");
+    const max = Number(process.env.RATE_LIMIT_MAX ?? "300");
+    app.use(rateLimit({ windowMs, max }));
+  }
 
   app.useLogger(app.get(Logger));
   app.use((req, _res, next) => {
