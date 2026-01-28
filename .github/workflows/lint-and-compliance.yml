@@ -31,7 +31,10 @@ jobs:
         run: |
           pnpm --filter @va/shared build
           pnpm --filter @easymo/commons build
-      
+
+      - name: Validate migrations
+        run: pnpm migration:validate
+
       - name: Run ESLint
         run: pnpm lint
         

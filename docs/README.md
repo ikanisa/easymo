@@ -30,3 +30,4 @@ Start here:
 - docs/development/migrations.md
 - docs/development/coding-standards.md
 - docs/development/troubleshooting.md
+- docs/development/refactor-plan.md

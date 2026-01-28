@@ -1,0 +1,7 @@
+# Legacy migrations with known prohibited strings. Do not add new entries.
+20251209114500_complete_mobility_schema.sql
+20251210075000_fix_profile_menu_items_alignment.sql
+20251213114455_create_whatsapp_users_and_function.sql
+20251213134615_buy_sell_enhancement.sql
+20251217210000_refactor_profile_menu_items.sql
+20251217220000_fix_profile_menu_items_final.sql

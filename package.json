@@ -22,6 +22,7 @@
     "test:ci": "pnpm --filter @easymo/admin-app run lint && pnpm --filter @easymo/admin-app run type-check && pnpm --filter @easymo/admin-app exec vitest run --coverage --config vitest.config.cjs && pnpm --filter @easymo/agent-core test -- --coverage --runInBand && pnpm --filter @easymo/broker-orchestrator test -- --coverage --runInBand && pnpm --filter @easymo/wallet-service test -- --coverage --runInBand",
     "test:functions": "deno test --allow-env --allow-read --allow-net supabase/functions/_shared",
     "lint:migrations": "node ./scripts/check-migrations-rls.mjs",
+    "migration:validate": "node ./scripts/migration-audit.mjs && bash ./scripts/check-migration-hygiene.sh && pnpm lint:migrations",
     "test:watch": "vitest",
     "schema:verify": "node ./scripts/check-schema-alignment.mjs",
     "env:check": "node ./scripts/check-env.mjs",
