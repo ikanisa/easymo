@@ -36,6 +36,33 @@ export type { AgentResponse } from "./agent.ts";
 // Import existing types
 import type { AgentResponse,MarketplaceContext } from "./agent.ts";
 
+async function callExternalDiscoveryFallback(payload: {
+  request_id: string;
+  need: string;
+  category?: string;
+  location_text?: string;
+  language?: "en" | "fr" | "rw";
+}) {
+  const enabled = (Deno.env.get("EXTERNAL_DISCOVERY_ENABLED") ?? "false").toLowerCase() === "true";
+  if (!enabled) return null;
+
+  const serviceUrl = Deno.env.get("EXTERNAL_DISCOVERY_SERVICE_URL");
+  if (!serviceUrl) return null;
+
+  const key = Deno.env.get("EXTERNAL_DISCOVERY_SERVICE_KEY");
+  const response = await fetch(`${serviceUrl.replace(/\/$/, "")}/marketplace/external-discovery`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(key ? { Authorization: `Bearer ${key}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) return null;
+  return await response.json();
+}
+
 // =====================================================
 // CONFIGURATION
 // =====================================================
@@ -699,6 +726,26 @@ Generate a helpful, concise response.`;
             // Extract final_response_text if available
             if ((result as any).finalResponseText) {
               finalResponseText = (result as any).finalResponseText;
+            }
+
+            // External discovery fallback when DB vendors are insufficient
+            if (savedCount < 2 && context.currentIntentId) {
+              const need = typeof intentResult?.entities?.product_name === "string"
+                ? intentResult.entities.product_name
+                : typeof intentResult?.entities?.description === "string"
+                ? intentResult.entities.description
+                : "User request";
+
+              const fallback = await callExternalDiscoveryFallback({
+                request_id: context.currentIntentId,
+                need,
+                category: context.selectedCategory,
+                location_text: (context.location as any)?.text,
+              });
+
+              if (fallback?.message) {
+                finalResponseText = [finalResponseText, fallback.message].filter(Boolean).join("\n\n");
+              }
             }
           } else {
             logStructuredEvent("CANDIDATES_SAVE_ERROR", {

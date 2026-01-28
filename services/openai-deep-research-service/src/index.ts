@@ -5,6 +5,7 @@
  * Searches from: 1) Configured website sources  2) User listings in database
  */
 
+import { createHash } from 'node:crypto';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import express, { Request, Response } from 'express';
 import OpenAI from 'openai';
@@ -40,6 +41,26 @@ interface DeepResearchRequest {
   input_context?: Record<string, unknown>;
   country?: string; // Filter sources by country
 }
+
+interface ExternalDiscoveryRequest {
+  request_id: string;
+  need: string;
+  category?: string;
+  location_text?: string;
+  language?: "en" | "fr" | "rw";
+  min_candidates?: number;
+  max_results?: number;
+}
+
+type CandidateVendor = {
+  name: string;
+  phones: string[];
+  website?: string;
+  address?: string;
+  area?: string;
+  confidence: number;
+  sources: Array<{ title?: string; url?: string; snippet?: string }>;
+};
 
 interface Source {
   id: string;
@@ -167,8 +188,371 @@ async function getInternalListings(
 }
 
 // ============================================================================
+// EXTERNAL DISCOVERY HELPERS
+// ============================================================================
+
+const PHONE_REGEX = /(?:\+?\d[\d\s().-]{6,}\d)/g;
+
+function extractPhones(text?: string): string[] {
+  if (!text) return [];
+  const matches = text.match(PHONE_REGEX) ?? [];
+  return matches
+    .map((raw) => raw.replace(/[\s().-]/g, ""))
+    .filter((value) => value.length >= 8)
+    .slice(0, 3);
+}
+
+function normalizeName(result: { title?: string; url?: string }) {
+  if (result.title && result.title.trim().length > 0) return result.title.trim();
+  if (result.url && result.url.trim().length > 0) return result.url.replace(/^https?:\/\//, "");
+  return "Unknown vendor";
+}
+
+function baseConfidence(result: { url?: string }, phones: string[]): number {
+  if (phones.length > 0) return 0.55;
+  if (result.url) return 0.35;
+  return 0.2;
+}
+
+function normalizeSearchResults(
+  results: Array<{ title?: string; url?: string; snippet?: string }>
+): CandidateVendor[] {
+  const seen = new Set<string>();
+  const candidates: CandidateVendor[] = [];
+
+  for (const result of results) {
+    const key = result.url ?? result.title ?? "";
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+
+    const phones = extractPhones(result.snippet);
+    candidates.push({
+      name: normalizeName(result),
+      phones,
+      website: result.url,
+      confidence: baseConfidence(result, phones),
+      sources: [result],
+    });
+  }
+
+  return candidates;
+}
+
+function buildDedupeKey(input: { name?: string; phones?: string[]; website?: string }): string {
+  const normalizedName = (input.name ?? "").trim().toLowerCase();
+  const normalizedWebsite = (input.website ?? "").trim().toLowerCase();
+  const normalizedPhones = (input.phones ?? [])
+    .map((phone) => phone.replace(/\D/g, ""))
+    .filter(Boolean)
+    .sort()
+    .join("|");
+
+  const seed = [normalizedName, normalizedWebsite, normalizedPhones].join("::");
+  return createHash("sha256").update(seed).digest("hex");
+}
+
+function formatExternalOptionsMessage(
+  candidates: CandidateVendor[],
+  language: ExternalDiscoveryRequest["language"]
+) {
+  const MAX_OPTIONS = 5;
+  const templates = {
+    en: {
+      header: "Additional options (not yet verified in our network):",
+      footer: "You can contact them directly to confirm availability and pricing.",
+    },
+    fr: {
+      header: "Options supplémentaires (pas encore vérifiées dans notre réseau) :",
+      footer: "Vous pouvez les contacter directement pour confirmer disponibilité et prix.",
+    },
+    rw: {
+      header: "Amahitamo y’inyongera (ataragenzuwe mu bafatanyabikorwa bacu):",
+      footer: "Mushobora kubavugisha mubonye amakuru y’ibiciro n’uko bahagaze.",
+    },
+  };
+  const lang = language === "fr" || language === "rw" ? language : "en";
+  const template = templates[lang];
+  const lines = candidates.slice(0, MAX_OPTIONS).map((candidate, idx) => {
+    const phone = candidate.phones?.[0];
+    const location = candidate.address ?? candidate.area;
+    const parts = [
+      `${idx + 1}) ${candidate.name}`,
+      location ? `— ${location}` : null,
+      phone ? `— ${phone}` : null,
+      candidate.website ? `— ${candidate.website}` : null,
+    ].filter(Boolean);
+    return parts.join(" ");
+  });
+
+  if (!lines.length) return "";
+  return [template.header, ...lines, template.footer].join("\n");
+}
+
+async function searchWithOpenAIWeb(query: string) {
+  const response = await openai.responses.create({
+    model: process.env.OPENAI_WEB_SEARCH_MODEL || "gpt-4o",
+    input: [{ role: "user", content: query }],
+    tools: [{ type: "web_search" }],
+  });
+
+  const results: Array<{ title?: string; url?: string; snippet?: string }> = [];
+  for (const item of response.output ?? []) {
+    if (item?.type !== "web_search_call") continue;
+    if (Array.isArray(item.results)) {
+      for (const entry of item.results) {
+        results.push({
+          title: entry?.title,
+          url: entry?.url,
+          snippet: entry?.snippet,
+        });
+      }
+    }
+    const sources = item.action?.sources;
+    if (Array.isArray(sources)) {
+      for (const source of sources) {
+        results.push({
+          title: source?.title,
+          url: source?.url,
+          snippet: source?.snippet ?? source?.description,
+        });
+      }
+    }
+  }
+
+  return results;
+}
+
+async function searchWithGeminiWeb(query: string) {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+  if (!apiKey) return [];
+
+  const model = process.env.GEMINI_SEARCH_MODEL || "gemini-2.0-flash-exp";
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: query }] }],
+        tools: [{ googleSearch: {} }],
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    return [];
+  }
+
+  const payload = await response.json();
+  const grounding = payload?.candidates?.[0]?.groundingMetadata;
+  const chunks = grounding?.groundingChunks ?? [];
+  const results: Array<{ title?: string; url?: string; snippet?: string }> = [];
+  for (const chunk of chunks) {
+    const web = chunk?.web;
+    if (!web?.uri && !web?.title) continue;
+    results.push({
+      title: web?.title,
+      url: web?.uri,
+      snippet: web?.snippet,
+    });
+  }
+
+  return results;
+}
+
+async function generateExternalMessageWithMoltbot(
+  candidates: CandidateVendor[],
+  language: ExternalDiscoveryRequest["language"]
+): Promise<string | null> {
+  const baseUrl = process.env.MOLTBOT_BASE_URL || DEFAULT_MOLTBOT_BASE_URL;
+
+  const token = process.env.MOLTBOT_BEARER_TOKEN;
+  const model = process.env.MOLTBOT_MODEL || "gpt-4o-mini";
+  const prompt = [
+    "You are a marketplace concierge.",
+    "Create a short WhatsApp message listing external options.",
+    "Do NOT claim availability or pricing. State they are not verified.",
+    "Keep it concise and numbered.",
+    "End with a short line encouraging the user to contact them directly.",
+  ].join(" ");
+
+  const payload = {
+    model,
+    messages: [
+      { role: "system", content: prompt },
+      {
+        role: "user",
+        content: JSON.stringify({
+          language: language ?? "en",
+          options: candidates.map((c) => ({
+            name: c.name,
+            phone: c.phones?.[0],
+            website: c.website,
+            location: c.address ?? c.area,
+          })),
+        }),
+      },
+    ],
+  };
+
+  const response = await fetch(`${baseUrl.replace(/\/$/, "")}/v1/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) return null;
+  const data = await response.json();
+  const content = data?.choices?.[0]?.message?.content;
+  return typeof content === "string" ? content.trim() : null;
+}
+
+async function checkMoltbotHealth(): Promise<{
+  reachable: boolean;
+  status: string;
+  http_status?: number;
+  message?: string;
+}> {
+  const baseUrl = process.env.MOLTBOT_BASE_URL || DEFAULT_MOLTBOT_BASE_URL;
+  const token = process.env.MOLTBOT_BEARER_TOKEN;
+  const model = process.env.MOLTBOT_MODEL || "moltbot";
+
+  try {
+    const response = await fetch(`${baseUrl.replace(/\/$/, "")}/v1/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: "user", content: "ping" }],
+      }),
+    });
+
+    if (response.ok) {
+      return { reachable: true, status: "ok", http_status: response.status };
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      return { reachable: true, status: "auth_required", http_status: response.status };
+    }
+
+    return { reachable: false, status: "error", http_status: response.status };
+  } catch (error) {
+    return {
+      reachable: false,
+      status: "unreachable",
+      message: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+// ============================================================================
 // API ENDPOINTS
 // ============================================================================
+
+/**
+ * POST /marketplace/external-discovery
+ *
+ * Lightweight external vendor discovery (web + maps) with lead storage.
+ */
+app.post('/marketplace/external-discovery', async (req: Request, res: Response) => {
+  try {
+    const payload = req.body as ExternalDiscoveryRequest;
+
+    if (!payload?.request_id || !payload?.need) {
+      return res.status(400).json({ error: 'request_id and need required' });
+    }
+
+    if ((process.env.EXTERNAL_DISCOVERY_ENABLED ?? 'false').toLowerCase() !== 'true') {
+      return res.json({
+        disabled: true,
+        message: '',
+        candidates: [],
+        lead_ids: [],
+      });
+    }
+
+    const maxResults = Math.min(Math.max(payload.max_results ?? 10, 1), 10);
+    const queryParts = [
+      payload.need,
+      payload.category ? `category: ${payload.category}` : null,
+      payload.location_text ? `location: ${payload.location_text}` : null,
+    ].filter(Boolean);
+    const query = `Find vendors or businesses for: ${queryParts.join(' ')}. Provide names and contact info.`;
+
+    const openAiResults = await searchWithOpenAIWeb(query);
+    const geminiResults = openAiResults.length < maxResults ? await searchWithGeminiWeb(query) : [];
+    const mergedResults = [...openAiResults, ...geminiResults].slice(0, maxResults);
+
+    const candidates = normalizeSearchResults(mergedResults);
+    const leadIds: string[] = [];
+
+    for (const candidate of candidates) {
+      const dedupeKey = buildDedupeKey({
+        name: candidate.name,
+        phones: candidate.phones,
+        website: candidate.website,
+      });
+
+      const { data, error } = await supabase
+        .from('vendor_leads')
+        .upsert({
+          request_id: payload.request_id,
+          source: 'external_discovery',
+          name: candidate.name,
+          category_guess: payload.category ?? null,
+          area: candidate.area ?? null,
+          address: candidate.address ?? null,
+          phones: candidate.phones,
+          website: candidate.website ?? null,
+          social_links: {},
+          confidence: candidate.confidence,
+          status: 'new',
+          dedupe_key: dedupeKey,
+          raw_sources: candidate.sources,
+        }, { onConflict: 'dedupe_key' })
+        .select('id')
+        .single();
+
+      if (error) {
+        logger.warn({ error, msg: 'vendor_lead.upsert_failed' });
+        continue;
+      }
+
+      if (data?.id) leadIds.push(data.id);
+    }
+
+    const fallbackMessage = formatExternalOptionsMessage(candidates, payload.language);
+    const moltbotMessage = await generateExternalMessageWithMoltbot(candidates, payload.language);
+
+    return res.json({
+      message: moltbotMessage || fallbackMessage,
+      candidates,
+      lead_ids: leadIds,
+    });
+  } catch (error) {
+    logger.error({ error, msg: 'external_discovery_failed' });
+    return res.status(500).json({ error: 'external_discovery_failed' });
+  }
+});
+
+/**
+ * GET /marketplace/moltbot-health
+ *
+ * Check Moltbot gateway reachability.
+ */
+app.get('/marketplace/moltbot-health', async (_req: Request, res: Response) => {
+  const health = await checkMoltbotHealth();
+  res.json({
+    base_url: process.env.MOLTBOT_BASE_URL || DEFAULT_MOLTBOT_BASE_URL,
+    ...health,
+  });
+});
 
 /**
  * GET /sources/:domain
@@ -583,3 +967,4 @@ const PORT = parseInt(process.env.DEEP_RESEARCH_PORT || '3033', 10);
 app.listen(PORT, () => {
   logger.info({ port: PORT, msg: 'deep-research-service.started' });
 });
+const DEFAULT_MOLTBOT_BASE_URL = "http://127.0.0.1:18789";

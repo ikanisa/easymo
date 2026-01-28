@@ -37,6 +37,14 @@
 | `WA_PHONE_ID` | WhatsApp Phone Number ID | Yes |
 | `WA_TOKEN` | WhatsApp API access token | Yes |
 
+## External Discovery Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `EXTERNAL_DISCOVERY_ENABLED` | Enable external discovery fallback (web/maps) | No (default: false) |
+| `EXTERNAL_DISCOVERY_SERVICE_URL` | Base URL for external discovery service | No |
+| `EXTERNAL_DISCOVERY_SERVICE_KEY` | Optional bearer token for discovery service | No |
+
 ## Setting Secrets
 
 ```bash

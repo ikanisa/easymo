@@ -40,6 +40,44 @@ export const AgentFeatureFlags = {
 } as const;
 
 /**
+ * External discovery feature flags
+ * All features default to OFF for safety
+ */
+export const ExternalDiscoveryFlags = {
+  /**
+   * Enable external vendor discovery (web search, maps, social)
+   */
+  EXTERNAL_DISCOVERY_ENABLED: process.env.EXTERNAL_DISCOVERY_ENABLED === "true" ||
+                              process.env.EXTERNAL_DISCOVERY_ENABLED === "1",
+
+  /**
+   * Enable Google Maps Places enrichment
+   */
+  MAPS_ENRICHMENT_ENABLED: process.env.MAPS_ENRICHMENT_ENABLED === "true" ||
+                           process.env.MAPS_ENRICHMENT_ENABLED === "1",
+
+  /**
+   * Enable social discovery (official APIs only)
+   */
+  SOCIAL_DISCOVERY_ENABLED: process.env.SOCIAL_DISCOVERY_ENABLED === "true" ||
+                            process.env.SOCIAL_DISCOVERY_ENABLED === "1",
+} as const;
+
+const parsePositiveInt = (value: string | undefined, fallback: number): number => {
+  const parsed = Number.parseInt(value ?? '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+/**
+ * External discovery budgets (safety caps)
+ */
+export const ExternalDiscoveryBudgets = {
+  DISCOVERY_MAX_RESULTS: parsePositiveInt(process.env.DISCOVERY_MAX_RESULTS, 10),
+  DISCOVERY_MAX_CALLS_PER_REQUEST: parsePositiveInt(process.env.DISCOVERY_MAX_CALLS_PER_REQUEST, 2),
+  MAPS_MAX_CALLS_PER_REQUEST: parsePositiveInt(process.env.MAPS_MAX_CALLS_PER_REQUEST, 2),
+} as const;
+
+/**
  * Check if a feature is enabled
  */
 export function isFeatureEnabled(feature: keyof typeof AgentFeatureFlags): boolean {

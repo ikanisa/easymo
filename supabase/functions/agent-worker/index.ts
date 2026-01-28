@@ -46,6 +46,33 @@ interface Job {
   status: string;
 }
 
+async function callExternalDiscoveryFallback(payload: {
+  request_id: string;
+  need: string;
+  category?: string;
+  location_text?: string;
+  language?: "en" | "fr" | "rw";
+}) {
+  const enabled = (Deno.env.get("EXTERNAL_DISCOVERY_ENABLED") ?? "false").toLowerCase() === "true";
+  if (!enabled) return null;
+
+  const serviceUrl = Deno.env.get("EXTERNAL_DISCOVERY_SERVICE_URL");
+  if (!serviceUrl) return null;
+
+  const key = Deno.env.get("EXTERNAL_DISCOVERY_SERVICE_KEY");
+  const response = await fetch(`${serviceUrl.replace(/\/$/, "")}/marketplace/external-discovery`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(key ? { Authorization: `Bearer ${key}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) return null;
+  return await response.json();
+}
+
 // =====================================================
 // JOB PROCESSING
 // =====================================================
@@ -258,6 +285,22 @@ Focus on businesses that are most likely to fulfill this need.`;
             count: candidates.length,
             correlationId
           });
+
+          if (candidates.length < 2) {
+            const fallback = await callExternalDiscoveryFallback({
+              request_id: sourcingRequest.id,
+              need: intent.description || "User request",
+              category: intent.need_type,
+              location_text: intent.location,
+            });
+
+            if (fallback?.message) {
+              await sendText(
+                from,
+                `${fallback.message}\n\n(These are external options; please contact them directly.)`
+              );
+            }
+          }
 
           // Ask user for confirmation to reach out
           await sendText(
