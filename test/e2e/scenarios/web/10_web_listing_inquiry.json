@@ -1,0 +1,73 @@
+{
+    "name": "web_listing_inquiry",
+    "description": "Anonymous buyer sends inquiry to a seller's listing via web marketplace",
+    "tags": [
+        "web",
+        "inquiry",
+        "listing",
+        "communication"
+    ],
+    "initial_state": {
+        "web_session_buyer": {
+            "id": "web_session_inquirer_001",
+            "anon_user_id": "anon_inquirer_001",
+            "language": "en"
+        },
+        "web_session_seller": {
+            "id": "web_session_listing_owner_001",
+            "anon_user_id": "anon_listing_owner_001",
+            "language": "en"
+        },
+        "existing_listing": {
+            "id": "listing_001",
+            "session_id": "web_session_listing_owner_001",
+            "listing_type": "sell",
+            "category": "vehicles",
+            "title": "Toyota RAV4 2020 - Excellent Condition",
+            "description": "Full service history, 45,000 km, single owner",
+            "price": 28000000,
+            "currency": "RWF",
+            "status": "active"
+        }
+    },
+    "steps": [
+        {
+            "id": "step_1_send_inquiry",
+            "description": "Buyer sends inquiry to seller's listing",
+            "web_action": {
+                "action_type": "create_listing_inquiry",
+                "input": {
+                    "listing_id": "listing_001",
+                    "buyer_session_id": "web_session_inquirer_001",
+                    "message": "Hi, is this car still available? I'm interested and would like to schedule a test drive."
+                }
+            },
+            "assert": {
+                "inquiry_created": true,
+                "inquiry_status": "sent"
+            }
+        },
+        {
+            "id": "step_2_seller_notified",
+            "description": "Seller receives notification about the inquiry",
+            "assert": {
+                "notifications_queued": 1,
+                "notification_type": "inquiry_received",
+                "notification_recipient": "web_session_listing_owner_001"
+            }
+        },
+        {
+            "id": "step_3_verify_audit",
+            "description": "Inquiry is logged in audit trail",
+            "assert": {
+                "db_row_count": {
+                    "table": "listing_inquiries",
+                    "filter": {
+                        "listing_id": "listing_001"
+                    },
+                    "count": 1
+                }
+            }
+        }
+    ]
+}

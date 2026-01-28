@@ -1,0 +1,67 @@
+{
+    "name": "web_moderation_rate_limit",
+    "description": "Anonymous user hits rate limit for posting, moderation triggers block",
+    "tags": [
+        "web",
+        "moderation",
+        "rate_limit",
+        "security"
+    ],
+    "initial_state": {
+        "web_session": {
+            "id": "web_session_spammer_001",
+            "anon_user_id": "anon_spammer_001",
+            "language": "en",
+            "post_count_today": 9
+        }
+    },
+    "steps": [
+        {
+            "id": "step_1_post_at_limit",
+            "description": "User has already posted 9 times today, creates 10th post (at limit)",
+            "web_action": {
+                "action_type": "create_draft_post",
+                "input": {
+                    "session_id": "web_session_spammer_001",
+                    "type": "sell",
+                    "category": "misc",
+                    "title": "Post number 10"
+                }
+            },
+            "assert": {
+                "post_created": true
+            }
+        },
+        {
+            "id": "step_2_exceed_limit",
+            "description": "User tries to create 11th post, rate limit kicks in",
+            "web_action": {
+                "action_type": "create_draft_post",
+                "input": {
+                    "session_id": "web_session_spammer_001",
+                    "type": "sell",
+                    "category": "misc",
+                    "title": "Post number 11 - should fail"
+                }
+            },
+            "assert": {
+                "error_code": "RATE_LIMIT_EXCEEDED",
+                "post_created": false
+            }
+        },
+        {
+            "id": "step_3_moderation_logged",
+            "description": "Rate limit violation is logged in moderation events",
+            "assert": {
+                "db_row_count": {
+                    "table": "moderation_events",
+                    "filter": {
+                        "session_id": "web_session_spammer_001",
+                        "event_type": "rate_limit_exceeded"
+                    },
+                    "count": 1
+                }
+            }
+        }
+    ]
+}

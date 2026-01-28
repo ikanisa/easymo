@@ -1,0 +1,131 @@
+{
+    "name": "web_post_listing_buy",
+    "description": "Anonymous user posts a 'buy' listing (looking for something), system matches with sellers and triggers notifications",
+    "tags": [
+        "web",
+        "listing",
+        "buy",
+        "matching",
+        "happy_path"
+    ],
+    "initial_state": {
+        "web_session": {
+            "id": "web_session_buy_001",
+            "anon_user_id": "anon_buyer_001",
+            "language": "en"
+        },
+        "existing_sell_posts": [
+            {
+                "id": "sell_post_001",
+                "session_id": "web_session_seller_001",
+                "type": "sell",
+                "category": "electronics",
+                "title": "iPhone 14 Pro Max 256GB",
+                "description": "Excellent condition, comes with charger and case",
+                "price_min": 850000,
+                "price_max": 900000,
+                "currency": "RWF",
+                "location_text": "Kigali, Nyarugenge",
+                "status": "posted"
+            },
+            {
+                "id": "sell_post_002",
+                "session_id": "web_session_seller_002",
+                "type": "sell",
+                "category": "electronics",
+                "title": "iPhone 14 Pro 128GB",
+                "description": "Like new, barely used",
+                "price_min": 700000,
+                "price_max": 750000,
+                "currency": "RWF",
+                "location_text": "Kigali, Kicukiro",
+                "status": "posted"
+            }
+        ]
+    },
+    "steps": [
+        {
+            "id": "step_1_create_draft",
+            "description": "User starts creating a buy post (looking for an iPhone)",
+            "web_action": {
+                "action_type": "create_draft_post",
+                "input": {
+                    "session_id": "web_session_buy_001",
+                    "type": "buy"
+                }
+            },
+            "assert": {
+                "post_created": true,
+                "post_status": "draft"
+            }
+        },
+        {
+            "id": "step_2_update_fields",
+            "description": "User fills in listing details",
+            "web_action": {
+                "action_type": "update_post_fields",
+                "input": {
+                    "post_id": "{{post.id}}",
+                    "fields": {
+                        "category": "electronics",
+                        "title": "Looking for iPhone 14 Pro",
+                        "description": "Need iPhone 14 Pro, any storage size, good condition",
+                        "price_min": 600000,
+                        "price_max": 850000,
+                        "currency": "RWF",
+                        "location_text": "Kigali"
+                    }
+                }
+            },
+            "assert": {
+                "post_status": "draft",
+                "post_title": "Looking for iPhone 14 Pro"
+            }
+        },
+        {
+            "id": "step_3_publish",
+            "description": "User publishes the listing",
+            "web_action": {
+                "action_type": "set_post_status",
+                "input": {
+                    "post_id": "{{post.id}}",
+                    "status": "posted"
+                }
+            },
+            "assert": {
+                "post_status": "posted",
+                "post_has_posted_at": true
+            }
+        },
+        {
+            "id": "step_4_verify_matching",
+            "description": "System runs matching and finds compatible sellers",
+            "web_action": {
+                "action_type": "trigger_matching",
+                "input": {
+                    "post_id": "{{post.id}}"
+                }
+            },
+            "assert": {
+                "match_suggestions_count": 2,
+                "top_match_score_gte": 50,
+                "match_reasons_include": [
+                    "CATEGORY",
+                    "KEYWORD",
+                    "PRICE"
+                ]
+            }
+        },
+        {
+            "id": "step_5_verify_notifications",
+            "description": "Top matching sellers are notified",
+            "assert": {
+                "notifications_queued": 2,
+                "notification_recipients": [
+                    "web_session_seller_001",
+                    "web_session_seller_002"
+                ]
+            }
+        }
+    ]
+}

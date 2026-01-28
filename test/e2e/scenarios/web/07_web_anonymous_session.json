@@ -1,0 +1,62 @@
+{
+    "name": "web_anonymous_session_bootstrap",
+    "description": "Anonymous user visits web marketplace, gets session bootstrapped, and verifies audit trail",
+    "tags": [
+        "web",
+        "session",
+        "anonymous",
+        "happy_path"
+    ],
+    "initial_state": {},
+    "steps": [
+        {
+            "id": "step_1_session_create",
+            "description": "Anonymous user lands on marketplace, session is bootstrapped",
+            "web_action": {
+                "action_type": "create_session",
+                "input": {
+                    "language": "en",
+                    "user_agent": "Mozilla/5.0 (Mobile; rv:110.0)"
+                }
+            },
+            "assert": {
+                "web_session_created": true,
+                "session_has_anon_user_id": true
+            }
+        },
+        {
+            "id": "step_2_verify_audit",
+            "description": "Verify session creation was audited",
+            "assert": {
+                "db_row_count": {
+                    "table": "audit_events",
+                    "filter": {
+                        "event_type": "web_session_created"
+                    },
+                    "count": 1
+                }
+            }
+        },
+        {
+            "id": "step_3_session_reuse",
+            "description": "Same anon_user_id returns, session is reused (not duplicated)",
+            "web_action": {
+                "action_type": "get_or_create_session",
+                "input": {
+                    "anon_user_id": "{{session.anon_user_id}}",
+                    "language": "en"
+                }
+            },
+            "assert": {
+                "session_id_matches_previous": true,
+                "db_row_count": {
+                    "table": "web_sessions",
+                    "filter": {
+                        "anon_user_id": "{{session.anon_user_id}}"
+                    },
+                    "count": 1
+                }
+            }
+        }
+    ]
+}

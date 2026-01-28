@@ -17,6 +17,7 @@ export default defineConfig({
     alias: {
       '@easymo/types': resolve(__dirname, 'packages/types/src/index.ts'),
       "@insure/ocr-extract": resolve(__dirname, "packages/ocr-extract/src/index.ts"),
+      '@easymo/commons': resolve(__dirname, 'packages/commons/src/index.ts'),
     },
   },
 });

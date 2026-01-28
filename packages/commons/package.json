@@ -9,6 +9,11 @@
       "types": "./dist/index.d.ts",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./web/chat-parser": {
+      "types": "./dist/web/chat-parser.d.ts",
+      "require": "./dist/web/chat-parser.js",
+      "default": "./dist/web/chat-parser.js"
     }
   },
   "files": [

@@ -1,0 +1,43 @@
+{
+    "name": "04_verification_request",
+    "description": "Seller requests listing verification to become verified vendor",
+    "preconditions": [
+        "published_listing_exists",
+        "seller_session_exists"
+    ],
+    "steps": [
+        {
+            "action": "requestListingVerification",
+            "input": {
+                "listing_id": "{{published_listing_id}}",
+                "session_id": "{{seller_session_id}}",
+                "requested_vendor_name": "TechShop Rwanda",
+                "requested_phone": "+250788123456",
+                "requested_business_location": "KG 123 St, Kigali"
+            },
+            "expected": {
+                "verification_request_created": true,
+                "verification_status": "pending"
+            }
+        },
+        {
+            "action": "adminReviewVerification",
+            "input": {
+                "verification_id": "{{verification_request_id}}",
+                "action": "approve"
+            },
+            "expected": {
+                "verification_status": "approved",
+                "vendor_created_or_linked": true,
+                "listing_vendor_id_set": true,
+                "listing_is_verified_seller": true
+            }
+        }
+    ],
+    "assertions": [
+        "listing_verification_requests.status == 'approved'",
+        "product_listings.vendor_id IS NOT NULL",
+        "product_listings.is_verified_seller == true",
+        "vendors.business_name == 'TechShop Rwanda'"
+    ]
+}

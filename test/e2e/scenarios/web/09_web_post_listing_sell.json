@@ -1,0 +1,100 @@
+{
+    "name": "web_post_listing_sell",
+    "description": "Anonymous user posts a 'sell' listing (offering something), system matches with existing buyers",
+    "tags": [
+        "web",
+        "listing",
+        "sell",
+        "matching",
+        "happy_path"
+    ],
+    "initial_state": {
+        "web_session": {
+            "id": "web_session_sell_001",
+            "anon_user_id": "anon_seller_001",
+            "language": "en"
+        },
+        "existing_buy_posts": [
+            {
+                "id": "buy_post_001",
+                "session_id": "web_session_buyer_001",
+                "type": "buy",
+                "category": "furniture",
+                "title": "Looking for office desk",
+                "description": "Need a standing desk, adjustable height, white color preferred",
+                "price_min": 80000,
+                "price_max": 150000,
+                "currency": "RWF",
+                "location_text": "Kigali",
+                "status": "posted"
+            }
+        ]
+    },
+    "steps": [
+        {
+            "id": "step_1_create_and_fill",
+            "description": "User creates sell listing with all details",
+            "web_action": {
+                "action_type": "create_draft_post",
+                "input": {
+                    "session_id": "web_session_sell_001",
+                    "type": "sell",
+                    "category": "furniture",
+                    "title": "Standing Desk - Adjustable Height",
+                    "description": "Brand new adjustable standing desk, white color, electric motor for height adjustment. 120cm x 60cm.",
+                    "price_min": 120000,
+                    "price_max": 130000,
+                    "currency": "RWF",
+                    "location_text": "Kigali, Gasabo"
+                }
+            },
+            "assert": {
+                "post_created": true,
+                "post_status": "draft"
+            }
+        },
+        {
+            "id": "step_2_publish",
+            "description": "User publishes the listing",
+            "web_action": {
+                "action_type": "set_post_status",
+                "input": {
+                    "post_id": "{{post.id}}",
+                    "status": "posted"
+                }
+            },
+            "assert": {
+                "post_status": "posted"
+            }
+        },
+        {
+            "id": "step_3_verify_matching",
+            "description": "System matches with existing buyer looking for desk",
+            "web_action": {
+                "action_type": "trigger_matching",
+                "input": {
+                    "post_id": "{{post.id}}"
+                }
+            },
+            "assert": {
+                "match_suggestions_count": 1,
+                "top_match_target_id": "buy_post_001",
+                "match_reasons_include": [
+                    "CATEGORY",
+                    "KEYWORD",
+                    "PRICE"
+                ]
+            }
+        },
+        {
+            "id": "step_4_buyer_notified",
+            "description": "Buyer looking for desk is notified about this seller",
+            "assert": {
+                "notifications_queued": 1,
+                "notification_recipients": [
+                    "web_session_buyer_001"
+                ]
+            }
+        }
+    ]
+}

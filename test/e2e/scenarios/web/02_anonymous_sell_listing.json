@@ -1,0 +1,64 @@
+{
+    "name": "02_anonymous_sell_listing",
+    "description": "Anonymous user creates a product listing via chat-first UI",
+    "steps": [
+        {
+            "action": "signInAnonymously",
+            "input": {},
+            "expected": {
+                "session_created": true
+            }
+        },
+        {
+            "action": "sendMessage",
+            "input": {
+                "text": "I want to sell a refurbished laptop with charger"
+            },
+            "expected": {
+                "listing_draft_created": true,
+                "listing_type": "product",
+                "category_inferred": "electronics"
+            }
+        },
+        {
+            "action": "sendMessage",
+            "input": {
+                "text": "Price 350000 RWF negotiable"
+            },
+            "expected": {
+                "price": 350000,
+                "price_type": "negotiable",
+                "currency": "RWF"
+            }
+        },
+        {
+            "action": "sendMessage",
+            "input": {
+                "text": "Available for pickup in Nyamirambo"
+            },
+            "expected": {
+                "location_text": "Nyamirambo",
+                "availability": "in_stock"
+            }
+        },
+        {
+            "action": "sendMessage",
+            "input": {
+                "text": "Publish listing"
+            },
+            "expected": {
+                "status": "published",
+                "published_at_set": true,
+                "is_verified_seller": false,
+                "seller_badge": {
+                    "kind": "unverified_seller"
+                }
+            }
+        }
+    ],
+    "assertions": [
+        "product_listings.status == 'published'",
+        "product_listings.is_verified_seller == false",
+        "product_listings.vendor_id IS NULL"
+    ]
+}

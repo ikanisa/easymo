@@ -17,6 +17,12 @@
       ],
       "@easymo/video-agent-schema/*": [
         "packages/video-agent-schema/dist/*"
+      ],
+      "@easymo/commons": [
+        "packages/commons/src/index.ts"
+      ],
+      "@easymo/commons/*": [
+        "packages/commons/src/*"
       ]
     },
     "noImplicitAny": true,

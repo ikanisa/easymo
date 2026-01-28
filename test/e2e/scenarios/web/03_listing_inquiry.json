@@ -1,0 +1,29 @@
+{
+    "name": "03_listing_inquiry",
+    "description": "Buyer creates inquiry for a listing and seller receives notification",
+    "preconditions": [
+        "published_listing_exists",
+        "buyer_session_exists"
+    ],
+    "steps": [
+        {
+            "action": "createListingInquiry",
+            "input": {
+                "listing_id": "{{published_listing_id}}",
+                "buyer_session_id": "{{buyer_session_id}}",
+                "message": "Is this laptop still available? Can you share more photos?"
+            },
+            "expected": {
+                "inquiry_created": true,
+                "inquiry_status": "sent",
+                "seller_notification_created": true
+            }
+        }
+    ],
+    "assertions": [
+        "listing_inquiries.count == 1",
+        "listing_inquiries.status == 'sent'",
+        "web_notifications.target_type == 'seller_session'",
+        "web_notifications.channel == 'web'"
+    ]
+}

@@ -19,3 +19,4 @@ export * from "./service-auth";
 export * from "./service-discovery";
 export * from "./types";
 export * from "./webhook-verification";
+export * from "./web/chat-parser";

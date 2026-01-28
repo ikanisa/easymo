@@ -1,0 +1,48 @@
+{
+    "name": "05_spam_moderation",
+    "description": "Spam scenario triggers moderation and blocks session",
+    "steps": [
+        {
+            "action": "signInAnonymously",
+            "input": {},
+            "expected": {
+                "session_created": true
+            }
+        },
+        {
+            "action": "spamBurst",
+            "input": {
+                "post_count": 10,
+                "interval_seconds": 30,
+                "content": "BUY NOW CHEAP PHONES BEST PRICE CLICK HERE"
+            },
+            "expected": {
+                "posts_created_before_block": 5,
+                "moderation_event_created": true,
+                "moderation_action": "block",
+                "session_blocked": true
+            }
+        },
+        {
+            "action": "attemptPostWhileBlocked",
+            "input": {
+                "text": "Another post attempt"
+            },
+            "expected": {
+                "blocked": true,
+                "error_code": "session_blocked_spam"
+            }
+        }
+    ],
+    "assertions": [
+        "market_posts.count == 5",
+        "moderation_events.count >= 1",
+        "moderation_events.action == 'block'",
+        "moderation_events.severity == 'high'"
+    ],
+    "notes": [
+        "Rate limit: max 5 posts per hour per session",
+        "Spam keywords trigger immediate moderation",
+        "Block is temporary (default 1 hour)"
+    ]
+}

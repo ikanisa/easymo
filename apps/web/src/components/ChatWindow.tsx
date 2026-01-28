@@ -5,7 +5,7 @@ export type ChatMessage = {
   id: string;
   role: "user" | "moltbot";
   text: string;
-  tone?: "clarify" | "confirm";
+  tone?: "clarify" | "confirm" | string;
 };
 
 type ChatWindowProps = {

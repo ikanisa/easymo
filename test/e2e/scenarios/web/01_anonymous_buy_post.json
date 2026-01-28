@@ -1,0 +1,64 @@
+{
+    "name": "01_anonymous_buy_post",
+    "description": "Anonymous user creates a buy post via chat-first UI",
+    "steps": [
+        {
+            "action": "signInAnonymously",
+            "input": {},
+            "expected": {
+                "session_created": true,
+                "web_sessions_row_created": true
+            }
+        },
+        {
+            "action": "sendMessage",
+            "input": {
+                "text": "I am looking to buy a gently used smartphone"
+            },
+            "expected": {
+                "draft_created": true,
+                "type": "buy",
+                "category_inferred": "electronics"
+            }
+        },
+        {
+            "action": "sendMessage",
+            "input": {
+                "text": "Price range 150000 to 200000 RWF"
+            },
+            "expected": {
+                "price_min": 150000,
+                "price_max": 200000,
+                "currency": "RWF"
+            }
+        },
+        {
+            "action": "sendMessage",
+            "input": {
+                "text": "Pickup around Kimironko, Kigali"
+            },
+            "expected": {
+                "location_text": "Kimironko, Kigali"
+            }
+        },
+        {
+            "action": "sendMessage",
+            "input": {
+                "text": "Post now"
+            },
+            "expected": {
+                "status": "posted",
+                "posted_at_set": true,
+                "match_suggestions_generated": true,
+                "notifications_queued": true,
+                "max_notifications": 10
+            }
+        }
+    ],
+    "assertions": [
+        "web_sessions.count == 1",
+        "market_posts.status == 'posted'",
+        "match_suggestions.count <= 10",
+        "web_notifications.count <= 10"
+    ]
+}
