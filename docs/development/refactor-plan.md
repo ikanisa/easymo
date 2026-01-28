@@ -129,6 +129,10 @@ Deliverables:
 - Contract validator script + CI hook
 - Expand to all services after pilot
 
+Status:
+- Pilot contracts created (agent-core, wallet-service)
+- Validator script added (CI hook pending)
+
 Acceptance Criteria:
 - Contract validation passes for pilot services
 - CI fails on missing/invalid contracts

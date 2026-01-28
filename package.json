@@ -23,6 +23,7 @@
     "test:functions": "deno test --allow-env --allow-read --allow-net supabase/functions/_shared",
     "lint:migrations": "node ./scripts/check-migrations-rls.mjs",
     "migration:validate": "node ./scripts/migration-audit.mjs && bash ./scripts/check-migration-hygiene.sh && pnpm lint:migrations",
+    "contracts:validate": "pnpm exec tsx ./scripts/validate-service-contracts.ts",
     "test:watch": "vitest",
     "schema:verify": "node ./scripts/check-schema-alignment.mjs",
     "env:check": "node ./scripts/assert-no-service-role-in-client.mjs && node ./scripts/check-env.mjs",
