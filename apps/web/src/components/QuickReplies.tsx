@@ -12,7 +12,7 @@ type QuickRepliesProps = {
   disabled?: boolean;
 };
 
-export function QuickReplies({ replies, onSelect }: QuickRepliesProps) {
+export function QuickReplies({ replies, onSelect, disabled = false }: QuickRepliesProps) {
   return (
     <div className="quick-replies" role="list">
       {replies.map((reply) => (

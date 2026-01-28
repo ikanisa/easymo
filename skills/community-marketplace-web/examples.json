@@ -99,4 +99,99 @@
       ]
     }
   }
+  ,
+  {
+    "title": "Create and publish an anonymous product listing",
+    "description": "User wants to sell a service/product listing. Moltbot creates a listing draft, updates captured fields, and publishes once minimum fields are present.",
+    "user_messages": [
+      "I want to list a phone for sale. iPhone 12, 230000 RWF, pickup Remera Kigali."
+    ],
+    "tool_plan": {
+      "actions": [
+        {
+          "create_listing_draft": {
+            "session_id": "d8fb5c23-1c0b-4b4e-9e72-a50dbe2a55ef",
+            "listing_type": "product"
+          }
+        },
+        {
+          "update_listing_fields": {
+            "listing_id": "2c1f9f3d-3a0e-4a8b-9c7c-2b2f9f0a1111",
+            "fields": {
+              "category": "electronics",
+              "title": "iPhone 12",
+              "description": "iPhone 12, good condition",
+              "price": 230000,
+              "currency": "RWF",
+              "location_text": "Remera, Kigali",
+              "availability": "in_stock"
+            }
+          }
+        },
+        {
+          "publish_listing": {
+            "listing_id": "2c1f9f3d-3a0e-4a8b-9c7c-2b2f9f0a1111"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "title": "Browse published listings (products/services)",
+    "description": "User asks to browse listings. Moltbot requests a small list of published listings in a category.",
+    "user_messages": [
+      "Show me available phone listings around Kigali"
+    ],
+    "tool_plan": {
+      "actions": [
+        {
+          "list_published_listings": {
+            "filters": {
+              "category": "electronics",
+              "listing_type": "product",
+              "limit": 10
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "title": "Contact a seller by creating a listing inquiry",
+    "description": "User wants to message a seller about a listing. Moltbot creates an inquiry tied to the buyer session.",
+    "user_messages": [
+      "Message the seller of listing 2c1f9f3d-3a0e-4a8b-9c7c-2b2f9f0a1111: Is the phone still available?"
+    ],
+    "tool_plan": {
+      "actions": [
+        {
+          "create_listing_inquiry": {
+            "listing_id": "2c1f9f3d-3a0e-4a8b-9c7c-2b2f9f0a1111",
+            "buyer_session_id": "a8f3c1a0-23a4-4b3e-b3c2-1c22f9c22fa3",
+            "message": "Is the phone still available?"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "title": "Request business verification for a listing",
+    "description": "Anonymous seller wants to become a verified vendor. Moltbot submits a verification request for admin review.",
+    "user_messages": [
+      "I want to verify my business so I can appear in the vendors directory. My shop is Kigali Phones Hub, phone +250788123456."
+    ],
+    "tool_plan": {
+      "actions": [
+        {
+          "request_listing_verification": {
+            "listing_id": "2c1f9f3d-3a0e-4a8b-9c7c-2b2f9f0a1111",
+            "session_id": "d8fb5c23-1c0b-4b4e-9e72-a50dbe2a55ef",
+            "requested_vendor_name": "Kigali Phones Hub",
+            "requested_phone": "+250788123456",
+            "requested_business_location": "Remera, Kigali"
+          }
+        }
+      ]
+    }
+  }
 ]

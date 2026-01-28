@@ -5,7 +5,8 @@ type NotificationRow = {
   id: string;
   channel: "web" | "whatsapp" | "email";
   payload: Record<string, unknown>;
-  post_id: string;
+  post_id: string | null;
+  listing_id?: string | null;
   target_type: string;
   target_id: string;
 };
@@ -63,6 +64,7 @@ export async function dispatchQueuedNotifications(limit = MAX_BATCH): Promise<Di
 
   const results: DispatchResult[] = [];
   for (const row of rows) {
+    const contextId = row.post_id ?? row.listing_id ?? row.id;
     let status: DispatchResult["status"] = "sent";
     let reason: string | undefined;
 
@@ -97,10 +99,16 @@ export async function dispatchQueuedNotifications(limit = MAX_BATCH): Promise<Di
     }
 
     await writeAuditEvent({
-      request_id: row.post_id,
+      request_id: contextId,
       event_type: "web_notification.dispatch",
       actor: "system",
-      input: { notification: row.id, target: row.target_id, channel: row.channel },
+      input: {
+        notification: row.id,
+        post_id: row.post_id,
+        listing_id: row.listing_id ?? null,
+        target: row.target_id,
+        channel: row.channel,
+      },
       output: { status, reason },
     });
 

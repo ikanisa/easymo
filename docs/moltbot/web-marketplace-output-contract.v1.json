@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "name": "web-marketplace",
   "description": "Strict Moltbot contract for anonymous web marketplace chat plans. All responses must be a single JSON object that names one or more actions below and nothing else.",
   "max_questions_per_turn": 3,
@@ -64,6 +64,120 @@
         },
         "required": ["post_id", "fields"],
         "minProperties": 2
+      }
+    },
+    "create_listing_draft": {
+      "description": "Create a draft product/service listing owned by an anonymous web session.",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "session_id": { "type": "string", "format": "uuid" },
+          "listing_type": { "enum": ["product", "service"] }
+        },
+        "required": ["session_id", "listing_type"],
+        "additionalProperties": false
+      }
+    },
+    "update_listing_fields": {
+      "description": "Persist captured fields into the Supabase product_listings record (never self-verify).",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "listing_id": { "type": "string", "format": "uuid" },
+          "fields": {
+            "type": "object",
+            "properties": {
+              "listing_type": { "enum": ["product", "service"] },
+              "category": { "type": "string" },
+              "title": { "type": "string" },
+              "description": { "type": "string" },
+              "price": { "type": "integer", "minimum": 0 },
+              "currency": { "type": "string" },
+              "price_type": { "enum": ["fixed", "negotiable", "range"] },
+              "price_min": { "type": "integer", "minimum": 0 },
+              "price_max": { "type": "integer", "minimum": 0 },
+              "location_text": { "type": "string" },
+              "geo": {
+                "type": "object",
+                "properties": {
+                  "latitude": { "type": "number" },
+                  "longitude": { "type": "number" }
+                },
+                "required": ["latitude", "longitude"],
+                "additionalProperties": false
+              },
+              "media_urls": {
+                "type": "array",
+                "items": { "type": "string", "format": "uri" }
+              },
+              "availability": { "enum": ["unknown", "in_stock", "made_to_order", "service_available"] },
+              "status": { "enum": ["draft", "published", "hidden", "deleted"] }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": ["listing_id", "fields"],
+        "additionalProperties": false
+      }
+    },
+    "publish_listing": {
+      "description": "Publish a listing (requires title, category, and location_text to be present).",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "listing_id": { "type": "string", "format": "uuid" }
+        },
+        "required": ["listing_id"],
+        "additionalProperties": false
+      }
+    },
+    "list_published_listings": {
+      "description": "Fetch published listing cards for browsing (mixed verified + unverified sellers).",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "filters": {
+            "type": "object",
+            "properties": {
+              "category": { "type": "string" },
+              "listing_type": { "enum": ["product", "service"] },
+              "price_min": { "type": "integer", "minimum": 0 },
+              "price_max": { "type": "integer", "minimum": 0 },
+              "limit": { "type": "integer", "minimum": 1, "maximum": 50 }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": ["filters"],
+        "additionalProperties": false
+      }
+    },
+    "create_listing_inquiry": {
+      "description": "Create a buyer inquiry for a listing and notify the seller (in-app; WhatsApp only if opted in).",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "listing_id": { "type": "string", "format": "uuid" },
+          "buyer_session_id": { "type": "string", "format": "uuid" },
+          "message": { "type": "string" }
+        },
+        "required": ["listing_id", "buyer_session_id", "message"],
+        "additionalProperties": false
+      }
+    },
+    "request_listing_verification": {
+      "description": "Submit a verification request for an anonymous listing to become a verified vendor.",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "listing_id": { "type": "string", "format": "uuid" },
+          "session_id": { "type": "string", "format": "uuid" },
+          "requested_vendor_name": { "type": "string" },
+          "requested_phone": { "type": "string" },
+          "requested_business_location": { "type": "string" }
+        },
+        "required": ["listing_id", "session_id"],
+        "additionalProperties": false
       }
     },
     "post_now": {

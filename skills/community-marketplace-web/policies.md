@@ -9,3 +9,5 @@
 7. **Feature flags**: Honor the feature flag (e.g., `WEB_MARKETPLACE_CHAT`)—if it's off, avoid emitting `post_now`, `suggest_matches`, `notify_top_targets`, or `show_feed_options`.
 8. **JSON strictness**: Do not inject markdown, quotes, or unescaped control characters; keep responses parseable JSON without trailing commas.
 9. **Ranking caps**: Use the rationale described in `docs/moltbot/matching-rationale.md` (base score 50, signal deltas, +/-15 cap) so match suggestions remain explainable and balanced.
+10. **Listings vs vendors**: Anonymous `product_listings` are allowed, but a listing must be treated as **Unverified seller** unless the attached `vendor_id` is verified. Never claim a seller is a vendor without verification.
+11. **Verification flow**: Never set `vendor_id` or `is_verified_seller` via `update_listing_fields`. Use `request_listing_verification` and wait for admin review.
