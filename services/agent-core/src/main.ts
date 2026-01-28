@@ -5,6 +5,7 @@ import { NestFactory } from "@nestjs/core";
 import helmet from "helmet";
 import { Logger } from "nestjs-pino";
 
+import "./env";
 import { AppModule } from "./app.module.js";
 import { LoggingInterceptor } from "./common/interceptors/logging.interceptor.js";
 import { RequestIdInterceptor } from "./common/interceptors/request-id.interceptor.js";

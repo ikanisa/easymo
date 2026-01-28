@@ -204,8 +204,8 @@ Acceptance Criteria:
 
 ## Checklist (tracking)
 
-- [ ] Phase 1 complete (migration audit + CI hook)
-- [ ] Phase 2 complete (env validation enforcement)
+- [x] Phase 1 complete (migration audit + CI hook)
+- [x] Phase 2 complete (env validation enforcement)
 - [ ] Phase 3 complete (contracts pilot + validator)
 - [ ] Phase 4 complete (TS/Lint strictness rollout)
 - [ ] Phase 5 complete (Vitest-only + test-utils)

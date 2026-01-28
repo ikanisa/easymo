@@ -6,12 +6,11 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { config } from 'dotenv';
 import express, { Request, Response } from 'express';
 import OpenAI from 'openai';
 import pino from 'pino';
 
-config();
+import './env';
 
 const logger = pino({ name: 'deep-research-service' });
 

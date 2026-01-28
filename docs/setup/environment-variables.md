@@ -38,6 +38,21 @@ WhatsApp webhooks:
 ```bash
 # Basic env checks
 pnpm env:check
+
+# Full validation (aliases env:check)
+pnpm env:validate
 ```
 
 The build also runs guard scripts (for example, blocking server secrets in public vars).
+
+## Profiles (deploy-only checks)
+
+`pnpm env:check` supports profiles to enforce additional requirements:
+
+```bash
+# Core checks (default)
+EASYMO_ENV_PROFILE=core pnpm env:check
+
+# Add admin + WhatsApp + AI checks
+EASYMO_ENV_PROFILE=admin,whatsapp,ai pnpm env:check
+```

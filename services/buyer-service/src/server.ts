@@ -5,6 +5,7 @@ import express from "express";
 import pinoHttp from "pino-http";
 import { z } from "zod";
 
+import "./env";
 import { settings } from "./config";
 import { logger } from "./logger";
 import { BuyerService, CreateBuyerInput, PurchaseInput } from "./service";

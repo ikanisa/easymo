@@ -11,6 +11,8 @@ import pino from 'pino';
 import pinoHttp from 'pino-http';
 import { z } from 'zod';
 
+import './env';
+
 const config = {
   port: parseInt(process.env.PORT || '4800'),
   supabase: {

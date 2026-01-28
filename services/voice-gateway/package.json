@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@easymo/commons": "workspace:*",
     "@easymo/call-capability": "workspace:*",
     "@easymo/google-speech": "workspace:*",
     "@supabase/supabase-js": "^2.86.2",

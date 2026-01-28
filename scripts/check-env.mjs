@@ -1,27 +1,79 @@
 #!/usr/bin/env node
 
-const requiredVars = [
-  'SUPABASE_URL',
-  'SUPABASE_SERVICE_ROLE_KEY',
-  'SUPABASE_JWT_SECRET',
-  'NEXT_PUBLIC_SUPABASE_URL',
-  'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-  'SLA_ALERT_WEBHOOK_URL',
-  'SUPABASE_CHANNEL_MONITOR_WEBHOOK',
-  'AGENT_AUDIT_WEBHOOK_URL',
-];
+const profile = (process.env.EASYMO_ENV_PROFILE || 'core')
+  .split(',')
+  .map((entry) => entry.trim().toLowerCase())
+  .filter(Boolean);
 
-const missing = requiredVars.filter((key) => {
+const requiredGroups = {
+  core: [
+    'SUPABASE_URL',
+    'SUPABASE_SERVICE_ROLE_KEY',
+    'SUPABASE_JWT_SECRET',
+    'NEXT_PUBLIC_SUPABASE_URL',
+    'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    'SLA_ALERT_WEBHOOK_URL',
+    'SUPABASE_CHANNEL_MONITOR_WEBHOOK',
+    'AGENT_AUDIT_WEBHOOK_URL',
+  ],
+  admin: [
+    'EASYMO_ADMIN_TOKEN',
+    'ADMIN_SESSION_SECRET',
+  ],
+  ai: [
+    'OPENAI_API_KEY',
+    'GEMINI_API_KEY',
+  ],
+};
+
+const requiredAnyGroups = {
+  whatsapp: [
+    ['WHATSAPP_ACCESS_TOKEN', 'WA_TOKEN', 'WABA_ACCESS_TOKEN'],
+    ['WHATSAPP_PHONE_NUMBER_ID', 'WA_PHONE_ID', 'WABA_PHONE_NUMBER_ID'],
+    ['WHATSAPP_APP_SECRET', 'WA_APP_SECRET'],
+    ['WHATSAPP_VERIFY_TOKEN', 'WA_VERIFY_TOKEN'],
+  ],
+};
+
+const requiredVars = new Set(requiredGroups.core);
+
+for (const key of profile) {
+  const group = requiredGroups[key];
+  if (group) {
+    group.forEach((item) => requiredVars.add(item));
+  }
+}
+
+const missing = Array.from(requiredVars).filter((key) => {
   const value = process.env[key];
   return !value || value.trim().length === 0;
 });
 
-if (missing.length > 0) {
+const missingAny = [];
+for (const key of profile) {
+  const groups = requiredAnyGroups[key];
+  if (!groups) continue;
+  for (const candidates of groups) {
+    const found = candidates.some((candidate) => {
+      const value = process.env[candidate];
+      return value && value.trim().length > 0;
+    });
+    if (!found) {
+      missingAny.push(candidates.join(' | '));
+    }
+  }
+}
+
+if (missing.length > 0 || missingAny.length > 0) {
   console.error('\n❌ Environment verification failed.');
   console.error('The following required variables are missing:');
   for (const key of missing) {
     console.error(`  - ${key}`);
   }
+  for (const options of missingAny) {
+    console.error(`  - ${options}`);
+  }
+  console.error('\nProfile:', profile.join(', ') || 'core');
   console.error('\nSet these variables locally (e.g. in .env) before running staging or production deploys.');
   process.exit(1);
 }

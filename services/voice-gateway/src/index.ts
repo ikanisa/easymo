@@ -11,6 +11,7 @@
  * - AGI tool integration for Call Center capabilities
  */
 
+import './env';
 import { startServer } from './server';
 
 // Export modules for testing and external use
@@ -45,4 +46,5 @@ export {
 } from './sip-config';
 
 // Start server when run directly
+validateConfig();
 startServer();

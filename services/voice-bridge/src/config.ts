@@ -1,7 +1,8 @@
-import dotenv from "dotenv";
+import { config as dotenvConfig } from "dotenv";
+import { validateEnv } from "@easymo/commons";
 import { z } from "zod";
 
-dotenv.config();
+dotenvConfig();
 
 const schema = z.object({
   PORT: z.coerce.number().default(4405),
@@ -14,4 +15,6 @@ const schema = z.object({
 
 export type VoiceBridgeConfig = z.infer<typeof schema>;
 
-export const config: VoiceBridgeConfig = schema.parse(process.env);
+export const config: VoiceBridgeConfig = validateEnv(schema, {
+  exitOnError: process.env.NODE_ENV === "production",
+});
