@@ -147,6 +147,9 @@ Deliverables:
 Acceptance Criteria:
 - Each service opt-in completed without breaking builds
 
+Status:
+- Pilot: tracking-service strict TS flags enabled (noUncheckedIndexedAccess, noImplicitOverride, noFallthroughCasesInSwitch)
+
 ### Phase 5 — Testing Unification
 **Goal:** Standardize tests and add coverage where it matters.
 
