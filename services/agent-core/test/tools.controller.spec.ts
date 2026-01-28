@@ -1,7 +1,8 @@
 import type { AgentContext } from "@easymo/commons";
 import { ForbiddenException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
-import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Mock } from "vitest";
 
 import { ToolsController } from "../src/modules/tools/tools.controller";
 import { ToolsService } from "../src/modules/tools/tools.service";
@@ -41,7 +42,7 @@ describe("ToolsController", () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("validates collect payment payload", async () => {
@@ -51,7 +52,7 @@ describe("ToolsController", () => {
   });
 
   it("normalizes snake_case payloads before searching Supabase", async () => {
-    (service.searchSupabase as jest.Mock).mockResolvedValue({ items: [], count: 0 });
+    (service.searchSupabase as Mock).mockResolvedValue({ items: [], count: 0 });
     await controller.searchSupabase(agent, {
       tenant_id: agent.tenantId,
       table: "produce_listings",
@@ -70,7 +71,7 @@ describe("ToolsController", () => {
   });
 
   it("normalizes createListing payloads", async () => {
-    (service.createListing as jest.Mock).mockResolvedValue({ listing_id: "listing" });
+    (service.createListing as Mock).mockResolvedValue({ listing_id: "listing" });
     await controller.createListing(agent, {
       tenant_id: agent.tenantId,
       farm_id: "059f4f52-89ed-4131-8a93-64a304d2b0dd",
@@ -114,7 +115,7 @@ describe("ToolsController", () => {
   });
 
   it("normalizes createMatch payloads", async () => {
-    (service.createMatch as jest.Mock).mockResolvedValue({ match_id: "match" });
+    (service.createMatch as Mock).mockResolvedValue({ match_id: "match" });
     await controller.createMatch(agent, {
       tenant_id: agent.tenantId,
       order_id: "35d9bb35-17df-4d9b-854f-e81fdf6579fc",
@@ -133,7 +134,7 @@ describe("ToolsController", () => {
   });
 
   it("normalizes recordPayment payloads", async () => {
-    (service.recordPayment as jest.Mock).mockResolvedValue({ payment_id: "pay" });
+    (service.recordPayment as Mock).mockResolvedValue({ payment_id: "pay" });
     await controller.recordPayment(agent, {
       tenant_id: agent.tenantId,
       order_id: "fe31c42e-3fda-41c4-a80d-5131b5a6fd88",

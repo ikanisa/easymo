@@ -167,6 +167,7 @@ Status:
 - Added @easymo/test-utils package scaffold
 - Migrated @easymo/messaging test runner to Vitest
 - Switched ai-core, circuit-breaker, state-machine, and wallet-service to Vitest
+- Added integration smoke tests for wallet-service and agent-core
 
 ### Phase 6 — Observability
 **Goal:** Standard logging + metrics for key flows.

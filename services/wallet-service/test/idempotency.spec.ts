@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { vi } from "vitest";
 
 import { idempotencyMiddleware, isValidIdempotencyKey } from "../src/idempotency";
 
@@ -32,7 +33,7 @@ describe("Idempotency Middleware", () => {
   describe("idempotencyMiddleware", () => {
     let mockReq: Partial<Request>;
     let mockRes: Partial<Response>;
-    let nextFn: jest.Mock;
+    let nextFn: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
       mockReq = {
@@ -41,15 +42,15 @@ describe("Idempotency Middleware", () => {
         headers: {},
       };
 
-      const jsonFn = jest.fn();
+      const jsonFn = vi.fn();
       mockRes = {
         json: jsonFn,
-        status: jest.fn().mockReturnValue({ json: jsonFn }),
-        setHeader: jest.fn(),
+        status: vi.fn().mockReturnValue({ json: jsonFn }),
+        setHeader: vi.fn(),
         statusCode: 201,
       };
 
-      nextFn = jest.fn();
+      nextFn = vi.fn();
     });
 
     it("should call next for POST requests without idempotency key", () => {
@@ -82,7 +83,7 @@ describe("Idempotency Middleware", () => {
 
       // Simulate successful response
       mockRes.statusCode = 201;
-      const originalJson = mockRes.json as jest.Mock;
+      const originalJson = mockRes.json as ReturnType<typeof vi.fn>;
       originalJson({ transactionId: "tx-123" });
 
       // Reset nextFn
@@ -96,4 +97,3 @@ describe("Idempotency Middleware", () => {
     });
   });
 });
-

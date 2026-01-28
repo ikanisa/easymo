@@ -1,10 +1,11 @@
-import { NextFunction,Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
+import { vi } from "vitest";
 
 import { idempotencyMiddleware, isValidIdempotencyKey } from "../src/idempotency";
 
 // Mock dependencies
-jest.mock("@easymo/messaging");
-jest.mock("../src/logger");
+vi.mock("@easymo/messaging");
+vi.mock("../src/logger");
 
 describe("Idempotency Middleware", () => {
   let mockReq: Partial<Request>;
@@ -19,12 +20,12 @@ describe("Idempotency Middleware", () => {
     };
 
     mockRes = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
       statusCode: 200,
     };
 
-    mockNext = jest.fn();
+    mockNext = vi.fn() as unknown as NextFunction;
   });
 
   describe("Idempotency Key Validation", () => {

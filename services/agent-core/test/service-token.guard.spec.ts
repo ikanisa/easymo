@@ -2,7 +2,7 @@ import type { ExecutionContext } from "@nestjs/common";
 import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Reflector } from "@nestjs/core";
-import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ServiceTokenGuard } from "../src/common/guards/service-token.guard";
 
@@ -31,7 +31,7 @@ describe("ServiceTokenGuard", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   const sign = async (scopes: string[]) => {

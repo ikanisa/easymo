@@ -25,13 +25,20 @@ const TransferSchema = z.object({
   commissionAccountId: z.string().uuid().optional(),
 });
 
-async function bootstrap() {
-  const prisma = new PrismaService();
-  await prisma.$connect();
-  const wallet = new WalletService(prisma);
-  const fx = new FXService(process.env.EXCHANGE_RATES_API);
-  const reconciliation = new ReconciliationService(prisma);
-  const reconciliationScheduler = new ReconciliationScheduler(prisma);
+type AppDependencies = {
+  prisma?: PrismaService;
+  wallet?: WalletService;
+  fx?: FXService;
+  reconciliation?: ReconciliationService;
+  reconciliationScheduler?: ReconciliationScheduler;
+};
+
+export const buildApp = (deps: AppDependencies = {}) => {
+  const prisma = deps.prisma ?? new PrismaService();
+  const wallet = deps.wallet ?? new WalletService(prisma);
+  const fx = deps.fx ?? new FXService(process.env.EXCHANGE_RATES_API);
+  const reconciliation = deps.reconciliation ?? new ReconciliationService(prisma);
+  const reconciliationScheduler = deps.reconciliationScheduler ?? new ReconciliationScheduler(prisma);
 
   const app = express();
   app.use(express.json());
@@ -244,6 +251,14 @@ async function bootstrap() {
 
     logger.info("Reconciliation scheduler started");
   }
+
+  return { app, prisma, reconciliationScheduler };
+};
+
+async function bootstrap() {
+  const prisma = new PrismaService();
+  await prisma.$connect();
+  const { app, reconciliationScheduler } = buildApp({ prisma });
 
   const server = app.listen(settings.port, () => {
     logger.info({ msg: "wallet-service.listen", port: settings.port });

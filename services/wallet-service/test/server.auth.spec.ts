@@ -1,6 +1,7 @@
 import { signServiceJwt } from "@easymo/commons";
 import type { PrismaService } from "@easymo/db";
 import request from "supertest";
+import { vi } from "vitest";
 
 import type { WalletService } from "../src/service";
 
@@ -8,21 +9,21 @@ const DEFAULT_TENANT_ID = "a4a8cf2d-0a4f-446c-8bf2-28509641158f";
 
 type PrismaMock = {
   walletAccount: {
-    findFirst: jest.Mock;
-    create: jest.Mock;
+    findFirst: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
   };
 };
 
 type WalletMock = {
-  transfer: jest.Mock;
-  getAccountSummary: jest.Mock;
+  transfer: ReturnType<typeof vi.fn>;
+  getAccountSummary: ReturnType<typeof vi.fn>;
 };
 
 async function setupApp(overrides?: {
   prisma?: Partial<PrismaMock>;
   wallet?: Partial<WalletMock>;
 }) {
-  jest.resetModules();
+  vi.resetModules();
   process.env.NODE_ENV = "test";
   process.env.FEATURE_WALLET_SERVICE = "1";
   process.env.SERVICE_JWT_KEYS = "test-secret";
@@ -36,18 +37,18 @@ async function setupApp(overrides?: {
 
   const prismaMock: PrismaMock = {
     walletAccount: {
-      findFirst: jest.fn().mockResolvedValue(null),
-      create: jest.fn().mockResolvedValue({ id: "wallet-1" }),
+      findFirst: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockResolvedValue({ id: "wallet-1" }),
     },
   };
 
   const walletMock: WalletMock = {
-    transfer: jest.fn().mockResolvedValue({
+    transfer: vi.fn().mockResolvedValue({
       transaction: { id: "txn-1" },
       entries: [],
       commissionAmount: 0,
     }),
-    getAccountSummary: jest.fn().mockResolvedValue({ id: "wallet-1", balance: 0 }),
+    getAccountSummary: vi.fn().mockResolvedValue({ id: "wallet-1", balance: 0 }),
   };
 
   Object.assign(prismaMock, overrides?.prisma);
@@ -100,7 +101,7 @@ describe("wallet-service authentication", () => {
   });
 
   it("allows valid scope", async () => {
-    const transfer = jest.fn().mockResolvedValue({
+    const transfer = vi.fn().mockResolvedValue({
       transaction: { id: "txn-1" },
       entries: [],
       commissionAmount: 5,
