@@ -1,0 +1,49 @@
+name: Quality Gate
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm type-check
+
+      - name: Validate migrations
+        run: pnpm migration:validate
+
+      - name: Validate service contracts
+        run: pnpm contracts:validate
+
+      - name: Validate environment variables
+        run: pnpm env:validate
+        env:
+          SUPABASE_URL: https://example.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: service-role-placeholder
+          SUPABASE_JWT_SECRET: jwt-secret-placeholder
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: anon-key-placeholder
+          SLA_ALERT_WEBHOOK_URL: https://example.com/webhook/slack
+          SUPABASE_CHANNEL_MONITOR_WEBHOOK: https://example.com/webhook/supabase
+          AGENT_AUDIT_WEBHOOK_URL: https://example.com/webhook/audit

@@ -194,6 +194,9 @@ Deliverables:
 Acceptance Criteria:
 - One authoritative CI entrypoint passes for all PRs
 
+Status:
+- Added quality gate workflow (`.github/workflows/quality-gate.yml`)
+
 ### Phase 8 — Performance & Security
 **Goal:** Measured improvements without premature optimization.
 
