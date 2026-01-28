@@ -10,13 +10,13 @@
  */
 
 export {
-  logStructuredEvent,
-  recordMetric,
-  logError,
-  scrubPII,
-  normalizeError,
-  serveWithObservability,
   createJsonErrorResponse,
-  type StructuredLogger,
+  logError,
+  logStructuredEvent,
+  normalizeError,
   type ObservabilityContext,
+  recordMetric,
+  scrubPII,
+  serveWithObservability,
+  type StructuredLogger,
 } from "./logger.ts";

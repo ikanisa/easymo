@@ -7,8 +7,8 @@
  */
 
 import fs from 'fs/promises';
-import path from 'path';
 import { glob } from 'glob';
+import path from 'path';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 

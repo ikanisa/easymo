@@ -1,5 +1,5 @@
-import { sendText } from "../wa/client.ts";
 import { logStructuredEvent } from "../../observability/index.ts";
+import { sendText } from "../wa/client.ts";
 
 /**
  * Notify user of token allocation

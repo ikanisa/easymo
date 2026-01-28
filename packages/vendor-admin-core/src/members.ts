@@ -3,13 +3,13 @@
  */
 
 import { FEATURE_FLAGS, isFeatureEnabled } from '@easymo/flags';
-import { 
-  type CreateMember, 
+import {
+  type CreateMember,
   CreateMemberSchema,
-  type Member, 
+  type Member,
   MemberSchema,
   type UpdateMember,
-} from '@easymo/sacco-core';
+} from './sacco-types.js';
 
 export { type CreateMember, type Member, type UpdateMember };
 
@@ -22,27 +22,27 @@ export interface MemberService {
    * Get a member by ID
    */
   getMember(id: string): Promise<Member | null>;
-  
+
   /**
    * List members for an ikimina group
    */
   listMembers(ikiminaId: string, options?: ListMembersOptions): Promise<MemberListResult>;
-  
+
   /**
    * Create a new member
    */
   createMember(data: CreateMember): Promise<Member>;
-  
+
   /**
    * Update a member
    */
   updateMember(id: string, data: UpdateMember): Promise<Member>;
-  
+
   /**
    * Soft delete a member (set status to INACTIVE)
    */
   deleteMember(id: string): Promise<void>;
-  
+
   /**
    * Import members from CSV/Excel
    */
@@ -78,8 +78,8 @@ export function validateMember(data: unknown): { success: true; data: Member } |
   if (result.success) {
     return { success: true, data: result.data };
   }
-  return { 
-    success: false, 
+  return {
+    success: false,
     errors: result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`),
   };
 }
@@ -92,8 +92,8 @@ export function validateCreateMember(data: unknown): { success: true; data: Crea
   if (result.success) {
     return { success: true, data: result.data };
   }
-  return { 
-    success: false, 
+  return {
+    success: false,
     errors: result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`),
   };
 }
@@ -102,6 +102,6 @@ export function validateCreateMember(data: unknown): { success: true; data: Crea
  * Check if member management features are enabled
  */
 export function isMemberManagementEnabled(): boolean {
-  return isFeatureEnabled(FEATURE_FLAGS.VENDOR_PORTAL) && 
-         isFeatureEnabled(FEATURE_FLAGS.IKIMINA_MANAGEMENT);
+  return isFeatureEnabled(FEATURE_FLAGS.VENDOR_PORTAL) &&
+    isFeatureEnabled(FEATURE_FLAGS.IKIMINA_MANAGEMENT);
 }

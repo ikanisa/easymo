@@ -1,5 +1,5 @@
 import { config } from "../config.js";
-import type { HealthCheck, CheckStatus } from "../types.js";
+import type { CheckStatus,HealthCheck } from "../types.js";
 
 async function fetchWithTimeout(url: string, timeout = 10000): Promise<Response> {
   const controller = new AbortController();

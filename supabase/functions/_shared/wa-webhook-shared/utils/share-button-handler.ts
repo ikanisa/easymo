@@ -1,12 +1,12 @@
 // Universal Share easyMO button handler for all webhook microservices
 // Import this in any microservice that shows buttons to users
 
+import { logStructuredEvent } from "../../observability.ts";
+import { t } from "../i18n/translator.ts";
 import type { RouterContext } from "../types.ts";
 import { IDS } from "../wa/ids.ts";
-import { ensureReferralLink } from "./share.ts";
 import { sendButtonsMessage } from "./reply.ts";
-import { t } from "../i18n/translator.ts";
-import { logStructuredEvent } from "../../observability.ts";
+import { ensureReferralLink } from "./share.ts";
 
 /**
  * Handle Share easyMO button tap

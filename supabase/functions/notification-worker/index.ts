@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { supabase as sharedSupabase } from "../_shared/wa-webhook-shared/config.ts";
-import { processNotificationQueue } from "./notify-sender.ts";
+
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { emitAlert } from "../_shared/observability.ts";
 import {
@@ -8,7 +7,9 @@ import {
   recordGauge,
   recordMetric,
 } from "../_shared/observability.ts";
+import { supabase as sharedSupabase } from "../_shared/wa-webhook-shared/config.ts";
 import { claimWorkerLease, releaseWorkerLease } from "./lease.ts";
+import { processNotificationQueue } from "./notify-sender.ts";
 
 const BATCH_SIZE = 20;
 const CRON_EXPR = "*/1 * * * *"; // once per minute

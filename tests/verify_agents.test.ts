@@ -1,5 +1,6 @@
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect,it } from 'vitest';
+
 import { BuyAndSellAgent } from '../packages/agents/src/agents/commerce/buy-and-sell.agent';
 
 /**

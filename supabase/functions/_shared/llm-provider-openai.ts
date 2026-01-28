@@ -5,14 +5,15 @@
  */
 
 import OpenAI from "npm:openai@^4.24.0";
-import { logStructuredEvent, logError, recordMetric } from "./observability.ts";
+
 import type {
-  LLMProvider,
   LLMCompletionOptions,
   LLMCompletionResponse,
-  LLMToolDefinition,
+  LLMProvider,
   LLMToolCall,
+  LLMToolDefinition,
 } from "./llm-provider-interface.ts";
+import { logError, logStructuredEvent, recordMetric } from "./observability.ts";
 
 export class OpenAIProvider implements LLMProvider {
   readonly name = 'openai';

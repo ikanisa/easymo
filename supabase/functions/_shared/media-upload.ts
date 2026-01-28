@@ -6,8 +6,9 @@
  * @see docs/GROUND_RULES.md for observability requirements
  */
 
-import { logStructuredEvent } from "../_shared/observability.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
+
+import { logStructuredEvent } from "../_shared/observability.ts";
 import type { MarketplaceContext } from "./agent.ts";
 
 const WA_PHONE_ID = Deno.env.get("WA_PHONE_NUMBER_ID") || "";

@@ -1,7 +1,7 @@
+import { logStructuredEvent } from "../../../observability/index.ts";
 import { supabase } from "../../config.ts";
 import type { SupabaseClient } from "../../deps.ts";
 import { getOrSetCached } from "../../utils/cache.ts";
-import { logStructuredEvent } from "../../../observability/index.ts";
 
 const MENU_CACHE_ENABLED =
   (Deno.env.get("WA_MENU_CACHE_ENABLED") ?? "true").toLowerCase() !== "false";

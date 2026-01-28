@@ -11,8 +11,9 @@
  */
 
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
+
 import { GeminiProvider } from "./llm-provider-gemini.ts";
-import { logStructuredEvent, logError, recordMetric } from "./observability.ts";
+import { logError, logStructuredEvent, recordMetric } from "./observability.ts";
 
 export interface VendorPayload {
   rawText?: string;

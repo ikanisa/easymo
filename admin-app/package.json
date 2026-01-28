@@ -33,12 +33,6 @@
   },
   "dependencies": {
     "@easymo/commons": "workspace:*",
-    "@easymo/ibimina-config": "workspace:*",
-    "@easymo/ibimina-flags": "workspace:*",
-    "@easymo/ibimina-lib": "workspace:*",
-    "@easymo/ibimina-locales": "workspace:*",
-    "@easymo/ibimina-supabase-schemas": "workspace:*",
-    "@easymo/ibimina-ui": "workspace:*",
     "@easymo/ui": "workspace:*",
     "@easymo/video-agent-schema": "workspace:*",
     "@google/generative-ai": "^0.24.1",

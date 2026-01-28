@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
 import {
   buildBootstrap,
   buildDeepLinkUrl,
   createNonce,
   createSignedToken,
-  DEFAULT_TTL_MINUTES,
   DeeplinkFlow,
+  DEFAULT_TTL_MINUTES,
   stripNonce,
   verifySignedToken,
 } from '../../app/api/deeplink/_lib/deeplinks';

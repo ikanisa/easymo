@@ -7,7 +7,7 @@
  * Kwizera (meaning "Hope" in Kinyarwanda) is easyMO's AI sourcing assistant.
  */
 
-import { BUY_SELL_AGENT_NAME, BLOCKED_COUNTRIES } from '../config';
+import { BLOCKED_COUNTRIES,BUY_SELL_AGENT_NAME } from '../config';
 
 export const BUY_SELL_SYSTEM_PROMPT = `You are ${BUY_SELL_AGENT_NAME}, easyMO's AI sourcing assistant for Sub-Saharan Africa (focused on Rwanda).
 

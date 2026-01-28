@@ -4,10 +4,10 @@
  * Eliminates hardcoded menu lists
  */
 
-import type { RouterContext } from "../types.ts";
+import { logStructuredEvent } from "../../observability/index.ts";
 import { supabase } from "../config.ts";
 import type { SupabaseClient } from "../deps.ts";
-import { logStructuredEvent } from "../../observability/index.ts";
+import type { RouterContext } from "../types.ts";
 
 export interface SubmenuItem {
   key: string;

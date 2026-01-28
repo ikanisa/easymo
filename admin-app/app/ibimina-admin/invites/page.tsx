@@ -1,5 +1,6 @@
-import Link from "next/link";
 import { revalidatePath } from "next/cache";
+import Link from "next/link";
+
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const inviteStaff = async (formData: FormData) => {

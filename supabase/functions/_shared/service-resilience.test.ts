@@ -1,11 +1,12 @@
 import { assertEquals } from "https://deno.land/std@0.203.0/testing/asserts.ts";
+
 import {
-  isServiceCircuitOpen,
-  recordServiceSuccess,
-  recordServiceFailure,
   checkRateLimit,
-  getCircuitState,
   cleanupRateLimitState,
+  getCircuitState,
+  isServiceCircuitOpen,
+  recordServiceFailure,
+  recordServiceSuccess,
 } from "./service-resilience.ts";
 
 // Reset state between tests (modules maintain state in memory)

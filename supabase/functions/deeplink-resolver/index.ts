@@ -1,13 +1,13 @@
-import { serve } from "../wa-webhook/deps.ts";
-import { logStructuredEvent } from "../wa-webhook/observe/log.ts";
 import {
   DeeplinkResolveSchema,
-  validateBody,
-  validationErrorResponse,
+  getClientIP,
   isRateLimited,
   rateLimitErrorResponse,
-  getClientIP,
+  validateBody,
+  validationErrorResponse,
 } from "../_shared/validation.ts";
+import { serve } from "../wa-webhook/deps.ts";
+import { logStructuredEvent } from "../wa-webhook/observe/log.ts";
 
 const DEFAULT_ALLOWED_ORIGINS = (Deno.env.get("DEEPLINK_ALLOWED_ORIGINS") ?? "")
   .split(",")

@@ -5,9 +5,10 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.1";
-import { verifyWebhookSignature } from "./webhook-utils.ts";
+
 import { logStructuredEvent } from "./observability.ts";
 import { rateLimitMiddleware } from "./rate-limit/index.ts";
+import { verifyWebhookSignature } from "./webhook-utils.ts";
 
 export interface WebhookSecurityConfig {
   serviceName: string;

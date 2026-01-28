@@ -7,19 +7,18 @@
  * @see docs/GROUND_RULES.md
  */
 
-import { sendText } from "../wa/client.ts";
 import { logStructuredEvent } from "../../observability/index.ts";
+import { sendText } from "../wa/client.ts";
 
 // Re-export new error classes from shared for consistency
 export { 
   WebhookError as BaseWebhookError,
-  ValidationError,
-  SignatureError,
-  RateLimitError,
+  CircuitBreakerOpenError,
   ProcessingError,
+  RateLimitError,
+  SignatureError,
   TimeoutError,
-  CircuitBreakerOpenError
-} from "../../_shared/errors.ts";
+  ValidationError} from "../../_shared/errors.ts";
 
 export enum ErrorCode {
   VALIDATION_ERROR = "VALIDATION_ERROR",

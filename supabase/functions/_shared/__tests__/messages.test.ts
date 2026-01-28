@@ -5,23 +5,24 @@
 
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { describe, it } from "https://deno.land/std@0.224.0/testing/bdd.ts";
-import {
-  isTextMessage,
-  isInteractiveButtonMessage,
-  isInteractiveListMessage,
-  isLocationMessage,
-  isMediaMessage,
-  getTextBody,
-  getButtonReplyId,
-  getListReplyId,
-} from "../wa-webhook-shared/utils/messages.ts";
+
 import type {
-  WhatsAppTextMessage,
   WhatsAppInteractiveButtonMessage,
   WhatsAppInteractiveListMessage,
   WhatsAppLocationMessage,
   WhatsAppMessage,
+  WhatsAppTextMessage,
 } from "../wa-webhook-shared/types.ts";
+import {
+  getButtonReplyId,
+  getListReplyId,
+  getTextBody,
+  isInteractiveButtonMessage,
+  isInteractiveListMessage,
+  isLocationMessage,
+  isMediaMessage,
+  isTextMessage,
+} from "../wa-webhook-shared/utils/messages.ts";
 
 describe("Message Utils", () => {
   describe("isTextMessage", () => {

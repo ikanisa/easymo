@@ -11,20 +11,20 @@
  * @see IMPLEMENTATION_PHASES.md Phase 2.1
  */
 
-import { logStructuredEvent, recordMetric } from "./observability.ts";
 import { storeDLQEntry } from "./dlq-manager.ts";
-import { maskPhone } from "./phone-utils.ts";
 import {
-  WebhookError,
-  ValidationError,
-  SignatureError,
   AuthenticationError,
-  RateLimitError,
-  ProcessingError,
-  ExternalServiceError,
-  TimeoutError,
   CircuitBreakerOpenError,
+  ExternalServiceError,
+  ProcessingError,
+  RateLimitError,
+  SignatureError,
+  TimeoutError,
+  ValidationError,
+  WebhookError,
 } from "./errors.ts";
+import { logStructuredEvent, recordMetric } from "./observability.ts";
+import { maskPhone } from "./phone-utils.ts";
 
 /**
  * Context for webhook error handling
@@ -465,13 +465,13 @@ export async function withRetry<T>(
  * Export error classes for use in services
  */
 export {
-  WebhookError,
-  ValidationError,
-  SignatureError,
   AuthenticationError,
-  RateLimitError,
-  ProcessingError,
-  ExternalServiceError,
-  TimeoutError,
   CircuitBreakerOpenError,
+  ExternalServiceError,
+  ProcessingError,
+  RateLimitError,
+  SignatureError,
+  TimeoutError,
+  ValidationError,
+  WebhookError,
 };

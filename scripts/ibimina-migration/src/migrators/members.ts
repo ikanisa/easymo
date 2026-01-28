@@ -1,7 +1,7 @@
-import { BaseMigrator } from "./base.js";
 import type { SourceMember, TargetMember } from "../types.js";
-import { validateMember } from "../validators/member.js";
 import { processPII } from "../utils/crypto.js";
+import { validateMember } from "../validators/member.js";
+import { BaseMigrator } from "./base.js";
 
 export class MemberMigrator extends BaseMigrator<SourceMember, TargetMember> {
   get tableName() {

@@ -7,9 +7,9 @@
  * @module message-deduplication
  */
 
-import { supabase } from "../config.ts";
-import { logStructuredEvent, logError } from "../../_shared/observability.ts";
+import { logError,logStructuredEvent } from "../../_shared/observability.ts";
 import { DEDUPLICATION_CONFIG } from "../../_shared/webhook-config.ts";
+import { supabase } from "../config.ts";
 
 /**
  * Check if a message has already been processed (database-backed deduplication)

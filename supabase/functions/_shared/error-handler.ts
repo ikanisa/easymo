@@ -7,7 +7,7 @@
  * @see docs/GROUND_RULES.md for error handling guidelines
  */
 
-import { logStructuredEvent, logError, getCorrelationId } from "./observability.ts";
+import { getCorrelationId,logError, logStructuredEvent } from "./observability.ts";
 import { supabase } from "./supabase.ts";
 
 /**

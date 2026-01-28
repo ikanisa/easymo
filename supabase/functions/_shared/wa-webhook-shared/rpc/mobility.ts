@@ -1,5 +1,5 @@
+import { getTripExpiryMs,MOBILITY_CONFIG } from "../config/mobility.ts";
 import type { SupabaseClient } from "../deps.ts";
-import { MOBILITY_CONFIG, getTripExpiryMs } from "../config/mobility.ts";
 
 // Re-export config for consumers
 export { MOBILITY_CONFIG } from "../config/mobility.ts";

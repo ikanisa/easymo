@@ -20,7 +20,6 @@
     "type-check": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@easymo/sacco-core": "workspace:*",
     "@easymo/supabase-schemas": "workspace:*",
     "@easymo/flags": "workspace:*",
     "zod": "^3.25.76"

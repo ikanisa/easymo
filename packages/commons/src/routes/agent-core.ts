@@ -118,7 +118,7 @@ export const getAgentCoreEndpointPath = <
   return buildEndpointPath(base, segment);
 };
 
-const agentCoreServiceScopes = Object.freeze({
+const agentCoreServiceScopes: Readonly<Record<string, readonly string[]>> = Object.freeze({
   aiBrokerOrchestrate: ["ai:broker.orchestrate"],
   aiSettlementRun: ["ai:settlement"],
   aiAttributionRun: ["ai:attribution"],
@@ -128,7 +128,7 @@ const agentCoreServiceScopes = Object.freeze({
   aiSoraGenerate: ["ai:sora.generate"],
   aiTasksSchedule: ["tasks:schedule"],
   aiTasksRunDue: ["tasks:run"],
-} satisfies Record<string, readonly string[]>);
+});
 
 export const getAgentCoreRouteServiceScopes = (key: string): readonly string[] =>
   agentCoreServiceScopes[key] ?? [];

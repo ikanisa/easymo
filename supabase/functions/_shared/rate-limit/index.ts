@@ -7,6 +7,7 @@
  */
 
 import { Redis } from "https://esm.sh/@upstash/redis@1.28.0";
+
 import { logStructuredEvent } from "../observability.ts";
 
 // In-memory rate limit store (fallback when Redis unavailable)

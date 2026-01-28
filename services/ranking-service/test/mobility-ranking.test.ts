@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { rankDrivers, DriverCandidate } from '../src/mobility-ranking';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { afterAll,beforeAll, describe, expect, it } from 'vitest';
+
+import { DriverCandidate,rankDrivers } from '../src/mobility-ranking';
 
 describe('Mobility Ranking', () => {
   let supabase: SupabaseClient;

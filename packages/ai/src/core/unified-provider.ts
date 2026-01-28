@@ -7,9 +7,8 @@
  * @packageDocumentation
  */
 
-import { EventEmitter } from 'events';
-
 import { childLogger } from '@easymo/commons';
+import { EventEmitter } from 'events';
 
 const log = childLogger({ service: 'unified-provider' });
 
@@ -365,7 +364,7 @@ export class UnifiedAIProvider extends EventEmitter {
     }
 
     // Select model based on cost routing if enabled
-    let effectiveConfig = { ...config };
+    const effectiveConfig = { ...config };
     if (this.config.enableCostRouting && !config?.model) {
       effectiveConfig.model = selectCostEffectiveModel(
         'simple',

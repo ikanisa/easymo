@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+
 import { getEnv, getSupabaseServiceConfig } from "./env.ts";
 
 const CLIENT_TTL_MS = (() => {

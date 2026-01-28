@@ -9,28 +9,28 @@ export * from './utils/index.js';
 
 // Re-export ibimina-specific (without types to avoid duplicate exports)
 export {
-  rwRWContentPack,
-  rwRWMessages,
+  contentPacks,
   enRWContentPack,
   enRWMessages,
-  frSNContentPack,
-  frSNMessages,
   frRWContentPack,
   frRWMessages,
+  frSNContentPack,
+  frSNMessages,
+  getAvailableLocales,
+  getContentPack,
+  getContentPackByCountry,
+  getLocalesForCountry,
+  getMessageDictionary,
+  getMessages,
   getSurfaceCopy,
   getSurfaceCopyVariant,
-  contentPacks,
   messages,
-  getContentPack,
-  getMessages,
-  resolveMessages,
   resolveContentPack,
-  getMessageDictionary,
-  getContentPackByCountry,
-  getAvailableLocales,
-  getLocalesForCountry,
+  resolveMessages,
+  rwRWContentPack,
+  rwRWMessages,
 } from './locales/ibimina/index.js';
 
 // Re-export types explicitly to avoid conflicts
-export type { LocaleCode, CountryContentPack, TranslationMessages } from './types/ibimina/index.js';
-export type { SurfaceCopy, CopyVariant } from './locales/ibimina/surface-copy.js';
+export type { CopyVariant,SurfaceCopy } from './locales/ibimina/surface-copy.js';
+export type { CountryContentPack, LocaleCode, TranslationMessages } from './types/ibimina/index.js';

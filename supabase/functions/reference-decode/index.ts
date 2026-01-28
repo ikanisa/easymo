@@ -8,6 +8,7 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js.39.0";
+
 import { corsHeaders } from "../_shared/http.ts";
 import { serveWithObservability } from "../_shared/observability.ts";
 

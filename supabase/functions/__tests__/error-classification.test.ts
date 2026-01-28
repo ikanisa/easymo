@@ -4,13 +4,13 @@
  */
 
 import { assertEquals } from "https://deno.land/std@0.168.0/testing/asserts.ts";
+
 import {
   classifyError,
+  type ErrorCategory,
   formatUnknownError,
   getStackTrace,
-  isRetryableError,
-  type ErrorCategory
-} from "../_shared/error-handler.ts";
+  isRetryableError} from "../_shared/error-handler.ts";
 
 Deno.test("Error Classification - User errors", () => {
   const userErrors = [

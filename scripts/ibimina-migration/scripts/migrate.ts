@@ -1,6 +1,7 @@
 #!/usr/bin/env tsx
-import { runMigration, logger, config } from "../src/index.js";
 import readline from "readline";
+
+import { config,logger, runMigration } from "../src/index.js";
 
 async function confirm(message: string): Promise<boolean> {
   const rl = readline.createInterface({

@@ -1,6 +1,6 @@
-import { BaseMigrator } from "./base.js";
 import type { SourcePayment } from "../types.js";
 import { validatePayment } from "../validators/payment.js";
+import { BaseMigrator } from "./base.js";
 
 export class PaymentMigrator extends BaseMigrator<SourcePayment> {
   get tableName() {

@@ -8,7 +8,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { CampaignConfigService, CampaignConfig } from './campaign-config.service';
+
+import { CampaignConfig,CampaignConfigService } from './campaign-config.service';
 
 export interface OutboundCallRequest {
   /** Campaign ID to use */

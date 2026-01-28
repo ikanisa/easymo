@@ -3,10 +3,10 @@
  * Optimizes cold start times through preloading
  */
 
-import { logStructuredEvent } from "../observability/index.ts";
-import { getClientPool } from "../database/client-pool.ts";
 import { getCachedAppConfig } from "../cache/index.ts";
+import { getClientPool } from "../database/client-pool.ts";
 import { preloadHandlers } from "../handlers/lazy-loader.ts";
+import { logStructuredEvent } from "../observability/index.ts";
 
 // ============================================================================
 // TYPES

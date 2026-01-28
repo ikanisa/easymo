@@ -11,7 +11,8 @@
  */
 
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
-import { logStructuredEvent, logError, recordMetric } from "./observability.ts";
+
+import { logError, logStructuredEvent, recordMetric } from "./observability.ts";
 
 export interface AgentConfig {
   type: 'buy_sell' | 'marketplace';

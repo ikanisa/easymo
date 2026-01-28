@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js";
-import { recordMetric } from "../_shared/metrics.ts";
+
 import { validateHmacRequest } from "../_shared/auth.ts";
+import { recordMetric } from "../_shared/metrics.ts";
 import { serveWithObservability } from "../_shared/observability.ts";
 
 const APP_ORIGIN = Deno.env.get("APP_ORIGIN") ?? "*";

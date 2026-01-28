@@ -8,6 +8,7 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
+
 import { logStructuredEvent } from "../observability.ts";
 import type { Job } from "../types/buy-sell.ts";
 

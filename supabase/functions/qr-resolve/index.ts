@@ -1,9 +1,9 @@
-import { serve } from "../wa-webhook/deps.ts";
-import { verifyQrPayload } from "../wa-webhook/utils/qr.ts";
-import { ensureProfile, setState } from "../wa-webhook/state/store.ts";
-import { supabase } from "../wa-webhook/config.ts";
-import { logStructuredEvent } from "../wa-webhook/observe/log.ts";
 import { getRotatingSecret } from "../_shared/env.ts";
+import { supabase } from "../wa-webhook/config.ts";
+import { serve } from "../wa-webhook/deps.ts";
+import { logStructuredEvent } from "../wa-webhook/observe/log.ts";
+import { ensureProfile, setState } from "../wa-webhook/state/store.ts";
+import { verifyQrPayload } from "../wa-webhook/utils/qr.ts";
 
 function normalize(label: string): string {
   return label.trim().replace(/\s+/g, " ").toUpperCase();

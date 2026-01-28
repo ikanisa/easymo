@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+
 import { logError } from "@/lib/observability/logger";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { CountryRow } from "@/lib/types/multicountry";
 
 export default async function GovernanceCountriesPage() {

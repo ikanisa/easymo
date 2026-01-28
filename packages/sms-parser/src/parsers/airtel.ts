@@ -1,4 +1,4 @@
-import type { SMSParser, ParsedSMS } from '../types.js';
+import type { ParsedSMS,SMSParser } from '../types.js';
 
 /**
  * Airtel Money SMS Parser

@@ -9,10 +9,10 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { EventEmitter } from 'events';
 import WebSocket from 'ws';
 
+import { AGIBridge, ToolCall } from './agi-bridge';
 import { config } from './config';
 import { logger } from './logger';
-import { AGIBridge, ToolCall } from './agi-bridge';
-import { REALTIME_FUNCTIONS, buildCallCenterPrompt } from './realtime-functions';
+import { buildCallCenterPrompt,REALTIME_FUNCTIONS } from './realtime-functions';
 
 export type CallState = 'ringing' | 'answered' | 'in_progress' | 'ending' | 'ended';
 

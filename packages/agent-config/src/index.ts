@@ -20,37 +20,37 @@ export * from './types';
 // Loader
 export {
   AgentConfigLoader,
-  getAgentConfigLoader,
-  getAgentBySlugOrId,
   clearAgentCache,
+  getAgentBySlugOrId,
+  getAgentConfigLoader,
 } from './loader';
 
 // Tools
 export {
-  registerToolHandler,
-  getToolHandler,
-  executeTool,
-  buildRuntimeTools,
   buildOpenAITools,
+  buildRuntimeTools,
   buildToolExecutorMap,
+  executeTool,
+  getToolHandler,
+  registerToolHandler,
   type ToolExecutorOptions,
 } from './tools';
 
 // Telemetry
 export {
-  logAgentMetric,
-  logToolExecution,
-  logMatchEvent,
-  updateMatchEventStatus,
-  createToolExecutionLogger,
   createConversationMetrics,
+  createToolExecutionLogger,
+  logAgentMetric,
+  logMatchEvent,
+  logToolExecution,
+  updateMatchEventStatus,
 } from './telemetry';
 
 // Experiments
 export {
   getActiveExperiments,
+  getExperimentalModelConfig,
+  getExperimentalSystemInstruction,
   getExperimentAssignment,
   recordExperimentResult,
-  getExperimentalSystemInstruction,
-  getExperimentalModelConfig,
 } from './experiments';

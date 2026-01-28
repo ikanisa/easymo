@@ -9,9 +9,9 @@
  * @see docs/GROUND_RULES.md for observability requirements
  */
 
+import type { LLMMessage } from "../llm-provider-interface.ts";
 import { LLMRouter } from "../llm-router.ts";
 import { logStructuredEvent, recordMetric } from "../observability.ts";
-import type { LLMMessage } from "../llm-provider-interface.ts";
 
 export interface MarketplaceAIChatOptions {
   temperature?: number;

@@ -1,15 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "zod";
+
+import { getSupabaseServiceConfig } from "../_shared/env.ts";
 import {
   generateCorrelationId,
   getCorrelationId,
+  logError,
   logRequest,
   logResponse,
   logStructuredEvent,
-  logError,
 } from "../_shared/observability.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
-import { getSupabaseServiceConfig } from "../_shared/env.ts";
 
 const supabase = getServiceClient();
 const serviceConfig = getSupabaseServiceConfig();

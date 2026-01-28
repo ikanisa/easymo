@@ -3,13 +3,13 @@
  */
 
 import { FEATURE_FLAGS, isFeatureEnabled } from '@easymo/flags';
-import { 
-  type CreateIkimina, 
+import {
+  type CreateIkimina,
   CreateIkiminaSchema,
-  type Ikimina, 
+  type Ikimina,
   IkiminaSchema,
   type UpdateIkimina,
-} from '@easymo/sacco-core';
+} from './sacco-types.js';
 
 export { type CreateIkimina, type Ikimina, type UpdateIkimina };
 
@@ -22,32 +22,32 @@ export interface IkiminaService {
    * Get an ikimina group by ID
    */
   getIkimina(id: string): Promise<Ikimina | null>;
-  
+
   /**
    * List ikimina groups for a SACCO
    */
   listIkimina(saccoId: string, options?: ListIkiminaOptions): Promise<IkiminaListResult>;
-  
+
   /**
    * Create a new ikimina group
    */
   createIkimina(data: CreateIkimina): Promise<Ikimina>;
-  
+
   /**
    * Update an ikimina group
    */
   updateIkimina(id: string, data: UpdateIkimina): Promise<Ikimina>;
-  
+
   /**
    * Suspend an ikimina group
    */
   suspendIkimina(id: string, reason: string): Promise<void>;
-  
+
   /**
    * Reactivate a suspended ikimina group
    */
   reactivateIkimina(id: string): Promise<void>;
-  
+
   /**
    * Get ikimina statistics
    */
@@ -109,8 +109,8 @@ export function validateIkimina(data: unknown): { success: true; data: Ikimina }
   if (result.success) {
     return { success: true, data: result.data };
   }
-  return { 
-    success: false, 
+  return {
+    success: false,
     errors: result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`),
   };
 }
@@ -123,8 +123,8 @@ export function validateCreateIkimina(data: unknown): { success: true; data: Cre
   if (result.success) {
     return { success: true, data: result.data };
   }
-  return { 
-    success: false, 
+  return {
+    success: false,
     errors: result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`),
   };
 }

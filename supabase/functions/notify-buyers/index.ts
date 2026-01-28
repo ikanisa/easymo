@@ -16,21 +16,22 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js";
+
 import { logStructuredEvent, recordMetric } from "../_shared/observability.ts";
-import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
+import { transcribeVoiceNote } from "../_shared/voice/gemini-voice-bridge.ts";
 import { claimEvent } from "../_shared/wa-webhook-shared/state/idempotency.ts";
-import { extractWhatsAppMessage } from "./utils/index.ts";
+import { clearState,ensureProfile, getState, setState } from "../_shared/wa-webhook-shared/state/store.ts";
+import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
+import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import {
   type BuyAndSellContext,
 } from "./core/agent.ts";
 import { EnhancedMarketplaceAgent } from "./core/agent-enhanced.ts";
-import { transcribeVoiceNote } from "../_shared/voice/gemini-voice-bridge.ts";
-import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
-import { classifyError, serializeError } from "./utils/error-handling.ts";
-import { ensureProfile, getState, setState, clearState } from "../_shared/wa-webhook-shared/state/store.ts";
+import { getProfileContext,handleInteractiveButton } from "./handlers/interactive-buttons.ts";
 import { handleStateTransition } from "./handlers/state-machine.ts";
-import { handleInteractiveButton, getProfileContext } from "./handlers/interactive-buttons.ts";
+import { classifyError, serializeError } from "./utils/error-handling.ts";
+import { extractWhatsAppMessage } from "./utils/index.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");

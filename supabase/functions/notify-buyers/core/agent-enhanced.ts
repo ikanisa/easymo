@@ -15,25 +15,26 @@
  * @see NOTIFY_BUYERS_AGENT_ANALYSIS.md for full analysis
  */
 
-import { logStructuredEvent, recordMetric } from "../../_shared/observability.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
-import { SOURCING_TOOLS_CONFIG, SOURCING_TOOL_CONFIG, executeTool } from "../../_shared/buy-sell-tools.ts";
-import { generateContent } from "../../_shared/gemini.ts";
+
+import { executeTool,SOURCING_TOOL_CONFIG, SOURCING_TOOLS_CONFIG } from "../../_shared/buy-sell-tools.ts";
 import { fetchUserContext, formatUserContextForPrompt } from "../../_shared/context/user-context.ts";
-import type { UserContext } from "../../_shared/types/buy-sell.ts";
-import { findVendorsNearby, getTier1Vendors } from "../../_shared/memory/vendor-proximity.ts";
+import { generateContent } from "../../_shared/gemini.ts";
 import { 
-  getRelevantMarketKnowledge, 
   formatMarketKnowledgeForPrompt,
+  getRelevantMarketKnowledge, 
   learnFromInteraction 
 } from "../../_shared/memory/market-intelligence.ts";
+import { findVendorsNearby, getTier1Vendors } from "../../_shared/memory/vendor-proximity.ts";
+import { logStructuredEvent, recordMetric } from "../../_shared/observability.ts";
+import type { UserContext } from "../../_shared/types/buy-sell.ts";
 
 // Re-export types for compatibility
-export type { MarketplaceContext, BuyAndSellContext } from "./agent.ts";
+export type { BuyAndSellContext,MarketplaceContext } from "./agent.ts";
 export type { AgentResponse } from "./agent.ts";
 
 // Import existing types
-import type { MarketplaceContext, AgentResponse } from "./agent.ts";
+import type { AgentResponse,MarketplaceContext } from "./agent.ts";
 
 // =====================================================
 // CONFIGURATION

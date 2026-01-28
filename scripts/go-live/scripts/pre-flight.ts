@@ -1,9 +1,10 @@
 #!/usr/bin/env tsx
 import { logger } from "@easymo/migration-shared/logger";
-import { config } from "../src/config.js";
-import { databaseChecks } from "../src/checks/database.js";
+
 import { apiChecks } from "../src/checks/api.js";
-import type { HealthCheck, HealthCheckResult, CheckStatus } from "../src/types.js";
+import { databaseChecks } from "../src/checks/database.js";
+import { config } from "../src/config.js";
+import type { CheckStatus,HealthCheck, HealthCheckResult } from "../src/types.js";
 
 logger.configure({ verbose: config.VERBOSE });
 

@@ -7,7 +7,7 @@
  * @see docs/GROUND_RULES.md for observability requirements
  */
 
-import { logStructuredEvent, logError } from "./observability.ts";
+import { logError,logStructuredEvent } from "./observability.ts";
 
 /**
  * Agent event types for structured logging

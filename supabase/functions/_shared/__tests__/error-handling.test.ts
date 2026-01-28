@@ -5,9 +5,10 @@
 
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { describe, it } from "https://deno.land/std@0.224.0/testing/bdd.ts";
+
 import {
-  formatUnknownError,
   classifyError,
+  formatUnknownError,
   serializeError,
 } from "../wa-webhook-shared/utils/error-handling.ts";
 

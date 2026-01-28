@@ -7,11 +7,12 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
-import type { ProfileContext } from "./interactive-buttons.ts";
+
 import { logStructuredEvent } from "../../_shared/observability.ts";
 import type { ChatState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import { EnhancedMarketplaceAgent } from "../core/agent-enhanced.ts";
+import type { ProfileContext } from "./interactive-buttons.ts";
 
 /**
  * Handle state transitions for multi-step workflows

@@ -1,8 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+
 import { logStructuredEvent, recordMetric } from "../_shared/observability.ts";
-import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import { claimEvent } from "../_shared/wa-webhook-shared/state/idempotency.ts";
+import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 
 function envAny(keys: string[], required = true): string {
   for (const k of keys) {

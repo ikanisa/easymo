@@ -13,10 +13,11 @@
  */
 
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { logStructuredEvent, recordMetric } from "../_shared/observability.ts";
-import { normalizePhoneNumber, maskPhone } from "../_shared/buy-sell-config.ts";
-import { generateContent } from "../_shared/gemini.ts";
+
+import { maskPhone,normalizePhoneNumber } from "../_shared/buy-sell-config.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import { generateContent } from "../_shared/gemini.ts";
+import { logStructuredEvent, recordMetric } from "../_shared/observability.ts";
 
 // =====================================================
 // TYPES

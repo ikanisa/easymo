@@ -1,5 +1,5 @@
-import cliProgress from "cli-progress";
 import chalk from "chalk";
+import cliProgress from "cli-progress";
 
 export function createProgressBar(total: number, table: string): cliProgress.SingleBar {
   const bar = new cliProgress.SingleBar({

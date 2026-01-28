@@ -10,6 +10,7 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
+
 import { logStructuredEvent, recordMetric } from "../observability.ts";
 import type { BroadcastRequest, BroadcastTarget, VendorCandidate } from "../types/buy-sell.ts";
 

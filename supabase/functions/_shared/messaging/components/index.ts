@@ -3,11 +3,11 @@
  * Pre-built message components for common patterns
  */
 
-import { text, buttons, list } from "../builder.ts";
-import type { ListMessageOptions, ButtonSpec } from "../../types/messages.ts";
+import type { Language } from "../../config/constants.ts";
 import { WA_IDS } from "../../config/constants.ts";
 import { t } from "../../i18n/index.ts";
-import type { Language } from "../../config/constants.ts";
+import type { ButtonSpec,ListMessageOptions } from "../../types/messages.ts";
+import { buttons, list,text } from "../builder.ts";
 
 // ============================================================================
 // CONFIRMATION COMPONENTS
@@ -382,10 +382,10 @@ export function searchingMessage(locale: Language = "en"): string {
 
 // Re-export builders
 export {
-  text,
+  ButtonMessageBuilder,
   buttons,
   list,
-  TextMessageBuilder,
-  ButtonMessageBuilder,
   ListMessageBuilder,
+  text,
+  TextMessageBuilder,
 } from "../builder.ts";

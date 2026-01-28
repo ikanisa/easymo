@@ -3,7 +3,7 @@
  * Tests for reverse geocoding functionality
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach,describe, expect, it } from 'vitest';
 
 // Mock tests since actual implementation is in Deno edge functions
 describe('Geocoding Integration Tests', () => {

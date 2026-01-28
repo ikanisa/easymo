@@ -12,7 +12,7 @@ import { WebSocket,WebSocketServer } from 'ws';
 
 import { config, validateConfig } from './config';
 import { logger } from './logger';
-import { sessionManager, CallSessionConfig } from './session';
+import { CallSessionConfig,sessionManager } from './session';
 import { SIPHandler } from './sip-handler';
 
 const app = express();

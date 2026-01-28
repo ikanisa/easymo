@@ -4,7 +4,7 @@
  * Provides reusable mock factories and assertion helpers
  */
 
-import { vi, expect } from 'vitest';
+import { expect,vi } from 'vitest';
 
 import type { AgentContext, AgentInput, AgentResult } from '../types/agent.types';
 

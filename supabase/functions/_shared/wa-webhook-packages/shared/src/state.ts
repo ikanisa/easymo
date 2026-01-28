@@ -1,6 +1,7 @@
 // Chat state management utilities
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
+
 import type { ChatState } from "./types.ts";
 
 export async function getState(

@@ -5,13 +5,14 @@
  */
 
 import { assertEquals, assertExists } from "https://deno.land/std@0.168.0/testing/asserts.ts";
+
 import {
-  getCacheManager,
-  getCached,
-  setCached,
-  getOrSetCached,
-  deleteCached,
   __resetCache,
+  deleteCached,
+  getCached,
+  getCacheManager,
+  getOrSetCached,
+  setCached,
 } from "./cache.ts";
 
 const test = (

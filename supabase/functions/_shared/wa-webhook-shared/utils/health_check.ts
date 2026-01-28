@@ -8,9 +8,9 @@
  */
 
 import { supabase } from "../config.ts";
-import { getRateLimitStats } from "./rate_limiter.ts";
 import { getCacheStats } from "./cache.ts";
 import { getMetricsStats } from "./metrics_collector.ts";
+import { getRateLimitStats } from "./rate_limiter.ts";
 
 interface HealthCheck {
   healthy: boolean;

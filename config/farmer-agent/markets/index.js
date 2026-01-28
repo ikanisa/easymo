@@ -1,6 +1,6 @@
-import snConfig from './sn-dakar.json' assert { type: 'json' };
-import ghConfig from './gh-accra.json' assert { type: 'json' };
 import ciConfig from './ci-abidjan.json' assert { type: 'json' };
+import ghConfig from './gh-accra.json' assert { type: 'json' };
+import snConfig from './sn-dakar.json' assert { type: 'json' };
 const rawConfigs = [snConfig, ghConfig, ciConfig];
 const configMap = new Map();
 const aliasMap = new Map();

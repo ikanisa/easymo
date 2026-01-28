@@ -11,7 +11,7 @@
  * @see docs/GROUND_RULES.md for observability requirements
  */
 
-import { WebhookError, ExternalServiceError } from "./errors.ts";
+import { ExternalServiceError,WebhookError } from "./errors.ts";
 
 interface SendMessageParams {
   to: string;

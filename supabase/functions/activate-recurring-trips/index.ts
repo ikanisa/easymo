@@ -3,6 +3,7 @@
 // Deno runtime
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js.39.3";
+
 import { corsHeaders } from "../_shared/cors.ts";
 
 interface ActivationResult {

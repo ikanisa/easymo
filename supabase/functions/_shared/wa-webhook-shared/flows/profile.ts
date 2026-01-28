@@ -1,5 +1,5 @@
-import type { RouterContext } from "../types.ts";
 import { handleProfileMenu } from "../domains/profile/index.ts";
+import type { RouterContext } from "../types.ts";
 
 export const PROFILE_STATE_KEY = "profile_menu";
 

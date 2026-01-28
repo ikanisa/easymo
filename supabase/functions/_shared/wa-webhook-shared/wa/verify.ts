@@ -1,5 +1,5 @@
-import { crypto, TextEncoder } from "../deps.ts";
 import { WA_APP_SECRET } from "../config.ts";
+import { crypto, TextEncoder } from "../deps.ts";
 
 const encoder = new TextEncoder();
 

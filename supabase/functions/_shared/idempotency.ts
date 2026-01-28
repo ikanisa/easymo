@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+
 import type { AnyClient } from "./mod.ts";
 
 const DEFAULT_TTL_SECONDS = 60 * 60 * 24; // 24 hours

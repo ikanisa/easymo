@@ -8,7 +8,7 @@
  * - Concise messages with emojis
  */
 
-import type { RouterContext, ButtonSpec } from "../types.ts";
+import type { ButtonSpec,RouterContext } from "../types.ts";
 import { sendText } from "../wa/client.ts";
 import { sendButtonsMessage } from "./reply.ts";
 

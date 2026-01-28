@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
-import { createSourceClient, createTargetClient, getTableCount } from "../src/utils/db.js";
 import { logger } from "../src/logger.js";
+import { createSourceClient, createTargetClient, getTableCount } from "../src/utils/db.js";
 import { formatNumber } from "../src/utils/progress.js";
 
 const TABLES = [

@@ -53,44 +53,43 @@ export {
 } from './feature-flags';
 
 // Config-Driven Agent Management
-export {
-  // Loader
-  AgentConfigLoader,
-  createAgentConfigLoader,
-  getDefaultAgentConfigLoader,
-  // Tool Factory
-  buildRuntimeTools,
-  // Telemetry
-  logAgentMetric,
-  logToolExecution,
-  logMatchEvent,
-  logExperimentResult,
-  // Experiment Support
-  getActiveExperiment,
-  getExperimentAwareInstruction,
-  // Service Catalog
-  EASYMO_VERTICALS,
-  SERVICE_CATALOG,
-  detectVerticalFromQuery,
-  isOutOfScope,
-} from './config';
-
 export type {
+  AgentMetricInput,
+  AgentSlug,
   // Database-driven types
   AiAgent,
+  AiAgentKnowledgeBase,
   AiAgentPersona,
   AiAgentSystemInstruction,
-  AiAgentTool,
   AiAgentTask,
-  AiAgentKnowledgeBase,
+  AiAgentTool,
+  Channel,
+  MatchEventInput,
+  MatchType,
   ResolvedAgentConfig,
   RuntimeTool,
   RuntimeToolContext,
-  AgentMetricInput,
   ToolExecutionInput,
-  MatchEventInput,
   ToolType,
-  Channel,
-  MatchType,
-  AgentSlug,
+} from './config';
+export {
+  // Loader
+  AgentConfigLoader,
+  // Tool Factory
+  buildRuntimeTools,
+  createAgentConfigLoader,
+  detectVerticalFromQuery,
+  // Service Catalog
+  EASYMO_VERTICALS,
+  // Experiment Support
+  getActiveExperiment,
+  getDefaultAgentConfigLoader,
+  getExperimentAwareInstruction,
+  isOutOfScope,
+  // Telemetry
+  logAgentMetric,
+  logExperimentResult,
+  logMatchEvent,
+  logToolExecution,
+  SERVICE_CATALOG,
 } from './config';

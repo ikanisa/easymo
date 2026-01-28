@@ -4,12 +4,13 @@
  */
 
 import { assertEquals, assertExists } from "https://deno.land/std@0.203.0/testing/asserts.ts";
+
+import { TEST_MESSAGES,TEST_USERS } from "../../_shared/testing/fixtures.ts";
 import {
   createMockSupabase,
   createMockWebhookPayload,
   createTestSuite,
 } from "../../_shared/testing/test-utils.ts";
-import { TEST_USERS, TEST_MESSAGES } from "../../_shared/testing/fixtures.ts";
 
 // ============================================================================
 // ROUTING DECISION TESTS

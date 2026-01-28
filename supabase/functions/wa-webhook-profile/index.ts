@@ -18,30 +18,31 @@
  * @version 3.0.0
  */
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "@supabase/supabase-js";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+import { CircuitBreaker } from "../_shared/circuit-breaker.ts";
+import { WEBHOOK_CONFIG } from "../_shared/config/webhooks.ts";
 import { logStructuredEvent } from "../_shared/observability/index.ts";
+import { maskPhone } from "../_shared/phone-utils.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
+import { isValidInternalForward } from "../_shared/security/internal-forward.ts";
 import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
 import type {
   RouterContext,
-  WhatsAppWebhookPayload,
   WhatsAppInteractiveMessage,
   WhatsAppTextMessage,
+  WhatsAppWebhookPayload,
 } from "../_shared/wa-webhook-shared/types.ts";
+import { ensureProfile } from "../_shared/wa-webhook-shared/utils/profile.ts";
+import { sendTextMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
+import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
-import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
-import { WEBHOOK_CONFIG } from "../_shared/config/webhooks.ts";
 import {
   checkIdempotency,
   verifyWebhookSignature,
 } from "../_shared/webhook-utils.ts";
-import { ensureProfile } from "../_shared/wa-webhook-shared/utils/profile.ts";
-import { CircuitBreaker } from "../_shared/circuit-breaker.ts";
 import { classifyError, formatUnknownError } from "./utils/error-handling.ts";
-import { sendTextMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
-import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
-import { maskPhone } from "../_shared/phone-utils.ts";
-import { isValidInternalForward } from "../_shared/security/internal-forward.ts";
 
 const profileConfig = WEBHOOK_CONFIG.profile;
 

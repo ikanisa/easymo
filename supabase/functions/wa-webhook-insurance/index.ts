@@ -9,13 +9,14 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 import { logStructuredEvent } from "../_shared/observability.ts";
-import { fetchInsuranceContacts, formatContactLinks } from "./handlers/contacts.ts";
-import { buildInsuranceMessage } from "./utils/messages.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
-import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { claimEvent } from "../_shared/wa-webhook-shared/state/idempotency.ts";
 import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
+import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
+import { fetchInsuranceContacts, formatContactLinks } from "./handlers/contacts.ts";
+import { buildInsuranceMessage } from "./utils/messages.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

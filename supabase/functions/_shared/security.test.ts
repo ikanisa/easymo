@@ -4,13 +4,14 @@
  */
 
 import { assertEquals, assertRejects } from "https://deno.land/std@0.224.0/assert/mod.ts";
+
 import {
-  constantTimeCompare,
-  validateRequiredEnvVars,
-  isPlaceholderValue,
-  sanitizeErrorMessage,
-  isValidJwtStructure,
   checkRateLimit,
+  constantTimeCompare,
+  isPlaceholderValue,
+  isValidJwtStructure,
+  sanitizeErrorMessage,
+  validateRequiredEnvVars,
 } from "./security.ts";
 
 Deno.test("constantTimeCompare - returns true for equal strings", () => {

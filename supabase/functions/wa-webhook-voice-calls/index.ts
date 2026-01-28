@@ -14,11 +14,12 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js';
+
 import { logStructuredEvent } from '../_shared/observability.ts';
-import { createWebRTCBridge } from './webrtc-bridge.ts';
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
-import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { claimEvent } from "../_shared/wa-webhook-shared/state/idempotency.ts";
+import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
+import { createWebRTCBridge } from './webrtc-bridge.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',

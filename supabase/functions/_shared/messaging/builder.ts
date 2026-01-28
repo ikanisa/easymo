@@ -3,8 +3,8 @@
  * Fluent API for building WhatsApp messages
  */
 
-import type { ButtonSpec, ListRowSpec, ListMessageOptions } from "../types/messages.ts";
 import { LIMITS } from "../config/constants.ts";
+import type { ButtonSpec, ListMessageOptions,ListRowSpec } from "../types/messages.ts";
 
 // ============================================================================
 // TEXT MESSAGE BUILDER

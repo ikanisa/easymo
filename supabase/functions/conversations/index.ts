@@ -5,12 +5,13 @@
 // endpoints documented in the OpenAPI specification, enabling admin tools
 // to fetch transcripts, append audit notes, or enrich metadata.
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "zod";
-import { getServiceClient } from "../_shared/supabase.ts";
+
 import { getAdminToken } from "../_shared/env.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
+import { getServiceClient } from "../_shared/supabase.ts";
 
 const BASE_HEADERS: Record<string, string> = {
   "content-type": "application/json; charset=utf-8",

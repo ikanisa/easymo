@@ -12,18 +12,18 @@
  * @see docs/GROUND_RULES.md for error handling requirements
  */
 
-import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
-import { logStructuredEvent, logError, recordMetric } from "./observability.ts";
-import { 
-  WebhookError, 
-  ValidationError, 
-  SignatureError, 
-  RateLimitError,
-  CircuitBreakerOpenError,
-  TimeoutError
-} from "./errors.ts";
 import { timingSafeEqual } from "https://deno.land/std@0.224.0/crypto/timing_safe_equal.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
+
+import { 
+  CircuitBreakerOpenError,
+  RateLimitError,
+  SignatureError, 
+  TimeoutError,
+  ValidationError, 
+  WebhookError} from "./errors.ts";
+import { logError, logStructuredEvent, recordMetric } from "./observability.ts";
 
 export const WEBHOOK_TIMEOUT_MS = 10000; // 10 seconds
 export const MAX_RETRIES = 3;

@@ -141,7 +141,6 @@ export {
 // See: supabase/functions/wa-webhook-mobility for workflow implementation
 
 export {
-  ProfessionalAgentBase,
   type Appointment,
   type AppointmentRequest,
   type AppointmentStatus,
@@ -152,4 +151,5 @@ export {
   type EscalationPriority,
   type EscalationRequest,
   type EscalationResult,
+  ProfessionalAgentBase,
 } from "./agents/professional-agent.base";

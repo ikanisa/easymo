@@ -4,13 +4,14 @@
  */
 
 import { assertEquals, assertExists } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { describe, it, beforeEach, afterEach } from "https://deno.land/std@0.224.0/testing/bdd.ts";
+import { afterEach,beforeEach, describe, it } from "https://deno.land/std@0.224.0/testing/bdd.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
+
 import {
   addToDeadLetterQueue,
   getRetriableMessages,
   markMessageProcessed,
 } from "../dead-letter-queue.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
 // Mock Supabase client for testing
 const mockSupabase = {

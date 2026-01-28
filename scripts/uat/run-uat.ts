@@ -300,4 +300,4 @@ if (import.meta.main) {
   Deno.exit(failed > 0 ? 1 : 0);
 }
 
-export { UATRunner, UAT_TEST_CASES };
+export { UAT_TEST_CASES,UATRunner };

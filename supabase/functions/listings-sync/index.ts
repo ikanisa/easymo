@@ -1,8 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js";
 import { GoogleGenerativeAI } from "npm:@google/generative-ai";
 import { googleSearch } from "shared/google_search.ts";
+
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -22,7 +23,7 @@ serve(async (req) => {
 
     if (error) throw error;
 
-    let stats = { jobs_added: 0, properties_added: 0, errors: 0 };
+    const stats = { jobs_added: 0, properties_added: 0, errors: 0 };
 
     for (const source of sources || []) {
       const config = source.config as { queries: string[], country: string };

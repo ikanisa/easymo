@@ -4,7 +4,7 @@
  */
 
 import { assertEquals, assertExists } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { describe, it, beforeEach } from "https://deno.land/std@0.224.0/testing/bdd.ts";
+import { beforeEach,describe, it } from "https://deno.land/std@0.224.0/testing/bdd.ts";
 
 // Mock dependencies
 const mockSupabase = {

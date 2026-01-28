@@ -4,7 +4,7 @@
  * Tests for the AgentBase class functionality.
  */
 
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach,describe, expect, it, vi } from 'vitest';
 
 import { AgentBase, AgentConfig, AgentInput, AgentResult } from '../src/core/agent-base.js';
 import type { Tool } from '../src/types/index.js';

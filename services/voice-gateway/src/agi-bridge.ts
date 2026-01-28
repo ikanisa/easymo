@@ -6,8 +6,9 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { logger } from './logger';
+
 import { config } from './config';
+import { logger } from './logger';
 
 export interface ToolCall {
   id: string;

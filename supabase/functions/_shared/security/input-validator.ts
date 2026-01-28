@@ -216,7 +216,7 @@ export function validateInput(
           break;
         }
         
-        let sanitizedValue = options.sanitize !== false ? sanitizeString(value) : value;
+        const sanitizedValue = options.sanitize !== false ? sanitizeString(value) : value;
         
         // Check for injection patterns
         if (hasSQLInjectionPatterns(sanitizedValue)) {

@@ -13,9 +13,9 @@
  * - Redis running
  */
 
-import http from 'k6/http';
 import { check, sleep } from 'k6';
-import { Rate, Trend, Counter } from 'k6/metrics';
+import http from 'k6/http';
+import { Counter,Rate, Trend } from 'k6/metrics';
 
 // Custom metrics
 const errorRate = new Rate('errors');

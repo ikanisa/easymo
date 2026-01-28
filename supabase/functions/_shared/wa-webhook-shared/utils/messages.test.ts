@@ -1,4 +1,13 @@
 import { assertEquals } from "https://deno.land/std@0.203.0/testing/asserts.ts";
+
+import type {
+  WhatsAppInteractiveButtonMessage,
+  WhatsAppInteractiveListMessage,
+  WhatsAppLocationMessage,
+  WhatsAppMediaMessage,
+  WhatsAppMessage,
+  WhatsAppTextMessage,
+} from "../types.ts";
 import {
   getButtonReplyId,
   getListReplyId,
@@ -9,14 +18,6 @@ import {
   isMediaMessage,
   isTextMessage,
 } from "./messages.ts";
-import type {
-  WhatsAppInteractiveButtonMessage,
-  WhatsAppInteractiveListMessage,
-  WhatsAppLocationMessage,
-  WhatsAppMediaMessage,
-  WhatsAppMessage,
-  WhatsAppTextMessage,
-} from "../types.ts";
 
 const base = {
   id: "wamid.1",

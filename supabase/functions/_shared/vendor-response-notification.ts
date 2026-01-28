@@ -7,6 +7,7 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
+
 import { logStructuredEvent } from "./observability.ts";
 import { sendText } from "./wa-webhook-shared/wa/client.ts";
 

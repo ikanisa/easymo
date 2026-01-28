@@ -1,6 +1,7 @@
 /// <reference types="https://deno.land/x/types/index.d.ts" />
 
 import { SupabaseClient } from "@supabase/supabase-js";
+
 import { logStructuredEvent } from "./observability.ts";
 
 export interface DLQMessage {

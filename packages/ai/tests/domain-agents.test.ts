@@ -7,29 +7,29 @@
  * as rides functionality is now handled via WhatsApp button-based workflows.
  */
 
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach,describe, expect, it, vi } from 'vitest';
 
 import {
   CommerceAgentBase,
-  OrderItem,
   Order,
+  OrderItem,
+  OrderStatus,
+  PaymentResult,
   Product,
   ProductQuery,
-  PaymentResult,
-  OrderStatus,
 } from '../src/agents/commerce-agent.base.js';
 import {
-  ProfessionalAgentBase,
-  DocumentData,
-  DocumentType,
-  AppointmentRequest,
   Appointment,
+  AppointmentRequest,
+  DocumentData,
+  DocumentTemplate,
+  DocumentType,
   EscalationRequest,
   EscalationResult,
-  DocumentTemplate,
+  ProfessionalAgentBase,
 } from '../src/agents/professional-agent.base.js';
-import type { Tool, ToolContext } from '../src/types/index.js';
 import type { AgentInput, AgentResult } from '../src/core/agent-base.js';
+import type { Tool, ToolContext } from '../src/types/index.js';
 
 // Mock childLogger
 vi.mock('@easymo/commons', () => ({

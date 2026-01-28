@@ -8,6 +8,7 @@
  */
 
 import { GoogleGenerativeAI } from "npm:@google/generative-ai@^0.21.0";
+
 import { logStructuredEvent } from "../observability.ts";
 
 declare const Deno: any;

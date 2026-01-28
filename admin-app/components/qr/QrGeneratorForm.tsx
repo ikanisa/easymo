@@ -7,10 +7,10 @@ import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
 import { useToast } from "@/components/ui/ToastProvider";
 import { getAdminApiPath } from "@/lib/routes";
 import type { Bar } from "@/lib/schemas";
-import { QrRangeGenerator } from "./QrRangeGenerator";
-import { QrBatchDownloader } from "./QrBatchDownloader";
 
+import { QrBatchDownloader } from "./QrBatchDownloader";
 import styles from "./QrGeneratorForm.module.css";
+import { QrRangeGenerator } from "./QrRangeGenerator";
 
 interface QrGeneratorFormProps {
   bars: Bar[];

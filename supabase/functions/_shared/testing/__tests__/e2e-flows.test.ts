@@ -4,13 +4,14 @@
  */
 
 import { assertEquals, assertExists } from "https://deno.land/std@0.203.0/testing/asserts.ts";
+
+import { TEST_LOCATIONS,TEST_USERS } from "../fixtures.ts";
 import {
   createMockSupabase,
   createMockWebhookPayload,
   createMockWhatsAppAPI,
   createTestSuite,
 } from "../test-utils.ts";
-import { TEST_USERS, TEST_LOCATIONS } from "../fixtures.ts";
 
 // ============================================================================
 // E2E FLOW: RIDE BOOKING

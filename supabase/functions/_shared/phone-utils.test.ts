@@ -1,9 +1,10 @@
 import { assertEquals } from "https://deno.land/std@0.203.0/testing/asserts.ts";
+
 import {
-  normalizePhone,
-  maskPhone,
-  isValidPhone,
   getCountryCode,
+  isValidPhone,
+  maskPhone,
+  normalizePhone,
 } from "./phone-utils.ts";
 
 Deno.test("normalizePhone - removes dashes and spaces", () => {

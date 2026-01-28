@@ -2,12 +2,13 @@
  * Unit tests for the Unified AI Provider
  */
 import { describe, expect, it, vi } from 'vitest';
+
 import {
   calculateCost,
-  selectCostEffectiveModel,
-  UnifiedAIProvider,
   type IUnifiedAIProvider,
   type ProviderHealthStatus,
+  selectCostEffectiveModel,
+  UnifiedAIProvider,
   type UnifiedChatConfig,
   type UnifiedChatResponse,
   type UnifiedMessage,

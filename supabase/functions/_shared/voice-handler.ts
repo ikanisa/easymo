@@ -6,6 +6,7 @@
 // =====================================================
 
 import OpenAI from "https://deno.land/x/openai@v4.20.0/mod.ts";
+
 import { logStructuredEvent } from "./observability.ts";
 
 const openai = new OpenAI({

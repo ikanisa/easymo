@@ -4,7 +4,8 @@
  */
 
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { isFeatureEnabled, getAllFeatureFlags } from "./feature-flags.ts";
+
+import { getAllFeatureFlags,isFeatureEnabled } from "./feature-flags.ts";
 
 Deno.test("isFeatureEnabled - returns default value when env not set", () => {
   // agent.chat defaults to true

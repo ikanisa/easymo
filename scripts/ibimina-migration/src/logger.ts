@@ -1,4 +1,5 @@
 import chalk from "chalk";
+
 import { config } from "./config.js";
 
 type LogLevel = "debug" | "info" | "warn" | "error" | "success";

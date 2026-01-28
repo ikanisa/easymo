@@ -6,6 +6,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+
 import { AiAgentTool, RuntimeTool } from './types';
 
 // ============================================================================

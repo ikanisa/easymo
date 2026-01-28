@@ -1,4 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.203.0/testing/asserts.ts";
+
 import { checkRequiredEnv, REQUIRED_CORE_VARS } from "./env-check.ts";
 
 Deno.test("checkRequiredEnv - identifies missing variables", () => {

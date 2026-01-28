@@ -7,7 +7,7 @@
  * The test suite validates that the mappings are correct and comprehensive.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect,it } from 'vitest';
 
 // CANONICAL KEYS - These must match dynamic_home_menu.ts
 const CANONICAL_KEYS = [

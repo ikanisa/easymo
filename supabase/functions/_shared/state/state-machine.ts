@@ -4,8 +4,9 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
-import { logStructuredEvent } from "../observability.ts";
+
 import { STATE_KEYS, TIMEOUTS } from "../config/constants.ts";
+import { logStructuredEvent } from "../observability.ts";
 
 // ============================================================================
 // TYPES

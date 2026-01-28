@@ -14,9 +14,9 @@
  * 5. Migrate data with proper categorization
  */
 
+import { GoogleGenerativeAI } from 'https://esm.sh/@google/generative-ai@0.1.3';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import OpenAI from 'https://esm.sh/openai@4';
-import { GoogleGenerativeAI } from 'https://esm.sh/@google/generative-ai@0.1.3';
 
 // Configuration
 const SUPABASE_URL = 'https://lhbowpbcpwoiparwnwgt.supabase.co';

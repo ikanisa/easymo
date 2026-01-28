@@ -6,5 +6,5 @@
  * @module location
  */
 
-export * from "./types.ts";
 export { LocationService } from "./location-service.ts";
+export * from "./types.ts";

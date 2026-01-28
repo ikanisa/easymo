@@ -13,15 +13,16 @@
  */
 
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
-import { logStructuredEvent, logError, recordMetric } from "./observability.ts";
-import { OpenAIProvider } from "./llm-provider-openai.ts";
+
 import { GeminiProvider } from "./llm-provider-gemini.ts";
 import type {
-  LLMProvider,
+  AgentProviderRules,
   LLMCompletionOptions,
   LLMCompletionResponse,
-  AgentProviderRules,
+  LLMProvider,
 } from "./llm-provider-interface.ts";
+import { OpenAIProvider } from "./llm-provider-openai.ts";
+import { logError, logStructuredEvent, recordMetric } from "./observability.ts";
 
 export interface LLMRouterConfig {
   correlationId?: string;

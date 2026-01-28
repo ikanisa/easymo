@@ -5,8 +5,9 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 import { logStructuredEvent } from "../../_shared/observability.ts";
-import { normalizePhone, isValidPhone, getCountryCode } from "../../_shared/phone-utils.ts";
+import { getCountryCode,isValidPhone, normalizePhone } from "../../_shared/phone-utils.ts";
 
 export interface InsuranceContact {
   display_name: string;

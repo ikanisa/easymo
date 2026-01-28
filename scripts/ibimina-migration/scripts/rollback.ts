@@ -1,7 +1,8 @@
 #!/usr/bin/env tsx
-import { createTargetClient } from "../src/utils/db.js";
-import { logger } from "../src/logger.js";
 import readline from "readline";
+
+import { logger } from "../src/logger.js";
+import { createTargetClient } from "../src/utils/db.js";
 
 // Tables in reverse dependency order (delete children first)
 const TABLES = [

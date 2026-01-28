@@ -1,6 +1,6 @@
-import { MTNParser } from './parsers/mtn.js';
 import { AirtelParser } from './parsers/airtel.js';
-import type { SMSParser, ParsedSMS } from './types.js';
+import { MTNParser } from './parsers/mtn.js';
+import type { ParsedSMS,SMSParser } from './types.js';
 
 /**
  * Utility function to parse SMS messages

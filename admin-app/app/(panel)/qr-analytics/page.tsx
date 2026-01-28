@@ -1,5 +1,7 @@
 import { Suspense } from 'react';
+
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
+
 import { QrAnalyticsDashboard } from './QrAnalyticsDashboard';
 
 export const dynamic = 'force-dynamic';

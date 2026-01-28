@@ -4,8 +4,9 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
-import { profileCache, stateCache, configCache, locationCache } from "./memory-cache.ts";
+
 import { logStructuredEvent } from "../observability/index.ts";
+import { configCache, locationCache,profileCache, stateCache } from "./memory-cache.ts";
 
 // ============================================================================
 // PROFILE CACHE

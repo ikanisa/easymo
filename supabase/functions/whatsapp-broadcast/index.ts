@@ -14,9 +14,10 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { logStructuredEvent } from "../_shared/observability.ts";
-import { isBlockedCountry, getCountryFromPhone, normalizePhoneNumber } from "../_shared/buy-sell-config.ts";
+
+import { getCountryFromPhone, isBlockedCountry, normalizePhoneNumber } from "../_shared/buy-sell-config.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 interface BroadcastRequest {
   requestId: string;

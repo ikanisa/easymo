@@ -1,5 +1,5 @@
-import { BaseMigrator } from "./base.js";
 import type { SourceLedgerEntry } from "../types.js";
+import { BaseMigrator } from "./base.js";
 
 export class LedgerMigrator extends BaseMigrator<SourceLedgerEntry> {
   get tableName() {

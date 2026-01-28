@@ -1,5 +1,5 @@
 #!/usr/bin/env tsx
-import { runMigration, logger } from "../src/index.js";
+import { logger,runMigration } from "../src/index.js";
 
 // Force dry run mode
 process.env.DRY_RUN = "true";

@@ -6,7 +6,7 @@
  */
 
 import type { Language } from "../config/constants.ts";
-import { DEFAULT_LANGUAGE, BLOCKED_UI_LANGUAGES } from "../config/constants.ts";
+import { BLOCKED_UI_LANGUAGES,DEFAULT_LANGUAGE } from "../config/constants.ts";
 import { en } from "./locales/en.ts";
 import { fr } from "./locales/fr.ts";
 

@@ -1,8 +1,8 @@
-import type { SupabaseClient } from "../deps.ts";
-import { sendText as sendTextMessage, sendList, sendButtons, sendTemplate } from "../wa/client.ts";
 import { logStructuredEvent } from "../../observability/index.ts";
-import { maskE164 } from "../utils/text.ts";
+import type { SupabaseClient } from "../deps.ts";
 import type { ApprovedTemplate } from "../shared/template_registry.ts";
+import { maskE164 } from "../utils/text.ts";
+import { sendButtons, sendList, sendTemplate,sendText as sendTextMessage } from "../wa/client.ts";
 
 interface SendTextOptions {
   body: string;

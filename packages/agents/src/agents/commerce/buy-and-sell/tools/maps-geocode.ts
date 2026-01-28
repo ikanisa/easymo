@@ -4,8 +4,9 @@
  * Convert addresses to coordinates using SerpAPI.
  */
 
-import axios from 'axios';
 import { childLogger } from '@easymo/commons';
+import axios from 'axios';
+
 import type { Tool } from '../../../../types/agent.types';
 
 const log = childLogger({ service: 'agents', tool: 'maps-geocode' });

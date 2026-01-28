@@ -22,10 +22,11 @@
  * @see docs/GROUND_RULES.md for observability requirements
  */
 
-import { logStructuredEvent, recordMetric } from "../../_shared/observability.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
-import { DualAIProvider } from "../../_shared/agents/marketplace-ai-provider.ts";
+
 import { AgentConfigLoader } from "../../_shared/agent-config-loader.ts";
+import { DualAIProvider } from "../../_shared/agents/marketplace-ai-provider.ts";
+import { logStructuredEvent, recordMetric } from "../../_shared/observability.ts";
 
 // Types moved from deleted _shared/agents/buy-and-sell.ts
 export interface MarketplaceContext {

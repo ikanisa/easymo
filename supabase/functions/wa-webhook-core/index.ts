@@ -6,27 +6,28 @@
 declare const Deno: { env?: { get(key: string): string | undefined } } | undefined;
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { supabase } from "../_shared/wa-webhook-shared/config.ts";
+
+import { logError } from "../_shared/correlation-logging.ts";
+import { storeDLQEntry } from "../_shared/dlq-manager.ts";
+import { checkRequiredEnv, REQUIRED_CORE_VARS } from "../_shared/env-check.ts";
+import { createErrorHandler } from "../_shared/errors/error-handler.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
+import { maskPhone } from "../_shared/phone-utils.ts";
+import { createAuditLogger } from "../_shared/security/audit-logger.ts";
+// Phase 2: Enhanced security modules
+import { createSecurityMiddleware } from "../_shared/security/middleware.ts";
+import { verifyWebhookRequest } from "../_shared/security/signature.ts";
+import {
+  checkRateLimit,
+  cleanupRateLimitState,
+} from "../_shared/service-resilience.ts";
+import { supabase } from "../_shared/wa-webhook-shared/config.ts";
 import {
   forwardToEdgeService,
   routeIncomingPayload,
   summarizeServiceHealth,
 } from "./router.ts";
 import { LatencyTracker } from "./telemetry.ts";
-import {
-  checkRateLimit,
-  cleanupRateLimitState,
-} from "../_shared/service-resilience.ts";
-import { maskPhone } from "../_shared/phone-utils.ts";
-import { logError } from "../_shared/correlation-logging.ts";
-import { storeDLQEntry } from "../_shared/dlq-manager.ts";
-import { checkRequiredEnv, REQUIRED_CORE_VARS } from "../_shared/env-check.ts";
-// Phase 2: Enhanced security modules
-import { createSecurityMiddleware } from "../_shared/security/middleware.ts";
-import { verifyWebhookRequest } from "../_shared/security/signature.ts";
-import { createAuditLogger } from "../_shared/security/audit-logger.ts";
-import { createErrorHandler } from "../_shared/errors/error-handler.ts";
 import { extractPhoneFromPayload } from "./utils/payload.ts";
 // Note: extractPhoneFromPayload is imported from utils/payload.ts, not defined locally
 

@@ -11,19 +11,19 @@
 // deno-lint-ignore no-explicit-any
 declare const Deno: { env?: { get(key: string): string | undefined } } | undefined;
 
-import type { WhatsAppWebhookPayload, RouterContext, WhatsAppMessage } from "../../_shared/wa-webhook-shared/types.ts";
-import { getRoutingText } from "../../_shared/wa-webhook-shared/utils/messages.ts";
-import { sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
-import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
-import { supabase } from "../../_shared/wa-webhook-shared/config.ts";
+import { logError, logInfo,logWarn } from "../../_shared/correlation-logging.ts";
+import { buildMenuKeyMap } from "../../_shared/route-config.ts";
 import {
   clearActiveService,
   setActiveService,
 } from "../../_shared/session-manager.ts";
-import { logError, logWarn, logInfo } from "../../_shared/correlation-logging.ts";
-import { buildMenuKeyMap } from "../../_shared/route-config.ts";
-import { handleInsuranceAgentRequest } from "./insurance.ts";
+import { supabase } from "../../_shared/wa-webhook-shared/config.ts";
+import type { RouterContext, WhatsAppMessage,WhatsAppWebhookPayload } from "../../_shared/wa-webhook-shared/types.ts";
+import { getRoutingText } from "../../_shared/wa-webhook-shared/utils/messages.ts";
+import { sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
+import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import { getFirstMessage } from "../utils/message-extraction.ts";
+import { handleInsuranceAgentRequest } from "./insurance.ts";
 
 // Helper function for safe Deno.env access
 const getEnvValue = (key: string): string | undefined => {

@@ -3,7 +3,7 @@
  * Provides a unified interface for sending WhatsApp messages
  */
 
-import { sendText, sendList, sendButtons } from "./wa-webhook-shared/wa/client.ts";
+import { sendButtons,sendList, sendText } from "./wa-webhook-shared/wa/client.ts";
 
 export interface WhatsAppMessageOptions {
   text?: string;

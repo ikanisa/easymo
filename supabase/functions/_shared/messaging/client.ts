@@ -3,11 +3,11 @@
  * Unified interface for sending WhatsApp messages
  */
 
-import type { RouterContext } from "../types/context.ts";
-import type { ButtonSpec, ListMessageOptions, OutgoingLocation, TemplateOptions } from "../types/messages.ts";
+import { TIMEOUTS } from "../config/constants.ts";
 import { getEnv } from "../config/index.ts";
 import { logStructuredEvent } from "../observability.ts";
-import { TIMEOUTS } from "../config/constants.ts";
+import type { RouterContext } from "../types/context.ts";
+import type { ButtonSpec, ListMessageOptions, OutgoingLocation, TemplateOptions } from "../types/messages.ts";
 
 // ============================================================================
 // TYPES

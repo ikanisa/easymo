@@ -3,13 +3,13 @@
  * Tracks request performance and reports metrics
  */
 
+import { logStructuredEvent } from "./logger.ts";
 import { 
-  recordRequestMetrics, 
-  recordHistogram, 
   incrementCounter,
+  recordHistogram, 
+  recordRequestMetrics, 
   startTimer 
 } from "./metrics.ts";
-import { logStructuredEvent } from "./logger.ts";
 
 // ============================================================================
 // TYPES

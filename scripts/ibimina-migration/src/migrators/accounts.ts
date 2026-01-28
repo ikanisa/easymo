@@ -1,5 +1,5 @@
-import { BaseMigrator } from "./base.js";
 import type { SourceAccount } from "../types.js";
+import { BaseMigrator } from "./base.js";
 
 export class AccountMigrator extends BaseMigrator<SourceAccount> {
   get tableName() {

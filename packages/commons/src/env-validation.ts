@@ -49,9 +49,9 @@ export function validateEnv<T extends z.ZodRawShape>(
 
   try {
     const parsed = schema.parse(process.env);
-    
+
     logger.info(
-      { 
+      {
         validatedKeys: Object.keys(parsed),
         environment: process.env.NODE_ENV || 'unknown',
       },
@@ -160,7 +160,7 @@ export const commonEnvSchemas = {
  * ```
  */
 export function createServiceEnvSchema<T extends z.ZodRawShape>(
-  serviceName: string,
+  _serviceName: string,
   customSchema: T,
   options?: {
     includeRedis?: boolean;

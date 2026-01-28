@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeAll } from 'vitest';
-import yaml from 'yaml';
 import fs from 'fs';
 import path from 'path';
+import { beforeAll,describe, expect, it } from 'vitest';
+import yaml from 'yaml';
 
 /**
  * Agent Configurations Tests

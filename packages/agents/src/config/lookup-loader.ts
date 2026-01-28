@@ -264,7 +264,7 @@ export class LookupLoader {
    */
   async getToolEnumValues(enumType: string, context?: Record<string, any>): Promise<string[]> {
     return this.getCached(`enum:${enumType}:${JSON.stringify(context || {})}`, async () => {
-      let query = this.supabase
+      const query = this.supabase
         .from('tool_enum_values')
         .select('value')
         .eq('enum_type', enumType)

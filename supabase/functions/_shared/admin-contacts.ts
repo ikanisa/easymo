@@ -172,7 +172,7 @@ export async function getSupportContactString(
  */
 function normalizePhone(value: string): string {
   if (!value) return value;
-  let s = value.trim();
+  const s = value.trim();
   if (!s) return s;
   
   // Remove all non-digit characters

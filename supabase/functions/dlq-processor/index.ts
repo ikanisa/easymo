@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { supabase } from "../_shared/wa-webhook-shared/config.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
+
 import { getRetriableMessages } from "../_shared/dead-letter-queue.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
+import { supabase } from "../_shared/wa-webhook-shared/config.ts";
 
 serve(async (req: Request): Promise<Response> => {
   const correlationId = crypto.randomUUID();

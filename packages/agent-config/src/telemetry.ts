@@ -6,7 +6,8 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { MetricInput, ToolExecutionInput, MatchEventInput } from './types';
+
+import { MatchEventInput,MetricInput, ToolExecutionInput } from './types';
 
 // ============================================================================
 // METRICS LOGGING

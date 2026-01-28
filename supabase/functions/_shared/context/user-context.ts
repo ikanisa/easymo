@@ -8,9 +8,10 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
-import { logStructuredEvent } from "../observability.ts";
-import type { UserContext, SourcingRequest, MarketKnowledge } from "../types/buy-sell.ts";
+
 import { getRelevantMarketKnowledge } from "../memory/market-intelligence.ts";
+import { logStructuredEvent } from "../observability.ts";
+import type { MarketKnowledge,SourcingRequest, UserContext } from "../types/buy-sell.ts";
 
 /**
  * Fetch user context for agent processing

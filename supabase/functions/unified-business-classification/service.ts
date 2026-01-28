@@ -4,7 +4,8 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { logStructuredEvent, logError } from "../_shared/observability.ts";
+
+import { logError,logStructuredEvent } from "../_shared/observability.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") || "";
 

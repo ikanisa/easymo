@@ -1,8 +1,10 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { MapPin, Phone, Plus, Star, TrendingUp } from "lucide-react";
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { createBrowserClient } from "@/lib/supabase/client";
+
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,8 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Star, MapPin, Phone, TrendingUp } from "lucide-react";
+import { createBrowserClient } from "@/lib/supabase/client";
 
 interface PreferredSupplier {
   id: string;

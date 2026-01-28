@@ -6,15 +6,16 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+
 import {
   AiAgent,
   AiAgentConfig,
+  AiAgentIntent,
+  AiAgentKnowledgeBase,
   AiAgentPersona,
   AiAgentSystemInstruction,
-  AiAgentIntent,
   AiAgentTask,
   AiAgentTool,
-  AiAgentKnowledgeBase,
   ResolvedAgentConfig,
 } from './types';
 

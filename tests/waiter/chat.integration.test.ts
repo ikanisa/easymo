@@ -4,8 +4,8 @@ import {
   createConversationInsert,
   createMessageInsert,
   mergeMessages,
-  normalizeMessage,
   type MessageRow,
+  normalizeMessage,
 } from '../../waiter-pwa/contexts/chat-helpers'
 import type { Message } from '../../waiter-pwa/types/chat'
 

@@ -1,5 +1,6 @@
 // OpenAI Service with Assistants API v2, Realtime, and Vision support
 import OpenAI from "npm:openai@^4.24.0";
+
 import {
   requireEmbedding,
   requireFirstMessageContent,

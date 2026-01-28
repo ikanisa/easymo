@@ -1,7 +1,8 @@
-import { createSourceClient, createTargetClient, testConnection, getTableCount } from "@easymo/migration-shared/db-clients";
+import { createSourceClient, createTargetClient, getTableCount,testConnection } from "@easymo/migration-shared/db-clients";
 import { logger } from "@easymo/migration-shared/logger";
+
 import { config } from "../config.js";
-import type { HealthCheck, CheckStatus } from "../types.js";
+import type { CheckStatus,HealthCheck } from "../types.js";
 
 const TABLES = ["saccos", "ikimina", "members", "accounts", "payments", "ledger_entries"];
 

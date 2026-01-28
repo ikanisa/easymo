@@ -1,7 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js";
-import { serveWithObservability } from "../_shared/observability.ts";
+
 import { jsonCorsResponse, preflightResponse } from "../_shared/http.ts";
 import { recordMetric } from "../_shared/metrics.ts";
+import { serveWithObservability } from "../_shared/observability.ts";
 
 /**
  * Gateway Health Check

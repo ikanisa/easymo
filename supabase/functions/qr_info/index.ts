@@ -1,5 +1,5 @@
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
+
 import {
   createServiceRoleClient,
   handleOptions,
@@ -8,8 +8,9 @@ import {
   logResponse,
   requireAdminAuth,
 } from "../_shared/admin.ts";
-import { verifyQrPayload } from "../wa-webhook/utils/qr.ts";
 import { getRotatingSecret } from "../_shared/env.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
+import { verifyQrPayload } from "../wa-webhook/utils/qr.ts";
 
 const supabase = createServiceRoleClient();
 const requestSchema = z.object({

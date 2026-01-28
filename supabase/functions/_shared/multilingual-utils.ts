@@ -5,6 +5,7 @@
 // =====================================================
 
 import OpenAI from "https://deno.land/x/openai@v4.20.0/mod.ts";
+
 import {
   requireFirstMessageContent,
 } from "../_shared/openaiGuard.ts";

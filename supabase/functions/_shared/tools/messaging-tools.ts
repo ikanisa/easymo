@@ -8,15 +8,15 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js';
+
+import { type DualChannelConfig,sendDualChannelNotification } from '../notifications/dual-channel.ts';
 import { logStructuredEvent } from '../observability.ts';
-import { sendDualChannelNotification, type DualChannelConfig } from '../notifications/dual-channel.ts';
 import { 
   getOrCreateSession, 
-  updateSessionStatus, 
-  updateSessionContext,
   getSessionContext,
-  type SessionContext 
-} from '../session/omnichannel-session.ts';
+  type SessionContext, 
+  updateSessionContext,
+  updateSessionStatus} from '../session/omnichannel-session.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',

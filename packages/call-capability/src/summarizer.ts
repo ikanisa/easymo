@@ -6,6 +6,8 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+
+import { TranscriptHelpers } from './transcript-logger';
 import {
   CallSentiment,
   CallSummary,
@@ -13,7 +15,6 @@ import {
   SaveSummaryInput,
   TranscriptChunk,
 } from './types';
-import { TranscriptHelpers } from './transcript-logger';
 
 /**
  * Configuration for the summarizer

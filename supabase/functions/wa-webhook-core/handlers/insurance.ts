@@ -1,6 +1,6 @@
 import { logStructuredEvent } from "../../_shared/observability.ts";
-import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import { supabase } from "../../_shared/wa-webhook-shared/config.ts";
+import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 
 type InsuranceContact = {
   phone: string;

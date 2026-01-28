@@ -14,9 +14,9 @@
  * - Test data seeded
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import axios from 'axios';
+import { afterAll,beforeAll, describe, expect, it } from 'vitest';
 
 // Service URLs
 const SERVICES = {

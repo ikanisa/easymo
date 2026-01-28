@@ -3,18 +3,28 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "@va/shared": ["packages/shared/src/index.ts"],
-      "@va/shared/*": ["packages/shared/src/*"],
-      "@easymo/video-agent-schema": ["packages/video-agent-schema/dist/index"],
-      "@easymo/video-agent-schema/*": ["packages/video-agent-schema/dist/*"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@va/shared": [
+        "packages/shared/src/index.ts"
+      ],
+      "@va/shared/*": [
+        "packages/shared/src/*"
+      ],
+      "@easymo/video-agent-schema": [
+        "packages/video-agent-schema/dist/index"
+      ],
+      "@easymo/video-agent-schema/*": [
+        "packages/video-agent-schema/dist/*"
+      ]
     },
-    "noImplicitAny": false,
-    "noUnusedParameters": false,
+    "noImplicitAny": true,
+    "noUnusedParameters": true,
     "skipLibCheck": true,
     "allowJs": true,
-    "noUnusedLocals": false,
-    "strictNullChecks": false,
+    "noUnusedLocals": true,
+    "strictNullChecks": true,
     "jsx": "react-jsx"
   },
   "files": []

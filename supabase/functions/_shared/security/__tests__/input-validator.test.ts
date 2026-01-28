@@ -3,16 +3,17 @@
  */
 
 import { assertEquals } from "https://deno.land/std@0.203.0/testing/asserts.ts";
+
 import {
-  sanitizeString,
-  sanitizePhoneNumber,
-  isValidPhoneNumber,
-  isValidEmail,
-  isValidUUID,
+  COMMON_SCHEMAS,
   hasSQLInjectionPatterns,
   hasXSSPatterns,
+  isValidEmail,
+  isValidPhoneNumber,
+  isValidUUID,
+  sanitizePhoneNumber,
+  sanitizeString,
   validateInput,
-  COMMON_SCHEMAS,
 } from "../input-validator.ts";
 
 Deno.test("sanitizeString - removes null bytes", () => {

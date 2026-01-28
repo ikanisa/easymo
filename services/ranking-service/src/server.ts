@@ -7,8 +7,8 @@ import { z } from "zod";
 
 import { settings } from "./config";
 import { logger } from "./logger";
-import { RankingService } from "./service";
 import mobilityRoutes from "./mobility-routes";
+import { RankingService } from "./service";
 
 const log = childLogger({ service: 'ranking-service' });
 

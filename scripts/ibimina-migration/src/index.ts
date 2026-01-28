@@ -1,17 +1,17 @@
-import { createSourceClient, createTargetClient, testConnection } from "./utils/db.js";
-import { IdMapper } from "./utils/id-mapping.js";
-import { logger } from "./logger.js";
 import { config } from "./config.js";
-import { formatDuration, formatNumber } from "./utils/progress.js";
+import { logger } from "./logger.js";
 import {
-  SaccoMigrator,
-  GroupMigrator,
-  MemberMigrator,
   AccountMigrator,
-  PaymentMigrator,
+  GroupMigrator,
   LedgerMigrator,
+  MemberMigrator,
+  PaymentMigrator,
+  SaccoMigrator,
 } from "./migrators/index.js";
 import type { MigrationSummary } from "./types.js";
+import { createSourceClient, createTargetClient, testConnection } from "./utils/db.js";
+import { IdMapper } from "./utils/id-mapping.js";
+import { formatDuration, formatNumber } from "./utils/progress.js";
 
 export async function runMigration(): Promise<MigrationSummary> {
   const startTime = Date.now();

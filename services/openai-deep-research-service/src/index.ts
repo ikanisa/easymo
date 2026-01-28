@@ -5,11 +5,11 @@
  * Searches from: 1) Configured website sources  2) User listings in database
  */
 
-import express, { Request, Response } from 'express';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { config } from 'dotenv';
+import express, { Request, Response } from 'express';
 import OpenAI from 'openai';
 import pino from 'pino';
-import { config } from 'dotenv';
 
 config();
 

@@ -4,10 +4,10 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { createHandler } from '@/app/api/withObservability';
+import { generateTableQrCode } from '@/lib/qr/qr-image-generator';
 import { recordAudit } from '@/lib/server/audit';
 import { logStructured } from '@/lib/server/logger';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
-import { generateTableQrCode } from '@/lib/qr/qr-image-generator';
 
 const requestSchema = z.object({
   stationId: z.string().uuid(),

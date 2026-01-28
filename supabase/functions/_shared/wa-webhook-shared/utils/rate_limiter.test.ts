@@ -5,11 +5,12 @@
  */
 
 import { assertEquals, assertExists } from "https://deno.land/std@0.168.0/testing/asserts.ts";
+
 import {
-  getRateLimiter,
-  checkRateLimit,
-  unblockIdentifier,
   __resetRateLimiter,
+  checkRateLimit,
+  getRateLimiter,
+  unblockIdentifier,
 } from "./rate_limiter.ts";
 
 const test = (

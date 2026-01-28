@@ -8,9 +8,10 @@
  * - Response generation with retry logic
  */
 
-import { GoogleGenerativeAI, GenerativeModel } from "npm:@google/generative-ai@0.21.0";
-import { logStructuredEvent } from "./observability.ts";
+import { GenerativeModel,GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0";
+
 import { ExtractedIntent } from "./buy-sell-types.ts";
+import { logStructuredEvent } from "./observability.ts";
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || Deno.env.get("API_KEY");
 

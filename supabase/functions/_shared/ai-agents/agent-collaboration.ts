@@ -9,6 +9,7 @@
  */
 
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js';
+
 import type { AgentResponse } from './base-agent.ts';
 
 export interface AgentCapability {

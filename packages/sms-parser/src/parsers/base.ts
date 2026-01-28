@@ -1,4 +1,4 @@
-import type { SMSParser, ParsedSMS } from "../types";
+import type { ParsedSMS,SMSParser } from "../types";
 
 export abstract class BaseSMSParser implements SMSParser {
   abstract canParse(message: string): boolean;

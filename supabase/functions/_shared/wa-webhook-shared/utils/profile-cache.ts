@@ -7,8 +7,9 @@
  * P2-007: Add caching for frequently accessed data
  */
 
-import { CacheManager } from "./cache.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
+
+import { CacheManager } from "./cache.ts";
 
 interface ProfileCacheEntry {
   profile_id: string;

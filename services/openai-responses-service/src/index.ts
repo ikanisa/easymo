@@ -5,12 +5,12 @@
  * using the OpenAI Responses API with structured outputs.
  */
 
-import express, { Request, Response } from 'express';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import OpenAI from 'openai';
-import { z } from 'zod';
-import pino from 'pino';
 import { config } from 'dotenv';
+import express, { Request, Response } from 'express';
+import OpenAI from 'openai';
+import pino from 'pino';
+import { z } from 'zod';
 
 config();
 

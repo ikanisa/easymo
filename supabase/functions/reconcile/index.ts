@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer";
-import { createServiceClient, jsonResponse, verifyHmacSignature } from "../_shared/mod.ts";
+
 import { recordMetric } from "../_shared/metrics.ts";
+import { createServiceClient, jsonResponse, verifyHmacSignature } from "../_shared/mod.ts";
 import { serveWithObservability } from "../_shared/observability.ts";
 
 const APP_ORIGIN = Deno.env.get("APP_ORIGIN") ?? "*";

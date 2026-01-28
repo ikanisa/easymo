@@ -6,7 +6,6 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { AgentContext, AgentTrace } from '../types';
 import {
   logAgentComplete,
   logAgentError,
@@ -17,6 +16,7 @@ import {
   recordMetric,
   storeAgentTrace,
 } from '../observability';
+import type { AgentContext, AgentTrace } from '../types';
 
 describe('Observability', () => {
   const mockContext: AgentContext = {

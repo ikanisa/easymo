@@ -5,8 +5,8 @@
  * Port: 4800
  */
 
-import express, { Request, Response, NextFunction } from 'express';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import express, { NextFunction,Request, Response } from 'express';
 import pino from 'pino';
 import pinoHttp from 'pino-http';
 import { z } from 'zod';

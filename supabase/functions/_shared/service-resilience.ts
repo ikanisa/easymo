@@ -8,7 +8,7 @@
  */
 
 import { logStructuredEvent, recordMetric } from "./observability.ts";
-import { normalizePhone, maskPhone } from "./phone-utils.ts";
+import { maskPhone,normalizePhone } from "./phone-utils.ts";
 
 // Circuit Breaker Configuration
 const CIRCUIT_BREAKER_THRESHOLD = Math.max(

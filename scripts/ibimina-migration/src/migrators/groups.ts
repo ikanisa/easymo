@@ -1,6 +1,6 @@
-import { BaseMigrator } from "./base.js";
 import type { SourceIkimina } from "../types.js";
 import { validateGroup } from "../validators/group.js";
+import { BaseMigrator } from "./base.js";
 
 export class GroupMigrator extends BaseMigrator<SourceIkimina> {
   get tableName() {

@@ -62,10 +62,12 @@ export const withRequestContext = async <T>(
 };
 
 export const runWithRequestContext = <T>(fn: () => T, seed?: RequestContextSeed): T => {
-  return ns.run(() => {
+  let result: T;
+  ns.run(() => {
     ns.set(CONTEXT_KEY, normaliseSeed(seed));
-    return fn();
+    result = fn();
   });
+  return result!;
 };
 
 const getContext = (): RequestContextShape | undefined => ns.get(CONTEXT_KEY);

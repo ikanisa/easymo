@@ -1,4 +1,4 @@
-import { Counter, Gauge,Histogram } from 'prom-client';
+import { Counter, Gauge, Histogram } from 'prom-client';
 
 import { MetricsRegistry } from './metrics';
 import { validatePaymentMethod } from './payment-methods';
@@ -8,7 +8,6 @@ import { validatePaymentMethod } from './payment-methods';
  * These are standardized metrics across all services
  */
 export class BusinessMetrics {
-  private metricsRegistry: MetricsRegistry;
 
   // Ride Metrics
   public rideRequestsTotal: Counter;
@@ -41,7 +40,6 @@ export class BusinessMetrics {
   public agentResponseTime: Histogram;
 
   constructor(metricsRegistry: MetricsRegistry) {
-    this.metricsRegistry = metricsRegistry;
     const registry = metricsRegistry.getRegistry();
 
     // Ride Metrics
@@ -209,9 +207,9 @@ export class BusinessMetrics {
   trackPayment(paymentMethod: string, amount: number, status: 'success' | 'failed', errorCode?: string) {
     // Validate payment method
     validatePaymentMethod(paymentMethod);
-    
+
     this.paymentTransactionsTotal.inc({ status, payment_method: paymentMethod });
-    
+
     if (status === 'success') {
       this.paymentAmount.observe({ payment_method: paymentMethod }, amount);
     } else if (errorCode) {
@@ -221,7 +219,7 @@ export class BusinessMetrics {
 
   trackWhatsAppMessage(messageType: string, status: 'sent' | 'delivered' | 'failed', errorCode?: string) {
     this.whatsappMessagesTotal.inc({ status, message_type: messageType });
-    
+
     if (status === 'failed' && errorCode) {
       this.whatsappDeliveryFailures.inc({ error_code: errorCode });
     }
@@ -229,7 +227,7 @@ export class BusinessMetrics {
 
   trackDatabaseQuery(queryType: string, table: string, durationSeconds: number, error?: boolean) {
     this.dbQueryDuration.observe({ query_type: queryType, table }, durationSeconds);
-    
+
     if (error) {
       this.dbErrors.inc({ error_type: 'query_error' });
     }

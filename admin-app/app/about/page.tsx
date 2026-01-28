@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect,useState } from 'react';
+
 import { getAppVersion, getPlatformInfo, type PlatformInfo } from '@/lib/platform';
 
 export default function AboutPage() {

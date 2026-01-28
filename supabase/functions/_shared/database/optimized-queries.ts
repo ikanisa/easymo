@@ -4,9 +4,10 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
-import { query } from "./query-builder.ts";
+
 import { getCachedProfile } from "../cache/index.ts";
 import { logStructuredEvent } from "../observability/index.ts";
+import { query } from "./query-builder.ts";
 
 // ============================================================================
 // PROFILE QUERIES

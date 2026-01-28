@@ -1,5 +1,5 @@
-import { supabase } from "../config.ts";
 import { logStructuredEvent } from "../../observability/index.ts";
+import { supabase } from "../config.ts";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const EVENTS_TTL_DAYS = Math.max(

@@ -3,8 +3,8 @@
  * HTTP response caching for frequently accessed endpoints
  */
 
-import { MemoryCache } from "./memory-cache.ts";
 import { logStructuredEvent } from "../observability/index.ts";
+import { MemoryCache } from "./memory-cache.ts";
 
 // ============================================================================
 // TYPES

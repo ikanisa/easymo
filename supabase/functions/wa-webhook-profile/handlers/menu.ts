@@ -1,9 +1,9 @@
+import { logStructuredEvent } from "../../_shared/observability.ts";
+import { setState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
+import { fetchProfileMenuItems } from "../../_shared/wa-webhook-shared/utils/dynamic_submenu.ts";
 import { sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
-import { setState } from "../../_shared/wa-webhook-shared/state/store.ts";
-import { logStructuredEvent } from "../../_shared/observability.ts";
-import { fetchProfileMenuItems } from "../../_shared/wa-webhook-shared/utils/dynamic_submenu.ts";
 
 export const PROFILE_STATE_HOME = "PROFILE_MENU";
 

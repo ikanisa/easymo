@@ -1,5 +1,6 @@
-import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
+
 import { logger } from "./logger.js";
 
 export interface SupabaseConnectionConfig {

@@ -4,6 +4,7 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
+
 import type { Language, ServiceName } from "../config/constants.ts";
 
 // ============================================================================

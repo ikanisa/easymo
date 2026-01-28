@@ -8,14 +8,15 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
+
 import { LOCATION_CONFIG } from "../location-config.ts";
 import type {
+  Locale,
   LocationConfig,
   LocationResult,
   NearbyResult,
-  SavedLocation,
   RecentLocation,
-  Locale,
+  SavedLocation,
 } from "./types.ts";
 
 // Use centralized configuration

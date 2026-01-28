@@ -4,8 +4,9 @@
  * Tools for searching and checking inventory of marketplace products.
  */
 
-import type { SupabaseClient } from '@supabase/supabase-js';
 import { childLogger } from '@easymo/commons';
+import type { SupabaseClient } from '@supabase/supabase-js';
+
 import type { Tool } from '../../../../types/agent.types';
 
 const log = childLogger({ service: 'agents', tool: 'search-products' });

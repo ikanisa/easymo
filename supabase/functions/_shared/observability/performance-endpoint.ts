@@ -3,11 +3,11 @@
  * Exposes metrics and performance data
  */
 
-import { getAllMetrics, exportPrometheusMetrics } from "./metrics.ts";
 import { getAllCacheStats } from "../cache/index.ts";
 import { getClientPool } from "../database/client-pool.ts";
 import { getHandlerLoadingStats } from "../handlers/lazy-loader.ts";
 import { getDeduplicationStats } from "../middleware/deduplication.ts";
+import { exportPrometheusMetrics,getAllMetrics } from "./metrics.ts";
 
 // ============================================================================
 // TYPES

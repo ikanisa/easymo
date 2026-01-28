@@ -3,7 +3,7 @@
  * Tests for location duplicate detection
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect,it } from 'vitest';
 
 describe('Location Deduplication Integration Tests', () => {
   describe('calculateDistance', () => {

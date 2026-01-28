@@ -4,15 +4,15 @@
  * Tools for discovering businesses using AI-powered search and category-based filtering.
  */
 
-import type { SupabaseClient } from '@supabase/supabase-js';
 import { childLogger } from '@easymo/commons';
+import type { SupabaseClient } from '@supabase/supabase-js';
+
 import type { Tool } from '../../../../types/agent.types';
 import { 
-  RPC_SEARCH_BUSINESSES_AI, 
-  RPC_FIND_NEARBY_BUSINESSES,
+  DEFAULT_SEARCH_LIMIT, 
   DEFAULT_SEARCH_RADIUS_KM,
-  DEFAULT_SEARCH_LIMIT 
-} from '../config';
+  RPC_FIND_NEARBY_BUSINESSES,
+  RPC_SEARCH_BUSINESSES_AI} from '../config';
 
 const log = childLogger({ service: 'agents', tool: 'search-businesses' });
 

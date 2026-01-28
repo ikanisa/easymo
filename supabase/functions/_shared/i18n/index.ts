@@ -2,8 +2,8 @@
  * I18n Module Exports
  */
 
-export { t, getTranslations, hasTranslation } from "./translator.ts";
 export type { TranslationKey, TranslationParams, Translations } from "./translator.ts";
+export { getTranslations, hasTranslation,t } from "./translator.ts";
 
 // Export locales
 export { en } from "./locales/en.ts";

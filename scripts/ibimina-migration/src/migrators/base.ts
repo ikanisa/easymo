@@ -1,9 +1,10 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+
 import { config } from "../config.js";
-import { IdMapper } from "../utils/id-mapping.js";
 import { logger } from "../logger.js";
-import { createProgressBar, formatDuration } from "../utils/progress.js";
 import type { MigrationResult } from "../types.js";
+import { IdMapper } from "../utils/id-mapping.js";
+import { createProgressBar, formatDuration } from "../utils/progress.js";
 
 export abstract class BaseMigrator<TSource = unknown, TTarget = unknown> {
   protected source: SupabaseClient;

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js";
+
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") || "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
@@ -77,7 +78,7 @@ async function classifySingleBusiness(businessId: string) {
   const classification = await classifyWithOpenAI(business, tags as BusinessTag[]);
 
   // Update business.tag_id with best match (tag field will auto-sync via trigger)
-  let assignments = [];
+  const assignments = [];
   if (classification.results.length > 0) {
     const bestMatch = classification.results[0];
     const tag = tags.find((t) => t.slug === bestMatch.tag);

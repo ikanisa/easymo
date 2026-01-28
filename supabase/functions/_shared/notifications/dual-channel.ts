@@ -8,9 +8,10 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js';
-import { WhatsAppSender } from '../whatsapp-sender.ts';
-import { sendSMSWithRetry, formatSMSMessage, type SMSConfig } from './sms-provider.ts';
+
 import { logStructuredEvent } from '../observability.ts';
+import { WhatsAppSender } from '../whatsapp-sender.ts';
+import { formatSMSMessage, sendSMSWithRetry, type SMSConfig } from './sms-provider.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',

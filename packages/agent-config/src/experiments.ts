@@ -8,6 +8,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+
 import { AiAgentSystemInstruction } from './types';
 
 // ============================================================================

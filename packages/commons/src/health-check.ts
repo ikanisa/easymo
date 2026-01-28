@@ -36,7 +36,7 @@ export async function createHealthCheck(options: HealthCheckOptions) {
       try {
         const ok = await Promise.race([
           options.database(),
-          new Promise<boolean>((_, reject) => 
+          new Promise<boolean>((_, reject) =>
             setTimeout(() => reject(new Error('Timeout')), 5000)
           ),
         ]);
@@ -143,12 +143,12 @@ export async function createHealthCheck(options: HealthCheckOptions) {
 }
 
 export function healthCheckMiddleware(healthCheck: () => Promise<HealthCheckResult>) {
-  return async (req: Request): Promise<Response> => {
+  return async (_req: Request): Promise<Response> => {
     const result = await healthCheck();
-    
-    const statusCode = result.status === 'healthy' ? 200 : 
-                       result.status === 'degraded' ? 200 : 503;
-    
+
+    const statusCode = result.status === 'healthy' ? 200 :
+      result.status === 'degraded' ? 200 : 503;
+
     return new Response(JSON.stringify(result), {
       status: statusCode,
       headers: {

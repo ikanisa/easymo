@@ -1,7 +1,8 @@
-import express, { Request, Response, NextFunction } from 'express';
 import { createClient } from '@supabase/supabase-js';
+import express, { NextFunction,Request, Response } from 'express';
 import { z } from 'zod';
-import { rankDrivers, DriverCandidate } from './mobility-ranking';
+
+import { DriverCandidate,rankDrivers } from './mobility-ranking';
 
 const router = express.Router();
 

@@ -1,4 +1,5 @@
 import { assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
+
 import EN from "./messages/en.json" with { type: "json" };
 import FR from "./messages/fr.json" with { type: "json" };
 

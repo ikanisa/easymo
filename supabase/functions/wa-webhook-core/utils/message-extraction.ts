@@ -4,7 +4,7 @@
  * Shared utilities for extracting messages from WhatsApp webhook payloads
  */
 
-import type { WhatsAppWebhookPayload, WhatsAppMessage } from "../../_shared/wa-webhook-shared/types.ts";
+import type { WhatsAppMessage,WhatsAppWebhookPayload } from "../../_shared/wa-webhook-shared/types.ts";
 
 /**
  * Extract the first message from a WhatsApp webhook payload

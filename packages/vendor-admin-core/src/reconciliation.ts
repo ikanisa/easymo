@@ -3,10 +3,10 @@
  */
 
 import { FEATURE_FLAGS, isFeatureEnabled } from '@easymo/flags';
-import { 
-  type Payment, 
+import {
+  type Payment,
   PaymentSchema,
-} from '@easymo/sacco-core';
+} from './sacco-types.js';
 
 export { type Payment };
 
@@ -19,22 +19,22 @@ export interface ReconciliationService {
    * Get pending payments for reconciliation
    */
   getPendingPayments(ikiminaId: string, options?: ReconciliationOptions): Promise<PaymentListResult>;
-  
+
   /**
    * Match a payment with a member contribution
    */
   matchPayment(paymentId: string, memberId: string, metadata?: Record<string, unknown>): Promise<Payment>;
-  
+
   /**
    * Reject a payment (mark as failed)
    */
   rejectPayment(paymentId: string, reason: string): Promise<Payment>;
-  
+
   /**
    * Auto-reconcile payments based on SMS parsing confidence
    */
   autoReconcile(ikiminaId: string, confidenceThreshold?: number): Promise<AutoReconcileResult>;
-  
+
   /**
    * Get reconciliation statistics
    */
@@ -98,8 +98,8 @@ export function validatePayment(data: unknown): { success: true; data: Payment }
   if (result.success) {
     return { success: true, data: result.data };
   }
-  return { 
-    success: false, 
+  return {
+    success: false,
     errors: result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`),
   };
 }
@@ -119,7 +119,7 @@ export function calculateMatchConfidence(
   memberData: { msisdn: string; full_name: string }
 ): number {
   let confidence = 0;
-  
+
   // Phone number match (highest weight)
   if (smsData.phone && memberData.msisdn) {
     const normalizedSms = smsData.phone.replace(/\D/g, '').slice(-9);
@@ -128,7 +128,7 @@ export function calculateMatchConfidence(
       confidence += 0.6;
     }
   }
-  
+
   // Name similarity (fuzzy match)
   if (smsData.name && memberData.full_name) {
     const smsName = smsData.name.toLowerCase();
@@ -143,6 +143,6 @@ export function calculateMatchConfidence(
       confidence += (matches.length / Math.max(smsWords.length, memberWords.length)) * 0.3;
     }
   }
-  
+
   return Math.min(confidence, 1);
 }

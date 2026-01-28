@@ -1,8 +1,8 @@
 // Mobility Intent Storage - Enhanced intent tracking for recommendations
 // Stores user intents in dedicated table instead of profiles.metadata
 
-import type { SupabaseClient } from "../deps.ts";
 import { MOBILITY_CONFIG } from "../config/mobility.ts";
+import type { SupabaseClient } from "../deps.ts";
 
 export type IntentType = 'nearby_drivers' | 'nearby_passengers' | 'schedule' | 'go_online';
 export type RecurrenceType = 'once' | 'daily' | 'weekdays' | 'weekly' | 'monthly';

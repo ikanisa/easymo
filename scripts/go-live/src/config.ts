@@ -1,7 +1,7 @@
-import { z } from "zod";
-import { createConfig, loadEnv, baseSupabaseConfigSchema } from "@easymo/migration-shared/config";
+import { baseSupabaseConfigSchema,createConfig, loadEnv } from "@easymo/migration-shared/config";
 import path from "path";
 import { fileURLToPath } from "url";
+import { z } from "zod";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 loadEnv(path.resolve(__dirname, "../.env"));

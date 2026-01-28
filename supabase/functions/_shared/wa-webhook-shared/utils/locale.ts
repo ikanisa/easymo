@@ -1,13 +1,13 @@
-import type {
-  WhatsAppContact,
-  WhatsAppWebhookChange,
-  WhatsAppMessage,
-} from "../types.ts";
+import { detectToneLocale } from "../../../../packages/localization/src/detection.ts";
+import type { DetectionResult, ToneLocale } from "../../../../packages/localization/src/index.ts";
+import { mapToneLocaleToLanguage } from "../../../../packages/localization/src/tone.ts";
 import type { SupportedLanguage } from "../i18n/language.ts";
 import { coerceToSupportedLanguage } from "../i18n/language.ts";
-import type { DetectionResult, ToneLocale } from "../../../../packages/localization/src/index.ts";
-import { detectToneLocale } from "../../../../packages/localization/src/detection.ts";
-import { mapToneLocaleToLanguage } from "../../../../packages/localization/src/tone.ts";
+import type {
+  WhatsAppContact,
+  WhatsAppMessage,
+  WhatsAppWebhookChange,
+} from "../types.ts";
 
 export type ContactChange = Pick<WhatsAppWebhookChange, "value">;
 

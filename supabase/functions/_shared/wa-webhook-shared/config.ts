@@ -1,9 +1,9 @@
+import { getEnv as getSharedEnv } from "../env.ts";
 import {
   createClient,
   createClientFactory,
   type SupabaseClient,
 } from "./deps.ts";
-import { getEnv as getSharedEnv } from "../env.ts";
 
 function getEnv(...names: string[]): string | undefined {
   for (const name of names) {

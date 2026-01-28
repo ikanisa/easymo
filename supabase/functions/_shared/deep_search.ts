@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "npm:@google/generative-ai";
+
 import { googleSearch } from "./google_search.ts";
 
 export async function deepSearch(query: string, apiKey: string): Promise<string> {

@@ -2,6 +2,7 @@ import {
   createClient,
   type SupabaseClient,
 } from "@supabase/supabase-js";
+
 import { getEnv, requireEnv } from "./env.ts";
 import { withRequestInstrumentation } from "./observability.ts";
 

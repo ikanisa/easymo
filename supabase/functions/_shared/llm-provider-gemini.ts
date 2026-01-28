@@ -7,17 +7,17 @@
  * Provides access to Gemini's Google-connected tools (Maps, Search, etc.)
  */
 
-import { logStructuredEvent, logError, recordMetric } from "./observability.ts";
-import type {
-  LLMProvider,
-  LLMCompletionOptions,
-  LLMCompletionResponse,
-  LLMToolDefinition,
-  LLMToolCall,
-} from "./llm-provider-interface.ts";
-
 // Using Google's Generative AI SDK for Deno
 import { GoogleGenerativeAI } from "npm:@google/generative-ai@^0.21.0";
+
+import type {
+  LLMCompletionOptions,
+  LLMCompletionResponse,
+  LLMProvider,
+  LLMToolCall,
+  LLMToolDefinition,
+} from "./llm-provider-interface.ts";
+import { logError, logStructuredEvent, recordMetric } from "./observability.ts";
 
 // Schema type enum (compatible with Gemini API)
 enum FunctionDeclarationSchemaType {

@@ -1,9 +1,9 @@
-import type { SupabaseClient } from "./deps.ts";
-import type { SupportedLanguage } from "./i18n/language.ts";
 import type {
   DetectionResult,
   ToneLocale,
 } from "../../../../packages/localization/src/index.ts";
+import type { SupabaseClient } from "./deps.ts";
+import type { SupportedLanguage } from "./i18n/language.ts";
 
 export type RouterContext = {
   supabase: SupabaseClient;

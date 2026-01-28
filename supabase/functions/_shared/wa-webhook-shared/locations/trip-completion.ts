@@ -4,6 +4,7 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
+
 import { checkDuplicateLocation } from "./deduplication.ts";
 import { getAddressOrCoords } from "./geocoding.ts";
 

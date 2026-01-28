@@ -7,9 +7,9 @@
  */
 
 export * from './config';
-export * from './types';
-export * from './tools';
 export * from './prompts/system-prompt';
+export * from './tools';
+export * from './types';
 
 // Note: The main BuyAndSellAgent class is exported from the parent directory
 // to maintain backward compatibility with existing imports

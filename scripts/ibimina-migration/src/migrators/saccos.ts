@@ -1,6 +1,6 @@
-import { BaseMigrator } from "./base.js";
 import type { SourceSacco } from "../types.js";
 import { validateSacco } from "../validators/sacco.js";
+import { BaseMigrator } from "./base.js";
 
 export class SaccoMigrator extends BaseMigrator<SourceSacco> {
   get tableName() {

@@ -5,34 +5,34 @@
 // deno-lint-ignore no-explicit-any
 declare const Deno: { env?: { get(key: string): string | undefined } } | undefined;
 
-import { getRoutingText } from "../_shared/wa-webhook-shared/utils/messages.ts";
-import type { WhatsAppWebhookPayload, RouterContext, WhatsAppMessage, WhatsAppCallEvent } from "../_shared/wa-webhook-shared/types.ts";
-import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
-import { supabase } from "../_shared/wa-webhook-shared/config.ts";
-import type { SupabaseClient } from "../_shared/wa-webhook-shared/deps.ts";
-import { getFirstMessage } from "./utils/message-extraction.ts";
+import { circuitBreakerManager } from "../_shared/circuit-breaker.ts";
+import { logError, logInfo,logWarn } from "../_shared/correlation-logging.ts";
+import { addToDeadLetterQueue } from "../_shared/dead-letter-queue.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
+import {
+  buildMenuKeyMap,
+  ROUTED_SERVICES,
+} from "../_shared/route-config.ts";
+import {
+  fetchWithRetry,
+  getAllCircuitStates,
+  isServiceCircuitOpen,
+  recordServiceFailure,
+  recordServiceSuccess,
+} from "../_shared/service-resilience.ts";
 import {
   clearActiveService,
   getSessionByPhone,
   setActiveService,
   touchSession,
 } from "../_shared/session-manager.ts";
-import {
-  isServiceCircuitOpen,
-  recordServiceSuccess,
-  recordServiceFailure,
-  fetchWithRetry,
-  getAllCircuitStates,
-} from "../_shared/service-resilience.ts";
-import { addToDeadLetterQueue } from "../_shared/dead-letter-queue.ts";
-import { circuitBreakerManager } from "../_shared/circuit-breaker.ts";
-import { logError, logWarn, logInfo } from "../_shared/correlation-logging.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
-import {
-  buildMenuKeyMap,
-  ROUTED_SERVICES,
-} from "../_shared/route-config.ts";
+import { supabase } from "../_shared/wa-webhook-shared/config.ts";
+import type { SupabaseClient } from "../_shared/wa-webhook-shared/deps.ts";
+import type { RouterContext, WhatsAppCallEvent,WhatsAppMessage, WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.ts";
+import { getRoutingText } from "../_shared/wa-webhook-shared/utils/messages.ts";
+import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
 import { handleInsuranceAgentRequest } from "./handlers/insurance.ts";
+import { getFirstMessage } from "./utils/message-extraction.ts";
 
 type RoutingDecision = {
   service: string;

@@ -1,7 +1,7 @@
+import { t } from "../i18n/translator.ts";
 import type { ButtonSpec, RouterContext } from "../types.ts";
 import { sendButtons, sendList } from "../wa/client.ts";
 import { IDS } from "../wa/ids.ts";
-import { t } from "../i18n/translator.ts";
 
 const HOME_BUTTON: ButtonSpec = { id: IDS.BACK_HOME, title: "🏠 Home" };
 
@@ -31,7 +31,7 @@ export async function sendButtonsMessage(
   buttons: ButtonSpec[],
   options: { emoji?: string } = {},
 ): Promise<void> {
-  let augmented = [...buttons];
+  const augmented = [...buttons];
   // Auto-append Share button if room (<3 actions)
   try {
     // Admin check removed - admin flows deleted

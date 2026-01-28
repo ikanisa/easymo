@@ -8,10 +8,10 @@
  * - LLM client initialization
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from 'events';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { AgentInput, AgentResult, Tool, AgentContext } from '../../types/agent.types';
+import type { AgentContext,AgentInput, AgentResult, Tool } from '../../types/agent.types';
 import { BaseAgent } from '../base/agent.base';
 
 // Concrete implementation for testing the abstract class

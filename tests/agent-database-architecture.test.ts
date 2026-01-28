@@ -8,7 +8,7 @@
  * 4. Fallback to hardcoded prompts works when DB unavailable
  */
 
-import { assertEquals, assertExists, assert } from "https://deno.land/std@0.208.0/assert/mod.ts";
+import { assert,assertEquals, assertExists } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Mock Supabase client

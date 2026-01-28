@@ -3,14 +3,15 @@
  * Tests for phone number utilities
  */
 
-import { assertEquals, assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assert,assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { describe, it } from "https://deno.land/std@0.224.0/testing/bdd.ts";
+
 import {
-  normalizePhone,
-  maskPhone,
-  isValidPhone,
   getCountryCode,
+  isValidPhone,
   mapCountryCode,
+  maskPhone,
+  normalizePhone,
 } from "../phone-utils.ts";
 
 describe("Phone Utils", () => {

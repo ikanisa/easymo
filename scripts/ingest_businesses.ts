@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
 import * as dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 
 // Load environment variables from root .env
 dotenv.config({ path: join(dirname(fileURLToPath(import.meta.url)), '../.env') });

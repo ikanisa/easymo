@@ -2,7 +2,8 @@
  * Tests for MessageDeduplicator
  */
 
-import { describe, it, expect, beforeEach } from "https://deno.land/std@0.208.0/testing/bdd.ts";
+import { beforeEach,describe, expect, it } from "https://deno.land/std@0.208.0/testing/bdd.ts";
+
 import { MessageDeduplicator, type MessageMetadata } from "./message-deduplicator.ts";
 
 // Mock Supabase client

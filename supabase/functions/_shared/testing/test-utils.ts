@@ -4,7 +4,7 @@
  */
 
 import { assertEquals, assertExists, assertRejects } from "https://deno.land/std@0.203.0/testing/asserts.ts";
-import { spy, stub, Spy, Stub } from "https://deno.land/std@0.203.0/testing/mock.ts";
+import { Spy, spy, Stub,stub } from "https://deno.land/std@0.203.0/testing/mock.ts";
 
 // ============================================================================
 // TYPES

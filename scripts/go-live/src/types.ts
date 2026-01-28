@@ -1,8 +1,8 @@
 // Export all shared types
-import type { CheckStatus as SharedCheckStatus, OperationStatus, OperationResult, BatchResult } from "@easymo/migration-shared/types";
+import type { BatchResult,CheckStatus as SharedCheckStatus, OperationResult, OperationStatus } from "@easymo/migration-shared/types";
 
 export type CheckStatus = SharedCheckStatus;
-export type { OperationStatus, OperationResult, BatchResult };
+export type { BatchResult,OperationResult, OperationStatus };
 
 // Health Check Types
 export interface HealthCheck {

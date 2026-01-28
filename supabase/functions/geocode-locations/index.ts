@@ -6,8 +6,9 @@
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { logStructuredEvent } from "../_shared/observability.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js'
+
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const GOOGLE_MAPS_API_KEY = Deno.env.get('GOOGLE_MAPS_API_KEY')!
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -182,7 +183,7 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-    let results = {
+    const results = {
       bars: { success: 0, failed: 0, skipped: 0 },
       business: { success: 0, failed: 0, skipped: 0 },
     }
