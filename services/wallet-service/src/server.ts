@@ -1,4 +1,10 @@
-import { isFeatureEnabled, setRequestId } from "@easymo/commons";
+import {
+  createMetricsRegistry,
+  isFeatureEnabled,
+  metricsHandler,
+  metricsMiddleware,
+  setRequestId,
+} from "@easymo/commons";
 import { PrismaService } from "@easymo/db";
 import { randomUUID } from "crypto";
 import express from "express";
@@ -42,6 +48,8 @@ export const buildApp = (deps: AppDependencies = {}) => {
 
   const app = express();
   app.use(express.json());
+  const metricsRegistry = createMetricsRegistry("wallet_service");
+  app.use(metricsMiddleware(metricsRegistry));
   app.use((req, res, next) => {
     const headerId = typeof req.headers["x-request-id"] === "string" ? req.headers["x-request-id"] : undefined;
     const requestId = headerId?.trim() || randomUUID();
@@ -60,6 +68,8 @@ export const buildApp = (deps: AppDependencies = {}) => {
   app.get("/health", (_req, res) => {
     res.json({ status: "ok" });
   });
+
+  app.get("/metrics", metricsHandler(metricsRegistry));
 
   app.post("/wallet/transfer", async (req, res) => {
     if (!isFeatureEnabled("wallet.service")) {

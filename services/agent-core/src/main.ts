@@ -1,5 +1,10 @@
-import { runWithRequestContext } from "@easymo/commons";
-import { childLogger } from '@easymo/commons';
+import {
+  childLogger,
+  createMetricsRegistry,
+  metricsHandler,
+  metricsMiddleware,
+  runWithRequestContext,
+} from "@easymo/commons";
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import helmet from "helmet";
@@ -19,6 +24,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
   });
+
+  const metricsRegistry = createMetricsRegistry("agent_core");
+  app.use(metricsMiddleware(metricsRegistry));
+  app.get("/metrics", metricsHandler(metricsRegistry));
 
   app.useLogger(app.get(Logger));
   app.use((req, _res, next) => {

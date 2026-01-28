@@ -181,6 +181,9 @@ Acceptance Criteria:
 - Log format consistent across services
 - Metrics endpoints available in critical services
 
+Status:
+- Added /metrics endpoints to wallet-service and agent-core (Prometheus format)
+
 ### Phase 7 — CI/CD Consolidation
 **Goal:** Reduce workflow fragmentation and enforce core checks.
 
