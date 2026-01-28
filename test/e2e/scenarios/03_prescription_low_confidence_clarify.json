@@ -1,0 +1,105 @@
+{
+    "name": "prescription_low_confidence_clarify",
+    "description": "Client sends blurry prescription image, OCR returns low confidence, bot asks for clarification",
+    "tags": [
+        "ocr",
+        "low_confidence",
+        "clarification",
+        "prescription"
+    ],
+    "initial_state": {
+        "conversation": {
+            "id": "conv_prescription_low_001",
+            "client_phone": "+250788100003",
+            "language": "en",
+            "status": "active"
+        }
+    },
+    "steps": [
+        {
+            "id": "step_1_client_sends_blurry_image",
+            "description": "Client sends a blurry prescription image",
+            "client_inbound": {
+                "message_type": "image",
+                "media_fixture": "prescription_blurry.jpg"
+            },
+            "assert": {
+                "request_state": "ocr_processing"
+            }
+        },
+        {
+            "id": "step_2_ocr_low_confidence",
+            "description": "OCR processes but returns low confidence result",
+            "ocr_result": {
+                "ocr_job_id": "ocr_job_002",
+                "status": "completed",
+                "extracted": {
+                    "patient_name": "J??? B???",
+                    "medications": [
+                        {
+                            "name": "Amox???",
+                            "quantity": null,
+                            "dosage": "??? daily"
+                        }
+                    ],
+                    "doctor_name": null,
+                    "hospital": "K??? F??? Hospital"
+                },
+                "confidence": 0.42
+            },
+            "moltbot_output": {
+                "type": "ask_client",
+                "question_text": "We had trouble reading your prescription clearly. Could you please send a clearer photo, or type out the medication names and quantities you need?",
+                "why": "OCR confidence (42%) below threshold (60%)",
+                "state_suggestion": "collecting_requirements"
+            },
+            "assert": {
+                "request_state": "collecting_requirements",
+                "outbound_messages": [
+                    {
+                        "contains": "trouble reading"
+                    },
+                    {
+                        "contains": "clearer photo"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "step_3_client_types_details",
+            "description": "Client manually types medication details",
+            "client_inbound": {
+                "message_type": "text",
+                "text": "I need Amoxicillin 500mg (21 tablets) and Paracetamol 500mg (14 tablets)"
+            },
+            "moltbot_output": {
+                "type": "vendor_outreach_plan",
+                "category": "pharmacy",
+                "normalized_need": "Amoxicillin 500mg (21), Paracetamol 500mg (14)",
+                "vendor_filters": {
+                    "tags": [
+                        "pharmacy"
+                    ]
+                },
+                "batch_size": 5,
+                "vendor_questions": [
+                    "Do you have Amoxicillin 500mg (21 tablets) and Paracetamol 500mg (14 tablets)?",
+                    "What is the total price?"
+                ],
+                "stop_conditions": {
+                    "max_vendors": 10,
+                    "min_replies": 2
+                },
+                "calling_allowed": false
+            },
+            "assert": {
+                "request_state": "vendor_outreach",
+                "outbound_messages": [
+                    {
+                        "contains": "searching"
+                    }
+                ]
+            }
+        }
+    ]
+}

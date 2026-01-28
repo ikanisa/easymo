@@ -1,0 +1,91 @@
+{
+    "name": "idempotency_double_webhook",
+    "description": "Same webhook payload is sent twice, only one database row is created (idempotency test)",
+    "tags": [
+        "idempotency",
+        "webhook",
+        "deduplication"
+    ],
+    "initial_state": {
+        "conversation": {
+            "id": "conv_idempotent_001",
+            "client_phone": "+250788100006",
+            "language": "en",
+            "status": "active"
+        }
+    },
+    "steps": [
+        {
+            "id": "step_1_first_message",
+            "description": "Client sends initial message",
+            "client_inbound": {
+                "message_type": "text",
+                "text": "I need a laptop charger"
+            },
+            "assert": {
+                "request_state": "collecting_requirements",
+                "db_row_count": {
+                    "table": "moltbot_conversation_messages",
+                    "filter": {
+                        "conversation_id": "conv_idempotent_001"
+                    },
+                    "count": 1
+                }
+            }
+        },
+        {
+            "id": "step_2_duplicate_message",
+            "description": "Same message is sent again (webhook retry/duplicate)",
+            "client_inbound": {
+                "message_type": "text",
+                "text": "I need a laptop charger",
+                "duplicate": true
+            },
+            "assert": {
+                "db_row_count": {
+                    "table": "moltbot_conversation_messages",
+                    "filter": {
+                        "conversation_id": "conv_idempotent_001"
+                    },
+                    "count": 1
+                }
+            }
+        },
+        {
+            "id": "step_3_new_message",
+            "description": "Client sends a new different message",
+            "client_inbound": {
+                "message_type": "text",
+                "text": "For a Dell laptop"
+            },
+            "assert": {
+                "db_row_count": {
+                    "table": "moltbot_conversation_messages",
+                    "filter": {
+                        "conversation_id": "conv_idempotent_001"
+                    },
+                    "count": 2
+                }
+            }
+        },
+        {
+            "id": "step_4_duplicate_second_message",
+            "description": "Second message duplicated",
+            "client_inbound": {
+                "message_type": "text",
+                "text": "For a Dell laptop",
+                "duplicate": true
+            },
+            "assert": {
+                "db_row_count": {
+                    "table": "moltbot_conversation_messages",
+                    "filter": {
+                        "conversation_id": "conv_idempotent_001"
+                    },
+                    "count": 2
+                },
+                "no_duplicate_outreach": true
+            }
+        }
+    ]
+}

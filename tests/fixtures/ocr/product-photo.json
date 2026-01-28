@@ -1,0 +1,51 @@
+{
+    "meta": {
+        "ocr_type": "general_document_or_photo",
+        "engine": "gemini",
+        "source_message_id": "test-msg-004",
+        "processed_at": "2026-01-28T12:00:00.000Z"
+    },
+    "extracted": {
+        "text_full": "Toyota Land Cruiser 300\nWhite color\n2024 model\nLow mileage\nContact: +250 788 123 456\nLocation: Remera, Kigali",
+        "fields": {
+            "product_keywords": [
+                "car",
+                "SUV",
+                "vehicle"
+            ],
+            "brands": [
+                "Toyota"
+            ],
+            "models": [
+                "Land Cruiser 300"
+            ],
+            "colors": [
+                "white"
+            ],
+            "quantities": [
+                "1"
+            ],
+            "addresses_or_landmarks": [
+                "Remera, Kigali"
+            ],
+            "phone_numbers": [
+                "+250 788 123 456"
+            ],
+            "notes": "2024 model, low mileage"
+        }
+    },
+    "confidence": {
+        "overall": 0.91,
+        "text_full": 0.94,
+        "fields": {
+            "product_keywords": 0.88,
+            "brands": 0.98,
+            "models": 0.95,
+            "colors": 0.92,
+            "quantities": 0.90,
+            "addresses_or_landmarks": 0.85,
+            "phone_numbers": 0.95
+        }
+    },
+    "warnings": []
+}

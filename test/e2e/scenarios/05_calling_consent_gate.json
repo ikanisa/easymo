@@ -1,0 +1,91 @@
+{
+    "name": "calling_consent_gate",
+    "description": "Call is requested but consent is denied, call is refused",
+    "tags": [
+        "calling",
+        "consent",
+        "security"
+    ],
+    "initial_state": {
+        "conversation": {
+            "id": "conv_calling_001",
+            "client_phone": "+250788100005",
+            "language": "en",
+            "status": "active"
+        },
+        "request": {
+            "id": "req_calling_001",
+            "state": "awaiting_vendor_replies",
+            "requirements": {
+                "urgency": "high",
+                "product": "urgent medication"
+            }
+        }
+    },
+    "steps": [
+        {
+            "id": "step_1_request_consent",
+            "description": "System requests consent for calling due to urgent request",
+            "call_event": {
+                "event_type": "consent_request"
+            },
+            "assert": {
+                "outbound_messages": [
+                    {
+                        "contains": "call you"
+                    },
+                    {
+                        "type": "buttons"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "step_2_consent_denied",
+            "description": "Client denies call consent",
+            "client_inbound": {
+                "message_type": "interactive",
+                "button_id": "deny_call"
+            },
+            "call_event": {
+                "event_type": "consent_denied",
+                "consent_id": "consent_001"
+            },
+            "assert": {
+                "outbound_messages": [
+                    {
+                        "contains": "continue via chat"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "step_3_call_attempt_blocked",
+            "description": "Confirm that no call is initiated",
+            "call_event": {
+                "event_type": "call_initiated",
+                "consent_id": "consent_001"
+            },
+            "assert": {
+                "call_refused": true
+            }
+        },
+        {
+            "id": "step_4_fallback_to_chat",
+            "description": "Bot continues with chat-based assistance",
+            "moltbot_output": {
+                "type": "ask_client",
+                "question_text": "No problem! Let me help you find what you need via chat. Could you describe your urgent medication need?",
+                "why": "Call consent denied, continuing via chat"
+            },
+            "assert": {
+                "request_state": "collecting_requirements",
+                "outbound_messages": [
+                    {
+                        "contains": "help you find"
+                    }
+                ]
+            }
+        }
+    ]
+}

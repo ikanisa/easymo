@@ -4,9 +4,12 @@ packages:
   
   # Microservices
   - services/*
-  
+
   # Admin panel (single unified admin)
   - admin-app
+
+  # Web PWA front-end
+  - apps/*
   
   # AI services
   - ai

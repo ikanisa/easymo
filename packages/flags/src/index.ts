@@ -29,25 +29,30 @@ export const FEATURE_FLAGS = {
   VENDOR_PORTAL: 'vendor_portal',
   SACCO_RECONCILIATION: 'sacco_reconciliation',
   IKIMINA_MANAGEMENT: 'ikimina_management',
-  
+
   // MomoTerminal features
   MOMO_TERMINAL_ADMIN: 'momo_terminal_admin',
   MOMO_TERMINAL_SMS_WEBHOOK: 'momo_terminal_sms_webhook',
   MOMO_TERMINAL_NFC: 'momo_terminal_nfc',
-  
+
   // Admin features
   AI_AGENTS_ADMIN: 'ai_agents_admin',
   WHATSAPP_ADMIN: 'whatsapp_admin',
-  
+
   // Marketplace
   MARKETPLACE: 'marketplace',
-  
+
   // Voice/Video
   VOICE_CALLS: 'voice_calls',
   VIDEO_CALLS: 'video_calls',
-  
+
   // Real Estate
   REAL_ESTATE_PWA: 'real_estate_pwa',
+
+  // AI Concierge Kill Switches (instant fallback to coded workflows)
+  AI_CONCIERGE: 'ai_concierge',                    // Master "brain" toggle
+  AI_CONCIERGE_CALLING: 'ai_concierge_calling',    // Voice call toggle
+  AI_CONCIERGE_OCR: 'ai_concierge_ocr',            // OCR pipeline toggle
 } as const;
 
 export type FeatureFlagKey = typeof FEATURE_FLAGS[keyof typeof FEATURE_FLAGS];
@@ -69,6 +74,10 @@ const defaultFlags: Record<string, boolean> = {
   [FEATURE_FLAGS.VOICE_CALLS]: false,
   [FEATURE_FLAGS.VIDEO_CALLS]: false,
   [FEATURE_FLAGS.REAL_ESTATE_PWA]: false,
+  // AI Concierge kill switches (default OFF = use coded workflows)
+  [FEATURE_FLAGS.AI_CONCIERGE]: false,
+  [FEATURE_FLAGS.AI_CONCIERGE_CALLING]: false,
+  [FEATURE_FLAGS.AI_CONCIERGE_OCR]: false,
 };
 
 /**
@@ -90,14 +99,14 @@ export function isFeatureEnabled(flag: FeatureFlagKey): boolean {
   // Check environment variable first (FEATURE_<FLAG_NAME>=true)
   // Transform flag to valid env var name: uppercase and replace non-alphanumeric with underscore
   const envKey = `FEATURE_${flag.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`;
-  const envValue = typeof process !== 'undefined' 
-    ? process.env?.[envKey] 
+  const envValue = typeof process !== 'undefined'
+    ? process.env?.[envKey]
     : undefined;
-  
+
   if (envValue !== undefined) {
     return envValue === 'true';
   }
-  
+
   // Fall back to default
   return defaultFlags[flag] ?? false;
 }
@@ -109,11 +118,11 @@ export function isFeatureEnabled(flag: FeatureFlagKey): boolean {
  */
 export function getAllFlags(): Record<FeatureFlagKey, boolean> {
   const result: Record<string, boolean> = {};
-  
+
   for (const [, flag] of Object.entries(FEATURE_FLAGS)) {
     result[flag] = isFeatureEnabled(flag);
   }
-  
+
   return result as Record<FeatureFlagKey, boolean>;
 }
 

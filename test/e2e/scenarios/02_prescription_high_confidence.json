@@ -1,0 +1,176 @@
+{
+    "name": "prescription_high_confidence",
+    "description": "Client sends prescription image, OCR extracts with high confidence, pharmacy outreach, shortlist generated",
+    "tags": [
+        "ocr",
+        "pharmacy",
+        "high_confidence",
+        "prescription"
+    ],
+    "initial_state": {
+        "conversation": {
+            "id": "conv_prescription_001",
+            "client_phone": "+250788100002",
+            "language": "en",
+            "status": "active"
+        },
+        "vendors": [
+            {
+                "id": "vendor_pharm_001",
+                "name": "Pharmacy Plus",
+                "phone": "+250788111001",
+                "category": "pharmacy"
+            },
+            {
+                "id": "vendor_pharm_002",
+                "name": "MediCare Pharmacy",
+                "phone": "+250788111002",
+                "category": "pharmacy"
+            },
+            {
+                "id": "vendor_pharm_003",
+                "name": "HealthFirst",
+                "phone": "+250788111003",
+                "category": "pharmacy"
+            }
+        ]
+    },
+    "steps": [
+        {
+            "id": "step_1_client_sends_image",
+            "description": "Client sends prescription image",
+            "client_inbound": {
+                "message_type": "image",
+                "media_fixture": "prescription_clear.jpg"
+            },
+            "assert": {
+                "request_state": "ocr_processing"
+            }
+        },
+        {
+            "id": "step_2_ocr_completes",
+            "description": "OCR processes image with high confidence",
+            "ocr_result": {
+                "ocr_job_id": "ocr_job_001",
+                "status": "completed",
+                "extracted": {
+                    "patient_name": "Jean Bosco",
+                    "medications": [
+                        {
+                            "name": "Amoxicillin 500mg",
+                            "quantity": 21,
+                            "dosage": "3x daily"
+                        },
+                        {
+                            "name": "Paracetamol 500mg",
+                            "quantity": 14,
+                            "dosage": "2x daily"
+                        }
+                    ],
+                    "doctor_name": "Dr. Uwimana",
+                    "hospital": "King Faisal Hospital"
+                },
+                "confidence": 0.95
+            },
+            "moltbot_output": {
+                "type": "vendor_outreach_plan",
+                "category": "pharmacy",
+                "normalized_need": "Amoxicillin 500mg (21), Paracetamol 500mg (14)",
+                "vendor_filters": {
+                    "tags": [
+                        "pharmacy",
+                        "medical"
+                    ]
+                },
+                "batch_size": 5,
+                "vendor_questions": [
+                    "Do you have Amoxicillin 500mg (21 tablets) and Paracetamol 500mg (14 tablets) in stock?",
+                    "What is the total price?",
+                    "When can I pick up?"
+                ],
+                "stop_conditions": {
+                    "max_vendors": 15,
+                    "min_replies": 3
+                },
+                "calling_allowed": true
+            },
+            "assert": {
+                "request_state": "vendor_outreach",
+                "outbound_messages": [
+                    {
+                        "contains": "prescription"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "step_3_vendor_1_replies",
+            "description": "First pharmacy responds with full availability",
+            "vendor_inbound": {
+                "vendor_id": "vendor_pharm_001",
+                "text": "Yes, all medications in stock. Total: 3,850 RWF. Available now. Kacyiru location."
+            },
+            "assert": {
+                "request_state": "awaiting_vendor_replies"
+            }
+        },
+        {
+            "id": "step_4_vendor_2_replies",
+            "description": "Second pharmacy responds",
+            "vendor_inbound": {
+                "vendor_id": "vendor_pharm_002",
+                "text": "We have Amoxicillin but Paracetamol is out. Total for what we have: 3,150 RWF."
+            }
+        },
+        {
+            "id": "step_5_vendor_3_replies",
+            "description": "Third pharmacy responds",
+            "vendor_inbound": {
+                "vendor_id": "vendor_pharm_003",
+                "text": "All available. 4,200 RWF total. Open until 9pm. Remera."
+            },
+            "assert": {
+                "request_state": "shortlist_ready"
+            }
+        },
+        {
+            "id": "step_6_shortlist_generated",
+            "description": "Bot creates and sends shortlist",
+            "moltbot_output": {
+                "type": "shortlist",
+                "summary_text": "Found 3 pharmacies with your medications!",
+                "items": [
+                    {
+                        "vendor_id": "vendor_pharm_001",
+                        "vendor_name": "Pharmacy Plus",
+                        "vendor_phone": "+250788111001",
+                        "response_summary": "All in stock. 3,850 RWF. Kacyiru",
+                        "price": 3850
+                    },
+                    {
+                        "vendor_id": "vendor_pharm_003",
+                        "vendor_name": "HealthFirst",
+                        "vendor_phone": "+250788111003",
+                        "response_summary": "All in stock. 4,200 RWF. Remera",
+                        "price": 4200
+                    },
+                    {
+                        "vendor_id": "vendor_pharm_002",
+                        "vendor_name": "MediCare Pharmacy",
+                        "vendor_phone": "+250788111002",
+                        "response_summary": "Partial - Amoxicillin only. 3,150 RWF"
+                    }
+                ],
+                "handoff": {
+                    "type": "wa_link",
+                    "message_template": "Hi, I need to pick up my prescription - found you on EasyMO."
+                }
+            },
+            "assert": {
+                "request_state": "handed_off",
+                "shortlist_wa_link_count": 3,
+                "no_duplicate_outreach": true
+            }
+        }
+    ]
+}

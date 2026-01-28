@@ -1,0 +1,60 @@
+{
+    "meta": {
+        "ocr_type": "medical_prescription",
+        "engine": "gemini",
+        "source_message_id": "test-msg-001",
+        "processed_at": "2026-01-28T12:00:00.000Z"
+    },
+    "extracted": {
+        "text_full": "Dr. Jean UWIMANA\nKing Faisal Hospital, Kigali\nDate: 2026-01-28\n\nRx:\n1. Amoxicillin 500mg - 21 capsules\n   Take 1 capsule 3 times daily for 7 days\n\n2. Paracetamol 500mg - 20 tablets\n   Take 1-2 tablets as needed for pain\n\nPatient: Marie MUKIZA",
+        "fields": {
+            "patient_name": "Marie MUKIZA",
+            "prescriber_name": "Dr. Jean UWIMANA",
+            "facility": "King Faisal Hospital, Kigali",
+            "date": "2026-01-28",
+            "items": [
+                {
+                    "drug_name": "Amoxicillin",
+                    "dose": "500mg",
+                    "form": "capsule",
+                    "quantity": 21,
+                    "instructions": "Take 1 capsule 3 times daily for 7 days"
+                },
+                {
+                    "drug_name": "Paracetamol",
+                    "dose": "500mg",
+                    "form": "tablet",
+                    "quantity": 20,
+                    "instructions": "Take 1-2 tablets as needed for pain"
+                }
+            ]
+        }
+    },
+    "confidence": {
+        "overall": 0.92,
+        "text_full": 0.95,
+        "fields": {
+            "patient_name": 0.88,
+            "prescriber_name": 0.95,
+            "facility": 0.90,
+            "date": 0.98,
+            "items": [
+                {
+                    "drug_name": 0.95,
+                    "dose": 0.92,
+                    "form": 0.90,
+                    "quantity": 0.98,
+                    "instructions": 0.88
+                },
+                {
+                    "drug_name": 0.92,
+                    "dose": 0.95,
+                    "form": 0.92,
+                    "quantity": 0.98,
+                    "instructions": 0.85
+                }
+            ]
+        }
+    },
+    "warnings": []
+}

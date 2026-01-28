@@ -19,7 +19,9 @@
   },
   "dependencies": {
     "@easymo/commons": "workspace:*",
-    "@prisma/client": "^5.22.0"
+    "@easymo/types": "workspace:*",
+    "@prisma/client": "^5.22.0",
+    "@supabase/supabase-js": "^2.43.0"
   },
   "devDependencies": {
     "prisma": "^5.22.0",

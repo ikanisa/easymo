@@ -1,0 +1,64 @@
+{
+    "meta": {
+        "ocr_type": "medical_prescription",
+        "engine": "gemini",
+        "source_message_id": "test-msg-002",
+        "processed_at": "2026-01-28T12:00:00.000Z"
+    },
+    "extracted": {
+        "text_full": "Dr. P. [illegible]\nClinic [unclear]\nDate: 28/1/26\n\nRx:\n1. [Am...cillin?] 500mg - 21 caps\n   TDS x 7d\n\n2. Ibupr... 400mg - ?? tabs\n   PRN",
+        "fields": {
+            "patient_name": null,
+            "prescriber_name": "Dr. P.",
+            "facility": null,
+            "date": "2026-01-28",
+            "items": [
+                {
+                    "drug_name": "Amoxicillin",
+                    "dose": "500mg",
+                    "form": "capsule",
+                    "quantity": 21,
+                    "instructions": "Take 3 times daily for 7 days"
+                },
+                {
+                    "drug_name": "Ibuprofen",
+                    "dose": "400mg",
+                    "form": "tablet",
+                    "quantity": null,
+                    "instructions": "As needed"
+                }
+            ]
+        }
+    },
+    "confidence": {
+        "overall": 0.58,
+        "text_full": 0.65,
+        "fields": {
+            "patient_name": 0.0,
+            "prescriber_name": 0.40,
+            "facility": 0.0,
+            "date": 0.75,
+            "items": [
+                {
+                    "drug_name": 0.68,
+                    "dose": 0.80,
+                    "form": 0.85,
+                    "quantity": 0.90,
+                    "instructions": 0.70
+                },
+                {
+                    "drug_name": 0.55,
+                    "dose": 0.72,
+                    "form": 0.80,
+                    "quantity": 0.0,
+                    "instructions": 0.60
+                }
+            ]
+        }
+    },
+    "warnings": [
+        "uncertain_drug_name",
+        "low_image_quality",
+        "possible_abbreviation"
+    ]
+}

@@ -1,0 +1,148 @@
+# Moltbot CI Configuration
+#
+# Runs E2E tests on PR and integration tests nightly.
+# Workflow 12 — Phase E
+
+name: Moltbot CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'supabase/functions/**'
+      - 'supabase/migrations/**'
+      - 'docs/moltbot/**'
+      - 'skills/marketplace-concierge/**'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'supabase/functions/**'
+      - 'supabase/migrations/**'
+  schedule:
+    # Run integration tests nightly at 3 AM UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+env:
+  DENO_VERSION: '1.40.0'
+
+jobs:
+  # Quick E2E tests on every PR
+  moltbot-e2e:
+    name: Moltbot E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+
+      - name: Cache Deno dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/deno
+          key: ${{ runner.os }}-deno-${{ hashFiles('**/deno.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-deno-
+
+      - name: Run E2E Tests
+        working-directory: supabase
+        run: |
+          deno test --no-check --allow-all \
+            functions/__tests__/integration/moltbot-e2e.test.ts \
+            --reporter=junit --output=reports/moltbot-e2e.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: moltbot-e2e-results
+          path: supabase/reports/
+
+  # OCR workflow tests
+  moltbot-ocr:
+    name: OCR Workflow Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+
+      - name: Run OCR Tests
+        working-directory: supabase
+        run: |
+          deno test --no-check --allow-all \
+            functions/__tests__/integration/ocr-workflow.test.ts
+
+  # AI integration tests
+  moltbot-ai:
+    name: AI Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+
+      - name: Run AI Integration Tests
+        working-directory: supabase
+        run: |
+          deno test --no-check --allow-all \
+            functions/__tests__/integration/ai-integration.test.ts
+
+  # Type checking (nightly only)
+  moltbot-typecheck:
+    name: Type Check Moltbot
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+
+      - name: Type check orchestrator
+        working-directory: supabase/functions
+        run: deno check _shared/moltbot/orchestrator.ts
+
+      - name: Type check webhook handler
+        working-directory: supabase/functions
+        run: deno check wa-webhook-core/handlers/moltbot.ts
+
+  # Full integration test (nightly)
+  moltbot-full-integration:
+    name: Full Integration Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    needs: [moltbot-e2e, moltbot-ocr, moltbot-ai]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+
+      - name: Run all Moltbot tests
+        working-directory: supabase
+        run: |
+          deno test --no-check --allow-all \
+            functions/__tests__/integration/moltbot-e2e.test.ts \
+            functions/__tests__/integration/ocr-workflow.test.ts \
+            functions/__tests__/integration/ai-integration.test.ts
+
+      - name: Summary
+        run: |
+          echo "## Moltbot Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- E2E Tests: ✅ Passed" >> $GITHUB_STEP_SUMMARY
+          echo "- OCR Workflow: ✅ Passed" >> $GITHUB_STEP_SUMMARY
+          echo "- AI Integration: ✅ Passed" >> $GITHUB_STEP_SUMMARY

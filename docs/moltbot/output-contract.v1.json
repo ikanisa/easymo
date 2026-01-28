@@ -1,0 +1,247 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "moltbot-output-contract.v1",
+    "title": "Moltbot Output Contract v1",
+    "description": "Valid output formats from Moltbot. Exactly one action type must be returned.",
+    "oneOf": [
+        {
+            "$ref": "#/definitions/ask_client"
+        },
+        {
+            "$ref": "#/definitions/vendor_outreach_plan"
+        },
+        {
+            "$ref": "#/definitions/shortlist"
+        },
+        {
+            "$ref": "#/definitions/escalate"
+        }
+    ],
+    "definitions": {
+        "ask_client": {
+            "type": "object",
+            "required": [
+                "type",
+                "question_text",
+                "why"
+            ],
+            "properties": {
+                "type": {
+                    "const": "ask_client"
+                },
+                "question_text": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "why": {
+                    "type": "string"
+                },
+                "options": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "state_suggestion": {
+                    "$ref": "#/definitions/request_state"
+                }
+            },
+            "additionalProperties": false
+        },
+        "vendor_outreach_plan": {
+            "type": "object",
+            "required": [
+                "type",
+                "category",
+                "normalized_need",
+                "batch_size",
+                "vendor_questions",
+                "stop_conditions",
+                "calling_allowed"
+            ],
+            "properties": {
+                "type": {
+                    "const": "vendor_outreach_plan"
+                },
+                "category": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "normalized_need": {
+                    "type": "string"
+                },
+                "vendor_filters": {
+                    "type": "object",
+                    "properties": {
+                        "location_radius_km": {
+                            "type": "number",
+                            "minimum": 0
+                        },
+                        "min_rating": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 5
+                        },
+                        "tags": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "batch_size": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5
+                },
+                "vendor_questions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "stop_conditions": {
+                    "type": "object",
+                    "required": [
+                        "max_vendors"
+                    ],
+                    "properties": {
+                        "max_vendors": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 15
+                        },
+                        "min_replies": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "timeout_hours": {
+                            "type": "number",
+                            "minimum": 0.5
+                        }
+                    }
+                },
+                "calling_allowed": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false
+        },
+        "shortlist": {
+            "type": "object",
+            "required": [
+                "type",
+                "summary_text",
+                "items",
+                "handoff"
+            ],
+            "properties": {
+                "type": {
+                    "const": "shortlist"
+                },
+                "summary_text": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/shortlist_item"
+                    }
+                },
+                "handoff": {
+                    "type": "object",
+                    "required": [
+                        "type"
+                    ],
+                    "properties": {
+                        "type": {
+                            "enum": [
+                                "wa_link",
+                                "phone"
+                            ]
+                        },
+                        "message_template": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "additionalProperties": false
+        },
+        "escalate": {
+            "type": "object",
+            "required": [
+                "type",
+                "reason",
+                "safe_client_message"
+            ],
+            "properties": {
+                "type": {
+                    "const": "escalate"
+                },
+                "reason": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "safe_client_message": {
+                    "type": "string"
+                },
+                "state_suggestion": {
+                    "$ref": "#/definitions/request_state"
+                },
+                "to": {
+                    "enum": [
+                        "human",
+                        "fallback"
+                    ]
+                }
+            },
+            "additionalProperties": false
+        },
+        "request_state": {
+            "enum": [
+                "collecting_requirements",
+                "ocr_processing",
+                "vendor_outreach",
+                "awaiting_vendor_replies",
+                "shortlist_ready",
+                "handed_off",
+                "closed",
+                "error"
+            ]
+        },
+        "shortlist_item": {
+            "type": "object",
+            "required": [
+                "vendor_id",
+                "vendor_name",
+                "vendor_phone",
+                "response_summary"
+            ],
+            "properties": {
+                "vendor_id": {
+                    "type": "string"
+                },
+                "vendor_name": {
+                    "type": "string"
+                },
+                "vendor_phone": {
+                    "type": "string"
+                },
+                "response_summary": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "availability": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object"
+                }
+            }
+        }
+    }
+}

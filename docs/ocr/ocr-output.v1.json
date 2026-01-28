@@ -1,0 +1,207 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "OCR Output Schema v1",
+    "description": "Structured output from OCR extraction with confidence scoring",
+    "type": "object",
+    "required": [
+        "meta",
+        "extracted",
+        "confidence"
+    ],
+    "properties": {
+        "meta": {
+            "type": "object",
+            "required": [
+                "ocr_type",
+                "engine",
+                "processed_at"
+            ],
+            "properties": {
+                "ocr_type": {
+                    "type": "string",
+                    "enum": [
+                        "medical_prescription",
+                        "general_document_or_photo"
+                    ]
+                },
+                "engine": {
+                    "type": "string",
+                    "enum": [
+                        "gemini",
+                        "openai"
+                    ]
+                },
+                "source_message_id": {
+                    "type": "string",
+                    "description": "UUID of the originating message"
+                },
+                "processed_at": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            }
+        },
+        "extracted": {
+            "type": "object",
+            "properties": {
+                "text_full": {
+                    "type": "string",
+                    "description": "Complete OCR text extraction"
+                },
+                "fields": {
+                    "oneOf": [
+                        {
+                            "$ref": "#/definitions/medical_prescription_fields"
+                        },
+                        {
+                            "$ref": "#/definitions/general_document_fields"
+                        }
+                    ]
+                }
+            }
+        },
+        "confidence": {
+            "type": "object",
+            "required": [
+                "overall"
+            ],
+            "properties": {
+                "overall": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                },
+                "text_full": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                },
+                "fields": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                    }
+                }
+            }
+        },
+        "warnings": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "enum": [
+                    "uncertain_drug_name",
+                    "uncertain_dose",
+                    "possible_abbreviation",
+                    "low_image_quality",
+                    "partial_extraction",
+                    "uncertain_brand",
+                    "uncertain_address"
+                ]
+            }
+        }
+    },
+    "definitions": {
+        "medical_prescription_fields": {
+            "type": "object",
+            "properties": {
+                "patient_name": {
+                    "type": "string"
+                },
+                "prescriber_name": {
+                    "type": "string"
+                },
+                "facility": {
+                    "type": "string"
+                },
+                "date": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "drug_name"
+                        ],
+                        "properties": {
+                            "drug_name": {
+                                "type": "string"
+                            },
+                            "dose": {
+                                "type": "string"
+                            },
+                            "form": {
+                                "type": "string"
+                            },
+                            "quantity": {
+                                "type": [
+                                    "string",
+                                    "number"
+                                ]
+                            },
+                            "instructions": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "general_document_fields": {
+            "type": "object",
+            "properties": {
+                "product_keywords": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "brands": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "models": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "colors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "quantities": {
+                    "type": "array",
+                    "items": {
+                        "type": [
+                            "string",
+                            "number"
+                        ]
+                    }
+                },
+                "addresses_or_landmarks": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "phone_numbers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "notes": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

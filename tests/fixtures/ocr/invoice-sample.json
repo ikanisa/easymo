@@ -1,0 +1,49 @@
+{
+    "meta": {
+        "ocr_type": "general_document_or_photo",
+        "engine": "gemini",
+        "source_message_id": "test-msg-003",
+        "processed_at": "2026-01-28T12:00:00.000Z"
+    },
+    "extracted": {
+        "text_full": "INVOICE #12345\nNovember 28, 2026\n\nTo: ABC Company Ltd\nKigali, Rwanda\n\nItems:\n- Samsung Galaxy S24 Ultra x 5 units @ $1,200\n- Apple iPhone 15 Pro x 3 units @ $1,100\n- USB-C Chargers x 10 @ $25\n\nTotal: $9,550\n\nBank: Bank of Kigali\nAccount: 1234567890",
+        "fields": {
+            "product_keywords": [
+                "smartphone",
+                "charger",
+                "mobile phone"
+            ],
+            "brands": [
+                "Samsung",
+                "Apple"
+            ],
+            "models": [
+                "Galaxy S24 Ultra",
+                "iPhone 15 Pro"
+            ],
+            "colors": [],
+            "quantities": [
+                "5",
+                "3",
+                "10"
+            ],
+            "addresses_or_landmarks": [
+                "Kigali, Rwanda"
+            ],
+            "phone_numbers": [],
+            "notes": "Invoice for electronics order"
+        }
+    },
+    "confidence": {
+        "overall": 0.88,
+        "text_full": 0.92,
+        "fields": {
+            "product_keywords": 0.85,
+            "brands": 0.95,
+            "models": 0.90,
+            "quantities": 0.92,
+            "addresses_or_landmarks": 0.88
+        }
+    },
+    "warnings": []
+}

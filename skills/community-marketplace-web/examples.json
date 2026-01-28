@@ -1,0 +1,102 @@
+[
+  {
+    "title": "Clarify missing price range for a buy request",
+    "description": "User starts with a short buy request but omits pricing. Moltbot asks for numbers before updating the draft.",
+    "user_messages": [
+      "I need a used mountain bike in Kigali."
+    ],
+    "tool_plan": {
+      "ask_user": {
+        "question": "Could you tell me the price range you're comfortable with so I can search for matches?",
+        "target_fields": [
+          "price_min",
+          "price_max"
+        ]
+      }
+    }
+  },
+  {
+    "title": "Complete a sell post, post it, match, and notify",
+    "description": "Moltbot captures post fields, marks the draft as posted, generates explainable matches, queues notifications, and surfaces discovery links.",
+    "user_messages": [
+      "Selling a gently used smartphone with warranty included. Price between 200000 and 250000 RWF. Pickup in Remera."
+    ],
+    "tool_plan": {
+      "actions": [
+        {
+          "update_post": {
+            "post_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+            "fields": {
+              "type": "sell",
+              "category": "electronics",
+              "title": "Used smartphone with warranty",
+              "description": "Comes with charger, warranty card, and original box",
+              "price_min": 200000,
+              "price_max": 250000,
+              "location_text": "Remera, Kigali",
+              "currency": "RWF"
+            }
+          }
+        },
+        {
+          "post_now": {
+            "post_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+            "status": "posted",
+            "posted_at": "2026-01-28T15:00:00Z"
+          }
+        },
+        {
+          "suggest_matches": {
+            "post_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+            "matches": [
+              {
+                "match_type": "internal_listing",
+                "target_id": "6d7f2f7b-8b07-4e99-ab6b-3ec3b3f2f9d0",
+                "score": 87.3,
+                "reasons": [
+                  { "code": "CATEGORY", "description": "Same electronics category", "score_delta": 10 },
+                  { "code": "PRICE", "description": "Listing price 230000 RWF falls inside seller range", "score_delta": 5 },
+                  { "code": "RECENCY", "description": "Listing posted within the last hour", "score_delta": 3 }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "notify_top_targets": {
+            "post_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+            "targets": [
+              {
+                "target_type": "seller_session",
+                "target_id": "d8fb5c23-1c0b-4b4e-9e72-a50dbe2a55ef",
+                "channel": "web",
+                "payload": { "message": "New sell request matches your listing" }
+              },
+              {
+                "target_type": "vendor",
+                "target_id": "b8f3c1a0-23a4-4b3e-b3c2-1c22f9c22fa3",
+                "channel": "whatsapp",
+                "payload": { "message": "Potential match in Remera" }
+              }
+            ]
+          }
+        },
+        {
+          "show_feed_options": {
+            "post_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+            "feed_items": [
+              {
+                "feed_item_id": "c1e2d6b1-0f87-4f4f-8a0b-525d0cf5f411",
+                "source": "openai_web_search",
+                "title": "Remera mobile shops with smartphones",
+                "url": "https://discover.example.com/rem-phones",
+                "snippet": "Verified vendors listing phones around 220000-240000 RWF",
+                "confidence": 0.68
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+]

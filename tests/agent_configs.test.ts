@@ -6,18 +6,17 @@ import yaml from 'yaml';
 /**
  * Agent Configurations Tests
  * 
- * Tests for the 9 official agents matching production agent_registry database:
+ * Tests for the official agents matching production agent_registry database:
  * 1. farmer - Farmer AI Agent
- * 2. insurance - Insurance AI Agent
- * 3. sales_cold_caller - Sales/Marketing Cold Caller AI Agent
- * 4. rides - Rides AI Agent
- * 5. jobs - Jobs AI Agent
- * 6. waiter - Waiter AI Agent
- * 7. real_estate - Real Estate AI Agent
- * 8. buy_sell - Buy & Sell AI Agent (unified commerce + business brokerage)
- * 9. support - Support AI Agent (includes concierge routing)
+ * 2. sales_cold_caller - Sales/Marketing Cold Caller AI Agent
+ * 3. jobs - Jobs AI Agent
+ * 4. waiter - Waiter AI Agent
+ * 5. real_estate - Real Estate AI Agent
+ * 6. buy_sell - Buy & Sell AI Agent (unified commerce + business brokerage)
+ * 7. support - Support AI Agent (includes concierge routing)
  * 
  * NOTE: buy_sell is the standardized slug (previously buy_and_sell)
+ * NOTE: insurance and rides are workflow-driven and are not configured as agents in this repo.
  */
 describe('Agent Configurations', () => {
   const configPath = path.join(process.cwd(), 'config', 'agent_configs.yaml');
@@ -33,16 +32,14 @@ describe('Agent Configurations', () => {
     expect(Array.isArray(configs)).toBe(true);
   });
 
-  it('should have exactly 9 official agent configurations', () => {
-    expect(configs).toHaveLength(9);
+  it('should have exactly 7 official agent configurations', () => {
+    expect(configs).toHaveLength(7);
   });
 
-  it('should have the correct 9 official agent slugs', () => {
+  it('should have the correct 7 official agent slugs', () => {
     const expectedSlugs = [
       'farmer',
-      'insurance',
       'sales_cold_caller',
-      'rides',
       'jobs',
       'waiter',
       'real_estate',
@@ -128,19 +125,6 @@ describe('Agent Configurations', () => {
       expect(farmer.guardrails.pii_minimization).toBe(true);
     });
 
-    it('should configure Insurance Agent correctly', () => {
-      const insurance = configs.find(c => c.slug === 'insurance');
-      expect(insurance).toBeDefined();
-      expect(insurance.name).toBe('Insurance AI Agent');
-      expect(insurance.autonomy).toBe('suggest');
-      expect(insurance.tools).toContain('ocr_extract');
-      expect(insurance.tools).toContain('price_insurance');
-      expect(insurance.tools).toContain('generate_pdf');
-      expect(insurance.guardrails.approval_thresholds).toBeDefined();
-      expect(insurance.guardrails.approval_thresholds.premium_gt).toBe(500000);
-      expect(insurance.guardrails.approval_thresholds.ocr_conf_lt).toBe(0.8);
-    });
-
     it('should configure Sales Cold Caller Agent correctly', () => {
       const sales = configs.find(c => c.slug === 'sales_cold_caller');
       expect(sales).toBeDefined();
@@ -148,15 +132,6 @@ describe('Agent Configurations', () => {
       expect(sales.autonomy).toBe('handoff');
       expect(sales.guardrails.only_preapproved_templates).toBe(true);
       expect(sales.guardrails.quiet_hours_throttle).toBe(true);
-    });
-
-    it('should configure Rides Agent correctly', () => {
-      const rides = configs.find(c => c.slug === 'rides');
-      expect(rides).toBeDefined();
-      expect(rides.name).toBe('Rides AI Agent');
-      expect(rides.autonomy).toBe('suggest');
-      expect(rides.tools).toContain('maps_geosearch');
-      expect(rides.guardrails.location_privacy).toBe('coarse_only');
     });
 
     it('should configure Jobs Agent correctly', () => {
@@ -303,7 +278,7 @@ describe('Agent Configurations', () => {
       const agentsWithAnalytics = configs.filter(c => 
         c.tools.includes('analytics_log')
       );
-      expect(agentsWithAnalytics.length).toBeGreaterThanOrEqual(8);
+      expect(agentsWithAnalytics.length).toBeGreaterThanOrEqual(6);
     });
 
     it('should assign notify_staff to escalation-capable agents', () => {
@@ -335,11 +310,9 @@ describe('Agent Configurations', () => {
     });
 
     it('should mark high-risk agents as suggest or handoff', () => {
-      const insurance = configs.find(c => c.slug === 'insurance');
       const buyAndSell = configs.find(c => c.slug === 'buy_sell');
       const salesColdCaller = configs.find(c => c.slug === 'sales_cold_caller');
 
-      expect(['suggest', 'handoff']).toContain(insurance?.autonomy);
       expect(['suggest', 'handoff']).toContain(buyAndSell?.autonomy);
       expect(['suggest', 'handoff']).toContain(salesColdCaller?.autonomy);
     });

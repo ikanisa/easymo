@@ -51,7 +51,10 @@ const TEST_USERS = {
   },
 };
 
-describe('Mobility V2 Integration Tests', () => {
+const RUN_DB_TESTS = process.env.EASYMO_RUN_DB_TESTS === 'true';
+const describeDb = RUN_DB_TESTS ? describe : describe.skip;
+
+describeDb('Mobility V2 Integration Tests', () => {
   beforeAll(async () => {
     // Initialize Supabase client
     supabase = createClient(TEST_CONFIG.supabaseUrl, TEST_CONFIG.supabaseKey, {

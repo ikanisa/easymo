@@ -300,6 +300,64 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
+    // Check for media messages (images/documents) - create OCR job if applicable
+    const { handleMediaMessage, sendOcrAcknowledgment } = await import("./handlers/ocr-media.ts");
+    const mediaResult = await handleMediaMessage(payload, correlationId);
+    if (mediaResult.handled) {
+      log("OCR_MEDIA_HANDLED", {
+        jobId: mediaResult.jobId,
+        success: !!mediaResult.jobId,
+        error: mediaResult.error,
+      });
+
+      // Send acknowledgment to user
+      if (mediaResult.jobId && phoneNumber) {
+        await sendOcrAcknowledgment(phoneNumber);
+      }
+
+      // Return success to Meta - OCR job created or attempted
+      return finalize(
+        json({
+          success: true,
+          handled: "ocr_media",
+          jobId: mediaResult.jobId,
+          error: mediaResult.error,
+        }, { status: 200 }),
+        "wa-webhook-core",
+      );
+    }
+
+    // Check for Moltbot marketplace requests
+    if (phoneNumber) {
+      const { handleMoltbotRequest } = await import("./handlers/moltbot.ts");
+      const moltbotResult = await handleMoltbotRequest(
+        payload,
+        phoneNumber,
+        correlationId,
+        supabase,
+      );
+
+      if (moltbotResult.handled) {
+        log("MOLTBOT_REQUEST_HANDLED", {
+          success: moltbotResult.result?.success,
+          mode: moltbotResult.result?.mode,
+          actionType: moltbotResult.result?.action?.type,
+          nextState: moltbotResult.result?.nextState,
+        });
+
+        // Return success to Meta - Moltbot handled the message
+        return finalize(
+          json({
+            success: true,
+            handled: "moltbot",
+            mode: moltbotResult.result?.mode,
+            actionType: moltbotResult.result?.action?.type,
+          }, { status: 200 }),
+          "wa-webhook-core",
+        );
+      }
+    }
+
     // Check if this is a call event BEFORE routing messages
     const calls = payload?.entry?.[0]?.changes?.[0]?.value?.calls;
     const callEvent = calls?.[0]; // Get first call from array
@@ -311,9 +369,8 @@ serve(async (req: Request): Promise<Response> => {
       });
 
       // Forward directly to voice-calls handler
-      const voiceCallsUrl = `${
-        getEnvValue("SUPABASE_URL") ?? ""
-      }/functions/v1/wa-webhook-voice-calls`;
+      const voiceCallsUrl = `${getEnvValue("SUPABASE_URL") ?? ""
+        }/functions/v1/wa-webhook-voice-calls`;
       try {
         const forwardResponse = await fetch(voiceCallsUrl, {
           method: "POST",
@@ -321,9 +378,8 @@ serve(async (req: Request): Promise<Response> => {
             "Content-Type": "application/json",
             "X-Correlation-ID": correlationId,
             "X-Request-ID": requestId,
-            "Authorization": `Bearer ${
-              getEnvValue("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-            }`,
+            "Authorization": `Bearer ${getEnvValue("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+              }`,
           },
           body: JSON.stringify(payload),
         });

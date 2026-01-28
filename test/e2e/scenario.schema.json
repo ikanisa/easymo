@@ -1,0 +1,424 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://easymo.co/schemas/e2e-scenario.json",
+    "title": "Moltbot E2E Test Scenario",
+    "description": "Schema for defining end-to-end conversation test scenarios for the Moltbot concierge system",
+    "type": "object",
+    "required": [
+        "name",
+        "steps"
+    ],
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Human-readable scenario name"
+        },
+        "description": {
+            "type": "string",
+            "description": "Detailed description of what this scenario tests"
+        },
+        "initial_state": {
+            "type": "object",
+            "description": "Optional initial database state before scenario runs",
+            "properties": {
+                "conversation": {
+                    "$ref": "#/definitions/conversation"
+                },
+                "request": {
+                    "$ref": "#/definitions/request"
+                },
+                "vendors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/vendor"
+                    }
+                },
+                "call_consent": {
+                    "$ref": "#/definitions/call_consent"
+                }
+            }
+        },
+        "steps": {
+            "type": "array",
+            "description": "Ordered list of scenario steps",
+            "items": {
+                "$ref": "#/definitions/step"
+            },
+            "minItems": 1
+        },
+        "tags": {
+            "type": "array",
+            "description": "Tags for filtering scenarios",
+            "items": {
+                "type": "string"
+            }
+        }
+    },
+    "definitions": {
+        "step": {
+            "type": "object",
+            "description": "A single step in the scenario",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "Step identifier for debugging"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "What this step does"
+                },
+                "client_inbound": {
+                    "$ref": "#/definitions/client_inbound"
+                },
+                "vendor_inbound": {
+                    "$ref": "#/definitions/vendor_inbound"
+                },
+                "ocr_result": {
+                    "$ref": "#/definitions/ocr_result"
+                },
+                "moltbot_output": {
+                    "$ref": "#/definitions/moltbot_output"
+                },
+                "call_event": {
+                    "$ref": "#/definitions/call_event"
+                },
+                "assert": {
+                    "$ref": "#/definitions/assertions"
+                },
+                "wait_ms": {
+                    "type": "integer",
+                    "description": "Milliseconds to wait before executing step",
+                    "minimum": 0
+                }
+            }
+        },
+        "client_inbound": {
+            "type": "object",
+            "description": "Simulated message from client",
+            "required": [
+                "message_type"
+            ],
+            "properties": {
+                "message_type": {
+                    "type": "string",
+                    "enum": [
+                        "text",
+                        "image",
+                        "document",
+                        "audio",
+                        "location",
+                        "interactive"
+                    ]
+                },
+                "text": {
+                    "type": "string",
+                    "description": "Message body for text messages"
+                },
+                "media_fixture": {
+                    "type": "string",
+                    "description": "Reference to fixture file for media messages"
+                },
+                "button_id": {
+                    "type": "string",
+                    "description": "Button ID for interactive responses"
+                },
+                "list_id": {
+                    "type": "string",
+                    "description": "List selection ID for interactive responses"
+                },
+                "duplicate": {
+                    "type": "boolean",
+                    "description": "If true, send the same message_id again (for idempotency tests)"
+                }
+            }
+        },
+        "vendor_inbound": {
+            "type": "object",
+            "description": "Simulated response from vendor",
+            "required": [
+                "vendor_id",
+                "text"
+            ],
+            "properties": {
+                "vendor_id": {
+                    "type": "string",
+                    "description": "Vendor ID responding"
+                },
+                "text": {
+                    "type": "string",
+                    "description": "Vendor reply text"
+                },
+                "is_injection_attempt": {
+                    "type": "boolean",
+                    "description": "Flag if this is a known injection attempt"
+                }
+            }
+        },
+        "ocr_result": {
+            "type": "object",
+            "description": "Simulated OCR processing result",
+            "required": [
+                "ocr_job_id",
+                "status"
+            ],
+            "properties": {
+                "ocr_job_id": {
+                    "type": "string",
+                    "description": "OCR job ID to update"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "completed",
+                        "failed"
+                    ]
+                },
+                "extracted": {
+                    "type": "object",
+                    "description": "Extracted data from OCR",
+                    "additionalProperties": true
+                },
+                "confidence": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "OCR confidence score"
+                },
+                "error_message": {
+                    "type": "string",
+                    "description": "Error message if status is failed"
+                }
+            }
+        },
+        "moltbot_output": {
+            "type": "object",
+            "description": "Expected or simulated Moltbot output",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "ask_client",
+                        "vendor_outreach_plan",
+                        "shortlist",
+                        "escalate"
+                    ]
+                },
+                "question_text": {
+                    "type": "string"
+                },
+                "why": {
+                    "type": "string"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "normalized_need": {
+                    "type": "string"
+                },
+                "batch_size": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5
+                },
+                "stop_conditions": {
+                    "type": "object"
+                },
+                "summary_text": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array"
+                },
+                "handoff": {
+                    "type": "object"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "safe_client_message": {
+                    "type": "string"
+                }
+            }
+        },
+        "call_event": {
+            "type": "object",
+            "description": "Calling-related event",
+            "required": [
+                "event_type"
+            ],
+            "properties": {
+                "event_type": {
+                    "type": "string",
+                    "enum": [
+                        "consent_request",
+                        "consent_granted",
+                        "consent_denied",
+                        "call_initiated",
+                        "call_completed",
+                        "call_failed"
+                    ]
+                },
+                "consent_id": {
+                    "type": "string"
+                },
+                "call_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "assertions": {
+            "type": "object",
+            "description": "Assertions to verify after step",
+            "properties": {
+                "request_state": {
+                    "type": "string",
+                    "enum": [
+                        "collecting_requirements",
+                        "ocr_processing",
+                        "vendor_outreach",
+                        "awaiting_vendor_replies",
+                        "shortlist_ready",
+                        "handed_off",
+                        "closed",
+                        "error"
+                    ]
+                },
+                "outbound_messages": {
+                    "type": "array",
+                    "description": "Expected outbound messages (partial match)",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "to": {
+                                "type": "string"
+                            },
+                            "contains": {
+                                "type": "string"
+                            },
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "text",
+                                    "buttons",
+                                    "list",
+                                    "template"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "no_duplicate_outreach": {
+                    "type": "boolean",
+                    "description": "Assert no duplicate vendor outreach exists"
+                },
+                "shortlist_wa_link_count": {
+                    "type": "integer",
+                    "description": "Assert shortlist has this many wa.me links",
+                    "minimum": 0
+                },
+                "vendor_outreach_count": {
+                    "type": "integer",
+                    "description": "Assert this many vendor outreach records exist"
+                },
+                "db_row_count": {
+                    "type": "object",
+                    "description": "Assert row counts in tables",
+                    "properties": {
+                        "table": {
+                            "type": "string"
+                        },
+                        "filter": {
+                            "type": "object"
+                        },
+                        "count": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "injection_flagged": {
+                    "type": "boolean",
+                    "description": "Assert vendor injection attempt was flagged"
+                },
+                "call_refused": {
+                    "type": "boolean",
+                    "description": "Assert call was refused due to consent denial"
+                }
+            }
+        },
+        "conversation": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "client_phone": {
+                    "type": "string"
+                },
+                "language": {
+                    "type": "string",
+                    "default": "en"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "closed",
+                        "archived"
+                    ]
+                }
+            }
+        },
+        "request": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "requirements": {
+                    "type": "object"
+                }
+            }
+        },
+        "vendor": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "category": {
+                    "type": "string"
+                }
+            }
+        },
+        "call_consent": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string",
+                    "enum": [
+                        "not_requested",
+                        "requested",
+                        "granted",
+                        "denied",
+                        "expired"
+                    ]
+                }
+            }
+        }
+    }
+}

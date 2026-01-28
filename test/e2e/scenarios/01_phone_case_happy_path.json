@@ -1,0 +1,172 @@
+{
+    "name": "phone_case_happy_path",
+    "description": "Client asks for a phone case, bot clarifies, conducts vendor outreach, generates shortlist, and hands off",
+    "tags": [
+        "happy_path",
+        "electronics",
+        "full_flow"
+    ],
+    "initial_state": {
+        "conversation": {
+            "id": "conv_phone_case_001",
+            "client_phone": "+250788100001",
+            "language": "en",
+            "status": "active"
+        },
+        "vendors": [
+            {
+                "id": "vendor_001",
+                "name": "TechHub Rwanda",
+                "phone": "+250788222001",
+                "category": "electronics"
+            },
+            {
+                "id": "vendor_002",
+                "name": "Mobile World",
+                "phone": "+250788222002",
+                "category": "electronics"
+            },
+            {
+                "id": "vendor_003",
+                "name": "Gadget Store",
+                "phone": "+250788222003",
+                "category": "electronics"
+            }
+        ]
+    },
+    "steps": [
+        {
+            "id": "step_1_client_request",
+            "description": "Client sends initial request for phone case",
+            "client_inbound": {
+                "message_type": "text",
+                "text": "I need a phone case for Samsung Galaxy S24"
+            },
+            "moltbot_output": {
+                "type": "ask_client",
+                "question_text": "What type of case are you looking for?",
+                "why": "Need to narrow down options",
+                "options": [
+                    "Silicone/Soft",
+                    "Hard plastic",
+                    "Leather",
+                    "Any type"
+                ]
+            },
+            "assert": {
+                "request_state": "collecting_requirements",
+                "outbound_messages": [
+                    {
+                        "contains": "What type of case"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "step_2_client_clarifies",
+            "description": "Client specifies case type preference",
+            "client_inbound": {
+                "message_type": "interactive",
+                "button_id": "silicone_soft"
+            },
+            "moltbot_output": {
+                "type": "vendor_outreach_plan",
+                "category": "electronics",
+                "normalized_need": "Samsung Galaxy S24 silicone phone case",
+                "vendor_filters": {
+                    "tags": [
+                        "electronics",
+                        "phone_accessories"
+                    ]
+                },
+                "batch_size": 3,
+                "vendor_questions": [
+                    "Do you have silicone cases for Samsung Galaxy S24?",
+                    "What colors are available?",
+                    "What is the price?"
+                ],
+                "stop_conditions": {
+                    "max_vendors": 10,
+                    "min_replies": 3
+                },
+                "calling_allowed": false
+            },
+            "assert": {
+                "request_state": "vendor_outreach"
+            }
+        },
+        {
+            "id": "step_3_vendor_1_replies",
+            "description": "First vendor responds with availability",
+            "vendor_inbound": {
+                "vendor_id": "vendor_001",
+                "text": "Yes we have silicone cases for S24! Black, blue, and clear colors. Price: 8,000-12,000 RWF. Located in Kigali Heights."
+            },
+            "assert": {
+                "request_state": "awaiting_vendor_replies",
+                "vendor_outreach_count": 3
+            }
+        },
+        {
+            "id": "step_4_vendor_2_replies",
+            "description": "Second vendor responds",
+            "vendor_inbound": {
+                "vendor_id": "vendor_002",
+                "text": "S24 silicone cases available. 7,000 RWF only. Colors: black and green. Remera location."
+            },
+            "assert": {
+                "request_state": "awaiting_vendor_replies"
+            }
+        },
+        {
+            "id": "step_5_vendor_3_replies",
+            "description": "Third vendor responds",
+            "vendor_inbound": {
+                "vendor_id": "vendor_003",
+                "text": "Sorry, we only have iPhone cases currently."
+            },
+            "assert": {
+                "request_state": "shortlist_ready"
+            }
+        },
+        {
+            "id": "step_6_shortlist_sent",
+            "description": "Bot sends shortlist to client",
+            "moltbot_output": {
+                "type": "shortlist",
+                "summary_text": "Found 2 shops with S24 silicone cases for you!",
+                "items": [
+                    {
+                        "vendor_id": "vendor_001",
+                        "vendor_name": "TechHub Rwanda",
+                        "vendor_phone": "+250788222001",
+                        "response_summary": "Black, blue, clear. 8,000-12,000 RWF. Kigali Heights"
+                    },
+                    {
+                        "vendor_id": "vendor_002",
+                        "vendor_name": "Mobile World",
+                        "vendor_phone": "+250788222002",
+                        "response_summary": "Black, green. 7,000 RWF. Remera"
+                    }
+                ],
+                "handoff": {
+                    "type": "wa_link",
+                    "message_template": "Hi, I found you through EasyMO for a Samsung S24 case."
+                }
+            },
+            "assert": {
+                "request_state": "handed_off",
+                "outbound_messages": [
+                    {
+                        "contains": "wa.me"
+                    },
+                    {
+                        "contains": "2 shops"
+                    }
+                ],
+                "shortlist_wa_link_count": 2,
+                "no_duplicate_outreach": true
+            }
+        }
+    ]
+}

@@ -138,6 +138,107 @@ groups:
           summary: "Long-running query detected"
           description: "Query {{ pid }} running for {{ duration_seconds }}s: {{ query_preview }}"
 
+  # =========================================================================
+  # Moltbot AI Concierge Alerts
+  # =========================================================================
+  - name: moltbot_alerts
+    interval: 5m
+    rules:
+      - alert: MoltbotOcrFailureRate
+        expr: |
+          SELECT 
+            ROUND(100.0 * COUNT(CASE WHEN status = 'failed' THEN 1 END) / NULLIF(COUNT(*), 0), 2) as failure_rate
+          FROM moltbot_ocr_jobs
+          WHERE created_at > NOW() - INTERVAL '24 hours'
+        condition: failure_rate > 10
+        severity: warning
+        annotations:
+          summary: "High OCR failure rate"
+          description: "{{ failure_rate }}% of OCR jobs failed in the last 24 hours (threshold: 10%)."
+          runbook_url: "https://docs.internal/runbooks/ocr-failures"
+      
+      - alert: MoltbotOcrFailureCritical
+        expr: |
+          SELECT 
+            ROUND(100.0 * COUNT(CASE WHEN status = 'failed' THEN 1 END) / NULLIF(COUNT(*), 0), 2) as failure_rate
+          FROM moltbot_ocr_jobs
+          WHERE created_at > NOW() - INTERVAL '24 hours'
+        condition: failure_rate > 25
+        severity: critical
+        annotations:
+          summary: "Critical OCR failure rate"
+          description: "{{ failure_rate }}% of OCR jobs failed in the last 24 hours (threshold: 25%). Consider pausing OCR."
+          runbook_url: "https://docs.internal/runbooks/ocr-failures"
+
+      - alert: MoltbotAiRejectionRate
+        expr: |
+          SELECT 
+            ROUND(100.0 * COUNT(CASE WHEN success = false THEN 1 END) / NULLIF(COUNT(*), 0), 2) as rejection_rate
+          FROM moltbot_audit_events
+          WHERE event_type = 'moltbot.called'
+          AND created_at > NOW() - INTERVAL '24 hours'
+        condition: rejection_rate > 5
+        severity: warning
+        annotations:
+          summary: "High Moltbot output rejection rate"
+          description: "{{ rejection_rate }}% of Moltbot outputs rejected by safety gate in the last 24 hours."
+          runbook_url: "https://docs.internal/runbooks/moltbot-rejections"
+
+      - alert: MoltbotVendorReplyRate
+        expr: |
+          SELECT 
+            ROUND(100.0 * COUNT(CASE WHEN state = 'replied' THEN 1 END) / NULLIF(COUNT(*), 0), 2) as reply_rate
+          FROM moltbot_vendor_outreach
+          WHERE outreach_sent_at > NOW() - INTERVAL '7 days'
+        condition: reply_rate < 15
+        severity: warning
+        annotations:
+          summary: "Low vendor reply rate"
+          description: "Only {{ reply_rate }}% of vendors replied in the last 7 days (threshold: 15%)."
+          runbook_url: "https://docs.internal/runbooks/vendor-engagement"
+
+      - alert: MoltbotCallFailureSpike
+        expr: |
+          SELECT COUNT(*) as failures
+          FROM moltbot_call_attempts
+          WHERE status = 'failed'
+          AND initiated_at > NOW() - INTERVAL '1 hour'
+        condition: failures > 5
+        severity: warning
+        annotations:
+          summary: "Call failure spike detected"
+          description: "{{ failures }} call failures in the last hour. Check provider status."
+          runbook_url: "https://docs.internal/runbooks/call-failures"
+
+      - alert: MoltbotBudgetExceededRate
+        expr: |
+          SELECT 
+            ROUND(100.0 * COUNT(CASE WHEN event_type LIKE '%budget_exceeded%' THEN 1 END) / NULLIF(COUNT(DISTINCT request_id), 0), 2) as exceeded_rate
+          FROM moltbot_audit_events
+          WHERE created_at > NOW() - INTERVAL '24 hours'
+        condition: exceeded_rate > 5
+        severity: warning
+        annotations:
+          summary: "High budget exceeded rate"
+          description: "{{ exceeded_rate }}% of requests hit budget limits in the last 24 hours."
+          runbook_url: "https://docs.internal/runbooks/budget-exceeded"
+
+      - alert: MoltbotTimeToShortlistSlow
+        expr: |
+          SELECT 
+            PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY 
+              EXTRACT(EPOCH FROM (updated_at - created_at))
+            ) as p95_seconds
+          FROM moltbot_marketplace_requests
+          WHERE state IN ('shortlist_ready', 'handed_off', 'closed')
+          AND created_at > NOW() - INTERVAL '6 hours'
+        condition: p95_seconds > 300
+        severity: warning
+        annotations:
+          summary: "Slow time-to-shortlist (P95)"
+          description: "P95 time-to-shortlist is {{ p95_seconds }}s (threshold: 300s / 5 minutes)."
+          runbook_url: "https://docs.internal/runbooks/performance"
+
 # Notification channels configuration
 notification_channels:
   - name: pagerduty_critical
